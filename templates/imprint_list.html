@@ -1,0 +1,34 @@
+{% extends "search_results_base.html" %}
+
+{% block results %}
+<tr class="result-status">
+    <td>
+        {{ total_results }} records matched your query:
+    </td>
+</tr>
+<tr class="result-display-status">
+    <td>
+        Displaying records {{ first_displayed }} through {{ last_displayed }}
+        ({{ num_displayed }} records displayed per page).
+    </td>
+</tr>
+<tr>
+    <table>
+        <tr class="search-results-header">
+            <td> &nbsp;
+            <td> Imprint
+            <td> Titles
+            <td> Issues
+        </tr>
+        {% for publisher in publisher_set %}
+        <tr class="{% cycle search-odd,search-even %}">
+            <td> <img src="{{ media_url }}/img/triangle.gif"/>
+            <td> <a href="/gcd/publisher/{{ publisher.id }}/">{{ publisher.name }}</a> 
+            <td> {{ publisher.series_set.count }} </td>
+            <td> {{ publisher.computed_issue_count }} </td>
+        </tr>
+        {% endfor %}
+    </table>
+</tr>
+{% endblock %}
+

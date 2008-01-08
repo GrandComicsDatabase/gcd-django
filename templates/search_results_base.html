@@ -1,0 +1,39 @@
+{% extends "tagline_base.html" %}
+
+{% block title %} GCD :: Search {% endblock %}
+
+{% block tagged %}
+<tr>
+    <td>
+        <table border="0" cellpadding="4" cellspacing="0">
+            <tr class="in-results-search">
+                <form action="/gcd/search/" method="get">
+                <td>
+                    <b>Search for:</b>
+                    <input type="text" name="query" size="15"> in
+                    <select name="type" size="1">
+                        <option value="writer"> Writer
+                        <option value="penciller"> Penciller
+                        <option value="inker"> Inker
+                        <option value="editor"> Editor
+                        <option value="letterer"> Letterer
+                        <option value="colorist"> Colorist
+                        <option value="credit"> Any credit
+                        <option value="publisher"> Publisher
+                        <option value="story"> Story title
+                        <option value="series" SELECTED> Comic Book title
+                        <option value="character"> Character
+                        <option value="job"> Job Number
+                    </select>
+                    Order by :
+                    <input type="radio" name="sort" value="alpha" CHECKED> Name
+                    <input type="radio" name="sort" value="chrono"> Year
+                    <input type="submit" name="Submit" value="Search">
+                </td>
+                </form>
+            </tr>
+            {% block results %}{% endblock %}
+        </table>
+    </td>
+</tr>
+{% endblock %}

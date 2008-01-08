@@ -1,0 +1,56 @@
+{% extends "search_results_base.html" %}
+
+{% block results %}
+<tr class="result-status">
+    <td>
+        {{ total_results }} records matched your search for "{{ search_term }}"
+    </td>
+</tr>
+<tr class="result-display-status">
+    <td>
+        Displaying records {{ first_displayed }} through {{ last_displayed }}
+        ({{ num_displayed }} records displayed per page).
+    </td>
+</tr>
+<tr>
+    <table border="0" cellpadding="3" cellspacing="1">
+        <tr class="search-results-header">
+            <td> &nbsp;
+            <td> Title
+            <td> Series
+            <td> Published
+            <td> Publisher
+            <td> Cover
+        <tr>
+        {% for story in results %}
+        <tr class="{% cycle search-odd,search-even %}">
+            <td> <img src="{{ media_url }}/img/triangle.gif"/>
+            <td> <a href="/gcd/issue/{{ story.issue.id }}/">{{ story.issue.series.name }} #{{ story.issue.number }}</a>
+                {% ifequal story.sequence_number 0 %}
+                    ({{ story.page_count }})
+                {% endifequal %}
+                <br>
+                Title: {{ story.title }}
+                {% ifnotequal story.sequence_number 0 %}
+                    {% if story.type %}
+                        ({{ story.type }} - {{ story.page_count }} pages)
+                    {% else %}
+                        ({{ story.page_count }} pages)
+                    {% endif %}
+                {% endifnotequal %}
+                <br>
+                [<b>TODO:</b> matched credits]
+            <td> {{ story.issue.series.year_began }}
+            <td> {{ story.issue.publication_date }}
+            <td> {{ story.issue.series.publisher.name }}
+            <td> {% if story.has_cover %}
+                <a href="{{ story.cover_url }}"><img src="{{ media_url }}/img/camera.gif"/></a>
+                 {% else %}
+                    &nbsp;
+                 {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+</tr>
+{% endblock %}
+

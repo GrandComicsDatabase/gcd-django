@@ -1,0 +1,52 @@
+{% extends "search_results_base.html" %}
+
+{% block results %}
+<tr class="result-status">
+    <td>
+        {{ total_results }} records matched your search for "{{ search_term }}"
+    <td>
+</tr>
+<tr class="result-display-status">
+    <td>
+        Displaying records {{ first_displayed }} through {{ last_displayed }}
+        ({{ num_displayed }} records displayed per page).<br>
+        Click the title to get the series information.
+    </td>
+</tr>
+<tr>
+    <table border="0" cellpadding="3" cellspacing="1">
+        <tr class="search-results-header">
+            <td> &nbsp;
+            <td> Country
+            <td> Title
+            <td> Series
+            <td> Issues
+            <td> Covers
+            <td> Publisher
+            <td> Published
+        <tr>
+        {% for series in results %}
+        <tr class="{% cycle search-odd,search-even %}">
+            <td> <img src="{{ media_url }}/img/triangle.gif"/>
+            <td> {{ series.country_code|upper }}
+            <td> <a href="/gcd/series/{{ series.id }}/">{{ series.name }}</a>
+            <td> {{ series.year_began }}
+            <td> {{ series.issue_set.count }}
+            <td>
+                {% if series.gallery_present %}
+                    {% ifnotequal series.gallery_present "0" %}
+                        Gallery
+                    {% else %}
+                        Add
+                    {% endifnotequal %}
+                {% else %}
+                    Add
+                {% endif %}
+            <td> {{ series.publisher.name }}
+            <td> {{ series.publication_dates }}
+        </tr>
+        {% endfor %}
+    </table>
+</tr>
+{% endblock %}
+

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %} GCD :: Series :: {{ series.name }} {% endblock %}
+
+{% block body %}
+<table width="600" border="0" cellpadding="0" cellspacing="0">
+<tr>
+    <td rowspan="2">
+        <img src="{{ media_url }}/img/icon_search_who_did_that.gif"
+             alt="Hmm... Who did that?"/>
+    </td>
+    <td class="logo">
+        <img src="{{ media_url }}/img/logo_gcdp.gif"
+             alt="The Grand Comic Book Database Project"/>
+    </td>
+</tr>
+<tr>
+    <td class="tagline">
+        {% block tagline %}
+        <img src="{{ media_url }}/img/search_03_have_details.gif"
+             alt="Have a look at the details"/>
+        {% endblock %}
+    </td>
+</tr>
+<tr>
+    <td colspan="2">
+        <table width="600" border="0" cellpadding="3" cellspacing="1">
+            <tr>
+                <td> &nbsp;
+            </tr>
+            <tr class="series-title">
+                <td colspan="2">
+                    <b>{{ series.name }}</b> ({{ series.year_began }} Series)
+                </td>
+            </tr>
+            <tr class="series-info">
+                <td> {{ image_tag|safe }}
+                <td>
+                    {% if series.format %}
+                        {{ series.format }}.
+                    {% endif %}
+                    Published by
+<a href="/gcd/publisher/{{ series.publisher.id }}/">{{ series.publisher.name }}</a>,
+                     {{ series.publication_dates }}<br>
+                     Published in {{ country }}, {{ language }} language<br>
+                     GCD ID {{ series.id }}<br>
+
+                     <p><b>Issues published:</b><br>
+                     {{ series.first_issue }}-{{ series.last_issue }}</p>
+
+                     <p><b>Issues indexed:</b><br>
+<!--a href="/gcd/series/index_matrix/{{ series.id }}/"-->See index matrix<!--/a--></p>
+                     <p>
+                     <p><b>Tracking:</b><br>
+                     {{ series.tracking_notes }}</p>
+                     <p>
+                     <p><b>Indexed by</b><br>{{ series.indexers }}<br>
+                     [[ <b>TODO:</b> Format properly, work out 2nd source of names. ]]
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <hr noshade size = "1"/>
+                </td>
+            </tr>
+            <tr valign="top" class="series-info">
+                <td colspan="2">
+                    <form action="/gcd/issue/" method="get">
+                        <select name="id" onChange="submit()">
+                            <option value="" selected>Select an issue to view:
+                            {% for issue in series.issue_set.all %}
+                            <option value="{{ issue.id }}">{{ issue.number }}
+                            {% endfor %}
+                        </select>, view the covergallery or see the scan matrix
+                    for missing covers
+                    </form>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <hr noshade size = "1"/>
+                </td>
+            </tr>
+            <tr class="fine-print">
+                <td colspan="2">
+                    If you believe any of this data to be incorrect, please
+                    send details to<br>
+<a href="mailto:gcd-errors@lists.comics.org">gcd-errors@lists.comics.org</a>.
+                    <p>
+                    Cover thumbnails are used for identification purposes only.
+                    All rights reserved by the respective copyright holder.
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <hr noshade size = "1"/>
+                </td>
+            </tr>
+            <tr class="series-info">
+                <td colspan="2"> <a href="/gcd/">New search</a>
+                     (Hit the back button to see the result list again) </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+</table>
+{% endblock body %}
