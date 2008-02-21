@@ -10,8 +10,8 @@ from django.shortcuts import render_to_response, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
 
-from gcd.models import Country, Publisher, Series, Issue, Story
-from gcd.views import covers
+from apps.gcd.models import Country, Publisher, Series, Issue, Story
+from apps.gcd.views import covers
 
 
 def publisher(request, publisher_id):

@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render_to_response
 
-from gcd.models import Issue
+from apps.gcd.models import Issue
 
 # Maximum number of recently modified issues to display.
 MAX = 6

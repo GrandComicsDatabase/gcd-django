@@ -10,7 +10,7 @@ from django.shortcuts import render_to_response, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
 
-from gcd.models import Publisher, Series, Issue, Story
+from apps.gcd.models import Publisher, Series, Issue, Story
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
