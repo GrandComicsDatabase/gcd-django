@@ -6,7 +6,7 @@ TEMPLATE_DEBUG = DEBUG
 # TODO: Set this to where you checked out the pydjango GCD project,
 # TODO: i.e. the directory containing "src", "media" and "templates"
 # TODO: *DO* include the trailing slash.
-INSTALL_DIR = "/Users/handrews/staging/gcd/"
+INSTALL_DIR = "/Users/morbus/Desktop/gcd-pydjango/"
 
 # TODO: Set to True to avoid hitting GCD for every cover image.
 # TODO: Note that if True, the same cover image will be used for
