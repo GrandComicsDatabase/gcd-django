@@ -1,9 +1,14 @@
 # Django settings for gcd project.
 from os.path import abspath, dirname, join
+from os import environ # helps determine MEDIA_URL.
 
 # disable on production!
 DEBUG          = True
 TEMPLATE_DEBUG = DEBUG
+
+# Set to True to avoid hitting comics.org for every cover image.
+# If True, the same cover image will be used for every issue.
+FAKE_COVER_IMAGES = False
 
 # absolute path to the directory that holds templates.
 TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
@@ -11,16 +16,12 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
-MEDIA_URL = "http://127.0.0.1:8000/site_media"
-
-# Set to True to avoid hitting comics.org for every cover image.
-# If True, the same cover image will be used for every issue.
-FAKE_COVER_IMAGES = False
+MEDIA_URL = "http://"+ environ.get('HTTP_HOST', '127.0.0.1') +":"+ environ.get('SERVER_PORT', '8000') +"/site_media"
 
 # Database settings. Override yours in a settings.local.py
 # if you're not gonna stick with these development defaults.
 DATABASE_ENGINE   = 'mysql'
-DATABASE_NAME     = 'gcd_base'
+DATABASE_NAME     = 'gcd_dev'
 DATABASE_USER     = 'gcd_dev'
 DATABASE_PASSWORD = ''
 DATABASE_HOST     = ''
