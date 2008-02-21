@@ -1,12 +1,20 @@
 # Django settings for gcd project.
+from os.path import abspath, dirname, join
 
-DEBUG = True
+# disable on production!
+DEBUG          = True
 TEMPLATE_DEBUG = DEBUG
 
-# TODO: Set this to where you checked out the pydjango GCD project,
-# TODO: i.e. the directory containing "src", "media" and "templates"
-# TODO: *DO* include the trailing slash.
-INSTALL_DIR = "/Users/morbus/Desktop/gcd-pydjango/"
+# absolute path to the directory that holds templates.
+TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
+
+# absolute path to the directory that holds media.
+MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
+
+
+
+
+
 
 # TODO: Set to True to avoid hitting GCD for every cover image.
 # TODO: Note that if True, the same cover image will be used for
@@ -46,10 +54,6 @@ SITE_ID = 1
 # to load the internationalization machinery.
 USE_I18N = True
 
-# Absolute path to the directory that holds media.
-# Example: "/home/media/media.lawrence.com/"
-# TODO
-MEDIA_ROOT = INSTALL_DIR + "media/"
 
 # URL that handles the media served from MEDIA_ROOT.
 # Example: "http://media.lawrence.com"
@@ -79,14 +83,7 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'urls'
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates"
-    # or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    # TODO
-    INSTALL_DIR + "templates"
-)
+
 
 INSTALLED_APPS = (
     'django.contrib.auth',
