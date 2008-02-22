@@ -16,7 +16,7 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
-MEDIA_URL = "http://"+ environ.get('HTTP_HOST', '127.0.0.1') +":"+ environ.get('SERVER_PORT', '8000') +"/site_media"
+MEDIA_URL = "/site_media/"
 
 # Database settings. Override yours in a settings.local.py
 # if you're not gonna stick with these development defaults.
