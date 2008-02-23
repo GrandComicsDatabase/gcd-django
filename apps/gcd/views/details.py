@@ -5,7 +5,6 @@ from urllib import urlopen
 
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
-import django.db.models.base
 from django.conf import settings
 from django.shortcuts import render_to_response, \
                              get_object_or_404, \
