@@ -135,8 +135,16 @@
                     <b>Feature Story:</b> {{ story.feature }}<br>
                     <p>
                     <b>Credits:</b><br>
-                    <!-- TODO: conditionals - don't show empty credits. -->
-                    {{ story.script }} (Script),
+                    <!-- TODO: conditionals - don't show empty credits. 
+                         - don't show credits 'None' or 'none' (optional?) 
+                         - optional?: don't show credits credits '?' 
+                         I guess we make one routine for handling no-shows -->
+                    {% if story.script %}
+                        {% ifequal story.script 'None' %}
+                        {% else %}
+                            {{ story.script }} (Script),
+                        {% endifequal %}
+                    {% endif %}
                     {{ story.pencils }} (Pencils),
                     {{ story.inks }} (Inks),
                     {{ story.colors }} (Colors),
