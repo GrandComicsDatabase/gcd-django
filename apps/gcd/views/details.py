@@ -52,18 +52,20 @@ def issue(request, issue_id):
     """Display the issue details page, including story details."""
     issue = get_object_or_404(Issue, id = issue_id)
     image_tag = covers.get_issue_image_tag(issue.series.id, issue_id)
-    # TODO: we probably can check directly if the issue is indexed
-    try:
-        cover_story = issue.story_set.get(sequence_number = 0)
-    except ObjectDoesNotExist:
-        # create a special empty page (with the cover if existing)
+
+    if issue.index_status <= 1:#skeleton
+        # TODO: create a special empty page (with the cover if existing)
+        # TODO: could vary accord. to (un)reserved/part.indexed/submitted
         return render_to_response('issue.html', {
           'issue' : issue,
           'image_tag' : image_tag,
           'media_url' : settings.MEDIA_URL })
+    
+    cover_story = issue.story_set.get(sequence_number = 0)
+    
     stories = issue.story_set.filter(sequence_number__gt = 0)
     stories = stories.order_by("sequence_number")
-
+    
     return render_to_response('issue.html', {
       'issue' : issue,
       'cover_story' : cover_story,
