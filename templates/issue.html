@@ -104,7 +104,13 @@
                             <tr class="issue-text">
                                 <td colspan="2">
 <a href="/gcd/series/{{ issue.series.id }}/">Series info</a><br>
-<!-- a href="http://www.comics.org/covers.lasso?seriesid={{ issue.series.id }}" -->View covergallery<!-- /a -->
+<!-- a href="http://www.comics.org/covers.lasso?seriesid={{ issue.series.id }}" -->View covergallery<br><!-- /a -->
+{% if prev_issue %}
+    <a href="/gcd/issue/{{ prev_issue.id }}/">Previous Issue</a><br>
+{% endif %}
+{% if next_issue %}
+    <a href="/gcd/issue/{{ next_issue.id }}/">Next Issue</a>
+{% endif %}
                                 </td>
                             </tr>
                         </table>

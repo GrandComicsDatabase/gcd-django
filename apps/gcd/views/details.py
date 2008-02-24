@@ -4,7 +4,6 @@ import re
 from urllib import urlopen
 
 from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from django.shortcuts import render_to_response, \
                              get_object_or_404, \
@@ -52,12 +51,26 @@ def issue(request, issue_id):
     """Display the issue details page, including story details."""
     issue = get_object_or_404(Issue, id = issue_id)
     image_tag = covers.get_issue_image_tag(issue.series.id, issue_id)
-
-    if issue.index_status <= 1:#skeleton
+    
+    #get sorted issue_set for series and find previous and next issue
+    issue_list = issue.series.issue_set.all().order_by('key_date')
+    num = list(issue_list).index(issue)
+    if num-1 >= 0:
+        prev_issue = issue_list[num-1]
+    else:
+        prev_issue = None
+    if num+1 < issue_list.count():
+        next_issue = issue_list[num+1]
+    else:
+        next_issue = None
+    
+    if issue.index_status <= 1:#only skeleton
         # TODO: create a special empty page (with the cover if existing)
         # TODO: could vary accord. to (un)reserved/part.indexed/submitted
         return render_to_response('issue.html', {
           'issue' : issue,
+          'prev_issue' : prev_issue,
+          'next_issue' : next_issue,
           'image_tag' : image_tag,
           'media_url' : settings.MEDIA_URL })
     
@@ -68,6 +81,8 @@ def issue(request, issue_id):
     
     return render_to_response('issue.html', {
       'issue' : issue,
+      'prev_issue' : prev_issue,
+      'next_issue' : next_issue,
       'cover_story' : cover_story,
       'stories' : stories,
       'image_tag' : image_tag,
