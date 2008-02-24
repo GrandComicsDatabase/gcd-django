@@ -1,0 +1,98 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-02-24 19:14+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: templates/issue.html:28
+#, python-format
+msgid " %(myvar)s Series "
+msgstr "Serie von %(myvar)s"
+
+#: templates/issue.html:30
+msgid "coverprice"
+msgstr "Preis"
+
+#: templates/issue.html:31 templates/issue.html.py:137
+msgid "pages"
+msgstr "Seiten"
+
+#: templates/issue.html:59 templates/issue.html.py:155
+msgid "Pencils"
+msgstr "Vorzeichnung"
+
+#: templates/issue.html:60 templates/issue.html.py:156
+msgid "Inks"
+msgstr "Tuschzeichnung"
+
+#: templates/issue.html:61 templates/issue.html.py:157
+msgid "Colors"
+msgstr "Farbe"
+
+#: templates/issue.html:62 templates/issue.html.py:158
+msgid "Letters"
+msgstr "Schrift"
+
+#: templates/issue.html:80
+msgid "Editor"
+msgstr "Redaktion"
+
+#: templates/issue.html:83
+msgid "Issues in this series have been indexed by:"
+msgstr "Diese Serie wurde erfasst von:"
+
+#: templates/issue.html:92
+msgid "Stories/features:"
+msgstr "Geschichten/Feature"
+
+#: templates/issue.html:100 templates/issue.html.py:131
+msgid "*No title given or indexed*"
+msgstr "*Kein Titel vorhanden oder erfasst*"
+
+#: templates/issue.html:107
+msgid "Series info"
+msgstr "Informationen zur Serie"
+
+#: templates/issue.html:108
+msgid "View covergallery"
+msgstr "Covergallerie betrachten"
+
+#: templates/issue.html:110
+msgid "Previous Issue"
+msgstr "Vorherige Ausgabe"
+
+#: templates/issue.html:113
+msgid "Next Issue"
+msgstr "Nächste Ausgabe"
+
+#: templates/issue.html:136
+#, python-format
+msgid "Sequence %(seq_num)s "
+msgstr "%(seq_num)s. Sequenz"
+
+#: templates/issue.html:142
+msgid "Feature Story:"
+msgstr ""
+
+#: templates/issue.html:144
+msgid "Credits"
+msgstr "Mitwirkende"
+
+#: templates/issue.html:152
+msgid "Script"
+msgstr "Szenario"
+
+#~ msgid "Sequence"
+#~ msgstr "Sequenz"

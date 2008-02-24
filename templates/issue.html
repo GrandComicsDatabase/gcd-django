@@ -1,4 +1,5 @@
 {% extends "tagline_base.html" %}
+{% load i18n %} 
 
 {% block title %}
     GCD :: Issue {{ issue.series.name }} #{{ issue.number }}
@@ -24,10 +25,10 @@
                 <td> <b>{{ issue.series.name }} #{{ issue.number }}</b> </td>
             </tr>
             <tr class="issue-text">
-                <td> <b>{{ issue.series.year_began }} Series</b> -
+                <td> <b>{% blocktrans with issue.series.year_began as myvar %} {{ myvar }} Series {% endblocktrans %}</b> -
                      {{ issue.series.publisher.name }},
-                     {{ issue.publication_date }}, coverprice {{ issue.price }},
-                     {{ cover_story.page_count }} pages
+                     {{ issue.publication_date }}, {% trans "coverprice" %} {{ issue.price }},
+                     {{ cover_story.page_count }} {% trans "pages" %}
             </tr>
             <tr class="issue-text">
                 <td> Format: {{ issue.series.format }}
@@ -55,10 +56,10 @@
                         <p>
                         <b>Cover Credits:</b><br>
                         <!-- TODO: conditionals, including writer. -->
-                        {{ cover_story.pencils }} (Pencils),
-                        {{ cover_story.inks }} (Inks),
-                        {{ cover_story.colors }} (Colors),
-                        {{ cover_story.letters }} (Letters)
+                        {{ cover_story.pencils }} ({% trans "Pencils" %}),
+                        {{ cover_story.inks }} ({% trans "Inks" %}),
+                        {{ cover_story.colors }} ({% trans "Colors" %}),
+                        {{ cover_story.letters }} ({% trans "Letters" %})
                         <p>
                         <b>Cover Feature:</b> {{ cover_story.feature}}
                         <p>
@@ -76,10 +77,10 @@
                             {{ cover_story.notes }}
                         {% endif %}
                         <p>
-                        <b>Editor:</b> {{ cover_story.editor }}
+                        <b>{% trans "Editor" %}:</b> {{ cover_story.editor }}
                         <div class="fine-print">
                             <p> <!-- TODO: proper indexer credits -->
-                            Issues in this series have been indexed by:
+                            {% trans "Issues in this series have been indexed by:" %}
                             <ul>
                                 <li> {{ issue.series.indexers }}
                             </ul>
@@ -88,7 +89,7 @@
                     <td>
                         <table border="0" cellpadding="4" cellspacing="0">
                             <tr class="story-table-header">
-                                <td colspan="2"> Stories/features: </td>
+                                <td colspan="2"> {% trans "Stories/features:" %} </td>
                             </tr>
                             {% for story in stories %}
                             <tr class="story-table-entry">
@@ -96,20 +97,20 @@
     <a href="#{{ story.sequence_number }}">{{ story.sequence_number }}.</a>
                                 </td>
                                 <td>
-    <a href="#{{ story.sequence_number }}">{% if story.title %}{{ story.title }}{% else %}*No title given or indexed*{% endif %}</a><br>
+    <a href="#{{ story.sequence_number }}">{% if story.title %}{{ story.title }}{% else %}{% trans "*No title given or indexed*" %}{% endif %}</a><br>
                                     Feature: {{ story.feature }}
                                 </td>
                             </tr>
                             {% endfor %}
                             <tr class="issue-text">
                                 <td colspan="2">
-<a href="/gcd/series/{{ issue.series.id }}/">Series info</a><br>
-<!-- a href="http://www.comics.org/covers.lasso?seriesid={{ issue.series.id }}" -->View covergallery<br><!-- /a -->
+<a href="/gcd/series/{{ issue.series.id }}/">{% trans "Series info" %}</a><br>
+<!-- a href="http://www.comics.org/covers.lasso?seriesid={{ issue.series.id }}" -->{% trans "View covergallery" %}<br><!-- /a -->
 {% if prev_issue %}
-    <a href="/gcd/issue/{{ prev_issue.id }}/">Previous Issue</a><br>
+    <a href="/gcd/issue/{{ prev_issue.id }}/">{% trans "Previous Issue" %}</a><br>
 {% endif %}
 {% if next_issue %}
-    <a href="/gcd/issue/{{ next_issue.id }}/">Next Issue</a>
+    <a href="/gcd/issue/{{ next_issue.id }}/">{% trans "Next Issue" %}</a>
 {% endif %}
                                 </td>
                             </tr>
@@ -127,34 +128,34 @@
                     {% if story.title %}
                         {{ story.title }}
                     {% else %}
-                        *No title given or indexed*
+                        {% trans "*No title given or indexed*" %}
                     {% endif %}
                 </td>
             </tr>
             <tr class="sequence-id">
-                <td> (Sequence {{ story.sequence_number }} - {{ story.type }},
-                     {{ story.page_count }} pages)</td>
+                <td> ({% blocktrans with story.sequence_number as seq_num %}Sequence {{ seq_num }} {% endblocktrans %} - {{ story.type }},
+                     {{ story.page_count }} {% trans "pages" %})</td>
             </tr>
             <tr class="issue-text">
                 <td>
                     <p>
-                    <b>Feature Story:</b> {{ story.feature }}<br>
+                    <b>{% trans "Feature Story:" %}</b> {{ story.feature }}<br>
                     <p>
-                    <b>Credits:</b><br>
+                    <b>{% trans "Credits" %}:</b><br>
                     <!-- TODO: conditionals - don't show empty credits. 
                          - don't show credits 'None' or 'none' (optional?) 
                          - optional?: don't show credits credits '?' 
-                         I guess we make one routine for handling no-shows -->
+                         - we might make one routine for handling no-shows -->
                     {% if story.script %}
                         {% ifequal story.script 'None' %}
                         {% else %}
-                            {{ story.script }} (Script),
+                            {{ story.script }} ({% trans "Script" %}),
                         {% endifequal %}
                     {% endif %}
-                    {{ story.pencils }} (Pencils),
-                    {{ story.inks }} (Inks),
-                    {{ story.colors }} (Colors),
-                    {{ story.letters }} (Letters)
+                    {{ story.pencils }} ({% trans "Pencils" %}),
+                    {{ story.inks }} ({% trans "Inks" %}),
+                    {{ story.colors }} ({% trans "Colors" %}),
+                    {{ story.letters }} ({% trans "Letters" %})
                     {% if story.synopsis %}
                         <p>
                         <b>Synopsis:</b><br>
