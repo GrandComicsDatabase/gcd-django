@@ -54,15 +54,30 @@ def issue(request, issue_id):
     
     #get sorted issue_set for series and find previous and next issue
     issue_list = issue.series.issue_set.all().order_by('key_date')
-    num = list(issue_list).index(issue)
-    if num-1 >= 0:
-        prev_issue = issue_list[num-1]
-    else:
+
+    earlier_issues = issue.series.issue_set.filter(key_date__lt = issue.key_date)
+    earlier_issues = earlier_issues.order_by('-key_date')
+    
+    later_issues = issue.series.issue_set.filter(key_date__gt = issue.key_date)
+    later_issues = later_issues.order_by('key_date')
+    
+    try:
+        prev_issue = earlier_issues[0]
+    except IndexError:
         prev_issue = None
-    if num+1 < issue_list.count():
-        next_issue = issue_list[num+1]
-    else:
+    try:
+        next_issue = later_issues[0]
+    except IndexError:
         next_issue = None
+    #num = list(issue_list).index(issue)
+    #if num-1 >= 0:
+        #prev_issue = issue_list[num-1]
+    #else:
+        #prev_issue = None
+    #if num+1 < issue_list.count():
+        #next_issue = issue_list[num+1]
+    #else:
+        #next_issue = None
     
     if issue.index_status <= 1:#only skeleton
         # TODO: create a special empty page (with the cover if existing)
