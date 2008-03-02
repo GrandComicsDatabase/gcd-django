@@ -134,7 +134,11 @@
             </tr>
             <tr class="sequence-id">
                 <td> ({% blocktrans with story.sequence_number as seq_num %}Sequence {{ seq_num }} {% endblocktrans %} - {{ story.type }},
-                     {{ story.page_count }} {% trans "pages" %})</td>
+                <!-- TODO: check for 1 page, story.page_count is char
+                which means pluralize can't be used straightforward,
+                how is it in the new schema ? Otherwise use ifequal -->
+                     {{ story.page_count }} {% trans "pages" %})
+                     </td>
             </tr>
             <tr class="issue-text">
                 <td>

@@ -1,14 +1,14 @@
-# German translations for the GCD website.
+# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Jochen Garcke <gcdmail@garcke.de>, 2008.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-02-24 19:14+0100\n"
+"POT-Creation-Date: 2008-03-02 13:10+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,80 +19,77 @@ msgstr ""
 #: templates/issue.html:28
 #, python-format
 msgid " %(myvar)s Series "
-msgstr "Serie von %(myvar)s"
+msgstr ""
 
 #: templates/issue.html:30
 msgid "coverprice"
-msgstr "Preis"
+msgstr ""
 
-#: templates/issue.html:31 templates/issue.html.py:137
+#: templates/issue.html:31 templates/issue.html.py:140
 msgid "pages"
-msgstr "Seiten"
+msgstr ""
 
-#: templates/issue.html:59 templates/issue.html.py:155
+#: templates/issue.html:59 templates/issue.html.py:159
 msgid "Pencils"
-msgstr "Vorzeichnung"
+msgstr ""
 
-#: templates/issue.html:60 templates/issue.html.py:156
+#: templates/issue.html:60 templates/issue.html.py:160
 msgid "Inks"
-msgstr "Tuschzeichnung"
+msgstr ""
 
-#: templates/issue.html:61 templates/issue.html.py:157
+#: templates/issue.html:61 templates/issue.html.py:161
 msgid "Colors"
-msgstr "Farbe"
+msgstr ""
 
-#: templates/issue.html:62 templates/issue.html.py:158
+#: templates/issue.html:62 templates/issue.html.py:162
 msgid "Letters"
-msgstr "Schrift"
+msgstr ""
 
 #: templates/issue.html:80
 msgid "Editor"
-msgstr "Redaktion"
+msgstr ""
 
 #: templates/issue.html:83
 msgid "Issues in this series have been indexed by:"
-msgstr "Diese Serie wurde erfasst von:"
+msgstr ""
 
 #: templates/issue.html:92
 msgid "Stories/features:"
-msgstr "Geschichten/Feature"
+msgstr ""
 
 #: templates/issue.html:100 templates/issue.html.py:131
 msgid "*No title given or indexed*"
-msgstr "*Kein Titel vorhanden oder erfasst*"
+msgstr ""
 
 #: templates/issue.html:107
 msgid "Series info"
-msgstr "Informationen zur Serie"
+msgstr ""
 
 #: templates/issue.html:108
 msgid "View covergallery"
-msgstr "Covergallerie betrachten"
+msgstr ""
 
 #: templates/issue.html:110
 msgid "Previous Issue"
-msgstr "Vorherige Ausgabe"
+msgstr ""
 
 #: templates/issue.html:113
 msgid "Next Issue"
-msgstr "Nächste Ausgabe"
+msgstr ""
 
 #: templates/issue.html:136
 #, python-format
 msgid "Sequence %(seq_num)s "
-msgstr "%(seq_num)s. Sequenz"
+msgstr ""
 
-#: templates/issue.html:142
+#: templates/issue.html:146
 msgid "Feature Story:"
 msgstr ""
 
-#: templates/issue.html:144
+#: templates/issue.html:148
 msgid "Credits"
-msgstr "Mitwirkende"
+msgstr ""
 
-#: templates/issue.html:152
+#: templates/issue.html:156
 msgid "Script"
-msgstr "Szenario"
-
-#~ msgid "Sequence"
-#~ msgstr "Sequenz"
+msgstr ""

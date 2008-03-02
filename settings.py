@@ -27,6 +27,13 @@ DATABASE_PASSWORD = ''
 DATABASE_HOST     = ''
 DATABASE_PORT     = ''
 
+# middleware settings, LocalMiddleware is for internationalisation
+MIDDLEWARE_CLASSES = (
+   'django.contrib.sessions.middleware.SessionMiddleware',
+   'django.middleware.locale.LocaleMiddleware',
+   'django.middleware.common.CommonMiddleware',
+)
+
 # The router where all our site URLs is defined.
 ROOT_URLCONF = 'urls'
 
