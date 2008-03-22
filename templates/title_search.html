@@ -3,13 +3,14 @@
 {% block results %}
 <tr class="result-status">
     <td>
-        {{ total_results }} records matched your search for "{{ search_term }}"
+        {{ paginator.count }} records matched your search for "{{ search_term }}"
     <td>
 </tr>
 <tr class="result-display-status">
     <td>
-        Displaying records {{ first_displayed }} through {{ last_displayed }}
-        ({{ num_displayed }} records displayed per page).<br>
+        Displaying records {{ page_obj.start_index }} through 
+        {{ page_obj.end_index }}
+        ({{ paginator.per_page }} records displayed per page).<br>
         Click the title to get the series information.
     </td>
 </tr>
@@ -25,7 +26,7 @@
             <td> Publisher
             <td> Published
         <tr>
-        {% for series in results %}
+        {% for series in object_list %}
         <tr class="{% cycle search-odd,search-even %}">
             <td> <img src="{{ media_url }}/img/triangle.gif"/>
             <td> {{ series.country_code|upper }}
@@ -46,6 +47,31 @@
             <td> {{ series.publication_dates }}
         </tr>
         {% endfor %}
+        <tr>
+            <td colspan="8">
+                <hr noshade size="1" WIDTH="100%">
+            </td>
+        </tr>
+        <tr class="result-display-status">
+            <td colspan="3" align="left">
+                <a href="/gcd">New search</a>
+            </td>
+            <td colspan="5" align="right">
+                {% if page_obj.has_previous %}
+                    <a href="./?{{ query_string }}page={{ page_obj.previous_page_number}}">&laquo;</a>
+                {% endif %}
+                {% for page in digg_paginator.page_range %} 
+                    {% if not page %} 
+                        ... 
+                    {% else %}
+                        <a href="./?{{ query_string }}page={{ page }}">{{page}}</a>
+                    {% endif %} 
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <a href="./?{{ query_string }}page={{ page_obj.next_page_number}}">&raquo;</a>
+                {% endif %}            
+            </td>
+        </tr>
     </table>
 </tr>
 {% endblock %}

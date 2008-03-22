@@ -9,8 +9,11 @@ from django.shortcuts import render_to_response, \
                              get_object_or_404, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
+from django.core.paginator import Paginator, InvalidPage
 
 from apps.gcd.models import Publisher, Series, Issue, Story
+from apps.gcd.views.DiggPaginator import DiggPaginator
+from django.views.generic.list_detail import object_list
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -54,17 +57,15 @@ def generic_by_name(request, name, q_obj, sort,
             things = things.order_by("stories__issue.key_date",
                                      "sequence_number")
 
-    # TODO: Paginate.
-    num_things = len(things)
-    return render_to_response(template, {
-      'results' : things,
-      'total_results' : num_things,
-      'first_displayed' : 1,
-      'last_displayed' : num_things,
-      'num_displayed' :num_things,
-      'search_term' : name,
-      'media_url' : settings.MEDIA_URL })
-
+    if 'page' in request.GET:
+        pageno=request.GET['page']
+    else:
+        pageno=1    
+    digg_paginator = DiggPaginator(things,50,page=pageno, body=7)
+    return object_list(request,things, paginate_by = 50, template_name = template,extra_context ={
+    'search_term' : name,
+    'media_url' : settings.MEDIA_URL, 
+    'digg_paginator' : digg_paginator})
 
 def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
     """Finds publishers that (probably) aren't imprints."""
@@ -253,17 +254,22 @@ def search_stories(request):
                                    "stories__issue__series.bk_name",
                                    "stories__issue.id",
                                    "sequence_number")
-    num_stories = len(stories)
 
-    # TODO: Paginate.
-    return render_to_response('default_search.html', {
-      'results' : stories,
-      'total_results' : num_stories,
-      'first_displayed' : 1,
-      'last_displayed' : num_stories,
-      'num_displayed' :num_stories,
-      'search_term' : "[TODO: Stringify advanced queries]",
-      'media_url' : settings.MEDIA_URL })
+    # query_string is needed for links to prev/next page
+    # page=<number> is always added by the template, so the '&' is fine
+    # we get a copy of GET and make sure there is no page entry
+    search_query = request.GET.copy()
+    if 'page' in search_query:
+        pageno=search_query['page']
+        del search_query['page']
+    else:
+        pageno=1    
+    digg_paginator = DiggPaginator(results,50,page=pageno, body=7)
+    return object_list(request,results, paginate_by = 50, template_name = 'default_search.html',extra_context ={
+    'search_term' : "[TODO: Stringify advanced queries]",
+    'media_url' : settings.MEDIA_URL,
+    'query_string' : search_query.urlencode()+'&',
+    'digg_paginator' : digg_paginator})
 
 
 def search_series(request):
@@ -292,14 +298,17 @@ def search_series(request):
     elif (request.GET["sort"] == ORDER_CHRONO):
         results = results.order_by('year_began', 'name')
 
-    num_series = len(results)
-    # TODO: Paginate.
-    return render_to_response('title_search.html', {
-      'results' : results,
-      'total_results' : num_series,
-      'first_displayed' : 1,
-      'last_displayed' : num_series,
-      'num_displayed' : num_series,
-      'search_term' : "[TODO: Stringify advanced queries]",
-      'media_url' : settings.MEDIA_URL })
+    # see search_stories
+    search_query = request.GET.copy()
+    if 'page' in search_query:
+        pageno=search_query['page']
+        del search_query['page']
+    else:
+        pageno=1    
+    digg_paginator = DiggPaginator(results,50,page=pageno, body=7)
+    return object_list(request,results, paginate_by = 50, template_name = 'title_search.html',extra_context ={
+    'search_term' : "[TODO: Stringify advanced queries]",
+    'media_url' : settings.MEDIA_URL,
+    'query_string' : search_query.urlencode()+'&',
+    'digg_paginator' : digg_paginator})
 
