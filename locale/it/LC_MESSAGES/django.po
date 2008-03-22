@@ -8,13 +8,45 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-02 13:07+0100\n"
+"POT-Creation-Date: 2008-03-22 17:45+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: apps/gcd/templatetags/gcd_filter.py:9 templates/issue.html:156
+msgid "Script"
+msgstr ""
+
+#: apps/gcd/templatetags/gcd_filter.py:11 templates/issue.html:59
+#: templates/issue.html.py:159
+msgid "Pencils"
+msgstr ""
+
+#: apps/gcd/templatetags/gcd_filter.py:13 templates/issue.html:60
+#: templates/issue.html.py:160
+msgid "Inks"
+msgstr ""
+
+#: apps/gcd/templatetags/gcd_filter.py:15 templates/issue.html:61
+#: templates/issue.html.py:161
+msgid "Colors"
+msgstr ""
+
+#: apps/gcd/templatetags/gcd_filter.py:17 templates/issue.html:62
+#: templates/issue.html.py:162
+msgid "Letters"
+msgstr ""
+
+#: apps/gcd/templatetags/gcd_filter.py:19
+msgid "Job number"
+msgstr ""
+
+#: apps/gcd/templatetags/gcd_filter.py:21
+msgid "Title"
+msgstr ""
 
 #: templates/issue.html:28
 #, python-format
@@ -27,22 +59,6 @@ msgstr ""
 
 #: templates/issue.html:31 templates/issue.html.py:140
 msgid "pages"
-msgstr ""
-
-#: templates/issue.html:59 templates/issue.html.py:159
-msgid "Pencils"
-msgstr ""
-
-#: templates/issue.html:60 templates/issue.html.py:160
-msgid "Inks"
-msgstr ""
-
-#: templates/issue.html:61 templates/issue.html.py:161
-msgid "Colors"
-msgstr ""
-
-#: templates/issue.html:62 templates/issue.html.py:162
-msgid "Letters"
 msgstr ""
 
 #: templates/issue.html:80
@@ -88,8 +104,4 @@ msgstr ""
 
 #: templates/issue.html:148
 msgid "Credits"
-msgstr ""
-
-#: templates/issue.html:156
-msgid "Script"
 msgstr ""

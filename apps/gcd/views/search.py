@@ -20,7 +20,8 @@ ORDER_CHRONO = "chrono"
 
 def generic_by_name(request, name, q_obj, sort,
                     class_name = Story,
-                    template = 'default_search.html'):
+                    template = 'default_search.html',
+                    credit = None):
     """Helper function for the most common search cases."""
 
     if (class_name is Series):
@@ -62,10 +63,12 @@ def generic_by_name(request, name, q_obj, sort,
     else:
         pageno=1    
     digg_paginator = DiggPaginator(things,50,page=pageno, body=7)
-    return object_list(request,things, paginate_by = 50, template_name = template,extra_context ={
-    'search_term' : name,
-    'media_url' : settings.MEDIA_URL, 
-    'digg_paginator' : digg_paginator})
+    return object_list(request,things, paginate_by = 50, 
+                       template_name = template,extra_context ={
+                       'search_term' : name,
+                       'media_url' : settings.MEDIA_URL, 
+                       'digg_paginator' : digg_paginator,
+                       'which_credit' : credit})
 
 def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
     """Finds publishers that (probably) aren't imprints."""
@@ -112,32 +115,32 @@ def character_appearances(request, character_name, sort=ORDER_ALPHA):
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):
     q_obj = Q(script__icontains = writer)
-    return generic_by_name(request, writer, q_obj, sort)
+    return generic_by_name(request, writer, q_obj, sort, credit="script")
 
 
 def penciller_by_name(request, penciller, sort=ORDER_ALPHA):
     q_obj = Q(pencils__icontains = penciller)
-    return generic_by_name(request, penciller, q_obj, sort)
+    return generic_by_name(request, penciller, q_obj, sort, credit="pencils")
 
 
 def inker_by_name(request, inker, sort=ORDER_ALPHA):
     q_obj = Q(inks__icontains = inker)
-    return generic_by_name(request, inker, q_obj, sort)
+    return generic_by_name(request, inker, q_obj, sort, credit="inks")
 
 
 def colorist_by_name(request, colorist, sort=ORDER_ALPHA):
     q_obj = Q(colors__icontains = colorist)
-    return generic_by_name(request, colorist, q_obj, sort)
+    return generic_by_name(request, colorist, q_obj, sort, credit="colors")
 
 
 def letterer_by_name(request, letterer, sort=ORDER_ALPHA):
     q_obj = Q(letters__icontains = letterer)
-    return generic_by_name(request, letterer, q_obj, sort)
+    return generic_by_name(request, letterer, q_obj, sort, credit="letters")
 
 
 def editor_by_name(request, editor, sort=ORDER_ALPHA):
     q_obj = Q(editor__icontains = editor)
-    return generic_by_name(request, editor, q_obj, sort)
+    return generic_by_name(request, editor, q_obj, sort, credit="editor")
 
 
 def story_by_credit(request, credit, sort=ORDER_ALPHA):
@@ -153,7 +156,7 @@ def story_by_credit(request, credit, sort=ORDER_ALPHA):
 
 def story_by_job(request, number, sort=ORDER_ALPHA):
     q_obj = Q(job_number = number)
-    return generic_by_name(request, number, q_obj, sort)
+    return generic_by_name(request, number, q_obj, sort, credit="job")
 
 
 def story_by_title(request, title, sort=ORDER_ALPHA):
@@ -265,11 +268,12 @@ def search_stories(request):
     else:
         pageno=1    
     digg_paginator = DiggPaginator(results,50,page=pageno, body=7)
-    return object_list(request,results, paginate_by = 50, template_name = 'default_search.html',extra_context ={
-    'search_term' : "[TODO: Stringify advanced queries]",
-    'media_url' : settings.MEDIA_URL,
-    'query_string' : search_query.urlencode()+'&',
-    'digg_paginator' : digg_paginator})
+    return object_list(request,results, paginate_by = 50, 
+      template_name = 'default_search.html',extra_context ={
+      'search_term' : "[TODO: Stringify advanced queries]",
+      'media_url' : settings.MEDIA_URL,
+      'query_string' : search_query.urlencode()+'&',
+      'digg_paginator' : digg_paginator})
 
 
 def search_series(request):
@@ -306,9 +310,10 @@ def search_series(request):
     else:
         pageno=1    
     digg_paginator = DiggPaginator(results,50,page=pageno, body=7)
-    return object_list(request,results, paginate_by = 50, template_name = 'title_search.html',extra_context ={
-    'search_term' : "[TODO: Stringify advanced queries]",
-    'media_url' : settings.MEDIA_URL,
-    'query_string' : search_query.urlencode()+'&',
-    'digg_paginator' : digg_paginator})
+    return object_list(request,results, paginate_by = 50, 
+      template_name = 'title_search.html',extra_context ={
+      'search_term' : "[TODO: Stringify advanced queries]",
+      'media_url' : settings.MEDIA_URL,
+      'query_string' : search_query.urlencode()+'&',
+      'digg_paginator' : digg_paginator})
 

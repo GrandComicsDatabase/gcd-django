@@ -1,4 +1,5 @@
 {% extends "search_results_base.html" %}
+{% load gcd_filter %}
 
 {% block results %}
 <tr class="result-status">
@@ -31,7 +32,7 @@
                     ({{ story.page_count }})
                 {% endifequal %}
                 <br>
-                Title: {{ story.title }}
+                {{ story|show_credit:"title" }}
                 {% ifnotequal story.sequence_number 0 %}
                     {% if story.type %}
                         ({{ story.type }} - {{ story.page_count }} pages)
@@ -40,7 +41,11 @@
                     {% endif %}
                 {% endifnotequal %}
                 <br>
-                [<b>TODO:</b> matched credits]
+                {% if which_credit %}
+                    {{ story|show_credit:which_credit }}
+                {% else %}
+                    [<b>TODO:</b> matched credits]
+                {% endif %}
             <td> {{ story.issue.series.year_began }}
             <td> {{ story.issue.publication_date }}
             <td> {{ story.issue.series.publisher.name }}
@@ -64,13 +69,15 @@
                 {% if page_obj.has_previous %}
                     <a href="./?{{ query_string }}page={{ page_obj.previous_page_number}}">&laquo;</a>
                 {% endif %}
-                {% for page in digg_paginator.page_range %} 
-                    {% if not page %} 
-                        ... 
-                    {% else %}
-                        <a href="./?{{ query_string }}page={{ page }}">{{page}}</a>
-                    {% endif %} 
-                {% endfor %}
+                {% if digg_paginator.is_paginated %}
+                    {% for page in digg_paginator.page_range %} 
+                        {% if not page %} 
+                            ... 
+                        {% else %}
+                            <a href="./?{{ query_string }}page={{ page }}">{{page}}</a>
+                        {% endif %} 
+                    {% endfor %}
+                {% endif %}
                 {% if page_obj.has_next %}
                     <a href="./?{{ query_string }}page={{ page_obj.next_page_number}}">&raquo;</a>
                 {% endif %}            
