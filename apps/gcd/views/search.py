@@ -10,10 +10,10 @@ from django.shortcuts import render_to_response, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
 from django.core.paginator import Paginator, InvalidPage
+from django.views.generic.list_detail import object_list
 
 from apps.gcd.models import Publisher, Series, Issue, Story
-from apps.gcd.views.DiggPaginator import DiggPaginator
-from django.views.generic.list_detail import object_list
+from apps.gcd.views.diggpaginator import DiggPaginator
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -143,15 +143,15 @@ def editor_by_name(request, editor, sort=ORDER_ALPHA):
     return generic_by_name(request, editor, q_obj, sort, credit="editor")
 
 
-def story_by_credit(request, credit, sort=ORDER_ALPHA):
+def story_by_credit(request, name, sort=ORDER_ALPHA):
     """Implements the 'Any Credit' story search."""
-    q_obj = Q(script__icontains = credit) | \
-            Q(pencils__icontains = credit) | \
-            Q(inks__icontains = credit) | \
-            Q(colors__icontains = credit) | \
-            Q(letters__icontains = credit) | \
-            Q(editor__icontains = credit)
-    return generic_by_name(request, credit, q_obj, sort)
+    q_obj = Q(script__icontains = name) | \
+            Q(pencils__icontains = name) | \
+            Q(inks__icontains = name) | \
+            Q(colors__icontains = name) | \
+            Q(letters__icontains = name) | \
+            Q(editor__icontains = name)
+    return generic_by_name(request, name, q_obj, sort, credit=('any:'+name))
 
 
 def story_by_job(request, number, sort=ORDER_ALPHA):

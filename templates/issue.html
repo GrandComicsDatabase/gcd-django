@@ -1,5 +1,6 @@
 {% extends "tagline_base.html" %}
 {% load i18n %} 
+{% load gcdfilter %}
 
 {% block title %}
     GCD :: Issue {{ issue.series.name }} #{{ issue.number }}
@@ -55,11 +56,11 @@
                         {% endif %}</b>
                         <p>
                         <b>Cover Credits:</b><br>
-                        <!-- TODO: conditionals, including writer. -->
-                        {{ cover_story.pencils }} ({% trans "Pencils" %}),
-                        {{ cover_story.inks }} ({% trans "Inks" %}),
-                        {{ cover_story.colors }} ({% trans "Colors" %}),
-                        {{ cover_story.letters }} ({% trans "Letters" %})
+                        {{ cover_story|show_details:"script" }}
+                        {{ cover_story|show_details:"pencils" }}
+                        {{ cover_story|show_details:"inks" }}
+                        {{ cover_story|show_details:"colors" }}
+                        {{ cover_story|show_details:"letters" }}
                         <p>
                         <b>Cover Feature:</b> {{ cover_story.feature}}
                         <p>
@@ -146,20 +147,12 @@
                     <b>{% trans "Feature Story:" %}</b> {{ story.feature }}<br>
                     <p>
                     <b>{% trans "Credits" %}:</b><br>
-                    <!-- TODO: conditionals - don't show empty credits. 
-                         - don't show credits 'None' or 'none' (optional?) 
-                         - optional?: don't show credits credits '?' 
-                         - we might make one routine for handling no-shows -->
-                    {% if story.script %}
-                        {% ifequal story.script 'None' %}
-                        {% else %}
-                            {{ story.script }} ({% trans "Script" %}),
-                        {% endifequal %}
-                    {% endif %}
-                    {{ story.pencils }} ({% trans "Pencils" %}),
-                    {{ story.inks }} ({% trans "Inks" %}),
-                    {{ story.colors }} ({% trans "Colors" %}),
-                    {{ story.letters }} ({% trans "Letters" %})
+                    {{ story|show_details:"script" }}
+                    {{ story|show_details:"pencils" }}
+                    {{ story|show_details:"inks" }}
+                    {{ story|show_details:"colors" }}
+                    {{ story|show_details:"letters" }}
+                    {{ story|show_details:"editor" }}
                     {% if story.synopsis %}
                         <p>
                         <b>Synopsis:</b><br>
