@@ -1,7 +1,9 @@
 from django import template
 from django.utils.translation import ugettext as _
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models import Story
+from apps.gcd.models import Issue
 
 register = template.Library()
 
@@ -42,6 +44,7 @@ def show_credit(story,credit):
     else:
         return ""
 
+
 # we may want to move this somewhere else
 def is_visible_credit(credit):
     """ Check if credit exists and if we want to show it.  Could add
@@ -51,6 +54,7 @@ def is_visible_credit(credit):
         if credit.lower != 'none':
             return True
     return False
+
 
 def show_details(story,credit):
     """ For showing the credits on the issue page."""
@@ -79,5 +83,140 @@ def show_details(story,credit):
         return ""
     return ""
 
+
+def parse_reprint(reprints, from_to):
+    """ parse a reprint entry, first for our standard, them some for
+    other common version.  We may turn the others off or add even more. ;-)"""
+    
+    if reprints.startswith(from_to):
+        try:#our preferred format: seriesname (publisher, year <series>) #nr
+            position = reprints.find(' (')
+            series = reprints[len(from_to):position].strip()
+            #print series 
+            string = reprints[position+2:]
+            position = string.find(', ')
+            publisher = string[:position].strip()
+            #print publisher
+            position+=2
+            string = string[position:]
+            year = string[:4]
+            #print year
+            string = string[4:]
+            position = string.find(' #')+2
+            string = string[position:]
+            number = string[:string.find(' ')]
+            #print number
+            results = Issue.objects.all()
+            results = results.filter(series__name__icontains = series)
+            results = results.filter(series__publisher__name__icontains 
+            = publisher)
+            results = results.filter(series__year_began__exact = int(year))
+            results = results.filter(number__exact = number)
+        except:
+            pass
+        if results.count() == 0:
+            try:#for format: seriesname (year series) #nr
+                position = reprints.find(' (')
+                series = reprints[len(from_to):position].strip()
+                #print series 
+                position += 2
+                string = reprints[position:]
+                year = string[:4]
+                #print year
+                string = string[4:]
+                position = string.find(' #')+2
+                string = string[position:]
+                #print string
+                number = string[:string.find(' ')]
+                #print number
+                results = Issue.objects.all()
+                results = results.filter(series__name__icontains = series)
+                results = results.filter(series__year_began__exact = int(year))
+                results = results.filter(number__exact = number)
+            except:
+                pass
+        if results.count() == 0:
+            try:#for format: seriesname #nr(publisher, year <series>)
+                position = reprints.find(' #')
+                series = reprints[len(from_to):position].strip()
+                #print series 
+                position += 2
+                string = reprints[position:]
+                position = string.find('(')
+                number = string[:position].strip()
+                #print number
+                position += 1
+                string = string[position:]
+                position = string.find(', ')
+                publisher = string[:position].strip()
+                #print publisher
+                position += 2
+                string = string[position:]
+                year = string[:4]
+                #print year
+                results = Issue.objects.all()
+                results = results.filter(series__name__icontains = series)
+                results = results.filter(series__publisher__name__icontains 
+                = publisher)
+                results = results.filter(series__year_began__exact = int(year))
+                results = results.filter(number__exact = number)
+            except:
+                pass
+        if results.count() == 0:
+            try:#for format: seriesname #nr (year)
+                position = reprints.find(' #')
+                series = reprints[len(from_to):position].strip()
+                #print series 
+                position += 2
+                string = reprints[position:]
+                position = string.find('(')
+                number = string[:position].strip()
+                #print number
+                position += 1
+                string = string[position:]
+                year = string[:4]
+                #print year
+                results = Issue.objects.all()
+                results = results.filter(series__name__icontains = series)
+                results = results.filter(series__year_began__exact = int(year))
+                results = results.filter(number__exact = number)
+            except:
+                pass
+        
+        if results.count() == 1:
+            issue = results[0]
+            link = "<a href=\"/gcd/issue/"+str(issue.id)+"/\">"
+            link += from_to.capitalize() + " " + esc(issue.series.name) 
+            link += " (" + esc(issue.series.publisher) + ", "
+            link += esc(issue.series.year_began) + " series) #"
+            link += esc(issue.number) + "</a>"
+            return link
+        else:
+            return None
+
+
+def show_reprint(story):
+    """ Filter for reprint line.  First step into database migration."""
+    
+    if story.reprints:
+        reprint = ""
+        for string in story.reprints.split(';'):
+            string = string.strip()
+            for from_to in ("from ","From ","In ","in ",""):
+                next_reprint = parse_reprint(string,from_to)
+                if next_reprint:
+                    if len(reprint) > 0:
+                        reprint += '; '
+                    reprint += next_reprint
+                    break
+            if next_reprint == None:
+                if len(reprint) > 0:
+                    reprint += '; '
+                reprint += esc(string)
+        return mark_safe("<p><b>Reprinted:</b> " + reprint + "</p>")
+    else:
+        return ""
+        
 register.filter(show_credit)
 register.filter(show_details)
+register.filter(show_reprint)
