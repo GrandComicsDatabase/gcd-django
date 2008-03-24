@@ -159,6 +159,11 @@ def story_by_job(request, number, sort=ORDER_ALPHA):
     return generic_by_name(request, number, q_obj, sort, credit="job")
 
 
+def story_by_reprint(request, reprints, sort=ORDER_ALPHA):
+    q_obj = Q(reprints__icontains = reprints)
+    return generic_by_name(request, reprints, q_obj, sort)
+
+
 def story_by_title(request, title, sort=ORDER_ALPHA):
     """Looks up story by story (not issue or series) title."""
     q_obj = Q(title__icontains = title)

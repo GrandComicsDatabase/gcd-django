@@ -93,4 +93,9 @@ urlpatterns = patterns('',
     (r'^gcd/job/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_job'),
     (r'^gcd/job/name/(?P<number>.+)/$', 'apps.gcd.views.search.story_by_job'),
+
+    (r'^gcd/reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.story_by_reprint'),
+    (r'^gcd/reprint/(?P<reprints>.+)/$',
+     'apps.gcd.views.search.story_by_reprint'),
 )
