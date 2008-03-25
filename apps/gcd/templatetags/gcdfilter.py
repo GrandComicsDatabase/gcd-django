@@ -84,9 +84,62 @@ def show_details(story,credit):
     return ""
 
 
+def parse_reprint_fr(reprints):
+    """ parse a reprint entry starting with "fr." Often found in older indices.
+    Don't trust this parsing too much."""
+
+    try:#for format: fr. seriesname #nr (issue date) date unused for parsing
+        position = reprints.find(' #')
+        series = reprints[3:position].strip()
+        #print series 
+        position += 2
+        string = reprints[position:]
+        position = string.find('(')
+        number = string[:position].strip()
+        #print number
+        results = Issue.objects.all()
+        results = results.filter(series__name__icontains = series)
+        results = results.filter(number__exact = number)
+        #print results.count()
+    except:
+        pass
+        
+    if results.count() == 0:
+        try:#for format: from seriesname #nr (issue date) date unused for parsing
+            #and for format: from seriesname #nr
+            position = reprints.find(' #')
+            series = reprints[4:position].strip()
+            #print series 
+            position += 2
+            string = reprints[position:]
+            position = string.find('(')
+            if position > 0:
+                number = string[:position].strip()
+            elif string.isdigit():#we don't even have (issue date)
+                number = string
+            #print number
+            results = Issue.objects.all()
+            results = results.filter(series__name__icontains = series)
+            results = results.filter(number__exact = number)
+            #print results.count()
+        except:
+            pass
+    
+    if results.count() == 1:
+        issue = results[0]
+        link = "<a href=\"/gcd/issue/"+str(issue.id)+"/\">"
+        link += "From " + esc(issue.series.name) 
+        link += " (" + esc(issue.series.publisher) + ", "
+        link += esc(issue.series.year_began) + " series) #"
+        link += esc(issue.number) + "</a>"
+        return link
+    else:
+        return None
+
 def parse_reprint(reprints, from_to):
     """ parse a reprint entry, first for our standard, them some for
     other common version.  We may turn the others off or add even more. ;-)"""
+    notes = None
     
     if reprints.startswith(from_to):
         try:#our preferred format: seriesname (publisher, year <series>) #nr
@@ -104,8 +157,14 @@ def parse_reprint(reprints, from_to):
             string = string[4:]
             position = string.find(' #')+2
             string = string[position:]
-            number = string[:string.find(' ')]
+            if string.isdigit():
+                number = string
+            else:
+                number = string[:string.find(' ')].strip('.')
             #print number
+            position = string.find('[')
+            if position > 0:
+                notes = string[position:]
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
             results = results.filter(series__publisher__name__icontains 
@@ -114,6 +173,7 @@ def parse_reprint(reprints, from_to):
             results = results.filter(number__exact = number)
         except:
             pass
+        
         if results.count() == 0:
             try:#for format: seriesname (year series) #nr
                 position = reprints.find(' (')
@@ -127,8 +187,14 @@ def parse_reprint(reprints, from_to):
                 position = string.find(' #')+2
                 string = string[position:]
                 #print string
-                number = string[:string.find(' ')]
+                if string.isdigit():
+                    number = string
+                else:
+                    number = string[:string.find(' ')]
                 #print number
+                position = string.find('[')
+                if position > 0:
+                    notes = string[position:]
                 results = Issue.objects.all()
                 results = results.filter(series__name__icontains = series)
                 results = results.filter(series__year_began__exact = int(year))
@@ -153,6 +219,9 @@ def parse_reprint(reprints, from_to):
                 position += 2
                 string = string[position:]
                 year = string[:4]
+                position = string.find('[')
+                if position > 0:
+                    notes = string[position:]
                 #print year
                 results = Issue.objects.all()
                 results = results.filter(series__name__icontains = series)
@@ -175,6 +244,9 @@ def parse_reprint(reprints, from_to):
                 position += 1
                 string = string[position:]
                 year = string[:4]
+                position = string.find('[')
+                if position > 0:
+                    notes = string[position:]
                 #print year
                 results = Issue.objects.all()
                 results = results.filter(series__name__icontains = series)
@@ -190,6 +262,8 @@ def parse_reprint(reprints, from_to):
             link += " (" + esc(issue.series.publisher) + ", "
             link += esc(issue.series.year_began) + " series) #"
             link += esc(issue.number) + "</a>"
+            if  notes:
+                link += " " + esc(notes)
             return link
         else:
             return None
@@ -210,9 +284,13 @@ def show_reprint(story):
                     reprint += next_reprint
                     break
             if next_reprint == None:
+                next_reprint = parse_reprint_fr(string)
                 if len(reprint) > 0:
                     reprint += '; '
-                reprint += esc(string)
+                if next_reprint:
+                    reprint += next_reprint
+                else:
+                    reprint += esc(string)
         return mark_safe("<p><b>Reprinted:</b> " + reprint + "</p>")
     else:
         return ""
