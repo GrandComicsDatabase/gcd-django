@@ -2,13 +2,6 @@ from django.db import models
 from country import Country
 
 class Publisher(models.Model):
-    class Meta:
-        db_table = 'publishers'
-        ordering = ['name']
-
-    class Admin:
-        pass
-
     id = models.AutoField(primary_key = True, db_column = 'ID')
 
     # Core publisher fields.
@@ -49,7 +42,15 @@ class Publisher(models.Model):
     updated = models.DateField(db_column = 'Updated',
                                auto_now = True, null = True)
 
-    def __str__(self):
+    class Meta:
+        db_table = 'publishers'
+        ordering = ['name']
+        app_label = 'gcd'
+
+    class Admin:
+        pass
+
+    def __unicode__(self):
         return self.name
 
     def has_imprints(self):

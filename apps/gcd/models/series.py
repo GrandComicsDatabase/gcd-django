@@ -8,7 +8,8 @@ class Series(models.Model):
 
     class Meta:
         db_table = 'series'
-
+        app_label = 'gcd'
+    
     class Admin:
         list_display = ('name', 'year_began', 'publisher')
 
@@ -89,6 +90,6 @@ class Series(models.Model):
     # Fields about which I have no idea.
     self_count = models.IntegerField(db_column = 'SelfCount', null = True)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.name
 

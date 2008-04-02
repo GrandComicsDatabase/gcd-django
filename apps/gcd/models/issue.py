@@ -3,8 +3,11 @@ from django.db import models
 from series import Series
 
 class Issue(models.Model):
+    """ issue from gcd database"""
+
     class Meta:
         db_table = 'issues'
+        app_label = 'gcd'
 
     class Admin:
         pass
@@ -119,7 +122,7 @@ class Issue(models.Model):
                                                 null = True)
     
 
-    def __str__(self):
+    def __unicode__(self):
         return str(self.series.name) + " #" + self.number # + " (" + \
                # self.publication_date + ") [" + self.key_date + "]"
 

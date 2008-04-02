@@ -7,7 +7,8 @@ class Language(models.Model):
 
     class Meta:
         db_table = 'Languages'
+        app_label = 'gcd'
 
-    def __str__(self):
+    def __unicode__(self):
         return self.language + " (" + self.code + ")"
 

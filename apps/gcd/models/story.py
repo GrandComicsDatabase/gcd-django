@@ -6,6 +6,7 @@ from issue import Issue
 class Story(models.Model):
     class Meta:
         db_table = 'stories'
+        app_label = 'gcd'
 
     class Admin:
         pass
@@ -91,6 +92,6 @@ class Story(models.Model):
     # Not sure about this one.  May have to do with file dists?
     last_change = models.DateField(db_column = 'LstChang', null = True)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.feature + "(" + self.type + ":" + self.page_count + ")"
 

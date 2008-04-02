@@ -7,7 +7,10 @@ class Country(models.Model):
 
     class Meta:
         db_table = 'Countries'
+        app_label = 'gcd'
 
-    def __str__(self):
+    class Admin:
+        pass
+
+    def __unicode__(self):
         return self.country + " (" + self.code + ")"
-

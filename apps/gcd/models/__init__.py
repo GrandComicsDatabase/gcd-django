@@ -6,4 +6,3 @@ from publisher import Publisher
 from series import Series
 from issue import Issue
 from story import Story
-
