@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %} GCD :: Settings {% endblock %}
+
+{% block body %}
+<table border="0" cellpadding="4" cellspacing="0">
+    <tr class="advanced-search">
+        <!-- TODO: Look into the Django forms package -->
+        <form action="/gcd/settings/" method="post">
+        <td>
+            <table border="0" cellpadding="4" cellspacing="0">
+                <tr class="advanced-search">
+                    <td> <b>Entries per page</b>
+                    <td> <input type="text" name="entries">
+            </table>
+        </td>
+        </form>
+    </tr>
+    {% block results %}{% endblock %}
+</table>
+{% endblock %}

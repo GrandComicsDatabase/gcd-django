@@ -98,4 +98,7 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_reprint'),
     (r'^gcd/reprint/(?P<reprints>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
+
+    (r'^gcd/settings/$',
+     'apps.gcd.views.settings.settings'),    
 )

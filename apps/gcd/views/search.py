@@ -62,8 +62,12 @@ def generic_by_name(request, name, q_obj, sort,
         pageno=request.GET['page']
     else:
         pageno=1    
-    digg_paginator = DiggPaginator(things,50,page=pageno, body=7)
-    return object_list(request,things, paginate_by = 50, 
+    if 'entries_per_page' in request.session:
+        entries = request.session['entries_per_page']
+    else:
+        entries = 50
+    digg_paginator = DiggPaginator(things,entries,page=pageno, body=7)
+    return object_list(request,things, paginate_by = entries, 
                        template_name = template,extra_context ={
                        'search_term' : name,
                        'media_url' : settings.MEDIA_URL, 

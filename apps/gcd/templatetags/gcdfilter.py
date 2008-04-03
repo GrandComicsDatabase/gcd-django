@@ -83,12 +83,18 @@ def show_details(story,credit):
         return ""
     return ""
 
+# list checks we should/could do when we use this for the migration
+# - keydate of from should be smaller, keydate of to should be larger
+# - if no keydate exists on one side maybe check on series year
+# - search for title match of story as well
+# - search for matching page count
+# - search for reprint link back
 
 def parse_reprint_fr(reprints):
     """ parse a reprint entry starting with "fr." Often found in older indices.
     Don't trust this parsing too much."""
 
-    try:#for format: fr. seriesname #nr (issue date) date unused for parsing
+    try:# for format: fr. seriesname #nr (issue date) date unused for parsing
         position = reprints.find(' #')
         series = reprints[3:position].strip()
         #print series 
@@ -105,7 +111,7 @@ def parse_reprint_fr(reprints):
         pass
         
     if results.count() == 0:
-        try:#for format: from seriesname #nr (issue date) date unused for parsing
+        try:# for format: from seriesname #nr (issue date) date unused for parsing
             #and for format: from seriesname #nr
             position = reprints.find(' #')
             series = reprints[4:position].strip()
@@ -142,7 +148,7 @@ def parse_reprint(reprints, from_to):
     notes = None
     
     if reprints.startswith(from_to):
-        try:#our preferred format: seriesname (publisher, year <series>) #nr
+        try:# our preferred format: seriesname (publisher, year <series>) #nr
             position = reprints.find(' (')
             series = reprints[len(from_to):position].strip()
             #print series 
@@ -175,7 +181,7 @@ def parse_reprint(reprints, from_to):
             pass
         
         if results.count() == 0:
-            try:#for format: seriesname (year series) #nr
+            try:# for format: seriesname (year series) #nr
                 position = reprints.find(' (')
                 series = reprints[len(from_to):position].strip()
                 #print series 
@@ -202,7 +208,7 @@ def parse_reprint(reprints, from_to):
             except:
                 pass
         if results.count() == 0:
-            try:#for format: seriesname #nr(publisher, year <series>)
+            try:# for format: seriesname #nr(publisher, year <series>)
                 position = reprints.find(' #')
                 series = reprints[len(from_to):position].strip()
                 #print series 
@@ -232,7 +238,7 @@ def parse_reprint(reprints, from_to):
             except:
                 pass
         if results.count() == 0:
-            try:#for format: seriesname #nr (year)
+            try:# for format: seriesname #nr (year)
                 position = reprints.find(' #')
                 series = reprints[len(from_to):position].strip()
                 #print series 
