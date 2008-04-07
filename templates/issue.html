@@ -72,7 +72,7 @@
                         {% if cover_story.notes %}
                             <p>
                             <b>Indexer Notes:</b><br>
-                            {{ cover_story.notes }}
+                            {{ cover_story.notes|linebreaksbr }}
                         {% endif %}
                         <p>
                         <b>{% trans "Editor" %}:</b> {{ cover_story.editor }}
@@ -153,7 +153,7 @@
                     {% if story.synopsis %}
                         <p>
                         <b>Synopsis:</b><br>
-                        {{ story.synopsis }}
+                        {{ story.synopsis|linebreaksbr }}
                     {% endif %}
                     <p>
                     <b>Character appearances:</b><br>
@@ -164,7 +164,7 @@
                     {% if story.notes %}
                         <p>
                         <b>Indexer Notes:</b><br>
-                        {{ story.notes }}
+                        {{ story.notes|linebreaksbr }}
                     {% endif %}
                 </td>
             </tr>
