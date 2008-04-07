@@ -169,8 +169,9 @@ def parse_reprint(reprints, from_to):
                 number = string[:string.find(' ')].strip('.')
             #print number
             position = string.find('[')
-            if position > 0:
-                notes = string[position:]
+            position_end = string.find(']')
+            if position > 0 and position_end > position:
+                notes = string[position:position_end]
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
             results = results.filter(series__publisher__name__icontains 
@@ -199,8 +200,9 @@ def parse_reprint(reprints, from_to):
                     number = string[:string.find(' ')]
                 #print number
                 position = string.find('[')
-                if position > 0:
-                    notes = string[position:]
+                position_end = string.find(']')
+                if position > 0 and position_end > position:
+                    notes = string[position:position_end+1]
                 results = Issue.objects.all()
                 results = results.filter(series__name__icontains = series)
                 results = results.filter(series__year_began__exact = int(year))
@@ -268,6 +270,8 @@ def parse_reprint(reprints, from_to):
             link += " (" + esc(issue.series.publisher) + ", "
             link += esc(issue.series.year_began) + " series) #"
             link += esc(issue.number) + "</a>"
+            # the publication date might be an user-option
+            link += " (" + esc(issue.publication_date) + ")"
             if  notes:
                 link += " " + esc(notes)
             return link
