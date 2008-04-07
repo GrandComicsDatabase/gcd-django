@@ -66,7 +66,7 @@
                         <p>
                         <b>Character appearances:</b><br>
                         {{ cover_story.characters }}
-                        {{ cover_story|show_reprint }}
+                        {{ cover_story|show_reprint|linebreaksbr }}
                         <p>
                         <b>Genre:</b> {{ cover_story.genre }}
                         {% if cover_story.notes %}
@@ -159,7 +159,7 @@
                     <b>Character appearances:</b><br>
                     {{ story.characters }}
                     <p>
-                    {{ story|show_reprint }}
+                    {{ story|show_reprint|linebreaksbr }}
                     <b>Genre:</b> {{ story.genre }}
                     {% if story.notes %}
                         <p>

@@ -286,18 +286,18 @@ def show_reprint(story):
                 next_reprint = parse_reprint(string,from_to)
                 if next_reprint:
                     if len(reprint) > 0:
-                        reprint += '; '
+                        reprint += '\n'
                     reprint += next_reprint
                     break
             if next_reprint == None:
                 next_reprint = parse_reprint_fr(string)
                 if len(reprint) > 0:
-                    reprint += '; '
+                    reprint += '\n'
                 if next_reprint:
                     reprint += next_reprint
                 else:
                     reprint += esc(string)
-        return mark_safe("<p><b>Reprinted:</b> " + reprint + "</p>")
+        return mark_safe("<p><b>Reprinted:</b><br> " + reprint + "</p>")
     else:
         return ""
         
