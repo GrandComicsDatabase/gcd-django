@@ -224,7 +224,7 @@ def search_stories(request):
           request.GET["publisher"])
 
     if (request.GET["feature"] != ""):
-        results.filter(feature__icontains = request.GET["feature"])
+        results = results.filter(feature__icontains = request.GET["feature"])
 
     if (request.GET["character"] != ""):
         results = results.filter(
@@ -257,12 +257,12 @@ def search_stories(request):
     # of translating "name" for the series.  But it accepts the
     # other model names such as "year_began" in place of "yr_began".
     if (request.GET["sort"] == ORDER_ALPHA):
-        stories = results.order_by("stories__issue__series.bk_name",
+        results = results.order_by("stories__issue__series.bk_name",
                                    "stories__issue__series.year_began",
                                    "stories__issue.key_date",
                                    "sequence_number")
     elif (request.GET["sort"] == ORDER_CHRONO):
-        stories = results.order_by("stories__issue.key_date",
+        results = results.order_by("stories__issue.key_date",
                                    "stories__issue__series.bk_name",
                                    "stories__issue.id",
                                    "sequence_number")
@@ -272,12 +272,14 @@ def search_stories(request):
     # we get a copy of GET and make sure there is no page entry
     search_query = request.GET.copy()
     if 'page' in search_query:
-        pageno=search_query['page']
+        pageno = search_query['page']
         del search_query['page']
     else:
-        pageno=1    
+        pageno = 1    
+
     digg_paginator = DiggPaginator(results,50,page=pageno, body=7)
-    return object_list(request,results, paginate_by = 50, 
+
+    return object_list(request, results, paginate_by = 50, 
       template_name = 'default_search.html',extra_context ={
       'search_term' : "[TODO: Stringify advanced queries]",
       'media_url' : settings.MEDIA_URL,
