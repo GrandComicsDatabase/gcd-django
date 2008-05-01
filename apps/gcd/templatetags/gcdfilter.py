@@ -113,24 +113,29 @@ def parse_reprint_fr(reprints):
         #print results.count()
     except:
         pass
-        
+    
     if results.count() == 0:
         try:# for format: from seriesname #nr (issue date) date unused for parsing
             #and for format: from seriesname #nr
             position = reprints.find(' #')
             series = reprints[4:position].strip()
-            #print series 
+            print series 
             position += 2
             string = reprints[position:]
             position = string.find('(')
             if position > 0:
                 number = string[:position].strip()
+                position_end = string.find(')')
+                if position_end > position:
+                    year = string[position_end-4:position_end]
+                    print year
             elif string.isdigit():#we don't even have (issue date)
                 number = string
-            #print number
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
             results = results.filter(number__exact = number)
+            if year:
+                results = results.filter(key_date__icontains = year)
             #print results.count()
         except:
             pass
@@ -171,6 +176,11 @@ def parse_reprint(reprints, from_to):
             position = string.find(' [') #check for notes
             if position > 0:
                 position_end = string.find(']')
+                if position_end > position:
+                    notes = string[position:position_end+1]
+                date_pos = string.find(' (') #check for (date)
+                if date_pos > 0 and date_pos < position:
+                    position = date_pos
             else:
                 position = string.find(' (') #check for (date)
                 if position > 0: #if found ignore later
@@ -190,10 +200,8 @@ def parse_reprint(reprints, from_to):
                 if position > 0:
                     number = string[:position].strip()
                 else:
-                    number = string.strip()
+                    number = string.strip().strip('.')
             #print number
-            if position > 0 and position_end > position:
-                notes = string[position:position_end+1]
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
             results = results.filter(series__publisher__name__icontains 
