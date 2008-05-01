@@ -110,4 +110,12 @@ tr.sequence-id {
     font-size: x-small;
 }
 
+.pagination a, .pagination .current {
+    padding: 2px 5px;
+    border: 1px solid;
+}
 
+.pagination .current {
+    background-color: white;
+    color: black;
+}
