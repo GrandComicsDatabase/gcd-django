@@ -90,6 +90,10 @@ def show_details(story,credit):
 # - search for matching page count
 # - search for reprint link back
 
+# other stuff to consider in the display
+# - sort the reprints according to keydate
+# - sort domestic/foreign reprints
+
 def parse_reprint_fr(reprints):
     """ parse a reprint entry starting with "fr." Often found in older indices.
     Don't trust this parsing too much."""
@@ -138,6 +142,7 @@ def parse_reprint_fr(reprints):
         link += " (" + esc(issue.series.publisher) + ", "
         link += esc(issue.series.year_began) + " series) #"
         link += esc(issue.number) + "</a>"
+        link += " (" + esc(issue.publication_date) + ")"
         return link
     else:
         return None
@@ -147,7 +152,7 @@ def parse_reprint(reprints, from_to):
     other common version.  We may turn the others off or add even more. ;-)"""
     notes = None
     
-    if reprints.startswith(from_to):
+    if reprints.lower().startswith(from_to):
         try:# our preferred format: seriesname (publisher, year <series>) #nr
             position = reprints.find(' (')
             series = reprints[len(from_to):position].strip()
@@ -163,15 +168,32 @@ def parse_reprint(reprints, from_to):
             string = string[4:]
             position = string.find(' #')+2
             string = string[position:]
-            if string.isdigit():
+            position = string.find(' [') #check for notes
+            if position > 0:
+                position_end = string.find(']')
+            else:
+                position = string.find(' (') #check for (date)
+                if position > 0: #if found ignore later
+                    position_end = 0
+                else:
+                    #allow #nr date without ( ) only 
+                    # if there is a number before the space
+                    position = string.find(' ') 
+                    if position > 0:
+                        if string[:position].isdigit():
+                            position_end = 0
+                        else:
+                            position = 0
+            if string.isdigit(): #in this case we are fine
                 number = string
             else:
-                number = string[:string.find(' ')].strip('.')
+                if position > 0:
+                    number = string[:position].strip()
+                else:
+                    number = string.strip()
             #print number
-            position = string.find('[')
-            position_end = string.find(']')
             if position > 0 and position_end > position:
-                notes = string[position:position_end]
+                notes = string[position:position_end+1]
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
             results = results.filter(series__publisher__name__icontains 
@@ -181,7 +203,53 @@ def parse_reprint(reprints, from_to):
         except:
             pass
         
-        if results.count() == 0:
+        if results.count() != 1:
+            try:# our typoed format: seriesname (publisher year <series>) #nr
+                position = reprints.find(' (')
+                series = reprints[len(from_to):position].strip()
+                #print series 
+                string = reprints[position+2:]
+                position = string.find(' 1')
+                if position > 0:
+                    publisher = string[:position].strip()
+                else:
+                    position = string.find(' 2')
+                    publisher = string[:position].strip()                    
+                #print publisher
+                position+=1
+                string = string[position:]
+                year = string[:4]
+                #print year
+                string = string[4:]
+                position = string.find(' #')+2
+                string = string[position:]
+                position = string.find(' [') #check for notes
+                if position > 0:
+                    position_end = string.find(']')
+                else:
+                    position = string.find(' (') #check for (date)
+                    if position > 0: #if found ignore later
+                        position_end = 0
+                if string.isdigit(): #in this case we are fine
+                    number = string
+                else:
+                    if position > 0:
+                        number = string[:position].strip()
+                    else:
+                        number = string.strip()
+                #print number
+                if position > 0 and position_end > position:
+                    notes = string[position:position_end+1]
+                results = Issue.objects.all()
+                results = results.filter(series__name__icontains = series)
+                results = results.filter(series__publisher__name__icontains 
+                = publisher)
+                results = results.filter(series__year_began__exact = int(year))
+                results = results.filter(number__exact = number)
+            except:
+                pass
+        
+        if results.count() != 1:
             try:# for format: seriesname (year series) #nr
                 position = reprints.find(' (')
                 series = reprints[len(from_to):position].strip()
@@ -209,7 +277,8 @@ def parse_reprint(reprints, from_to):
                 results = results.filter(number__exact = number)
             except:
                 pass
-        if results.count() == 0:
+                
+        if results.count() != 1:
             try:# for format: seriesname #nr(publisher, year <series>)
                 position = reprints.find(' #')
                 series = reprints[len(from_to):position].strip()
@@ -239,7 +308,8 @@ def parse_reprint(reprints, from_to):
                 results = results.filter(number__exact = number)
             except:
                 pass
-        if results.count() == 0:
+                
+        if results.count() != 1:
             try:# for format: seriesname #nr (year)
                 position = reprints.find(' #')
                 series = reprints[len(from_to):position].strip()
@@ -286,7 +356,7 @@ def show_reprint(story):
         reprint = ""
         for string in story.reprints.split(';'):
             string = string.strip()
-            for from_to in ("from ","From ","In ","in ",""):
+            for from_to in ("from ","in ",""):
                 next_reprint = parse_reprint(string,from_to)
                 if next_reprint:
                     if len(reprint) > 0:
