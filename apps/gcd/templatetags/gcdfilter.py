@@ -3,7 +3,7 @@ from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models import Issue
+from apps.gcd.models import Issue,Story
 
 register = template.Library()
 
@@ -94,11 +94,43 @@ def show_details(story,credit):
 # - sort the reprints according to keydate
 # - sort domestic/foreign reprints
 
+def find_reprint_sequence_in_issue(from_story,to_issue):
+    '''look for sequence in <to_issue> which fits <from_story>'''
+    
+    results = Story.objects.all()
+    results = results.filter(issue__id = to_issue)
+    results = results.filter(title__icontains = from_story.title.strip().strip('!').strip('.'))
+    if (results.count() > 1):
+        results = results.filter(page_count = from_story.page_count)
+    if (results.count() == 1):
+        return results[0].sequence_number
+    #for i in range(results.count()):
+        #print results[i].title
+    return -1
+
+
+def generate_reprint_link(from_story, to_issue, from_to):
+    ''' generate reprint link to_issue'''
+    
+    link = "<a href=\"/gcd/issue/"+str(to_issue.id)
+    sequence = find_reprint_sequence_in_issue(from_story,to_issue.id)
+    if (sequence >= 0):
+        link += "/#" + esc(sequence) +"\">"
+    else:
+        link += "/\">"
+    link += esc(from_to) + esc(to_issue.series.name) 
+    link += " (" + esc(to_issue.series.publisher) + ", "
+    link += esc(to_issue.series.year_began) + " series) #"
+    link += esc(to_issue.number) + "</a>"
+    link += " (" + esc(to_issue.publication_date) + ")"
+    return link
+    
+
 def parse_reprint_fr(reprints):
     """ parse a reprint entry starting with "fr." Often found in older indices.
     Don't trust this parsing too much."""
 
-    try:# for format: fr. seriesname #nr (issue date) date unused for parsing
+    try:# for format: fr. seriesp #nr (issue date) date unused for parsing
         position = reprints.find(' #')
         series = reprints[3:position].strip()
         #print series 
@@ -114,12 +146,18 @@ def parse_reprint_fr(reprints):
     except:
         pass
     
-    if results.count() == 0:
+    if results.count() == 0 or results.count() > 10:
         try:# for format: from seriesname #nr (issue date) date unused for parsing
             #and for format: from seriesname #nr
             position = reprints.find(' #')
-            series = reprints[4:position].strip()
-            print series 
+            if reprints.lower().startswith('from'):
+                series = reprints[4:position].strip()
+            elif reprints.lower().startswith('rpt. from'):
+                series = reprints[9:position].strip()
+            elif reprints.lower().startswith('rep from'):
+                series = reprints[8:position].strip()
+            else:
+                return Issue.objects.none()
             position += 2
             string = reprints[position:]
             position = string.find('(')
@@ -128,9 +166,10 @@ def parse_reprint_fr(reprints):
                 position_end = string.find(')')
                 if position_end > position:
                     year = string[position_end-4:position_end]
-                    print year
             elif string.isdigit():#we don't even have (issue date)
                 number = string
+            else:
+                number = string[:string.find(' ')].strip()
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
             results = results.filter(number__exact = number)
@@ -140,17 +179,8 @@ def parse_reprint_fr(reprints):
         except:
             pass
     
-    if results.count() == 1:
-        issue = results[0]
-        link = "<a href=\"/gcd/issue/"+str(issue.id)+"/\">"
-        link += "From " + esc(issue.series.name) 
-        link += " (" + esc(issue.series.publisher) + ", "
-        link += esc(issue.series.year_began) + " series) #"
-        link += esc(issue.number) + "</a>"
-        link += " (" + esc(issue.publication_date) + ")"
-        return link
-    else:
-        return None
+    return results
+
 
 def parse_reprint(reprints, from_to):
     """ parse a reprint entry, first for our standard, them some for
@@ -160,9 +190,10 @@ def parse_reprint(reprints, from_to):
     if reprints.lower().startswith(from_to):
         try:# our preferred format: seriesname (publisher, year <series>) #nr
             position = reprints.find(' (')
-            series = reprints[len(from_to):position].strip()
-            #print series 
+            series = reprints[len(from_to):position].strip().strip("The ").strip("the ")
             string = reprints[position+2:]
+            after_series = string # use in other formats
+            #print series 
             position = string.find(', ')
             publisher = string[:position].strip()
             #print publisher
@@ -184,14 +215,14 @@ def parse_reprint(reprints, from_to):
             else:
                 position = string.find(' (') #check for (date)
                 if position > 0: #if found ignore later
-                    position_end = 0
+                    pass
                 else:
                     #allow #nr date without ( ) only 
-                    # if there is a number before the space
+                    #if there is a number before the space
                     position = string.find(' ') 
                     if position > 0:
                         if string[:position].isdigit():
-                            position_end = 0
+                            pass
                         else:
                             position = 0
             if string.isdigit(): #in this case we are fine
@@ -211,12 +242,10 @@ def parse_reprint(reprints, from_to):
         except:
             pass
         
-        if results.count() != 1:
+        if results.count() == 0 or results.count() > 10:
             try:# our typoed format: seriesname (publisher year <series>) #nr
-                position = reprints.find(' (')
-                series = reprints[len(from_to):position].strip()
-                #print series 
-                string = reprints[position+2:]
+                # use series from before
+                string = after_series
                 position = string.find(' 1')
                 if position > 0:
                     publisher = string[:position].strip()
@@ -257,13 +286,10 @@ def parse_reprint(reprints, from_to):
             except:
                 pass
         
-        if results.count() != 1:
+        if results.count() == 0 or results.count() > 10:
             try:# for format: seriesname (year series) #nr
-                position = reprints.find(' (')
-                series = reprints[len(from_to):position].strip()
-                #print series 
-                position += 2
-                string = reprints[position:]
+                # use series from before
+                string = after_series
                 year = string[:4]
                 #print year
                 string = string[4:]
@@ -286,13 +312,14 @@ def parse_reprint(reprints, from_to):
             except:
                 pass
                 
-        if results.count() != 1:
+        if results.count() == 0 or results.count() > 10:
             try:# for format: seriesname #nr(publisher, year <series>)
                 position = reprints.find(' #')
-                series = reprints[len(from_to):position].strip()
+                series = reprints[len(from_to):position].strip().strip("The ").strip("the ")
                 #print series 
                 position += 2
                 string = reprints[position:]
+                after_series = string
                 position = string.find('(')
                 number = string[:position].strip()
                 #print number
@@ -317,13 +344,10 @@ def parse_reprint(reprints, from_to):
             except:
                 pass
                 
-        if results.count() != 1:
+        if results.count() == 0 or results.count() > 10:
             try:# for format: seriesname #nr (year)
-                position = reprints.find(' #')
-                series = reprints[len(from_to):position].strip()
-                #print series 
-                position += 2
-                string = reprints[position:]
+                # use series from before                
+                string = after_series
                 position = string.find('(')
                 number = string[:position].strip()
                 #print number
@@ -340,21 +364,9 @@ def parse_reprint(reprints, from_to):
                 results = results.filter(number__exact = number)
             except:
                 pass
-        
-        if results.count() == 1:
-            issue = results[0]
-            link = "<a href=\"/gcd/issue/"+str(issue.id)+"/\">"
-            link += from_to.capitalize() + " " + esc(issue.series.name) 
-            link += " (" + esc(issue.series.publisher) + ", "
-            link += esc(issue.series.year_began) + " series) #"
-            link += esc(issue.number) + "</a>"
-            # the publication date might be an user-option
-            link += " (" + esc(issue.publication_date) + ")"
-            if  notes:
-                link += " " + esc(notes)
-            return link
-        else:
-            return None
+        return results
+    else:
+        return Issue.objects.none()
 
 
 def show_reprint(story):
@@ -365,18 +377,38 @@ def show_reprint(story):
         for string in story.reprints.split(';'):
             string = string.strip()
             for from_to in ("from ","in ",""):
-                next_reprint = parse_reprint(string,from_to)
-                if next_reprint:
+                next_reprint = parse_reprint(string, from_to)
+                if next_reprint.count() > 1 and next_reprint.count() <= 15:
+                    a = []
+                    for i in range(next_reprint.count()):
+                        nr = find_reprint_sequence_in_issue(story,
+                                                         next_reprint[i].id)
+                        if (nr > 0):
+                            a.append(i)
+                    if len(a) == 1:
+                        next_reprint = next_reprint.filter(id =
+                                                next_reprint[a[0]].id)
+                if next_reprint.count() == 1:
                     if len(reprint) > 0:
                         reprint += '\n'
-                    reprint += next_reprint
+                    reprint += generate_reprint_link(story,next_reprint[0],from_to)
                     break
-            if next_reprint == None:
+            if next_reprint.count() != 1:
                 next_reprint = parse_reprint_fr(string)
                 if len(reprint) > 0:
                     reprint += '\n'
-                if next_reprint:
-                    reprint += next_reprint
+                if next_reprint.count() > 1 and next_reprint.count() <= 15:
+                    a = []
+                    for i in range(next_reprint.count()):
+                        nr = find_reprint_sequence_in_issue(story,
+                                                         next_reprint[i].id)
+                        if (nr > 0):
+                            a.append(i)
+                    if len(a) == 1:
+                        next_reprint = next_reprint.filter(id =
+                                                next_reprint[a[0]].id)
+                if next_reprint.count() == 1:
+                    reprint += generate_reprint_link(story,next_reprint[0],"from ")
                 else:
                     reprint += esc(string)
         return mark_safe("<p><b>Reprinted:</b><br> " + reprint + "</p>")
