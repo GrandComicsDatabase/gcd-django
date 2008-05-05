@@ -6,3 +6,7 @@ from publisher import Publisher
 from series import Series
 from issue import Issue
 from story import Story
+from cover import Cover
+from indexer import Indexer
+from indexcredit import IndexCredit
+
