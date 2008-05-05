@@ -27,7 +27,7 @@ class Publisher(models.Model):
     # connection as it is always null except one '' right now.  But perhaps
     # it is intended to describe these relationships (imprint, common name...)
     # next_id is completely mysterious, but maybe in this category?
-    is_master = models.NullBooleanField(db_column = 'Master', null = True)
+    is_master = models.NullBooleanField(db_column = 'Master')
     connection = models.TextField(db_column = 'Connection', null = True)
     parent = models.ForeignKey('self', db_column = 'ParentID',
                                 null = True, related_name = 'imprint_set')
