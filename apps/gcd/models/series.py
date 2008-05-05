@@ -25,7 +25,7 @@ class Series(models.Model):
     year_ended = models.IntegerField(db_column = 'Yr_Ended', null = True)
     publication_dates = models.CharField(max_length = 255,
                                          db_column = 'PubDates', null = True)
-    publication_note = models.TextField(db_column = 'Notes', null = True)
+    publication_note = models.TextField(db_column = 'Pub_Note', null = True)
     themes = models.TextField(db_column = 'Themes', null = True)
     issue_count = models.IntegerField(db_column = 'Issuecount', null = True)
 
