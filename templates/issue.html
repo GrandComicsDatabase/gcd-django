@@ -36,7 +36,7 @@
             </tr>
             <tr><td><table border="0" cellpadding="4" cellspacing="0">
                 <tr class="issue-data">
-                    <td> {{ image_tag|safe }}<br>
+                    <td width="110"> {{ image_tag|safe }}<br>
                          <span class="fine-print">Zoom:
                          <a href="/gcd/image/{{ issue.id }}/medium/">medium</a>
                          <a href="/gcd/image/{{ issue.id }}/large/">large</a>
@@ -77,10 +77,12 @@
                         <p>
                         <b>{% trans "Editor" %}:</b> {{ cover_story.editor }}
                         <div class="fine-print">
-                            <p> <!-- TODO: proper indexer credits -->
+                            <p> 
                             {% trans "Issues in this series have been indexed by:" %}
                             <ul>
-                                <li> {{ issue.series.indexers }}
+                              {% for credit in issue.series.index_credit_set.all %}
+                                <li> {{ credit.indexer.name }}
+                              {% endfor %}
                             </ul>
                         </div>
                     </td>

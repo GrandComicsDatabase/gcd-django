@@ -50,12 +50,23 @@
 
                      <p><b>Issues indexed:</b><br>
 <!--a href="/gcd/series/index_matrix/{{ series.id }}/"-->See index matrix<!--/a--></p>
-                     <p>
-                     <p><b>Tracking:</b><br>
-                     {{ series.tracking_notes }}</p>
-                     <p>
-                     <p><b>Indexed by</b><br>{{ series.indexers }}<br>
-                     [[ <b>TODO:</b> Format properly, work out 2nd source of names. ]]
+                     {% if series.notes %}
+                       <p><b>Title Notes:</b><br>
+                       {{ series.notes|linebreaks }}
+                       </p>
+                     {% endif %}
+
+                     {% if series.tracking_notes %}
+                       <p><b>Tracking:</b><br>
+                       {{ series.tracking_notes|linebreaks }}
+                       </p>
+                     {% endif %}
+
+                     <p><b>Indexed by:</b><br>
+                     {% for credit in series.index_credit_set.all %}
+                       {{ credit.indexer.name }}<br>
+                     {% endfor %}
+                     </p>
                 </td>
             </tr>
             <tr>

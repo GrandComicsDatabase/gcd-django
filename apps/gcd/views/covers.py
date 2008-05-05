@@ -2,74 +2,42 @@ import re
 from urllib import urlopen
 
 from django.conf import settings
+from django.shortcuts import get_list_or_404, \
+                             get_object_or_404
 
+from apps.gcd.models import Cover, Series
 
-def get_issue_image_tag(series_id, issue_id):
-    """Either return a placeholder for the issue page's cover image, or
-    find and link to the real image from the production GCD site.  At last
-    resort, fake it all with an iframe that loads whole cover page.
-    Ginormous hack until the method of mapping image locations is made
-    available."""
-    if (settings.FAKE_COVER_IMAGES):
-        return "<img src=\"" + settings.MEDIA_URL + \
-               "/img/placeholder_small.jpg\"/>"
+ZOOM_SMALL = 1
+ZOOM_MEDIUM = 2
+ZOOM_LARGE = 4
 
-    gcd_page = urlopen("http://www.comics.org/details.lasso?id=%s" % issue_id)
+# Entries in this tuple match the server_version column of the covers table.
+# Note that there is no sever version 0 recorded.
+_server_prefixes = ['',
+                    'http://www.comics.org/graphics/covers/',
+                    'http://www.gcdcovers.com/graphics/covers/']
 
-    match = None
-    image_source = None
-    image_number = None
-    image_tag = None
-    for line in gcd_page:
-        match = re.search(\
-          "http://www.comics.org/graphics/covers/%s/%s_\d+.jpg" %
-          (series_id, series_id), line)
-        if (match):
-            image_source = match.group(0)
-            image_tag = "<img src=\"%s\"/>" % image_source
-            break
+def get_image_tag(series_id, issue_id, alt_text, zoom_level):
+    img_url = '<img src="" alt="' + alt_text + '"/>'
 
-    gcd_page.close()
-    if (not image_tag):
-        # TODO: No standalone page for the smallest size, so this
-        # TODO: returns an iframe that is too big.  For now.
-        # TODO: Hopefully we never get here anyway.
-        image_tag = "<iframe src=\"http://www.comics.org/coverview.lasso?" \
-                    "id=%s&zoom=4\" height=346 frameborder=0 scrolling=no>" \
-                    "</iframe>" % issue_id
-    return image_tag
+    cover = get_list_or_404(Cover, issue__id = issue_id)[0]
+        
+    if (zoom_level == ZOOM_SMALL):
+        suffix = "%d/%d_%s.jpg" % (series_id, series_id, cover.code)
+    else:
 
+        suffix = "%d/" % series_id
+        suffix = suffix + "%d00/" % zoom_level
+        suffix = suffix + "%d_%d_%s.jpg" % (series_id, zoom_level, cover.code)
+    try:
+        img_url = _server_prefixes[cover.server_version] + suffix
+        img = urlopen(img_url)
+    except:
+        # TODO: Figure out specific recoverable error.
+        # TODO: Don't hardcode the number 2.
+        cover.server_version = 2
+        cover.save()
+        img_url = _server_prefixes[cover.server_version] + suffix
 
-def get_series_image_tag(series_id):
-    """Either return a placeholder for the series page's cover image, or
-    find and link to the real image from the production GCD site.  At last
-    resort, fake it all with an iframe that loads whole cover page.
-    Ginormous hack until the method of mapping image locations is made
-    available."""
-
-    if (settings.FAKE_COVER_IMAGES):
-        return "<img src=\"" + settings.MEDIA_URL + \
-               "/img/placeholder_medium.jpg\"/>"
-
-    gcd_page = urlopen("http://www.comics.org/series.lasso?SeriesID=%s" % \
-                       series_id)
-
-    match = None
-    image_source = None
-    image_number = None
-    image_tag = None
-    for line in gcd_page:
-        match = re.search("http://www.comics.org/graphics/covers/%s/200/" \
-                          "%s_2_\d+.jpg" % (series_id, series_id), line)
-        if (match):
-            image_source = match.group(0)
-            image_tag = "<img src=\"%s\"/>" % image_source
-            break
-
-    gcd_page.close()
-    if (not image_tag):
-        image_tag = "<iframe src=\"http://www.comics.org/coverview.lasso?" \
-                    "id=%s&zoom=2\" height=346 frameborder=0 scrolling=no>" \
-                    "</iframe>" % series_id
-    return image_tag
+    return '<img src="' + img_url + '" alt="' + alt_text + '"/>'
 
