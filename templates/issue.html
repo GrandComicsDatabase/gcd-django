@@ -1,6 +1,7 @@
 {% extends "tagline_base.html" %}
 {% load i18n %} 
 {% load gcdfilter %}
+{% load migration.reprints %}
 
 {% block title %}
     GCD :: Issue {{ issue.series.name }} #{{ issue.number }}
