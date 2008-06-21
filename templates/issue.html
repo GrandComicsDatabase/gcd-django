@@ -138,7 +138,7 @@
                 <!-- TODO: check for 1 page, story.page_count is char
                 which means pluralize can't be used straightforward,
                 how is it in the new schema ? Otherwise use ifequal -->
-                     {{ story.page_count }} {% trans "pages" %})
+                     {{ story.page_count }} {% trans "pages" %} {{story|show_details:"job" }} )
                      </td>
             </tr>
             <tr class="issue-text">

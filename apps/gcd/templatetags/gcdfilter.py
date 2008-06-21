@@ -78,7 +78,8 @@ def show_details(story,credit):
         if is_visible_credit(story.editor):
             return story.editor +" ("+_('Editor')+")."
     elif credit == 'job':
-        return _('Job number')+": "+story.job_number
+        if is_visible_credit(story.job_number):
+            return _(', job number ')+story.job_number
     else:
         return ""
     return ""
