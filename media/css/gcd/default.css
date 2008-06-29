@@ -99,6 +99,7 @@ div.item_id div.prev_next {
 }
 
 #search_bar {
+    clear: both;
     background-color: #77E;
     color: black;
     margin-bottom: 1em;
