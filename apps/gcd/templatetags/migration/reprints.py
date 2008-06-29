@@ -5,9 +5,6 @@ from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue,Story
 
-# TODO: Sort out reprint crosscall hackiness added when UI was rewritten.
-from apps.gcd.templatetags.credits import format_credit
-
 register = template.Library()
 
 # list checks we should/could do when we use this for the migration
