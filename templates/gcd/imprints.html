@@ -17,24 +17,37 @@
 
 {% include "gcd/publisher_header.html" %}
 
+<!-- See publisher.html for an explanation of the divs around the dt/dd
+     pairs, which is just a hack untile I figure out something better.
+     But this way, IE6 is readable and Firefox 3 just has odd spacing,
+     as opposed to IE6 displaying things out of order before.
+  -->
 <dl class="pub_data">
 {% if publisher.parent %}
+<div>
   <dt> Parent Company:
   <dd> <a href="/gcd/publisher/{{ publisher.parent.id }}/?style={{ style }}">{{ publisher.parent.name }}</a>
+</div>
 {% endif %}
 {% if publisher.country %}
+<div>
   <dt> Country:
-  <dd id="country"> {{ publisher.country.name }}
+  <dd> {{ publisher.country.name }}
+</div>
 {% endif %}
 {% if publisher.notes %}
+<div>
   <dt> Notes:
-  <dd id="notes"> {{ publisher.notes|linebreaksbr }}
+  <dd> {{ publisher.notes|linebreaksbr }}
+</div>
 {% endif %}
 </dl>
 
 {% ifequal publisher.imprint_set.count 0 %}
+<div>
   <dt> Imprints:
   <dd> None
+</div>
 </dl>
 {% else %}
 </dl>

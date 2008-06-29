@@ -15,57 +15,46 @@
 
 {% block view_body %}
 
-<h1 class="item_id"> <div class="left">{{ publisher.name }}</div> </h1>
-<div class="item_id">
-  <div class="left">{{ publisher.year_began }} - {{ publisher.year_end }}</div>
-  <div class="right pagination">
-    {% if page.has_other_pages %}
-      {% if page.has_previous %}
-        <a href="?style={{ style }}&page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
-      {% else %}
-        &lt; {% trans "Previous" %}
-      {% endif %}
-      |
-      {% for number in paginator.page_range %}
-        {% ifequal number page_number %}
-          {{ number }}
-        {% else %}
-          <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
-        {% endifequal %}
-        |
-      {% endfor %}
-      {% if page.has_next %}
-        <a href="{{ page_url }}?style={{ style }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
-      {% else %}
-        {% trans "Next" %} &gt;
-      {% endif %}
-    {% endif %}
-  </div>
-</div>
+{% include "gcd/publisher_header.html" %}
 
+<!-- Throwing extra divs around dt/dd pairs keeps IE6/Win from doing silly
+     things like floating the <dd> on the line above its <dt>, and it
+     doesn't hurt Firefox 2/Mac.  But it does make Firefox 3/Win ignore
+     the margin/padding setting on the contained dds for some reason.
+     One step forward, half a step back.  To be continued. -->
 <dl class="pub_data">
 {% if publisher.parent %}
+<div>
   <dt> Parent Company:
   <dd> <a href="/gcd/publisher/{{ publisher.parent.id }}/?style={{ style }}">{{ publisher.parent.name }}</a>
+</div>
 {% endif %}
 {% if publisher.country %}
+<div>
   <dt> Country:
-  <dd id="country"> {{ publisher.country.name }}
+  <dd> {{ publisher.country.name }}
+</div>
 {% endif %}
 
 {% ifnotequal publisher.imprint_set.count 0 %}
+<div>
   <dt> Imprints:
-  <dd id="imprints"> <a href="/gcd/publisher/{{ publisher.id }}/imprints/?style={{ style }}">{{ publisher.imprint_set.count }}</a>
+  <dd> <a href="/gcd/publisher/{{ publisher.id }}/imprints/?style={{ style }}">{{ publisher.imprint_set.count }}</a>
+</div>
 {% endifnotequal %}
 
 {% if publisher.notes %}
+<div>
   <dt> Notes:
-  <dd id="notes"> {{ publisher.notes|linebreaksbr }}
+  <dd> {{ publisher.notes|linebreaksbr }}
+</div>
 {% endif %}
 
 {% ifequal publisher.series_set.count 0 %}
+<div>
   <dt> Titles:
-  <dd id="titles"> None
+  <dd> None
+</div>
 </dl>
 {% else %}
 </dl>
