@@ -28,7 +28,10 @@
   <div class="right" class="prev_next">
       {% if prev_issue %}
           <a href="/gcd/issue/{{ prev_issue.id }}{{ extra }}?style={{ style }}">&lt; {% trans "Previous Issue" %}</a>
-      {% endif %} |
+      {% endif %}
+      {% if prev_issue or next_issue %}
+        |
+      {% endif %}
       {% if next_issue %}
           <a href="/gcd/issue/{{ next_issue.id }}{{ extra }}?style={{ style }}">{% trans "Next Issue" %} &gt;</a>
       {% endif %}
