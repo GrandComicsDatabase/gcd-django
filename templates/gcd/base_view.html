@@ -1,0 +1,22 @@
+<html>
+<head>
+<title>{% block title %}{% endblock %}</title>
+
+{% comment %}
+Having trouble with block / ifnotequal interactions.  Need to investigate.
+For now, just a simple single block for all CSS, despite redundancy.
+{% endcomment %}
+
+{% block css %}{% endblock %}
+</head>
+
+<body>
+{% include "gcd/search_bar.html" %}
+
+{% block view_body %}{% endblock %}
+
+{% include "gcd/search_bar.html" %}
+
+{% include "gcd/fine_print.html" %}
+</body>
+</html>

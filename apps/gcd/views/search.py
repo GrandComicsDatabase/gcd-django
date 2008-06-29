@@ -89,23 +89,6 @@ def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
       'media_url' : settings.MEDIA_URL })
 
 
-def imprints_by_publisher(request, publisher_id, sort=ORDER_ALPHA):
-    """Finds imprints of a publisher.  Imprints are defined as those
-    publishers whose parent_id matches the given publisher."""
-
-    p = get_object_or_404(Publisher, id = publisher_id)
-    imps = p.imprint_set.all()
-    if (sort == ORDER_ALPHA):
-        imps = imps.order_by('name', 'year_began')
-    elif (sort == ORDER_CHRONO):
-        pubs = pubs.order_by('year_began', 'name')
-
-    return render_to_response('imprint_list.html', {
-      'publisher_set' : imps,
-      'publisher_count' : len(imps),
-      'media_url' : settings.MEDIA_URL })
-
-
 def character_appearances(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
     is named are often not also listed under character appearances, this
@@ -224,6 +207,9 @@ def search_stories(request):
 
     if (request.GET["feature"] != ""):
         results = results.filter(feature__icontains = request.GET["feature"])
+
+    if (request.GET["story"] != ""):
+        results = results.filter(title__icontains = request.GET["story"])
 
     if (request.GET["character"] != ""):
         results = results.filter(

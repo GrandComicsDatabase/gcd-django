@@ -26,23 +26,42 @@ urlpatterns = patterns('',
     (r'^gcd/search/$', 'apps.gcd.views.search.search'),
     (r'^gcd/search/advanced/$', 'apps.gcd.views.search.advanced_search'),
 
-    (r'^gcd/publisher/(?P<publisher_id>\d+)/$', 'apps.gcd.views.details.publisher'),
+    # Publisher
+    (r'^gcd/publisher/(?P<publisher_id>\d+)/$',
+     'apps.gcd.views.details.publisher'),
     (r'^gcd/publisher/name/(?P<publisher_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.publishers_by_name'),
     (r'^gcd/publisher/name/(?P<publisher_name>.+)/$',
      'apps.gcd.views.search.publishers_by_name'),
     (r'^gcd/publisher/(?P<publisher_id>\d+)/imprints/$',
-     'apps.gcd.views.search.imprints_by_publisher'),
+     'apps.gcd.views.details.imprints'),
 
+    # Series
     (r'^gcd/series/(?P<series_id>\d+)/$', 'apps.gcd.views.details.series'),
     (r'^gcd/series/name/(?P<series_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.series_by_name'),
     (r'^gcd/series/name/(?P<series_name>.+)/$',
      'apps.gcd.views.search.series_by_name'),
 
+    # Series index and cover status / gallery
+    (r'^gcd/series/(?P<series_id>\d+)/status/$',
+     'apps.gcd.views.details.status'),
+
+    (r'^gcd/series/(?P<series_id>\d+)/covers/$',
+     'apps.gcd.views.details.covers'),
+
+    (r'^gcd/series/(?P<series_id>\d+)/scans/$',
+     'apps.gcd.views.details.scans'),
+
+    # Issue
     (r'^gcd/issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue'),
     (r'^gcd/issue/$', 'apps.gcd.views.details.issue_form'),
 
+    # Single Cover
+    (r'^gcd/issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',
+     'apps.gcd.views.details.cover'),
+
+    # Attribute searches
     (r'^gcd/character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.character_appearances'),
     (r'^gcd/character/name/(?P<character_name>.+)/$',
@@ -88,17 +107,19 @@ urlpatterns = patterns('',
     (r'^gcd/credit/name/(?P<name>.+)/$',
      'apps.gcd.views.search.story_by_credit'),
 
-    # Odd to list job numbers by 'name' but makes forms consistent.
-    # TODO: Fix this, it's weird.
-    (r'^gcd/job/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
+    # Note that Jobs don't have 'name' in the path, but otherwise work the same.
+    (r'^gcd/job/(?P<number>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_job'),
-    (r'^gcd/job/name/(?P<number>.+)/$', 'apps.gcd.views.search.story_by_job'),
+    (r'^gcd/job/(?P<number>.+)/$', 'apps.gcd.views.search.story_by_job'),
 
+    # Reprints
     (r'^gcd/reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
     (r'^gcd/reprint/(?P<reprints>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
-
     (r'^gcd/settings/$',
      'apps.gcd.views.settings.settings'),    
+
+    # URL for trying out new layouts, styles and UI concepts.
+    (r'^gcd/new/(?P<name>.+)/$', 'apps.gcd.views.prototype'),
 )

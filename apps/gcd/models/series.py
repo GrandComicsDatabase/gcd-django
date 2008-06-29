@@ -25,7 +25,7 @@ class Series(models.Model):
     year_ended = models.IntegerField(db_column = 'Yr_Ended', null = True)
     publication_dates = models.CharField(max_length = 255,
                                          db_column = 'PubDates', null = True)
-    publication_note = models.TextField(db_column = 'Pub_Note', null = True)
+    publication_notes = models.TextField(db_column = 'Pub_Note', null = True)
     themes = models.TextField(db_column = 'Themes', null = True)
     issue_count = models.IntegerField(db_column = 'Issuecount', null = True)
 
@@ -89,6 +89,9 @@ class Series(models.Model):
 
     # Fields about which I have no idea.
     self_count = models.IntegerField(db_column = 'SelfCount', null = True)
+
+    def scan_count(self):
+        return self.cover_set.filter(has_image = '1').count()
 
     def __unicode__(self):
         return self.name

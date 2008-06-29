@@ -1,0 +1,47 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+
+{% block title %} GCD :: Covers :: {{ series.name }} {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}/covers.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% include "gcd/series_issue_header.html" %}
+
+<div id="info_links">
+  <a href="/gcd/series/{{series.id}}/scans/?style={{ style }}">Cover Scan Status</a>
+  <br>
+  <a href="/gcd/series/{{ series.id }}/status/?style={{ style}}">Index Status</a>
+</div>
+
+<table id="covers">
+  <tr>
+  {% for cover, issue, tag in tags %}
+    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+      <a href="/gcd/issue/{{ issue.id }}/?style={{ style }}">{{ tag|safe }}</a>
+      <br/>
+      <span class="cover_links">Zoom:
+<a href="/gcd/issue/{{ issue.id }}/cover/2/?style={{ style }}">Medium</a>
+<a href="/gcd/issue/{{ issue.id }}/cover/4/?style={{ style }}">Large</a></span> <br/>
+      <div class="cover_caption">
+        <span class="cover_number">Issue {{ issue.number }}</span> <br/>
+        <span class="cover_date">{{ issue.publication_date }}</span>
+      </div>
+    </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+    {% endif %}
+  {% endfor %}
+  </tr>
+</table>
+
+{% endblock %}

@@ -9,6 +9,7 @@ class Cover(models.Model):
     class Meta:
         db_table = 'covers'
         app_label = 'gcd'
+        ordering = ['code']
 
     class Admin:
         pass

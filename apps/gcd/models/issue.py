@@ -8,6 +8,7 @@ class Issue(models.Model):
     class Meta:
         db_table = 'issues'
         app_label = 'gcd'
+        ordering = ['key_date']
 
     class Admin:
         pass
@@ -121,6 +122,17 @@ class Issue(models.Model):
     cover_sequence_number = models.IntegerField(db_column = 'Seq_No',
                                                 null = True)
     
+    def index_status_description(self):
+        """Text form of status.  If clauses arranged in order of most
+        likely case to least."""
+        if (self.index_status == 3):
+            return 'approved'
+        if (self.index_status == 0):
+            return 'no data'
+        if (self.index_status == 1):
+            return 'reserved'
+        if (self.index_status == 2):
+            return 'pending'
 
     def __unicode__(self):
         return str(self.series.name) + " #" + self.number # + " (" + \

@@ -1,0 +1,44 @@
+/* ***************************************
+ * series.css
+ * CSS specific to the series details page.
+ * ***************************************/
+
+.clear {
+    float: left;
+    clear: both;
+    margin-top: 1em;
+    width: 100%;
+}
+
+#series_cover {
+    clear: both;
+    float: left;
+    width: 200px;
+    margin-bottom: 1em;
+}
+
+#series_cover img {
+    border: solid 1px;
+}
+
+#series_data {
+    margin-left: 210px;
+}
+
+#series_data dl {
+    margin-top: 0;
+}
+
+#series_data dl dt {
+    float: left;
+    margin-right: .5em;
+}
+
+#series_data dl dd {
+    margin: 0;
+}
+
+hr {
+    clear: both;
+}
+

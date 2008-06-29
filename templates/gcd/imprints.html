@@ -1,0 +1,57 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+
+{% block title %}
+  GCD :: Publisher :: {{ publisher.name }} :: Imprints
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}/publisher.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% include "gcd/publisher_header.html" %}
+
+<dl class="pub_data">
+{% if publisher.parent %}
+  <dt> Parent Company:
+  <dd> <a href="/gcd/publisher/{{ publisher.parent.id }}/?style={{ style }}">{{ publisher.parent.name }}</a>
+{% endif %}
+{% if publisher.country %}
+  <dt> Country:
+  <dd id="country"> {{ publisher.country.name }}
+{% endif %}
+{% if publisher.notes %}
+  <dt> Notes:
+  <dd id="notes"> {{ publisher.notes|linebreaksbr }}
+{% endif %}
+</dl>
+
+{% ifequal publisher.imprint_set.count 0 %}
+  <dt> Imprints:
+  <dd> None
+</dl>
+{% else %}
+</dl>
+<table class="listing">
+  <tr>
+    <th> Imprint </th>
+    <th> Titles </th>
+    <th> Issues </th>
+  </tr>
+{% for imprint in imprints %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="/gcd/publisher/{{ imprint.id }}/?style={{ style }}">{{ imprint.name }}</a> </td>
+    <td> {{ imprint.series_set.count }} </td>
+    <td> {{ imprint.computed_issue_count }} </td>
+  </tr>
+{% endfor %}
+</table>
+{% endifequal %}
+
+{% endblock %}

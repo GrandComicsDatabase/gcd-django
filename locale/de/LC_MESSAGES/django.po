@@ -61,6 +61,9 @@ msgstr "Preis"
 msgid "pages"
 msgstr "Seiten"
 
+msgid "Pages"
+msgstr "Seiten"
+
 #: templates/issue.html:80
 msgid "Editor"
 msgstr "Redaktion"

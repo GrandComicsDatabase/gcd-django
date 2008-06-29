@@ -1,0 +1,62 @@
+{% load i18n %}
+
+<h1 class="item_id">
+<div class="left">
+  <span id="series_name">
+    <a href="/gcd/series/{{ series.id }}/?style={{ style }}">{{ series.name }}</a>
+  </span>
+  {% if issue_number %}
+  <span id="issue_number">
+    <span class="p">#</span>{{ issue_number }}
+  </span>
+  {% endif %}
+</div>
+<div class="right">
+  {% if issue_number %}
+    ({{ issue.publication_date }})
+  {% endif %}
+</div>
+</h1>
+
+<div class="item_id">
+  <div class="left" class="item_data">
+    <a href="/gcd/publisher/{{ series.publisher.id }}/?style={{ style }}">{{ series.publisher }}</a>,
+    {{ series.year_began }} Series
+  </div>
+
+  {% if issue_number %}
+  <div class="right" class="prev_next">
+      {% if prev_issue %}
+          <a href="/gcd/issue/{{ prev_issue.id }}{{ extra }}?style={{ style }}">&lt; {% trans "Previous Issue" %}</a>
+      {% endif %} |
+      {% if next_issue %}
+          <a href="/gcd/issue/{{ next_issue.id }}{{ extra }}?style={{ style }}">{% trans "Next Issue" %} &gt;</a>
+      {% endif %}
+  </div>
+  {% endif %}
+  {% if page %}
+  <div class="right pagination">
+    {% if page.has_other_pages %}
+      {% if page.has_previous %}
+        <a href="?style={{ style }}&page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+      {% else %}
+        &lt; {% trans "Previous" %}
+      {% endif %}
+      |
+      {% for number in paginator.page_range %}
+        {% ifequal number page_number %}
+          {{ number }}
+        {% else %}
+          <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
+        {% endifequal %}
+        |
+      {% endfor %}
+      {% if page.has_next %}
+        <a href="{{ page_url }}?style={{ style }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+      {% else %}
+        {% trans "Next" %} &gt;
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

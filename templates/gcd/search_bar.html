@@ -1,0 +1,29 @@
+<div id="search_bar">
+  <form action="/gcd/search/" method="get">
+    <!-- <span class="logo">GCD</span> -->
+    <img src="{{ media_url }}/img/logo.gif" alt-text="GCD"/>
+    <b>Search for:</b>
+    <input type="text" name="query" size="15"> in
+    <select name="type" size="1">
+        <option value="writer"> Writer
+        <option value="penciller"> Penciller
+        <option value="inker"> Inker
+        <option value="editor"> Editor
+        <option value="letterer"> Letterer
+        <option value="colorist"> Colorist
+        <option value="credit"> Any credit
+        <option value="publisher"> Publisher
+        <option value="story"> Story title
+        <option value="series" selected> Comic Book title
+        <option value="character"> Character
+        <option value="job"> Job Number
+    </select>
+    Order by:
+    <select name="sort" size="1">
+        <option value="alpha" selected> Name
+        <option value="chrono"> Year
+    </select>
+    &nbsp;
+    <input type="submit" name="Submit" value="Search">
+  </form>
+</div>

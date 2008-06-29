@@ -1,0 +1,12 @@
+
+<form action="/gcd/issue/" method="get">
+  <select name="id" onChange="submit()">
+    <option value=""> --
+  {% for issue in series.issue_set.all %}
+    <option value="{{ issue.id }}">{{ issue.number }}
+  {% endfor %}
+  </select>
+  <input type="hidden" name="style" value="{{ style }}"/>
+  <input type="submit" value="View Issue"/>
+</form>
+

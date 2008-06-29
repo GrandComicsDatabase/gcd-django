@@ -1,0 +1,230 @@
+/* ***************************************
+ * issue.css
+ * CSS specific to the issue details page.
+ * ***************************************/
+
+/*
+ * Common elements
+ */
+
+.notes {
+    clear: left;
+}
+.notes p {
+    float: left;
+}
+
+dl {
+    float: left;
+    width: 100%;
+    margin-top: 0;
+}
+
+dt {
+    float: left;
+    padding-right: 0.25em;
+}
+
+dd {
+    float: left;
+    margin: 0 0.5em 0 0;
+}
+
+div#format {
+    margin-top: 0;
+    margin-bottom: 1em;
+    float: left;
+}
+
+#format_tag {
+    font-weight: bold;
+    float: left;
+}
+
+#format_data {
+    float: left;
+}
+
+
+.credit_header {
+    clear: both;
+}
+
+.content_header {
+    clear: both;
+}
+
+dl.contents dt {
+    clear: left;
+}
+
+dl.contents dd {
+    clear: left;
+    padding-bottom: 0.5em;
+}
+
+dl.contents dd.short {
+    clear: none;
+}
+
+hr {
+    clear: both;
+}
+
+.title {
+    font-style: italic;
+}
+
+
+/*
+ * Issue layout elements
+ */
+
+#issue_data {
+    float: left;
+    width: 100%;
+}
+
+#issue_data p {
+    margin-top: 0.4em;
+}
+
+#issue_data_list {
+    margin-top: 1em;
+    margin-bottom: 0;
+}
+
+#series_date {
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+#story_toc { /* right */
+    float: right;
+    font-size: x-small;
+    border: solid 1px;
+    width: 14em;
+    margin-bottom: 1em;
+}
+
+.toc_story_title {
+    font-style: italic;
+}
+
+#story_toc ol {
+    margin: 0;
+    padding: 0;
+    list-style-position: inside;
+}
+
+#story_toc ol li {
+    padding: 0.4em;
+}
+
+#story_toc ol li.odd {
+    background-color: #FFF;
+}
+#story_toc ol li.even {
+    background-color: #DDD;
+}
+
+#toc_header {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding: .4em;
+    background-color: #888;
+    color: white;
+}
+
+
+/*
+ * Cover layout elements
+ */
+
+#cover_links {
+    float: left;
+    clear: left;
+}
+
+#cover_disclaimer {
+    margin-bottom: 0.4em;
+}
+
+#cover_credits { /* center */
+    /* width: 250px; */
+    min-width: 20em;
+    margin-left: 10em;
+    margin-right: 14em;
+    margin-bottom: 1em;
+    /* max-width: 600px; */
+}
+
+#cover_float_fixer {
+    float: left;
+}
+
+#cover_credits h3.credit_header {
+    clear: none;
+}
+
+.cover_header {
+    margin-top: 0;
+}
+
+#cover_data {
+    float: left;
+}
+
+#cover {
+    float: left;
+    margin-right: 4px;
+    margin-bottom: 1em;
+}
+
+#cover img {
+    /* float: left; */
+    border: solid 1px;
+}
+
+#cover div {
+    width: 9em;
+    margin-right: 1em;
+}
+
+#cover dt {
+    clear: left;
+}
+
+#cover_disclaimer {
+    font-size: x-small;
+    color: #CCC;
+}
+
+#index_credits {
+    clear: both;
+}
+
+
+/*
+ * Story layout elements
+ */
+
+#story_data {
+    clear: both;
+    margin-bottom: 1em;
+}
+
+.single_story h2 {
+    font-size: large;
+    clear: both;
+}
+.single_story h3 {
+    font-size: medium;
+    clear: both;
+}
+
+.sequence_header {
+    background-color: #DDD;
+    padding: 0.2em;
+}
+

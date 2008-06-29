@@ -1,0 +1,236 @@
+body {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: small;
+}
+
+h1.item_id {
+    float: left;
+}
+
+.left {
+    float: left;
+}
+
+.right {
+    float: right;
+}
+
+h1 {
+    font-size: x-large;
+    clear: both;
+}
+
+dt {
+    font-weight: bold;
+}
+
+img .cover_img {
+    /* Used to make alt text more visible.  Better way to do this? */
+    color: white;
+    background-color: black;
+}
+
+
+/* Item ID stuff */
+
+.item_id {
+    /* ID of the primary subject of a given page. */
+    /* background-color: #DDD; */
+    /* padding-left/right must be in an absolute unit to get the right edges
+     * to line up due to the necessary 100% width which is itself due
+     * to needing to float things in order to implement float left/right.
+     */
+    padding: 0.2em 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    background-color: #444;
+    color: white;
+    border: solid 1px black;
+    font-weight: bold;
+    width: 100%;
+}
+
+.item_id :link {
+    color: white;
+}
+
+.item_id :visited {
+    color: white;
+}
+
+.item_id .left {
+    padding-left: 0.2em;
+}
+
+.item_id .right {
+    padding-right: 0.2em;
+}
+
+.item_id .pagination {
+    /* Margin to push it down to a similar baseline to the larger
+     * text on the left.  Must be a better/more reliable way to do this.
+     */
+    margin-top: 0.25em;
+    font-size: xx-small;
+}
+
+div.item_id {
+    background-color: #EEE;
+    color: black;
+    float: left;
+    clear: both;
+    border-top: none;
+}
+
+div.item_id :link {
+    color: black;
+}
+
+div.item_id :visited {
+    color: black;
+}
+
+div.item_id div.item_data {
+    float: left;
+}
+div.item_id div.prev_next {
+    padding-right: 0.2em;
+    float: right;
+}
+
+#search_bar {
+    background-color: #77E;
+    color: black;
+    margin-bottom: 1em;
+    vertical-align: center;
+    border: solid 1px;
+    width: 100%;
+}
+
+#search_bar form {
+    margin: 0;
+    padding: 0.6em;
+}
+
+#search_bar img {
+    font-weight: bold;
+    height: 2em;
+    position: relative;
+    top: 0.5em;
+    margin-top: -0.5em;
+}
+
+.fine_print {
+    margin-top: 1em;
+}
+
+/* Some of this goes down to cover.css, some is common.  TODO: Figure out. */
+
+table#covers {
+    margin: 1em 0;
+}
+
+table#covers td.marked {
+    background-color: #77E;
+}
+
+.no_cover {
+    border: solid 1px;
+}
+
+.cover_links {
+    font-size: x-small;
+}
+
+.cover_caption {
+    /* text-align: center; */
+    font-size: small;
+}
+
+.cover_number {
+    font-weight: bold;
+}
+
+.cover_grid {
+    text-align: center;
+    vertical-align: top;
+    width: 20%;
+}
+
+.cover_grid img {
+    border: solid 1px;
+    background-color: black;
+    color: black;
+}
+.cover_grid img :link {
+    color: black;
+}
+
+.cover_grid img :visited {
+    color: #666;
+}
+
+#cover_zoom {
+    text-align: center;
+}
+
+#cover_zoom img {
+    border: solid 1px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+#cover_zoom .cover_links {
+    font-size: small;
+    margin-bottom: 1em;
+}
+
+
+/* Listing table stuff */
+
+.listing {
+    clear: both;
+    border: solid black 1px;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+}
+
+.listing th {
+    text-align: left;
+    border: solid black 1px;
+    padding: .4em;
+    background-color: #888;
+    color: white;
+}
+
+.listing td {
+    font-size: small;
+    padding: .3em;
+    border-left: solid 1px;
+    border-right: solid 1px;
+}
+
+tr.listing_odd {
+    background-color: #FFF;
+}
+
+tr.listing_even {
+    background-color: #DDD;
+}
+
+/* Move to publisher.css when it's created. */
+dl.pub_data {
+    float: left;
+    margin-top: 1em;
+}
+
+dl.pub_data dt {
+    float: left;
+    clear: left;
+}
+
+dl.pub_data dd {
+    float: left;
+    padding: 0 0 0 0.5em;
+    margin: 0;
+}

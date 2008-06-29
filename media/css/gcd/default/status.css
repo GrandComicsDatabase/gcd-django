@@ -1,0 +1,45 @@
+/* ***************************************
+ * status.css
+ * CSS specific to the index status page.
+ * ***************************************/
+
+.status_0 {
+    background-color: white;
+}
+
+.status_1 {
+    background-color: #F93;
+}
+
+.status_2 {
+    background-color: #F39;
+}
+
+.status_3 {
+    /* background-color: #0B2; */
+    background-color: #6C6;
+}
+
+table#status {
+    background-color: black;
+    border-spacing: 1px;
+    border: solid 2px;
+    width: 50em;
+    font-size: x-small;
+    font-weight: bold;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+table#status td {
+    padding: .2em;
+}
+
+table#status :link {
+    color: black;
+}
+
+table#status :visited {
+    color: #666;
+}
+

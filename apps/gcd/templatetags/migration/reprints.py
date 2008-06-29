@@ -5,6 +5,9 @@ from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue,Story
 
+# TODO: Sort out reprint crosscall hackiness added when UI was rewritten.
+from apps.gcd.templatetags.credits import format_credit
+
 register = template.Library()
 
 # list checks we should/could do when we use this for the migration
@@ -33,21 +36,23 @@ def find_reprint_sequence_in_issue(from_story,to_issue):
     return -1
 
 
-def generate_reprint_link(from_story, to_issue, from_to):
+def generate_reprint_link(from_story, to_issue, from_to, style):
     ''' generate reprint link to_issue'''
     
     link = "<a href=\"/gcd/issue/"+str(to_issue.id)
     sequence = find_reprint_sequence_in_issue(from_story,to_issue.id)
     if (sequence >= 0):
-        link += "/#" + esc(sequence) +"\">"
+        link += "/#" + esc(sequence)
     else:
-        link += "/\">"
+        link += "/"
+    link += "?style=" + style + "&reprints=True\">"
+
     link += esc(from_to) + esc(to_issue.series.name) 
     link += " (" + esc(to_issue.series.publisher) + ", "
     link += esc(to_issue.series.year_began) + " series) #"
     link += esc(to_issue.number) + "</a>"
     link += " (" + esc(to_issue.publication_date) + ")"
-    return link
+    return '<li> ' + link + ' </li>'
     
 
 def parse_reprint_fr(reprints):
@@ -293,7 +298,7 @@ def parse_reprint(reprints, from_to):
         return Issue.objects.none()
 
 
-def show_reprint(story):
+def show_reprint(story, style):
     """ Filter for reprint line.  First step into database migration."""
     
     if story.reprints:
@@ -313,29 +318,34 @@ def show_reprint(story):
                         next_reprint = next_reprint.filter(id =
                                                 next_reprint[a[0]].id)
                 if next_reprint.count() == 1:
-                    if len(reprint) > 0:
-                        reprint += '\n'
-                    reprint += generate_reprint_link(story,next_reprint[0],from_to)
+                    # if len(reprint) > 0:
+                        # reprint += '\n'
+                    reprint += generate_reprint_link(story, next_reprint[0],
+                                                     from_to, style)
                     break
             if next_reprint.count() != 1:
                 next_reprint = parse_reprint_fr(string)
-                if len(reprint) > 0:
-                    reprint += '\n'
+                # if len(reprint) > 0:
+                    # reprint += '\n'
                 if next_reprint.count() > 1 and next_reprint.count() <= 15:
                     a = []
                     for i in range(next_reprint.count()):
                         nr = find_reprint_sequence_in_issue(story,
-                                                         next_reprint[i].id)
+                                                            next_reprint[i].id)
                         if (nr > 0):
                             a.append(i)
                     if len(a) == 1:
                         next_reprint = next_reprint.filter(id =
                                                 next_reprint[a[0]].id)
                 if next_reprint.count() == 1:
-                    reprint += generate_reprint_link(story,next_reprint[0],"from ")
+                    reprint += generate_reprint_link(story, next_reprint[0],
+                                                     "from ", style)
                 else:
-                    reprint += esc(string)
-        return mark_safe("<p><b>Reprinted:</b><br> " + reprint + "</p>")
+                    reprint += '<li> ' + esc(string) + ' </li>'
+
+        return mark_safe('<dt class="credit_tag">Reprints:</dt>' + \
+                         '<dd class="credit_def"><ul> ' + reprint + \
+                         '</ul></dd>')
     else:
         return ""
         

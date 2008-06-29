@@ -2,7 +2,8 @@ from django.db import models
 
 class Country(models.Model):
     code = models.CharField(max_length = 10, null = True)
-    country = models.CharField(max_length = 255, null = True)
+    name = models.CharField(db_column = 'country', max_length = 255,
+                            null = True)
     id = models.AutoField(primary_key = True, db_column = 'ID')
 
     class Meta:

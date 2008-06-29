@@ -1,107 +1,159 @@
+{% extends "gcd/base_view.html" %}
+
 {% load i18n %}
 {% load credits %}
-{% load reprints %}
+{% load migration.reprints %}
 
-<!-- NOTE: *** Various things filtered through |safe here are *NOT* safe.
-           *** Need to rework to allow tags we add but not tags from DB.
-  -->
-     
+{% block title %}
+  GCD :: Issue :: {{ issue.series.name }} #{{ issue.number }}
+{% endblock %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ media_url }}/css/gcd/{{ style }}/issue.css"/>
+{% endblock %}
+
+{% block view_body %}
+
 <div id="issue_data">
-<h1 id="issue">{{ issue.series.name }} #{{ issue.number }}</h1>
-<ul>
-  <li id="series_date">
-    {% blocktrans with issue.series.year_began as year %}
-      {{ year }} Series
-    {% endblocktrans %}
-  <li id="series_publisher"> {{ issue.series.publisher.name }}
-  <li id="issue_date"> {{ issue.publication_date }}
-  <li id="issue_price"> {% trans "coverprice" %} {{ issue.price }}
-  <!-- Need to put i18n'd "pages" in var so we can pluralize -->
-  <li id="issue_pages"> {{ cover_story.page_count }} {% trans "pages" %}
-  <li id="issue_format"> {{ issue.series.format }}
-  <li id="issue_editor"> Edited by {{ cover_story.editor }}
-</ul>
+{% comment %}
+  Can withs be condensed?  To tired to look it up right now.
+{% endcomment %}
+
+{% with issue.series as series %}
+{% with issue.number as issue_number %}
+  {% include "gcd/series_issue_header.html" %}
+{% endwith %}
+{% endwith %}
+
+<dl id="issue_data_list">
+  <dt> Price:
+  <dd id="issue_price"> {{ issue.price }}
+  <dt> {% trans "Pages" %}:
+  <dd id="issue_pages"> {{ cover_story.page_count }}
+  {{ cover_story|show_credit:"editor"|safe }}
+</dl>
+<!-- IE6 didn't like various attempts to get the sometimes very long
+     "Format" field to lay out nicely.  And even in Firefox it was
+     problematic to get it to act ideally.  So it's a specially styled
+     'div' instead of part of the 'dl'.
+  -->
+<div id="format">
+  <div id="format_tag">Format:&nbsp;</div>
+  <div id="format_data">{{ issue.series.format }}</div>
 </div>
+</div> <!-- issue_data -->
 
-<div id="cover_data">
-  {% if cover_story.feature or cover_story.title %}
-  <h2 class="sequence_header">
-    {% if cover_story.feature %}
-    <span class="feature">
-    {{ cover_story.feature }}</span>{% if cover_story.title %}:{% endif %}
-    {% endif %}
-    {% if cover_story.title %}
-    <span class="cover_title">{{ cover_story.title }}</span>
-    {% endif %}
-  </h2>
-  {% endif %}
+<div id="main"> <!-- extra -->
 
-  {{ image_tag|safe }} <!-- Note:  Need "Issue Cover (Small)" alt text -->
-  <div id="cover_links">Zoom: Medium Large</div>
-  <div id="cover_disclaimer">
-    Cover thumbnails are used for identification purposes only.
-    All rights reserved by the respective copyrightholder.
-  </div>
+  <div id="story_toc">
+    <h2 id="toc_header">Issue Contents</h2>
+    <ol>
+      {% for story in stories %}
+      <li class="{% cycle 'odd' 'even' %}">
+        {% if story.feature or story.title %}
+          <a href="#SEQ{{ story.sequence_number }}">
+          {% if story.feature %}
+          <span class="toc_story_feature">
+          {{ story.feature}}</span>{% if story.title %}:{% endif %}
+          {% endif %}
+          {% if story.title %}
+          <span class="toc_story_title">{{ story.title }}</span>
+          {% endif %}
+          </a>
+        {% else %}
+          <a href="#SEQ{{ story.sequence_number }}"><span
+                  class="toc_story_title">[* no feature or title given *]</span></a>
+        {% endif %}
+      {% endfor %}
+    </ol>
+  </div> <!-- story_toc, a.k.a "right" -->
 
-  <h3 class="credit_header"> Cover Credits </h3>
-  <dl class="credits">
-    {{ cover_story|show_credit:"script"|safe }}
-    {{ cover_story|show_credit:"pencils"|safe }}
-    {{ cover_story|show_credit:"inks"|safe }}
-    {{ cover_story|show_credit:"colors"|safe }}
-    {{ cover_story|show_credit:"letter"|safe }}
-    {{ cover_story|show_credit:"job_number"|safe }}
-  </dl>
+  <div id="cover">
+    {{ image_tag|safe }}
+    <!-- There must not be a space around the '&nbsp;'s in this div
+         or else two spaces (one breaking and one non) will be shown.
+         The '&nbsp;'s are needed to prevent the line from wrapping
+         at the default font size due to the width of the containing
+         div.  Which must be specified in order for the 3-column bit
+         to work.  There may be a better way to do all of this.
+      -->
+    <div class="cover_links">Zoom:&nbsp;<a href="/gcd/issue/{{ issue.id }}/cover/2/?style={{ style }}">Medium</a>&nbsp;<a href="/gcd/issue/{{ issue.id }}/cover/4/?style={{ style }}">Large</a>
+      <br>
+      <a href="/gcd/series/{{ issue.series.id }}/covers/?style={{ style }}">Series Covers</a>
+    </div>
+  </div> <!-- cover -->
 
-  </dl>
-  <h3 class="content_header"> Content Information </h3>
-  <dl class="contents">
-    {{ cover_story|show_credit:"genre"|safe }}
-    {{ cover_story|show_credit:"characters"|safe|linebreaksbr }}
-    {{ cover_story|show_reprint|safe|linebreaksbr }}
-  </dl>
-
-  {% if cover_story.notes %}
-    <h3 class="notes"> Indexer Notes </h3>
-    <p>{{ cover_story.notes|linebreaksbr }}</p>
-  {% endif %}
-</div>
-
-{% if issue.series.indexers %}
-<div id="index_credits">
-<h3 id="indexers_header">Issues in this series have been indexed by:</h3>
-<!-- TODO: proper indexer credits -->
-<ul>
-    <li> {{ issue.series.indexers }}
-</ul>
-</div>
-{% endif %}
-
-<div id="story_toc">
-<h2 id="toc_header">Issue Contents</h2>
-<ol>
-  {% for story in stories %}
-  <li>
-    {% if story.feature or story.title %}
-      <a href="#SEQ{{ story.sequence_number }}">
-      {% if story.feature %}
-      <span class="toc_story_feature">
-      {{ story.feature}}</span>{% if story.title %}:{% endif %}
+  <div id="cover_credits">
+    <div id="cover_float_fixer">
+    {% if cover_story.feature or cover_story.title %}
+    <h2 class="cover_header">
+      {% if cover_story.feature %}
+      <span class="feature">
+      {{ cover_story.feature }}</span>{% if cover_story.title %}:{% endif %}
       {% endif %}
-      {% if story.title %}
-      <span class="toc_story_title">{{ story.title }}</span>
+      {% if cover_story.title %}
+      <span class="title">{{ cover_story.title }}</span>
       {% endif %}
-      </a>
+    </h2>
+    {% else %}
+      <h2 class="cover_header">
+        <span class="title">[* no cover feature or title given *]</span>
+      </h2>
     {% endif %}
-  {% endfor %}
-</ol>
-</div>
+
+    <h3 class="credit_header"> Cover Credits </h3>
+    <dl class="credits">
+      {{ cover_story|show_credit:"script"|safe }}
+      {{ cover_story|show_credit:"pencils"|safe }}
+      {{ cover_story|show_credit:"inks"|safe }}
+      {{ cover_story|show_credit:"colors"|safe }}
+      {{ cover_story|show_credit:"letters"|safe }}
+      {{ cover_story|show_credit:"job_number"|safe }}
+    </dl>
+
+    {% if cover_story.genre or cover_story.characters or cover_story.synopsis or cover_story.reprints %}
+      <h3 class="content_header"> Cover Information </h3>
+      <dl class="contents">
+        {{ cover_story|show_credit:"genre"|safe }}
+        {{ cover_story|show_credit:"characters"|safe|linebreaksbr }}
+        {{ cover_story|show_credit:"synopsis"|safe|linebreaksbr }}
+        {% if linkify_reprints %}
+          {{ cover_story|show_reprint:style|safe|linebreaksbr }}
+        {% else %}
+          {{ cover_story|show_credit:"reprints"|safe|linebreaksbr }}
+        {% endif %}
+      </dl>
+    {% endif %}
+
+    {% if cover_story.notes %}
+      <h3 class="notes"> Indexer Notes </h3>
+      <p>{{ cover_story.notes|linebreaksbr }}</p>
+    {% endif %}
+
+    {% if issue.series.indexers %}
+    <div id="index_credits">
+      <h3 id="indexers_header">{% trans "Issues in this series have been indexed by:" %}</h3>
+      <ul>
+        {% for credit in issue.series.index_credit_set.all.select_related %}
+          <li> {{ credit.indexer.name }}
+        {% endfor %}
+      </ul>
+    </div> <!-- index_credits -->
+    {% endif %}
+    </div> <!-- cover_float_fixer -->
+  </div> <!-- cover_credits -->
+
+</div> <!-- main -->
+
 
 <div id="story_data">
   {% for story in stories %}
     <a name="SEQ{{ story.sequence_number }}"/><hr/></a>
-    <div class="{{ story.type|lower }}">
-      {% if cover_story.feature or cover_story.title %}
+    <div class="single_story {% if story.type %}{{ story.type|lower }}{% endif %}">
+      {% if story.feature or story.title %}
       <h2 class="sequence_header">
         {% if story.feature %}
         <span class="feature">
@@ -111,37 +163,50 @@
         <span class="title">{{ story.title }}</span>
         {% endif %}
       </h2>
+      {% else %}
+      <h2 class="sequence_header">
+        <span class="title">[* no feature or title given *]</span>
+      </h2>
       {% endif %}
-      <p>(Sequence {{ story.sequence_number }} -
-          {{ story.type }}, {{ story.page_count }}
-          {{ "pages"|pluralize:story.page_count }})</p>
+      <p>(Sequence {{ story.sequence_number }}{% if story.type %}
+          - {{ story.type }}{% endif %}{% if story.page_count %},
+          {{ story.page_count }} {% trans "pages" %}{% endif %})</p>
 
+      {% if story.script or story.pencils or story.inks or story.colors or story.letters or story.editor or story.job_number %}
       <h3 class"credit_header"> Credits </h3>
       <dl class="credits">
         {{ story|show_credit:"script"|safe }}
         {{ story|show_credit:"pencils"|safe }}
         {{ story|show_credit:"inks"|safe }}
         {{ story|show_credit:"colors"|safe }}
-        {{ story|show_credit:"letter"|safe }}
+        {{ story|show_credit:"letters"|safe }}
         {{ story|show_credit:"editor"|safe }}
         {{ story|show_credit:"job_number"|safe }}
       </dl>
+      {% endif %}
 
-      <h3 class="content_header"> Content Information </h3>
-      <dl class="contents">
-        {{ story|show_credit:"genre"|safe }}
-        {{ story|show_credit:"characters"|safe|linebreaksbr }}
-        {{ story|show_credit:"synopsis"|safe|linebreaksbr }}
-        {{ story|show_reprint|safe|linebreaksbr }}
-      </dl>
+      {% if story.genre or story.characters or story.synopsis or story.reprints %}
+        <h3 class="content_header"> Content Information </h3>
+        <dl class="contents">
+          {{ story|show_credit:"genre,short"|safe }}
+          {{ story|show_credit:"characters"|safe|linebreaksbr }}
+          {{ story|show_credit:"synopsis"|safe|linebreaksbr }}
+          {% if linkify_reprints %}
+            {{ story|show_reprint:style|safe|linebreaksbr }}
+          {% else %}
+            {{ story|show_credit:"reprints"|safe|linebreaksbr }}
+          {% endif %}
+        </dl>
+      {% endif %}
 
       {% if story.notes %}
         <h3 class="notes_header"> Indexer Notes </h3>
-        {{ story.notes|linebreaksbr }}
+        <p>{{ story.notes|linebreaksbr }}</p>
       {% endif %}
+
     </div>
   {% endfor %}
   <hr/>
 </div>
 
-
+{% endblock %}

@@ -17,4 +17,8 @@ def index(request):
     return render_to_response('index.html', vars)
       
 
+def prototype(request, name):
+    """Load a template (really a static page) for a UI prototype."""
+    return render_to_response('new/' + name + '.html',
+                              { 'media_url' : settings.MEDIA_URL })
 

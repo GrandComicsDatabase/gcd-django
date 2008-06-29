@@ -1,0 +1,108 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+{% load reprints %}
+
+{% block title %} GCD :: Series :: {{ series.name }} {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}/series.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}/status.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% include "gcd/series_issue_header.html" %}
+<div class="clear">
+<div id="series_cover">
+  {{ image_tag|safe }}
+<p>
+<a href="/gcd/series/{{ series.id }}/covers/?style={{ style }}">See cover gallery</a>
+</p>
+{% include "gcd/series_form.html" %}
+</div>
+
+<div id="series_data">
+<dl>
+  {% if series.publication_dates %}
+  <dt> Publication Dates:
+  <dd id="publication_dates"> {{ series.publication_dates }}
+  {% endif %}
+  {% if series.first_issue %}
+  <dt> Issues Published:
+  <dd id="issues_published"> {{ series.first_issue }}-{{ series.last_issue }}
+  {% endif %}
+
+  {% if country %}
+  <dt> Country:
+  <dd id="publication_country"> {{ country }}
+  {% endif %}
+  {% if language %}
+  <dt> Language:
+  <dd id="publication_language"> {{ language }}
+  {% endif %}
+  {% if series.format %}
+  <dt class="long"> Format:
+  <dd id="series_format"> {{ series.format }}
+  {% endif %}
+  <dt> GCD ID:
+  <dd class="series_id"> {{ series.id }}
+</dl>
+
+<div id="series_notes">
+  {% if series.publication_notes %}
+    <h3 class="series_notes"> Publication Notes </h3>
+    <p> {{ series.publication_notes|linebreaksbr }}</p>
+  {% endif %}
+  
+  {% if series.tracking_notes %}
+    <h3 class="series_notes"> Tracking </h3>
+    <p>{{ series.tracking_notes|linebreaksbr }}</p>
+  {% endif %}
+  
+  {% if series.notes %}
+    <h3 class="series_notes"> Title Notes </h3>
+    <p>{{ series.notes|linebreaksbr }}</p>
+  {% endif %}
+</div> <!-- series_notes -->
+
+{% if series.indexers %}
+  <div id="index_credits">
+    <h3 id="indexers_header">{% trans "Indexed by:" %}</h3>
+    <ul>
+      {% for credit in series.index_credit_set.all %}
+        <li> {{ credit.indexer.name }}
+      {% endfor %}
+    </ul>
+  </div> <!-- index_credits -->
+{% endif %}
+</div> <!-- series_data -->
+</div> <!-- class="clear" -->
+
+<hr/>
+
+<table id="status">
+  <tr>
+  {% for issue in series.issue_set.all %}
+    <td class="status_{{ issue.index_status }}">
+      <a href="/gcd/issue/{{ issue.id }}/?style={{ style }}">{{ issue.number }}</a> </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+      {% if not forloop.last %}
+  <tr>
+      {% endif %}
+    {% else %}
+      {% if forloop.last %}
+  </tr>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+</table>
+
+{% endblock %}
+
