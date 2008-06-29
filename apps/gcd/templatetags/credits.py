@@ -27,11 +27,11 @@ def show_credit(story, credit):
         credit_string = ''
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editor']:
             if story.__dict__[c].find(target) != -1:
-              credit_string += ' ' + format_credit(story, c, style)
+              credit_string += ' ' + __format_credit(story, c, style)
         return credit_string
 
     elif story.__dict__.has_key(credit):
-        return format_credit(story, credit, style)
+        return __format_credit(story, credit, style)
 
     else:
         return ""
@@ -43,7 +43,7 @@ def __credit_visible(value):
     return value and value.lower != 'none'
 
 
-def format_credit(story, credit, style):
+def __format_credit(story, credit, style):
     credit_value = story.__dict__[credit]
     if not __credit_visible(credit_value):
         return ''
