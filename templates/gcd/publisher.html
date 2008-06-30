@@ -59,6 +59,7 @@
 <table class="listing">
   <tr>
     <th> Title </th>
+    <th> Year </th>
     <th> Issues </th>
     <th> Scans </th>
     <th> Cover Gallery </th>
@@ -66,6 +67,7 @@
 {% for series in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="/gcd/series/{{ series.id }}/?style={{ style }}">{{ series.name }}</a> </td>
+    <td> {{ series.year_began }}
     <td> <a href="/gcd/series/{{ series.id }}/status/?style={{ style }}">{{ series.issue_set.count }}</a> </td>
     <td> <a href="/gcd/series/{{ series.id }}/scans/?style={{ style }}">{{ series.scan_count }}</a> </td>
     <td> <a href="/gcd/series/{{ series.id }}/covers/?style={{ style }}">Cover Gallery</a> </td>
