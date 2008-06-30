@@ -214,7 +214,7 @@ def get_prev_next_issue(series, issue):
         except IndexError:
             next_issue = None
 
-        return [prev_issue, next_issue]
+    return [prev_issue, next_issue]
 
 def issue(request, issue_id):
     """Display the issue details page, including story details."""
