@@ -3,10 +3,13 @@
 <title>{% block title %}{% endblock %}</title>
 <link rel="stylesheet" type="text/css"
       href="{{ media_url }}/css/gcd.css"/>
-
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/default.css"/>
 </head>
 <body>
+<div id="sizing_base">
 {% block body %}{% endblock %}
+</div>
 <p>
 <hr>
 <p>

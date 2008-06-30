@@ -1,15 +1,10 @@
 body {
     font-family: Verdana, Arial, Helvetica, sans-serif;
-    font-size: small;
+    font-size: 100%;
 }
 
-h1.item_id {
-    float: left;
-}
-
-hr {
-    width: 100%;
-    clear: both;
+#sizing_base {
+    font-size: 0.8em;
 }
 
 .left {
@@ -21,12 +16,29 @@ hr {
 }
 
 h1 {
-    font-size: x-large;
+    font-size: 2em;
+    clear: both;
+}
+
+h2 {
+    font-size: 1.5em;
+}
+
+h3 {
+    font-size: 1.25em;
+}
+
+hr {
+    width: 100%;
     clear: both;
 }
 
 dt {
     font-weight: bold;
+}
+
+h1.item_id {
+    float: left;
 }
 
 img .cover_img {
@@ -76,7 +88,7 @@ img .cover_img {
      * text on the left.  Must be a better/more reliable way to do this.
      */
     margin-top: 0.25em;
-    font-size: xx-small;
+    font-size: 0.75em;
 }
 
 div.item_id {
@@ -145,12 +157,12 @@ table#covers td.marked {
 }
 
 .cover_links {
-    font-size: x-small;
+    font-size: 0.7em;
 }
 
 .cover_caption {
     /* text-align: center; */
-    font-size: small;
+    font-size: 0.75em;
 }
 
 .cover_number {
@@ -187,7 +199,7 @@ table#covers td.marked {
 }
 
 #cover_zoom .cover_links {
-    font-size: small;
+    font-size: 1em;
     margin-bottom: 1em;
 }
 
@@ -199,6 +211,7 @@ table#covers td.marked {
     border: solid black 1px;
     border-collapse: collapse;
     margin-bottom: 1em;
+    width: 100%;
 }
 
 .listing th {
@@ -210,7 +223,7 @@ table#covers td.marked {
 }
 
 .listing td {
-    font-size: small;
+    font-size: .75em;
     padding: .3em;
     border-left: solid 1px;
     border-right: solid 1px;

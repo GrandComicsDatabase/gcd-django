@@ -97,7 +97,7 @@ dl.contents dd.short {
 
 #story_toc { /* right */
     float: right;
-    font-size: x-small;
+    font-size: 0.85em;
     border: solid 1px;
     width: 14em;
     margin-bottom: 1em;
@@ -129,7 +129,6 @@ dl.contents dd.short {
     margin-bottom: 0;
     padding: .4em;
     background-color: #888;
-    color: white;
 }
 
 
@@ -137,9 +136,10 @@ dl.contents dd.short {
  * Cover layout elements
  */
 
-#cover_links {
+.issue_cover_links {
     float: left;
     clear: left;
+    font-size: 0.75em;
 }
 
 #cover_disclaimer {
@@ -173,7 +173,7 @@ dl.contents dd.short {
 
 #cover {
     float: left;
-    margin-right: 4px;
+    width: 10em;
     margin-bottom: 1em;
 }
 
@@ -192,7 +192,7 @@ dl.contents dd.short {
 }
 
 #cover_disclaimer {
-    font-size: x-small;
+    font-size: 0.75em;
     color: #CCC;
 }
 
@@ -211,11 +211,9 @@ dl.contents dd.short {
 }
 
 .single_story h2 {
-    font-size: large;
     clear: both;
 }
 .single_story h3 {
-    font-size: medium;
     clear: both;
 }
 

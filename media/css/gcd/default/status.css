@@ -20,7 +20,7 @@
     background-color: #6C6;
 }
 
-/* Note that this table has border="1" specified in
+/* Note that these tables have border="1" specified in
  * the HTML source to allow user agents such as elinks
  * to render a border.  Which means the CSS related to
  * the table border may behave a little differently.
@@ -31,7 +31,7 @@ table.status {
     border-spacing: 0px;
     border: solid black;
     width: 50em;
-    font-size: x-small;
+    font-size: 0.85em;
     font-weight: bold;
     margin-top: 1em;
     margin-bottom: 1em;
