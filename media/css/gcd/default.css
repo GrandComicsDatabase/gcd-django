@@ -7,6 +7,11 @@ h1.item_id {
     float: left;
 }
 
+hr {
+    width: 100%;
+    clear: both;
+}
+
 .left {
     float: left;
 }

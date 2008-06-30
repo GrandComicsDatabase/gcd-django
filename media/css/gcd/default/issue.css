@@ -67,10 +67,6 @@ dl.contents dd.short {
     clear: none;
 }
 
-hr {
-    clear: both;
-}
-
 .title {
     font-style: italic;
 }
