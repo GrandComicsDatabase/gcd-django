@@ -8,11 +8,11 @@
 }
 
 .status_1 {
-    background-color: #F93;
+    background-color: #F30;
 }
 
 .status_2 {
-    background-color: #F39;
+    background-color: #F93;
 }
 
 .status_3 {
@@ -20,10 +20,16 @@
     background-color: #6C6;
 }
 
-table#status {
+/* Note that this table has border="1" specified in
+ * the HTML source to allow user agents such as elinks
+ * to render a border.  Which means the CSS related to
+ * the table border may behave a little differently.
+ */
+table.status {
     background-color: black;
-    border-spacing: 1px;
-    border: solid 2px;
+    border-collapse: collapse;
+    border-spacing: 0px;
+    border: solid black;
     width: 50em;
     font-size: x-small;
     font-weight: bold;
@@ -31,15 +37,26 @@ table#status {
     margin-bottom: 1em;
 }
 
-table#status td {
-    padding: .2em;
+table#status_key {
+    font-weight: normal;
 }
 
-table#status :link {
+table.status td {
+    padding: .2em;
+    border: solid black 1px;
+}
+
+table.status :link {
     color: black;
 }
 
-table#status :visited {
+table.status :visited {
     color: #666;
 }
 
+/* spacers are used in a few places where spacing is normally
+ * controlled by CSS but non-CSS browsers need a bit of help.
+ */
+p.spacer {
+    margin: 0;
+}

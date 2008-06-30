@@ -86,23 +86,9 @@
 
 <hr/>
 
-<table id="status">
-  <tr>
-  {% for issue in series.issue_set.all %}
-    <td class="status_{{ issue.index_status }}">
-      <a href="/gcd/issue/{{ issue.id }}/?style={{ style }}">{{ issue.number }}</a> </td>
-    {% if forloop.counter|divisibleby:table_width %}
-  </tr>
-      {% if not forloop.last %}
-  <tr>
-      {% endif %}
-    {% else %}
-      {% if forloop.last %}
-  </tr>
-      {% endif %}
-    {% endif %}
-  {% endfor %}
-</table>
+<h3> Index Status </h3>
+
+{% include "gcd/status_tables.html" %}
 
 {% endblock %}
 

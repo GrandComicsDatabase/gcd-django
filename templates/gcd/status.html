@@ -22,19 +22,6 @@
   <a href="/gcd/series/{{ series.id }}/covers/?style={{ style}}">Cover Gallery</a>
 </div>
 
-<table id="status">
-  <tr>
-  {% for issue in series.issue_set.all %}
-    <td class="status_{{ issue.index_status }}">
-      <a href="/gcd/issue/{{ issue.id }}/?style={{ style }}">{{ issue.number }}</a> </td>
-    {% if forloop.counter|divisibleby:table_width %}
-  </tr>
-  <tr>
-    {% endif %}
-  {% endfor %}
-  </tr>
-</table>
-
-<hr/>
+{% include "gcd/status_tables.html" %}
 
 {% endblock %}
