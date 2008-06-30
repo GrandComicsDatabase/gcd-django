@@ -74,11 +74,14 @@ def series(request, series_id):
                               alt_text = 'First Issue Cover')
 
     # TODO: Fix language table hookup- why is this not a foreign key?
-    language = Language.objects.get(code__iexact = series.language_code)
-    if language:
-        language = language.name
-    else:
-        language = series.language_code
+    # For now if we can't get a match in the table then just use the
+    # code as itis.
+    language = series.language_code
+    try:
+        lobj = Language.objects.get(code__iexact = series.language_code)
+        language = lobj.name
+    except:
+        pass
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12

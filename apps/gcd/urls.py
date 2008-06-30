@@ -102,6 +102,11 @@ urlpatterns = patterns('',
     (r'^gcd/story/name/(?P<title>.+)/$',
      'apps.gcd.views.search.story_by_title'),
 
+    (r'^gcd/feature/name/(?P<feature>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.story_by_feature'),
+    (r'^gcd/feature/name/(?P<feature>.+)/$',
+     'apps.gcd.views.search.story_by_feature'),
+
     (r'^gcd/credit/name/(?P<name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_credit'),
     (r'^gcd/credit/name/(?P<name>.+)/$',
