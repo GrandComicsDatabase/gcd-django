@@ -1,20 +1,18 @@
 from django.conf import settings
 from django.shortcuts import render_to_response
 
-from apps.gcd.models import Issue
-
-# Maximum number of recently modified issues to display.
-MAX = 6
-
 def index(request):
     """Generates the front index page."""
-    latest_updated_indexes = \
-      Issue.objects.all().order_by('-modified', '-modification_time')[:MAX]
+
+    style = 'default'
+    if request.GET.has_key('style'):
+        style = request.GET['style']
+
     vars = {
-        'latest_updated_indexes' : latest_updated_indexes,
+        'style' : style,
         'media_url' : settings.MEDIA_URL,
     }
-    return render_to_response('index.html', vars)
+    return render_to_response('gcd/index.html', vars)
       
 
 def prototype(request, name):

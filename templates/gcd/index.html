@@ -1,0 +1,27 @@
+<html>
+<head>
+  <title> Grand Comic-Book Database </title>
+  <link rel="stylesheet" type="text/css"
+        href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+</head>
+
+<body>
+
+{% include "gcd/search_bar.html" %}
+
+<p>
+<a href="/gcd/search/advanced/">Advanced Search</a>
+</p>
+
+<p>
+This is a placeholder front page.  It is not, nor is it intended to be,
+particularly interesting.  If searching for things in the GCD does not
+intereste you, perhaps you might like some
+<a href="http://maelstrom.walton.uark.edu/wiki/Main_Page">documentation</a>.
+
+<hr/>
+
+{% include "gcd/fine_print.html" %}
+
+</body>
+</html>
