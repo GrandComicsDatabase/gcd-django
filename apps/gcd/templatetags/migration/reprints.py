@@ -108,7 +108,7 @@ def parse_reprint_fr(reprints):
     return results
 
 
-def parse_reprint(reprints, from_to):
+def parse_reprint_full(reprints, from_to):
     """ parse a reprint entry, first for our standard, them some for
     other common version.  We may turn the others off or add even more. ;-)"""
     notes = None
@@ -295,7 +295,7 @@ def parse_reprint(reprints, from_to):
         return Issue.objects.none()
 
 
-def show_reprint(story, style):
+def show_reprint_full(story, style):
     """ Filter for reprint line.  First step into database migration."""
     
     if story.reprints:
@@ -303,7 +303,7 @@ def show_reprint(story, style):
         for string in story.reprints.split(';'):
             string = string.strip()
             for from_to in ("from ","in ",""):
-                next_reprint = parse_reprint(string, from_to)
+                next_reprint = parse_reprint_full(string, from_to)
                 if next_reprint.count() > 1 and next_reprint.count() <= 15:
                     a = []
                     for i in range(next_reprint.count()):
@@ -346,4 +346,92 @@ def show_reprint(story, style):
     else:
         return ""
         
+
+def parse_reprint(reprints, from_to):
+    """ parse a reprint entry for our standard """
+    notes = None
+    
+    if reprints.lower().startswith(from_to):
+        try:# our preferred format: seriesname (publisher, year <series>) #nr
+            position = reprints.find(' (')
+            series = reprints[len(from_to):position].strip().strip("The ").strip("the ")
+            string = reprints[position+2:]
+            after_series = string # use in other formats
+            #print series 
+            position = string.find(', ')
+            publisher = string[:position].strip()
+            #print publisher
+            position+=2
+            string = string[position:]
+            year = string[:4]
+            #print year
+            string = string[4:]
+            position = string.find(' #')+2
+            string = string[position:]
+            position = string.find(' [') #check for notes
+            if position > 0:
+                position_end = string.find(']')
+                if position_end > position:
+                    notes = string[position:position_end+1]
+                date_pos = string.find(' (') #check for (date)
+                if date_pos > 0 and date_pos < position:
+                    position = date_pos
+            else:
+                position = string.find(' (') #check for (date)
+                if position > 0: #if found ignore later
+                    pass
+                else:
+                    #allow #nr date without ( ) only 
+                    #if there is a number before the space
+                    position = string.find(' ') 
+                    if position > 0:
+                        if string[:position].isdigit():
+                            pass
+                        else:
+                            position = 0
+            if string.isdigit(): #in this case we are fine
+                number = string
+            else:
+                if position > 0:
+                    number = string[:position].strip()
+                else:
+                    number = string.strip().strip('.')
+            #print number
+            results = Issue.objects.all()
+            results = results.filter(series__name__icontains = series)
+            results = results.filter(series__publisher__name__icontains 
+            = publisher)
+            results = results.filter(series__year_began__exact = int(year))
+            results = results.filter(number__exact = number)
+        except:
+            pass
+        
+        return results
+    else:
+        return Issue.objects.none()
+
+
+def show_reprint(story, style):
+    """ Filter for our reprint line."""
+    
+    if story.reprints:
+        reprint = ""
+        for string in story.reprints.split(';'):
+            string = string.strip()
+            for from_to in ("from ","in "):
+                next_reprint = parse_reprint(string, from_to)
+                if next_reprint.count() == 1:
+                    reprint += generate_reprint_link(story, next_reprint[0],
+                                                     from_to, style)
+                    break
+            if next_reprint.count() != 1:
+                reprint += '<li> ' + esc(string) + ' </li>'
+
+        return mark_safe('<dt class="credit_tag">Reprints:</dt>' + \
+                         '<dd class="credit_def"><ul> ' + reprint + \
+                         '</ul></dd>')
+    else:
+        return ""
+
 register.filter(show_reprint)
+register.filter(show_reprint_full)
