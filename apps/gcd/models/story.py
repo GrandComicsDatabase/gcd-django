@@ -92,6 +92,28 @@ class Story(models.Model):
     # Not sure about this one.  May have to do with file dists?
     last_change = models.DateField(db_column = 'LstChang', null = True)
 
+    def has_credits(self):
+        """Simplifies UI checks for conditionals.  Credit fields.
+        Note that the editor field does not apply to the special cover story."""
+        return self.script or \
+               self.pencils or \
+               self.inks or \
+               self.colors or \
+               self.letters or \
+               (self.editor and (self.sequence_number > 0)) or \
+               self.job_number
+
+    def has_content(self):
+        """Simplifies UI checks for conditionals.  Content fields"""
+        return self.genre or \
+               self.characters or \
+               self.synopsis or \
+               self.reprints
+
+    def has_data(self):
+        """Simplifies UI checks for conditionals.  All non-heading fields"""
+        return self.has_credits() or self.has_content() or self.notes
+
     def __unicode__(self):
         return self.feature + "(" + self.type + ":" + self.page_count + ")"
 

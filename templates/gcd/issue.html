@@ -80,7 +80,7 @@
          div.  Which must be specified in order for the 3-column bit
          to work.  There may be a better way to do all of this.
       -->
-    <div class="issue_cover_links">Zoom:&nbsp;<a href="/gcd/issue/{{ issue.id }}/cover/2/?style={{ style }}">Medium</a>&nbsp;<a href="/gcd/issue/{{ issue.id }}/cover/4/?style={{ style }}">Large</a>
+    <div class="issue_cover_links">View: <a href="/gcd/issue/{{ issue.id }}/cover/2/?style={{ style }}">Medium</a> <a href="/gcd/issue/{{ issue.id }}/cover/4/?style={{ style }}">Large</a>
       <br>
       <a href="/gcd/series/{{ issue.series.id }}/covers/?style={{ style }}">Series Covers</a>
     </div>
@@ -88,50 +88,12 @@
 
   <div id="cover_credits">
     <div id="cover_float_fixer">
-    {% if cover_story.feature or cover_story.title %}
-    <h2 class="cover_header">
-      {% if cover_story.feature %}
-      <span class="feature">
-      {{ cover_story.feature }}</span>{% if cover_story.title %}:{% endif %}
-      {% endif %}
-      {% if cover_story.title %}
-      <span class="title">{{ cover_story.title }}</span>
-      {% endif %}
-    </h2>
-    {% else %}
-      <h2 class="cover_header">
-        <span class="title">[* no cover feature or title given *]</span>
-      </h2>
-    {% endif %}
 
-    <h3 class="credit_header"> Cover Credits </h3>
-    <dl class="credits">
-      {{ cover_story|show_credit:"script"|safe }}
-      {{ cover_story|show_credit:"pencils"|safe }}
-      {{ cover_story|show_credit:"inks"|safe }}
-      {{ cover_story|show_credit:"colors"|safe }}
-      {{ cover_story|show_credit:"letters"|safe }}
-      {{ cover_story|show_credit:"job_number"|safe }}
-    </dl>
-
-    {% if cover_story.genre or cover_story.characters or cover_story.synopsis or cover_story.reprints %}
-      <h3 class="content_header"> Cover Information </h3>
-      <dl class="contents">
-        {{ cover_story|show_credit:"genre"|safe }}
-        {{ cover_story|show_credit:"characters"|safe|linebreaksbr }}
-        {{ cover_story|show_credit:"synopsis"|safe|linebreaksbr }}
-        {% if linkify_reprints %}
-          {{ cover_story|show_reprint_full:style|safe|linebreaksbr }}
-        {% else %}
-          {{ cover_story|show_credit:"reprints"|safe|linebreaksbr }}
-        {% endif %}
-      </dl>
-    {% endif %}
-
-    {% if cover_story.notes %}
-      <h3 class="notes"> Indexer Notes </h3>
-      <p>{{ cover_story.notes|linebreaksbr }}</p>
-    {% endif %}
+    {% with cover_story as story %}
+    {% with 1 as is_cover %}
+      {% include "gcd/single_story.html" %}
+    {% endwith %}
+    {% endwith %}
 
     {% if issue.series.indexers %}
     <div id="index_credits">
@@ -151,62 +113,10 @@
 
 <div id="story_data">
   {% for story in stories %}
-    <a name="SEQ{{ story.sequence_number }}"/><hr/></a>
-    <div class="single_story {% if story.type %}{{ story.type|lower }}{% endif %}">
-      {% if story.feature or story.title %}
-      <h2 class="sequence_header">
-        {% if story.feature %}
-        <span class="feature">
-        {{ story.feature }}</span>{% if story.title %}:{% endif %}
-        {% endif %}
-        {% if story.title %}
-        <span class="title">{{ story.title }}</span>
-        {% endif %}
-      </h2>
-      {% else %}
-      <h2 class="sequence_header">
-        <span class="title">[* no feature or title given *]</span>
-      </h2>
-      {% endif %}
-      <p>(Sequence {{ story.sequence_number }}{% if story.type %}
-          - {{ story.type }}{% endif %}{% if story.page_count %},
-          {{ story.page_count }} {% trans "pages" %}{% endif %})</p>
-
-      {% if story.script or story.pencils or story.inks or story.colors or story.letters or story.editor or story.job_number %}
-      <h3 class"credit_header"> Credits </h3>
-      <dl class="credits">
-        {{ story|show_credit:"script"|safe }}
-        {{ story|show_credit:"pencils"|safe }}
-        {{ story|show_credit:"inks"|safe }}
-        {{ story|show_credit:"colors"|safe }}
-        {{ story|show_credit:"letters"|safe }}
-        {{ story|show_credit:"editor"|safe }}
-        {{ story|show_credit:"job_number"|safe }}
-      </dl>
-      {% endif %}
-
-      {% if story.genre or story.characters or story.synopsis or story.reprints %}
-        <h3 class="content_header"> Content Information </h3>
-        <dl class="contents">
-          {{ story|show_credit:"genre,short"|safe }}
-          {{ story|show_credit:"characters"|safe|linebreaksbr }}
-          {{ story|show_credit:"synopsis"|safe|linebreaksbr }}
-          {% if linkify_reprints %}
-            {{ story|show_reprint_full:style|safe|linebreaksbr }}
-          {% else %}
-            {{ story|show_credit:"reprints"|safe|linebreaksbr }}
-          {% endif %}
-        </dl>
-      {% endif %}
-
-      {% if story.notes %}
-        <h3 class="notes_header"> Indexer Notes </h3>
-        <p>{{ story.notes|linebreaksbr }}</p>
-      {% endif %}
-
-    </div>
+    <a name="SEQ{{ story.sequence_number }}"/><hr class="divider"/></a>
+    {% include "gcd/single_story.html" %}
   {% endfor %}
-  <hr/>
+  <hr class="divider"/>
 </div>
 
 {% endblock %}

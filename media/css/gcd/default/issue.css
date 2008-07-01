@@ -50,8 +50,20 @@ div#format {
     clear: both;
 }
 
+.single_story dl.credits {
+    margin-bottom: 0.5em;
+}
+
+dl.credits dt {
+    clear: left;
+}
+
 .content_header {
     clear: both;
+}
+
+.single_story dl.contents {
+    margin-bottom: 0.15em;
 }
 
 dl.contents dt {
@@ -60,7 +72,7 @@ dl.contents dt {
 
 dl.contents dd {
     clear: left;
-    padding-bottom: 0.5em;
+    margin-bottom: 0.5em;
 }
 
 dl.contents dd.short {
@@ -68,7 +80,7 @@ dl.contents dd.short {
 }
 
 .title {
-    font-style: italic;
+    /* font-style: italic; */
 }
 
 
@@ -104,7 +116,7 @@ dl.contents dd.short {
 }
 
 .toc_story_title {
-    font-style: italic;
+    /* font-style: italic; */
 }
 
 #story_toc ol {
@@ -128,7 +140,8 @@ dl.contents dd.short {
     margin-top: 0;
     margin-bottom: 0;
     padding: .4em;
-    background-color: #888;
+    background-color: #444;
+    color: white;
 }
 
 
@@ -140,6 +153,7 @@ dl.contents dd.short {
     float: left;
     clear: left;
     font-size: 0.75em;
+    width: 100%;
 }
 
 #cover_disclaimer {
@@ -149,7 +163,7 @@ dl.contents dd.short {
 #cover_credits { /* center */
     /* width: 250px; */
     min-width: 20em;
-    margin-left: 10em;
+    margin-left: 118px;
     margin-right: 14em;
     margin-bottom: 1em;
     /* max-width: 600px; */
@@ -173,18 +187,13 @@ dl.contents dd.short {
 
 #cover {
     float: left;
-    width: 10em;
+    width: 118px;
     margin-bottom: 1em;
 }
 
 #cover img {
     /* float: left; */
     border: solid 1px;
-}
-
-#cover div {
-    width: 9em;
-    margin-right: 1em;
 }
 
 #cover dt {
@@ -210,15 +219,71 @@ dl.contents dd.short {
     margin-bottom: 1em;
 }
 
+div.single_story {
+    border: solid black 1px;
+    float: left;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
 .single_story h2 {
     clear: both;
+    padding: 0.2em 6px;
 }
+
 .single_story h3 {
     clear: both;
+    background-color: #DDD;
+    padding: 0.2em 6px;
+    margin-top: 0;
+    margin-bottom: 0.15em;
+    border-top: solid black 1px;
+}
+
+.single_story h4 {
+    clear: both;
+    padding: 0.2em 6px;
+}
+
+.single_story dl {
+    padding: 0.2em 6px;
+    margin: 0;
+}
+
+.single_story p {
+    padding: 0.2em 6px;
+    margin: 0 0 0.5em 0;
 }
 
 .sequence_header {
     background-color: #DDD;
-    padding: 0.2em;
+    /* padding: 0.2em; */
 }
 
+h2.title {
+    background-color: #444;
+    color: white;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+h4.feature {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: normal;
+    font-size: 1em;
+}
+
+span.feature {
+    font-weight: bold;
+}
+span.seq_no {
+    font-weight: bold;
+}
+span.fake {
+    font-style: italic;
+}
+
+hr.divider {
+    visibility: hidden;
+}

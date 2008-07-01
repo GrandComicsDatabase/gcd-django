@@ -1,0 +1,70 @@
+{% load i18n %}
+{% load credits %}
+{% load migration.reprints %}
+
+    <div class="single_story {% if story.type %}{{ story.type|lower }}{% endif %}">
+      <h2 class="sequence_header title">
+        {% if story.title %}
+          <span class="title">{{ story.title }}</span>
+        {% else %}
+            <span class="title fake">[ no title ]</span>
+        {% endif %}
+      </h2>
+      {% if not is_cover or story.feature %}
+      <h4 class="sequence_header feature">
+        {% if is_cover %}
+          Cover Feature:
+        {% else %}
+          <span class="seq_no">{{ story.sequence_number }}:&nbsp;</span>
+        {% endif %}
+
+        {% if story.feature %}
+          <span class="feature">{{ story.feature }}</span>&nbsp;
+        {% endif %}
+
+        {% if not is_cover %}
+          {% if story.type or story.page_count %}
+            <!-- needss to be stuck together to get display spacing right. -->
+            ({% if story.type %}{{ story.type }}{% if story.page_count %},
+             {% endif %}{% endif %}{% if story.page_count %}{{ story.page_count }} {% trans "pages" %}{% endif %})
+          {%endif %}
+        {% endif %}
+      </h4>
+      {% endif %}
+
+      {% if story.has_credits %}
+      <h3 class="credit_header"> Credits </h3>
+      <dl class="credits">
+        {{ story|show_credit:"script"|safe }}
+        {{ story|show_credit:"pencils"|safe }}
+        {{ story|show_credit:"inks"|safe }}
+        {{ story|show_credit:"colors"|safe }}
+        {{ story|show_credit:"letters"|safe }}
+      {% if not is_cover %}
+        {{ story|show_credit:"editor"|safe }}
+      {% endif %}
+        {{ story|show_credit:"job_number"|safe }}
+      </dl>
+      {% endif %}
+
+      {% if story.has_content %}
+        <h3 class="content_header"> Content Information </h3>
+        <dl class="contents">
+          {{ story|show_credit:"genre,short"|safe }}
+          {{ story|show_credit:"characters"|safe|linebreaksbr }}
+          {{ story|show_credit:"synopsis"|safe|linebreaksbr }}
+          {% if linkify_reprints %}
+            {{ story|show_reprint_full:style|safe|linebreaksbr }}
+          {% else %}
+            {{ story|show_credit:"reprints"|safe|linebreaksbr }}
+          {% endif %}
+        </dl>
+      {% endif %}
+
+      {% if story.notes %}
+        <h3 class="notes_header"> Indexer Notes </h3>
+        <p>{{ story.notes|linebreaksbr }}</p>
+      {% endif %}
+
+    </div>
+
