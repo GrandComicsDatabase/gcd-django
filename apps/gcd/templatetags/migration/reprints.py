@@ -33,7 +33,7 @@ def find_reprint_sequence_in_issue(from_story,to_issue):
     return -1
 
 
-def generate_reprint_link(from_story, to_issue, from_to, style):
+def generate_reprint_link(from_story, to_issue, from_to, style, notes=None):
     ''' generate reprint link to_issue'''
     
     link = "<a href=\"/gcd/issue/"+str(to_issue.id)
@@ -48,6 +48,8 @@ def generate_reprint_link(from_story, to_issue, from_to, style):
     link += " (" + esc(to_issue.series.publisher) + ", "
     link += esc(to_issue.series.year_began) + " series) #"
     link += esc(to_issue.number) + "</a>"
+    if notes:
+        link += esc(notes)
     link += " (" + esc(to_issue.publication_date) + ")"
     return '<li> ' + link + ' </li>'
     
@@ -290,9 +292,9 @@ def parse_reprint_full(reprints, from_to):
                 results = results.filter(number__exact = number)
             except:
                 pass
-        return results
+        return results,notes
     else:
-        return Issue.objects.none()
+        return Issue.objects.none(),None
 
 
 def show_reprint_full(story, style):
@@ -303,7 +305,7 @@ def show_reprint_full(story, style):
         for string in story.reprints.split(';'):
             string = string.strip()
             for from_to in ("from ","in ",""):
-                next_reprint = parse_reprint_full(string, from_to)
+                next_reprint,notes = parse_reprint_full(string, from_to)
                 if next_reprint.count() > 1 and next_reprint.count() <= 15:
                     a = []
                     for i in range(next_reprint.count()):
@@ -318,7 +320,8 @@ def show_reprint_full(story, style):
                     # if len(reprint) > 0:
                         # reprint += '\n'
                     reprint += generate_reprint_link(story, next_reprint[0],
-                                                     from_to, style)
+                                                     from_to, style, 
+                                                     notes=notes)
                     break
             if next_reprint.count() != 1:
                 next_reprint = parse_reprint_fr(string)
@@ -406,9 +409,9 @@ def parse_reprint(reprints, from_to):
         except:
             pass
         
-        return results
+        return results, notes
     else:
-        return Issue.objects.none()
+        return Issue.objects.none(), None
 
 
 def show_reprint(story, style):
@@ -419,10 +422,11 @@ def show_reprint(story, style):
         for string in story.reprints.split(';'):
             string = string.strip()
             for from_to in ("from ","in "):
-                next_reprint = parse_reprint(string, from_to)
+                next_reprint, notes = parse_reprint(string, from_to)
                 if next_reprint.count() == 1:
                     reprint += generate_reprint_link(story, next_reprint[0],
-                                                     from_to, style)
+                                                     from_to, style,
+                                                     notes = notes)
                     break
             if next_reprint.count() != 1:
                 reprint += '<li> ' + esc(string) + ' </li>'
