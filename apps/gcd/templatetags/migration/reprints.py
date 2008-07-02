@@ -38,11 +38,11 @@ def generate_reprint_link(from_story, to_issue, from_to, style, notes=None):
     
     link = "<a href=\"/gcd/issue/"+str(to_issue.id)
     sequence = find_reprint_sequence_in_issue(from_story,to_issue.id)
+    link += "?style=" + style + "&reprints=True"
     if (sequence >= 0):
-        link += "/#" + esc(sequence) + "/"
-    else:
-        link += "/"
-    link += "?style=" + style + "&reprints=True\">"
+        link += "#SEQ" + esc(sequence)
+    link += "\">"
+#    link += "?style=" + style + "&reprints=True\">"
 
     link += esc(from_to) + esc(to_issue.series.name) 
     link += " (" + esc(to_issue.series.publisher) + ", "
