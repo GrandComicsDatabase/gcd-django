@@ -56,6 +56,12 @@ div#format {
 
 dl.credits dt {
     clear: left;
+    padding-right: 0.5em;
+}
+dl.credits dd {
+    float: none;
+    margin: 0;
+    padding: 0;
 }
 
 .content_header {

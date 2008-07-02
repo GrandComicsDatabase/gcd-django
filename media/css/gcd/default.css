@@ -244,16 +244,18 @@ tr.listing_even {
 /* Move to publisher.css when it's created. */
 dl.pub_data {
     float: left;
+    width: 100%;
     margin-top: 1em;
 }
 
 dl.pub_data dt {
+    padding-right: 0.5em;
     float: left;
     clear: left;
 }
 
 dl.pub_data dd {
-    float: left;
-    padding: 0 0 0 0.5em;
+    float: none;
+    padding: 0;
     margin: 0;
 }

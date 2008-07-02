@@ -15,44 +15,29 @@
 
 {% include "gcd/publisher_header.html" %}
 
-<!-- Throwing extra divs around dt/dd pairs keeps IE6/Win from doing silly
-     things like floating the <dd> on the line above its <dt>, and it
-     doesn't hurt Firefox 2/Mac.  But it does make Firefox 3/Win ignore
-     the margin/padding setting on the contained dds for some reason.
-     One step forward, half a step back.  To be continued. -->
 <dl class="pub_data">
 {% if publisher.parent %}
-<div>
   <dt> Parent Company:
   <dd> <a href="/gcd/publisher/{{ publisher.parent.id }}/?style={{ style }}">{{ publisher.parent.name }}</a>
-</div>
 {% endif %}
 {% if publisher.country %}
-<div>
   <dt> Country:
   <dd> {{ publisher.country.name }}
-</div>
 {% endif %}
 
 {% ifnotequal publisher.imprint_set.count 0 %}
-<div>
   <dt> Imprints:
   <dd> <a href="/gcd/publisher/{{ publisher.id }}/imprints/?style={{ style }}">{{ publisher.imprint_set.count }}</a>
-</div>
 {% endifnotequal %}
 
 {% if publisher.notes %}
-<div>
   <dt> Notes:
   <dd> {{ publisher.notes|linebreaksbr }}
-</div>
 {% endif %}
 
 {% ifequal publisher.series_set.count 0 %}
-<div>
   <dt> Titles:
   <dd> None
-</div>
 </dl>
 {% else %}
 </dl>
