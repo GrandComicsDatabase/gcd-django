@@ -30,7 +30,7 @@
         <tr class="{% cycle search-odd,search-even %}">
             <td> <img src="{{ media_url }}/img/triangle.gif"/>
             <!-- TODO: make sure there are flag gifs for each country in gcdonline.countries. I know AR is missing right now. -->
-            <td> <img src="{{ media_url }}/img/gcd/flags/{{ series.country_code|upper }}.gif">
+            <td> <img src="{{ media_url }}/img/gcd/flags/{{ series.country_code|lower }}.gif">
             <td> <a href="/gcd/series/{{ series.id }}/">{{ series.name }}</a>
             <td> {{ series.year_began }}
             <td> {{ series.issue_set.count }}
