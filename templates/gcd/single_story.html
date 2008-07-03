@@ -3,19 +3,11 @@
 {% load migration.reprints %}
 
     <div class="single_story {% if story.type %}{{ story.type|lower }}{% endif %}">
-      <h2 class="sequence_header title">
-        {% if story.title %}
-          <span class="title">{{ story.title }}</span>
-        {% else %}
-            <span class="title fake">[ no title ]</span>
-        {% endif %}
-      </h2>
-      {% if not is_cover or story.feature %}
-      <h4 class="sequence_header feature">
+      <h2 class="sequence_header feature">
         {% if is_cover %}
-          Cover Feature:
+          Cover Feature{% if story.feature %}:{% endif %}
         {% else %}
-          <span class="seq_no">{{ story.sequence_number }}:&nbsp;</span>
+          <span class="seq_no">{{ story.sequence_number }}.&nbsp;</span>
         {% endif %}
 
         {% if story.feature %}
@@ -24,13 +16,21 @@
 
         {% if not is_cover %}
           {% if story.type or story.page_count %}
-            <!-- needss to be stuck together to get display spacing right. -->
+            <span class="type">
+            <!-- needs to be stuck together to get display spacing right. -->
             ({% if story.type %}{{ story.type }}{% if story.page_count %},
-             {% endif %}{% endif %}{% if story.page_count %}{{ story.page_count }} {% trans "pages" %}{% endif %})
+             {% endif %}{% endif %}{% if story.page_count %}{{ story.page_count }} page{{ story.page_count|pluralize }}{% endif %})
+            </span>
           {%endif %}
         {% endif %}
-      </h4>
-      {% endif %}
+      </h2>
+      <h3 class="sequence_header title">
+        {% if story.title %}
+          <span class="title">{{ story.title }}</span>
+        {% else %}
+            <span class="title fake">[ no title ]</span>
+        {% endif %}
+      </h3>
 
       {% if story.has_credits %}
       <h3 class="credit_header"> Credits </h3>
