@@ -49,8 +49,7 @@ def __format_credit(story, credit, style):
         return ''
 
 
-    if (credit == 'job'):
-        credit = 'job_number'
+    if (credit == 'job_number'):
         label = 'Job Number'
     else:
         label = credit.title()
