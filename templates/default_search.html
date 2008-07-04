@@ -32,7 +32,7 @@
                     ({{ story.page_count }})
                 {% endifequal %}
                 <br>
-                {{ story|show_credit:"title" }}
+                {{ story|show_credit:"title"|safe }}
                 {% ifnotequal story.sequence_number 0 %}
                     {% if story.type %}
                         ({{ story.type }} - {{ story.page_count }} pages)
@@ -42,7 +42,7 @@
                 {% endifnotequal %}
                 <br>
                 {% if which_credit %}
-                    {{ story|show_credit:which_credit }}
+                    {{ story|show_credit:which_credit|safe }}
                 {% else %}
                     [<b>TODO:</b> matched credits]
                 {% endif %}
