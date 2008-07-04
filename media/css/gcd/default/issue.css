@@ -7,13 +7,6 @@
  * Common elements
  */
 
-.notes {
-    clear: left;
-}
-.notes p {
-    float: left;
-}
-
 dl {
     float: left;
     width: 100%;
@@ -30,6 +23,10 @@ dd {
     margin: 0 0.5em 0 0;
 }
 
+hr.divider {
+    visibility: hidden;
+}
+
 div#format {
     margin-top: 0;
     margin-bottom: 1em;
@@ -43,50 +40,6 @@ div#format {
 
 #format_data {
     float: left;
-}
-
-
-.credit_header {
-    clear: both;
-}
-
-.single_story dl.credits {
-    margin-bottom: 0.5em;
-}
-
-dl.credits dt {
-    clear: left;
-    padding-right: 0.5em;
-}
-dl.credits dd {
-    float: none;
-    margin: 0;
-    padding: 0;
-}
-
-.content_header {
-    clear: both;
-}
-
-.single_story dl.contents {
-    margin-bottom: 0.15em;
-}
-
-dl.contents dt {
-    clear: left;
-}
-
-dl.contents dd {
-    clear: left;
-    margin-bottom: 0.5em;
-}
-
-dl.contents dd.short {
-    clear: none;
-}
-
-.title {
-    /* font-style: italic; */
 }
 
 
@@ -213,87 +166,4 @@ dl.contents dd.short {
 
 #index_credits {
     clear: both;
-}
-
-
-/*
- * Story layout elements
- */
-
-#story_data {
-    clear: both;
-    margin-bottom: 1em;
-}
-
-div.single_story {
-    border: solid black 1px;
-    float: left;
-    width: 100%;
-    margin-bottom: 1em;
-}
-
-.single_story h2 {
-    clear: both;
-    padding: 0.2em 6px;
-}
-
-.single_story h3 {
-    clear: both;
-    background-color: #DDD;
-    padding: 0.2em 6px;
-    margin-top: 0;
-    margin-bottom: 0.15em;
-    border-top: solid black 1px;
-}
-
-.single_story h4 {
-    clear: both;
-    padding: 0.2em 6px;
-}
-
-.single_story dl {
-    padding: 0.2em 6px;
-    margin: 0;
-}
-
-.single_story p {
-    padding: 0.2em 6px;
-    margin: 0 0 0.5em 0;
-}
-
-.sequence_header {
-    background-color: #DDD;
-    /* padding: 0.2em; */
-}
-
-h3.title {
-    margin-bottom: 0;
-    margin-top: 0;
-}
-
-h2.feature {
-    background-color: #444;
-    color: white;
-    margin-top: 0;
-    margin-bottom: 0;
-    font-weight: normal;
-    /* font-size: 1em; */
-}
-
-span.feature {
-    font-weight: bold;
-}
-span.seq_no {
-    font-size: 0.8em;
-    /* font-weight: bold; */
-}
-span.type {
-    font-size: 0.8em;
-}
-span.fake {
-    font-style: italic;
-}
-
-hr.divider {
-    visibility: hidden;
 }

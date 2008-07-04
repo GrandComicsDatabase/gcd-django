@@ -40,7 +40,7 @@ def generate_reprint_link(from_story, to_issue, from_to, style, notes=None):
     sequence = find_reprint_sequence_in_issue(from_story,to_issue.id)
     link += "?style=" + style + "&reprints=True"
     if (sequence >= 0):
-        link += "#SEQ" + esc(sequence)
+        link += "#" + esc(sequence)
     link += "\">"
 #    link += "?style=" + style + "&reprints=True\">"
 

@@ -50,15 +50,16 @@ def __format_credit(story, credit, style):
 
 
     if (credit == 'job_number'):
-        label = 'Job Number'
+        label = 'Job Number:'
     else:
-        label = credit.title()
+        label = credit.title() + ':'
 
     if (credit == 'reprints'):
         credit_value = '<ul><li>' + re.sub(r';\s*', "<li>", credit_value) + \
                        '</ul>'
         # TODO: Deal with style parameter / setting.
-        label += ' [<a href="?reprints=True">linkify</a>]'
+        label += ' <span class="linkify"><a href="?reprints=True">' + \
+                 'search and link</a></span>'
     
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
@@ -68,7 +69,7 @@ def __format_credit(story, credit, style):
     dt += '">'
     dd += '">'
 
-    return dt + '<span class="credit_label">' + _(label) + ':</span></dt>' + \
+    return dt + '<span class="credit_label">' + _(label) + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>'
 
 

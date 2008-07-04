@@ -3,6 +3,7 @@
 {% load migration.reprints %}
 
     <div class="single_story {% if story.type %}{{ story.type|lower }}{% endif %}">
+      <a name="{{ story.sequence_number }}"/>
       <h2 class="sequence_header feature">
         {% if is_cover %}
           Cover Feature{% if story.feature %}:{% endif %}
@@ -13,17 +14,22 @@
         {% if story.feature %}
           <span class="feature">{{ story.feature }}</span>&nbsp;
         {% endif %}
-
         {% if not is_cover %}
           {% if story.type or story.page_count %}
             <span class="type">
             <!-- needs to be stuck together to get display spacing right. -->
             ({% if story.type %}{{ story.type }}{% if story.page_count %},
-             {% endif %}{% endif %}{% if story.page_count %}{{ story.page_count }} page{{ story.page_count|pluralize }}{% endif %})
+            {% endif %}{% endif %}{% if story.page_count %}{{ story.page_count }}
+            {% blocktrans with story.page_count|pluralize as suffix %}
+              page{{ suffix }}
+            {% endblocktrans %}
+            {% endif %})
             </span>
           {%endif %}
         {% endif %}
+
       </h2>
+      </a>
       <h3 class="sequence_header title">
         {% if story.title %}
           <span class="title">{{ story.title }}</span>
@@ -31,6 +37,22 @@
             <span class="title fake">[ no title ]</span>
         {% endif %}
       </h3>
+<!--
+        {% if not is_cover %}
+          {% if story.type or story.page_count %}
+            <p class="type_page">
+            <span class="type">
+            <!-- needs to be stuck together to get display spacing right. -- >
+            {% if story.type %}{{ story.type }}{% if story.page_count %},
+            {% endif %}</span>{% endif %}{% if story.page_count %}{{ story.page_count }}
+            {% blocktrans with story.page_count|pluralize as suffix %}
+              page{{ suffix }}
+            {% endblocktrans %}
+            {% endif %}
+            </p>
+          {%endif %}
+        {% endif %}
+-->
 
       {% if story.has_credits %}
       <h3 class="credit_header"> Credits </h3>

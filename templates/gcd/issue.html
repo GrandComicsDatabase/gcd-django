@@ -13,6 +13,8 @@
         href="{{ media_url }}/css/gcd/{{ style }}.css"/>
   <link rel="stylesheet" type="text/css"
         href="{{ media_url }}/css/gcd/{{ style }}/issue.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ media_url }}/css/gcd/{{ style }}/single_story.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -53,33 +55,21 @@
     <ol>
       {% for story in stories %}
       <li class="{% cycle 'odd' 'even' %}">
-        {% if story.feature or story.title %}
-          <a href="#SEQ{{ story.sequence_number }}">
-          {% if story.feature %}
-          <span class="toc_story_feature">
-          {{ story.feature}}</span>{% if story.title %}:{% endif %}
-          {% endif %}
-          {% if story.title %}
-          <span class="toc_story_title">{{ story.title }}</span>
-          {% endif %}
-          </a>
-        {% else %}
-          <a href="#SEQ{{ story.sequence_number }}"><span
-                  class="toc_story_title">[* no feature or title given *]</span></a>
+        {% if story.feature %}
+        <span class="toc_story_feature">
+        {{ story.feature}}</span><br/>
         {% endif %}
-      {% endfor %}
+        <span class="toc_story_title">
+        <a href="#{{ story.sequence_number }}">{% if story.title %}
+          {{ story.title }}
+        {% else %}
+          <span class="fake">[ no title ]</span>
+        {% endif %}</a></span> {% endfor %}
     </ol>
   </div> <!-- story_toc, a.k.a "right" -->
 
   <div id="cover">
     {{ image_tag|safe }}
-    <!-- There must not be a space around the '&nbsp;'s in this div
-         or else two spaces (one breaking and one non) will be shown.
-         The '&nbsp;'s are needed to prevent the line from wrapping
-         at the default font size due to the width of the containing
-         div.  Which must be specified in order for the 3-column bit
-         to work.  There may be a better way to do all of this.
-      -->
     <div class="issue_cover_links">View: <a href="/gcd/issue/{{ issue.id }}/cover/2/?style={{ style }}">Medium</a> <a href="/gcd/issue/{{ issue.id }}/cover/4/?style={{ style }}">Large</a>
       <br>
       <a href="/gcd/series/{{ issue.series.id }}/covers/?style={{ style }}">Series Covers</a>
@@ -113,7 +103,7 @@
 
 <div id="story_data">
   {% for story in stories %}
-    <a name="SEQ{{ story.sequence_number }}"/><hr class="divider"/></a>
+    <hr class="divider"/>
     {% include "gcd/single_story.html" %}
   {% endfor %}
   <hr class="divider"/>
