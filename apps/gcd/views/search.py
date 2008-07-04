@@ -31,30 +31,16 @@ def generic_by_name(request, name, q_obj, sort,
             things = things.order_by("year_began", "name")
 
     else:
-        # NOTE:  ORDER BY on joined tables is a bit of a mess right now,
-        # see Django bug #2076.  This works as of SVN revision 6980.
-        # In particular, for some reason it insists on "bk_name" instead
-        # of translating "name" for the series.  But it accepts the
-        # other model names such as "year_began" in place of "yr_began".
-
         things = class_name.objects.filter(q_obj)
         # TODO: This order_by stuff only works for Stories, which is 
         # TODO: OK for now, but might not always be.
         if (sort == ORDER_ALPHA):
-            # Hack to make the join table available for ORDER BY.
-            # Calling order_by should do this, but does not.
-            # No series with ID 0 in DB.
-            things = things.filter(issue__series__id__gt = "0")
-            things = things.order_by("stories__issue__series.bk_name",
-                                     "stories__issue__series.year_began",
-                                     "stories__issue.key_date",
+            things = things.order_by("issue__series__name",
+                                     "issue__series__year_began",
+                                     "issue__key_date",
                                      "sequence_number")
         elif (sort == ORDER_CHRONO):
-            # Hack to make the join table available for ORDER BY.
-            # Calling order_by should do this, but does not.
-            # No issue with ID 0 in DB.
-            things = things.filter(issue__id__gt = "0")
-            things = things.order_by("stories__issue.key_date",
+            things = things.order_by("issue__key_date",
                                      "sequence_number")
 
     if 'page' in request.GET:
@@ -234,27 +220,15 @@ def search_stories(request):
     if (request.GET["editor"] != ""):
         results = results.filter(editor__icontains = request.GET["editor"])
 
-    # Hack to make the join table available for ORDER BY, in case no
-    # query field forced the join already.
-    # Calling order_by should do this, but does not.
-    # No series with ID 0 in DB.
-    # TODO: Only do this if needed.
-    results = results.filter(issue__series__id__gt = "0")
-
-    # NOTE:  ORDER BY on joined tables is a bit of a mess right now,
-    # see Django bug #2076.  This works as of SVN revision 6980.
-    # In particular, for some reason it insists on "bk_name" instead
-    # of translating "name" for the series.  But it accepts the
-    # other model names such as "year_began" in place of "yr_began".
     if (request.GET["sort"] == ORDER_ALPHA):
-        results = results.order_by("stories__issue__series.bk_name",
-                                   "stories__issue__series.year_began",
-                                   "stories__issue.key_date",
+        results = results.order_by("issue__series__name",
+                                   "issue__series__year_began",
+                                   "issue__key_date",
                                    "sequence_number")
     elif (request.GET["sort"] == ORDER_CHRONO):
-        results = results.order_by("stories__issue.key_date",
-                                   "stories__issue__series.bk_name",
-                                   "stories__issue.id",
+        results = results.order_by("issue__key_date",
+                                   "issue__series__name",
+                                   "issue__id",
                                    "sequence_number")
 
     # query_string is needed for links to prev/next page
