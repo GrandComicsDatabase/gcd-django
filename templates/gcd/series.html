@@ -33,13 +33,8 @@
   <dd id="publication_dates"> {{ series.publication_dates }}
   {% endif %}
   {% if series.first_issue %}
-    {% ifequal series.first_issue series.last_issue %}
-      <dt> Issue Published:
-      <dd id="issues_published"> {{ series.first_issue }}
-    {% else %}
-      <dt> Issues Published:
-      <dd id="issues_published"> {{ series.first_issue }}-{{ series.last_issue }}    
-    {% endifequal %}
+  <dt> Number of Issues Published:
+  <dd id="issues_published"> {{ series.issue_set.count }}
   {% endif %}
 
   {% if country %}
