@@ -5,7 +5,7 @@ Ralf Haring
 
 [The assumption in this document is that everything be installed in one directory - D:\maelstrom.]
 
-[This document is located in the source code at gcd\Getting_Started_on_Windows.txt as well as available online at http://maelstrom.walton.uark.edu/wiki/Getting_Started_on_Windows]
+[This document is located in the source code at pydjango\docs\Getting_Started_on_Windows.txt as well as available online at http://maelstrom.walton.uark.edu/wiki/Getting_Started_on_Windows]
 ----------------------------
 To run a local copy of the web site:
 
