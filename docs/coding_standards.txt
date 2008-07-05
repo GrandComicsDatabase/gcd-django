@@ -1,0 +1,84 @@
+*******************************************************************************
+* Please try to adhere to the following coding standards.
+*******************************************************************************
+
+Python Coding Standards:
+
+* Indentation is 4 spaces.  No tabs.  This is critical in Python.
+
+* Stay within 80 columns.  Continued lines should line up with matching
+  operands or parameters on the first line if possible, or should be
+  indented an extra 2 (not 4) spaces.  Examples:
+
+  ** Breaking after an operator:
+    interesting_data = some_object.long_method_call(with, params) + \
+                       something_else
+
+  ** Simple example of 2-space continuation:
+
+    latest_updated_indexes = \
+      Issue.objects.all().order_by('-modified', -modification_time')[:MAX]
+
+  ** Continuing a line when lining up the parameters would not work.  In this
+    case it is better to start the 2nd parameter with a 2-space indent rather
+    than line it up with the first and break again inside the dictionary:
+
+    return render_to_response('index.html',
+      {'latest_updated_indexes' : latest_updated_indexes})
+
+  ** Use extra local variables to avoid complex long lines.  For instance,
+    the previous example could be done as:
+
+    vars = {'latest_updated_indexes' : latest_updated_indexes}
+    return render_to_response('index.html', vars)
+
+
+* Place two blank lines in between methods and/or classes.
+
+* Place a blank line between code blocks, especially when there are
+  multiple adjacent if blocks that could easily be misinterpreted as
+  else-ifs.
+
+* Keep model code arranged as one class per file.
+
+* Group view functions into files based on similar functionality.
+
+* Put a space between keywords and open parentheses, but no space
+  between a function/method name and open parentheses:
+
+    if (something or something_else):
+    my_object.my_method(foo)
+
+* Put a space around most binary operators, *except* when using '=' to pass
+  keyword arguments.
+
+    if (this == that):
+           one_variable = the_other
+    function_call(first_arg, keyword_arg="value")
+
+* Put comments on their own lines, and put a space between the '#' marker
+  and the first word:
+
+    # TODO: Fix stuff
+
+*******************************************************************************
+
+HTML / CSS / Template coding standards.
+
+* Use two space indents rather than four.
+  Indentation can be tricky with both HTML tags and template tags.
+  Always indent based on HTML structure.  Use indentation as necessary
+  to make additional template tag structure clear.
+
+* Otherwise the same as for Python, although in some cases long lines
+  are unavoidable.  For instance, within anchor tags (links) extra
+  whitespace of any sort can cause undesired effects, and sometimes
+  Django template evaluations must be placed next to other text with
+  no spaces.
+
+* Use CSS whenever possible.  If something is being done through HTML
+  that could be done through CSS, please fix it.
+
+* If you have extensive HTML/CSS/JavaScript experience, contact handrews
+  about expanding this section.
+
