@@ -43,6 +43,25 @@ def publisher(request, publisher_id):
              'media_url' : settings.MEDIA_URL }
     return render_to_response('gcd/publisher.html', vars)
 
+def imprint(request, imprint_id):
+    """Display the details page for an Imprint."""
+
+    style = get_style(request)
+    imprint = get_object_or_404(Publisher, id = imprint_id)
+    p = QuerySetPaginator(imprint.imprint_series_set.order_by('name'), 100)
+    page_num = 1
+    if (request.GET.has_key('page')):
+        page_num = int(request.GET['page'])
+    page = p.page(page_num)
+
+    vars = { 'publisher' : imprint,
+             'page' : page,
+             'paginator' : p,
+             'page_number' : page_num,
+             'style' : style,
+             'media_url' : settings.MEDIA_URL }
+    return render_to_response('gcd/publisher.html', vars)
+
 def imprints(request, publisher_id):
     """Finds imprints of a publisher.  Imprints are defined as those
     publishers whose parent_id matches the given publisher."""

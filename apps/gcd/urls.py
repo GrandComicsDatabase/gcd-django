@@ -36,6 +36,10 @@ urlpatterns = patterns('',
     (r'^gcd/publisher/(?P<publisher_id>\d+)/imprints/$',
      'apps.gcd.views.details.imprints'),
 
+    # Imprint
+    (r'^gcd/imprint/(?P<imprint_id>\d+)/$',
+     'apps.gcd.views.details.imprint'),
+
     # Series
     (r'^gcd/series/(?P<series_id>\d+)/$', 'apps.gcd.views.details.series'),
     (r'^gcd/series/name/(?P<series_name>.+)/sort/(?P<sort>.+)/$',

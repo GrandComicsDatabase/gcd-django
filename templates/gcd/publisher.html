@@ -3,7 +3,11 @@
 {% load i18n %}
 
 {% block title %}
-  GCD :: Publisher :: {{ publisher.name }}
+  {% if publisher.parent %}
+    GCD :: Imprint :: {{ publisher.name }}
+  {% else %}
+    GCD :: Publisher :: {{ publisher.name }}
+  {% endif %}
 {% endblock %}
 
 {% block css %}
@@ -16,10 +20,6 @@
 {% include "gcd/publisher_header.html" %}
 
 <dl class="pub_data">
-{% if publisher.parent %}
-  <dt> Parent Company:
-  <dd> <a href="/gcd/publisher/{{ publisher.parent.id }}/?style={{ style }}">{{ publisher.parent.name }}</a>
-{% endif %}
 {% if publisher.country %}
   <dt> Country:
   <dd> {{ publisher.country.name }}
@@ -35,7 +35,7 @@
   <dd> {{ publisher.notes|linebreaksbr }}
 {% endif %}
 
-{% ifequal publisher.series_set.count 0 %}
+{% ifequal page.object_list.count 0 %}
   <dt> Titles:
   <dd> None
 </dl>

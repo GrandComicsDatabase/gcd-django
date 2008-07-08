@@ -9,6 +9,7 @@ class Series(models.Model):
     class Meta:
         db_table = 'series'
         app_label = 'gcd'
+        ordering = ['name', 'year_began']
     
     class Admin:
         list_display = ('name', 'year_began', 'publisher')
