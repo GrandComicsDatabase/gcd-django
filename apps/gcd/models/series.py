@@ -72,7 +72,8 @@ class Series(models.Model):
     publisher = models.ForeignKey(Publisher, db_column = 'PubID', null = True)
     publisher_name = models.CharField(max_length = 255, db_column = 'Pub_Name',
                                       null = True)
-    imprint_id = models.IntegerField(default = 0)
+    imprint = models.ForeignKey(Publisher, db_column = 'imprint_id',
+                                related_name = 'imprint_series_set', null = True)
 
     # Fields related to change management.
     created = models.DateField(db_column = 'Created',
