@@ -24,10 +24,10 @@
         {% for publisher in publisher_set %}
         <tr class="{% cycle search-odd,search-even %}">
             <td> <img src="{{ media_url }}/img/triangle.gif"/>
-            <td> <a href="/gcd/publisher/{{ publisher.id }}/">{{ publisher.name }}</a> 
+            <td> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
             <td>
             {% if publisher.has_imprints %}
-                <a href="/gcd/publisher/{{ publisher.id }}/imprints/">{{ publisher.imprint_set.count }}</a>
+                <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_set.count }}</a>
             {% else %}
                 {{ publisher.imprint_set.count }}
             {% endif %}

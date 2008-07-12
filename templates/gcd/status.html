@@ -17,9 +17,9 @@
 {% include "gcd/series_issue_header.html" %}
 
 <div id="info_links">
-  <a href="/gcd/series/{{series.id}}/scans/?style={{ style }}">Cover Scan Status</a>
+  <a href="{{ series.get_absolute_url }}scans/?style={{ style }}">Cover Scan Status</a>
   <br>
-  <a href="/gcd/series/{{ series.id }}/covers/?style={{ style}}">Cover Gallery</a>
+  <a href="{{ series.get_absolute_url }}covers/?style={{ style}}">Cover Gallery</a>
 </div>
 
 {% include "gcd/status_tables.html" %}

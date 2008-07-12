@@ -3,8 +3,8 @@
 {% load i18n %}
 
 {% block title %}
-  {% if publisher.parent %}
-    GCD :: Imprint :: {{ publisher.name }}
+  {% if publisher.is_imprint %}
+    GCD :: Publisher :: {{ publisher.parent.name }} :: Imprint :: {{ publisher.name }}
   {% else %}
     GCD :: Publisher :: {{ publisher.name }}
   {% endif %}
@@ -25,14 +25,18 @@
   <dd> {{ publisher.country.name }}
 {% endif %}
 
-{% ifnotequal publisher.imprint_set.count 0 %}
+{% if publisher.has_imprints %}
   <dt> Imprints:
-  <dd> <a href="/gcd/publisher/{{ publisher.id }}/imprints/?style={{ style }}">{{ publisher.imprint_set.count }}</a>
-{% endifnotequal %}
+  <dd> <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_set.count }}</a>
+{% endif %}
 
 {% if publisher.notes %}
   <dt> Notes:
   <dd> {{ publisher.notes|linebreaksbr }}
+{% endif %}
+
+{% if publisher.url %}
+  <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
 {% endif %}
 
 {% ifequal page.object_list.count 0 %}
@@ -51,11 +55,11 @@
   </tr>
 {% for series in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <a href="/gcd/series/{{ series.id }}/?style={{ style }}">{{ series.name }}</a> </td>
+    <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}
-    <td> <a href="/gcd/series/{{ series.id }}/status/?style={{ style }}">{{ series.issue_set.count }}</a> </td>
-    <td> <a href="/gcd/series/{{ series.id }}/scans/?style={{ style }}">{{ series.scan_count }}</a> </td>
-    <td> <a href="/gcd/series/{{ series.id }}/covers/?style={{ style }}">Cover Gallery</a> </td>
+    <td> <a href="{{ series.get_absolute_url }}status/?style={{ style }}">{{ series.issue_set.count }}</a> </td>
+    <td> <a href="{{ series.get_absolute_url }}scans/?style={{ style }}">{{ series.scan_count }}</a> </td>
+    <td> <a href="{{ series.get_absolute_url }}covers/?style={{ style }}">Cover Gallery</a> </td>
   </tr>
 {% endfor %}
 </table>

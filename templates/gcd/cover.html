@@ -22,10 +22,10 @@
 {% endwith %}
 
 <div id="cover_zoom">
-  <a href="/gcd/issue/{{ issue.id }}/?style={{ style }}">{{ cover_tag|safe }}</a>
-  <div class="cover_links">Zoom:&nbsp;<a href="/gcd/issue/{{ issue.id }}/cover/1/?style={{ style }}">Small</a>&nbsp;<a href="/gcd/issue/{{ issue.id }}/cover/2/?style={{ style }}">Medium</a>&nbsp;<a href="/gcd/issue/{{ issue.id }}/cover/4/?style={{ style }}">Large</a>
+  <a href="{{ issue.get_absolute_url }}">{{ cover_tag|safe }}</a>
+  <div class="cover_links">Zoom:&nbsp;<a href="{{ issue.get_absolute_url }}cover/1/?style={{ style }}">Small</a>&nbsp;<a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>&nbsp;<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
     <br>
-    <a href="/gcd/series/{{ issue.series.id }}/covers/?style={{ style }}">Series Covers</a>
+    <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Series Covers</a>
   </div>
 </div>
 

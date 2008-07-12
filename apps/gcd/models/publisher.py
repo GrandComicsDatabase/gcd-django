@@ -1,5 +1,6 @@
 from django.db import models
 from country import Country
+from django.core.exceptions import ObjectDoesNotExist
 
 class Publisher(models.Model):
     id = models.AutoField(primary_key = True, db_column = 'ID')
@@ -11,7 +12,7 @@ class Publisher(models.Model):
     year_ended = models.IntegerField(db_column = 'YearEnded', null = True)
     country = models.ForeignKey(Country, db_column = 'CountryID', null = True)
     notes = models.TextField(db_column = 'Notes', null = True)
-    url = models.TextField(db_column = 'web', null = True)
+    url = models.URLField(db_column = 'web', null = True)
 
     # This seems to help sort related publishers together despite spelling.
     alpha_sort_code = models.CharField(max_length = 1,
@@ -30,7 +31,7 @@ class Publisher(models.Model):
     is_master = models.NullBooleanField(db_column = 'Master')
     connection = models.TextField(db_column = 'Connection', null = True)
     parent = models.ForeignKey('self', db_column = 'ParentID',
-                                null = True, related_name = 'imprint_set')
+                               null = True, related_name = 'imprint_set')
     next = models.ForeignKey('self', db_column = 'NextID', null = True,
                              related_name = 'previous_set')
 
@@ -54,7 +55,30 @@ class Publisher(models.Model):
         return self.name
 
     def has_imprints(self):
-        return self.imprint_set.count > 0
+        return self.imprint_set.count() > 0
+
+    def is_imprint(self):
+        try:
+            return self.parent
+        except ObjectDoesNotExist:
+            return False
+
+    def get_absolute_url(self):
+        if self.is_imprint():
+            return "/gcd/imprint/%i/" % self.id
+        else:
+            return "/gcd/publisher/%i/" % self.id
+
+    def get_official_url(self):
+        try:
+            if not self.url.lower().startswith("http://"):
+                self.url = "http://" + self.url
+#                auto fix urls ?
+#                self.save()
+        except:
+            return ""
+
+        return self.url
 
     def computed_issue_count(self):
         # issue_count is not accurate, but computing is slow.

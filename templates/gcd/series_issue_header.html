@@ -3,7 +3,7 @@
 <h1 class="item_id">
 <div class="left">
   <span id="series_name">
-    <a href="/gcd/series/{{ series.id }}/?style={{ style }}">{{ series.name }}</a>
+    <a href="{{ series.get_absolute_url }}">{{ series.name }}</a>
   </span>
   {% if issue_number %}
   <span id="issue_number">
@@ -20,9 +20,9 @@
 
 <div class="item_id">
   <div class="left" class="item_data">
-    <a href="/gcd/publisher/{{ series.publisher.id }}/?style={{ style }}">{{ series.publisher }}</a>,
+    <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a>,
     {% if series.imprint %}
-      <a href="/gcd/imprint/{{ series.imprint.id }}/?style={{ style }}">{{ series.imprint }}</a> imprint,
+      <a href="{{ series.imprint.get_absolute_url }}">{{ series.imprint }}</a> imprint,
     {% endif %}
     {{ series.year_began }} Series
   </div>
@@ -30,13 +30,13 @@
   {% if issue_number %}
   <div class="right" class="prev_next">
       {% if prev_issue %}
-          <a href="/gcd/issue/{{ prev_issue.id }}{{ extra }}?style={{ style }}">&lt; {% trans "Previous Issue" %}</a>
+          <a href="{{ prev_issue.get_absolute_url }}{{ extra }}?style={{ style }}">&lt; {% trans "Previous Issue" %}</a>
       {% endif %}
       {% if prev_issue or next_issue %}
         |
       {% endif %}
       {% if next_issue %}
-          <a href="/gcd/issue/{{ next_issue.id }}{{ extra }}?style={{ style }}">{% trans "Next Issue" %} &gt;</a>
+          <a href="{{ next_issue.get_absolute_url }}{{ extra }}?style={{ style }}">{% trans "Next Issue" %} &gt;</a>
       {% endif %}
   </div>
   {% endif %}

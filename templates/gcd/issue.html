@@ -70,9 +70,9 @@
 
   <div id="cover">
     {{ image_tag|safe }}
-    <div class="issue_cover_links">View: <a href="/gcd/issue/{{ issue.id }}/cover/2/?style={{ style }}">Medium</a> <a href="/gcd/issue/{{ issue.id }}/cover/4/?style={{ style }}">Large</a>
+    <div class="issue_cover_links">View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a> <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
       <br>
-      <a href="/gcd/series/{{ issue.series.id }}/covers/?style={{ style }}">Series Covers</a>
+      <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Series Covers</a>
     </div>
   </div> <!-- cover -->
 

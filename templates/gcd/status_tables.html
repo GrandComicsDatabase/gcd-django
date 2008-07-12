@@ -13,7 +13,7 @@
   <tr>
   {% for issue in series.issue_set.all %}
     <td class="status_{{ issue.index_status }}">
-      <a href="/gcd/issue/{{ issue.id }}/?style={{ style }}">{{ issue.number }}</a> </td>
+      <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>
       {% if not forloop.last %}

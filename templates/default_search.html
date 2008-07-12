@@ -27,7 +27,7 @@
         {% for story in object_list %}
         <tr class="{% cycle search-odd,search-even %}">
             <td> <img src="{{ media_url }}/img/triangle.gif"/>
-            <td> <a href="/gcd/issue/{{ story.issue.id }}/">{{ story.issue.series.name }} #{{ story.issue.number }}</a>
+            <td> <a href="{{ story.issue.get_absolute_url }}">{{ story.issue.series.name }} #{{ story.issue.number }}</a>
                 {% ifequal story.sequence_number 0 %}
                     ({{ story.page_count }})
                 {% endifequal %}

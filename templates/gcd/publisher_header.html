@@ -5,11 +5,11 @@
 
 <h1 class="item_id">
   <div class="left">
-    {% if publisher.parent %}
-      <a href="/gcd/publisher/{{ publisher.parent.id }}/?style={{ style }}">{{ publisher.parent.name }}</a> :
-      <a href="/gcd/imprint/{{ publisher.id }}/?style={{ style }}">{{ publisher.name }}</a>
+    {% if publisher.is_imprint %}
+      <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
+      <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
     {% else %}
-      <a href="/gcd/publisher/{{ publisher.id }}/?style={{ style }}">{{ publisher.name }}</a>
+      <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
     {% endif %}
   </div>
 </h1>

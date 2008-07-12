@@ -154,7 +154,7 @@ def cover(request, issue_id, size):
                               "Cover Image", int(size))
     style = get_style(request)
 
-    extra = '/cover/' + size + '/' # TODO: remove abstraction-breaking hack.
+    extra = 'cover/' + size + '/' # TODO: remove abstraction-breaking hack.
 
     return render_to_response('gcd/cover.html', {
       'issue' : issue,

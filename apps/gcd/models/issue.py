@@ -134,6 +134,9 @@ class Issue(models.Model):
         if (self.index_status == 2):
             return 'pending'
 
+    def get_absolute_url(self):
+        return "/gcd/issue/%i/" % self.id
+
     def __unicode__(self):
         return str(self.series.name) + " #" + self.number # + " (" + \
                # self.publication_date + ") [" + self.key_date + "]"

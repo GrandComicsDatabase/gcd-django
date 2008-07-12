@@ -16,10 +16,6 @@
 {% include "gcd/publisher_header.html" %}
 
 <dl class="pub_data">
-{% if publisher.parent %}
-  <dt> Parent Company:
-  <dd> <a href="/gcd/publisher/{{ publisher.parent.id }}/?style={{ style }}">{{ publisher.parent.name }}</a>
-{% endif %}
 {% if publisher.country %}
   <dt> Country:
   <dd> {{ publisher.country.name }}
@@ -30,11 +26,7 @@
 {% endif %}
 </dl>
 
-{% ifequal publisher.imprint_set.count 0 %}
-  <dt> Imprints:
-  <dd> None
-</dl>
-{% else %}
+{% if publisher.has_imprints %}
 </dl>
 <table class="listing">
   <tr>
@@ -44,12 +36,16 @@
   </tr>
 {% for imprint in imprints %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <a href="/gcd/imprint/{{ imprint.id }}/?style={{ style }}">{{ imprint.name }}</a> </td>
+    <td> <a href="{{ imprint.get_absolute_url }}">{{ imprint.name }}</a> </td>
     <td> {{ imprint.imprint_series_set.count }} </td>
     <td> {{ imprint.computed_issue_count }} </td>
   </tr>
 {% endfor %}
 </table>
-{% endifequal %}
+{% else %}
+  <dt> Imprints:
+  <dd> None
+</dl>
+{% endif %}
 
 {% endblock %}

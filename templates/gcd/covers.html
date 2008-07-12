@@ -17,20 +17,20 @@
 {% include "gcd/series_issue_header.html" %}
 
 <div id="info_links">
-  <a href="/gcd/series/{{series.id}}/scans/?style={{ style }}">Cover Scan Status</a>
+  <a href="{{series.get_absolute_url}}scans/?style={{ style }}">Cover Scan Status</a>
   <br>
-  <a href="/gcd/series/{{ series.id }}/status/?style={{ style}}">Index Status</a>
+  <a href="{{ series.get_absolute_url }}status/?style={{ style}}">Index Status</a>
 </div>
 
 <table id="covers">
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="/gcd/issue/{{ issue.id }}/?style={{ style }}">{{ tag|safe }}</a>
+      <a href="{{ issue.get_absolute_url }}">{{ tag|safe }}</a>
       <br/>
       <span class="cover_links">Zoom:
-<a href="/gcd/issue/{{ issue.id }}/cover/2/?style={{ style }}">Medium</a>
-<a href="/gcd/issue/{{ issue.id }}/cover/4/?style={{ style }}">Large</a></span> <br/>
+<a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
+<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span> <br/>
       <div class="cover_caption">
         <span class="cover_number">Issue {{ issue.number }}</span> <br/>
         <span class="cover_date">{{ issue.publication_date }}</span>

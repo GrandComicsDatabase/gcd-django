@@ -92,6 +92,9 @@ class Series(models.Model):
     # Fields about which I have no idea.
     self_count = models.IntegerField(db_column = 'SelfCount', null = True)
 
+    def get_absolute_url(self):
+        return "/gcd/series/%i/" % self.id
+
     def scan_count(self):
         return self.cover_set.filter(has_image = '1').count()
 

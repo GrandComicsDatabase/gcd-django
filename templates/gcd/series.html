@@ -21,7 +21,7 @@
 <div id="series_cover">
   {{ image_tag|safe }}
 <p>
-<a href="/gcd/series/{{ series.id }}/covers/?style={{ style }}">See cover gallery</a>
+<a href="{{ series.get_absolute_url }}covers/?style={{ style }}">See cover gallery</a>
 </p>
 {% include "gcd/series_form.html" %}
 </div>
