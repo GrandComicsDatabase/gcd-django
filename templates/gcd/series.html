@@ -12,6 +12,8 @@
       href="{{ media_url }}/css/gcd/{{ style }}/series.css"/>
 <link rel="stylesheet" type="text/css"
       href="{{ media_url }}/css/gcd/{{ style }}/status.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}/scans.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -86,6 +88,11 @@
 <h3> Index Status </h3>
 
 {% include "gcd/status_tables.html" %}
+<hr/>
+
+<h3> Cover Status </h3>
+
+{% include "gcd/scan_tables.html" %}
 
 {% endblock %}
 

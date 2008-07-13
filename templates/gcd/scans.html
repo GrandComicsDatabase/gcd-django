@@ -1,5 +1,8 @@
 {% extends "gcd/base_view.html" %}
 
+{% load i18n %}
+{% load credits %}
+
 {% block title %} GCD :: Scan Matrix :: {{ series.name }} {% endblock %}
 
 {% block css %}
@@ -10,6 +13,15 @@
 {% endblock %}
 
 {% block view_body %}
-<div> To Be Implemented </div>
-<p>
+
+{% include "gcd/series_issue_header.html" %}
+
+<div id="info_links">
+  <a href="{{ series.get_absolute_url }}covers/?style={{ style}}">Cover Gallery</a>
+  <br>
+  <a href="{{ series.get_absolute_url }}status/?style={{ style }}">Index Status</a>
+</div>
+
+{% include "gcd/scan_tables.html" %}
+
 {% endblock %}

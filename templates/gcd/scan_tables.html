@@ -1,0 +1,30 @@
+{% load gcdtable %}
+
+<table border="1" class="status" id="key">
+  <tr>
+    <td class="scan_status_3"> Hi-res </td>
+    <td class="scan_status_2"> Medium </td>
+    <td class="scan_status_1"> Thumb </td>
+    <td class="scan_status_4"> Needs Replacement </td>
+    <td class="scan_status_0"> No Scan </td>
+  </tr>
+</table>
+<p class="spacer"/>
+<table border="1" class="status">
+  <tr>
+  {% for issue in series.issue_set.all %}
+    <td class="scan_status_{{ issue.cover.get_cover_status }}">
+      <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+      {% if not forloop.last %}
+  <tr>
+      {% endif %}
+    {% else %}
+      {% if forloop.last %}
+        {{ forloop.counter|finishrow:table_width|safe }}
+  </tr>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+</table>

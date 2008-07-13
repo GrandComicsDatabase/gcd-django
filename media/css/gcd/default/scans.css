@@ -3,21 +3,25 @@
  * CSS specific to the index status page.
  * ***************************************/
 
-.status_0 {
+.scan_status_0 {
     background-color: white;
 }
 
-.status_1 {
-    background-color: #F30;
+.scan_status_1 {
+    background-color: #CFC;
 }
 
-.status_2 {
-    background-color: #F93;
+.scan_status_2 {
+    background-color: #3F6;
 }
 
-.status_3 {
+.scan_status_3 {
     /* background-color: #0B2; */
     background-color: #3C3;
+}
+
+.scan_status_4 {
+    background-color: #6CF;
 }
 
 /* Note that these tables have border="1" specified in
