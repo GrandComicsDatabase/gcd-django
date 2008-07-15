@@ -304,8 +304,9 @@ def show_reprint_full(story, style):
         reprint = ""
         for string in story.reprints.split(';'):
             string = string.strip()
+            # check for our format
             for from_to in ("from ","in ",""):
-                next_reprint,notes = parse_reprint_full(string, from_to)
+                next_reprint, notes = parse_reprint(string, from_to)
                 if next_reprint.count() > 1 and next_reprint.count() <= 15:
                     a = []
                     for i in range(next_reprint.count()):
@@ -316,13 +317,33 @@ def show_reprint_full(story, style):
                     if len(a) == 1:
                         next_reprint = next_reprint.filter(id =
                                                 next_reprint[a[0]].id)
-                if next_reprint.count() == 1:
-                    # if len(reprint) > 0:
-                        # reprint += '\n'
-                    reprint += generate_reprint_link(story, next_reprint[0],
-                                                     from_to, style, 
-                                                     notes=notes)
-                    break
+                    if next_reprint.count() == 1:
+                        reprint += generate_reprint_link(story, next_reprint[0],
+                                                        from_to, style, 
+                                                        notes=notes)
+                        break
+            # check for some others
+            if next_reprint.count() != 1:
+                for from_to in ("from ","in ",""):
+                    next_reprint,notes = parse_reprint_full(string, from_to)
+                    if next_reprint.count() > 1 and next_reprint.count() <= 15:
+                        a = []
+                        for i in range(next_reprint.count()):
+                            nr = find_reprint_sequence_in_issue(story,
+                                                            next_reprint[i].id)
+                            if (nr > 0):
+                                a.append(i)
+                        if len(a) == 1:
+                            next_reprint = next_reprint.filter(id =
+                                                    next_reprint[a[0]].id)
+                    if next_reprint.count() == 1:
+                        # if len(reprint) > 0:
+                            # reprint += '\n'
+                        reprint += generate_reprint_link(story, next_reprint[0],
+                                                        from_to, style, 
+                                                        notes=notes)
+                        break
+            # and some more obscure ones
             if next_reprint.count() != 1:
                 next_reprint = parse_reprint_fr(string)
                 # if len(reprint) > 0:
@@ -349,6 +370,82 @@ def show_reprint_full(story, style):
     else:
         return ""
         
+def show_reprint_suggestions(story, style):
+    """ Filter for reprint line.  First step into database migration."""
+    
+    if story.reprints:
+        reprint = ""
+        for string in story.reprints.split(';'):
+            string = string.strip()
+            # check for our format
+            for from_to in ("from ","in ",""):
+                next_reprint, notes = parse_reprint(string, from_to)
+                if next_reprint.count() > 1 and next_reprint.count() <= 15:
+                    a = []
+                    for i in range(next_reprint.count()):
+                        nr = find_reprint_sequence_in_issue(story,
+                                                         next_reprint[i].id)
+                        if (nr > 0):
+                            a.append(i)
+                    if len(a) == 1:
+                        next_reprint = next_reprint.filter(id =
+                                                next_reprint[a[0]].id)
+                if next_reprint.count() > 0 and next_reprint.count() <= 5:
+                    for i in range(next_reprint.count()):
+                        reprint += "reprint entry: " + string + '\t candidate:'
+                        reprint += generate_reprint_link(story, next_reprint[i],
+                                                        from_to, style, 
+                                                        notes=notes)
+                        reprint += mark_safe('<a target="_blank" href=\"http://www.comics.org/admin/system/modules/site.lasso?mode=update&type=story&storyid='+str(story.id)+'\">dblink</a>')
+                    break
+                        
+            # check for some others
+            if next_reprint.count() == 0 or next_reprint.count() > 5:
+                for from_to in ("from ","in ",""):
+                    next_reprint,notes = parse_reprint_full(string, from_to)
+                    if next_reprint.count() > 1 and next_reprint.count() <= 15:
+                        a = []
+                        for i in range(next_reprint.count()):
+                            nr = find_reprint_sequence_in_issue(story,
+                                                            next_reprint[i].id)
+                            if (nr > 0):
+                                a.append(i)
+                        if len(a) == 1:
+                            next_reprint = next_reprint.filter(id =
+                                                    next_reprint[a[0]].id)
+                    if next_reprint.count() > 0 and next_reprint.count() <= 5:
+                        for i in next_reprint:
+                            reprint += "reprint entry: " + string + '\t candidate:'
+                            reprint += generate_reprint_link(story, i,
+                                                            from_to, style, 
+                                                            notes=notes)
+                            reprint += mark_safe('<a target="_blank" href=\"http://www.comics.org/admin/system/modules/site.lasso?mode=update&type=story&storyid='+str(story.id)+'\">dblink</a>') 
+                        break
+            if next_reprint.count() == 0 or next_reprint.count() > 5:
+                next_reprint = parse_reprint_fr(string)
+                # if len(reprint) > 0:
+                    # reprint += '\n'
+                if next_reprint.count() > 1 and next_reprint.count() <= 15:
+                    a = []
+                    for i in range(next_reprint.count()):
+                        nr = find_reprint_sequence_in_issue(story,
+                                                            next_reprint[i].id)
+                        if (nr > 0):
+                            a.append(i)
+                    if len(a) == 1:
+                        next_reprint = next_reprint.filter(id =
+                                                next_reprint[a[0]].id)
+                if next_reprint.count() == 1:
+                    reprint += generate_reprint_link(story, next_reprint[0],
+                                                     "from ", style)
+                else:
+                    reprint += '<li> ' + esc(string) + ' </li>'
+
+        return mark_safe('<dt class="credit_tag">Reprints:</dt>' + \
+                         '<dd class="credit_def"><ul> ' + reprint + \
+                         '</ul></dd>')
+    else:
+        return ""
 
 def parse_reprint(reprints, from_to):
     """ parse a reprint entry for our standard """
@@ -439,3 +536,4 @@ def show_reprint(story, style):
 
 register.filter(show_reprint)
 register.filter(show_reprint_full)
+register.filter(show_reprint_suggestions)
