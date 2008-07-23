@@ -76,9 +76,10 @@
           {{ story|show_credit:"characters"|safe|linebreaksbr }}
           {{ story|show_credit:"synopsis"|safe|linebreaksbr }}
           {% if linkify_reprints %}
-            {{ story|show_reprint_full:style|safe|linebreaksbr }}
+            {{ story|show_reprint_suggestions:style|safe|linebreaksbr }}
           {% else %}
-            {{ story|show_credit:"reprints"|safe|linebreaksbr }}
+            {{ story|show_reprint:style|safe|linebreaksbr }}
+<!--             {{ story|show_credit:"reprints"|safe|linebreaksbr }} -->
           {% endif %}
         </dl>
       {% endif %}

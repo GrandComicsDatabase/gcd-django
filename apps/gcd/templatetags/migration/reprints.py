@@ -33,7 +33,8 @@ def find_reprint_sequence_in_issue(from_story,to_issue):
     return -1
 
 
-def generate_reprint_link(from_story, to_issue, from_to, style, notes=None):
+def generate_reprint_link(from_story, to_issue, from_to, style, notes=None,
+                          li=True):
     ''' generate reprint link to_issue'''
     
     link = "<a href=\"/gcd/issue/"+str(to_issue.id)
@@ -51,8 +52,21 @@ def generate_reprint_link(from_story, to_issue, from_to, style, notes=None):
     if notes:
         link += esc(notes)
     link += " (" + esc(to_issue.publication_date) + ")"
-    return '<li> ' + link + ' </li>'
-    
+    if li:
+        return '<li> ' + link + ' </li>'
+    else:
+        return link    
+
+def generate_candidates_link(story, reprint_string, candidates, from_to, style):
+    ''' generate links for candidate reprints to_issue'''
+
+    link = "<li>" + esc(reprint_string) + '\t candidate(s):\n'
+    for i in candidates:
+        link += generate_reprint_link(story, i,
+                                         from_to, style, li=False)
+        link += '\n editors please edit the <a target="_blank" href=\"http://www.comics.org/admin/system/modules/site.lasso?mode=update&type=story&storyid='+esc(story.id)+'\">database</a>\n'
+    link += '</li>'
+    return link
 
 def parse_reprint_fr(reprints):
     """ parse a reprint entry starting with "fr." Often found in older indices.
@@ -110,7 +124,7 @@ def parse_reprint_fr(reprints):
     return results
 
 
-def parse_reprint_full(reprints, from_to):
+def parse_reprint_full(reprints, from_to, max_found = 10):
     """ parse a reprint entry, first for our standard, them some for
     other common version.  We may turn the others off or add even more. ;-)"""
     notes = None
@@ -170,7 +184,7 @@ def parse_reprint_full(reprints, from_to):
         except:
             pass
         
-        if results.count() == 0 or results.count() > 10:
+        if results.count() == 0 or results.count() > max_found:
             try:# our typoed format: seriesname (publisher year <series>) #nr
                 # use series from before
                 string = after_series
@@ -214,7 +228,7 @@ def parse_reprint_full(reprints, from_to):
             except:
                 pass
         
-        if results.count() == 0 or results.count() > 10:
+        if results.count() == 0 or results.count() > max_found:
             try:# for format: seriesname (year series) #nr
                 # use series from before
                 string = after_series
@@ -240,7 +254,7 @@ def parse_reprint_full(reprints, from_to):
             except:
                 pass
                 
-        if results.count() == 0 or results.count() > 10:
+        if results.count() == 0 or results.count() > max_found:
             try:# for format: seriesname #nr(publisher, year <series>)
                 position = reprints.find(' #')
                 series = reprints[len(from_to):position].strip().strip("The ").strip("the ")
@@ -272,7 +286,7 @@ def parse_reprint_full(reprints, from_to):
             except:
                 pass
                 
-        if results.count() == 0 or results.count() > 10:
+        if results.count() == 0 or results.count() > max_found:
             try:# for format: seriesname #nr (year)
                 # use series from before                
                 string = after_series
@@ -337,8 +351,6 @@ def show_reprint_full(story, style):
                             next_reprint = next_reprint.filter(id =
                                                     next_reprint[a[0]].id)
                     if next_reprint.count() == 1:
-                        # if len(reprint) > 0:
-                            # reprint += '\n'
                         reprint += generate_reprint_link(story, next_reprint[0],
                                                         from_to, style, 
                                                         notes=notes)
@@ -346,8 +358,6 @@ def show_reprint_full(story, style):
             # and some more obscure ones
             if next_reprint.count() != 1:
                 next_reprint = parse_reprint_fr(string)
-                # if len(reprint) > 0:
-                    # reprint += '\n'
                 if next_reprint.count() > 1 and next_reprint.count() <= 15:
                     a = []
                     for i in range(next_reprint.count()):
@@ -390,13 +400,14 @@ def show_reprint_suggestions(story, style):
                     if len(a) == 1:
                         next_reprint = next_reprint.filter(id =
                                                 next_reprint[a[0]].id)
-                if next_reprint.count() > 0 and next_reprint.count() <= 5:
-                    for i in range(next_reprint.count()):
-                        reprint += "reprint entry: " + string + '\t candidate:'
-                        reprint += generate_reprint_link(story, next_reprint[i],
-                                                        from_to, style, 
-                                                        notes=notes)
-                        reprint += mark_safe('<a target="_blank" href=\"http://www.comics.org/admin/system/modules/site.lasso?mode=update&type=story&storyid='+str(story.id)+'\">dblink</a>')
+                if next_reprint.count() == 1 and from_to in ("from ","in "):
+                    reprint += generate_reprint_link(story, next_reprint[0],
+                                                     from_to, style,
+                                                     notes = notes)
+                    break
+                elif next_reprint.count() > 0 and next_reprint.count() <= 5:
+                    reprint += generate_candidates_link(story, string,
+                                                next_reprint, from_to, style)
                     break
                         
             # check for some others
@@ -414,17 +425,11 @@ def show_reprint_suggestions(story, style):
                             next_reprint = next_reprint.filter(id =
                                                     next_reprint[a[0]].id)
                     if next_reprint.count() > 0 and next_reprint.count() <= 5:
-                        for i in next_reprint:
-                            reprint += "reprint entry: " + string + '\t candidate:'
-                            reprint += generate_reprint_link(story, i,
-                                                            from_to, style, 
-                                                            notes=notes)
-                            reprint += mark_safe('<a target="_blank" href=\"http://www.comics.org/admin/system/modules/site.lasso?mode=update&type=story&storyid='+str(story.id)+'\">dblink</a>') 
+                        reprint += generate_candidates_link(story, string,
+                                                next_reprint, from_to, style)
                         break
             if next_reprint.count() == 0 or next_reprint.count() > 5:
                 next_reprint = parse_reprint_fr(string)
-                # if len(reprint) > 0:
-                    # reprint += '\n'
                 if next_reprint.count() > 1 and next_reprint.count() <= 15:
                     a = []
                     for i in range(next_reprint.count()):
@@ -435,26 +440,36 @@ def show_reprint_suggestions(story, style):
                     if len(a) == 1:
                         next_reprint = next_reprint.filter(id =
                                                 next_reprint[a[0]].id)
-                if next_reprint.count() == 1:
-                    reprint += generate_reprint_link(story, next_reprint[0],
-                                                     "from ", style)
+                if next_reprint.count() > 0 and next_reprint.count() <= 5:
+                    reprint += generate_candidates_link(story, string,
+                                                next_reprint, from_to, style)
                 else:
                     reprint += '<li> ' + esc(string) + ' </li>'
 
-        return mark_safe('<dt class="credit_tag">Reprints:</dt>' + \
-                         '<dd class="credit_def"><ul> ' + reprint + \
-                         '</ul></dd>')
+        dt = '<dt class="credit_tag'
+        dd = '<dd class="credit_def'
+        if (style):
+            dt += ' %s' % style
+            dd += ' %s' % style
+        dt += '">'
+        dd += '">'
+        
+        return mark_safe(dt + '<span class="credit_label">' + _('Reprints:') \
+                + '</span></dt>' + \
+               dd + '<span class="credit_value"><ul>' + reprint \
+                + '</ul></span></dd>')
     else:
         return ""
 
 def parse_reprint(reprints, from_to):
-    """ parse a reprint entry for our standard """
+    """ parse a reprint entry for exactly our standard """
     notes = None
     
     if reprints.lower().startswith(from_to):
         try:# our preferred format: seriesname (publisher, year <series>) #nr
             position = reprints.find(' (')
-            series = reprints[len(from_to):position].strip().strip("The ").strip("the ")
+            series = reprints[len(from_to):position].strip()
+            # could remove the/The from beginning and from end with ','
             string = reprints[position+2:]
             after_series = string # use in other formats
             #print series 
@@ -480,22 +495,13 @@ def parse_reprint(reprints, from_to):
                 position = string.find(' (') #check for (date)
                 if position > 0: #if found ignore later
                     pass
-                else:
-                    #allow #nr date without ( ) only 
-                    #if there is a number before the space
-                    position = string.find(' ') 
-                    if position > 0:
-                        if string[:position].isdigit():
-                            pass
-                        else:
-                            position = 0
             if string.isdigit(): #in this case we are fine
                 number = string
             else:
                 if position > 0:
-                    number = string[:position].strip()
+                    number = string[:position].strip('., ')
                 else:
-                    number = string.strip().strip('.')
+                    number = string.strip('., ')
             #print number
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
@@ -528,9 +534,24 @@ def show_reprint(story, style):
             if next_reprint.count() != 1:
                 reprint += '<li> ' + esc(string) + ' </li>'
 
-        return mark_safe('<dt class="credit_tag">Reprints:</dt>' + \
-                         '<dd class="credit_def"><ul> ' + reprint + \
-                         '</ul></dd>')
+        # old version, without linkify button
+        #return mark_safe('<dt class="credit_tag">Reprints:</dt>' + \
+                         #'<dd class="credit_def"><ul> ' + reprint + \
+                         #'</ul></dd>')
+        label = 'Reprints: <span class="linkify"><a href="?reprints=True">' + \
+                'search and link</a></span>'
+    
+        dt = '<dt class="credit_tag'
+        dd = '<dd class="credit_def'
+        if (style):
+            dt += ' %s' % style
+            dd += ' %s' % style
+        dt += '">'
+        dd += '">'
+
+        return mark_safe(dt + '<span class="credit_label">' + _(label) + '</span></dt>' + \
+               dd + '<span class="credit_value"><ul>' + reprint + '</ul></span></dd>')
+    
     else:
         return ""
 
