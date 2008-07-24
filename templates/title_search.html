@@ -33,11 +33,11 @@
             <td> <img src="{{ media_url }}/img/gcd/flags/{{ series.country_code|lower }}.gif">
             <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a>
             <td> {{ series.year_began }}
-            <td> {{ series.issue_set.count }}
+            <td> <a href="{{ series.get_absolute_url }}status/">{{ series.issue_set.count }}</a>
             <td>
                 {% if series.gallery_present %}
                     {% ifnotequal series.gallery_present "0" %}
-                        Gallery
+                        <a href="{{ series.get_absolute_url }}covers/">Gallery</a>
                     {% else %}
                         Add
                     {% endifnotequal %}
