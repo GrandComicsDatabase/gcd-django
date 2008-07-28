@@ -15,11 +15,13 @@
     <td> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
     <td>
     {% if not publisher.is_imprint %}
-      {% if publisher.has_imprints %}
-        <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_set.count }}</a>
-      {% else %}
-        {{ publisher.imprint_set.count }}
-      {% endif %}
+      {% with publisher.imprint_set.count as imprint_count %}
+        {% if imprint_count %}
+          <a href="{{ publisher.get_absolute_url }}imprints/">{{ imprint_count }}</a>
+        {% else %}
+          {{ imprint_count }}
+        {% endif %}
+      {% endwith %}
     {% endif %}
     </td>
     <td> {{ publisher.series_set.count }} </td>

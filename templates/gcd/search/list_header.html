@@ -5,10 +5,9 @@
   {{ heading }}:
 </div>
 <div class="right">
-  {% with items.count as count %}
-    {{ count }} {{ item_name }}{{ count|pluralize:plural_suffix }}
-    matched your search.
-  {% endwith %}
+  {{ paginator.count }}
+  {{ item_name }}{{ paginator.count|pluralize:plural_suffix }}
+  matched your search.
 </div>
 </h1>
 

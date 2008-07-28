@@ -208,7 +208,8 @@ def process_advanced(request):
     items = []
     list_template = None
     if data['target'] == 'publisher':
-        items = Publisher.objects.filter(pq_obj).order_by(*terms)
+        filter = Publisher.objects.filter(pq_obj).order_by(*terms)
+        items = filter.select_related('country')
         template = 'gcd/search/publisher_list.html'
 
     elif data['target'] == 'series':
@@ -246,6 +247,8 @@ def process_advanced(request):
     elif item_name == 'series':
         plural_suffix = ''
 
+    # Store the URL minus the page setting so that we can use
+    # it to build the URLs for the links to other pages.
     get_copy = request.GET.copy()
     get_copy.pop('page', None)
 
