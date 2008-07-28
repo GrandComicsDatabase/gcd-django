@@ -2,8 +2,12 @@
 <form action="/gcd/issue/" method="get">
   <select name="id" onChange="submit()">
     <option value=""> --
-  {% for issue in series.issue_set.all %}
-    <option value="{{ issue.id }}">{{ issue.number }}
+  <!-- Iterate over covers rather than issues because cover sort codes
+       are more reliable than key dates, and if both cover and issue
+       records are needed the queries are more optimal done from the
+       covers side. -->
+  {% for cover in covers %}
+    <option value="{{ cover.issue.id }}">{{ cover.issue.number }}
   {% endfor %}
   </select>
   <input type="hidden" name="style" value="{{ style }}"/>

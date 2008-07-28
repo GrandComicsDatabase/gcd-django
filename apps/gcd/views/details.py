@@ -86,9 +86,10 @@ def series(request, series_id):
     """Display the details page for a series."""
     
     series = get_object_or_404(Series, id = series_id)
+    covers = series.cover_set.select_related('issue')
     country = Country.objects.get(code__iexact = series.country_code)
     image_tag = get_image_tag(series_id = int(series_id),
-                              issue_id = series.issue_set.all()[0].id,
+                              cover = covers[0],
                               zoom_level = ZOOM_MEDIUM,
                               alt_text = 'First Issue Cover')
 
@@ -109,6 +110,7 @@ def series(request, series_id):
 
     return render_to_response('gcd/series.html', {
       'series' : series,
+      'covers' : covers,
       'image_tag' : image_tag,
       'country' : country.name or series.country_code,
       'language' : language,
@@ -120,12 +122,17 @@ def status(request, series_id):
     """Display the index status matrix for a series."""
 
     series = get_object_or_404(Series, id = series_id)
+    # Cover sort codes are more reliable than issue key dates,
+    # and the 'select_related' optimization only works in this direction.
+    covers = series.cover_set.select_related('issue')
+
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
     style = get_style(request)
 
     return render_to_response('gcd/status.html', {
       'series' : series,
+      'covers' : covers,
       'table_width' : table_width,
       'style' : style,
       'media_url' : settings.MEDIA_URL })
@@ -134,12 +141,15 @@ def scans(request, series_id):
     """Display the cover scan status matrix for a series."""
 
     series = get_object_or_404(Series, id = series_id)
+    covers = series.cover_set.select_related('issue')
+
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
     style = get_style(request)
 
     return render_to_response('gcd/scans.html', {
       'series' : series,
+      'covers' : covers,
       'table_width' : table_width,
       'style' : style,
       'media_url' : settings.MEDIA_URL })
@@ -148,9 +158,10 @@ def cover(request, issue_id, size):
     """Display the cover for a single issue on its own page."""
 
     issue = get_object_or_404(Issue, id = issue_id)
-    [prev_issue, next_issue] = get_prev_next_issue(issue.series, issue)
+    cover = issue.cover
+    [prev_issue, next_issue] = get_prev_next_issue(issue.series, cover)
 
-    cover_tag = get_image_tag(issue.series_id, issue_id,
+    cover_tag = get_image_tag(issue.series_id, cover,
                               "Cover Image", int(size))
     style = get_style(request)
 
@@ -173,7 +184,7 @@ def covers(request, series_id, style="default"):
     table_width = 5
 
     cover_tags = []
-    p = QuerySetPaginator(series.cover_set.all(), 50)
+    p = QuerySetPaginator(series.cover_set.select_related('issue'), 50)
     page_num = 1
     if (request.GET.has_key('page')):
         page_num = int(request.GET['page'])
@@ -183,10 +194,9 @@ def covers(request, series_id, style="default"):
         issue = cover.issue
         alt_string = series.name + ' #' + issue.number
         cover_tags.append([cover, issue, get_image_tag(series.id,
-                                                       issue.id,
+                                                       cover,
                                                        alt_string,
-                                                       ZOOM_SMALL,
-                                                       cover)])
+                                                       ZOOM_SMALL)])
 
 
     style = get_style(request)
@@ -208,46 +218,45 @@ def issue_form(request):
     return HttpResponseRedirect("/gcd/issue/" + request.GET["id"] + \
                                 "/?style=" + request.GET["style"])
 
-def get_prev_next_issue(series, issue):
+def get_prev_next_issue(series, cover):
     prev_issue = None
     next_issue = None
-    if issue.key_date:
-        # Get sorted issue_set for series and find previous and next issue
+    if cover.code != None:
+        # Get sorted cover_set for series and find previous and next issue
         # TODO:  It would be more efficient to store next/prev issue ids
         # in the the issue DB record and avoid these queries.
-        issue_list = series.issue_set.all().order_by('key_date')
+        cover_list = series.cover_set.all()
     
-        earlier_issues = \
-          series.issue_set.filter(key_date__lt = issue.key_date)
-        earlier_issues = earlier_issues.order_by('-key_date')
+        earlier_covers = \
+          series.cover_set.filter(code__lt = cover.code)
+        earlier_covers = earlier_covers.order_by('-code')
         
-        later_issues = series.issue_set.filter(key_date__gt = issue.key_date)
-        later_issues = later_issues.order_by('key_date')
+        later_covers = series.cover_set.filter(code__gt = cover.code)
+        later_covers = later_covers.order_by('code')
         
         try:
-            prev_issue = earlier_issues[0]
+            prev_issue = earlier_covers[0].issue
         except IndexError:
-            prev_issue = None
+            pass
         try:
-            next_issue = later_issues[0]
+            next_issue = later_covers[0].issue
         except IndexError:
-            next_issue = None
+            pass
 
     return [prev_issue, next_issue]
 
 def issue(request, issue_id):
     """Display the issue details page, including story details."""
     issue = get_object_or_404(Issue, id = issue_id)
-    image_tag = get_image_tag(series_id = issue.series.id,
-                              issue_id = int(issue_id),
-                              zoom_level = ZOOM_SMALL,
-                              alt_text = 'Cover Thumbnail')
+    cover = issue.cover
+    image_tag = get_image_tag(series_id=issue.series.id,
+                              cover=cover,
+                              zoom_level=ZOOM_SMALL,
+                              alt_text='Cover Thumbnail')
     style = get_style(request)
 
-    # prev_issue = None
-    # next_issue = None
     series = issue.series
-    [prev_issue, next_issue] = get_prev_next_issue(series, issue)
+    [prev_issue, next_issue] = get_prev_next_issue(series, cover)
 
     linkify_reprints = None
     if (request.GET.has_key('reprints')):

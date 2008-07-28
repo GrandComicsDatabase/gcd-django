@@ -11,7 +11,12 @@
 <p class="spacer"/>
 <table border="1" class="status">
   <tr>
-  {% for issue in series.issue_set.all %}
+  <!-- Iterate over covers rather than issues because cover sort codes
+       are more reliable than key dates, and if both cover and issue
+       records are needed the queries are more optimal done from the
+       covers side. -->
+  {% for cover in covers %}
+  {% with cover.issue as issue %}
     <td class="status_{{ issue.index_status }}">
       <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
     {% if forloop.counter|divisibleby:table_width %}
@@ -25,5 +30,6 @@
   </tr>
       {% endif %}
     {% endif %}
+  {% endwith %}
   {% endfor %}
 </table>

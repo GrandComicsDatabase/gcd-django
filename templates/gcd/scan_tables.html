@@ -12,9 +12,9 @@
 <p class="spacer"/>
 <table border="1" class="status">
   <tr>
-  {% for issue in series.issue_set.all %}
-    <td class="scan_status_{{ issue.cover.get_cover_status }}">
-      <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
+  {% for cover in covers %}
+    <td class="scan_status_{{ cover.get_cover_status }}">
+      <a href="{{ cover.issue.get_absolute_url }}">{{ cover.issue.number }}</a> </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>
       {% if not forloop.last %}

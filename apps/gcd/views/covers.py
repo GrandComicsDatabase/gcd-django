@@ -17,7 +17,7 @@ _server_prefixes = ['',
                     'http://www.comics.org/graphics/covers/',
                     'http://www.gcdcovers.com/graphics/covers/']
 
-def get_image_tag(series_id, issue_id, alt_text, zoom_level, cover=None):
+def get_image_tag(series_id, cover, alt_text, zoom_level):
     if settings.FAKE_COVER_IMAGES:
         if zoom_level == ZOOM_SMALL:
             return '<img src="' +settings.MEDIA_URL + \
@@ -31,9 +31,6 @@ def get_image_tag(series_id, issue_id, alt_text, zoom_level, cover=None):
 
     img_url = '<img src="" alt="' + alt_text + '" class="cover_img"/>'
 
-    if not cover:
-        cover = get_object_or_404(Cover, issue = issue_id)
-        
     if (zoom_level == ZOOM_SMALL):
         if not (cover.has_image):
             return '<img class="no_cover" src="' + _server_prefixes[2] + \
@@ -44,15 +41,18 @@ def get_image_tag(series_id, issue_id, alt_text, zoom_level, cover=None):
         suffix = suffix + "%d00/" % zoom_level
         suffix = suffix + "%d_%d_%s.jpg" % (series_id, zoom_level, cover.code)
 
-    try:
-        img_url = _server_prefixes[cover.server_version] + suffix
-        img = urlopen(img_url)
-    except:
+    # For now trust the DB on the graphics server.  This will sometimes
+    # be wrong but is *MUCH* faster.
+    img_url = _server_prefixes[cover.server_version] + suffix
+    # try:
+        # img_url = _server_prefixes[cover.server_version] + suffix
+        # img = urlopen(img_url)
+    # except:
         # TODO: Figure out specific recoverable error.
         # TODO: Don't hardcode the number 2.
-        cover.server_version = 2
-        cover.save()
-        img_url = _server_prefixes[cover.server_version] + suffix
+        # cover.server_version = 2
+        # cover.save()
+        # img_url = _server_prefixes[cover.server_version] + suffix
 
     return '<img src="' + img_url + '" alt="' + alt_text + \
            '" class="cover_img"/>'

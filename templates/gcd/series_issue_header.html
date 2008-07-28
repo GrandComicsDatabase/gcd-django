@@ -21,7 +21,9 @@
 <div class="item_id">
   <div class="left" class="item_data">
     <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a>,
-    {% if series.imprint %}
+    <!-- use imprint_id to avoid a needless DB lookup on imprint_id = 0
+         If we used NULL for "no imprint" this wouldn't be a problem.  -->
+    {% if series.imprint_id %}
       <a href="{{ series.imprint.get_absolute_url }}">{{ series.imprint }}</a> imprint,
     {% endif %}
     {{ series.year_began }} Series
