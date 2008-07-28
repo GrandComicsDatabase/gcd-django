@@ -9,6 +9,7 @@ from django.shortcuts import render_to_response, \
                              get_object_or_404, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
+from django.core.paginator import QuerySetPaginator
 from django.views.generic.list_detail import object_list
 
 from apps.gcd.models import Publisher, Series, Issue, Story
@@ -170,10 +171,7 @@ def search(request):
 
 
 def advanced_search(request):
-    """Handler for advanced searches.  If no search is specified, this
-    displayes the advanced search page.  Otherwise it runs the search.
-    Currently, this is done by seing if the mandatory field 'target'
-    is set, which tells us whether we're looking for stories or series."""
+    """Displays the advanced search page."""
 
     if (not request.GET.has_key("target")):
         return render_to_response('gcd/search/advanced.html', {
@@ -188,6 +186,7 @@ def advanced_search(request):
 
     
 def process_advanced(request):
+    """Runs advanced searches."""
     form = AdvancedSearch(request.GET)
     if not form.is_valid():
         return render_to_response('gcd/search/advanced.html', {
@@ -231,6 +230,12 @@ def process_advanced(request):
         items = filter.select_related('issue__series')
         template = 'gcd/search/content_list.html'
 
+    p = QuerySetPaginator(items, 100)
+    page_num = 1
+    if (request.GET.has_key('page')):
+        page_num = int(request.GET['page'])
+    page = p.page(page_num)
+
     item_name = data['target']
     plural_suffix = 's'
     if item_name == 'sequence':
@@ -241,11 +246,18 @@ def process_advanced(request):
     elif item_name == 'series':
         plural_suffix = ''
 
+    get_copy = request.GET.copy()
+    get_copy.pop('page', None)
+
     context = {
-        'items' : items,
+        'items' : page.object_list,
         'item_name' : item_name,
         'plural_suffix' : plural_suffix,
-        'header' : data['target'].title() + ' Search Results',
+        'page' : page,
+        'paginator' : p,
+        'page_number': page_num,
+        'heading' : data['target'].title() + ' Search Results',
+        'query_string' : get_copy.urlencode(),
         'media_url' : settings.MEDIA_URL,
         'style' : 'default',
     }
@@ -578,25 +590,4 @@ def compute_order(data):
                 terms.append(order)
 
     return terms
-
-
-def xsearch_stories(data):
-    # query_string is needed for links to prev/next page
-    # page=<number> is always added by the template, so the '&' is fine
-    # we get a copy of GET and make sure there is no page entry
-    search_query = request.GET.copy()
-    if 'page' in search_query:
-        pageno = search_query['page']
-        del search_query['page']
-    else:
-        pageno = 1    
-
-    digg_paginator = DiggPaginator(results,50,page=pageno, body=7)
-
-    return object_list(request, results, paginate_by = 50, 
-      template_name = 'default_search.html',extra_context ={
-      'search_term' : "[TODO: Stringify advanced queries]",
-      'media_url' : settings.MEDIA_URL,
-      'query_string' : search_query.urlencode()+'&',
-      'digg_paginator' : digg_paginator})
 

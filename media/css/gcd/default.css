@@ -119,6 +119,14 @@ div.item_id div.prev_next {
     float: right;
 }
 
+/* Specialized version of part of the item_id for search result pages. */
+
+h1#search_id {
+    font-size: 1.25em;
+}
+
+/* Search or plain header bars that appear at the top of nearly every page. */
+
 #search_bar {
     clear: both;
     background-color: #77E;
@@ -239,6 +247,7 @@ table#covers td.marked {
     clear: both;
     border: solid black 1px;
     border-collapse: collapse;
+    margin-top: 1em;
     margin-bottom: 1em;
     width: 100%;
 }
