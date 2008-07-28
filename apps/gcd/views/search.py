@@ -440,10 +440,25 @@ def search_stories(data, op):
     table in the hierarchy, there are no possible subqueries to run."""
     q_objs = []
     for field in ('feature', 'title', 'type', 'script', 'pencils', 'inks',
-                  'colors', 'letters', 'editor', 'job_number', 'characters',
+                  'colors', 'letters', 'job_number', 'characters',
                   'synopsis', 'reprints', 'notes'):
         if data[field]:
             q_objs.append(Q(**{ '%s__%s' % (field, op) : data[field] }))
+
+    for field in ('issue_editor', 'issue_notes', 'issue_reprints'):
+        if data[field]:
+            m = match(r'issue_(?P<column>.+)', field)
+            kwargs = {'%s__%s' % (m.group('column'), op) : data[field],
+                      'sequence_number' : 0}
+            q_objs.append(Q(**kwargs))
+
+    # The editor field on the first cover sequence is always intended
+    # to apply to the whole issue.  However, reprints and notes may
+    # apply to either the issue or the cover, so allow them to match
+    # either way.
+    if data['editor']:
+        q_objs.append(Q(**{ 'editor__%s' % op : data['editor'] }) & \
+                      ~Q(sequence_number=0))
 
     if data['pages']:
         range_match = match(r'(?P<begin>\d+)\s*-\s*(?P<end>\d+)$',
@@ -459,7 +474,9 @@ def search_stories(data, op):
         if range_match:
             num_range = range(int(range_match.group('begin')),
                               int(range_match.group('end')) + 1)
-            q_objs.append(Q(page_count__in=num_range) & Q(sequence_number=0))
+            q_objs.append(Q(page_count__in=num_range, sequence_number=0))
+        else:
+            q_objs.append(Q(page_count=data['issue_pages'], sequence_number=0))
 
     return compute_qobj(data, [], q_objs)
 

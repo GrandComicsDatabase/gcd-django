@@ -113,9 +113,9 @@ search system.  The polish is forthcoming.  Some usage notes:
     {{ form.price|show_form }}
     {{ form.issue_pages|show_form }}
     {{ form.format|show_form }}
-    <div class="disabled">{{ form.editor|show_form }}</div>
-    <div class="disabled">{{ form.issue_notes|show_form }}</div>
-    <div class="disabled">{{ form.issue_reprints|show_form }}</div>
+    {{ form.issue_editor|show_form }}
+    {{ form.issue_notes|show_form }}
+    {{ form.issue_reprints|show_form }}
   </ol>
 </fieldset>
 
