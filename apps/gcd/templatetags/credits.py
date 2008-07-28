@@ -2,6 +2,7 @@ import re
 
 from django import template
 from django.utils.translation import ugettext as _
+from django.utils.safestring import mark_safe
 
 from apps.gcd.models import Issue
 
@@ -36,6 +37,10 @@ def show_credit(story, credit):
     else:
         return ""
 
+def show_form(field):
+    """ For showing form fields for credits and similar fields."""
+    return mark_safe('<li>' + field.label_tag() + unicode(field) + \
+                     unicode(field.errors))
 
 def __credit_visible(value):
     """ Check if credit exists and if we want to show it.  Could add
@@ -74,3 +79,4 @@ def __format_credit(story, credit, style):
 
 
 register.filter(show_credit)
+register.filter(show_form)

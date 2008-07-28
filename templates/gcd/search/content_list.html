@@ -1,0 +1,32 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% block list_contents %}
+<table class="listing">
+  <tr>
+    <th> Content </th>
+    <th> Type </th>
+    <th> Title </th>
+    <th> Series </th>
+    <th> Issue </th>
+    <th> Date </th>
+  </tr>
+{% for story in items %}
+  {% with story.issue.get_absolute_url as url %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ url }}#{{ story.sequence_number}}">{{ story.feature }}</a>
+    {% with story.type|lower as lower_type %}
+    <td> {% ifequal lower_type 'cover' %}
+            <a href="{{ url }}cover/4/">{{ story.type }}</a>
+         {% else %}
+            {{ story.type }}
+         {% endifequal %}
+    {% endwith %}
+    <td> <a href="{{ url }}#{{ story.sequence_number}}">{{ story.title }}</a>
+    <td> <a href="{{ story.issue.series.get_absolute_url }}">{{ story.issue.series.name }}</a> ({{ story.issue.series.year_began }} series)</td>
+    <td> <a href="{{ url }}">{{ story.issue.number }}</a> </td>
+    <td> {{ story.issue.publication_date }} </td>
+  </tr>
+  {% endwith %}
+{% endfor %}
+</table>
+{% endblock %}

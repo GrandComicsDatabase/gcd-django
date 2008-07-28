@@ -1,24 +1,9 @@
-<html>
-<head>
-<title>{% block title %}{% endblock %}</title>
+{% extends "gcd/base.html" %}
 
-{% comment %}
-Having trouble with block / ifnotequal interactions.  Need to investigate.
-For now, just a simple single block for all CSS, despite redundancy.
-{% endcomment %}
+{% block body %}
+  {% include "gcd/search_bar.html" %}
 
-{% block css %}{% endblock %}
-</head>
+  {% block view_body %}{% endblock %}
 
-<body>
-<div id="sizing_base">
-{% include "gcd/search_bar.html" %}
-
-{% block view_body %}{% endblock %}
-
-{% include "gcd/search_bar.html" %}
-
-{% include "gcd/fine_print.html" %}
-</div>
-</body>
-</html>
+  {% include "gcd/search_bar.html" %}
+{% endblock %}

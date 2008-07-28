@@ -3,7 +3,8 @@
 {% block results %}
 <tr class="result-status">
     <td>
-        {{ paginator.count }} records matched your search for "{{ search_term }}"
+<!-- paginator.count -->
+        {{ object_list.count }} records matched your search for "{{ search_term }}"
     <td>
 </tr>
 <tr class="result-display-status">

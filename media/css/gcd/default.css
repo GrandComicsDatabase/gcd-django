@@ -142,6 +142,31 @@ div.item_id div.prev_next {
     margin-top: -0.5em;
 }
 
+#plain_bar {
+    clear: both;
+    background-color: #77E;
+    color: black;
+    margin-bottom: 1em;
+    padding-bottom: 0.5em;
+    vertical-align: center;
+    border: solid 1px;
+    width: 100%;
+}
+
+#plain_bar img {
+    font-weight: bold;
+    height: 2em;
+    position: relative;
+    top: 0.3em;
+    margin-top: -0.3em;
+    margin-left: 0.5em;
+}
+
+#plain_bar span {
+    font-size: 2em;
+    font-weight: bold;
+}
+
 .fine_print {
     margin-top: 1em;
 }
@@ -241,6 +266,10 @@ tr.listing_even {
     background-color: #DDD;
 }
 
+div.list_table_header {
+    margin-bottom: 1em;
+}
+
 /* Move to publisher.css when it's created. */
 dl.pub_data {
     float: left;
@@ -259,3 +288,4 @@ dl.pub_data dd {
     padding: 0;
     margin: 0;
 }
+

@@ -1,0 +1,27 @@
+{% extends "gcd/base.html" %}
+
+{% block title %}
+  GCD :: {{ heading }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+{% endblock %}
+
+{% block body %}
+
+{% with heading as bar_heading %}
+{% include "gcd/plain_bar.html" %}
+{% endwith %}
+
+<div class="list_table_header">
+{% with items.count as count %}
+  {{ count }} {{ item_name }}{{ count|pluralize:plural_suffix }}
+  matched your search.
+{% endwith %}
+</div>
+
+{% block list_contents %}{% endblock %}
+
+{% endblock %}

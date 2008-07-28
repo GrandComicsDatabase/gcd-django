@@ -1,0 +1,198 @@
+{% extends "gcd/base.html" %}
+
+{% load credits %}
+
+{% block title %} GCD :: Advanced Search {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}/advanced_search.css"/>
+{% endblock %}
+
+{% block body %}
+
+{% with "Advanced Search" as bar_heading %}
+{% include "gcd/plain_bar.html" %}
+{% endwith %}
+
+<div id="blithering">
+<p>
+This is another <strong>intermediate</strong> step towards a proper
+advanced search form.  No work has yet been done to make the layout nice
+or to make the input fields optimally sized.  The point of this step
+was to produce a flexible base of code on which to build a more polished
+search system.  The polish is forthcoming.  Some usage notes:
+<ul>
+  <li> All three methods of searching (contains, exact, regexp) are
+       case-insensitive.  Regular expressions are powerful but not even
+       remotely user-friendly.  The specific regexp syntax is
+       <a href="http://dev.mysql.com/doc/refman/5.0/en/regexp.html">MYSQL's</a>,
+       which is POSIX-ish and relatively basic.
+  <li> To search for "starts with" or "ends with", select Regular Expression
+       and put '^' at the beginning or a '$' at the end respectively.  This
+       will be made more user-friendly later.
+  <li> The AND vs OR fields is an idea that didn't work out well.  It
+       will be replaced shortly.  For now, it sort-of controls whether
+       conditions are ANDed or ORed, but really only applies to most of
+       the content fields a few others that made sense.
+  <li> There's no way to specify an exclusion right now.
+  <li> The imprint checkbox only affects searches for Publishers.  This
+       needs to be made more clear (but it's usually what you want anyway).
+  <li> Fields that apply to the issue but are stored in the Cover story
+       record will be matched when specified in either the issue or story
+       section.
+  <li> Not selecting any country or language means you get all countries and
+       languages.  Which is probably what most people would expect.
+</ul>
+</div>
+<form action="/gcd/search/advanced/process" method="get">
+<fieldset class="control">
+<!-- TODO: why did I put this style attr here? -->
+<legend style="visibility:hidden">Search Control</legend>
+<ol>
+  {{ form.target|show_form }}
+  {{ form.method|show_form }}
+  {{ form.logic|show_form }}
+</ol>
+</fieldset>
+<fieldset class="ordering">
+<legend>Ordering</legend>
+<ol>
+  {{ form.order1|show_form }}
+  {{ form.order2|show_form }}
+  {{ form.order3|show_form }}
+</ol>
+</fieldset>
+
+<fieldset class="universal">
+<legend>Universal Fields</legend>
+<ol>
+  {{ form.start_date|show_form }}
+  {{ form.end_date|show_form }}
+  {{ form.country|show_form }}
+  {{ form.language|show_form }}
+</ol>
+</fieldset>
+
+<fieldset class="publisher" id="publisher_fieldset">
+  <legend>
+    Publisher Fields
+  </legend>
+  <ol>
+    {{ form.pub_name|show_form }}
+    {{ form.imprints|show_form }}
+    {{ form.pub_notes|show_form }}
+  </ol>
+</fieldset>
+
+<fieldset class="series" id="series_fieldset">
+  <legend>
+    Series Fields
+  </legend>
+
+  <ol id="series_list">
+    {{ form.series|show_form }}
+    {{ form.series_notes|show_form }}
+    {{ form.tracking_notes|show_form }}
+    {{ form.publication_notes|show_form }}
+  </ol>
+</fieldset>
+
+<fieldset class="issue" id="issue_fieldset">
+  <legend>
+    Issue Fields
+  </legend>
+  <ol>
+    {{ form.issues|show_form }}
+    {{ form.price|show_form }}
+    {{ form.issue_pages|show_form }}
+    {{ form.format|show_form }}
+    <div class="disabled">{{ form.editor|show_form }}</div>
+    <div class="disabled">{{ form.issue_notes|show_form }}</div>
+    <div class="disabled">{{ form.issue_reprints|show_form }}</div>
+  </ol>
+</fieldset>
+
+<fieldset class="sequence">
+  <legend> Content Fields </legend>
+  <ol>
+    {{ form.feature|show_form }}
+    {{ form.type|show_form }}
+    {{ form.title|show_form }}
+    {{ form.pages|show_form }}
+  </ol>
+
+  <fieldset class="credits">
+    <legend> Credits </legend>
+    <ol>
+      {{ form.script|show_form }}
+      {{ form.pencils|show_form }}
+      {{ form.inks|show_form }}
+      {{ form.colors|show_form }}
+      {{ form.letters|show_form }}
+      {{ form.editor|show_form }}
+      {{ form.job_number|show_form }}
+    </ol>
+  </fieldset>
+
+  <fieldset class="contents">
+    <legend> Contents </legend>
+    <ol>
+      {{ form.genre|show_form }}
+      {{ form.characters|show_form }}
+      {{ form.synopsis|show_form }}
+      {{ form.reprints|show_form }}
+    </ol>
+  </fieldset>
+  <fieldset class="notes">
+    <legend> Indexer Notes </legend>
+    <ol>
+      {{ form.notes|show_form }}
+    </ol>
+  </fieldset>
+</fieldset>
+
+<fieldset class="submit">
+  <input type="submit" value="Search">
+</fieldset>
+<!--
+<h2>Sequence Fields</h2>
+
+    <div class="single_story">
+      <h2 class="sequence_header feature">
+        <span class="feature">
+        
+        </span>
+        <span class="type">
+        ({{ form.type.label_tag }}: {{ form.type }})
+        </span>
+      </h2>
+      <h3 class="sequence_header title">
+        {{ form.title.label_tag }}: {{ form.title }}
+      </h3>
+
+      <h3 class="credit_header"> Credits </h3>
+      <ul class="credits">
+        {{ form.script|show_form }}
+        {{ form.pencils|show_form }}
+        {{ form.inks|show_form }}
+        {{ form.colors|show_form }}
+        {{ form.letters|show_form }}
+        {{ form.editor|show_form }}
+        {{ form.job_number|show_form }}
+      </ul>
+
+      <h3 class="content_header"> Content Information </h3>
+      <dl class="contents">
+        {{ form.genre|show_form }}
+        {{ form.reprints|show_form }}
+      </dl>
+    </div>
+-->
+</form>
+{% endblock %}
+
+{% include "gcd/fine_print.html" %}
+

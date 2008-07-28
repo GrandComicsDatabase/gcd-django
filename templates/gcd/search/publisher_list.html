@@ -1,0 +1,31 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% block list_contents %}
+<table class="listing">
+  <tr>
+    <th> Country </th>
+    <th> Publisher </th>
+    <th> Imprints </th>
+    <th> Titles </th>
+    <th> Issues </th>
+  </tr>
+  {% for publisher in items %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <img src="{{ media_url }}/img/gcd/flags/{{ publisher.country.code|lower }}.gif" alt="{{ publisher.country.code|upper }}">
+    <td> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
+    <td>
+    {% if not publisher.is_imprint %}
+      {% if publisher.has_imprints %}
+        <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_set.count }}</a>
+      {% else %}
+        {{ publisher.imprint_set.count }}
+      {% endif %}
+    {% endif %}
+    </td>
+    <td> {{ publisher.series_set.count }} </td>
+    <td> {{ publisher.computed_issue_count }} </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
+

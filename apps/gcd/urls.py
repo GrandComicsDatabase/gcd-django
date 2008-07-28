@@ -25,6 +25,8 @@ urlpatterns = patterns('',
     (r'^gcd/$', 'apps.gcd.views.index'),
     (r'^gcd/search/$', 'apps.gcd.views.search.search'),
     (r'^gcd/search/advanced/$', 'apps.gcd.views.search.advanced_search'),
+    (r'^gcd/search/advanced/process/$',
+     'apps.gcd.views.search.process_advanced'),
 
     # Publisher
     (r'^gcd/publisher/(?P<publisher_id>\d+)/$',

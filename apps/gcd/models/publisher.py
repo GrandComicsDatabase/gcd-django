@@ -58,9 +58,9 @@ class Publisher(models.Model):
         return self.imprint_set.count() > 0
 
     def is_imprint(self):
-        try:
-            return self.parent
-        except ObjectDoesNotExist:
+        if self.parent_id:
+            return True
+        else:
             return False
 
     def get_absolute_url(self):

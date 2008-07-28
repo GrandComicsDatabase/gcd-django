@@ -1,0 +1,269 @@
+/* ***************************************
+ * advanced_search.css
+ * CSS specific to the advance search page.
+ * ***************************************/
+
+/*
+ * Much of this is from http://www.sidepoint.com/article/fancy-form-design-ccs/
+ */
+
+fieldset {
+    margin: 1em 0;
+    padding: 0;
+    pudding: vannila;
+    overflow: hidden;
+    border: solid black 1px;
+}
+
+#plus_series {
+    display: none;
+}
+
+legend {
+    /* margin-left: 1em; */
+    color: #000;
+    font-weight: bold;
+}
+
+fieldset ol {
+    /* padding: 1em 1em 0 1em; */
+    list-style: none;
+    padding-left: 1em;
+}
+
+fieldset li {
+    /* padding-bottom: 1em;
+    float: left;
+    clear: left; */
+    margin-bottom: 0.5em;
+}
+
+label {
+    width: 9em;
+    margin-right: 1em;
+    text-align: right;
+    float: left;
+}
+
+fieldset.control label {
+    width: 10em;
+}
+
+input {
+    margin-bottom: 0.2em;
+}
+
+
+fieldset.submit {
+    border-style: none;
+    margin 1em;
+}
+
+fieldset.submit input {
+    padding: 0 0.2em;
+}
+
+fieldset.sequence {
+    padding-bottom: 1em;
+}
+
+fieldset.publisher {
+}
+
+fieldset fieldset {
+    margin: 0 3% 1em 3%;
+    width: 94%
+}
+
+.control {
+    border: none;
+}
+.control ol {
+    margin: 0;
+    padding-left: 0;
+}
+.control li {
+    margin-left: 0;
+}
+.control label {
+    width: 6.5em;
+    text-align: left;
+    font-weight: bold;
+}
+
+/******************************************************************/
+
+/*
+ * Common elements
+ */
+
+.credit_header {
+    clear: both;
+}
+
+.single_story dl.credits {
+    margin-bottom: 0.5em;
+}
+
+ul.credits {
+    list-style: none;
+    padding-left: 0.5em;
+}
+
+ul.credits li {
+    clear: left;
+    margin-left: 0;
+    font-weight: bold;
+}
+dl.credits dd {
+    float: none;
+    margin: 0;
+    padding: 0;
+}
+
+.content_header {
+    clear: both;
+}
+
+.single_story dl.contents {
+    margin-bottom: 0.15em;
+}
+
+dl.contents dt {
+    clear: left;
+}
+
+dl.contents dd {
+    clear: left;
+    margin-bottom: 0.5em;
+}
+
+dl.contents dd.short {
+    clear: none;
+}
+
+.title {
+    /* font-style: italic; */
+}
+
+
+/*
+ * Story layout elements
+ */
+
+#story_data {
+    clear: both;
+    margin-bottom: 1em;
+}
+
+div.single_story {
+    border: solid black 1px;
+    float: left;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+.single_story h2 {
+    clear: both;
+    padding: 0.2em 6px;
+}
+
+.single_story h3 {
+    clear: both;
+    background-color: #DDD;
+    padding: 0.2em 6px;
+    margin-top: 0;
+    margin-bottom: 0.15em;
+    border-top: solid black 1px;
+}
+
+.single_story h4 {
+    clear: both;
+    padding: 0.2em 6px;
+}
+
+.single_story dl {
+    padding: 0.2em 6px;
+    margin: 0;
+}
+
+.single_story p {
+    padding: 0.2em 6px;
+    margin: 0 0 0.5em 0;
+}
+
+.sequence_header {
+    background-color: #DDD;
+    /* padding: 0.2em; */
+}
+
+h3.title {
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+h2.feature {
+    background-color: #444;
+    color: white;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: normal;
+    /* font-size: 1em; */
+}
+
+span.feature {
+    font-weight: bold;
+}
+span.seq_no {
+    font-size: 0.8em;
+    font-weight: bold;
+}
+span.type {
+    font-size: 0.8em;
+    font-weight: normal;
+}
+p.type_page {
+    margin-top: 0.5em;
+}
+span.fake {
+    font-style: italic;
+}
+
+span.linkify {
+    border: solid #666 1px;
+    padding: 0 0.2em;
+    color: #888;
+    font-size: 0.9em;
+}
+span.linkify :link {
+    color: #888;
+    text-decoration: none;
+}
+span.linkify :visited {
+    color: #888;
+    text-decoration: none;
+}
+
+.disabled {
+    color: gray;
+}
+
+.errorlist li {
+    list-style: disc;
+    color: red;
+    font-weight: bold;
+}
+
+.errorlist {
+    margin-bottom: 1em;
+    margin-left: 10em;
+    padding-left: 0;
+}
+
+fieldset.control .errorlist {
+    margin-left: 11em;
+}
+
+#blithering li {
+    margin-bottom: 0.5em;
+}

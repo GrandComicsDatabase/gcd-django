@@ -7,6 +7,7 @@ class Indexer(models.Model):
     class Meta:
         db_table = 'Indexers'
         app_label = 'gcd'
+        ordering = ['name']
 
     class Admin:
         pass
@@ -23,4 +24,9 @@ class Indexer(models.Model):
     # supposed to use two-letter codes even though not all entries do.
     country_code = models.CharField(max_length = 255, db_column = 'Country',
                                     null = True)
+
+    def __unicode__(self):
+        if self.name:
+            return self.name
+        return self.first_name + ' ' + self.last_name
 
