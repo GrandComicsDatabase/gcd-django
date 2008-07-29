@@ -356,6 +356,10 @@ def search_series(data, op, issues_q=None):
         q_and_only.append(
           Q(**{ '%slanguage_code__in' % prefix : data['language'] }))
 
+    if data['indexer']:
+        q_and_only.append(
+          Q(**{ '%sindex_credit_set__indexer__in' %prefix : data['indexer'] }))
+
     q_objs = []
     if data['series']:
         q_objs.append(Q(**{ '%sname__%s' % (prefix, op) : data['series'] }))

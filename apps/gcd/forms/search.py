@@ -105,5 +105,5 @@ class AdvancedSearch(forms.Form):
 
     indexer = forms.ModelMultipleChoiceField(required=False,
       queryset=Indexer.objects.all(),
-      widget=forms.SelectMultiple(attrs={'size' : '4'}))
+      widget=forms.SelectMultiple(attrs={'size' : '6'}))
 

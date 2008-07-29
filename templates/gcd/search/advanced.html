@@ -43,8 +43,11 @@ search system.  The polish is forthcoming.  Some usage notes:
   <li> Fields that apply to the issue but are stored in the Cover story
        record will be matched when specified in either the issue or story
        section.
-  <li> Not selecting any country or language means you get all countries and
-       languages.  Which is probably what most people would expect.
+  <li> Not selecting any country, language or indexer means you get all
+       countries, languages and indexers.  Which is probably what most
+       people would expect.
+  <li> Search by indexer is only available at the series level as the tables
+       that map issue indexes to indexers are not present in the public data.
   <li> If you try to order by something that doesn't make sense for the
        type of thing you're searching for (i.e. ordering Publishers by
        Penciler) it will just ignore you.  Obviously that doesn't count
@@ -101,6 +104,7 @@ search system.  The polish is forthcoming.  Some usage notes:
     {{ form.series_notes|show_form }}
     {{ form.tracking_notes|show_form }}
     {{ form.publication_notes|show_form }}
+    {{ form.indexer|show_form }}
   </ol>
 </fieldset>
 
@@ -161,40 +165,6 @@ search system.  The polish is forthcoming.  Some usage notes:
 <fieldset class="submit">
   <input type="submit" value="Search">
 </fieldset>
-<!--
-<h2>Sequence Fields</h2>
-
-    <div class="single_story">
-      <h2 class="sequence_header feature">
-        <span class="feature">
-        
-        </span>
-        <span class="type">
-        ({{ form.type.label_tag }}: {{ form.type }})
-        </span>
-      </h2>
-      <h3 class="sequence_header title">
-        {{ form.title.label_tag }}: {{ form.title }}
-      </h3>
-
-      <h3 class="credit_header"> Credits </h3>
-      <ul class="credits">
-        {{ form.script|show_form }}
-        {{ form.pencils|show_form }}
-        {{ form.inks|show_form }}
-        {{ form.colors|show_form }}
-        {{ form.letters|show_form }}
-        {{ form.editor|show_form }}
-        {{ form.job_number|show_form }}
-      </ul>
-
-      <h3 class="content_header"> Content Information </h3>
-      <dl class="contents">
-        {{ form.genre|show_form }}
-        {{ form.reprints|show_form }}
-      </dl>
-    </div>
--->
 </form>
 {% endblock %}
 
