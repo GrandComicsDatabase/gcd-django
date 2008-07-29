@@ -8,11 +8,13 @@
 }
 
 .scan_status_1 {
-    background-color: #CFC;
+    /* background-color: #CFC; */
+    background-color: yellow;
 }
 
 .scan_status_2 {
-    background-color: #3F6;
+    /* background-color: #3F6; */
+    background-color: #F93;
 }
 
 .scan_status_3 {
@@ -21,7 +23,8 @@
 }
 
 .scan_status_4 {
-    background-color: #6CF;
+    /* background-color: #6CF; */
+    background-color: #77E;
 }
 
 /* Note that these tables have border="1" specified in
