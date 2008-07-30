@@ -454,9 +454,9 @@ def show_reprint_suggestions(story, style):
         dt += '">'
         dd += '">'
         
-        return mark_safe(dt + '<span class="credit_label">' + _('Reprints:') \
-                + '</span></dt>' + \
-               dd + '<span class="credit_value"><ul>' + reprint \
+        return mark_safe(dt + '<span class="credit_label">' + _('Reprints') \
+                + ':' + '</span></dt>' + \
+                dd + '<span class="credit_value"><ul>' + reprint \
                 + '</ul></span></dd>')
     else:
         return ""
@@ -538,7 +538,8 @@ def show_reprint(story, style):
         #return mark_safe('<dt class="credit_tag">Reprints:</dt>' + \
                          #'<dd class="credit_def"><ul> ' + reprint + \
                          #'</ul></dd>')
-        label = 'Reprints: <span class="linkify"><a href="?reprints=True">' + \
+        label = _('Reprints') + ': <span class="linkify">' + \
+                '<a href="?reprints=True">' + \
                 'search and link</a></span>'
     
         dt = '<dt class="credit_tag'
@@ -549,7 +550,7 @@ def show_reprint(story, style):
         dt += '">'
         dd += '">'
 
-        return mark_safe(dt + '<span class="credit_label">' + _(label) + '</span></dt>' + \
+        return mark_safe(dt + '<span class="credit_label">' + label + '</span></dt>' + \
                dd + '<span class="credit_value"><ul>' + reprint + '</ul></span></dd>')
     
     else:

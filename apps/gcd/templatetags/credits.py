@@ -3,6 +3,7 @@ import re
 from django import template
 from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue
 
@@ -55,17 +56,18 @@ def __format_credit(story, credit, style):
 
 
     if (credit == 'job_number'):
-        label = 'Job Number:'
+        label = _('Job Number:')
     else:
-        label = credit.title() + ':'
+        label = _(credit.title()) + ':'
 
     if (credit == 'reprints'):
-        credit_value = '<ul><li>' + re.sub(r';\s*', "<li>", credit_value) + \
+        credit_value = '<ul><li>' + re.sub(r';\s*', "<li>", esc(credit_value)) + \
                        '</ul>'
         # TODO: Deal with style parameter / setting.
         label += ' <span class="linkify"><a href="?reprints=True">' + \
-                 'search and link</a></span>'
-    
+                 _('search and link') + '</a></span>'
+    else: # This takes care of escaping the database entries we display
+        credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
     if (style):
@@ -74,8 +76,8 @@ def __format_credit(story, credit, style):
     dt += '">'
     dd += '">'
 
-    return dt + '<span class="credit_label">' + _(label) + '</span></dt>' + \
-           dd + '<span class="credit_value">' + credit_value + '</span></dd>'
+    return mark_safe(dt + '<span class="credit_label">' + label + '</span></dt>' + \
+           dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
 
 register.filter(show_credit)
