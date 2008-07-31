@@ -119,12 +119,14 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_credit'),
 
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.
-    (r'^gcd/job/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
-     'apps.gcd.views.search.story_by_jobname'),
-    (r'^gcd/job/name/(?P<number>.+)/$', 'apps.gcd.views.search.story_by_jobname'),
-    (r'^gcd/job/(?P<number>.+)/sort/(?P<sort>.+)/$',
-     'apps.gcd.views.search.story_by_job'),
-    (r'^gcd/job/(?P<number>.+)/$', 'apps.gcd.views.search.story_by_job'),
+    (r'^gcd/job_number/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.story_by_job_number_name'),
+    (r'^gcd/job_number/name/(?P<number>.+)/$',
+     'apps.gcd.views.search.story_by_job_number_name'),
+    (r'^gcd/job_number/(?P<number>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.story_by_job_number'),
+    (r'^gcd/job_number/(?P<number>.+)/$',
+     'apps.gcd.views.search.story_by_job_number'),
 
     # Reprints
     (r'^gcd/reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',

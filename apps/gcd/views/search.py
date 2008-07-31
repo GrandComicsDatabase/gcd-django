@@ -130,15 +130,15 @@ def story_by_credit(request, name, sort=ORDER_ALPHA):
     return generic_by_name(request, name, q_obj, sort, credit=('any:'+name))
 
 
-def story_by_job(request, number, sort=ORDER_ALPHA):
+def story_by_job_number(request, number, sort=ORDER_ALPHA):
     q_obj = Q(job_number__icontains = number)
-    return generic_by_name(request, number, q_obj, sort, credit="job")
+    return generic_by_name(request, number, q_obj, sort, credit="job_number")
 
-def story_by_jobname(request, number, sort=ORDER_ALPHA):
+def story_by_job_number_name(request, number, sort=ORDER_ALPHA):
     """Handle the form-style URL from the basic search form by mapping
     it into the by-name lookup URLs the system already knows how to handle."""
 
-    return HttpResponseRedirect("/gcd/job/" + \
+    return HttpResponseRedirect("/gcd/job_number/" + \
                                 number + \
                                 "/sort/" + \
                                 sort + \

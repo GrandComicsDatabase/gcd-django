@@ -35,9 +35,6 @@ def show_credit(story, credit):
     elif story.__dict__.has_key(credit):
         return __format_credit(story, credit, style)
 
-    elif (credit == 'job'):
-        return __format_credit(story, 'job_number', style)
-        
     else:
         return ""
 
