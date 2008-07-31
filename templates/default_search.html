@@ -7,6 +7,7 @@
         {{ paginator.count }} records matched your search for "{{ search_term }}"
     </td>
 </tr>
+{% ifnotequal paginator.count 0 %}
 <tr class="result-display-status">
     <td>
         Displaying records {{ page_obj.start_index }} through 
@@ -88,5 +89,6 @@
         
     </table>
 </tr>
+{% endifnotequal %}
 {% endblock %}
 
