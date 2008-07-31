@@ -131,9 +131,18 @@ def story_by_credit(request, name, sort=ORDER_ALPHA):
 
 
 def story_by_job(request, number, sort=ORDER_ALPHA):
-    q_obj = Q(job_number = number)
+    q_obj = Q(job_number__icontains = number)
     return generic_by_name(request, number, q_obj, sort, credit="job")
 
+def story_by_jobname(request, number, sort=ORDER_ALPHA):
+    """Handle the form-style URL from the basic search form by mapping
+    it into the by-name lookup URLs the system already knows how to handle."""
+
+    return HttpResponseRedirect("/gcd/job/" + \
+                                number + \
+                                "/sort/" + \
+                                sort + \
+                                "/")
 
 def story_by_reprint(request, reprints, sort=ORDER_ALPHA):
     q_obj = Q(reprints__icontains = reprints)
