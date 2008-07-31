@@ -234,12 +234,23 @@ def get_prev_next_issue(series, cover):
         later_covers = series.cover_set.filter(code__gt = cover.code)
         later_covers = later_covers.order_by('code')
         
+        # covers <-> issues is not really one-to-one.  Selecting back
+        # along a one-to-one relationship when the other side is not
+        # present seems to lead to Django attempting to select the
+        # entire table.  Carefully saving off the issue's ID and then
+        # filtering (*not* getting) that issue correctly deals with 
+        # nonexistant issues.  
+        # TODO: Find a less fragile solution.  Or fix the database.
         try:
-            prev_issue = earlier_covers[0].issue
+            earlier_id = earlier_covers[0].issue_id
+            earlier_list = Issue.objects.filter(id=earlier_id)
+            prev_issue = earlier_list[0]
         except IndexError:
             pass
         try:
-            next_issue = later_covers[0].issue
+            later_id = later_covers[0].issue_id
+            later_list = Issue.objects.filter(id=later_id)
+            next_issue = later_list[0]
         except IndexError:
             pass
 
