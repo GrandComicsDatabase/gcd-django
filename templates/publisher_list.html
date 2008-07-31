@@ -3,9 +3,10 @@
 {% block results %}
 <tr class="result-status">
     <td>
-        {{ total_results }} records matched your query:
+        {{ publisher_set.count }} records matched your query:
     </td>
 </tr>
+{% ifnotequal publisher_set.count 0 %}
 <tr class="result-display-status">
     <td>
         Displaying records {{ first_displayed }} through {{ last_displayed }}
@@ -40,5 +41,6 @@
         {% endfor %}
     </table>
 </tr>
+{% endifnotequal %}
 {% endblock %}
 
