@@ -88,6 +88,10 @@ def series(request, series_id):
     series = get_object_or_404(Series, id = series_id)
     covers = series.cover_set.select_related('issue')
     
+    # if just one issue display extended issue page
+    if series.issue_count == 1:
+        return issue(request,covers[0].issue.id)
+    
     try:
         cover = covers.filter(has_image = '1')[0]
     except IndexError:
@@ -114,8 +118,6 @@ def series(request, series_id):
 
     style = get_style(request)
 
-    if series.issue_count == 1:
-        return issue(request,covers[0].issue.id)
     return render_to_response('gcd/series.html', {
       'series' : series,
       'covers' : covers,
