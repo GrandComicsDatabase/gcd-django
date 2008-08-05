@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load credits %}
 
 <h1 class="item_id">
 <div class="left">
@@ -6,13 +7,11 @@
     <a href="{{ series.get_absolute_url }}">{{ series.name }}</a>
   </span>
   {% if issue_number %}
-  <span id="issue_number">
-    <span class="p">#</span>{{ issue_number }}
-  </span>
+  {{ issue_number|show_issue_number }}
   {% endif %}
 </div>
 <div class="right">
-  {% if issue_number %}
+  {% if issue.publication_date %}
     ({{ issue.publication_date }})
   {% endif %}
 </div>
@@ -26,7 +25,12 @@
     {% if series.imprint_id %}
       <a href="{{ series.imprint.get_absolute_url }}">{{ series.imprint }}</a> imprint,
     {% endif %}
-    {{ series.year_began }} Series
+    {{ series.year_began }} Series,
+    <img src="{{ media_url }}/img/gcd/flags/{{ series.country_code|lower }}.gif" alt="{{ country }}">
+    {% if country %}
+    {{ country }},
+    Published in {{ language }}
+    {% endif %}
   </div>
 
   {% if issue_number %}

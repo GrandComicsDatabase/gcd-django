@@ -87,9 +87,15 @@ def series(request, series_id):
     
     series = get_object_or_404(Series, id = series_id)
     covers = series.cover_set.select_related('issue')
+    
+    try:
+        cover = covers.filter(has_image = '1')[0]
+    except IndexError:
+        cover = covers[0]
+        
     country = Country.objects.get(code__iexact = series.country_code)
     image_tag = get_image_tag(series_id = int(series_id),
-                              cover = covers[0],
+                              cover = cover,
                               zoom_level = ZOOM_MEDIUM,
                               alt_text = 'First Issue Cover')
 
@@ -108,6 +114,8 @@ def series(request, series_id):
 
     style = get_style(request)
 
+    if series.issue_count == 1:
+        return issue(request,covers[0].issue.id)
     return render_to_response('gcd/series.html', {
       'series' : series,
       'covers' : covers,
@@ -184,7 +192,8 @@ def covers(request, series_id, style="default"):
     table_width = 5
 
     cover_tags = []
-    p = QuerySetPaginator(series.cover_set.select_related('issue'), 50)
+    p = QuerySetPaginator(series.cover_set.select_related('issue') \
+        .filter(has_image = '1'), 50)
     page_num = 1
     if (request.GET.has_key('page')):
         page_num = int(request.GET['page'])

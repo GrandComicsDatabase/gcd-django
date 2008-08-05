@@ -24,14 +24,32 @@
   Can withs be condensed?  To tired to look it up right now.
 {% endcomment %}
 
+{% ifequal issue.series.issue_count 1 %}
+
+{% with issue.series as series %}
+{% with issue.number as issue_number %}
+{% with issue.series|show_country as country %}
+{% with issue.series|show_language as language %}
+  {% include "gcd/series_issue_header.html" %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+
+{% include "gcd/one_issue_series.html" %}
+
+{% else %}
+
 {% with issue.series as series %}
 {% with issue.number as issue_number %}
   {% include "gcd/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}
 
+{% endifequal %}
+
 <dl id="issue_data_list">
-  <dt> Price:
+  <dt> {% trans "Price" %}:
   <dd id="issue_price"> {{ issue.price }}
   <dt> {% trans "Pages" %}:
   <dd id="issue_pages"> {{ cover_story.page_count }}

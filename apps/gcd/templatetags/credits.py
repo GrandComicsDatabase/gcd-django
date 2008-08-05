@@ -5,7 +5,7 @@ from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models import Issue
+from apps.gcd.models import Issue, Country, Language
 
 register = template.Library()
 
@@ -79,6 +79,34 @@ def __format_credit(story, credit, style):
     return mark_safe(dt + '<span class="credit_label">' + label + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
+# these next three might better fit into a different file
+
+def show_country(series):
+    """ Translate country code into country name."""
+    return Country.objects.get(code__iexact = series.country_code).name \
+            or series.country_code
+
+
+def show_language(series):
+    """ Translate country code into country name."""
+    # see comment in series of details.py
+    try:
+        lobj = Language.objects.get(code__iexact = series.language_code)
+        language = lobj.name
+    except:
+        language = series.language_code
+    return language
+
+def show_issue_number(issue_number):
+    """ Return issue number, but maybe not """
+    if issue_number == 'nn' or issue_number == '[nn]':
+        return ''
+    else: 
+        return mark_safe('<span id="issue_number"><span class="p">#</span>' + \
+            esc(issue_number) + '</span>')
 
 register.filter(show_credit)
 register.filter(show_form)
+register.filter(show_country)
+register.filter(show_language)
+register.filter(show_issue_number)
