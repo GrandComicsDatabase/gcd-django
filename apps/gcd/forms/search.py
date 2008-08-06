@@ -15,6 +15,14 @@ ORDERINGS = [['', '--'],
              ['editor', 'Editor'],
              ['job_number', 'Job Number']]
 
+DATE_FORMATS = ['%Y.%m.%d', '%Y-%m-%d',
+                '%m/%d/%Y', '%m/%d/%y',
+                '%b %d %Y', '%b %d, %Y',
+                '%d %b %Y', '%d %b, %Y',
+                '%B %d %Y', '%B %d, %Y',
+                '%d %B %Y', '%d %B, %Y',
+                '%Y']
+
 class AdvancedSearch(forms.Form):
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
                                         ['series', 'Series'],
@@ -51,8 +59,10 @@ class AdvancedSearch(forms.Form):
                                required=False,
                                label='Third By')
 
-    start_date = forms.DateField(label='Start Date', required=False)
-    end_date = forms.DateField(label='End Date', required=False)
+    start_date = forms.DateField(label='Start Date', required=False,
+                                 input_formats=DATE_FORMATS)
+    end_date = forms.DateField(label='End Date', required=False,
+                                 input_formats=DATE_FORMATS)
 
     pub_name = forms.CharField(label='Publisher', required=False)
     imprints = forms.BooleanField(label='Imprints', required=False)

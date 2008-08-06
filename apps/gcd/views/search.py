@@ -19,7 +19,6 @@ from apps.gcd.forms.search import AdvancedSearch
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
 
-KEY_FMT = '%Y.%m.%d'
 
 def generic_by_name(request, name, q_obj, sort,
                     class_name = Story,
@@ -217,29 +216,39 @@ def process_advanced(request):
     items = []
     list_template = None
     if data['target'] == 'publisher':
-        filter = Publisher.objects.filter(pq_obj).order_by(*terms)
-        items = filter.select_related('country')
+        if pq_obj:
+            filter = Publisher.objects.filter(pq_obj)
+        else:
+            filter = Publisher.objects.all()
+        items = filter.order_by(*terms).select_related('country')
         template = 'gcd/search/publisher_list.html'
 
     elif data['target'] == 'series':
         query = combine_q(data, sq_obj, pq_obj)
-        filter = Series.objects.filter(query).order_by(*terms)
-        items = filter.select_related('publisher')
+        if query:
+            filter = Series.objects.filter(query)
+        else:
+            filter = Series.objects.all()
+        items = filter.order_by(*terms).select_related('publisher')
 
         template = 'gcd/search/series_list.html'
 
     elif data['target'] == 'issue':
         query = combine_q(data, iq_obj, sq_obj, pq_obj)
-        filter = Issue.objects.filter(query).filter(index_status=3) \
-            .order_by(*terms)
-        items = filter.select_related('series__publisher')
+        if query:
+            filter = Issue.objects.filter(query)
+        else:
+            filter = Issue.objects.all()
+        items = filter.order_by(*terms).select_related('series__publisher')
         template = 'gcd/search/issue_list.html',
 
     elif data['target'] == 'sequence':
         query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj)
-        filter = Story.objects.filter(query).filter(issue__index_status=3) \
-            .order_by(*terms)
-        items = filter.select_related('issue__series')
+        if query:
+            filter = Story.objects.filter(query)
+        else:
+            filter = Story.objects.all()
+        items = filter.order_by(*terms).select_related('issue__series')
         template = 'gcd/search/content_list.html'
 
     p = QuerySetPaginator(items, 100)
@@ -290,35 +299,44 @@ def combine_q(data, *qobjs):
     filtered = filter(lambda x: x != None, qobjs)
     if filtered:
         return reduce(lambda x, y: x & y, filtered)
+    return None
 
     # No search terms were entered
     # TODO: proper exception for this?
-    raise Exception("At least one search field must be filled out.")
+    # raise Exception("At least one search field must be filled out.")
 
 
-def search_dates(data, format='%Y', 
+def search_dates(data, formatter=lambda d: d.year,
                  start_name='year_began', end_name='year_ended'):
     """Add query terms for date ranges, which may have either or both
-    endpoints, or may be absent."""
+    endpoints, or may be absent.  Note that strftime cannot handle
+    years before 1900, hence the formatter callable."""
 
     # TODO: Could probably use __range operator if end dates were more
     #       reliable / structured.
+    # TODO: If start and end name are the same, this could be done better.
     q_and_only = []
     if data['start_date']:
         begin_after_start = \
-          { '%s__gte' % start_name : data['start_date'].strftime(format) }
+          { '%s__gte' % start_name : formatter(data['start_date']) }
         end_after_start = \
-          { '%s__gte' % end_name : data['start_date'].strftime(format) }
+          { '%s__gte' % end_name : formatter(data['start_date']) }
 
-        q_and_only.append(Q(**begin_after_start) | Q(**end_after_start))
+        if data['end_date']:
+            q_and_only.append(Q(**begin_after_start) | Q(**end_after_start))
+        else:
+            q_and_only.append(Q(**end_after_start))
 
     if data['end_date']:
         begin_before_end = \
-          { '%s__lte' % start_name : data['end_date'].strftime(format) }
+          { '%s__lte' % start_name : formatter(data['end_date']) }
         end_before_end = \
-          { '%s__lte' % end_name : data['end_date'].strftime(format) }
+          { '%s__lte' % end_name : formatter(data['end_date']) }
 
-        q_and_only.append(Q(**begin_before_end) | Q(**end_before_end))
+        if data['start_date']:
+            q_and_only.append(Q(**begin_before_end) | Q(**end_before_end))
+        else:
+            q_and_only.append(Q(**begin_before_end))
 
     return q_and_only
 
@@ -332,7 +350,7 @@ def search_publishers(data, op, series_q=None):
     if target == 'publisher':
         if data['country']:
             q_and_only.append(Q(country__code__in=data['country']))
-        q_and_only.extend(search_dates(data, '%Y'))
+        q_and_only.extend(search_dates(data))
 
         # Filtering imprints on/off really only makes sense if we're
         # searching for publishers. Currently we don't support searching
@@ -361,7 +379,7 @@ def search_series(data, op, issues_q=None):
     if target == 'series':
         if data['country']:
             q_and_only.append(Q(country_code__in=data['country']))
-        q_and_only.extend(search_dates(data, '%Y'))
+        q_and_only.extend(search_dates(data))
 
     if data['language'] and (target == 'series' or target == 'publisher'):
         q_and_only.append(
@@ -398,9 +416,14 @@ def search_issues(data, op, stories_q=None):
 
     q_and_only = []
     if target == 'issue' or target == 'feature' or target == 'sequence':
-        q_and_only.extend(search_dates(data, '%Y.%m.%d',
+        date_formatter = lambda d: '%04d.%02d.%02d' % (d.year, d.month, d.day)
+        q_and_only.extend(search_dates(data, date_formatter,
                                        '%skey_date' % prefix,
                                        '%skey_date' % prefix))
+
+        # 3 indicates an approved index.  TODO: constants.
+        q_and_only.append(Q(**{ '%sindex_status' % prefix : 3 }))
+
     q_objs = []
     if data['issues']:
         q_objs.append(handle_issue_numbers(data, prefix))
