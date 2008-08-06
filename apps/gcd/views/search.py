@@ -35,7 +35,7 @@ def generic_by_name(request, name, q_obj, sort,
             things = things.order_by("year_began", "name")
 
     else:
-        things = class_name.objects.filter(q_obj)
+        things = class_name.objects.filter(q_obj).filter(issue__index_status=3)
         # TODO: This order_by stuff only works for Stories, which is 
         # TODO: OK for now, but might not always be.
         if (sort == ORDER_ALPHA):
@@ -230,13 +230,15 @@ def process_advanced(request):
 
     elif data['target'] == 'issue':
         query = combine_q(data, iq_obj, sq_obj, pq_obj)
-        filter = Issue.objects.filter(query).order_by(*terms)
+        filter = Issue.objects.filter(query).filter(index_status=3) \
+            .order_by(*terms)
         items = filter.select_related('series__publisher')
         template = 'gcd/search/issue_list.html',
 
     elif data['target'] == 'sequence':
         query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj)
-        filter = Story.objects.filter(query).order_by(*terms)
+        filter = Story.objects.filter(query).filter(issue__index_status=3) \
+            .order_by(*terms)
         items = filter.select_related('issue__series')
         template = 'gcd/search/content_list.html'
 
