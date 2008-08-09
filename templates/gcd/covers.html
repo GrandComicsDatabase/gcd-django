@@ -33,7 +33,9 @@
 <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span> <br/>
       <div class="cover_caption">
         <span class="cover_number">Issue {{ issue.number }}</span> <br/>
+        {% if issue.publication_date %}
         <span class="cover_date">{{ issue.publication_date }}</span>
+        {% endif %}
       </div>
     </td>
     {% if forloop.counter|divisibleby:table_width %}
