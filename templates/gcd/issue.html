@@ -88,7 +88,11 @@
 
   <div id="cover">
     {{ image_tag|safe }}
-    <div class="issue_cover_links">View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a> <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
+    <div class="issue_cover_links">
+      {% if issue.cover.has_large %}
+        View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
+        <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
+      {% endif %}
       <br>
       <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Series Covers</a>
     </div>
