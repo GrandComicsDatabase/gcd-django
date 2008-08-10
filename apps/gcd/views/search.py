@@ -301,10 +301,6 @@ def combine_q(data, *qobjs):
         return reduce(lambda x, y: x & y, filtered)
     return None
 
-    # No search terms were entered
-    # TODO: proper exception for this?
-    # raise Exception("At least one search field must be filled out.")
-
 
 def search_dates(data, formatter=lambda d: d.year,
                  start_name='year_began', end_name='year_ended'):
@@ -376,18 +372,21 @@ def search_series(data, op, issues_q=None):
     prefix = compute_prefix(target, 'series')
 
     q_and_only = []
-    if target == 'series':
+    if target != 'publisher':
         if data['country']:
-            q_and_only.append(Q(country_code__in=data['country']))
+            country_qargs = { '%scountry_code__in' % prefix : data['country'] }
+            q_and_only.append(Q(**country_qargs))
         q_and_only.extend(search_dates(data))
 
-    if data['language'] and (target == 'series' or target == 'publisher'):
-        q_and_only.append(
-          Q(**{ '%slanguage_code__in' % prefix : data['language'] }))
+    if data['language']:
+        language_qargs = { '%slanguage_code__in' % prefix : data['language'] }
+        q_and_only.append(Q(**language_qargs))
 
     if data['indexer']:
-        q_and_only.append(
-          Q(**{ '%sindex_credit_set__indexer__in' %prefix : data['indexer'] }))
+        indexer_qargs = {
+            '%sindex_credit_set__indexer__in' %prefix : data['indexer']
+        }
+        q_and_only.append(Q(**indexer_qargs))
 
     q_objs = []
     if data['series']:
