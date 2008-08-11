@@ -12,7 +12,7 @@
   </tr>
 {% for issue in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <img src="{{ media_url }}/img/gcd/flags/{{ issue.series.country_code|lower }}.gif" alt="{{ issue.series.country_code|upper }}">
+    <td> <img src="{{ media_url }}/img/gcd/flags/{{ issue.series.country_code|lower }}.png" alt="{{ issue.series.country_code|upper }}">
     <td> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
     <td> <a href="{{ issue.series.get_absolute_url }}">{{ issue.series.name }}</a> </td>
     <td> {{ issue.series.year_began }}

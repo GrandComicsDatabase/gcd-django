@@ -11,7 +11,7 @@
   </tr>
   {% for publisher in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <img src="{{ media_url }}/img/gcd/flags/{{ publisher.country.code|lower }}.gif" alt="{{ publisher.country.code|upper }}">
+    <td> <img src="{{ media_url }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
     <td> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
     <td>
     {% if not publisher.is_imprint %}
