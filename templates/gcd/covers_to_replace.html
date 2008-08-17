@@ -1,0 +1,74 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+
+{% block title %} GCD :: Covers :: {{ series.name }} {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ media_url }}/css/gcd/{{ style }}/covers.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h1 class="item_id">
+<div class="left">
+  {% trans "Covers marked for replacement" %}
+</div>
+</h1>
+
+<div class="item_id">
+  <div class="left">
+  {{ paginator.count }} covers needing replacement.
+  </div>
+  {% if page %}
+  <div class="right pagination">
+    {% if page.has_other_pages %}
+      {% if page.has_previous %}
+        <a href="?style={{ style }}&page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+      {% else %}
+        &lt; {% trans "Previous" %}
+      {% endif %}
+      |
+      {% for number in paginator.page_range %}
+        {% ifequal number page_number %}
+          {{ number }}
+        {% else %}
+          <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
+        {% endifequal %}
+        |
+      {% endfor %}
+      {% if page.has_next %}
+        <a href="{{ page_url }}?style={{ style }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+      {% else %}
+        {% trans "Next" %} &gt;
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<table id="covers">
+  <tr>
+  {% for cover, issue, tag in tags %}
+    <td class="cover_grid">
+      <a href="{{ issue.get_absolute_url }}">{{ tag|safe }}</a>
+      <br/>
+      <div class="cover_caption">
+        
+        {{ issue.series.name }} #{{ issue.number }}<br/>
+        ({{ issue.series.publisher }}, {{ issue.series.year_began }})
+      </div>
+    </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+    {% endif %}
+  {% endfor %}
+  </tr>
+</table>
+
+{% endblock %}

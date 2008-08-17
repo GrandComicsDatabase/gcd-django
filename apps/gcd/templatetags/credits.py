@@ -83,8 +83,11 @@ def __format_credit(story, credit, style):
 
 def show_country(series):
     """ Translate country code into country name."""
-    return Country.objects.get(code__iexact = series.country_code).name \
-            or series.country_code
+    try:
+        country = Country.objects.get(code__iexact = series.country_code).name
+    except:
+        country = series.country_code
+    return country
 
 
 def show_language(series):

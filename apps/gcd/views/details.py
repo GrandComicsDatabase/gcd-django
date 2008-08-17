@@ -12,7 +12,7 @@ from django.shortcuts import render_to_response, \
 from django.http import HttpResponseRedirect
 
 from apps.gcd.models import Publisher, Series, Issue, Story, \
-                            Country, Language, Indexer, IndexCredit
+                            Country, Language, Indexer, IndexCredit, Cover
 from apps.gcd.views.covers import get_image_tag, \
                                   ZOOM_SMALL, \
                                   ZOOM_MEDIUM, \
@@ -97,7 +97,10 @@ def series(request, series_id):
     except IndexError:
         cover = covers[0]
         
-    country = Country.objects.get(code__iexact = series.country_code)
+    try:
+        country = Country.objects.get(code__iexact = series.country_code).name
+    except:
+        country = series.country_code
     image_tag = get_image_tag(series_id = int(series_id),
                               cover = cover,
                               zoom_level = ZOOM_MEDIUM,
@@ -122,7 +125,7 @@ def series(request, series_id):
       'series' : series,
       'covers' : covers,
       'image_tag' : image_tag,
-      'country' : country.name or series.country_code,
+      'country' : country,
       'language' : language,
       'table_width': table_width,
       'style' : style,
@@ -161,6 +164,44 @@ def scans(request, series_id):
       'series' : series,
       'covers' : covers,
       'table_width' : table_width,
+      'style' : style,
+      'media_url' : settings.MEDIA_URL })
+
+def covers_to_replace(request, style="default"):
+    """Display the covers to replace."""
+
+    # TODO: Figure out optimal table width and/or make it user controllable.
+    table_width = 5
+
+    cover_tags = []
+    covers = Cover.objects.filter(marked = True)
+    covers = covers.order_by("issue__series__name",
+                             "issue__series__year_began",
+                             "issue__key_date")
+    p = QuerySetPaginator(covers, 50)
+
+    page_num = 1
+    if (request.GET.has_key('page')):
+        page_num = int(request.GET['page'])
+    page = p.page(page_num)
+
+    for cover in page.object_list:
+        issue = cover.issue
+        alt_string = cover.series.name + ' #' + issue.number
+        cover_tags.append([cover, issue, get_image_tag(issue.series.id,
+                                                       cover,
+                                                       alt_string,
+                                                       ZOOM_SMALL)])
+
+
+    style = get_style(request)
+
+    return render_to_response('gcd/covers_to_replace.html', {
+      'tags' : cover_tags,
+      'table_width' : table_width,
+      'page' : page,
+      'paginator' : p,
+      'page_number' : page_num,
       'style' : style,
       'media_url' : settings.MEDIA_URL })
 

@@ -128,6 +128,10 @@ urlpatterns = patterns('',
     (r'^gcd/job_number/(?P<number>.+)/$',
      'apps.gcd.views.search.story_by_job_number'),
 
+    # list covers marked for replacement
+    (r'^gcd/covers_to_replace/$',
+     'apps.gcd.views.details.covers_to_replace'),    
+ 
     # Reprints
     (r'^gcd/reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
