@@ -46,11 +46,11 @@ urlpatterns = patterns('',
     (r'^gcd/series/(?P<series_id>\d+)/$', 'apps.gcd.views.details.series'),
     (r'^gcd/series/name/(?P<series_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.series_by_name'),
-    (r'^gcd/series/name/(?P<series_name>.+)/$',
-     'apps.gcd.views.search.series_by_name'),
     # Series and Issue
     (r'^gcd/series/name/(?P<series_name>.+)/issue/(?P<issue_nr>.+)/$',
      'apps.gcd.views.search.series_and_issue'),
+    (r'^gcd/series/name/(?P<series_name>.+)/$',
+     'apps.gcd.views.search.series_by_name'),
 
     # Series index and cover status / gallery
     (r'^gcd/series/(?P<series_id>\d+)/status/$',
