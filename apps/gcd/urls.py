@@ -46,10 +46,11 @@ urlpatterns = patterns('',
     (r'^gcd/series/(?P<series_id>\d+)/$', 'apps.gcd.views.details.series'),
     (r'^gcd/series/name/(?P<series_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.series_by_name'),
-    (r'^gcd/series/name/(?P<series_name>.+)/issue/(?P<issue_nr>.+)/$',
-     'apps.gcd.views.search.series_and_issue'),
     (r'^gcd/series/name/(?P<series_name>.+)/$',
      'apps.gcd.views.search.series_by_name'),
+    # Series and Issue
+    (r'^gcd/series/name/(?P<series_name>.+)/issue/(?P<issue_nr>.+)/$',
+     'apps.gcd.views.search.series_and_issue'),
 
     # Series index and cover status / gallery
     (r'^gcd/series/(?P<series_id>\d+)/status/$',
@@ -129,6 +130,12 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_job_number'),
     (r'^gcd/job_number/(?P<number>.+)/$',
      'apps.gcd.views.search.story_by_job_number'),
+
+    # show covers uploaded on a particular date
+    (r'^gcd/daily_covers/$',
+     'apps.gcd.views.details.daily_covers'),
+    (r'^gcd/daily_covers/(?P<show_date>.+)/$',
+     'apps.gcd.views.details.daily_covers'),
 
     # list covers marked for replacement
     (r'^gcd/covers_to_replace/$',

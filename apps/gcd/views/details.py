@@ -2,6 +2,7 @@
 
 import re
 from urllib import urlopen
+from datetime import date, timedelta
 
 from django.db.models import Q
 from django.conf import settings
@@ -205,6 +206,62 @@ def covers_to_replace(request, style="default"):
       'style' : style,
       'media_url' : settings.MEDIA_URL })
 
+
+def daily_covers(request, show_date = None):
+    if not show_date:
+        show_date = date.today()
+    else:
+        try:
+            show_date = date(int(show_date[0:4]),int(show_date[5:7]), \
+                            int(show_date[8:10]))
+        except:
+            return HttpResponseRedirect("/gcd/daily_covers/")
+    date_before = show_date + timedelta(-1)
+    if show_date < date.today():
+        date_after = show_date + timedelta(1)
+    else:
+        date_after = None
+    
+    # TODO: Figure out optimal table width and/or make it user controllable.
+    table_width = 5
+
+    cover_tags = []
+    covers = Cover.objects.filter(modified = show_date)
+    covers = covers.order_by("issue__series__publisher__name",
+                             "issue__series__name",
+                             "issue__series__year_began",
+                             "issue__number")
+
+    p = QuerySetPaginator(covers, 50)
+    
+    page_num = 1
+    if (request.GET.has_key('page')):
+        page_num = int(request.GET['page'])
+    page = p.page(page_num)
+
+    for cover in page.object_list:
+        issue = cover.issue
+        alt_string = cover.series.name + ' #' + issue.number
+        cover_tags.append([cover, issue, get_image_tag(issue.series.id,
+                                                       cover,
+                                                       alt_string,
+                                                       ZOOM_SMALL)])
+
+    style = get_style(request)
+
+    return render_to_response('gcd/daily_covers.html', {
+      'tags' : cover_tags,
+      'date' : show_date,
+      'date_after' : date_after,
+      'date_before' : date_before,
+      'table_width' : table_width,
+      'page' : page,
+      'paginator' : p,
+      'page_number' : page_num,
+      'style' : style,
+      'media_url' : settings.MEDIA_URL })
+    
+    
 def cover(request, issue_id, size):
     """Display the cover for a single issue on its own page."""
 
