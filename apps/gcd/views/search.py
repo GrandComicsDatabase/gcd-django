@@ -15,6 +15,7 @@ from django.views.generic.list_detail import object_list
 from apps.gcd.models import Publisher, Series, Issue, Story
 from apps.gcd.views.diggpaginator import DiggPaginator
 from apps.gcd.forms.search import AdvancedSearch
+from apps.gcd.views.details import issue 
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -153,6 +154,7 @@ def story_by_title(request, title, sort=ORDER_ALPHA):
     q_obj = Q(title__icontains = title)
     return generic_by_name(request, title, q_obj, sort)
 
+
 def story_by_feature(request, feature, sort=ORDER_ALPHA):
     """Looks up story by feature."""
     q_obj = Q(feature__icontains = feature)
@@ -163,6 +165,36 @@ def series_by_name(request, series_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains = series_name)
     return generic_by_name(request, series_name, q_obj, sort,
                            Series, 'title_search.html')
+
+def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
+    """ Looks for issue_nr in series_name """
+    things = Issue.objects.filter(series__name__exact = series_name) \
+                .filter(number__exact = issue_nr).filter(index_status=3)
+    
+    if things.count() == 1: # if one display the issue
+        return issue(request,things[0].id)
+    else: # if more or none use issue_list.html from search
+        p = QuerySetPaginator(things, 100)
+        page_num = 1
+        if (request.GET.has_key('page')):
+            page_num = int(request.GET['page'])
+        page = p.page(page_num)
+        
+        context = {
+            'items' : things,
+            'item_name' : 'issue',
+            'plural_suffix' : 's',
+            'page' : page,
+            'paginator' : p,
+            'page_number': page_num,
+            'heading' : series_name + ' #' + issue_nr,
+            'media_url' : settings.MEDIA_URL,
+            'style' : 'default',
+        }
+        if request.GET.has_key('style'):
+            context['style'] = request.GET['style']
+
+        return render_to_response('gcd/search/issue_list.html', context)
 
 
 def search(request):
