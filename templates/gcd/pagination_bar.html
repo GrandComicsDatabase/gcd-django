@@ -1,0 +1,37 @@
+{% load i18n %}
+  
+<div class="right pagination">
+    {% if page.has_other_pages %}
+    {% if page.has_previous %}
+        {% if extra_string %}
+        <a href="?{{ extra_string }}&page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+        {% else %}
+        <a href="?style={{ style }}&page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+        {% endif %}
+    {% else %}
+        &lt; {% trans "Previous" %}
+    {% endif %}
+    |
+    {% for number in paginator.page_range %}
+        {% ifequal number page_number %}
+        {{ number }}
+        {% else %}
+        {% if extra_string %}
+            <a href="?{{ extra_string }}&page={{ number }}">{{ number }}</a>        
+        {% else %}
+            <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
+        {% endif %}
+        {% endifequal %}
+        |
+    {% endfor %}
+    {% if page.has_next %}
+        {% if extra_string %}
+        <a href="?{{ extra_string }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+        {% else %}
+        <a href="?style={{ style }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+        {% endif %}
+    {% else %}
+        {% trans "Next" %} &gt;
+    {% endif %}
+    {% endif %}
+</div>

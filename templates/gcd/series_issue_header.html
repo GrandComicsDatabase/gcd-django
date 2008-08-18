@@ -47,28 +47,6 @@
   </div>
   {% endif %}
   {% if page %}
-  <div class="right pagination">
-    {% if page.has_other_pages %}
-      {% if page.has_previous %}
-        <a href="?style={{ style }}&page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
-      {% else %}
-        &lt; {% trans "Previous" %}
-      {% endif %}
-      |
-      {% for number in paginator.page_range %}
-        {% ifequal number page_number %}
-          {{ number }}
-        {% else %}
-          <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
-        {% endifequal %}
-        |
-      {% endfor %}
-      {% if page.has_next %}
-        <a href="{{ page_url }}?style={{ style }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
-      {% else %}
-        {% trans "Next" %} &gt;
-      {% endif %}
-    {% endif %}
-  </div>
+  {% include "gcd/pagination_bar.html" %}
   {% endif %}
 </div>
