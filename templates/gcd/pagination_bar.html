@@ -33,5 +33,7 @@
     {% else %}
         {% trans "Next" %} &gt;
     {% endif %}
+    {% else %}
+    &lt; {% trans "Previous" %} | {{ page_number }} | {% trans "Next" %} &gt;
     {% endif %}
 </div>

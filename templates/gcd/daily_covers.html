@@ -22,13 +22,13 @@
   <a href="/gcd/daily_covers/{{ date_before }}">&lt; {% trans "day before" %}</a>
   {% if date_after %}
    | <a href="/gcd/daily_covers/{{ date_after }}">{% trans "day after" %} &gt;</a>
-  {% endif %} 
+  {% endif %}
 </div>
 </h1>
 
 <div class="item_id">
   <div class="left">
-  {{ paginator.count }}{% trans " covers posted" %}.
+  {{ paginator.count }}{% trans " covers posted" %}
   </div>
   {% if page %}
   {% include "gcd/pagination_bar.html" %}
