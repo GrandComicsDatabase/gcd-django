@@ -29,10 +29,11 @@
   {% endif %}
 </div>
 <div class="item_id">
-  <div class="left pagination">
-  <a href="../../">all marked covers</a>
+  <div class="right pagination">
+  {# TODO: this is ugly since it uses a direct path, does reverse lookup work? #}
+  <a href="/gcd/covers_to_replace/">all marked covers</a>
   {% for letter in "ABCDEFGHIJKLMNOPQRSTUBEXYZ"|make_list %}
-  | <a href="../{{ letter }}">{{ letter }}</a>
+  | <a href="/gcd/covers_to_replace/with/{{ letter }}">{{ letter }}</a>
   {% endfor %}
   </div>
 </div>
