@@ -8,9 +8,8 @@
 
 <div class="item_id">
   <div class="left" class="item_data">
-  {{ paginator.count }}
-  {{ item_name }}{{ paginator.count|pluralize:plural_suffix }}
-  matched your search.
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }}
+  matching your search.
   </div>
   {% with query_string as extra_string %}
   {% include "gcd/pagination_bar.html" %}

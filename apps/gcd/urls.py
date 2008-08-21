@@ -140,6 +140,8 @@ urlpatterns = patterns('',
     # list covers marked for replacement
     (r'^gcd/covers_to_replace/$',
      'apps.gcd.views.details.covers_to_replace'),    
+    (r'^gcd/covers_to_replace/with/(?P<starts_with>.+)/$',
+     'apps.gcd.views.details.covers_to_replace'),    
  
     # Reprints
     (r'^gcd/reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
@@ -148,6 +150,9 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_reprint'),
     (r'^gcd/settings/$',
      'apps.gcd.views.settings.settings'),    
+
+    (r'^gcd/last_updated/$',
+     'apps.gcd.views.details.last_updated'),
 
     # URL for trying out new layouts, styles and UI concepts.
     (r'^gcd/new/(?P<name>.+)/$', 'apps.gcd.views.prototype'),

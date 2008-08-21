@@ -168,7 +168,7 @@ def scans(request, series_id):
       'style' : style,
       'media_url' : settings.MEDIA_URL })
 
-def covers_to_replace(request, style="default"):
+def covers_to_replace(request, starts_with = None, style="default"):
     """Display the covers to replace."""
 
     # TODO: Figure out optimal table width and/or make it user controllable.
@@ -176,6 +176,8 @@ def covers_to_replace(request, style="default"):
 
     cover_tags = []
     covers = Cover.objects.filter(marked = True)
+    if starts_with:
+        covers = covers.filter(issue__series__name__startswith = starts_with)
     covers = covers.order_by("issue__series__name",
                              "issue__series__year_began",
                              "issue__key_date")
@@ -416,3 +418,11 @@ def issue(request, issue_id):
       'linkify_reprints' : linkify_reprints,
       'media_url' : settings.MEDIA_URL })
 
+def last_updated(request, number = 5):
+    """ display the <number> last updated indexes """
+    
+    i = Issue.objects.latest('modified')
+    last_updated = Issue.objects.order_by('-modified','-modification_time') \
+                    [:number]
+    for i in last_updated:
+        print i.series.name,i.id,i.number,i.modified,i.modification_time

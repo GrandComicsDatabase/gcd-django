@@ -22,11 +22,19 @@
 
 <div class="item_id">
   <div class="left">
-  {{ paginator.count }} covers needing replacement.
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} covers needing replacement.
   </div>
   {% if page %}
   {% include "gcd/pagination_bar.html" %}
   {% endif %}
+</div>
+<div class="item_id">
+  <div class="left pagination">
+  <a href="../../">all marked covers</a>
+  {% for letter in "ABCDEFGHIJKLMNOPQRSTUBEXYZ"|make_list %}
+  | <a href="../{{ letter }}">{{ letter }}</a>
+  {% endfor %}
+  </div>
 </div>
 
 <table id="covers">
