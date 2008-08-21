@@ -44,17 +44,17 @@ class Story(models.Model):
     type = models.CharField(max_length = 255, db_column = 'Type',
                             null = True)
     sequence_number = models.IntegerField(db_column = 'Seq_No', null = True)
+    job_number = models.CharField(max_length = 25, db_column = 'JobNo',
+                                  null = True)
 
     # I believe this counts issues this appears in (i.e. reprints)
     issue_count = models.IntegerField(db_column = 'IssueCount', null = True)
 
-    # I'm not sure what this is- indexing artifact or story attribute?
-    job_number = models.CharField(max_length = 25, db_column = 'JobNo',
-                                  null = True)
 
     # Fields having to do with the old files.  I think.
-    initial_distribution = models.IntegerField(db_column = 'InitDist',
-                                               null = True)
+    #UNUSED: InitDist is an unused field in the current database schema
+    #initial_distribution = models.IntegerField(db_column = 'InitDist',
+    #                                           null = True)
 
     # Fields from issue (foreign key plus duplicates/caches).
     issue = models.ForeignKey(Issue,
@@ -63,25 +63,25 @@ class Story(models.Model):
                               edit_inline = models.STACKED,
                               raw_id_admin = True,
                               num_in_admin = 3)
-    issue_number = models.CharField(max_length = 50, db_column = 'Issue',
-                                    null = True)
-    publication_date = models.CharField(max_length = 50, db_column = 'Pub_Date',
-                                        null = True)
-    key_date = models.CharField(max_length = 10, db_column = 'Key_Date',
-                                null = True)
-    price = models.FloatField(db_column = 'Price', null = True)
-    rel_year = models.IntegerField(null = True)
+    #UNUSED: Issue, Pub_Date, Key_Date, Price, and rel_year are unused fields in the current database schema
+    #issue_number = models.CharField(max_length = 50, db_column = 'Issue',
+    #                                null = True)
+    #publication_date = models.CharField(max_length = 50, db_column = 'Pub_Date',
+    #                                    null = True)
+    #key_date = models.CharField(max_length = 10, db_column = 'Key_Date',
+    #                            null = True)
+    #price = models.FloatField(db_column = 'Price', null = True)
+    #rel_year = models.IntegerField(null = True)
 
     # Fields from series (foreign key plus duplicates/caches).
     # Technically, foreign key is a dup/cache, as issue already has it.
     # series = models.ForeignKey(Series, db_column = 'SeriesID', null = True,
                                # raw_id_admin = True)
     series = models.IntegerField(db_column = 'SeriesID', null = True)
-    year_began = models.IntegerField(db_column = 'Yr_Began', null = True)
-
-    # Fields from publishers (duplicate/cache), no foreign key.
-    publisher_name = models.CharField(max_length = 255, db_column = 'Pub_Name',
-                                      null = True)
+    #UNUSED: Yr_Began and Pub_Name are unused fields in the current database schema
+    #year_began = models.IntegerField(db_column = 'Yr_Began', null = True)
+    #publisher_name = models.CharField(max_length = 255, db_column = 'Pub_Name',
+    #                                  null = True)
 
     # Fields related to change management.
     created = models.DateField(auto_now_add = True, null = True)
@@ -89,8 +89,8 @@ class Story(models.Model):
                                 auto_now = True, null = True)
     modification_time = models.TimeField(db_column = 'ModTime',
                                          auto_now = True, null = True)
-    # Not sure about this one.  May have to do with file dists?
-    last_change = models.DateField(db_column = 'LstChang', null = True)
+    #UNUSED: LstChang is an unused field in the current database schema
+    #last_change = models.DateField(db_column = 'LstChang', null = True)
 
     def has_credits(self):
         """Simplifies UI checks for conditionals.  Credit fields.

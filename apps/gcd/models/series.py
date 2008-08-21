@@ -26,22 +26,25 @@ class Series(models.Model):
     year_ended = models.IntegerField(db_column = 'Yr_Ended', null = True)
     publication_dates = models.CharField(max_length = 255,
                                          db_column = 'PubDates', null = True)
-    publication_notes = models.TextField(db_column = 'Pub_Note', null = True)
-    themes = models.TextField(db_column = 'Themes', null = True)
     issue_count = models.IntegerField(db_column = 'Issuecount', null = True)
+    #UNUSED: Pub_Note and Themes are unused fields in the current database schema
+    #publication_notes = models.TextField(db_column = 'Pub_Note', null = True)
+    #themes = models.TextField(db_column = 'Themes', null = True)
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
     tracking_notes = models.TextField(db_column = 'Tracking', null = True)
-    crossref = models.IntegerField(db_column = 'Crossref', null = True)
-    crossref_id = models.IntegerField(db_column = 'CrossrefID', null = True)
+    #UNUSED: Crossref and CrossrefID are unused fields in the current database schema
+    #crossref = models.IntegerField(db_column = 'Crossref', null = True)
+    #crossref_id = models.IntegerField(db_column = 'CrossrefID', null = True)
 
     # Fields related to cover image galleries.
     gallery_present = models.CharField(max_length = 3, db_column = 'HasGallery',
                                 null = True)
-    gallery_includes = models.CharField(max_length = 255,
-                                        db_column = 'Included',
-                                        null = True)
+    #UNUSED: Included is an unused field in the current database schema
+    #gallery_includes = models.CharField(max_length = 255,
+    #                                    db_column = 'Included',
+    #                                    null = True)
     
     # Fields related to indexing activities.
     indexers = models.TextField(db_column = 'Indexers', null = True)
@@ -62,11 +65,12 @@ class Series(models.Model):
                                      null = True)
 
     # Fields related to old-style indexing files.  I think.
-    file = models.CharField(max_length = 10, db_column = 'File', null = True)
-    initial_distribution = models.IntegerField(db_column = 'InitDist',
-                                               null = True)
-    update_distribution = models.IntegerField(db_column = 'UpdateDist',
-                                              null = True)
+    #UNUSED: File, InitDist, and UpdateDist are unused fields in the current database schema
+    #file = models.CharField(max_length = 10, db_column = 'File', null = True)
+    #initial_distribution = models.IntegerField(db_column = 'InitDist',
+    #                                           null = True)
+    #update_distribution = models.IntegerField(db_column = 'UpdateDist',
+    #                                          null = True)
 
     # Fields related to the publishers table.
     # publisher_name is redundant, and currently not used(?) by lasso version.
@@ -83,14 +87,10 @@ class Series(models.Model):
                                 auto_now = True, null = True)
     modification_time = models.TimeField(db_column = 'ModTime',
                                          auto_now = True, null = True)
-    # Not sure about this one.  May have to do with file dists?
-    last_change = models.DateField(db_column = 'LstChang', null = True)
-
-    # Apparently the ID from a previous arrangement of the table?
-    old_id = models.IntegerField(db_column = 'oldID', null = True)
-
-    # Fields about which I have no idea.
-    self_count = models.IntegerField(db_column = 'SelfCount', null = True)
+    #UNUSED: LstChang, oldID, and SelfCount are unused fields in the current database schema
+    #last_change = models.DateField(db_column = 'LstChang', null = True)
+    #old_id = models.IntegerField(db_column = 'oldID', null = True)
+    #self_count = models.IntegerField(db_column = 'SelfCount', null = True)
 
     def get_absolute_url(self):
         return "/gcd/series/%i/" % self.id

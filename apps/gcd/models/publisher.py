@@ -29,19 +29,21 @@ class Publisher(models.Model):
     # it is intended to describe these relationships (imprint, common name...)
     # next_id is completely mysterious, but maybe in this category?
     is_master = models.NullBooleanField(db_column = 'Master')
-    connection = models.TextField(db_column = 'Connection', null = True)
     parent = models.ForeignKey('self', db_column = 'ParentID',
                                null = True, related_name = 'imprint_set')
-    next = models.ForeignKey('self', db_column = 'NextID', null = True,
-                             related_name = 'previous_set')
+    #UNUSED: Connection and NextID are unused fields in the current database schema
+    #connection = models.TextField(db_column = 'Connection', null = True)
+    #next = models.ForeignKey('self', db_column = 'NextID', null = True,
+    #                         related_name = 'previous_set')
 
     # Fields related to change management.
     # No idea what the distinction between "Updated" and "Modified" is.
     created = models.DateField(auto_now_add = True, null = True)
     modified = models.DateField(db_column = 'Modified',
                                 auto_now = True, null = True)
-    updated = models.DateField(db_column = 'Updated',
-                               auto_now = True, null = True)
+    #UNUSED: Updated is an unused field in the current database schema
+    #updated = models.DateField(db_column = 'Updated',
+    #                           auto_now = True, null = True)
 
     class Meta:
         db_table = 'publishers'
@@ -73,8 +75,8 @@ class Publisher(models.Model):
         try:
             if not self.url.lower().startswith("http://"):
                 self.url = "http://" + self.url
-#                auto fix urls ?
-#                self.save()
+                #TODO: auto fix urls ?
+                #self.save()
         except:
             return ""
 
