@@ -206,6 +206,7 @@ def covers_to_replace(request, starts_with = None, style="default"):
       'paginator' : p,
       'page_number' : page_num,
       'style' : style,
+      'starts_with' : starts_with,
       'media_url' : settings.MEDIA_URL })
 
 
