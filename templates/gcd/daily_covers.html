@@ -28,7 +28,7 @@
 
 <div class="item_id">
   <div class="left">
-  {{ paginator.count }}{% trans " covers posted" %}
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }}{% trans " covers posted" %}
   </div>
   {% if page %}
   {% include "gcd/pagination_bar.html" %}
