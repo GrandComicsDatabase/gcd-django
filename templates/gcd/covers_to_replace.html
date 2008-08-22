@@ -17,6 +17,9 @@
 <h1 class="item_id" id="search_id">
 <div class="left">
   {% trans "Covers marked for replacement" %}
+  {% if starts_with %}
+  for series starting with {{ starts_with }}
+  {% endif %}
 </div>
 </h1>
 
@@ -52,7 +55,7 @@
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid">
-      <a href="{{ issue.get_absolute_url }}">{{ tag|safe }}</a>
+      <a href="http://www.comics.org/coversubmit/index.lasso?issueid={{ issue.id }}">{{ tag|safe }}</a>
       <br/>
       <div class="cover_caption">
         {{ issue.series.name }} #{{ issue.number }}<br/>
