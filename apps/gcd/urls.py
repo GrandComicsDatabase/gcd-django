@@ -154,6 +154,10 @@ urlpatterns = patterns('',
     (r'^gcd/last_updated/$',
      'apps.gcd.views.details.last_updated'),
 
+    # trying out XML output
+    # Issue
+    (r'^gcd_xml/issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue_xml'),
+    
     # URL for trying out new layouts, styles and UI concepts.
     (r'^gcd/new/(?P<name>.+)/$', 'apps.gcd.views.prototype'),
 )
