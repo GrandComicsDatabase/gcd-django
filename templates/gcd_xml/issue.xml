@@ -2,7 +2,7 @@
 <!DOCTYPE comicbook SYSTEM "comics.dtd">
 <comicbook id="{{ issue.id }}">
 <title>{{ cover_story.title }}</title>
-<series id="{{ issue.series.id }}">{{ issue.series_nam}}</series>
+<series id="{{ issue.series.id }}">{{ issue.series.name }}</series>
 <issue>{{ issue.number }}</issue>
 <publisher>{{ issue.series.publisher }}</publisher>
 <price>{{ issue.price }}</price>
