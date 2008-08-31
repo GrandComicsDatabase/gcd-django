@@ -8,7 +8,7 @@
 <price>{{ issue.price }}</price>
 <pages>{{ cover_story.page_count }}</pages>
 <publication_date>{{ issue.publication_date }}</publication_date>
-<notes>Two covers were done for this issue; one featuring Superman with the Legion of Super-Heroes, and an alternate one featuring only Superman, both by Gary Frank (10 issues for 1 issue mixture).  This issue went on sale 2008-04-02 (1 week late from the solicited shipping date of this issue). </notes>
+<notes>{{ cover_story.notes }}</notes>
 <editors>
     {{ cover_story.editor }}
 </editors>
