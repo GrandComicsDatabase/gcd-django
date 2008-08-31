@@ -419,6 +419,33 @@ def issue(request, issue_id):
       'linkify_reprints' : linkify_reprints,
       'media_url' : settings.MEDIA_URL })
 
+def issue_xml(request, issue_id):
+    """Display the issue details page, including story details."""
+    issue = get_object_or_404(Issue, id = issue_id)
+
+    series = issue.series
+
+    if issue.index_status <= 1: # only skeleton
+        # TODO: create a special empty page (with the cover if existing)
+        # TODO: could vary accord. to (un)reserved/part.indexed/submitted
+        return render_to_response('gcd_xml/issue.xml', {
+          'issue' : issue },
+          mimetype="text/xml")
+    
+    # TODO: Since the number of stories per issue is typically fairly small,
+    # it seems more efficient to grab the whole list and only do one database
+    # query rather than separately select the cover story and the interior
+    # stories.  But we should measure this.  Note that we definitely want
+    # to send the cover and interior stories to the UI separately, as the
+    # UI should not be concerned with the designation of story 0 as the cover.
+    stories = list(issue.story_set.order_by('sequence_number'))
+
+    return render_to_response('gcd_xml/issue.xml', {
+      'issue' : issue,
+      'cover_story' : stories.pop(0), # cover_story,
+      'stories' : stories },
+      mimetype="text/xml")
+
 def last_updated(request, number = 5):
     """ display the <number> last updated indexes """
     

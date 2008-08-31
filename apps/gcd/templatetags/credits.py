@@ -79,6 +79,61 @@ def __format_credit(story, credit, style):
     return mark_safe(dt + '<span class="credit_label">' + label + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
+# a try for xml output
+
+def show_credit_xml(story, credit):
+    """ For showing the credits in the xml."""
+
+    if not story:
+        return ''
+
+    if story.__dict__.has_key(credit):
+        credit_value = story.__dict__[credit]
+        if not __credit_visible(credit_value):
+            return ''
+
+        return mark_safe('<credit type="' + credit + '">' + \
+                     esc(credit_value) + '</credit>')
+    else:
+        return ''
+
+def show_characters_xml(story):
+    """ For showing the characters in the xml."""
+
+    if not story:
+        return ""
+
+    if story.characters:
+        output = '<characters>'
+        for string in story.characters.split(';'):
+            # TODO: need handling for groups where in [] are characters
+            output += '<character>' + esc(string) + '</character>'
+        output += '</characters>'
+        return mark_safe(output)
+    else:
+        return ""
+
+def show_list_xml(story, credit):
+    """ For separating fields at ';' in the xml."""
+    """ Assumes credit is singular as is the name of field in the model. """
+
+    if not story:
+        return ""
+
+    if story.__dict__.has_key(credit):
+        credit_value = story.__dict__[credit]
+        if not __credit_visible(credit_value):
+            return ''
+        
+        output = '<' + credit + 's>'
+        # works only if we don't overload the field with information
+        for string in credit_value.split(';'):
+            output += '<' + credit + '>' + esc(string) + '</' + credit + '>'
+        output += '</' + credit + 's>'
+        return mark_safe(output)
+    else:
+        return ""
+
 # these next three might better fit into a different file
 
 def show_country(series):
@@ -110,6 +165,9 @@ def show_issue_number(issue_number):
 
 register.filter(show_credit)
 register.filter(show_form)
+register.filter(show_credit_xml)
+register.filter(show_characters_xml)
+register.filter(show_list_xml)
 register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)

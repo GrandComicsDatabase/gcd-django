@@ -1,0 +1,46 @@
+{% load credits %}<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE comicbook SYSTEM "comics.dtd">
+<comicbook id="{{ issue.id }}">
+<title>{{ cover_story.title }}</title>
+<series id="{{ issue.series.id }}">{{ issue.series_nam}}</series>
+<issue>{{ issue.number }}</issue>
+<publisher>{{ issue.series.publisher }}</publisher>
+<price>{{ issue.price }}</price>
+<pages>{{ cover_story.page_count }}</pages>
+<publication_date>{{ issue.publication_date }}</publication_date>
+<notes>Two covers were done for this issue; one featuring Superman with the Legion of Super-Heroes, and an alternate one featuring only Superman, both by Gary Frank (10 issues for 1 issue mixture).  This issue went on sale 2008-04-02 (1 week late from the solicited shipping date of this issue). </notes>
+<editors>
+    {{ cover_story.editor }}
+</editors>
+<cover>
+    <credits>
+        {{ cover_story|show_credit_xml:"pencils" }}
+        {{ cover_story|show_credit_xml:"inks" }}
+        {{ cover_story|show_credit_xml:"letters" }}
+    </credits>
+    {{ cover_story|show_list_xml:"feature" }}
+    {{ cover_story|show_list_xml:"genre" }}
+    {{ cover_story|show_characters_xml }}
+</cover>
+<stories>
+    {% for story in stories %}
+    <story sequence="{{ story.sequence_number }}" type="{{ story.type}}">
+    <title>{{ story.title }}</title>
+    {{ story|show_list_xml:"feature" }}
+    <synopsis>{{ story.synopsis }}</synopsis>
+    <reprinted>{{ story.reprints }}</reprinted>
+    <notes>{{ story.notes }}</notes>
+    {{ story|show_list_xml:"genre" }}
+    <credits>
+        {{ story|show_credit_xml:"script" }}
+        {{ story|show_credit_xml:"pencils" }}
+        {{ story|show_credit_xml:"inks" }}
+        {{ story|show_credit_xml:"colors" }}
+        {{ story|show_credit_xml:"letters" }}
+    </credits>
+    {{ story|show_characters_xml }}
+    </story>
+    {% endfor %}
+
+</stories>
+</comicbook>
