@@ -13,13 +13,16 @@
     {{ cover_story.editor }}
 </editors>
 <cover>
-    <credits>
-        {{ cover_story|show_credit_xml:"pencils" }}
-        {{ cover_story|show_credit_xml:"inks" }}
-        {{ cover_story|show_credit_xml:"letters" }}
-    </credits>
     {{ cover_story|show_list_xml:"feature" }}
     {{ cover_story|show_list_xml:"genre" }}
+    <credits>
+        {{ cover_story|show_credit_xml:"script" }}
+        {{ cover_story|show_credit_xml:"pencils" }}
+        {{ cover_story|show_credit_xml:"inks" }}
+        {{ cover_story|show_credit_xml:"colors" }}
+        {{ cover_story|show_credit_xml:"letters" }}
+    </credits>
+    <reprinted>{{ cover_story.reprints }}</reprinted>
     {{ cover_story|show_characters_xml }}
 </cover>
 <stories>
@@ -27,9 +30,6 @@
     <story sequence="{{ story.sequence_number }}" type="{{ story.type}}">
     <title>{{ story.title }}</title>
     {{ story|show_list_xml:"feature" }}
-    <synopsis>{{ story.synopsis }}</synopsis>
-    <reprinted>{{ story.reprints }}</reprinted>
-    <notes>{{ story.notes }}</notes>
     {{ story|show_list_xml:"genre" }}
     <credits>
         {{ story|show_credit_xml:"script" }}
@@ -38,6 +38,9 @@
         {{ story|show_credit_xml:"colors" }}
         {{ story|show_credit_xml:"letters" }}
     </credits>
+    <synopsis>{{ story.synopsis }}</synopsis>
+    <reprinted>{{ story.reprints }}</reprinted>
+    <notes>{{ story.notes }}</notes>
     {{ story|show_characters_xml }}
     </story>
     {% endfor %}
