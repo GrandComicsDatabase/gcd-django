@@ -419,6 +419,14 @@ def issue(request, issue_id):
       'linkify_reprints' : linkify_reprints,
       'media_url' : settings.MEDIA_URL })
 
+
+# this is just a copy of the above routine, done this way to not
+# change the above while trying the xml-output
+#
+# if we do xml the routines should be rejoined in a suitable way
+# either as one routine with two possible output calls (html/xml)
+# or as two (actually three) routines, one with the joint code which 
+# would be called by the xml/html routine who do their own stuff as well
 def issue_xml(request, issue_id):
     """Display the issue details page, including story details."""
     issue = get_object_or_404(Issue, id = issue_id)
