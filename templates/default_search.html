@@ -71,8 +71,8 @@
                     {% if page_obj.has_previous %}
                         <a href="./?{{ query_string }}page={{ page_obj.previous_page_number}}">&laquo;</a>
                     {% endif %}
-                    {% if digg_paginator.is_paginated %}
-                        {% for page in digg_paginator.page_range %} 
+                    {% if page_obj.has_other_pages %}
+                        {% for page in digg_page.page_range %} 
                             {% if not page %} 
                                 ... 
                             {% else %}
