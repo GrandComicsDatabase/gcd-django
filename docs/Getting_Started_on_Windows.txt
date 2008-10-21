@@ -3,29 +3,57 @@ Step-by-step guide to setting up a development environment on Windows
 Ralf Haring
 5 July 2008
 
-[The assumption in this document is that everything be installed in one directory - D:\maelstrom.]
+[The assumption in this document is that everything be installed in one
+directory - D:\maelstrom.]
 
-[This document is located in the source code at pydjango\docs\Getting_Started_on_Windows.txt as well as available online at http://maelstrom.walton.uark.edu/wiki/Getting_Started_on_Windows]
 ----------------------------
 To run a local copy of the web site:
 
-1. Download the latest Python 2.4.X (currently 2.4.4) from http://www.python.org/download/releases . Run python-2.4.4.msi and install to D:\maelstrom\Python24 . Add D:\maelstrom\Python24 to the end of the PATH environment variable.
+1. Download the latest Python 2.4.X (currently 2.4.4) from
+http://www.python.org/download/releases . Run python-2.4.4.msi and install
+to D:\maelstrom\Python24 . Add D:\maelstrom\Python24 to the end of the PATH
+environment variable.
 
-2. Download Tortoise SVN (currently 1.5.0) from http://tortoisesvn.net/downloads . Run TortoiseSVN-1.5.0.13316-win32-svn-1.5.0.msi and install to D:\maelstrom\TortoiseSVN . Restart of OS needed.
+2. Download Tortoise SVN (currently 1.5.0) from
+http://tortoisesvn.net/downloads . Run
+TortoiseSVN-1.5.0.13316-win32-svn-1.5.0.msi and install to
+D:\maelstrom\TortoiseSVN . Restart of OS needed.
 
-3. Create D:\maelstrom\django . Right click on the dir and choose SVN Checkout. Enter the URL http://code.djangoproject.com/svn/django/trunk , choose Revision 7838 , and click OK. Create a new environment variable PYTHONPATH and set it to D:\maelstrom\django .
+3. Install Django 1.0 (http://www.djangoproject.com) at D:\maelstrom\django .
+Create a new environment variable PYTHONPATH and set it to D:\maelstrom\django .
+*OR*
+Create D:\maelstrom\django . Right click on the dir and choose SVN Checkout.
+Enter the URL http://code.djangoproject.com/svn/django/trunk , choose
+Revision ??? (need svn revision number for release 1.0), and click OK.
+Create a new environment variable PYTHONPATH and set it to D:\maelstrom\django .
 
-4. Download the latest MySQL 5.0.X (currently 5.0.51b) from http://dev.mysql.com/downloads/mysql/5.0.html#win32 . Run mysql-essential-5.0.51b-win32.msi and install to D:\maelstrom\MySQL . In the configuration wizard, choose Standard Configuration, check Install As Windows Service and Include Bin Directory in Windows PATH.
+4. Download the latest MySQL 5.0.X (currently 5.0.51b) from
+http://dev.mysql.com/downloads/mysql/5.0.html#win32 . Run
+mysql-essential-5.0.51b-win32.msi and install to D:\maelstrom\MySQL . In the
+configuration wizard, choose Standard Configuration, check Install As Windows
+Service and Include Bin Directory in Windows PATH.
 
-5. Download the latest MySQL python module for python 2.4 (currently 1.2.2) from http://sourceforge.net/project/showfiles.php?group_id=22307 . Run MySQL-python-1.2.2.win32-py2.4.exe . It should autodetect the Python install dir from step 2.
+5. Download the latest MySQL python module for python 2.4 (currently 1.2.2)
+from http://sourceforge.net/project/showfiles.php?group_id=22307 . Run
+MySQL-python-1.2.2.win32-py2.4.exe . It should autodetect the Python install
+dir from step 2.
 
-6. Download the latest database dump from http://www.comics.org/beta/GCDData.gz. (WARNING: If downloading in Internet Explorer, it will unzip it for you but won't remove the gz extension.) Unzip it to D:\maelstrom\GCDData . Current unzipped file size is around 397 MB.
+6. Download the latest database dump from
+http://www.comics.org/beta/GCDData.gz. (WARNING: If downloading in Internet
+Explorer, it will unzip it for you but won't remove the gz extension.) Unzip it
+to D:\maelstrom\GCDData . Current unzipped file size is around 397 MB.
 
-7. Create D:\maelstrom\gcd . Right click on the dir and choose SVN Checkout. Enter the URL https://grandcomic-book.svn.sourceforge.net/svnroot/grandcomic-book/pydjango , choose HEAD Revision, and click OK.
+7. Create D:\maelstrom\gcd . Right click on the dir and choose SVN Checkout.
+Enter the URL
+https://grandcomic-book.svn.sourceforge.net/svnroot/grandcomic-book/pydjango ,
+choose HEAD Revision, and click OK.
 
-8. Edit D:\maelstrom\gcd\settings.py to change the DATABASE_NAME from gcd_dev to gcdonline
+8. Edit D:\maelstrom\gcd\settings.py to change the DATABASE_NAME from gcd_dev
+to gcdonline
 
-9. Run "mysql -u root -pXXXXX" where XXXXX is the root password set in step 5. Note that there is no space between -p and XXXXX. Enter "CREATE USER gcd_dev;" , then "GRANT ALL ON *.* TO 'gcd_dev'" , and then "quit;" .
+9. Run "mysql -u root -pXXXXX" where XXXXX is the root password set in step 5.
+Note that there is no space between -p and XXXXX. Enter "CREATE USER gcd_dev;" ,
+then "GRANT ALL ON *.* TO 'gcd_dev'" , and then "quit;" .
 
 10. Run "mysql -u gcd_dev < D:\maelstrom\GCDData" to import the database.
 
@@ -37,9 +65,24 @@ To run a local copy of the web site:
 ----------------------------
 To change the web site code:
 
-1. Create a sourceforge user and join project http://sourceforge.net/projects/grandcomic-book/
+1. Create a sourceforge user and join project
+http://sourceforge.net/projects/grandcomic-book/
 
-2. Edit the files in D:\maelstrom\gcd and test on the local machine. Changed files will appear with a red icon instead of green.
+2. Edit the files in D:\maelstrom\gcd and test on the local machine. Changed
+files will appear with a red icon instead of green.
 
-3. When ready to commit a change, right click and choose SVN Commit. Enter a description of the change and your sourceforge user name and password.
+3. Submit a code review to the Review Board using the post-review tool,
+available at
+http://reviewboard.googlecode.com/svn/trunk/reviewboard/contrib/tools/post-review
+Submit the reivew to the server at
+http://maelstrom.walton.uark.edu/reviewboard/
+(note that the trailing '/' is required).
+
+See the following web pages for documentation on 
+http://code.google.com/p/reviewboard/wiki/UserBasics
+http://code.google.com/p/reviewboard/wiki/Using_PostReview
+
+4. When ready to commit a change, *after* receiving approval through
+Review Board, right click and choose SVN Commit. Enter a
+description of the change and your sourceforge user name and password.
 ----------------------------

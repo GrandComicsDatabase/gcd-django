@@ -13,11 +13,7 @@ for MacOS.  Current versions of MySQLdb do not compile on all versions
 of MacOS.  More details on this later.
 
 
-1.  Install Django (http://www.djangoproject.com).  Get the source
-from Subversion as of revision 7835 for best results (this number will
-move forward as relevant patches to Django are checked in- if you try a
-later revision and it works please update the docs an notify the GCD-Tech
-mailing list).
+1.  Install Django 1.0 (http://www.djangoproject.com).
 
 
 2.  Install MySQL (version 5.0.45 has been used with this code).  Load a
@@ -45,13 +41,17 @@ the compile problems to be fixed.
 If you're feeling brave, this page on installing Django:
 http://tinyurl.com/2sq4x7
 (which is on a Ruby site for some reason) has instructions on how to
-get MySQLdb  compiling for Python 2.5.
+get MySQLdb compiling for Python 2.5.
 
 
 4.  Put the src/ directory of this project on your Python path.
 
 
-5.  Open up src/gcd/settings.py
+5.  Open up src/gcd/settings.py and change database settings as needed.
+By default, we assume that the database is called gcd_dev and it can
+be accessed by a user called gcd_dev with no passwords.  If you set
+your database up differently, look for settings that start with
+DATABASE and change them appropriately.
 
 
 6.  From the src/gcd/ directory, run
@@ -64,4 +64,10 @@ If you don't get any page at all, check www.djangoproject.com if it
 looks like Django isn't configured correctly, or
 http://maelstrom.walton.uark.edu/bugzilla/ and/or handrews@users.sourceforge.net
 if it appears to be a code problem.
+
+
+7.  When you start making changes, go to the wiki on maelstrom for instructions
+on how to get code reviewed before checkin.  Submissions that do not first
+go through code review will be reverted.
+
 
