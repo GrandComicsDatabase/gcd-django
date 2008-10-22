@@ -1,3 +1,4 @@
+# coding=utf-8
 from django import template
 from django.utils.translation import ugettext as _
 from django.utils.safestring import mark_safe
@@ -25,7 +26,10 @@ def find_reprint_sequence_in_issue(from_story,to_issue):
     results = results.filter(issue__id = to_issue)
     results = results.filter(title__icontains = from_story.title.strip().strip('!').strip('.'))
     if (results.count() > 1):
-        results = results.filter(page_count = from_story.page_count)
+        try:
+            results = results.filter(page_count = from_story.page_count)
+        except:
+            pass
     if (results.count() == 1):
         return results[0].sequence_number
     #for i in range(results.count()):
@@ -75,16 +79,13 @@ def parse_reprint_fr(reprints):
     try:# for format: fr. seriesp #nr (issue date) date unused for parsing
         position = reprints.find(' #')
         series = reprints[3:position].strip()
-        #print series 
         position += 2
         string = reprints[position:]
         position = string.find('(')
         number = string[:position].strip()
-        #print number
         results = Issue.objects.all()
         results = results.filter(series__name__icontains = series)
         results = results.filter(number__exact = number)
-        #print results.count()
     except:
         pass
     
@@ -117,7 +118,6 @@ def parse_reprint_fr(reprints):
             results = results.filter(number__exact = number)
             if year:
                 results = results.filter(key_date__icontains = year)
-            #print results.count()
         except:
             pass
     
@@ -132,17 +132,18 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
     if reprints.lower().startswith(from_to):
         try:# our preferred format: seriesname (publisher, year <series>) #nr
             position = reprints.find(' (')
-            series = reprints[len(from_to):position].strip().strip("The ").strip("the ")
+            series = reprints[len(from_to):position].strip("Tthe ")
             string = reprints[position+2:]
             after_series = string # use in other formats
-            #print series 
             position = string.find(', ')
             publisher = string[:position].strip()
-            #print publisher
             position+=2
             string = string[position:]
             year = string[:4]
-            #print year
+            if from_to in ['da ', 'in ', 'de ', 'en ']: #italian and spanish from/in
+                if year.isdigit() != True:
+                    position = string.find(')')
+                    year = string[position-4:position]
             string = string[4:]
             position = string.find(' #')+2
             string = string[position:]
@@ -174,13 +175,24 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
                     number = string[:position].strip()
                 else:
                     number = string.strip().strip('.')
-            #print number
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
             results = results.filter(series__publisher__name__icontains 
             = publisher)
             results = results.filter(series__year_began__exact = int(year))
             results = results.filter(number__exact = number)
+            if results.count() == 0 or results.count() > max_found:
+                position = string.find(' ') 
+                if position > 0:
+                    number = string[:position].strip('.,')
+                else:
+                    number = string.strip('.,')
+                results = Issue.objects.all()
+                results = results.filter(series__name__icontains = series)
+                results = results.filter(series__publisher__name__icontains 
+                = publisher)
+                results = results.filter(series__year_began__exact = int(year))
+                results = results.filter(number__exact = number)
         except:
             pass
         
@@ -194,11 +206,9 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
                 else:
                     position = string.find(' 2')
                     publisher = string[:position].strip()                    
-                #print publisher
                 position+=1
                 string = string[position:]
                 year = string[:4]
-                #print year
                 string = string[4:]
                 position = string.find(' #')+2
                 string = string[position:]
@@ -216,7 +226,6 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
                         number = string[:position].strip()
                     else:
                         number = string.strip()
-                #print number
                 if position > 0 and position_end > position:
                     notes = string[position:position_end+1]
                 results = Issue.objects.all()
@@ -233,16 +242,13 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
                 # use series from before
                 string = after_series
                 year = string[:4]
-                #print year
                 string = string[4:]
                 position = string.find(' #')+2
                 string = string[position:]
-                #print string
                 if string.isdigit():
                     number = string
                 else:
                     number = string[:string.find(' ')]
-                #print number
                 position = string.find('[')
                 position_end = string.find(']')
                 if position > 0 and position_end > position:
@@ -257,26 +263,22 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
         if results.count() == 0 or results.count() > max_found:
             try:# for format: seriesname #nr(publisher, year <series>)
                 position = reprints.find(' #')
-                series = reprints[len(from_to):position].strip().strip("The ").strip("the ")
-                #print series 
+                series = reprints[len(from_to):position].strip("Tthe ")
                 position += 2
                 string = reprints[position:]
                 after_series = string
                 position = string.find('(')
                 number = string[:position].strip()
-                #print number
                 position += 1
                 string = string[position:]
                 position = string.find(', ')
                 publisher = string[:position].strip()
-                #print publisher
                 position += 2
                 string = string[position:]
                 year = string[:4]
                 position = string.find('[')
                 if position > 0:
                     notes = string[position:]
-                #print year
                 results = Issue.objects.all()
                 results = results.filter(series__name__icontains = series)
                 results = results.filter(series__publisher__name__icontains 
@@ -292,14 +294,12 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
                 string = after_series
                 position = string.find('(')
                 number = string[:position].strip()
-                #print number
                 position += 1
                 string = string[position:]
                 year = string[:4]
                 position = string.find('[')
                 if position > 0:
                     notes = string[position:]
-                #print year
                 results = Issue.objects.all()
                 results = results.filter(series__name__icontains = series)
                 results = results.filter(series__year_began__exact = int(year))
@@ -312,7 +312,8 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
 
 
 def show_reprint_full(story, style):
-    """ Filter for reprint line.  First step into database migration."""
+    """ Filter for reprint line.  First step into database migration.
+    This routine is currently not being used. """
     
     if story.reprints:
         reprint = ""
@@ -381,14 +382,26 @@ def show_reprint_full(story, style):
         return ""
         
 def show_reprint_suggestions(story, style):
-    """ Filter for reprint line.  First step into database migration."""
+    """ Filter for reprint line.  First step into database migration.
+    If parsing does not work for the current format but for other formats
+    prints the correct and link to edit it."""
     
+    reprint_direction = ["from ", "in "]
+    if story.issue.series.language_code.lower() == 'it': #da, in
+        reprint_direction = ["da "] + reprint_direction
+    elif story.issue.series.language_code.lower() == 'es': #de, en
+        reprint_direction = ["de ", "en "] + reprint_direction
+    elif story.issue.series.language_code.lower() == 'nl': # uit, in
+        reprint_direction = ["uit "] + reprint_direction 
+    elif story.issue.series.language_code.lower() == 'sv': # från, i
+        reprint_direction = [u"från ", "i "] + reprint_direction 
+    reprint_direction_search = reprint_direction + [""]
     if story.reprints:
         reprint = ""
         for string in story.reprints.split(';'):
             string = string.strip()
             # check for our format
-            for from_to in ("from ","in ",""):
+            for from_to in reprint_direction_search:
                 next_reprint, notes = parse_reprint(string, from_to)
                 if next_reprint.count() > 1 and next_reprint.count() <= 15:
                     a = []
@@ -400,7 +413,7 @@ def show_reprint_suggestions(story, style):
                     if len(a) == 1:
                         next_reprint = next_reprint.filter(id =
                                                 next_reprint[a[0]].id)
-                if next_reprint.count() == 1 and from_to in ("from ","in "):
+                if next_reprint.count() == 1 and from_to in reprint_direction:
                     reprint += generate_reprint_link(story, next_reprint[0],
                                                      from_to, style,
                                                      notes = notes)
@@ -412,7 +425,7 @@ def show_reprint_suggestions(story, style):
                         
             # check for some others
             if next_reprint.count() == 0 or next_reprint.count() > 5:
-                for from_to in ("from ","in ",""):
+                for from_to in reprint_direction_search:
                     next_reprint,notes = parse_reprint_full(string, from_to)
                     if next_reprint.count() > 1 and next_reprint.count() <= 15:
                         a = []
@@ -466,20 +479,21 @@ def parse_reprint(reprints, from_to):
     notes = None
     
     if reprints.lower().startswith(from_to):
-        try:# our preferred format: seriesname (publisher, year <series>) #nr
+        try:# our format: seriesname (publisher, year <series>) #nr
             position = reprints.find(' (')
-            series = reprints[len(from_to):position].strip()
+            series = reprints[len(from_to):position]
             # could remove the/The from beginning and from end with ','
             string = reprints[position+2:]
             after_series = string # use in other formats
-            #print series 
             position = string.find(', ')
             publisher = string[:position].strip()
-            #print publisher
             position+=2
             string = string[position:]
             year = string[:4]
-            #print year
+            if from_to in ['da ', 'in ', 'de ', 'en ']: #italian and spanish from/in
+                if year.isdigit() != True:
+                    position = string.find(')')
+                    year = string[position-4:position]
             string = string[4:]
             position = string.find(' #')+2
             string = string[position:]
@@ -502,7 +516,6 @@ def parse_reprint(reprints, from_to):
                     number = string[:position].strip('., ')
                 else:
                     number = string.strip('., ')
-            #print number
             results = Issue.objects.all()
             results = results.filter(series__name__icontains = series)
             results = results.filter(series__publisher__name__icontains 
@@ -520,11 +533,20 @@ def parse_reprint(reprints, from_to):
 def show_reprint(story, style):
     """ Filter for our reprint line."""
     
+    reprint_direction = ["from ", "in "]
+    if story.issue.series.language_code.lower() == 'it': #da, in
+        reprint_direction = ["da "] + reprint_direction
+    elif story.issue.series.language_code.lower() == 'es': #de, en
+        reprint_direction = ["de ", "en "] + reprint_direction
+    elif story.issue.series.language_code.lower() == 'nl': # uit, in
+        reprint_direction = ["uit "] + reprint_direction 
+    elif story.issue.series.language_code.lower() == 'sv': # från, i
+        reprint_direction = [u"från ", "i "] + reprint_direction 
     if story.reprints:
         reprint = ""
         for string in story.reprints.split(';'):
             string = string.strip()
-            for from_to in ("from ","in "):
+            for from_to in reprint_direction:
                 next_reprint, notes = parse_reprint(string, from_to)
                 if next_reprint.count() == 1:
                     reprint += generate_reprint_link(story, next_reprint[0],
