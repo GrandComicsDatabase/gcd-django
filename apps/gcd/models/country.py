@@ -14,4 +14,4 @@ class Country(models.Model):
         pass
 
     def __unicode__(self):
-        return self.country + " (" + self.code + ")"
+        return self.name + " (" + self.code + ")"

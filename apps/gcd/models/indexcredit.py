@@ -16,11 +16,9 @@ class IndexCredit(models.Model):
     id = models.AutoField(primary_key = True, db_column = 'ID')
 
     indexer = models.ForeignKey(Indexer, db_column = 'IndexerID',
-                                related_name = 'index_credit_set',
-                                raw_id_admin = True)
+                                related_name = 'index_credit_set')
     series = models.ForeignKey(Series, db_column = 'SeriesID',
-                               related_name = 'index_credit_set',
-                               raw_id_admin = True)
+                               related_name = 'index_credit_set')
     run = models.CharField(max_length = 255, db_column = 'Run', null = True)
     notes = models.TextField(db_column = 'Notes', null = True)
     comment = models.TextField(db_column = 'Comment', null = True)

@@ -21,7 +21,7 @@ class Issue(models.Model):
     volume = models.IntegerField(max_length = 255, db_column = 'VolumeNum',
                                  null = True)
     number = models.CharField(max_length = 25, db_column = 'Issue',
-                              core = True, null = True)
+                              null = True)
     # Note that in stories, publication_date is limited to 50 chars.
     publication_date = models.CharField(max_length = 255,
                                         db_column = 'Pub_Date',
@@ -48,7 +48,7 @@ class Issue(models.Model):
     #UNUSED: ReserveCheck is an unused field in the current database schema
     #reserve_check = models.IntegerField(db_column = 'ReserveCheck', null = True)
 
-    # Fields related to cover images
+    # Fields related to cover images, apparently currently not being used
     #UNUSED: CoverCheck and CoverCount are unused fields in the current database schema
     #has_cover = models.IntegerField(db_column = 'CoverCheck', null = True)
     #num_covers = models.IntegerField(db_column = 'CoverCount', null = True)
@@ -56,8 +56,7 @@ class Issue(models.Model):
     # Attributes from series table. First is foreign key, rest are
     # dups and seem to be ignored in the lasso implementation
     series = models.ForeignKey(Series,
-                               db_column = 'SeriesID',
-                               raw_id_admin = True)
+                               db_column = 'SeriesID')
     #UNUSED: Bk_Name and Yr_Began are unused fields in the current database schema
     #series_name = models.CharField(max_length = 255, db_column = 'Bk_Name',
     #                               null = True)
@@ -148,6 +147,6 @@ class Issue(models.Model):
         return "/gcd/issue/%i/" % self.id
 
     def __unicode__(self):
-        return str(self.series.name) + " #" + self.number # + " (" + \
+        return unicode(self.series.name) + " #" + self.number # + " (" + \
                # self.publication_date + ") [" + self.key_date + "]"
 

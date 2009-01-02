@@ -23,18 +23,15 @@ class Cover(models.Model):
     # Series attributes
     
     series = models.ForeignKey(Series,
-                               db_column = 'SeriesID',
-                               raw_id_admin = True)
+                               db_column = 'SeriesID')
     series_name = models.CharField(max_length = 255, db_column = 'Bk_Name',
                                    null = True)
     year_began = models.IntegerField(db_column = 'Yr_Began', null = True)
 
     # Issue attributes
     issue = models.OneToOneField(Issue,
-                                 db_column = 'IssueID',
-                                 raw_id_admin = True)
-    issue_number = models.CharField(max_length = 50, db_column = 'Issue',
-                                    core = True)
+                                 db_column = 'IssueID')
+    issue_number = models.CharField(max_length = 50, db_column = 'Issue')
 
     # Fields directly related to cover images
     code = models.CharField(db_column = 'covercode', max_length = 50)

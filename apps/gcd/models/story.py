@@ -16,7 +16,7 @@ class Story(models.Model):
 
     # Core story fields.
     feature = models.CharField(max_length = 255, db_column = 'Feature',
-                               null = True, core = True)
+                               null = True)
     page_count = models.IntegerField(db_column = 'Pg_Cnt', null = True)
     characters = models.TextField(db_column = 'Char_App',
                                   null = True)
@@ -59,10 +59,7 @@ class Story(models.Model):
     # Fields from issue (foreign key plus duplicates/caches).
     issue = models.ForeignKey(Issue,
                               db_column = 'IssueID',
-                              null = True,
-                              edit_inline = models.STACKED,
-                              raw_id_admin = True,
-                              num_in_admin = 3)
+                              null = True)
     #UNUSED: Issue, Pub_Date, Key_Date, Price, and rel_year are unused fields in the current database schema
     #issue_number = models.CharField(max_length = 50, db_column = 'Issue',
     #                                null = True)
