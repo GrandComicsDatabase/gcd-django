@@ -1,12 +1,15 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
+# Uncomment the next two lines to enable the admin:
+from django.contrib import admin
+admin.autodiscover()
 
 urlpatterns = patterns('',
     # Example:
     # (r'^gcd/', include('gcd.foo.urls')),
 
     # Uncomment this for admin:
-    (r'^admin/', include('django.contrib.admin.urls')),
+    (r'^admin/(.*)', admin.site.root),
 
     ###########################################################################
     # GCD URLs.
@@ -22,136 +25,136 @@ urlpatterns = patterns('',
     # or else it will never be used because the shorter form will always match.
     ###########################################################################
 
-    (r'^gcd/$', 'apps.gcd.views.index'),
-    (r'^gcd/search/$', 'apps.gcd.views.search.search'),
-    (r'^gcd/search/advanced/$', 'apps.gcd.views.search.advanced_search'),
-    (r'^gcd/search/advanced/process/$',
+    (r'^$', 'apps.gcd.views.index'),
+    (r'^search/$', 'apps.gcd.views.search.search'),
+    (r'^search/advanced/$', 'apps.gcd.views.search.advanced_search'),
+    (r'^search/advanced/process/$',
      'apps.gcd.views.search.process_advanced'),
 
     # Publisher
-    (r'^gcd/publisher/(?P<publisher_id>\d+)/$',
+    (r'^publisher/(?P<publisher_id>\d+)/$',
      'apps.gcd.views.details.publisher'),
-    (r'^gcd/publisher/name/(?P<publisher_name>.+)/sort/(?P<sort>.+)/$',
+    (r'^publisher/name/(?P<publisher_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.publishers_by_name'),
-    (r'^gcd/publisher/name/(?P<publisher_name>.+)/$',
+    (r'^publisher/name/(?P<publisher_name>.+)/$',
      'apps.gcd.views.search.publishers_by_name'),
-    (r'^gcd/publisher/(?P<publisher_id>\d+)/imprints/$',
+    (r'^publisher/(?P<publisher_id>\d+)/imprints/$',
      'apps.gcd.views.details.imprints'),
 
     # Imprint
-    (r'^gcd/imprint/(?P<imprint_id>\d+)/$',
+    (r'^imprint/(?P<imprint_id>\d+)/$',
      'apps.gcd.views.details.imprint'),
 
     # Series
-    (r'^gcd/series/(?P<series_id>\d+)/$', 'apps.gcd.views.details.series'),
-    (r'^gcd/series/name/(?P<series_name>.+)/sort/(?P<sort>.+)/$',
+    (r'^series/(?P<series_id>\d+)/$', 'apps.gcd.views.details.series'),
+    (r'^series/name/(?P<series_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.series_by_name'),
     # Series and Issue
-    (r'^gcd/series/name/(?P<series_name>.+)/issue/(?P<issue_nr>.+)/$',
+    (r'^series/name/(?P<series_name>.+)/issue/(?P<issue_nr>.+)/$',
      'apps.gcd.views.search.series_and_issue'),
-    (r'^gcd/series/name/(?P<series_name>.+)/$',
+    (r'^series/name/(?P<series_name>.+)/$',
      'apps.gcd.views.search.series_by_name'),
 
     # Series index and cover status / gallery
-    (r'^gcd/series/(?P<series_id>\d+)/status/$',
+    (r'^series/(?P<series_id>\d+)/status/$',
      'apps.gcd.views.details.status'),
 
-    (r'^gcd/series/(?P<series_id>\d+)/covers/$',
+    (r'^series/(?P<series_id>\d+)/covers/$',
      'apps.gcd.views.details.covers'),
 
-    (r'^gcd/series/(?P<series_id>\d+)/scans/$',
+    (r'^series/(?P<series_id>\d+)/scans/$',
      'apps.gcd.views.details.scans'),
 
     # Issue
-    (r'^gcd/issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue'),
-    (r'^gcd/issue/$', 'apps.gcd.views.details.issue_form'),
+    (r'^issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue'),
+    (r'^issue/$', 'apps.gcd.views.details.issue_form'),
 
     # Single Cover
-    (r'^gcd/issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',
+    (r'^issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',
      'apps.gcd.views.details.cover'),
 
     # Attribute searches
-    (r'^gcd/character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
+    (r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.character_appearances'),
-    (r'^gcd/character/name/(?P<character_name>.+)/$',
+    (r'^character/name/(?P<character_name>.+)/$',
      'apps.gcd.views.search.character_appearances'),
 
-    (r'^gcd/writer/name/(?P<writer>.+)/sort/(?P<sort>.+)/$',
+    (r'^writer/name/(?P<writer>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.writer_by_name'),
-    (r'^gcd/writer/name/(?P<writer>.+)/$',
+    (r'^writer/name/(?P<writer>.+)/$',
      'apps.gcd.views.search.writer_by_name'),
 
-    (r'^gcd/penciller/name/(?P<penciller>.+)/sort/(?P<sort>.+)/$',
+    (r'^penciller/name/(?P<penciller>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.penciller_by_name'),
-    (r'^gcd/penciller/name/(?P<penciller>.+)/$',
+    (r'^penciller/name/(?P<penciller>.+)/$',
      'apps.gcd.views.search.penciller_by_name'),
 
-    (r'^gcd/inker/name/(?P<inker>.+)/sort/(?P<sort>.+)/$',
+    (r'^inker/name/(?P<inker>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.inker_by_name'),
-    (r'^gcd/inker/name/(?P<inker>.+)/$',
+    (r'^inker/name/(?P<inker>.+)/$',
      'apps.gcd.views.search.inker_by_name'),
 
-    (r'^gcd/colorist/name/(?P<colorist>.+)/sort/(?P<sort>.+)/$',
+    (r'^colorist/name/(?P<colorist>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.colorist_by_name'),
-    (r'^gcd/colorist/name/(?P<colorist>.+)/$',
+    (r'^colorist/name/(?P<colorist>.+)/$',
      'apps.gcd.views.search.colorist_by_name'),
 
-    (r'^gcd/letterer/name/(?P<letterer>.+)/sort/(?P<sort>.+)/$',
+    (r'^letterer/name/(?P<letterer>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.letterer_by_name'),
-    (r'^gcd/letterer/name/(?P<letterer>.+)/$',
+    (r'^letterer/name/(?P<letterer>.+)/$',
      'apps.gcd.views.search.letterer_by_name'),
 
-    (r'^gcd/editor/name/(?P<editor>.+)/sort/(?P<sort>.+)/$',
+    (r'^editor/name/(?P<editor>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.editor_by_name'),
-    (r'^gcd/editor/name/(?P<editor>.+)/$',
+    (r'^editor/name/(?P<editor>.+)/$',
      'apps.gcd.views.search.editor_by_name'),
 
-    (r'^gcd/story/name/(?P<title>.+)/sort/(?P<sort>.+)/$',
+    (r'^story/name/(?P<title>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_title'),
-    (r'^gcd/story/name/(?P<title>.+)/$',
+    (r'^story/name/(?P<title>.+)/$',
      'apps.gcd.views.search.story_by_title'),
 
-    (r'^gcd/feature/name/(?P<feature>.+)/sort/(?P<sort>.+)/$',
+    (r'^feature/name/(?P<feature>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_feature'),
-    (r'^gcd/feature/name/(?P<feature>.+)/$',
+    (r'^feature/name/(?P<feature>.+)/$',
      'apps.gcd.views.search.story_by_feature'),
 
-    (r'^gcd/credit/name/(?P<name>.+)/sort/(?P<sort>.+)/$',
+    (r'^credit/name/(?P<name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_credit'),
-    (r'^gcd/credit/name/(?P<name>.+)/$',
+    (r'^credit/name/(?P<name>.+)/$',
      'apps.gcd.views.search.story_by_credit'),
 
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.
-    (r'^gcd/job_number/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
+    (r'^job_number/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_job_number_name'),
-    (r'^gcd/job_number/name/(?P<number>.+)/$',
+    (r'^job_number/name/(?P<number>.+)/$',
      'apps.gcd.views.search.story_by_job_number_name'),
-    (r'^gcd/job_number/(?P<number>.+)/sort/(?P<sort>.+)/$',
+    (r'^job_number/(?P<number>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_job_number'),
-    (r'^gcd/job_number/(?P<number>.+)/$',
+    (r'^job_number/(?P<number>.+)/$',
      'apps.gcd.views.search.story_by_job_number'),
 
     # show covers uploaded on a particular date
-    (r'^gcd/daily_covers/$',
+    (r'^daily_covers/$',
      'apps.gcd.views.details.daily_covers'),
-    (r'^gcd/daily_covers/(?P<show_date>.+)/$',
+    (r'^daily_covers/(?P<show_date>.+)/$',
      'apps.gcd.views.details.daily_covers'),
 
     # list covers marked for replacement
-    (r'^gcd/covers_to_replace/$',
+    (r'^covers_to_replace/$',
      'apps.gcd.views.details.covers_to_replace'),    
-    (r'^gcd/covers_to_replace/with/(?P<starts_with>.+)/$',
+    (r'^covers_to_replace/with/(?P<starts_with>.+)/$',
      'apps.gcd.views.details.covers_to_replace'),    
  
     # Reprints
-    (r'^gcd/reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
+    (r'^reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
-    (r'^gcd/reprint/(?P<reprints>.+)/$',
+    (r'^reprint/(?P<reprints>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
-    (r'^gcd/settings/$',
+    (r'^settings/$',
      'apps.gcd.views.settings.settings'),    
 
-    (r'^gcd/last_updated/$',
+    (r'^last_updated/$',
      'apps.gcd.views.details.last_updated'),
 
     # trying out XML output
@@ -159,5 +162,5 @@ urlpatterns = patterns('',
     (r'^gcd_xml/issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue_xml'),
     
     # URL for trying out new layouts, styles and UI concepts.
-    (r'^gcd/new/(?P<name>.+)/$', 'apps.gcd.views.prototype'),
+    (r'^new/(?P<name>.+)/$', 'apps.gcd.views.prototype'),
 )
