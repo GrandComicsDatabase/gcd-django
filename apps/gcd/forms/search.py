@@ -1,4 +1,4 @@
-import django.newforms as forms
+from django import forms
 from apps.gcd.models import Country, Language, Indexer
 
 ORDERINGS = [['', '--'],
