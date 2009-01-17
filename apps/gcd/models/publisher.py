@@ -18,32 +18,20 @@ class Publisher(models.Model):
     alpha_sort_code = models.CharField(max_length = 1,
                                        db_column = 'AlphaSortCode', null = True)
 
-    # I'm not convinced we need all of these cached counts.
-    # They're not entirely accurate in the current DB snapshot.
+    # Cached counts.  Not guaranteed to be accurate in a production dump.
     imprint_count = models.IntegerField(db_column = 'ImprintCount', null = True)
     series_count = models.IntegerField(db_column = 'BookCount', null = True)
     issue_count = models.IntegerField(db_column = 'IssueCount', null = True)
 
-    # Fields about relating publishers to each other.  Not sure about
-    # connection as it is always null except one '' right now.  But perhaps
-    # it is intended to describe these relationships (imprint, common name...)
-    # next_id is completely mysterious, but maybe in this category?
+    # Fields about relating publishers/imprints to each other.
     is_master = models.NullBooleanField(db_column = 'Master')
     parent = models.ForeignKey('self', db_column = 'ParentID',
                                null = True, related_name = 'imprint_set')
-    #UNUSED: Connection and NextID are unused fields in the current database schema
-    #connection = models.TextField(db_column = 'Connection', null = True)
-    #next = models.ForeignKey('self', db_column = 'NextID', null = True,
-    #                         related_name = 'previous_set')
 
     # Fields related to change management.
-    # No idea what the distinction between "Updated" and "Modified" is.
     created = models.DateField(auto_now_add = True, null = True)
     modified = models.DateField(db_column = 'Modified',
                                 auto_now = True, null = True)
-    #UNUSED: Updated is an unused field in the current database schema
-    #updated = models.DateField(db_column = 'Updated',
-    #                           auto_now = True, null = True)
 
     class Meta:
         db_table = 'publishers'
