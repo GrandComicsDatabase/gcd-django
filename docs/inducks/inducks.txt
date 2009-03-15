@@ -1,0 +1,8 @@
+use 
+getScript
+to download all the inducks-db-tables and put them in a subdir called isv.
+
+Then use 
+createtables_utf8.sql  
+to import the tables into the gcd_dev-db.
+
