@@ -1,0 +1,42 @@
+{% extends "inducks/base.html" %}
+
+{% load i18n %}
+{% load flatfile %}
+
+{% block title %}
+  Inducks :: Issue :: {{ issue.series.name }} #{{ issue.number }} 
+{% endblock %}
+
+{% block body %}
+
+<div id="issue_data">
+{{ issue.title}}
+{% with issue.number as issue_number %}
+{% endwith %}
+
+
+<dl id="issue_data_list">
+  {{issue.series}} #{{issue.number}}
+  <dt> {% trans "Price" %}: {{ issue.price }} 
+  <dt> {% trans "Pages" %}: {{issue.page_count}}  
+  <dt> {{issue.publication_date}}
+</dl>
+</div> <!-- issue_data -->
+
+<div id="main"> <!-- extra -->
+  {% for story in stories %}
+    <hr class="divider"/>
+  {{ story.title }} {{story.id}} {{story.notes}} {{story.job_number}} {{story.story_version}} {% if story.included_in_story %}in: {{ story.included_in_story }} {% endif %} 
+  {{ story|show_credit:"type" }} {% trans "Pages" %}: {{ story.story_version.page_count }}
+  <dt>Script: {{ story|show_credit:"script" }}
+  <dt>Pencils: {{ story|show_credit:"pencils" }} 
+  <dt>Inks: {{ story|show_credit:"inks" }}
+  <dt>Colors: {{ story|show_credit:"colors" }}
+  <dt>Letters: {{ story|show_credit:"letters" }}
+  {% endfor %}
+
+</div> <!-- main -->
+<pre>
+{{ issue|issue_flatfile }}
+</pre>
+{% endblock %}

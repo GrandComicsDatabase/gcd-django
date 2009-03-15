@@ -1,0 +1,27 @@
+{% extends "inducks/base.html" %}
+
+{% load i18n %}
+{% load flatfile %}
+
+{% block title %}
+  Inducks :: Series :: {{ series.name }} 
+{% endblock %}
+
+{% block body %}
+  {% for issue in issues %}
+    <hr class="divider"/>
+    inducks-id: <a href="/inducks/issue/{{issue.id}}">{{issue.id}}</a> #{{issue.number}} date: {{issue.publication_date}} price: {{ issue.price }} pages: {{issue.page_count}} 
+  {% endfor %}
+<br/>
+<pre>
+&gt;&gt;series&lt;&lt;	{{ series.name }}	FakePublisher	FakeImprint	1111	9999	1	999		{{ series.format }}	{{ series.country_code.code }}	{{ series.language_code }}	{{ series.notes }}	Inducks
+</pre>
+{% endblock %}
+<!--BookName ^T Publisher ^T Imprint/PubNotes ^T
+SeriesBegan ^T SeriesEnded ^T FirstIssue ^T LastIssue ^T Tracking
+^T Format ^T CountryCode ^T LanguageCode ^T Notes ^T Indexer-->
+<!--{{issue.number}} ^T {{issue.publication_date}} ^T Cover ^T ^T {{ issue.price }} {{issue.page_count}}  -->
+
+<!--Issue ^T PubDate ^T Type ^T Genre ^T Feature ^T Title ^T Pencils
+^T Inks ^T Script ^T Colors ^T Letters ^T Editing ^T PageCount ^T
+Price ^T Characters ^T Notes ^T Synopsis ^T Reprints-->

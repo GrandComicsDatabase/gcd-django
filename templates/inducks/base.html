@@ -1,0 +1,20 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
+<html>
+<head>
+<title>{% block title %}{% endblock %}</title>
+
+{% comment %}
+Having trouble with block / ifnotequal interactions.  Need to investigate.
+For now, just a simple single block for all CSS, despite redundancy.
+{% endcomment %}
+
+{% block css %}{% endblock %}
+</head>
+
+<body>
+<div id="sizing_base">
+{% block body %}{% endblock %}
+
+</div>
+</body>
+</html>

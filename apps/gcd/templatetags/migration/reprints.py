@@ -182,6 +182,7 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
             results = results.filter(series__year_began__exact = int(year))
             results = results.filter(number__exact = number)
             if results.count() == 0 or results.count() > max_found:
+                # try stripping ',.' from before whitespace/from the end
                 position = string.find(' ') 
                 if position > 0:
                     number = string[:position].strip('.,')
@@ -306,6 +307,24 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
                 results = results.filter(number__exact = number)
             except:
                 pass
+
+        if from_to == u"från " and (results.count() == 0 or results.count() > max_found):
+            try:# for format: seriesname #nr [country, publication year]
+                # use series from before                
+                string = after_series
+                position = string.find('[')
+                number = string[:position].strip()
+                position += 1
+                string = string[position:]
+                position = string.find(']')
+                pub_year = string[position-4:position]
+                results = Issue.objects.all()
+                results = results.filter(series__name__icontains = series)
+                #results = results.filter(series__year_began__exact = int(year))
+                results = results.filter(publication_date__icontains = pub_year)
+                results = results.filter(number__exact = number)
+            except:
+                pass
         return results,notes
     else:
         return Issue.objects.none(),None
@@ -386,6 +405,7 @@ def show_reprint_suggestions(story, style):
     If parsing does not work for the current format but for other formats
     prints the correct and link to edit it."""
     
+    # if languages get added also add in check_reprints ! 
     reprint_direction = ["from ", "in "]
     if story.issue.series.language_code.lower() == 'it': #da, in
         reprint_direction = ["da "] + reprint_direction
@@ -393,7 +413,7 @@ def show_reprint_suggestions(story, style):
         reprint_direction = ["de ", "en "] + reprint_direction
     elif story.issue.series.language_code.lower() == 'nl': # uit, in
         reprint_direction = ["uit "] + reprint_direction 
-    elif story.issue.series.language_code.lower() == 'sv': # från, i
+    elif story.issue.series.language_code.lower() in ['sv', 'no']: # från, i
         reprint_direction = [u"från ", "i "] + reprint_direction 
     reprint_direction_search = reprint_direction + [""]
     if story.reprints:

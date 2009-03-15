@@ -21,7 +21,7 @@ MEDIA_URL = "/site_media/"
 # Database settings. Override yours in a settings.local.py
 # if you're not gonna stick with these development defaults.
 DATABASE_ENGINE   = 'mysql'
-DATABASE_NAME     = 'gcd_dev'
+DATABASE_NAME     = 'gcd'
 DATABASE_USER     = 'gcd_dev'
 DATABASE_PASSWORD = ''
 DATABASE_HOST     = ''
@@ -32,6 +32,7 @@ MIDDLEWARE_CLASSES = (
    'django.contrib.sessions.middleware.SessionMiddleware',
    'django.middleware.locale.LocaleMiddleware',
    'django.middleware.common.CommonMiddleware',
+   'django.contrib.auth.middleware.AuthenticationMiddleware'
 )
 
 # The router where all our site URLs is defined.
@@ -52,6 +53,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.admin',
     'apps.gcd',
+    'apps.inducks',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.

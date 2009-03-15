@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-22 17:45+0100\n"
+"POT-Creation-Date: 2008-08-19 18:26+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,95 +16,107 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: apps/gcd/templatetags/gcd_filter.py:9 templates/issue.html:156
-msgid "Script"
-msgstr "Scenario"
-
-#: apps/gcd/templatetags/gcd_filter.py:11 templates/issue.html:59
-#: templates/issue.html.py:159
-msgid "Pencils"
-msgstr "Potloodtekenaar"
-
-#: apps/gcd/templatetags/gcd_filter.py:13 templates/issue.html:60
-#: templates/issue.html.py:160
-msgid "Inks"
-msgstr "Inkter"
-
-#: apps/gcd/templatetags/gcd_filter.py:15 templates/issue.html:61
-#: templates/issue.html.py:161
-msgid "Colors"
-msgstr "Inkleuring"
-
-#: apps/gcd/templatetags/gcd_filter.py:17 templates/issue.html:62
-#: templates/issue.html.py:162
-msgid "Letters"
-msgstr "Lettering"
-
-#: apps/gcd/templatetags/gcd_filter.py:19
-msgid "Job number"
+#: apps/gcd/templatetags/credits.py:59
+msgid "Job Number:"
 msgstr ""
 
-#: apps/gcd/templatetags/gcd_filter.py:21
-msgid "Title"
+#: apps/gcd/templatetags/credits.py:68
+msgid "search and link"
 msgstr ""
 
-#: templates/issue.html:28
-#, python-format
-msgid " %(myvar)s Series "
+#: apps/gcd/templatetags/migration/reprints.py:457
+#: apps/gcd/templatetags/migration/reprints.py:541
+msgid "Reprints"
 msgstr ""
 
-#: templates/issue.html:30
-msgid "coverprice"
+#: templates/gcd/covers_to_replace.html:19
+msgid "Covers marked for replacement"
 msgstr ""
 
-#: templates/issue.html:31 templates/issue.html.py:140
-msgid "pages"
+#: templates/gcd/daily_covers.html:19
+msgid "Covers for "
 msgstr ""
 
+#: templates/gcd/daily_covers.html:22
+msgid "day before"
+msgstr ""
+
+#: templates/gcd/daily_covers.html:24
+msgid "day after"
+msgstr ""
+
+#: templates/gcd/daily_covers.html:31
+msgid " covers posted"
+msgstr ""
+
+#: templates/gcd/issue.html:52
+msgid "Price"
+msgstr ""
+
+#: templates/gcd/issue.html:54
 msgid "Pages"
 msgstr ""
 
-#: templates/issue.html:80
-msgid "Editor"
-msgstr "Redacteur"
-
-#: templates/issue.html:83
+#: templates/gcd/issue.html:112
 msgid "Issues in this series have been indexed by:"
 msgstr ""
 
-#: templates/issue.html:92
-msgid "Stories/features:"
+#: templates/gcd/one_issue_series.html:5
+msgid "Publication Notes"
 msgstr ""
 
-#: templates/issue.html:100 templates/issue.html.py:131
-msgid "*No title given or indexed*"
+#: templates/gcd/one_issue_series.html:10
+msgid "Tracking"
 msgstr ""
 
-#: templates/issue.html:107
-msgid "Series info"
+#: templates/gcd/one_issue_series.html:15
+msgid "Title Notes"
 msgstr ""
 
-#: templates/issue.html:108
-msgid "View covergallery"
+#: templates/gcd/pagination_bar.html:7 templates/gcd/pagination_bar.html:9
+#: templates/gcd/pagination_bar.html:12
+msgid "Previous"
 msgstr ""
 
-#: templates/issue.html:110
+#: templates/gcd/pagination_bar.html:29 templates/gcd/pagination_bar.html:31
+#: templates/gcd/pagination_bar.html:34
+msgid "Next"
+msgstr ""
+
+#: templates/gcd/series.html:74
+msgid "Indexed by:"
+msgstr ""
+
+#: templates/gcd/series_issue_header.html:39
 msgid "Previous Issue"
 msgstr ""
 
-#: templates/issue.html:113
+#: templates/gcd/series_issue_header.html:45
 msgid "Next Issue"
 msgstr ""
 
-#: templates/issue.html:136
+#: templates/gcd/single_story.html:23 templates/gcd/single_story.html.py:48
 #, python-format
-msgid "Sequence %(seq_num)s "
+msgid ""
+"\n"
+"              page%(suffix)s\n"
+"            "
 msgstr ""
 
-#: templates/issue.html:146
-msgid "Feature Story:"
-msgstr ""
+#~ msgid "Script"
+#~ msgstr "Scenario"
 
-#: templates/issue.html:148
-msgid "Credits"
-msgstr ""
+#~ msgid "Pencils"
+#~ msgstr "Potloodtekenaar"
+
+#~ msgid "Inks"
+#~ msgstr "Inkter"
+
+#~ msgid "Colors"
+#~ msgstr "Inkleuring"
+
+#~ msgid "Letters"
+#~ msgstr "Lettering"
+
+#~ msgid "Editor"
+#~ msgstr "Redacteur"

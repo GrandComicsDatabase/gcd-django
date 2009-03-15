@@ -1,0 +1,37 @@
+<html>
+<head>
+  <title> Grand Comic-Book Database </title>
+  <link rel="stylesheet" type="text/css"
+        href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+</head>
+
+<body>
+<div id="sizing_base">
+
+<p>
+This is a placeholder front page for accessing the inducks data.  It is not, nor is it intended to be, particularly interesting.
+<hr/>
+<p/>
+You can access a list of issues for a particular series with urls of the form<br>
+http://maelstrom.walton.uark.edu/inducks/series/&lt;country_code&gt;/&lt;inducks_series_id&gt;/
+<br>
+For example
+<a href="/inducks/series/us/DD/">http://maelstrom.walton.uark.edu/inducks/series/us/DD/</a>
+<p/>
+
+Or go directly to an issue by<br>
+http://maelstrom.walton.uark.edu/inducks/issue/&lt;country_code&gt;/&lt;inducks_issue_id&gt;/
+<br>
+and see the contents of the issue including its GCD flatfile format for cut-and-paste at the end. <br>
+For example
+<a href="/inducks/issue/no/DD2000-45/">http://maelstrom.walton.uark.edu/inducks/issue/no/DD2000-45/</a>
+<p/>
+
+
+<hr/>
+
+{% include "gcd/fine_print.html" %}
+
+</div>
+</body>
+</html>
