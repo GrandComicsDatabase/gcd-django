@@ -81,6 +81,8 @@ class AdvancedSearch(forms.Form):
     issue_notes = forms.CharField(label='Issue Notes', required=False)
     issue_reprints = forms.CharField(label='Issue Reprints', required=False)
     issue_editor = forms.CharField(required=False)
+    issue_date = forms.CharField(label='Cover Date', required=False)
+
 
     feature = forms.CharField(label='Name', required=False)
     type = forms.CharField(required=False)

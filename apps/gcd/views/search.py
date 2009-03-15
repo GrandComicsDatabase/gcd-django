@@ -459,6 +459,9 @@ def search_issues(data, op, stories_q=None):
     q_objs = []
     if data['issues']:
         q_objs.append(handle_issue_numbers(data, prefix))
+    if data['issue_date']:
+        q_objs.append(
+          Q(**{ '%spublication_date__%s' % (prefix, op) : data['issue_date'] }))
 
     predecessor_objs = None
     if stories_q and (target == 'issue' or
