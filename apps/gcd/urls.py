@@ -163,8 +163,4 @@ urlpatterns = patterns('',
     
     # URL for trying out new layouts, styles and UI concepts.
     (r'^new/(?P<name>.+)/$', 'apps.gcd.views.prototype'),
-
-    # to generate lists of non-parsable reprints
-    (r'^reprint_check/$',
-     'apps.gcd.views.check_reprints.check_reprints'),
 )
