@@ -438,7 +438,6 @@ def issue_flatfile(issue):
         story = stories[num]
         force = story.story_version.type == 'n'
         script = show_credit(story,"script", force or story.story_version.type in ['t', 'a'], translation_default)
-	print script
         notes = ""
         if story.story_version.type in ['c', 'i']:
             #notes += "Illustration idea by " + script
