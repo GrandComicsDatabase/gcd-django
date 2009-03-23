@@ -80,28 +80,28 @@ def show_credit(story, credit, force = False, default = ""):
         pencils = story.story_version.creatorrole_set.filter(role = 'a')
         credit_value = ""
         for i in pencils:
-            credit_value += i.creator.name + "; "
+            credit_value += uni(i.creator.name) + "; "
         credit_value = credit_value[0:-2]
     elif credit == "inks":
         inks = story.story_version.creatorrole_set.filter(role = 'i')
         credit_value = ""
         for i in inks:
-            credit_value += i.creator.name + "; "
+            credit_value += uni(i.creator.name) + "; "
         credit_value = credit_value[0:-2]
         if credit_value == "": # no-inks --> inks=pencils
             credit_value = default
     elif credit == "script":
         script = story.story_version.creatorrole_set.filter(role = 'w')
         plot = story.story_version.creatorrole_set.filter(role = 'p')
-        credit_value = ""
+        credit_value = uni("")
         for i in script:
             if len(plot) > 0 and i not in plot:
-                credit_value += i.creator.name + " (" + _("script") + "); "
+                credit_value += uni(i.creator.name) + " (" + _("script") + "); "
             else:
-                credit_value += i.creator.name + "; "
+                credit_value += uni(i.creator.name) + "; "
         for i in plot:
             if i not in script:
-                credit_value += i.creator.name + " (" + _("plot") + "); "
+                credit_value += uni(i.creator.name) + " (" + _("plot") + "); "
         translator = SupportRole.objects.filter(story = story.id).filter(role = 't')
         #print "Trans", len(translator)
         #translator = story.supportrole_set.filter(role = 't')
@@ -109,7 +109,7 @@ def show_credit(story, credit, force = False, default = ""):
             credit_value = '?; '
         if len(translator) > 0:
             for i in translator:
-                credit_value += i.creator.name + " (" + _("translation") + "); "
+                credit_value += uni(i.creator.name) + " (" + _("translation") + "); "
         elif default != "":
             credit_value += default + "; "
         credit_value = credit_value[0:-2]
@@ -119,7 +119,7 @@ def show_credit(story, credit, force = False, default = ""):
         # colors = story.supportrole_set.filter(role = 'c')
         credit_value = ""
         for i in colors:
-            credit_value += i.creator.name + "; "
+            credit_value += uni(i.creator.name) + "; "
         credit_value = credit_value[0:-2]
         if credit_value == "":
             credit_value = default
@@ -128,7 +128,7 @@ def show_credit(story, credit, force = False, default = ""):
         #letters = story.supportrole_set.filter(role = 'l')
         credit_value = ""
         for i in letters:
-            credit_value += i.creator.name + "; "
+            credit_value += uni(i.creator.name) + "; "
         credit_value = credit_value[0:-2]
         if credit_value == "":
             credit_value = default
@@ -438,6 +438,7 @@ def issue_flatfile(issue):
         story = stories[num]
         force = story.story_version.type == 'n'
         script = show_credit(story,"script", force or story.story_version.type in ['t', 'a'], translation_default)
+	print script
         notes = ""
         if story.story_version.type in ['c', 'i']:
             #notes += "Illustration idea by " + script
