@@ -353,9 +353,9 @@ def reprints(story):
                                 story.issue.series.country_code:
                         if source.issue.series.country_code.\
                           countryname_set.filter(language = story.language):
-                            reprint += ") [" + source.issue.series\
+                            reprint += ") [" + uni(source.issue.series\
                             .country_code.countryname_set\
-                            .filter(language = story.language)[0].name + \
+                            .filter(language = story.language)[0].name) + \
                             "]; "
                     else:
                         reprint += "); "
