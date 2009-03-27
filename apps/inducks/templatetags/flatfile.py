@@ -38,6 +38,11 @@ def show_issue_credit(issue, credit):
         for i in letters:
             credit_value += i.creator.name + "; "
         credit_value = credit_value[0:-2]
+    elif credit == "indexer":
+        indexer = issue.issuerole_set.filter(role = 'i')
+        for i in indexer:
+            credit_value += i.creator.name + "; "
+        credit_value = credit_value[0:-2]
     return uni(credit_value)
     
 def show_credit(story, credit, force = False, default = ""):
@@ -418,7 +423,7 @@ def issue_flatfile(issue):
     letter_default = show_issue_credit(issue,"letters")
     color_default = show_issue_credit(issue,"colors")
     translation_default = show_issue_credit(issue,"translation")
-
+    indexer = show_issue_credit(issue,"indexer")
     # first cover sequence
     line = issue.number + "\t" \
         + convert_isv_date(issue.publication_date, issue.series.language_code)\
@@ -430,7 +435,8 @@ def issue_flatfile(issue):
         show_credit(stories[0],"letters", False) + "\t" +\
         "?\t" + issue.page_count + "\t" + issue.price + "\t" \
         + get_characters(stories[0]) + \
-        "\tIssue data imported from inducks.org [inducks issue-id:" + issue.id \
+        "\tIssue data imported from inducks.org. Original inducks indexer " + indexer + \
+        " [inducks issue-id:" + issue.id \
         + "][inducks story-id:" + stories[0].id + "][inducks storyversion-id:" \
         + stories[0].story_version.id + "]\t" + "\t" + uni(reprints(stories[0]))\
         + "\t" + stories[0].job_number
