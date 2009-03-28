@@ -423,7 +423,7 @@ def issue_flatfile(issue):
     letter_default = show_issue_credit(issue,"letters")
     color_default = show_issue_credit(issue,"colors")
     translation_default = show_issue_credit(issue,"translation")
-    indexer = show_issue_credit(issue,"indexer")
+    #indexer = show_issue_credit(issue,"indexer")
     # first cover sequence
     line = issue.number + "\t" \
         + convert_isv_date(issue.publication_date, issue.series.language_code)\
@@ -434,12 +434,16 @@ def issue_flatfile(issue):
         "\t" + "\t" + show_credit(stories[0],"colors", True) + "\t" +\
         show_credit(stories[0],"letters", False) + "\t" +\
         "?\t" + issue.page_count + "\t" + issue.price + "\t" \
-        + get_characters(stories[0]) + \
-        "\tIssue data imported from inducks.org. Original inducks indexer " + indexer + \
-        " [inducks issue-id:" + issue.id \
-        + "][inducks story-id:" + stories[0].id + "][inducks storyversion-id:" \
-        + stories[0].story_version.id + "]\t" + "\t" + uni(reprints(stories[0]))\
-        + "\t" + stories[0].job_number
+        + get_characters(stories[0]) 
+    line += "\tIssue data imported from inducks.org. "
+    line += "If you edit entries please give the updated information also to inducks.org. "
+    #line += "Original inducks indexer " + indexer
+    line += "[inducks issue-id:" + issue.id \
+        + "][inducks story-id:" + stories[0].id + \
+        "][inducks storyversion-id:" \
+        + stories[0].story_version.id + "]\t" 
+    line += "\t" + uni(reprints(stories[0])) + "\t" \
+        + stories[0].job_number
     for num in range(1,len(stories)):
         story = stories[num]
         force = story.story_version.type == 'n'
