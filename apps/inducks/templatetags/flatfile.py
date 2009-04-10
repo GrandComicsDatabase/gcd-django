@@ -307,13 +307,16 @@ def reprints(story):
     if first_printing:
         if first_printing.filter(id = story.id):
             if original_story[0] == 'D':
-                reprint = "from Egmont, DK; "
+                reprint = "from Egmont (DK); "
             elif original_story[0] == 'Q':
                 reprint = ""
             elif original_story[0] == 'H':
                 reprint = "from Netherlands; "
+            elif original_story[0] == 'S':
+                reprint = "Disney Studio (US); "
             elif story.story_version.type != 'c':
-                reprint = "check for studio; "
+                reprint = "ask Jochen to include studio code: " + original_story[0] + "; " 
+#                print original_story
         for source in first_printing[0:3]:
             if source.id != story.id:
                 if source.id[0:4] in ["us/Z", "us/Y"]:
@@ -321,8 +324,11 @@ def reprints(story):
                         reprint += "from Mickey Mouse"
                     elif original_story[1] == 'D':
                         reprint += "from Donald Duck"
+                    elif original_story[1] == 'X':
+                        reprint += "from Scamp"
                     else:
-                        reprint += "something, fix me"
+                        reprint += "from some strip, find out and tell Jochen"
+                        print original_story
                     if original_story[0] == 'Y':
                         reprint += " daily"
                     elif original_story[0] == 'Z':
