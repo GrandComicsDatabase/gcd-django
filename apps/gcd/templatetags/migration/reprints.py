@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # coding=utf-8
 from django import template
 from django.utils.translation import ugettext as _
@@ -135,7 +136,8 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
             series = reprints[len(from_to):position].strip("Tthe ")
             string = reprints[position+2:]
             after_series = string # use in other formats
-            position = string.find(', ')
+            end_bracket = string.find(')')
+            position = string[:end_bracket].rfind(', ')
             publisher = string[:position].strip()
             position+=2
             string = string[position:]
@@ -272,7 +274,8 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
                 number = string[:position].strip()
                 position += 1
                 string = string[position:]
-                position = string.find(', ')
+                end_bracket = string.find(')')
+                position = string[:end_bracket].rfind(', ')
                 publisher = string[:position].strip()
                 position += 2
                 string = string[position:]
@@ -415,6 +418,8 @@ def show_reprint_suggestions(story, style):
         reprint_direction = ["uit "] + reprint_direction 
     elif story.issue.series.language_code.lower() in ['sv', 'no']: # från, i
         reprint_direction = [u"från ", "i "] + reprint_direction 
+    elif story.issue.series.language_code.lower() == 'de': # aus
+        reprint_direction = ["aus "] + reprint_direction 
     reprint_direction_search = reprint_direction + [""]
     if story.reprints:
         reprint = ""
@@ -505,7 +510,8 @@ def parse_reprint(reprints, from_to):
             # could remove the/The from beginning and from end with ','
             string = reprints[position+2:]
             after_series = string # use in other formats
-            position = string.find(', ')
+            end_bracket = string.find(')')
+            position = string[:end_bracket].rfind(', ')
             publisher = string[:position].strip()
             position+=2
             string = string[position:]
@@ -542,6 +548,8 @@ def parse_reprint(reprints, from_to):
             = publisher)
             results = results.filter(series__year_began__exact = int(year))
             results = results.filter(number__exact = number)
+            if results.count() > 1:
+                results = results.filter(series__name__exact = series)
         except:
             pass
         
@@ -562,6 +570,8 @@ def show_reprint(story, style):
         reprint_direction = ["uit "] + reprint_direction 
     elif story.issue.series.language_code.lower() == 'sv': # från, i
         reprint_direction = [u"från ", "i "] + reprint_direction 
+    elif story.issue.series.language_code.lower() == 'de': # aus
+        reprint_direction = ["aus "] + reprint_direction 
     if story.reprints:
         reprint = ""
         for string in story.reprints.split(';'):
