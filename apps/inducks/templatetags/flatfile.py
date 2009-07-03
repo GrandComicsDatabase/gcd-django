@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # coding=utf-8
 import re
 import locale
@@ -211,7 +212,7 @@ def get_job_number(story):
     else:
         return story.story_version.id
 
-def convert_isv_date(date_string, language_code = 'en'):
+def convert_isv_date(date_string, language_code = 'en_US'):
     try:
         date = ParseDateTimeUTC(date_string)
     except ValueError:
@@ -219,7 +220,7 @@ def convert_isv_date(date_string, language_code = 'en'):
     if len(language_code) == 5:
         language_code = language_code[0:2] + '_' + language_code[3:5]
     #print language_code, locale.normalize(language_code)
-    locale.setlocale(locale.LC_ALL, locale.normalize(language_code))
+    locale.setlocale(locale.LC_ALL, (language_code,'utf-8'))
     if len(date_string) >= 9:
         return date.strftime("%e %B %Y").strip() 
     if len(date_string) >= 6:
