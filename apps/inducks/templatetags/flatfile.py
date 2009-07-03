@@ -435,7 +435,7 @@ def issue_flatfile(issue):
     line = issue.number + "\t" \
         + convert_isv_date(issue.publication_date, issue.series.language_code)\
         + "\t" + show_credit(stories[0],"type") + \
-        "\t" + "\t" + get_feature(stories[0]) + "\t" + stories[0].title + \
+        "\t" + "\t" + get_feature(stories[0]) + "\t" + uni(stories[0].title) + \
         "\t" + show_credit(stories[0],"pencils", True) + "\t" +\
         show_credit(stories[0],"inks", show_credit(stories[0],"pencils")) + \
         "\t" + "\t" + show_credit(stories[0],"colors", True) + "\t" +\
