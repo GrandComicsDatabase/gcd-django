@@ -20,6 +20,35 @@ register = template.Library()
 # - sort the reprints according to keydate
 # - sort domestic/foreign reprints
 
+def split_reprint_string(reprints):
+    '''
+    split the reprint string
+    we need our own routine to take care of the ';' in publisher names
+    we might want to do the same for ';' in notes
+    '''
+    liste = []
+    sc_pos = reprints.find(';')
+    while sc_pos >= 0:
+        position = reprints.find('(')
+        position_2 = reprints.find(')')
+        if sc_pos in range(position,position_2):
+            sc_pos = reprints[position_2:].find(';')
+            if sc_pos >= 0:
+                sc_pos += position_2
+                if sc_pos in range(position,position_2):
+                    pass
+                else:
+                    liste.append(reprints[:sc_pos].strip())
+                    reprints = reprints[sc_pos+1:]
+                    sc_pos = reprints.find(';')
+        else:
+            liste.append(reprints[:sc_pos].strip())
+            reprints = reprints[sc_pos+1:]
+            sc_pos = reprints.find(';')
+    liste.append(reprints.strip())
+    return liste
+
+
 def find_reprint_sequence_in_issue(from_story,to_issue):
     '''look for sequence in <to_issue> which fits <from_story>'''
     

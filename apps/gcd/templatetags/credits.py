@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 
 from django import template
@@ -6,6 +7,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue, Country, Language
+from migration.reprints import split_reprint_string
 
 register = template.Library()
 
@@ -61,8 +63,11 @@ def __format_credit(story, credit, style):
         label = _(credit.title()) + ':'
 
     if (credit == 'reprints'):
-        credit_value = '<ul><li>' + re.sub(r';\s*', "<li>", esc(credit_value)) + \
-                       '</ul>'
+        values = split_reprint_string(credit_value)
+        credit_value = '<ul>'
+        for value in values:
+            credit_value += '<li>' + esc(value)
+        credit_value += '</ul>'
     else: # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
