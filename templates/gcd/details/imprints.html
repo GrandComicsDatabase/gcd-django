@@ -8,12 +8,12 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
 {% endblock %}
 
 {% block view_body %}
 
-{% include "gcd/publisher_header.html" %}
+{% include "gcd/bits/publisher_header.html" %}
 
 <dl class="pub_data">
 {% if publisher.country %}
@@ -47,5 +47,9 @@
   <dd> None
 </dl>
 {% endif %}
+
+{% with 1 as paginate_only %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
 
 {% endblock %}

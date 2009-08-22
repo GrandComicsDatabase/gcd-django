@@ -2,8 +2,8 @@ from django.conf.urls.defaults import *
 from django.conf import settings
 
 urlpatterns = patterns('',
-    (r'^gcd/', include('apps.gcd.urls')),
-    (r'^inducks/', include('apps.inducks.urls')),
+    (r'^', include('apps.gcd.urls')),
+    # (r'^inducks/', include('apps.inducks.urls')),
 )
 
 if settings.DEBUG:

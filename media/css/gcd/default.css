@@ -71,6 +71,11 @@ img .cover_img {
     width: 100%;
 }
 
+#item_id_footer {
+    border: solid 1px black;
+    margin-bottom: 1em;
+}
+
 .item_id :link {
     color: white;
 }
@@ -176,6 +181,8 @@ h1#search_id {
 }
 
 .fine_print {
+    float: left;
+    clear: left;
     margin-top: 1em;
 }
 
@@ -183,6 +190,7 @@ h1#search_id {
 
 table#covers {
     margin: 1em 0;
+    clear: left;
 }
 
 table#covers td.marked {
@@ -298,3 +306,6 @@ dl.pub_data dd {
     margin: 0;
 }
 
+.embedded_flag {
+    height: 1em;
+}

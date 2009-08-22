@@ -61,7 +61,7 @@ class Issue(models.Model):
             return 'pending'
 
     def get_absolute_url(self):
-        return "/gcd/issue/%i/" % self.id
+        return "/issue/%i/" % self.id
 
     def __unicode__(self):
         return unicode(self.series.name) + " #" + self.number # + " (" + \

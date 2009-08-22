@@ -2,7 +2,7 @@
 
 <h1 class="item_id" id="search_id">
 <div class="left">
-  {{ heading }}:
+  {{ heading }}: {{ search_item }}
 </div>
 </h1>
 
@@ -12,6 +12,6 @@
   matching your search.
   </div>
   {% with query_string as extra_string %}
-  {% include "gcd/pagination_bar.html" %}
+  {% include "gcd/bits/pagination_bar.html" %}
   {% endwith %}
 </div>

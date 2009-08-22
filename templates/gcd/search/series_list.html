@@ -13,13 +13,13 @@
   </tr>
 {% for series in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <img src="{{ media_url }}/img/gcd/flags/{{ series.country_code|lower }}.png" alt="{{ series.country_code|upper }}">
+    <td> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country_code|lower }}.png" alt="{{ series.country_code|upper }}">
     <td> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}
-    <td> <a href="/gcd/series/{{ series.id }}/status/">{{ series.issue_count }}</a> </td>
-    <td> <a href="/gcd/series/{{ series.id }}/covers/">Gallery</a>
-    <td> <a href="/gcd/series/{{ series.id }}/scans/">Status</a>
+    <td> <a href="{% url apps.gcd.views.details.status series_id=series.id %}">{{ series.issue_count }}</a> </td>
+    <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
+    <td> <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Status</a>
     <td> {{ series.publication_dates }} </td>
   </tr>
 {% endfor %}

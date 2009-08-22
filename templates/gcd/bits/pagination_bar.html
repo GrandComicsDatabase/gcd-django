@@ -12,18 +12,40 @@
         &lt; {% trans "Previous" %}
     {% endif %}
     |
-    {% for number in paginator.page_range %}
+    {% ifnotequal ranges.current.0 1 %}
+        {% for number in ranges.low %}
+          {% if extra_string %}
+              <a href="?{{ extra_string }}&page={{ number }}">{{ number }}</a>
+          {% else %}
+              <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
+          {% endif %}
+          |
+        {% endfor %}
+        ...|
+    {% endifnotequal %}
+    {% for number in ranges.current %}
         {% ifequal number page_number %}
         {{ number }}
         {% else %}
         {% if extra_string %}
-            <a href="?{{ extra_string }}&page={{ number }}">{{ number }}</a>        
+            <a href="?{{ extra_string }}&page={{ number }}">{{ number }}</a>
         {% else %}
             <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
         {% endif %}
         {% endifequal %}
         |
     {% endfor %}
+    {% ifnotequal ranges.current_max paginator.num_pages %}
+        ...|
+        {% for number in ranges.high %}
+          {% if extra_string %}
+              <a href="?{{ extra_string }}&page={{ number }}">{{ number }}</a>
+          {% else %}
+              <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
+          {% endif %}
+          |
+        {% endfor %}
+    {% endifnotequal %}
     {% if page.has_next %}
         {% if extra_string %}
         <a href="?{{ extra_string }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
@@ -36,4 +58,9 @@
     {% else %}
     &lt; {% trans "Previous" %} | {{ page_number }} | {% trans "Next" %} &gt;
     {% endif %}
+    <form method="GET" style="display:inline">
+        <label for="page">#</label>:
+        <input type="text" name="page" id="page" size="3"/>
+        <input type="submit" value="{% trans 'Go' %}"/>
+    </form>
 </div>

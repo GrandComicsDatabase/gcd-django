@@ -76,7 +76,7 @@ class Series(models.Model):
                                          auto_now = True, null = True)
 
     def get_absolute_url(self):
-        return "/gcd/series/%i/" % self.id
+        return "/series/%i/" % self.id
 
     def scan_count(self):
         return self.cover_set.filter(has_image = '1').count()

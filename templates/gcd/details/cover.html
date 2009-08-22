@@ -8,16 +8,16 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}/cover.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/cover.css"/>
 {% endblock %}
 
 {% block view_body %}
 
 {% with issue.series as series %}
 {% with issue.number as issue_number %}
-  {% include "gcd/series_issue_header.html" %}
+  {% include "gcd/bits/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}
 
@@ -28,6 +28,14 @@
     <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Series Covers</a>
   </div>
 </div>
+
+{% with 1 as paginate_only %}
+{% with issue.series as series %}
+{% with issue.number as issue_number %}
+  {% include "gcd/bits/series_issue_header.html" %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
 
 {% endblock %}
 

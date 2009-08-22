@@ -2,7 +2,6 @@
 
 {% load i18n %}
 {% load credits %}
-{% load migration.reprints %}
 
 {% block title %}
   GCD :: Issue :: {{ issue.series.name }} #{{ issue.number }}
@@ -10,11 +9,11 @@
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ media_url }}/css/gcd/{{ style }}/issue.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/{{ style }}/issue.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ media_url }}/css/gcd/{{ style }}/single_story.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/{{ style }}/single_story.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -24,29 +23,11 @@
   Can withs be condensed?  To tired to look it up right now.
 {% endcomment %}
 
-{% ifequal issue.series.issue_count 1 %}
-
 {% with issue.series as series %}
 {% with issue.number as issue_number %}
-{% with issue.series|show_country as country %}
-{% with issue.series|show_language as language %}
-  {% include "gcd/series_issue_header.html" %}
+  {% include "gcd/bits/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}
-{% endwith %}
-{% endwith %}
-
-{% include "gcd/one_issue_series.html" %}
-
-{% else %}
-
-{% with issue.series as series %}
-{% with issue.number as issue_number %}
-  {% include "gcd/series_issue_header.html" %}
-{% endwith %}
-{% endwith %}
-
-{% endifequal %}
 
 <dl id="issue_data_list">
   <dt> {% trans "Price" %}:
@@ -103,7 +84,7 @@
 
     {% with cover_story as story %}
     {% with 1 as is_cover %}
-      {% include "gcd/single_story.html" %}
+      {% include "gcd/details/single_story.html" %}
     {% endwith %}
     {% endwith %}
 
@@ -126,9 +107,17 @@
 <div id="story_data">
   {% for story in stories %}
     <hr class="divider"/>
-    {% include "gcd/single_story.html" %}
+    {% include "gcd/details/single_story.html" %}
   {% endfor %}
   <hr class="divider"/>
 </div>
+
+{% with 1 as paginate_only %}
+{% with issue.series as series %}
+{% with issue.number as issue_number %}
+  {% include "gcd/bits/series_issue_header.html" %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
 
 {% endblock %}

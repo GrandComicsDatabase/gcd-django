@@ -7,9 +7,9 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}/covers.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/covers.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -28,11 +28,11 @@
   Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} covers needing replacement.
   </div>
   {% if page %}
-  {% include "gcd/pagination_bar.html" %}
+  {% include "gcd/bits/pagination_bar.html" %}
   {% endif %}
 </div>
 <div class="item_id">
-  <div class="right pagination">
+  <div class="left pagination">
   {% if starts_with %}
   <a href="../../">all marked covers</a>
   {% endif %}

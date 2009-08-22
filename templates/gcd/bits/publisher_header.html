@@ -3,6 +3,7 @@
 <!-- Probably needs to be refactored with the series_issue_header.html file
      somehow, but deal with that later. -->
 
+{% ifnotequal paginate_only 1 %}
 <h1 class="item_id">
   <div class="left">
     {% if publisher.is_imprint %}
@@ -13,8 +14,12 @@
     {% endif %}
   </div>
 </h1>
+{% endifnotequal %}
 
-<div class="item_id">
+<div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
+     class="item_id">
+{% ifnotequal paginate_only 1 %}
   <div class="left">{{ publisher.year_began }} - {{ publisher.year_end }}</div>
-  {% include "gcd/pagination_bar.html" %}
+{% endifnotequal %}
+  {% include "gcd/bits/pagination_bar.html" %}
 </div>

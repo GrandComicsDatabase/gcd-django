@@ -6,15 +6,15 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}/advanced_search.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/advanced_search.css"/>
 {% endblock %}
 
 {% block body %}
 
 {% with "Advanced Search" as bar_heading %}
-{% include "gcd/plain_bar.html" %}
+{% include "gcd/bits/plain_bar.html" %}
 {% endwith %}
 
 <div id="blithering">
@@ -54,7 +54,7 @@ search system.  The polish is forthcoming.  Some usage notes:
        as a good usability decision.
 </ul>
 </div>
-<form action="/gcd/search/advanced/process" method="get">
+<form action="{% url apps.gcd.views.search.process_advanced %}" method="get">
 <fieldset class="control">
 <!-- TODO: why did I put this style attr here? -->
 <legend style="visibility:hidden">Search Control</legend>
@@ -73,6 +73,7 @@ search system.  The polish is forthcoming.  Some usage notes:
 </ol>
 </fieldset>
 
+{% comment %}
 <fieldset class="universal">
 <legend>Universal Fields</legend>
 <ol>
@@ -82,6 +83,7 @@ search system.  The polish is forthcoming.  Some usage notes:
   {{ form.language|show_form }}
 </ol>
 </fieldset>
+{% endcomment %}
 
 <fieldset class="publisher" id="publisher_fieldset">
   <legend>
@@ -90,7 +92,10 @@ search system.  The polish is forthcoming.  Some usage notes:
   <ol>
     {{ form.pub_name|show_form }}
     {{ form.imprints|show_form }}
+    {{ form.country|show_form }}
+{% comment %}
     {{ form.pub_notes|show_form }}
+{% endcomment %}
   </ol>
 </fieldset>
 
@@ -101,10 +106,13 @@ search system.  The polish is forthcoming.  Some usage notes:
 
   <ol id="series_list">
     {{ form.series|show_form }}
+{% comment %}
     {{ form.series_notes|show_form }}
     {{ form.tracking_notes|show_form }}
     {{ form.publication_notes|show_form }}
     {{ form.indexer|show_form }}
+{% endcomment %}
+    {{ form.language|show_form }}
   </ol>
 </fieldset>
 
@@ -113,24 +121,31 @@ search system.  The polish is forthcoming.  Some usage notes:
     Issue Fields
   </legend>
   <ol>
+{% comment %}
     {{ form.issues|show_form }}
     {{ form.issue_date|show_form }}
     {{ form.price|show_form }}
     {{ form.issue_pages|show_form }}
     {{ form.format|show_form }}
+{% endcomment %}
     {{ form.issue_editor|show_form }}
+{% comment %}
     {{ form.issue_notes|show_form }}
     {{ form.issue_reprints|show_form }}
+{% endcomment %}
   </ol>
 </fieldset>
 
 <fieldset class="sequence">
-  <legend> Content Fields </legend>
+  <legend> Story Fields </legend>
   <ol>
-    {{ form.feature|show_form }}
-    {{ form.type|show_form }}
     {{ form.title|show_form }}
+    {{ form.feature|show_form }}
+    {{ form.job_number|show_form }}
+{% comment %}
+    {{ form.type|show_form }}
     {{ form.pages|show_form }}
+{% endcomment %}
   </ol>
 
   <fieldset class="credits">
@@ -141,11 +156,11 @@ search system.  The polish is forthcoming.  Some usage notes:
       {{ form.inks|show_form }}
       {{ form.colors|show_form }}
       {{ form.letters|show_form }}
-      {{ form.editor|show_form }}
-      {{ form.job_number|show_form }}
+      {{ form.story_editor|show_form }}
     </ol>
   </fieldset>
 
+{% comment %}
   <fieldset class="contents">
     <legend> Contents </legend>
     <ol>
@@ -161,6 +176,7 @@ search system.  The polish is forthcoming.  Some usage notes:
       {{ form.notes|show_form }}
     </ol>
   </fieldset>
+{% endcomment %}
 </fieldset>
 
 <fieldset class="submit">

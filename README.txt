@@ -55,7 +55,7 @@ To run:
 
 
 To report bugs or find bugs to work on:
-    http://maelstrom.walton.uark.edu/bugzilla/
+    http://dev.comics.org/bugzilla/
 
     * Bugs in the NEW state are available for work.
     * Bugs in the ASSIGNED state are being worked on.
@@ -71,6 +71,7 @@ To report bugs or find bugs to work on:
 *******************************************************************************
 
 A quick guide to the code:
+[For the most up-to-date-docs, visit http://docs.comics.org/ ]
 
 gcd.settings, gcd.urls and gcd.manage are all Django artifacts.  gcd.manage
 is entirely Django code, with no modifications.  gcd.urls provides the mappings

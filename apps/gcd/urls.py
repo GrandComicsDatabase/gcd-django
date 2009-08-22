@@ -1,16 +1,7 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
-# Uncomment the next two lines to enable the admin:
-from django.contrib import admin
-admin.autodiscover()
 
 urlpatterns = patterns('',
-    # Example:
-    # (r'^gcd/', include('gcd.foo.urls')),
-
-    # Uncomment this for admin:
-    (r'^admin/(.*)', admin.site.root),
-
     ###########################################################################
     # GCD URLs.
     #
@@ -75,9 +66,9 @@ urlpatterns = patterns('',
 
     # Attribute searches
     (r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
-     'apps.gcd.views.search.character_appearances'),
+     'apps.gcd.views.search.character_by_name'),
     (r'^character/name/(?P<character_name>.+)/$',
-     'apps.gcd.views.search.character_appearances'),
+     'apps.gcd.views.search.character_by_name'),
 
     (r'^writer/name/(?P<writer>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.writer_by_name'),
@@ -153,14 +144,4 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_reprint'),
     (r'^settings/$',
      'apps.gcd.views.settings.settings'),    
-
-    (r'^last_updated/$',
-     'apps.gcd.views.details.last_updated'),
-
-    # trying out XML output
-    # Issue
-    (r'^gcd_xml/issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue_xml'),
-    
-    # URL for trying out new layouts, styles and UI concepts.
-    (r'^new/(?P<name>.+)/$', 'apps.gcd.views.prototype'),
 )

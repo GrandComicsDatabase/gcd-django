@@ -1,7 +1,7 @@
 <div id="search_bar">
-  <form action="/gcd/search/" method="get">
+  <form action="{% url apps.gcd.views.search.search %}" method="get">
     <!-- <span class="logo">GCD</span> -->
-    <a href="/gcd"><img src="{{ media_url }}/img/logo.gif" alt-text="GCD" style="border:0;"/></a>
+    <a href="{% url apps.gcd.views.index %}"><img src="{{ MEDIA_URL }}/img/logo.gif" alt-text="GCD" style="border:0;"/></a>
     <b>Search for:</b>
     <input type="text" name="query" size="15"> in
     <select name="type" size="1">

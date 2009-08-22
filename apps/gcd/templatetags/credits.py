@@ -63,9 +63,6 @@ def __format_credit(story, credit, style):
     if (credit == 'reprints'):
         credit_value = '<ul><li>' + re.sub(r';\s*', "<li>", esc(credit_value)) + \
                        '</ul>'
-        # TODO: Deal with style parameter / setting.
-        label += ' <span class="linkify"><a href="?reprints=True">' + \
-                 _('search and link') + '</a></span>'
     else: # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'

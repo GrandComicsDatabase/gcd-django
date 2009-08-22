@@ -2,28 +2,30 @@
 <head>
   <title> Grand Comic-Book Database </title>
   <link rel="stylesheet" type="text/css"
-        href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
 </head>
 
 <body>
 <div id="sizing_base">
 
-{% include "gcd/search_bar.html" %}
+{% include "gcd/bits/search_bar.html" %}
 
 <p>
-<a href="/gcd/search/advanced/">Advanced Search</a>
+<strong> Oops!  We're still working on the new GCD front page!  Sorry!
+Here are some links to start you off for now:</strong>
 </p>
 <p>
-<a href="/gcd/covers_to_replace">Covers marked for replacement</a>
+<a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a>
 </p>
 <p>
-<a href="/gcd/daily_covers/2008-01-01">Cover uploaded on 2008/01/01</a>
+<a href="{% url apps.gcd.views.details.covers_to_replace %}">Covers marked for replacement</a>
 </p>
 <p>
-This is a placeholder front page.  It is not, nor is it intended to be,
-particularly interesting.  If searching for things in the GCD does not
-interest you, perhaps you might like some
-<a href="http://maelstrom.walton.uark.edu/wiki/Main_Page">documentation</a>.
+<a href="{% url apps.gcd.views.details.daily_covers %}">Cover uploaded today</a>
+</p>
+<p>
+<a href="http://docs.comics.org/">Documentation</a>
+</p>
 
 <hr/>
 

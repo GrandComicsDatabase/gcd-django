@@ -1,6 +1,5 @@
 {% load i18n %}
 {% load credits %}
-{% load migration.reprints %}
 
     <div class="single_story {% if story.type %}{{ story.type|lower }}{% endif %}">
       <a name="{{ story.sequence_number }}"/>
@@ -75,12 +74,7 @@
           {{ story|show_credit:"genre,short" }}
           {{ story|show_credit:"characters"|linebreaksbr }}
           {{ story|show_credit:"synopsis"|linebreaksbr }}
-          {% if linkify_reprints %}
-            {{ story|show_reprint_suggestions:style|linebreaksbr }}
-          {% else %}
-            {{ story|show_reprint:style|linebreaksbr }}
-<!--             {#{ story|show_credit:"reprints"|linebreaksbr }#} -->
-          {% endif %}
+          {{ story|show_credit:"reprints"|linebreaksbr }}
         </dl>
       {% endif %}
 

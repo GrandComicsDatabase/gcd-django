@@ -7,14 +7,14 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ media_url }}/css/gcd/{{ style }}/status.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/status.css"/>
 {% endblock %}
 
 {% block view_body %}
 
-{% include "gcd/series_issue_header.html" %}
+{% include "gcd/bits/series_issue_header.html" %}
 
 <div id="info_links">
   <a href="{{ series.get_absolute_url }}scans/?style={{ style }}">Cover Scan Status</a>
@@ -22,6 +22,6 @@
   <a href="{{ series.get_absolute_url }}covers/?style={{ style}}">Cover Gallery</a>
 </div>
 
-{% include "gcd/status_tables.html" %}
+{% include "gcd/bits/status_tables.html" %}
 
 {% endblock %}

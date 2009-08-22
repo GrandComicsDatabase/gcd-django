@@ -9,33 +9,43 @@ from django.shortcuts import render_to_response, \
                              get_object_or_404, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
+from django.core import urlresolvers
 from django.core.paginator import QuerySetPaginator
 from django.views.generic.list_detail import object_list
+from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Story
-from apps.gcd.views.diggpaginator import DiggPaginator
+from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch
 from apps.gcd.views.details import issue 
 
-ORDER_ALPHA = "alpha"
-ORDER_CHRONO = "chrono"
-
 
 def generic_by_name(request, name, q_obj, sort,
-                    class_name = Story,
-                    template = 'default_search.html',
-                    credit = None):
-    """Helper function for the most common search cases."""
+                    class_=Story,
+                    template='gcd/search/content_list.html',
+                    credit=None):
+    """
+    Helper function for the most common search cases.
+    """
 
-    if (class_name is Series):
-        things = Series.objects.filter(q_obj)
+    base_name = 'unknown'
+    plural_suffix = 's'
+    if (class_ is Series):
+        base_name = 'series'
+        plural_suffix = ''
+        things = Series.objects.filter(q_obj).select_related('publisher')
         if (sort == ORDER_ALPHA):
             things = things.order_by("name")
         elif (sort == ORDER_CHRONO):
             things = things.order_by("year_began", "name")
+        heading = 'Series Search Results'
 
-    else:
-        things = class_name.objects.filter(q_obj).filter(issue__index_status=3)
+    elif (class_ is Story):
+        base_name = 'stor'
+        plural_suffix = 'y,ies'
+
+        things = class_.objects.filter(q_obj).select_related('issue__series')
+
         # TODO: This order_by stuff only works for Stories, which is 
         # TODO: OK for now, but might not always be.
         if (sort == ORDER_ALPHA):
@@ -46,23 +56,19 @@ def generic_by_name(request, name, q_obj, sort,
         elif (sort == ORDER_CHRONO):
             things = things.order_by("issue__key_date",
                                      "sequence_number")
+        heading = 'Story Search Results'
 
-    if 'page' in request.GET:
-        pageno=request.GET['page']
     else:
-        pageno=1    
-    if 'entries_per_page' in request.session:
-        entries = request.session['entries_per_page']
-    else:
-        entries = 50
-    digg_paginator = DiggPaginator(things,entries, body=7)
-    return object_list(request,things, paginate_by = entries, 
-                       template_name = template,extra_context = {
-                       'search_term' : name,
-                       'media_url' : settings.MEDIA_URL, 
-                       'digg_paginator' : digg_paginator,
-                       'digg_page' : digg_paginator.page(pageno),
-                       'which_credit' : credit})
+        raise TypeError, "Usupported search target!"
+
+    vars = { 'item_name': base_name,
+             'plural_suffix': plural_suffix,
+             'heading': heading,
+             'search_term' : name,
+             'media_url' : settings.MEDIA_URL, 
+             'style' : 'default',
+             'which_credit' : credit }
+    return paginate_response(request, things, template, vars)
 
 def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
     """Finds publishers that (probably) aren't imprints."""
@@ -74,13 +80,19 @@ def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
     elif (sort == ORDER_CHRONO):
         pubs = pubs.order_by('year_began', 'name')
 
-    return render_to_response('publisher_list.html', {
-      'publisher_set' : pubs,
-      'publisher_count' : len(pubs),
-      'media_url' : settings.MEDIA_URL })
+    get_copy = request.GET.copy()
+    get_copy.pop('page', None)
 
+    return paginate_response(request, pubs, 'gcd/search/publisher_list.html',
+        { 'items': pubs,
+          'item_name': 'publisher',
+          'plural_suffix': 's',
+          'heading' : 'Publisher Search Results',
+          'query_string' : get_copy.urlencode(),
+          'style' : 'default',
+        })
 
-def character_appearances(request, character_name, sort=ORDER_ALPHA):
+def character_by_name(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
     is named are often not also listed under character appearances, this
     search looks at both the feature and characters fields."""
@@ -139,11 +151,9 @@ def story_by_job_number_name(request, number, sort=ORDER_ALPHA):
     """Handle the form-style URL from the basic search form by mapping
     it into the by-name lookup URLs the system already knows how to handle."""
 
-    return HttpResponseRedirect("/gcd/job_number/" + \
-                                number + \
-                                "/sort/" + \
-                                sort + \
-                                "/")
+    return HttpResponseRedirect(
+      urlresolvers.reverse(story_by_job_number,
+                           kwargs={ 'number': number, 'sort': sort }))
 
 def story_by_reprint(request, reprints, sort=ORDER_ALPHA):
     q_obj = Q(reprints__icontains = reprints)
@@ -165,12 +175,12 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
 def series_by_name(request, series_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains = series_name)
     return generic_by_name(request, series_name, q_obj, sort,
-                           Series, 'title_search.html')
+                           Series, 'gcd/search/series_list.html')
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series_name """
     things = Issue.objects.filter(series__name__exact = series_name) \
-                .filter(number__exact = issue_nr).filter(index_status=3)
+                .filter(number__exact = issue_nr)
     
     if things.count() == 1: # if one display the issue
         return issue(request,things[0].id)
@@ -185,40 +195,58 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
             'items' : things,
             'item_name' : 'issue',
             'plural_suffix' : 's',
-            'page' : page,
-            'paginator' : p,
-            'page_number': page_num,
             'heading' : series_name + ' #' + issue_nr,
-            'media_url' : settings.MEDIA_URL,
             'style' : 'default',
         }
-        if request.GET.has_key('style'):
+        if 'style' in request.GET:
             context['style'] = request.GET['style']
 
-        return render_to_response('gcd/search/issue_list.html', context)
+        return paginate_response(
+          request, things, 'gcd/search/issue_list.html', context)
 
 
 def search(request):
-    """Handle the form-style URL from the basic search form by mapping
-    it into the by-name lookup URLs the system already knows how to handle."""
+    """
+    Handle the form-style URL from the basic search form by mapping
+    it into the by-name lookup URLs the system already knows how to handle.
+    """
 
-    return HttpResponseRedirect("/gcd/" + \
-                                request.GET["type"] + \
-                                "/name/" + \
-                                request.GET["query"] + \
-                                "/sort/" + \
-                                request.GET["sort"] + \
-                                "/")
+    # TODO: Redesign this- the current setup is a quick hack to adjust
+    # a design that was elegant when it was written, but things have changed.
+    object_type = str(request.GET['type'])
+    param_type = object_type
+    view_type = object_type
+    if view_type == 'publisher':
+        view_type += 's'
+        param_type = 'publisher_name'
 
+    view = 'apps.gcd.views.search.%s_by_name' % view_type
+
+    if object_type == 'story':
+        param_type = 'title'
+        view = story_by_title
+    elif object_type in ('credit', 'job_number', 'feature'):
+        view = 'apps.gcd.views.search.story_by_%s' % object_type
+
+    if object_type == 'credit':
+        param_type = 'name'
+    elif object_type in ('series', 'character'):
+        param_type = object_type + '_name'
+    elif object_type == 'job_number':
+        param_type = 'number'
+
+    return HttpResponseRedirect(
+      urlresolvers.reverse(view,
+                           kwargs = { param_type: request.GET['query'],
+                                      'sort': request.GET['sort'] }))
 
 def advanced_search(request):
     """Displays the advanced search page."""
 
-    if (not request.GET.has_key("target")):
-        return render_to_response('gcd/search/advanced.html', {
-          'form' : AdvancedSearch(auto_id=True),
-          'style' : 'default',
-          'media_url' : settings.MEDIA_URL })
+    if ('target' not in request.GET):
+        return render_to_response('gcd/search/advanced.html',
+          { 'form' : AdvancedSearch(auto_id=True), 'style' : 'default'},
+          context_instance=RequestContext(request))
 
     if (request.GET["target"] == "stories"):
         return search_stories(request)
@@ -227,13 +255,14 @@ def advanced_search(request):
 
     
 def process_advanced(request):
-    """Runs advanced searches."""
+    """
+    Runs advanced searches.
+    """
     form = AdvancedSearch(request.GET)
     if not form.is_valid():
-        return render_to_response('gcd/search/advanced.html', {
-          'form': form,
-          'style': 'default',
-          'media_url': settings.MEDIA_URL })
+        return render_to_response('gcd/search/advanced.html',
+                                  { 'form': form, 'style': 'default' },
+                                  context_instance=RequestContext(request))
 
     data = form.cleaned_data
     template = None
@@ -284,12 +313,6 @@ def process_advanced(request):
         items = filter.order_by(*terms).select_related('issue__series')
         template = 'gcd/search/content_list.html'
 
-    p = QuerySetPaginator(items, 100)
-    page_num = 1
-    if (request.GET.has_key('page')):
-        page_num = int(request.GET['page'])
-    page = p.page(page_num)
-
     item_name = data['target']
     plural_suffix = 's'
     if item_name == 'sequence':
@@ -306,21 +329,16 @@ def process_advanced(request):
     get_copy.pop('page', None)
 
     context = {
-        'items' : page.object_list,
         'item_name' : item_name,
         'plural_suffix' : plural_suffix,
-        'page' : page,
-        'paginator' : p,
-        'page_number': page_num,
         'heading' : data['target'].title() + ' Search Results',
         'query_string' : get_copy.urlencode(),
-        'media_url' : settings.MEDIA_URL,
         'style' : 'default',
     }
     if request.GET.has_key('style'):
         context['style'] = request.GET['style']
 
-    return render_to_response(template, context)
+    return paginate_response(request, items, template, context)
 
 
 def combine_q(data, *qobjs):
@@ -379,7 +397,7 @@ def search_publishers(data, op, series_q=None):
     if target == 'publisher':
         if data['country']:
             q_and_only.append(Q(country__code__in=data['country']))
-        q_and_only.extend(search_dates(data))
+#        q_and_only.extend(search_dates(data))
 
         # Filtering imprints on/off really only makes sense if we're
         # searching for publishers. Currently we don't support searching
@@ -396,7 +414,7 @@ def search_publishers(data, op, series_q=None):
         predecessor_objs = Series.objects
 
     return compute_qobj(data, q_and_only, q_objs,
-                        predecessor_objs, series_q, 'publisher')
+                        predecessor_objs, series_q, 'publisher_id')
 
 
 def search_series(data, op, issues_q=None):
@@ -409,36 +427,36 @@ def search_series(data, op, issues_q=None):
         if data['country']:
             country_qargs = { '%scountry_code__in' % prefix : data['country'] }
             q_and_only.append(Q(**country_qargs))
-        q_and_only.extend(search_dates(data))
+#        q_and_only.extend(search_dates(data))
 
     if data['language']:
         language_qargs = { '%slanguage_code__in' % prefix : data['language'] }
         q_and_only.append(Q(**language_qargs))
 
-    if data['indexer']:
-        indexer_qargs = {
-            '%sindex_credit_set__indexer__in' %prefix : data['indexer']
-        }
-        q_and_only.append(Q(**indexer_qargs))
+#    if data['indexer']:
+#        indexer_qargs = {
+#            '%sindex_credit_set__indexer__in' %prefix : data['indexer']
+#        }
+#        q_and_only.append(Q(**indexer_qargs))
 
     q_objs = []
     if data['series']:
         q_objs.append(Q(**{ '%sname__%s' % (prefix, op) : data['series'] }))
-    if data['format']:
-        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op) :  data['format'] }))
-    if data['series_notes']:
-        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op) :
-                            data['series_notes'] }))
-    if data['tracking_notes']:
-        q_objs.append(Q(**{ '%stracking_notes__%s' % (prefix, op) :
-                             data['tracking_notes']}))
+#    if data['format']:
+#        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op) :  data['format'] }))
+#    if data['series_notes']:
+#        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op) :
+#                            data['series_notes'] }))
+#    if data['tracking_notes']:
+#        q_objs.append(Q(**{ '%stracking_notes__%s' % (prefix, op) :
+#                             data['tracking_notes']}))
 
     predecessor_objs = None
     if issues_q and (target == 'series' or target == 'publisher'):
         predecessor_objs = Issue.objects
 
     return compute_qobj(data, q_and_only, q_objs,
-                        predecessor_objs, issues_q, 'series')
+                        predecessor_objs, issues_q, 'series_id')
 
 
 def search_issues(data, op, stories_q=None):
@@ -447,21 +465,23 @@ def search_issues(data, op, stories_q=None):
     prefix = compute_prefix(target, 'issue')
 
     q_and_only = []
-    if target == 'issue' or target == 'feature' or target == 'sequence':
-        date_formatter = lambda d: '%04d.%02d.%02d' % (d.year, d.month, d.day)
-        q_and_only.extend(search_dates(data, date_formatter,
-                                       '%skey_date' % prefix,
-                                       '%skey_date' % prefix))
+#    if target == 'issue' or target == 'feature' or target == 'sequence':
+#        date_formatter = lambda d: '%04d.%02d.%02d' % (d.year, d.month, d.day)
+#        q_and_only.extend(search_dates(data, date_formatter,
+#                                       '%skey_date' % prefix,
+#                                       '%skey_date' % prefix))
 
         # 3 indicates an approved index.  TODO: constants.
-        q_and_only.append(Q(**{ '%sindex_status' % prefix : 3 }))
+        # TODO: Too many indexes are being re-indexed, which takes valid
+        # TODO: expected results out of the search.  So don't do this yet.
+        # q_and_only.append(Q(**{ '%sindex_status' % prefix : 3 }))
 
     q_objs = []
-    if data['issues']:
-        q_objs.append(handle_issue_numbers(data, prefix))
-    if data['issue_date']:
-        q_objs.append(
-          Q(**{ '%spublication_date__%s' % (prefix, op) : data['issue_date'] }))
+#    if data['issues']:
+#        q_objs.append(handle_issue_numbers(data, prefix))
+#    if data['issue_date']:
+#        q_objs.append(
+#          Q(**{ '%spublication_date__%s' % (prefix, op) : data['issue_date'] }))
 
     predecessor_objs = None
     if stories_q and (target == 'issue' or
@@ -470,7 +490,7 @@ def search_issues(data, op, stories_q=None):
         predecessor_objs = Story.objects
 
     return compute_qobj(data, q_and_only, q_objs,
-                        predecessor_objs, stories_q, 'issue')
+                        predecessor_objs, stories_q, 'issue_id')
 
 
 def handle_issue_numbers(data, prefix):
@@ -512,44 +532,41 @@ def search_stories(data, op):
     """Build the query against the story table.  As it is the lowest
     table in the hierarchy, there are no possible subqueries to run."""
     q_objs = []
-    for field in ('feature', 'title', 'type', 'script', 'pencils', 'inks',
+    for field in ('feature', 'title', # 'type',
+                  'script', 'pencils', 'inks',
                   'colors', 'letters', 'job_number', 'characters',
                   'synopsis', 'reprints', 'notes'):
         if data[field]:
             q_objs.append(Q(**{ '%s__%s' % (field, op) : data[field] }))
 
-    for field in ('issue_editor', 'issue_notes', 'issue_reprints'):
+    for field in ('issue_editor',): # , 'issue_notes', 'issue_reprints'):
         if data[field]:
             m = match(r'issue_(?P<column>.+)', field)
             kwargs = {'%s__%s' % (m.group('column'), op) : data[field],
                       'sequence_number' : 0}
             q_objs.append(Q(**kwargs))
 
-    # The editor field on the first cover sequence is always intended
-    # to apply to the whole issue.  However, reprints and notes may
-    # apply to either the issue or the cover, so allow them to match
-    # either way.
-    if data['editor']:
-        q_objs.append(Q(**{ 'editor__%s' % op : data['editor'] }) & \
+    if data['story_editor']:
+        q_objs.append(Q(**{ 'editor__%s' % op : data['story_editor'] }) & \
                       ~Q(sequence_number=0))
 
-    if data['pages']:
-        range_match = match(r'(?P<begin>\d+)\s*-\s*(?P<end>\d+)$',
-                            data['pages'])
-        if range_match:
-            num_range = range(int(range_match.group('begin')),
-                              int(range_match.group('end')) + 1)
-            q_objs.append(Q(page_count__in=num_range))
-        
-    if data['issue_pages']:
-        range_match = match(r'(?P<begin>\d+)\s*-\s*(?P<end>\d+)$',
-                            data['issue_pages'])
-        if range_match:
-            num_range = range(int(range_match.group('begin')),
-                              int(range_match.group('end')) + 1)
-            q_objs.append(Q(page_count__in=num_range, sequence_number=0))
-        else:
-            q_objs.append(Q(page_count=data['issue_pages'], sequence_number=0))
+#    if data['pages']:
+#        range_match = match(r'(?P<begin>\d+)\s*-\s*(?P<end>\d+)$',
+#                            data['pages'])
+#        if range_match:
+#            num_range = range(int(range_match.group('begin')),
+#                              int(range_match.group('end')) + 1)
+#            q_objs.append(Q(page_count__in=num_range))
+#        
+#    if data['issue_pages']:
+#        range_match = match(r'(?P<begin>\d+)\s*-\s*(?P<end>\d+)$',
+#                            data['issue_pages'])
+#        if range_match:
+#            num_range = range(int(range_match.group('begin')),
+#                              int(range_match.group('end')) + 1)
+#            q_objs.append(Q(page_count__in=num_range, sequence_number=0))
+#        else:
+#            q_objs.append(Q(page_count=data['issue_pages'], sequence_number=0))
 
     return compute_qobj(data, [], q_objs)
 

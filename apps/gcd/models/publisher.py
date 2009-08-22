@@ -55,9 +55,9 @@ class Publisher(models.Model):
 
     def get_absolute_url(self):
         if self.is_imprint():
-            return "/gcd/imprint/%i/" % self.id
+            return "/imprint/%i/" % self.id
         else:
-            return "/gcd/publisher/%i/" % self.id
+            return "/publisher/%i/" % self.id
 
     def get_official_url(self):
         try:
