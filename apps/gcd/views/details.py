@@ -400,7 +400,7 @@ def issue(request, issue_id):
 
     cover_story = None
     if (len(stories) > 0):
-        cover_stories = stories.pop(0)
+        cover_story = stories.pop(0)
     return render_to_response(
       'gcd/details/issue.html',
       {
