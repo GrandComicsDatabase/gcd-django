@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """View methods for pages displaying entity details."""
 
 import re
@@ -213,6 +215,13 @@ def daily_covers(request, show_date=None):
             year = int(request.GET['year'])
             month = int(request.GET['month'])
             day = int(request.GET['day'])
+            # Do a redirect, otherwise pagination links point to today
+            requested_date = date(year, month, day)
+            show_date = requested_date.strftime('%Y-%m-%d')
+            return HttpResponseRedirect(
+              urlresolvers.reverse(
+                'covers_by_date',
+                kwargs={'show_date': show_date} ))
 
         elif show_date:
             year = int(show_date[0:4])
@@ -231,11 +240,11 @@ def daily_covers(request, show_date=None):
         # the output, instead of seeing the erroneous date.
         return HttpResponseRedirect(
           urlresolvers.reverse(
-            issue,
-            kwargs={ 'show_date': date.today().strftime('%Y-%m-%d') }))
+            'covers_by_date',
+            kwargs={'show_date' : date.today().strftime('%Y-%m-%d') }))
 
     date_before = requested_date + timedelta(-1)
-    if requested_date <= date.today():
+    if requested_date < date.today():
         date_after = requested_date + timedelta(1)
     else:
         date_after = None
@@ -244,6 +253,7 @@ def daily_covers(request, show_date=None):
     table_width = 5
     style = get_style(request)
     covers = Cover.objects.filter(modified=requested_date)
+    covers = covers.filter(has_image=True)
     covers = covers.order_by("issue__series__publisher__name",
                              "issue__series__name",
                              "issue__series__year_began",

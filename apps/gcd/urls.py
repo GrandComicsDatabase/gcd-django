@@ -126,10 +126,10 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_job_number'),
 
     # show covers uploaded on a particular date
-    (r'^daily_covers/$',
-     'apps.gcd.views.details.daily_covers'),
-    (r'^daily_covers/(?P<show_date>.+)/$',
-     'apps.gcd.views.details.daily_covers'),
+    url(r'^daily_covers/$',
+     'apps.gcd.views.details.daily_covers', name='covers_today'),
+    url(r'^daily_covers/(?P<show_date>.+)/$',
+     'apps.gcd.views.details.daily_covers', name='covers_by_date'),
 
     # list covers marked for replacement
     (r'^covers_to_replace/$',
