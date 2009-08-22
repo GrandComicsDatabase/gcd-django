@@ -19,40 +19,12 @@
 
 <div id="blithering">
 <p>
-This is another <strong>intermediate</strong> step towards a proper
-advanced search form.  No work has yet been done to make the layout nice
-or to make the input fields optimally sized.  The point of this step
-was to produce a flexible base of code on which to build a more polished
-search system.  The polish is forthcoming.  Some usage notes:
-<ul>
-  <li> All three methods of searching (contains, exact, regexp) are
-       case-insensitive.  Regular expressions are powerful but not even
-       remotely user-friendly.  The specific regexp syntax is
-       <a href="http://dev.mysql.com/doc/refman/5.0/en/regexp.html">MYSQL's</a>,
-       which is POSIX-ish and relatively basic.
-  <li> To search for "starts with" or "ends with", select Regular Expression
-       and put '^' at the beginning or a '$' at the end respectively.  This
-       will be made more user-friendly later.
-  <li> The AND vs OR fields is an idea that didn't work out well.  It
-       will be replaced shortly.  For now, it sort-of controls whether
-       conditions are ANDed or ORed, but really only applies to most of
-       the content fields a few others that made sense.
-  <li> There's no way to specify an exclusion right now.
-  <li> The imprint checkbox only affects searches for Publishers.  This
-       needs to be made more clear (but it's usually what you want anyway).
-  <li> Fields that apply to the issue but are stored in the Cover story
-       record will be matched when specified in either the issue or story
-       section.
-  <li> Not selecting any country, language or indexer means you get all
-       countries, languages and indexers.  Which is probably what most
-       people would expect.
-  <li> Search by indexer is only available at the series level as the tables
-       that map issue indexes to indexers are not present in the public data.
-  <li> If you try to order by something that doesn't make sense for the
-       type of thing you're searching for (i.e. ordering Publishers by
-       Penciler) it will just ignore you.  Obviously that doesn't count
-       as a good usability decision.
-</ul>
+<strong>Please Pardon the Rough Edges!</strong>
+</p>
+<p>
+We're still working on this form in order to make it more usable and
+support the most options that we can and still deliver good performance.
+</p>
 </div>
 <form action="{% url apps.gcd.views.search.process_advanced %}" method="get">
 <fieldset class="control">

@@ -34,14 +34,15 @@ class AdvancedSearch(forms.Form):
     method_help = "All methods case-insensitive.  Regular expressions " + \
                   "use MYSQL's syntax."
     method = forms.ChoiceField(choices=[['iexact', 'Matches Exactly'],
+                                        ['istartswith', 'Starts With'],
                                         ['icontains', 'Contains'],
-                                        ['iregex', 'Regular Expression']],
+                                       ], # ['iregex', 'Regular Expression']],
                                initial='icontains',
                                label='Search Method',
                                help_text = method_help)
 
-    logic_help = "This option mostly applies to content fields, and only " + \
-                 "sort of works.  It will be resplaced with something better."
+    logic_help = "This option mostly applies to credit fields, and only " + \
+                 "sort of works.  It will be replaced with something better."
     logic = forms.ChoiceField(choices=[[False, 'AND all fields'],
                                        [True, 'OR credit, AND other fields']],
                               initial=False,
