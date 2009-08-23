@@ -3,16 +3,15 @@
 {% block list_contents %}
 <table class="listing">
   <tr>
-    <th> Country </th>
-    <th> Publisher </th>
-    <th> Imprints </th>
-    <th> Titles </th>
-    <th> Issues </th>
+    <th colspan="2"> Publisher </th>
+    <th> #&nbsp;Imprints </th>
+    <th> #&nbsp;Titles </th>
+    <th> #&nbsp;Issues </th>
   </tr>
   {% for publisher in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
-    <td> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
+    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
+    <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
     <td>
     {% if not publisher.is_imprint %}
       {% with publisher.imprint_set.count as imprint_count %}

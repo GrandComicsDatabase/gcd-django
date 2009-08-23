@@ -3,23 +3,21 @@
 {% block list_contents %}
 <table class="listing">
   <tr>
-    <th> Country </th>
-    <th> Publisher </th>
+    <th colspan="2"> Publisher </th>
     <th> Title </th>
     <th> Year </th>
-    <th> Issues </th>
-    <th colspan="2"> Covers </th>
+    <th> #&nbsp;Issues </th>
+    <th> Covers </th>
     <th> Published </th>
   </tr>
 {% for series in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country_code|lower }}.png" alt="{{ series.country_code|upper }}">
-    <td> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
+    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country_code|lower }}.png" alt="{{ series.country_code|upper }}">
+    <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}
-    <td> <a href="{% url apps.gcd.views.details.status series_id=series.id %}">{{ series.issue_count }}</a> </td>
+    <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }}</td>
     <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
-    <td> <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Status</a>
     <td> {{ series.publication_dates }} </td>
   </tr>
 {% endfor %}

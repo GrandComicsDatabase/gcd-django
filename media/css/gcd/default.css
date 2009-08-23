@@ -257,7 +257,6 @@ table#covers td.marked {
     border-collapse: collapse;
     margin-top: 1em;
     margin-bottom: 1em;
-    width: 100%;
 }
 
 .listing th {
@@ -269,7 +268,6 @@ table#covers td.marked {
 }
 
 .listing td {
-    font-size: .75em;
     padding: .3em;
     border-left: solid 1px;
     border-right: solid 1px;
@@ -281,6 +279,14 @@ tr.listing_odd {
 
 tr.listing_even {
     background-color: #DDD;
+}
+
+td.listing_publisher {
+    border-left: none;
+}
+
+td.listing_country {
+    border-right: none;
 }
 
 div.list_table_header {
