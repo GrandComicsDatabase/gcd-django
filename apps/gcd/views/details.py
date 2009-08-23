@@ -235,6 +235,9 @@ def daily_covers(request, show_date=None):
         if requested_date is None:
             requested_date = date(year, month, day)
 
+        if show_date is None:
+            show_date = requested_date.strftime('%Y-%m-%d')
+
     except (TypeError, ValueError):
         # Redirect so the user sees the date in the URL that matches
         # the output, instead of seeing the erroneous date.
