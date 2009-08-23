@@ -49,23 +49,36 @@
 
 <div id="main"> <!-- extra -->
 
-  <div id="story_toc">
-    <h2 id="toc_header">Issue Contents</h2>
-    <ol>
-      {% for story in stories %}
-      <li class="{% cycle 'odd' 'even' %}">
-        {% if story.feature %}
-        <span class="toc_story_feature">
-        {{ story.feature}}</span><br/>
-        {% endif %}
-        <span class="toc_story_title">
-        <a href="#{{ story.sequence_number }}">{% if story.title %}
-          {{ story.title }}
-        {% else %}
-          <span class="fake">[ no title ]</span>
-        {% endif %}</a></span> {% endfor %}
-    </ol>
-  </div> <!-- story_toc, a.k.a "right" -->
+  <div id="story_sidebar">
+    <div id="story_toc">
+      <h2 id="toc_header">Issue Contents</h2>
+      <ol>
+        {% for story in stories %}
+        <li class="{% cycle 'odd' 'even' %}">
+          {% if story.feature %}
+          <span class="toc_story_feature">
+          {{ story.feature}}</span><br/>
+          {% endif %}
+          <span class="toc_story_title">
+          <a href="#{{ story.sequence_number }}">{% if story.title %}
+            {{ story.title }}
+          {% else %}
+            <span class="fake">[ no title ]</span>
+          {% endif %}</a></span> {% endfor %}
+      </ol>
+    </div> <!-- story_toc, a.k.a "right" -->
+
+    {% if issue.series.indexers %}
+    <div id="index_credits">
+      <div id="indexers_header">{% trans "Issues in this series have been indexed by:" %}</div>
+      <ul>
+        {% for credit in issue.series.index_credit_set.all.select_related %}
+          <li> {{ credit.indexer.name }}
+        {% endfor %}
+      </ul>
+    </div> <!-- index_credits -->
+    {% endif %}
+  </div> <!-- story_sidebar -->
 
   <div id="cover">
     {{ image_tag|safe }}
@@ -88,16 +101,6 @@
     {% endwith %}
     {% endwith %}
 
-    {% if issue.series.indexers %}
-    <div id="index_credits">
-      <h3 id="indexers_header">{% trans "Issues in this series have been indexed by:" %}</h3>
-      <ul>
-        {% for credit in issue.series.index_credit_set.all.select_related %}
-          <li> {{ credit.indexer.name }}
-        {% endfor %}
-      </ul>
-    </div> <!-- index_credits -->
-    {% endif %}
     </div> <!-- cover_float_fixer -->
   </div> <!-- cover_credits -->
 

@@ -56,8 +56,9 @@ dl.contents dd.short {
  */
 
 #story_data {
-    clear: both;
+    clear: left;
     margin-bottom: 1em;
+    margin-right: 14em;
 }
 
 div.single_story {

@@ -24,6 +24,7 @@ dd {
 }
 
 hr.divider {
+    clear: left;
     visibility: hidden;
 }
 
@@ -66,11 +67,14 @@ div#format {
     margin-bottom: 0;
 }
 
-#story_toc { /* right */
+#story_sidebar { /* right */
     float: right;
     font-size: 0.85em;
-    border: solid 1px;
     width: 14em;
+}
+
+#story_toc {
+    border: solid 1px;
     margin-bottom: 1em;
 }
 
@@ -166,4 +170,19 @@ div#format {
 
 #index_credits {
     clear: both;
+    border: 1px solid;
+    padding: 0;
 }
+
+#indexers_header {
+    font-weight: bold;
+    background-color: #DDD;
+    margin: 0;
+    padding: 0.4em;
+}
+
+#index_credits ul {
+    margin: 0.4em;
+}
+
+
