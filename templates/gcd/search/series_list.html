@@ -1,5 +1,7 @@
 {% extends "gcd/search/base_list.html" %}
 
+{% load mathfilter %}
+
 {% block list_contents %}
 <table class="listing">
   <tr>
@@ -17,7 +19,18 @@
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }}</td>
+    {% ifequal series.scan_count series.issue_count %}
     <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
+    {% else %}
+      {% if series.scan_count %}
+        <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
+        {{ series.scan_count}}</a>
+        (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need 
+        {{ series.issue_count|sub_int:series.scan_count}}</a>)
+      {% else %}
+        <td> <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
+      {% endif %}
+    {% endifequal %}
     <td> {{ series.publication_dates }} </td>
   </tr>
 {% endfor %}
