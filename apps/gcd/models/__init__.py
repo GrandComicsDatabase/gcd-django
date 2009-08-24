@@ -9,4 +9,5 @@ from story import Story
 from cover import Cover
 from indexer import Indexer
 from indexcredit import IndexCredit
+from reservation import Reservation
 
