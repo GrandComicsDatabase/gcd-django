@@ -39,6 +39,7 @@ def publisher(request, publisher_id):
     pub = get_object_or_404(Publisher, id = publisher_id)
 
     vars = { 'publisher' : pub,
+             'error_subject' : pub,
              'style' : style,
              'media_url' : settings.MEDIA_URL }
     return paginate_response(request, pub.series_set.order_by('name'),
@@ -53,7 +54,9 @@ def imprint(request, imprint_id):
     imprint = get_object_or_404(Publisher, id = imprint_id)
     imprint_series = imprint.imprint_series_set.order_by('name')
 
-    vars = { 'publisher' : imprint, 'style' : style }
+    vars = { 'publisher' : imprint,
+             'error_subject': '%s' % imprint,
+             'style' : style }
     return paginate_response(request,
                              imprint_series,
                              'gcd/details/publisher.html',
@@ -80,6 +83,7 @@ def imprints(request, publisher_id):
     style = get_style(request)
     return paginate_response(request, imps, 'gcd/details/imprints.html', {
       'publisher' : publisher,
+      'error_subject' : '%s imprints' % publisher,
       'imprints' : imps,
       'style' : style })
 
@@ -132,6 +136,7 @@ def series(request, series_id):
         'country' : country,
         'language' : language,
         'table_width': table_width,
+        'error_subject': '%s' % series,
         'style' : style
       },
       context_instance=RequestContext(request))
@@ -296,12 +301,13 @@ def cover(request, issue_id, size):
     return render_to_response(
       'gcd/details/cover.html',
       {
-        'issue' : issue,
-        'prev_issue' : prev_issue,
-        'next_issue' : next_issue,
-        'cover_tag' : cover_tag,
-        'extra' : extra,
-        'style' : style
+        'issue': issue,
+        'prev_issue': prev_issue,
+        'next_issue': next_issue,
+        'cover_tag': cover_tag,
+        'extra': extra,
+        'error_subject': '%s cover' % issue,
+        'style': style
       },
       context_instance=RequestContext(request)
     )
@@ -318,9 +324,10 @@ def covers(request, series_id, style="default"):
     covers =series.cover_set.select_related('issue').filter(has_image = '1')
     style = get_style(request)
     vars = {
-      'series' : series,
-      'table_width' : table_width,
-      'style' : style,
+      'series': series,
+      'error_subject': '%s covers' % series,
+      'table_width': table_width,
+      'style': style,
     }
 
     return paginate_response(request, covers, 'gcd/details/covers.html', vars,
@@ -417,13 +424,14 @@ def issue(request, issue_id):
     return render_to_response(
       'gcd/details/issue.html',
       {
-        'issue' : issue,
-        'prev_issue' : prev_issue,
-        'next_issue' : next_issue,
-        'cover_story' : cover_story,
-        'stories' : stories,
-        'image_tag' : image_tag,
-        'style' : style,
+        'issue': issue,
+        'prev_issue': prev_issue,
+        'next_issue': next_issue,
+        'cover_story': cover_story,
+        'stories': stories,
+        'image_tag': image_tag,
+        'error_subject': '%s' % issue,
+        'style': style,
       },
       context_instance=RequestContext(request))
 

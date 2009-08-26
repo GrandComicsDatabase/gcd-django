@@ -82,5 +82,5 @@ class Series(models.Model):
         return self.cover_set.filter(has_image = '1').count()
 
     def __unicode__(self):
-        return self.name
+        return '%s (%s series)' % (self.name, self.year_began)
 

@@ -48,10 +48,7 @@ class Publisher(models.Model):
         return self.imprint_set.count() > 0
 
     def is_imprint(self):
-        if self.parent_id:
-            return True
-        else:
-            return False
+        return self.parent_id is not None and self.parent_id != 0
 
     def get_absolute_url(self):
         if self.is_imprint():
@@ -69,6 +66,13 @@ class Publisher(models.Model):
             return ""
 
         return self.url
+
+    def __unicode__(self):
+        if self.is_imprint():
+            if self.parent_id:
+                return '%s: %s' % (self.parent.name, self.name)
+            return '*GCD ORPHAN IMPRINT: %s' % (self.name)
+        return self.name
 
     def computed_issue_count(self):
         # issue_count is not accurate, but computing is slow.
