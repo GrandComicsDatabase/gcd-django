@@ -185,4 +185,26 @@ div#format {
     margin: 0.4em;
 }
 
+#index_status {
+    float: left;
+    width: 100%;
+    padding: 0.4em 0 0.4em 0;
+    margin-bottom: 1em;
+}
+
+#index_status span {
+    margin-left: 0.4em;
+}
+
+.index_status_0 {
+    background-color: #EE7;
+}
+
+.index_status_1 {
+    background-color: #E77;
+}
+
+.index_status_2 {
+    background-color: #EA7;
+}
 

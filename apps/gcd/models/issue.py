@@ -60,10 +60,23 @@ class Issue(models.Model):
         if (self.index_status == 2):
             return 'pending'
 
+    def reserver(self):
+        """
+        Return the likely current reservation holder.  While it is common
+        for an issue to have multiple reservation records for the same issue
+        in the same status, at no point in the current (at this time) data set
+        does an issue have more than one unapproved reservation record with
+        differen indexers in each.  So taking the first 
+        """
+        if self.index_status in (1, 2):
+            reservers = self.reservation_set.filter(status=self.index_status)
+            if reservers.count() > 0:
+                return reservers[0].indexer
+        return None
+
     def get_absolute_url(self):
         return "/issue/%i/" % self.id
 
     def __unicode__(self):
-        return unicode(self.series.name) + " #" + self.number # + " (" + \
-               # self.publication_date + ") [" + self.key_date + "]"
+        return u'%s #%s' % (self.series, self.number)
 
