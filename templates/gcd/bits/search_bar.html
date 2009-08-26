@@ -1,9 +1,9 @@
 <div id="search_bar">
   <form action="{% url apps.gcd.views.search.search %}" method="get">
-    <!-- <span class="logo">GCD</span> -->
-    <a href="{% url apps.gcd.views.index %}"><img src="{{ MEDIA_URL }}/img/logo.gif" alt-text="GCD" style="border:0;"/></a>
-    <b>Search for:</b>
-    <input type="text" name="query" size="15"> in
+    <a href="{% url apps.gcd.views.index %}"><img src="{{ MEDIA_URL }}/img/logo_icon.gif" alt-text="GCD" style="border:0;"/></a>
+    | <a href="/">Home</a> |
+    <span class="search_message">Search for:</span>
+    <input type="text" name="query" id="query" size="15"> in
     <select name="type" size="1">
         <option value="writer"> Writer
         <option value="penciller"> Penciller
@@ -25,6 +25,8 @@
         <option value="chrono"> Year
     </select>
     &nbsp;
-    <input type="submit" name="Submit" value="Search">
+    <input type="submit" name="submit" id="submit" value="Search">
   </form>
+  | <a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a>
+  </span>
 </div>

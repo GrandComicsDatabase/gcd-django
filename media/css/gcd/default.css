@@ -139,20 +139,36 @@ h1#search_id {
     margin-bottom: 1em;
     vertical-align: center;
     border: solid 1px;
-    width: 100%;
+    padding: 0.6em;
+    font-weight: bold;
 }
 
 #search_bar form {
     margin: 0;
-    padding: 0.6em;
+    display: inline;
+}
+
+#search_bar input {
+    font-size: 0.8em;
+}
+
+#search_bar select {
+    font-size: 0.8em;
 }
 
 #search_bar img {
-    font-weight: bold;
     height: 2em;
     position: relative;
     top: 0.5em;
     margin-top: -0.5em;
+}
+
+#search_bar :link {
+    color: black;
+}
+
+#search_bar :visited {
+    color: black;
 }
 
 #plain_bar {
@@ -315,3 +331,4 @@ dl.pub_data dd {
 .embedded_flag {
     height: 1em;
 }
+
