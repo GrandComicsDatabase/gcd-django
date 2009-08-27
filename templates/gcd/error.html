@@ -1,0 +1,24 @@
+{% extends "gcd/base_view.html" %}
+
+{% block title %}
+  GCD :: Error
+{% endblock %}
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ media_url }}/css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1 class="item_id" id="search_id">
+<div class="left">
+Error
+</div>
+</h1>
+<div class="item_id">
+<div class="left">
+{{ error_text }}
+</div>
+</div>
+&nbsp;
+{% endblock %}
+
