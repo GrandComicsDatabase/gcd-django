@@ -18,7 +18,7 @@
 
 <div id="info_links">
   <a href="{{series.get_absolute_url}}scans/?style={{ style }}">Cover Scan Status</a> ({{ series.scan_count }} of {{ series.issue_count }} covers available)
-  <br>
+  <br/>
   <a href="{{ series.get_absolute_url }}status/?style={{ style}}">Index Status</a>
 </div>
 
@@ -30,7 +30,7 @@
       <br/>
       <span class="cover_links">Zoom:
 <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
-<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span> <br/>
+<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span>
       <div class="cover_caption">
         <span class="cover_number">Issue {{ issue.number }}</span> <br/>
         {% if issue.publication_date %}
