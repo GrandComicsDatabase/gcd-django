@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load credits %}
+{% load mathfilter %}
 
     <div class="single_story {% if story.type %}{{ story.type|lower }}{% endif %}">
       <a name="{{ story.sequence_number }}"/>
@@ -19,7 +20,7 @@
             <!-- needs to be stuck together to get display spacing right. -->
             ({% if story.type %}{{ story.type }}{% if story.page_count %},
             {% endif %}{% endif %}{% if story.page_count %}{{ story.page_count }}
-            {% blocktrans with story.page_count|pluralize as suffix %}
+            {% blocktrans with story.page_count|ceil|pluralize as suffix %}
               page{{ suffix }}
             {% endblocktrans %}
             {% endif %})
