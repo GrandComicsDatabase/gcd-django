@@ -48,14 +48,13 @@ def show_form(field):
 def __credit_visible(value):
     """ Check if credit exists and if we want to show it.  Could add
     further conditions for not showing the credit here."""
-    return value and value.lower != 'none'
+    return value and value.lower() != 'none'
 
 
 def __format_credit(story, credit, style):
     credit_value = story.__dict__[credit]
     if not __credit_visible(credit_value):
         return ''
-
 
     if (credit == 'job_number'):
         label = _('Job Number:')
