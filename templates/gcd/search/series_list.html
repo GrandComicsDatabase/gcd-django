@@ -19,18 +19,18 @@
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }}</td>
-    {% ifequal series.scan_count series.issue_count %}
+    {% if not series.scan_needed %}
     <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
     {% else %}
       {% if series.scan_count %}
         <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
         {{ series.scan_count}}</a>
         (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need 
-        {{ series.issue_count|sub_int:series.scan_count}}</a>)
+        {{ series.scan_needed }}</a>)
       {% else %}
         <td> <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
       {% endif %}
-    {% endifequal %}
+    {% endif %}
     <td> {{ series.publication_dates }} </td>
   </tr>
 {% endfor %}

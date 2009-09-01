@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 
 from country import Country
@@ -78,8 +79,14 @@ class Series(models.Model):
     def get_absolute_url(self):
         return "/series/%i/" % self.id
 
+    def marked_scan_count(self):
+        return self.cover_set.filter(marked = True, has_image = '1').count()
+
     def scan_count(self):
         return self.cover_set.filter(has_image = '1').count()
+
+    def scan_needed(self):
+        return self.issue_count - self.scan_count() + self.marked_scan_count()
 
     def __unicode__(self):
         return '%s (%s series)' % (self.name, self.year_began)
