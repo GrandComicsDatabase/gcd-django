@@ -57,7 +57,10 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }}
     {% ifequal upload_type 'replacement' %}
     If you are replacing a cover, make sure the new cover is better than the one that is already there.
     {% endifequal %}
-   </div> <!-- cover -->
+    {% ifequal upload_type 'variant' %}
+    The uploaded variant cover will be stacked below the existing image. Full support for several covers for an issue will be added by 2010.
+    {% endifequal %}   
+    </div> <!-- cover -->
    {% endif %}
 
 </div> <!-- main -->
