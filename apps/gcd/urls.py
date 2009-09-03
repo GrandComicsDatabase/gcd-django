@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.conf.urls.defaults import *
 from django.conf import settings
 
@@ -131,12 +132,17 @@ urlpatterns = patterns('',
     url(r'^daily_covers/(?P<show_date>.+)/$',
      'apps.gcd.views.details.daily_covers', name='covers_by_date'),
 
+    # upload of covers
+    (r'^cover_upload/(?P<issue_id>.+)/$', 'apps.gcd.views.covers.cover_upload'),
+    (r'^variant_upload/(?P<issue_id>.+)/$',
+      'apps.gcd.views.covers.variant_upload'),
+
     # list covers marked for replacement
     (r'^covers_to_replace/$',
      'apps.gcd.views.details.covers_to_replace'),    
     (r'^covers_to_replace/with/(?P<starts_with>.+)/$',
      'apps.gcd.views.details.covers_to_replace'),    
- 
+
     # Reprints
     (r'^reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),

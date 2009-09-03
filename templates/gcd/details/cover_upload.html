@@ -1,0 +1,84 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+
+{% block title %} 
+GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }} 
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/cover.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/cover_upload.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1 class="item_id" id="search_id">
+<div class="left">
+     Upload {{ upload_type }} cover for
+</div>
+</h1>
+<div class="item_id">
+<div class="left">
+{{ issue.series.name }} #{{ issue.number }}
+</div>
+</div>
+     {% if info %}
+        <h2>{{ info }}<br/></h2>
+     {% endif %}
+<div>
+
+    <fieldset class="universal">
+    <ol>
+    {% ifequal upload_type 'variant' %}
+    <form action="{% url apps.gcd.views.covers.variant_upload issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+    {% else %}
+    <form action="{% url apps.gcd.views.covers.cover_upload issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+    {% endifequal %}
+    {{ form }}
+    <input type="submit" value="Upload">
+    </form>
+    </ol>
+    </fieldset>
+
+
+   {% if display_cover %}
+   <div id="display_cover">
+    {{ display_cover|safe }}
+    <div class="issue_cover_links">
+      {% if issue.cover.has_large %}
+      <a href="{{ issue.get_absolute_url }}cover/4/?style=default">Zoom</a>
+      {% endif %}
+    </div>
+    {% ifequal upload_type 'replacement' %}
+    If you are replacing a cover, make sure the new cover is better than the one that is already there.
+    {% endifequal %}
+   </div> <!-- cover -->
+   {% endif %}
+
+</div> <!-- main -->
+<p/>
+<div id="guidelines">
+<B>Guidelines:</B>
+<UL>
+   <li>Please supply accurate scans that reflect the look of the actual cover.</li>
+   <li>The scan needs to be perfectly trimmed - no extra edges around - and not rotated in any way.</li>
+   <li>Please do not upload altered scans, scans with watermarks, scans of the cover reprinted in other comics, used for solicitation, etc.</li>
+   <li>Images must be at least 400 pixels wide, 1000 pixels wide is preferred. <br/> Do not blow up scans to meet this requirement as this results in muddy pictures.
+   <LI>Note that full support for variant and wraparound covers will be added by 2010.</li>
+   <LI>Please fill in your name and email in the form so that we know who to contact (if needed) and who to credit - member or not. 
+      <br>Your e-mail will of course NOT be used for ANY other purpose, nor sold, leased, lent or whatever.
+      <br>Please note that at this time, scan credits do not show on the site. The name may in the future.</li>
+   <li>If you accidentally upload the wrong cover, please contact your favorite editor or <a href="http://errors.comics.org/enter_bug.cgi?product=GCD&bug_file_loc={{ request.build_absolute_uri }}&short_desc={{ error_subject|urlencode }}"
+   target="_blank">let us know</a> (opens in a new window).
+</UL>
+</div>
+</p>
+
+<p/>
+{% endblock %}
+

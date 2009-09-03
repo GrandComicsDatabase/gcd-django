@@ -1,0 +1,53 @@
+{% extends "gcd/base_view.html" %}
+
+{% block title %} 
+GCD :: Cover for {{ issue.series.name }} #{{ issue.number }} 
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/cover.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/cover_upload.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h1 class="item_id" id="search_id">
+<div class="left">
+Cover {{ already }} uploaded for
+</div>
+</h1>
+<div class="item_id">
+<div class="left">
+{{ issue.series.name }} #{{ issue.number }}
+</div>
+</div>
+
+
+<div>
+  <div id="cover_uploaded">
+  <a href="{{ issue.get_absolute_url }}">{{ tag|safe }}</a><br/>
+  <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Zoom</a>
+    <br>
+    <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Series Covers</a>
+  </div>
+<div>
+{% if covers_needed %}
+  Other covers needed
+   <ul>
+  {% for cover_needed in covers_needed %}
+  <li><a href="{{ cover_needed.get_status_url }}">{{ cover_needed.issue.series }} #{{ cover_needed.issue.number }}</a>
+  {% if cover_needed.marked %}
+    ( marked for replacement )
+  {% endif %}
+  </li>
+  {% endfor %}
+   </ul>
+  {% endif %}
+<a href="{{ issue.series.get_absolute_url }}">Back to the series.</a>
+</div>
+</div>
+{% endblock %}

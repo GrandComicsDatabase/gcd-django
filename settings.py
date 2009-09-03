@@ -18,7 +18,7 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
 MEDIA_URL = "/site_media/"
 
-# Database settings. Override yours in a settings.local.py
+# Database settings. Override yours in a settings_local.py
 # if you're not gonna stick with these development defaults.
 DATABASE_ENGINE   = 'mysql'
 DATABASE_NAME     = 'gcdonline'
@@ -29,7 +29,7 @@ DATABASE_PORT     = ''
 
 # middleware settings, LocalMiddleware is for internationalisation
 MIDDLEWARE_CLASSES = (
-   # 'django.contrib.sessions.middleware.SessionMiddleware',
+   'django.contrib.sessions.middleware.SessionMiddleware',
    'django.middleware.locale.LocaleMiddleware',
    'django.middleware.common.CommonMiddleware',
 )
@@ -47,7 +47,7 @@ MANAGERS = ADMINS
 INSTALLED_APPS = (
     # 'django.contrib.auth',
     # 'django.contrib.contenttypes',
-    # 'django.contrib.sessions',
+    'django.contrib.sessions',
     # 'django.contrib.sites',
     # 'django.contrib.admin',
     'apps.gcd',
@@ -77,3 +77,10 @@ SITE_ID = 1
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 TIME_ZONE = 'GMT'
+
+# get local settings, will override settings from here
+try:
+    from settings_local import *
+except ImportError, exp:
+    pass
+

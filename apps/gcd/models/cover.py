@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 from django.db import models
+from django.core import urlresolvers
 
 from issue import Issue
 from series import Series
@@ -64,6 +66,14 @@ class Cover(models.Model):
                                      auto_now_add = True, null = True)
     modification_time = models.TimeField(db_column = 'Modtime',
                                          auto_now = True, null = True)
+
+    def get_status_url(self):
+        if self.marked or not self.has_image:
+            return urlresolvers.reverse(
+                'apps.gcd.views.covers.cover_upload',
+                kwargs={'issue_id': self.issue.id} )
+        else:
+            return self.issue.get_absolute_url()
 
     def get_cover_status(self):
         import logging
