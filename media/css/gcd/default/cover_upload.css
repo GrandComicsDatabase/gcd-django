@@ -1,0 +1,58 @@
+/* ***************************************
+ * cover_upload.css
+ * CSS specific to the cover upload page.
+ * ***************************************/
+
+fieldset {
+    float: left;
+    margin: 1em 0;
+    padding: 0;
+    overflow: hidden;
+    border: solid black 1px;
+    width: 50%;
+}
+
+fieldset ol {
+    /* padding: 1em 1em 0 1em; */
+    list-style: none;
+    padding-left: 1em;
+}
+
+fieldset li {
+    margin-bottom: 0.5em;
+}
+
+label {
+    width: 9em;
+    margin-right: 1em;
+    text-align: right;
+    float: left;
+}
+
+.errorlist li {
+    list-style: none;
+    color: red;
+}
+
+#display_cover {
+    margin: 1em 0;
+    padding: 0;
+    overflow: hidden;
+    float: right;
+    width: 40%;
+    text-align: center;
+}
+
+#cover_uploaded {
+    margin: 1em 0;
+    padding: 0;
+    overflow: hidden;
+    float: left;
+    width: 40%;
+    text-align: center;
+}
+
+#guidelines {
+    clear: both;
+}
+
