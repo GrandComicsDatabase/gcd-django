@@ -55,10 +55,10 @@
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid">
-      <a href="http://www.comics.org/coversubmit/index.lasso?issueid={{ issue.id }}">{{ tag|safe }}</a>
+      <a href="{{ issue.cover.get_status_url }}">{{ tag|safe }}</a>
       <br/>
       <div class="cover_caption">
-        {{ issue.series.name }} #{{ issue.number }}<br/>
+        <a href="{{ issue.get_absolute_url }}">{{ issue.series.name }} #{{ issue.number }}</a><br/>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }})
       </div>
     </td>
