@@ -49,21 +49,28 @@
   <tr>
     <th> Title </th>
     <th> Year </th>
-    <th> Issues </th>
-    <th> Scans </th>
-    <th> Cover Gallery </th>
+    <th> #&nbsp;Issues </th>
+    <th> Covers </th>
+    <th> Published </th>
   </tr>
 {% for series in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}
-    <td> <a href="{{ series.get_absolute_url }}status/?style={{ style }}">{{ series.issue_set.count }}</a> </td>
-    {% ifequal series.issue_set.count series.scan_count %}
-    <td> {{ series.scan_count }} </td>
+    <td> {{ series.issue_set.count }} issue{{ series.issue_count|pluralize }} </td>
+    {% if not series.scan_needed %}
+    <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
     {% else %}
-    <td> <a href="{{ series.get_absolute_url }}scans/?style={{ style }}">{{ series.scan_count }}</a> </td>
-    {% endifequal %}
-    <td> <a href="{{ series.get_absolute_url }}covers/?style={{ style }}">Cover Gallery</a> </td>
+      {% if series.scan_count %}
+        <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
+        {{ series.scan_count}}</a>
+        (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need 
+        {{ series.scan_needed }}</a>)
+      {% else %}
+        <td> <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
+      {% endif %}
+    {% endif %}
+    <td> {{ series.publication_dates }} </td>
   </tr>
 {% endfor %}
 </table>
