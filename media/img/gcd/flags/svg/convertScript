@@ -1,0 +1,5 @@
+for i in *.svg
+do 
+  convert -resize 23x16! -border 1 $i ${i%.svg}.png
+done
+
