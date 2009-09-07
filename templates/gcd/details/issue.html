@@ -57,7 +57,7 @@
 {% endifequal %}
 {% ifequal issue.index_status 1 %}
    This issue is currently being indexed by
-   {{ issue.reserver|default:'[no one, please contact the editors to fix this reservation]' }}.
+   {{ issue.reserver|default:"[no one, please contact the editors to fix this reservation]" }}.
 {% endifequal %}
 {% ifequal issue.index_status 2 %}
    The index for this issue is awaiting editorial approval.
@@ -89,8 +89,16 @@
       </ol>
     </div> <!-- story_toc, a.k.a "right" -->
 
-    {% if issue.series.indexers %}
+    {% if issue.series.index_credit_set.all.select_related %}
     <div id="index_credits">
+      {% if oi_indexers %}
+      <div id="indexers_header">{% trans "This issue was most recently indexed by:" %}</div>
+      <ul>
+        {% for credit in oi_indexers %}
+          <li> {{ credit.name }}
+        {% endfor %}
+      </ul>
+      {% endif %}
       <div id="indexers_header">{% trans "Issues in this series have been indexed by:" %}</div>
       <ul>
         {% for credit in issue.series.index_credit_set.all.select_related %}

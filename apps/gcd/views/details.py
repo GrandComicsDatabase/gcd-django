@@ -405,11 +405,6 @@ def issue(request, issue_id):
     series = issue.series
     [prev_issue, next_issue] = get_prev_next_issue(series, cover)
 
-    if issue.index_status <= 1: # only skeleton
-        # TODO: create a special empty page (with the cover if existing)
-        # TODO: could vary accord. to (un)reserved/part.indexed/submitted
-        pass
-    
     # TODO: Since the number of stories per issue is typically fairly small,
     # it seems more efficient to grab the whole list and only do one database
     # query rather than separately select the cover story and the interior
@@ -421,6 +416,14 @@ def issue(request, issue_id):
     cover_story = None
     if (len(stories) > 0):
         cover_story = stories.pop(0)
+
+    # get reservations which got approved and make unique for indexers
+    res = issue.reservation_set.filter(status=3)
+    oi_indexers = []
+    for i in res:
+        oi_indexers.append(i.indexer)
+    oi_indexers = list(set(oi_indexers))
+
     return render_to_response(
       'gcd/details/issue.html',
       {
@@ -429,21 +432,10 @@ def issue(request, issue_id):
         'next_issue': next_issue,
         'cover_story': cover_story,
         'stories': stories,
+        'oi_indexers' : oi_indexers,
         'image_tag': image_tag,
         'error_subject': '%s' % issue,
         'style': style,
       },
       context_instance=RequestContext(request))
-
-
-def last_updated(request, number = 5):
-    """
-    Display the <number> last updated indexes
-    """
-    
-    i = Issue.objects.latest('modified')
-    issues = Issue.objects.order_by('-modified','-modification_time')
-    last_update = issues[:number]
-    for i in last_updated:
-        print i.series.name,i.id,i.number,i.modified,i.modification_time
 
