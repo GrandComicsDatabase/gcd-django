@@ -17,7 +17,7 @@
        covers side. -->
   {% for cover in covers %}
   {% with cover.issue as issue %}
-    <td class="status_{{ issue.index_status }}">
+    <td class="status_{% if issue.reserve_status %}{{ issue.index_status }}{% else %}0{% endif %}">
       <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>
