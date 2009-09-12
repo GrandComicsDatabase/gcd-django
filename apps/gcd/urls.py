@@ -150,4 +150,8 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_reprint'),
     (r'^settings/$',
      'apps.gcd.views.settings.settings'),    
+
+    # loging
+    (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'gcd/accounts/login.html'}),
+    (r'^accounts/profile/$', 'apps.gcd.views.accounts.profile'),
 )
