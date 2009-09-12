@@ -17,7 +17,7 @@ class Story(models.Model):
     # Core story fields.
     feature = models.CharField(max_length = 255, db_column = 'Feature',
                                null = True)
-    page_count = models.IntegerField(db_column = 'Pg_Cnt', null = True)
+    page_count = models.FloatField(db_column = 'Pg_Cnt', null = True)
     characters = models.TextField(db_column = 'Char_App',
                                   null = True)
     script = models.TextField(max_length = 255, db_column = 'Script',
