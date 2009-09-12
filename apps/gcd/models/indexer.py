@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Indexer(models.Model):
@@ -14,6 +16,8 @@ class Indexer(models.Model):
 
     id = models.AutoField(primary_key=True, db_column='ID')
 
+    user = models.OneToOneField(User)
+
     username = models.CharField(max_length=255)
 
     first_name = models.CharField(max_length=255, db_column='FirstName',
@@ -22,6 +26,13 @@ class Indexer(models.Model):
                                  null=True)
     name = models.CharField(max_length=255, db_column='Name', null=True)
 
+    password = models.CharField(max_length=255)
+    
+    access_level = models.IntegerField(db_column = 'userlevel')
+    
+    email = models.CharField(db_column = 'eMail', max_length=255)
+    
+    active = models.IntegerField(db_column = 'Active')
     # This is not quite the country code from other fields, but is clearly
     # supposed to use two-letter codes even though not all entries do.
     country_code = models.CharField(max_length=255, db_column='Country',
@@ -31,7 +42,7 @@ class Indexer(models.Model):
         if self.name is not None:
             return self.name
         elif self.first_name is not None and self.last_name is not None:
-            return u'%s %s' (self.first_name, self.last_name)
+            return u'%s %s' % (self.first_name, self.last_name)
         elif self.first_name is not None:
             return self.first_name
         elif self.last_name is not None:

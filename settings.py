@@ -30,6 +30,7 @@ DATABASE_PORT     = ''
 # middleware settings, LocalMiddleware is for internationalisation
 MIDDLEWARE_CLASSES = (
    'django.contrib.sessions.middleware.SessionMiddleware',
+   'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.locale.LocaleMiddleware',
    'django.middleware.common.CommonMiddleware',
 )
@@ -45,8 +46,8 @@ MANAGERS = ADMINS
 
 # All enabled apps for this install.
 INSTALLED_APPS = (
-    # 'django.contrib.auth',
-    # 'django.contrib.contenttypes',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
     'django.contrib.sessions',
     # 'django.contrib.sites',
     # 'django.contrib.admin',
@@ -69,6 +70,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.media',
     'django.core.context_processors.request',
 )
+
+AUTH_PROFILE_MODULE = 'gcd.Indexer'
+
 
 # Corresponds to the django_site database table. As far
 # as I know, we won't be using this for the GCD.
