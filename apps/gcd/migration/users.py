@@ -5,6 +5,12 @@ from django.db import connection
 from _mysql_exceptions import OperationalError, IntegrityError
 
 def pre_convert_users():
+    # create the additional column for the indexer table to
+    # link to the django user table
+    cursor = connection.cursor()
+    cursor.execute("ALTER TABLE Indexers ADD COLUMN user_id int(11) default NULL;")
+
+
     # some cleanup of the indexer table
     a = Indexer.objects.filter(username='blank')
     for i in a:
@@ -13,8 +19,8 @@ def pre_convert_users():
     # double usernames
     a = Indexer.objects.filter(username='DOCV')
     if a.count() > 1:
-        use = a.exclude(eMail=None)[0]
-        not_use = a.filter(eMail=None)[0]
+        use = a.exclude(email=None)[0]
+        not_use = a.filter(email=None)[0]
         indexed_series = not_use.index_credit_set.all()
         for i in indexed_series:
             i.indexer_id = use.id
@@ -72,10 +78,6 @@ def pre_convert_users():
         i.country_code = 'ar'
         i.save()
 
-    # create the additional column for the indexer table to
-    # link to the django user table
-    cursor = connection.cursor()
-    cursor.execute("ALTER TABLE Indexers ADD COLUMN User int(11) default NULL;")
 
     # create our groups
     # we will later set permissions for the groups
