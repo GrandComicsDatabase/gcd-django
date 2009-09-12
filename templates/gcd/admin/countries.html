@@ -1,0 +1,6 @@
+countries used in series and in indexer tables<br/>
+
+{% for country in countries %}
+  <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ country.code|lower }}.png" alt=" " class="embedded_flag">{{ country }}<br/>
+{% endfor %}
+

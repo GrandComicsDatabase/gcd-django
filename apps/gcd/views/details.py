@@ -439,3 +439,37 @@ def issue(request, issue_id):
       },
       context_instance=RequestContext(request))
 
+
+# this should later be moved to admin.py or something like that
+def countries_in_use(request):
+    """
+    Show list of countries with name and flag.
+    Main use is to find missing names and flags.
+    """
+
+    if request.user.is_authenticated and \
+      request.user.groups.filter(name='admin'):
+        codes_from_series = list(set(Series.objects.all().\
+                                values_list('country_code', flat='True')))
+        codes_from_indexers = list(set(Indexer.objects.all().\
+                                values_list('country_code', flat='True')))
+        used_country_codes = list(set(codes_from_indexers+codes_from_series))
+        used_countries = []
+        for i in used_country_codes:
+            try: # there is none
+                country = Country.objects.filter(code=i.lower())
+                if country.count():
+                    used_countries.append(country[0])
+                else:
+                    used_countries.append(i)
+            except AttributeError:
+                used_countries.append(i)
+        used_countries = set(used_countries)
+        return render_to_response('gcd/admin/countries.html',
+                                  {'countries' : used_countries },
+                                  context_instance=RequestContext(request))
+    else:
+        return render_to_response('gcd/error.html', {
+          'error_text' : 'You are not allowed to access this page.',
+          'media_url' : settings.MEDIA_URL
+          })
