@@ -1,5 +1,6 @@
 {% load i18n %}
 
+<div>
 <h1 class="item_id" id="search_id">
 <div class="left">
   {{ heading }}: {{ search_item }}
@@ -14,4 +15,5 @@
   {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
   {% endwith %}
+</div>
 </div>

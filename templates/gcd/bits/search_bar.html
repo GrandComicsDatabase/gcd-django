@@ -1,6 +1,6 @@
 <div id="search_bar">
   <form action="{% url apps.gcd.views.search.search %}" method="get">
-    <a href="{% url apps.gcd.views.index %}"><img src="{{ MEDIA_URL }}/img/logo_icon.gif" alt-text="GCD" style="border:0;"/></a>
+    <a href="{% url apps.gcd.views.index %}"><img src="{{ MEDIA_URL }}/img/logo_icon.gif" alt="GCD" style="border:0;"/></a>
     | <a href="/">Home</a> |
     <span class="search_message">Search for:</span>
     <input type="text" name="query" id="query" size="15"> in
@@ -28,5 +28,4 @@
     <input type="submit" name="submit" id="submit" value="Search">
   </form>
   | <a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a>
-  </span>
 </div>
