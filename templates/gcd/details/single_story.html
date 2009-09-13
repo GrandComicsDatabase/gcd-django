@@ -2,57 +2,43 @@
 {% load credits %}
 {% load mathfilter %}
 
-    <div class="single_story {% if story.type %}{{ story.type|lower }}{% endif %}">
-      <a name="{{ story.sequence_number }}"/>
-      <h2 class="sequence_header feature">
-        {% if is_cover %}
-          Cover Feature{% if story.feature %}:{% endif %}
+    <div class="single_story">
+      <a name="{{ story.id }}"></a>
+      <h2 class="sequence header title">
+        {% if story.title %}
+          <span class="title left">{{ story.title }}</span>
         {% else %}
-          <span class="seq_no">{{ story.sequence_number }}.&nbsp;</span>
+            <span class="title left">[ no title ]</span>
         {% endif %}
-
+        <span class="right"><a href="#toc">(Table of Contents)</a></span>
+      </h2>
+      <h3 class="sequence_header feature">
+        <span class="left">
         {% if story.feature %}
-          <span class="feature">{{ story.feature }}</span>&nbsp;
+          <span class="feature">{{ story.feature }}</span>
         {% endif %}
         {% if not is_cover %}
           {% if story.type or story.page_count %}
             <span class="type">
             <!-- needs to be stuck together to get display spacing right. -->
-            ({% if story.type %}{{ story.type }}{% if story.page_count %},
+            {% if story.feature %} / {% endif %}
+            {% if story.type %}{{ story.type }}{% if story.page_count %} /
             {% endif %}{% endif %}{% if story.page_count %}{{ story.page_count }}
             {% blocktrans with story.page_count|ceil|pluralize as suffix %}
               page{{ suffix }}
             {% endblocktrans %}
-            {% endif %})
+            {% endif %}
             </span>
           {%endif %}
-        {% endif %}
-
-      </h2>
-      </a>
-      <h3 class="sequence_header title">
-        {% if story.title %}
-          <span class="title">{{ story.title }}</span>
         {% else %}
-            <span class="title fake">[ no title ]</span>
-        {% endif %}
-      </h3>
-<!--
-        {% if not is_cover %}
-          {% if story.type or story.page_count %}
-            <p class="type_page">
             <span class="type">
-            <!-- needs to be stuck together to get display spacing right. -- >
-            {% if story.type %}{{ story.type }}{% if story.page_count %},
-            {% endif %}</span>{% endif %}{% if story.page_count %}{{ story.page_count }}
-            {% blocktrans with story.page_count|pluralize as suffix %}
-              page{{ suffix }}
-            {% endblocktrans %}
-            {% endif %}
-            </p>
-          {%endif %}
+            <!-- needs to be stuck together to get display spacing right. -->
+            {% if story.feature %} / {% endif %}
+            {% if story.type %}{{ story.type }}{% endif %}
+            </span>
         {% endif %}
--->
+        </span><span class="right"><a href="http://errors.comics.org/enter_bug.cgi?product=GCD&bug_file_loc={{ request.build_absolute_uri }}%23{{ story.id }}&short_desc={{ error_subject|urlencode }}%20-%20{{story.title|urlencode}}" target="_blank">(report information)</a></span>
+      </h3>
 
       {% if story.has_credits %}
       <h3 class="credit_header"> Credits </h3>

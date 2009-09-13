@@ -72,20 +72,22 @@
 
   <div id="story_sidebar">
     <div id="story_toc">
-      <h2 id="toc_header">Issue Contents</h2>
+      <a name="toc"></a>
+      <h2 id="toc_header">Table of Contents</h2>
       <ol>
         {% for story in stories %}
         <li class="{% cycle 'odd' 'even' %}">
-          {% if story.feature %}
-          <span class="toc_story_feature">
-          {{ story.feature}}</span><br/>
-          {% endif %}
           <span class="toc_story_title">
-          <a href="#{{ story.sequence_number }}">{% if story.title %}
+          <a href="#{{ story.id }}">{% if story.title %}
             {{ story.title }}
           {% else %}
-            <span class="fake">[ no title ]</span>
-          {% endif %}</a></span> {% endfor %}
+            <span class="toc_story_title">[ no title ]</span>
+          {% endif %}</a></span> <br/>
+          {% if story.feature %}
+          <span class="toc_story_feature">
+          {{ story.feature}}</span>
+          {% endif %}
+          {% endfor %}
       </ol>
     </div> <!-- story_toc, a.k.a "right" -->
 
@@ -111,9 +113,9 @@
 
   <div id="cover">
     {% if issue.cover.has_image %}
-      {{ image_tag|safe }}
+      {{ image_tag }}
     {% else %}
-      <a href="{{ issue.cover.get_status_url }}">{{ image_tag|safe }}</a>
+      <a href="{{ issue.cover.get_status_url }}">{{ image_tag }}</a>
     {% endif %}
     <div class="issue_cover_links">
       {% if issue.cover.has_large %}
@@ -123,7 +125,11 @@
       <br>
       <a href="{% url apps.gcd.views.covers.variant_upload issue_id=issue.id%}?style={{ style }}">Add Variant Cover</a>
       <br>
-      <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Series Covers</a>
+      <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover Gallery</a>
+    </div>
+    <div class="disclaimer">
+    Cover thumbnails are used for identification purposes only. All rights to 
+    cover images reserved by the respective copyright holders. 
     </div>
   </div> <!-- cover -->
 
@@ -135,7 +141,6 @@
       {% include "gcd/details/single_story.html" %}
     {% endwith %}
     {% endwith %}
-
     </div> <!-- cover_float_fixer -->
   </div> <!-- cover_credits -->
 
@@ -144,10 +149,10 @@
 
 <div id="story_data">
   {% for story in stories %}
-    <hr class="divider"/>
+    <hr class="divider">
     {% include "gcd/details/single_story.html" %}
   {% endfor %}
-  <hr class="divider"/>
+  <hr class="divider">
 </div>
 
 {% with 1 as paginate_only %}

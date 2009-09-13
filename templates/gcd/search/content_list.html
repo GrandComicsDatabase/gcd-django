@@ -13,7 +13,7 @@
 {% for story in items %}
   {% with story.issue.get_absolute_url as url %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <a href="{{ url }}#{{ story.sequence_number}}">
+    <td> <a href="{{ url }}#{{ story.id}}">
       {% if story.title %}
         {{ story.title }}
       {% else %}

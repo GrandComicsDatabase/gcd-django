@@ -50,7 +50,10 @@ dl.contents dd.short {
     /* font-style: italic; */
 }
 
-
+.disclaimer {
+    font-size: 0.8em;
+    color: #CCC;
+}
 /*
  * Story layout elements
  */
@@ -58,7 +61,12 @@ dl.contents dd.short {
 #story_data {
     clear: left;
     margin-bottom: 1em;
-    margin-right: 14em;
+    margin-right: 15em;
+}
+
+.offset_one_back {
+    position: relative;
+    left: -1px;
 }
 
 div.single_story {
@@ -68,9 +76,11 @@ div.single_story {
     margin-bottom: 1em;
 }
 
+
 .single_story h2 {
     clear: both;
     padding: 0.2em 6px;
+    float: left;
 }
 
 .single_story h3 {
@@ -92,46 +102,66 @@ div.single_story {
     margin: 0;
 }
 
+.single_story a {
+    color: white;
+    font-size: 0.8em;
+    font-weight: normal;
+}
+
 .single_story p {
     padding: 0.2em 6px;
     margin: 0 0 0.5em 0;
 }
 
+.single_story .left {
+    padding-left: 6px;
+}
+
+.single_story .right {
+    padding-right: 6px;
+}
+
 .sequence_header {
     background-color: #DDD;
-    /* padding: 0.2em; */
 }
 
-h3.title {
+h3.feature {
     margin-bottom: 0;
     margin-top: 0;
+    width: 100%;
+    float: left;
+    padding: 0.2em 0;
 }
 
-h2.feature {
+h3.feature a {
+    color: #000;
+}
+
+h2.title {
     background-color: #444;
     color: white;
     margin-top: 0;
     margin-bottom: 0;
     font-weight: normal;
-    /* font-size: 1em; */
+    padding: 0.2em 0;
+    width: 100%;
 }
 
 span.feature {
     font-weight: bold;
 }
+
 span.seq_no {
     font-size: 0.8em;
     font-weight: bold;
 }
+
 span.type {
-    font-size: 0.8em;
     font-weight: normal;
 }
+
 p.type_page {
     margin-top: 0.5em;
-}
-span.fake {
-    font-style: italic;
 }
 
 span.linkify {
@@ -140,13 +170,14 @@ span.linkify {
     color: #888;
     font-size: 0.9em;
 }
+
 span.linkify :link {
     color: #888;
     text-decoration: none;
 }
+
 span.linkify :visited {
     color: #888;
     text-decoration: none;
 }
-
 

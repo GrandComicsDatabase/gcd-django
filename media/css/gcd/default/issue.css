@@ -70,7 +70,7 @@ div#format {
 #story_sidebar { /* right */
     float: right;
     font-size: 0.85em;
-    width: 14em;
+    width: 16.5em;
 }
 
 #story_toc {
@@ -127,17 +127,9 @@ div#format {
     /* width: 250px; */
     min-width: 20em;
     margin-left: 118px;
-    margin-right: 14em;
+    margin-right: 15em;
     margin-bottom: 1em;
     /* max-width: 600px; */
-}
-
-#cover_float_fixer {
-    float: left;
-}
-
-#cover_credits h3.credit_header {
-    clear: none;
 }
 
 .cover_header {

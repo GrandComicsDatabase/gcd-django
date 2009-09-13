@@ -62,6 +62,7 @@ def __format_credit(story, credit, style):
         label = _(credit.title()) + ':'
 
     if (credit == 'reprints'):
+        label = _('Reprinted:')
         values = split_reprint_string(credit_value)
         credit_value = '<ul>'
         for value in values:
