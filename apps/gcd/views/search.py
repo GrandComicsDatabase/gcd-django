@@ -1,7 +1,7 @@
 """View methods related to displaying search and search results pages."""
 
 from re import *
-from urllib import urlopen
+from urllib import urlopen, quote
 
 from django.db.models import Q
 from django.conf import settings
@@ -211,6 +211,17 @@ def search(request):
     it into the by-name lookup URLs the system already knows how to handle.
     """
 
+    # redirect if url starts with '/search/' but the rest is of no use
+    if not request.GET.has_key('type'):
+        return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
+
+    if not request.GET.has_key('query') or not request.GET['query']:
+        # if no query, but a referer page
+        if request.META.has_key('HTTP_REFERER'):
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+        else: # rare, but possible
+            return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
+
     # TODO: Redesign this- the current setup is a quick hack to adjust
     # a design that was elegant when it was written, but things have changed.
     object_type = str(request.GET['type'])
@@ -237,8 +248,9 @@ def search(request):
 
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
-                           kwargs = { param_type: request.GET['query'],
+                           kwargs = { param_type: quote(request.GET['query']),
                                       'sort': request.GET['sort'] }))
+
 
 def advanced_search(request):
     """Displays the advanced search page."""
