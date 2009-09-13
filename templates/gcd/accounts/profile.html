@@ -1,6 +1,20 @@
+{% extends "gcd/base_view.html" %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/default.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/default/issue.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/default/single_story.css"/>
+{% endblock %}
+
+{% block view_body %}
 
 Username: {{ user.user.username }}<br/>
 Name: {{ user }}<br/>
 Email: {{ user.user.email }}<br/>
 Country: {{ user.country_code }} <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ user.country_code|lower }}.png" alt="{{ country }}" class="embedded_flag"><br>
 Groups: {% for group in user.user.groups.all %}{{ group }} {% endfor %}
+
+{% endblock %}
