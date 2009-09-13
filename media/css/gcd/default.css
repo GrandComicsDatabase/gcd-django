@@ -268,11 +268,16 @@ table#covers td.marked {
 /* Listing table stuff */
 
 .listing {
+    float: left;
     clear: both;
     border: solid black 1px;
     border-collapse: collapse;
     margin-top: 1em;
     margin-bottom: 1em;
+}
+
+#publisher_detail_listing {
+    margin-top: 0;
 }
 
 .listing th {

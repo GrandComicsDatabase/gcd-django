@@ -36,6 +36,7 @@
 {% endif %}
 
 {% if publisher.url %}
+  <dt> Web Site:
   <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
 {% endif %}
 
@@ -45,7 +46,7 @@
 </dl>
 {% else %}
 </dl>
-<table class="listing">
+<table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Title </th>
     <th> Year </th>
