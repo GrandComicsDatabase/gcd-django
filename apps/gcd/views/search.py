@@ -44,7 +44,8 @@ def generic_by_name(request, name, q_obj, sort,
         base_name = 'stor'
         plural_suffix = 'y,ies'
 
-        things = class_.objects.filter(q_obj).select_related('issue__series')
+        things = class_.objects.filter(q_obj)
+        things = things.select_related('issue__series__publisher')
 
         # TODO: This order_by stuff only works for Stories, which is 
         # TODO: OK for now, but might not always be.

@@ -6,9 +6,9 @@
     <th> Story Title </th>
     <th> Feature </th>
     <th> Type </th>
-    <th> Series </th>
     <th> Issue </th>
     <th> Date </th>
+    <th> Publisher </th>
   </tr>
 {% for story in items %}
   {% with story.issue.get_absolute_url as url %}
@@ -28,9 +28,10 @@
             {{ story.type }}
          {% endifequal %}
     {% endwith %}
-    <td> <a href="{{ story.issue.series.get_absolute_url }}">{{ story.issue.series.name }}</a> ({{ story.issue.series.year_began }} series)</td>
-    <td> <a href="{{ url }}">{{ story.issue.number }}</a> </td>
+    <td> <a href="{{ story.issue.series.get_absolute_url }}">{{ story.issue.series.name }}</a> ({{ story.issue.series.year_began }} series)
+         <a href="{{ url }}">#{{ story.issue.number }}</a> </td>
     <td> {{ story.issue.publication_date }} </td>
+    <td> <a href="{{ story.issue.series.publisher.get_absolute_url }}">{{ story.issue.series.publisher.name }}</a> </td>
   </tr>
   {% endwith %}
 {% endfor %}
