@@ -1,4 +1,5 @@
 from django import template
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -16,6 +17,6 @@ def finishrow(position, width):
         cells += '<td>&nbsp;</td>'
         position += 1
 
-    return cells
+    return mark_safe(cells)
 
 register.filter(finishrow)

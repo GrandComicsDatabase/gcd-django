@@ -142,6 +142,7 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.covers_to_replace'),    
     (r'^covers_to_replace/with/(?P<starts_with>.+)/$',
      'apps.gcd.views.details.covers_to_replace'),    
+    (r'^mark_cover/(?P<issue_id>.+)/$', 'apps.gcd.views.covers.mark_cover'),
 
     # Reprints
     (r'^reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',

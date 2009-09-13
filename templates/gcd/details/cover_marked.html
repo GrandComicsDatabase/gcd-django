@@ -17,7 +17,7 @@ GCD :: Cover for {{ issue.series.name }} #{{ issue.number }}
 
 <h1 class="item_id" id="search_id">
 <div class="left">
-Cover {{ already }} uploaded for
+Cover marked for replacement
 </div>
 </h1>
 <div class="item_id">
@@ -27,27 +27,13 @@ Cover {{ already }} uploaded for
 </div>
 
 
-<div>
-  <div id="cover_uploaded">
-    <a href="{{ issue.get_absolute_url }}">{{ tag|safe }}</a><br/>
-    <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Zoom</a><br>
+  <div id="cover_zoom">
+  <a href="{{ issue.get_absolute_url }}">{{ cover_tag }}</a><br/>
+  <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Zoom</a><br/>
+  <div id="info_links">
     <a href="{{ issue.series.get_absolute_url}}scans/?style={{ style }}">Cover Scan Status</a><br/>
     <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover Gallery</a>
   </div>
-<div>
-{% if covers_needed %}
-  Other covers needed
-   <ul>
-  {% for cover_needed in covers_needed %}
-  <li><a href="{{ cover_needed.get_status_url }}">{{ cover_needed.issue.series }} #{{ cover_needed.issue.number }}</a>
-  {% if cover_needed.marked %}
-    ( marked for replacement )
-  {% endif %}
-  </li>
-  {% endfor %}
-   </ul>
-  {% endif %}
-<a href="{{ issue.series.get_absolute_url }}">Back to the series.</a>
-</div>
-</div>
+  </div>
 {% endblock %}
+

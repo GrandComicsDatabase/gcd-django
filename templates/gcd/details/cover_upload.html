@@ -48,7 +48,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }}
 
    {% if display_cover %}
    <div id="display_cover">
-    {{ display_cover|safe }}
+    {{ display_cover }}
     <div class="issue_cover_links">
       {% if issue.cover.has_large %}
       <a href="{{ issue.get_absolute_url }}cover/4/?style=default">Zoom</a>

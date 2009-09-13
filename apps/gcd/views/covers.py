@@ -14,6 +14,8 @@ from django.shortcuts import get_list_or_404, \
 from django.template import RequestContext
 from django.utils.encoding import smart_unicode as uni
 from django.core.files import temp as tempfile
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Cover, Series, Issue
 
@@ -35,19 +37,19 @@ _server_prefixes = ['',
 
 def get_image_tag(series_id, cover, alt_text, zoom_level):
     if cover is None:
-        return '<img class="no_cover" src="' + _server_prefixes[2] + \
-               'nocover.gif" alt="No image yet" class="cover_img"/>'
+        return mark_safe('<img class="no_cover" src="' + _server_prefixes[2] + \
+               'nocover.gif" alt="No image yet" class="cover_img"/>')
 
     if settings.FAKE_COVER_IMAGES:
         if zoom_level == ZOOM_SMALL:
-            return '<img src="' +settings.MEDIA_URL + \
-                   'img/placeholder_small.jpg" width="100" class="cover_img"/>'
+            return mark_safe('<img src="' +settings.MEDIA_URL + \
+                   'img/placeholder_small.jpg" width="100" class="cover_img"/>')
         if zoom_level == ZOOM_MEDIUM:
-            return '<img src="' + settings.MEDIA_URL + \
-                   'img/placeholder_medium.jpg" width="200" class="cover_img"/>'
+            return mark_safe('<img src="' + settings.MEDIA_URL + \
+                   'img/placeholder_medium.jpg" width="200" class="cover_img"/>')
         if zoom_level == ZOOM_LARGE:
-            return '<img src="' + settings.MEDIA_URL + \
-                   'img/placeholder_large.jpg" width="400" class="cover_img"/>'
+            return mark_safe('<img src="' + settings.MEDIA_URL + \
+                   'img/placeholder_large.jpg" width="400" class="cover_img"/>')
 
     width = ''
     if zoom_level == ZOOM_SMALL:
@@ -57,16 +59,17 @@ def get_image_tag(series_id, cover, alt_text, zoom_level):
     elif zoom_level == ZOOM_LARGE:
         width = 'width="400"'
 
+    # I don't think this is used ?
     img_url = ('<img src="" alt="' +
-               alt_text +
+               esc(alt_text) +
                '" ' +
                width +
                ' class="cover_img"/>')
 
     if (zoom_level == ZOOM_SMALL):
         if not (cover.has_image):
-            return '<img class="no_cover" src="' + _server_prefixes[2] + \
-                   'nocover.gif" alt="No image yet" class="cover_img"/>'
+            return mark_safe('<img class="no_cover" src="' + _server_prefixes[2] + \
+                   'nocover.gif" alt="No image yet" class="cover_img"/>')
         suffix = "%d/%d_%s.jpg" % (series_id, series_id, cover.code)
     else:
         suffix = "%d/" % series_id
@@ -86,8 +89,8 @@ def get_image_tag(series_id, cover, alt_text, zoom_level):
         # cover.save()
         # img_url = _server_prefixes[cover.server_version] + suffix
 
-    return '<img src="' + img_url + '" alt="' + alt_text + \
-           '" ' + width + ' class="cover_img"/>'
+    return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) + \
+           '" ' + width + ' class="cover_img"/>')
 
 def get_image_tags_per_page(page, series=None):
     """
@@ -144,7 +147,7 @@ class UploadScanForm(forms.Form):
                                      required=False)
 
 
-def cover_upload(request, issue_id, add_variant = False):
+def cover_upload(request, issue_id, add_variant=False):
     """
     Handles uploading of covers be it
     - first upload
@@ -159,7 +162,7 @@ def cover_upload(request, issue_id, add_variant = False):
 
     # check for issue and cover
     # TODO might do get_object_or_404 instead of own error check
-    issue = Issue.objects.filter(id = int(issue_id))
+    issue = Issue.objects.filter(id=int(issue_id))
     if len(issue) == 0:
         return render_to_response(error_template, {
           'error_text' : 'Issue ID #' + issue_id  + ' does not exist.',
@@ -168,7 +171,7 @@ def cover_upload(request, issue_id, add_variant = False):
     else:
         issue = issue[0]
 
-    cover = Cover.objects.filter(issue = issue)
+    cover = Cover.objects.filter(issue=issue)
     if len(cover) == 0:
         return render_to_response(error_template, {
           'error_text' : 'Something wrong with issue ID #' + issue_id  + \
@@ -181,12 +184,12 @@ def cover_upload(request, issue_id, add_variant = False):
     # check that we are actually allowed to upload
     if cover.has_image and not cover.marked and not add_variant:
         tag = get_image_tag(issue.series.id, cover, "existing cover", 2)
-        covers_needed = Cover.objects.filter(issue__series = issue.series)
-        covers_needed = covers_needed.exclude(marked = False, 
-                                              has_large = True)
+        covers_needed = Cover.objects.filter(issue__series=issue.series)
+        covers_needed = covers_needed.exclude(marked=False, 
+                                              has_large=True)
         # TODO: make the 15 an option
-        covers_needed = covers_needed.exclude(marked = None, 
-                                              has_large = True)[:15]
+        covers_needed = covers_needed.exclude(marked=None, 
+                                              has_large=True)[:15]
         return render_to_response(uploaded_template, {
                                   'cover' : cover,
                                   'covers_needed' :  covers_needed,
@@ -351,6 +354,8 @@ def cover_upload(request, issue_id, add_variant = False):
                         series = cover.series
                         series.gallery_present = True
                         series.save()
+                    cover.modified = datetime.today()                    
+                    cover.modification_time = datetime.today().time()
                     cover.save()
 
                     if 'remember_me' in request.POST:
@@ -432,4 +437,56 @@ def cover_upload(request, issue_id, add_variant = False):
 def variant_upload(request, issue_id):
     """ handle uploads of variant covers"""
 
-    return cover_upload(request, issue_id, add_variant = True)
+    return cover_upload(request, issue_id, add_variant=True)
+
+
+def mark_cover(request, issue_id):
+    """
+    marks the cover of the issue for replacement
+    """
+
+    # TODO: once we have permissions 'can_mark' should be one
+    if request.user.is_authenticated() and \
+      request.user.groups.filter(name='editor'):
+        # check for issue and cover
+        # TODO might do get_object_or_404 instead of own error check
+        issue = Issue.objects.filter(id=int(issue_id))
+        if len(issue) == 0:
+            return render_to_response(error_template, {
+              'error_text' : 'Issue ID #' + issue_id  + ' does not exist.',
+              'media_url' : settings.MEDIA_URL
+              })    
+        else:
+            issue = issue[0]
+
+        cover = Cover.objects.filter(issue=issue)
+        if len(cover) == 0:
+            return render_to_response(error_template, {
+              'error_text' : 'Something wrong with issue ID #' + issue_id  + \
+                            ' and its cover table, please contact the admins.',
+              'media_url' : settings.MEDIA_URL
+              })    
+        else:
+            cover = cover[0]
+        
+        cover.marked = True
+        cover.save()
+        cover_tag = get_image_tag(issue.series_id, cover,
+                                  "Cover Image", 2)
+        return render_to_response(
+          'gcd/details/cover_marked.html',
+          {
+            'issue': issue,
+            'cover_tag': cover_tag,
+            'error_subject': '%s cover' % issue,
+            'style': 'default',
+          },
+          context_instance=RequestContext(request)
+        )        
+    else:
+        return render_to_response('gcd/error.html', {
+          'error_text' : 'You are not allowed to mark covers for replacement.',
+          'media_url' : settings.MEDIA_URL
+          })
+
+

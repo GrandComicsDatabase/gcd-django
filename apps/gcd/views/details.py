@@ -184,7 +184,7 @@ def covers_to_replace(request, starts_with=None, style="default"):
     Display the covers that are marked for replacement.
     """
 
-    covers = Cover.objects.filter(marked = True)
+    covers = Cover.objects.filter(marked = True).filter(has_image = True)
     if starts_with:
         covers = covers.filter(issue__series__name__startswith = starts_with)
     covers = covers.order_by("issue__series__name",
@@ -267,6 +267,13 @@ def daily_covers(request, show_date=None):
                              "issue__series__year_began",
                              "issue__number")
 
+    # TODO: once we have permissions 'can_mark' should be one
+    if request.user.is_authenticated() and \
+      request.user.groups.filter(name='editor'):
+        can_mark = True
+    else:
+        can_mark = False
+
     return paginate_response(
       request,
       covers,
@@ -277,6 +284,7 @@ def daily_covers(request, show_date=None):
         'date_before' : date_before,
         'table_width' : table_width,
         'style' : style,
+        'can_mark' : can_mark
       },
       page_size=50,
       callback_key='tags',
@@ -321,6 +329,13 @@ def covers(request, series_id, style="default"):
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 5
 
+    # TODO: once we get permissions going 'can_mark' should be one
+    if request.user.is_authenticated() and \
+      request.user.groups.filter(name='editor'):
+        can_mark = True
+    else:
+        can_mark = False
+
     covers =series.cover_set.select_related('issue').filter(has_image = '1')
     style = get_style(request)
     vars = {
@@ -328,6 +343,7 @@ def covers(request, series_id, style="default"):
       'error_subject': '%s covers' % series,
       'table_width': table_width,
       'style': style,
+      'can_mark': can_mark
     }
 
     return paginate_response(request, covers, 'gcd/details/covers.html', vars,
@@ -447,7 +463,7 @@ def countries_in_use(request):
     Main use is to find missing names and flags.
     """
 
-    if request.user.is_authenticated and \
+    if request.user.is_authenticated() and \
       request.user.groups.filter(name='admin'):
         codes_from_series = list(set(Series.objects.all().\
                                 values_list('country_code', flat='True')))

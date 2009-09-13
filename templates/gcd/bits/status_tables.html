@@ -26,7 +26,7 @@
       {% endif %}
     {% else %}
       {% if forloop.last %}
-        {{ forloop.counter|finishrow:table_width|safe }}
+        {{ forloop.counter|finishrow:table_width }}
   </tr>
       {% endif %}
     {% endif %}

@@ -22,7 +22,7 @@
 {% endwith %}
 
 <div id="cover_zoom">
-  <a href="{{ issue.get_absolute_url }}">{{ cover_tag|safe }}</a>
+  <a href="{{ issue.get_absolute_url }}">{{ cover_tag }}</a>
   <div class="cover_links">Zoom:&nbsp;<a href="{{ issue.get_absolute_url }}cover/1/?style={{ style }}">Small</a>&nbsp;<a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>&nbsp;<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
     <br>
     <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Series Covers</a>

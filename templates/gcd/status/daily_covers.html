@@ -66,12 +66,15 @@
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{{ issue.get_absolute_url }}">{{ tag|safe }}</a>
+      <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br/>
       <span class="cover_links">Zoom:
 <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
 <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span> <br/>
       <div class="cover_caption">
+        {% if can_mark and not cover.marked %}
+        <a href="{% url apps.gcd.views.covers.mark_cover issue_id=issue.id %}">mark for replacement</a><br>
+        {% endif %}
         {{ issue.series.name }} #{{ issue.number }}<br/>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br/>
         {% if issue.publication_date %}
@@ -88,3 +91,5 @@
 </table>
 
 {% endblock %}
+
+
