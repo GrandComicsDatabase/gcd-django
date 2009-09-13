@@ -13,11 +13,13 @@ register = template.Library()
 
 
 def show_credit(story, credit):
-    """ For showing the credits on the search results page.
+    """
+    For showing the credits on the search results page.
     As far as I can tell Django template filters can only take
     one argument, hence the icky splitting of 'credit'.  Suggestions
     on a better way welcome, as clearly I'm abusing the Django filter
-    convention here."""
+    convention here.
+    """
 
     if not story:
         return ""
@@ -41,14 +43,18 @@ def show_credit(story, credit):
         return ""
 
 def show_form(field):
-    """ For showing form fields for credits and similar fields."""
+    """
+    For showing form fields for credits and similar fields.
+    """
     return mark_safe('<li>' + field.label_tag() + unicode(field) + \
                      unicode(field.errors))
 
 def __credit_visible(value):
-    """ Check if credit exists and if we want to show it.  Could add
-    further conditions for not showing the credit here."""
-    return value and value.lower() != 'none'
+    """
+    Check if credit exists and if we want to show it.
+    This used to be a bit more complicated but it's very simple now.
+    """
+    return value is not None and value != ''
 
 
 def __format_credit(story, credit, style):
@@ -78,63 +84,9 @@ def __format_credit(story, credit, style):
     dt += '">'
     dd += '">'
 
-    return mark_safe(dt + '<span class="credit_label">' + label + '</span></dt>' + \
+    return mark_safe(
+           dt + '<span class="credit_label">' + label + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
-
-# a try for xml output
-
-def show_credit_xml(story, credit):
-    """ For showing the credits in the xml."""
-
-    if not story:
-        return ''
-
-    if story.__dict__.has_key(credit):
-        credit_value = story.__dict__[credit]
-        if not __credit_visible(credit_value):
-            return ''
-
-        return mark_safe('<credit type="' + credit + '">' + \
-                     esc(credit_value) + '</credit>')
-    else:
-        return ''
-
-def show_characters_xml(story):
-    """ For showing the characters in the xml."""
-
-    if not story:
-        return ""
-
-    if story.characters:
-        output = '<characters>'
-        for string in story.characters.split(';'):
-            # TODO: need handling for groups where in [] are characters
-            output += '<character>' + esc(string) + '</character>'
-        output += '</characters>'
-        return mark_safe(output)
-    else:
-        return ""
-
-def show_list_xml(story, credit):
-    """ For separating fields at ';' in the xml."""
-    """ Assumes credit is singular as is the name of field in the model. """
-
-    if not story:
-        return ""
-
-    if story.__dict__.has_key(credit):
-        credit_value = story.__dict__[credit]
-        if not __credit_visible(credit_value):
-            return ''
-        
-        output = '<' + credit + 's>'
-        # works only if we don't overload the field with information
-        for string in credit_value.split(';'):
-            output += '<' + credit + '>' + esc(string) + '</' + credit + '>'
-        output += '</' + credit + 's>'
-        return mark_safe(output)
-    else:
-        return ""
 
 # these next three might better fit into a different file
 
@@ -167,9 +119,6 @@ def show_issue_number(issue_number):
 
 register.filter(show_credit)
 register.filter(show_form)
-register.filter(show_credit_xml)
-register.filter(show_characters_xml)
-register.filter(show_list_xml)
 register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)

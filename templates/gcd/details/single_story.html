@@ -24,6 +24,7 @@
             {% if story.feature %} / {% endif %}
             {% if story.type %}{{ story.type }}{% if story.page_count %} /
             {% endif %}{% endif %}{% if story.page_count %}{{ story.page_count }}
+              {% if story.page_count_uncertain %}?{% endif %}
             {% blocktrans with story.page_count|ceil|pluralize as suffix %}
               page{{ suffix }}
             {% endblocktrans %}
