@@ -38,7 +38,7 @@
             {% if story.type %}{{ story.type }}{% endif %}
             </span>
         {% endif %}
-        </span><span class="right"><a href="http://errors.comics.org/enter_bug.cgi?product=GCD&bug_file_loc={{ request.build_absolute_uri }}%23{{ story.id }}&short_desc={{ error_subject|urlencode }}%20-%20{{story.title|urlencode}}" target="_blank">(report information)</a></span>
+        </span><span class="right"><a href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}%23{{ story.id }}&amp;short_desc={{ error_subject|urlencode }}%20-%20{{story.title|urlencode}}" target="_blank">(report information)</a></span>
       </h3>
 
       {% if story.has_credits %}

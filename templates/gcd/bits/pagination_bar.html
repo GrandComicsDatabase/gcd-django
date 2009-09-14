@@ -4,9 +4,9 @@
     {% if page.has_other_pages %}
     {% if page.has_previous %}
         {% if extra_string %}
-        <a href="?{{ extra_string }}&page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+        <a href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
         {% else %}
-        <a href="?style={{ style }}&page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+        <a href="?style={{ style }}&amp;page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
         {% endif %}
     {% else %}
         &lt; {% trans "Previous" %}
@@ -15,9 +15,9 @@
     {% ifnotequal ranges.current.0 1 %}
         {% for number in ranges.low %}
           {% if extra_string %}
-              <a href="?{{ extra_string }}&page={{ number }}">{{ number }}</a>
+              <a href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
           {% else %}
-              <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
+              <a href="?style={{ style }}&amp;page={{ number }}">{{ number }}</a>
           {% endif %}
           |
         {% endfor %}
@@ -28,9 +28,9 @@
         {{ number }}
         {% else %}
         {% if extra_string %}
-            <a href="?{{ extra_string }}&page={{ number }}">{{ number }}</a>
+            <a href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
         {% else %}
-            <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
+            <a href="?style={{ style }}&amp;page={{ number }}">{{ number }}</a>
         {% endif %}
         {% endifequal %}
         |
@@ -39,18 +39,18 @@
         ...|
         {% for number in ranges.high %}
           {% if extra_string %}
-              <a href="?{{ extra_string }}&page={{ number }}">{{ number }}</a>
+              <a href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
           {% else %}
-              <a href="?style={{ style }}&page={{ number }}">{{ number }}</a>
+              <a href="?style={{ style }}&amp;page={{ number }}">{{ number }}</a>
           {% endif %}
           |
         {% endfor %}
     {% endifnotequal %}
     {% if page.has_next %}
         {% if extra_string %}
-        <a href="?{{ extra_string }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+        <a href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
         {% else %}
-        <a href="?style={{ style }}&page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+        <a href="?style={{ style }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
         {% endif %}
     {% else %}
         {% trans "Next" %} &gt;
