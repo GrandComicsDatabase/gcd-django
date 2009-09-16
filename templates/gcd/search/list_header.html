@@ -10,7 +10,7 @@
 <div class="item_id">
   <div class="left" class="item_data">
   Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }}
-  matching your search.
+  matching your search{% if search_term %} for '{{ search_term }}'{% endif %}.
   </div>
   {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
