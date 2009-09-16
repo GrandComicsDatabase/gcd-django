@@ -15,6 +15,10 @@
     margin-bottom: 0.5em;
 }
 
+.single_story dt {
+    padding-left: 6px;
+}
+
 dl.credits dt {
     clear: left;
     padding-right: 0.5em;
@@ -40,10 +44,12 @@ dl.contents dt {
 dl.contents dd {
     clear: left;
     margin-bottom: 0.5em;
+    padding-left: 6px;
 }
 
 dl.contents dd.short {
     clear: none;
+    padding-left: 0;
 }
 
 .title {
@@ -61,7 +67,7 @@ dl.contents dd.short {
 #story_data {
     clear: left;
     margin-bottom: 1em;
-    margin-right: 15em;
+    margin-right: 15.5em;
 }
 
 .offset_one_back {
@@ -98,7 +104,7 @@ div.single_story {
 }
 
 .single_story dl {
-    padding: 0.2em 6px;
+    padding: 0.2em 0; 
     margin: 0;
 }
 
