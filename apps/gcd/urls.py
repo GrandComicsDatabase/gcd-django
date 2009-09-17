@@ -133,8 +133,8 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.daily_covers', name='covers_by_date'),
 
     # upload of covers
-    (r'^cover_upload/(?P<issue_id>.+)/$', 'apps.gcd.views.covers.cover_upload'),
-    (r'^variant_upload/(?P<issue_id>.+)/$',
+    (r'^cover_upload/(?P<issue_id>\d+)/$', 'apps.gcd.views.covers.cover_upload'),
+    (r'^variant_upload/(?P<issue_id>\d+)/$',
       'apps.gcd.views.covers.variant_upload'),
 
     # list covers marked for replacement
@@ -159,4 +159,21 @@ urlpatterns = patterns('',
 
     # admin tools
     (r'^countries/$','apps.gcd.views.details.countries_in_use'),
+
+    # redirects of old lasso pages
+    (r'^publisher_details.lasso/$', 'apps.gcd.views.redirect.publisher'),
+    (r'^series.lasso/$', 'apps.gcd.views.redirect.series'),
+    (r'^indexstatus.lasso/$', 'apps.gcd.views.redirect.series_status'),
+    (r'^scans.lasso/$', 'apps.gcd.views.redirect.series_scans'),
+    (r'^covers.lasso/$', 'apps.gcd.views.redirect.series_covers'),
+    (r'^details.lasso/$', 'apps.gcd.views.redirect.issue'),
+    (r'^coverview.lasso/$', 'apps.gcd.views.redirect.issue_cover'),
+    (r'^daily_covers.lasso/$','apps.gcd.views.redirect.daily_covers'),
+    (r'^search.lasso/$','apps.gcd.views.redirect.search'),
+)
+
+
+urlpatterns += patterns('django.views.generic.simple',
+    ('^covers_for_replacement.lasso/$', 'redirect_to', 
+     {'url' : '/covers_to_replace/' })
 )
