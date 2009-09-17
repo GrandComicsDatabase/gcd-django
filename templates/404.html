@@ -1,0 +1,24 @@
+{% extends "gcd/base_view.html" %}
+
+{% block title %}
+  GCD :: Page not found
+{% endblock %}
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1 class="item_id" id="search_id">
+<div class="left">
+Page not found
+</div>
+</h1>
+<div class="item_id">
+<div class="left">
+Looks like you followed a bad link. If you think it's our fault, please <a href="http://dev.comics.org/bugs/enter_bug.cgi?product=GCD Online">let us know.</a>
+</div>
+</div>
+&nbsp;
+{% endblock %}
+
