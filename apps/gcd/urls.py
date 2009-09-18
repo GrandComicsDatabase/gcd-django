@@ -175,5 +175,6 @@ urlpatterns = patterns('',
 
 urlpatterns += patterns('django.views.generic.simple',
     ('^covers_for_replacement.lasso/$', 'redirect_to', 
-     {'url' : '/covers_to_replace/' })
+     {'url' : '/covers_to_replace/' }),
+    ('^job_number/name/$', 'redirect_to', {'url' : '/job_number/' })
 )

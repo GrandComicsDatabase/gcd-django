@@ -31,7 +31,7 @@
 
 <dl id="issue_data_list">
   <dt> {% trans "Price" %}:
-  <dd id="issue_price"> {{ issue.price }}
+  <dd id="issue_price"> {{ issue.price|default:"" }}
   <dt> {% trans "Pages" %}:
   <dd id="issue_pages"> {{ cover_story.page_count }}
     {% if cover_story.page_count_uncertain %}?{% endif %}

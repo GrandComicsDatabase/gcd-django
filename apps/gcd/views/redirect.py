@@ -107,7 +107,7 @@ def search(request):
             search_type = '/series'
         # jobno becomes job_number
         elif request.GET['type'] == 'jobno':
-            search_type = '/number'
+            search_type = '/job_number'
         else:
             search_type = '/' + request.GET['type']
 
