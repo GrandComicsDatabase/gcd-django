@@ -35,7 +35,7 @@ def generic_by_name(request, name, q_obj, sort,
         plural_suffix = ''
         things = Series.objects.filter(q_obj).select_related('publisher')
         if (sort == ORDER_ALPHA):
-            things = things.order_by("name")
+            things = things.order_by("name", "year_began")
         elif (sort == ORDER_CHRONO):
             things = things.order_by("year_began", "name")
         heading = 'Series Search Results'
