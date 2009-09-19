@@ -1,4 +1,11 @@
+import re
 from django.http import HttpResponsePermanentRedirect
+
+
+def _find_key(request, key='SeriesID'):
+    matches = filter(lambda k: re.match('%s$' %key, k, re.IGNORECASE), request.GET.keys())
+    if len(matches) > 0:
+        return request.GET[matches[0]]
 
 
 def publisher(request):
@@ -6,8 +13,10 @@ def publisher(request):
     Redirects the lasso publisher page.
     """
 
-    if 'id' in request.GET:
-        return HttpResponsePermanentRedirect('/publisher/' + request.GET['id'])
+    get_id = _find_key(request,'id')
+
+    if get_id: 
+        return HttpResponsePermanentRedirect('/publisher/' + get_id)
 
     return HttpResponsePermanentRedirect("/")
 
@@ -16,9 +25,11 @@ def series(request):
     """
     Redirects the lasso series page.
     """
+    
+    get_id = _find_key(request)
 
-    if 'SeriesID' in request.GET:
-        return HttpResponsePermanentRedirect('/series/' + request.GET['SeriesID'])
+    if get_id: 
+        return HttpResponsePermanentRedirect('/series/' + get_id)
 
     return HttpResponsePermanentRedirect("/")
 
@@ -28,8 +39,10 @@ def series_status(request):
     Redirects the lasso series index status page.
     """
 
-    if 'SeriesID' in request.GET:
-        return HttpResponsePermanentRedirect('/series/' + request.GET['SeriesID'] + '/status/')
+    get_id = _find_key(request)
+
+    if get_id: 
+        return HttpResponsePermanentRedirect('/series/' + get_id + '/status/')
 
     return HttpResponsePermanentRedirect("/")
 
@@ -39,8 +52,10 @@ def series_scans(request):
     Redirects the lasso series scan status page.
     """
 
-    if 'SeriesID' in request.GET:
-        return HttpResponsePermanentRedirect('/series/' + request.GET['SeriesID'] + '/scans/')
+    get_id = _find_key(request)
+
+    if get_id: 
+        return HttpResponsePermanentRedirect('/series/' + get_id + '/scans/')
 
     return HttpResponsePermanentRedirect("/")
 
@@ -50,8 +65,10 @@ def series_covers(request):
     Redirects the lasso series cover page.
     """
 
-    if 'SeriesID' in request.GET:
-        return HttpResponsePermanentRedirect('/series/' + request.GET['SeriesID'] + '/covers/')
+    get_id = _find_key(request)
+
+    if get_id: 
+        return HttpResponsePermanentRedirect('/series/' + get_id + '/covers/')
 
     return HttpResponsePermanentRedirect("/")
 
@@ -61,8 +78,10 @@ def issue(request):
     Redirects the lasso issue page.
     """
 
-    if 'id' in request.GET:
-        return HttpResponsePermanentRedirect('/issue/' + request.GET['id'])
+    get_id = _find_key(request,'id')
+
+    if get_id: 
+        return HttpResponsePermanentRedirect('/issue/' + get_id)
 
     return HttpResponsePermanentRedirect("/")
 
@@ -72,9 +91,11 @@ def issue_cover(request):
     Redirects the lasso issue cover page.
     """
 
+    get_id = _find_key(request,'id')
+
     # we don't bother about the zoom and show the large scan
-    if 'id' in request.GET: 
-        return HttpResponsePermanentRedirect('/issue/' + request.GET['id'] + '/cover/4/')
+    if get_id: 
+        return HttpResponsePermanentRedirect('/issue/' + get_id + '/cover/4/')
 
     return HttpResponsePermanentRedirect("/")
 
