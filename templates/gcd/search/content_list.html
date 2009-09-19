@@ -1,36 +1,51 @@
 {% extends "gcd/search/base_list.html" %}
+{% load credits %}
+{% load i18n %}
+{% load mathfilter %}
 
 {% block list_contents %}
 <table class="listing">
   <tr>
-    <th> Story Title </th>
-    <th> Feature </th>
-    <th> Type </th>
+    {% if which_credit %}
+    <th> Matched Search </th>
+    {% endif %}
+    <th> Story </th>
     <th> Issue </th>
-    <th> Date </th>
     <th> Publisher </th>
   </tr>
 {% for story in items %}
   {% with story.issue.get_absolute_url as url %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    {% if which_credit %}<td>
+      <dl class="credits">
+      {{ story|show_credit:which_credit|safe }}
+      </dl>
+    {% endif %}
     <td> <a href="{{ url }}#{{ story.id}}">
       {% if story.title %}
         {{ story.title }}
       {% else %}
-        [no title given or indexed]
+        [ no title ]
       {% endif %}
-         </a>
-    <td> {{ story.feature }}
+         </a><br>
+    {% if story.feature %}
+    {{ story.feature }} /
+    {% endif %}
     {% with story.type|lower as lower_type %}
-    <td> {% ifequal lower_type 'cover' %}
+    {% ifequal lower_type 'cover' %}
             <a href="{{ url }}cover/4/">{{ story.type }}</a>
          {% else %}
-            {{ story.type }}
+            {{ story.type }} / {% if story.page_count %}{{ story.page_count }}
+              {% if story.page_count_uncertain %}?{% endif %}
+            {% blocktrans with story.page_count|ceil|pluralize as suffix %}
+              page{{ suffix }}
+            {% endblocktrans %}
+            {% endif %}
          {% endifequal %}
     {% endwith %}
     <td> <a href="{{ story.issue.series.get_absolute_url }}">{{ story.issue.series.name }}</a> ({{ story.issue.series.year_began }} series)
-         <a href="{{ url }}">#{{ story.issue.number }}</a> </td>
-    <td> {{ story.issue.publication_date }} </td>
+         <a href="{{ url }}">#{{ story.issue.number }}</a> <br>
+    {{ story.issue.publication_date }}
     <td> <a href="{{ story.issue.series.publisher.get_absolute_url }}">{{ story.issue.series.publisher.name }}</a> </td>
   </tr>
   {% endwith %}

@@ -14,7 +14,7 @@
     <td> <a href="{{ issue.series.get_absolute_url }}">{{ issue.series.name }}</a>
          ({{ issue.series.year_began }} series) 
          <a href="{{ issue.get_absolute_url }}">#{{ issue.number }}</a> </td>
-    <td> {{ issue.publication_date|default:'' }} </td>
+    <td> {{ issue.publication_date|default:"" }} </td>
   </tr>
 {% endfor %}
 </table>

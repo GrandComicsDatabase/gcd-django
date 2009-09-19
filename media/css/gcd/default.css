@@ -296,10 +296,12 @@ table#covers td.marked {
 
 tr.listing_odd {
     background-color: #FFF;
+    vertical-align: top;
 }
 
 tr.listing_even {
     background-color: #DDD;
+    vertical-align: top;
 }
 
 td.listing_publisher {
@@ -312,6 +314,21 @@ td.listing_country {
 
 div.list_table_header {
     margin-bottom: 1em;
+}
+
+.listing dl {
+    margin-top: 0;
+}
+
+.listing dl.credits dt {
+    float: left;
+    clear: both;
+    padding-right: 0.25em;
+}
+
+.listing dl.credits dd {
+    float: left;
+    margin: 0;
 }
 
 /* Move to publisher.css when it's created. */
