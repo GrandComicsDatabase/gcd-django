@@ -11,10 +11,12 @@
 
 {% block view_body %}
 
-Username: {{ user.user.username }}<br/>
-Name: {{ user }}<br/>
-Email: {{ user.user.email }}<br/>
-Country: {{ user.country_code }} <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ user.country_code|lower }}.png" alt="{{ country }}" class="embedded_flag"><br>
-Groups: {% for group in user.user.groups.all %}{{ group }} {% endfor %}
+<p>
+Username: {{ user.username }}<br/>
+Name: {{ user.indexer }}<br/>
+Email: {{ user.email }}<br/>
+Country: {{ user.indexer.country_code }} <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ user.indexer.country_code|lower }}.png" alt="{{ country }}" class="embedded_flag"><br>
+Groups: {% for group in user.groups.all %}{{ group }} {% endfor %}
+</p>
 
 {% endblock %}
