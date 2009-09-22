@@ -32,6 +32,9 @@ class Issue(models.Model):
                                 null = True)
 
     # Fields related to indexing activities.
+    # Only "reserved" is in active use, the others are legacy fields
+    # used only by migration scripts.
+    reserved = models.BooleanField(default=0)
     index_status = models.IntegerField(db_column = 'IndexStatus', null = True)
     reserve_status = models.IntegerField(db_column = 'ReserveStatus',
                                          null = True)
@@ -42,11 +45,9 @@ class Issue(models.Model):
                                db_column = 'SeriesID')
 
     # Fields related to change management.
-    created = models.DateField(auto_now_add = True, null = True)
-    modified = models.DateField(db_column = 'Modified',
-                                auto_now = True, null = True)
-    modification_time = models.TimeField(db_column = 'ModTime',
-                                         auto_now = True, null = True)
+    created = models.DateTimeField(auto_now_add = True, null = True)
+    modified = models.DateTimeField(db_column = 'Modified',
+                                    auto_now = True, null = True)
     
     def index_status_description(self):
         """Text form of status.  If clauses arranged in order of most

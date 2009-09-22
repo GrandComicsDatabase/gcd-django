@@ -58,11 +58,10 @@ class Story(models.Model):
     series = models.IntegerField(db_column = 'SeriesID', null = True)
 
     # Fields related to change management.
-    created = models.DateField(auto_now_add = True, null = True)
-    modified = models.DateField(db_column = 'Modified',
-                                auto_now = True, null = True)
-    modification_time = models.TimeField(db_column = 'ModTime',
-                                         auto_now = True, null = True)
+    reserved = models.BooleanField(default=0)
+    created = models.DateTimeField(auto_now_add = True, null = True)
+    modified = models.DateTimeField(db_column = 'Modified',
+                                    auto_now = True, null = True)
 
     def has_credits(self):
         """Simplifies UI checks for conditionals.  Credit fields.

@@ -58,12 +58,9 @@ class Cover(models.Model):
     contributor = models.CharField(max_length = 255, null = True)
 
     # Fields related to change management.
-    created = models.DateField(db_column = 'Created',
-                               auto_now_add = True, null = True)
-    modified = models.DateField(db_column = 'Modified', null = True)
-    creation_time = models.TimeField(db_column = 'Cretime',
-                                     auto_now_add = True, null = True)
-    modification_time = models.TimeField(db_column = 'Modtime', null = True)
+    created = models.DateTimeField(db_column = 'Created',
+                                   auto_now_add = True, null = True)
+    modified = models.DateTimeField(db_column = 'Modified', null = True)
 
     def get_status_url(self):
         if self.marked or not self.has_image:
