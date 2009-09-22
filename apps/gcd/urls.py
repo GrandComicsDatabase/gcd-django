@@ -152,11 +152,6 @@ urlpatterns = patterns('',
     (r'^settings/$',
      'apps.gcd.views.settings.settings'),    
 
-    # login
-    (r'^accounts/login/$', 'django.contrib.auth.views.login', 
-     {'template_name': 'gcd/accounts/login.html'}),
-    (r'^accounts/profile/$', 'apps.gcd.views.accounts.profile'),
-
     # admin tools
     (r'^countries/$','apps.gcd.views.details.countries_in_use'),
 

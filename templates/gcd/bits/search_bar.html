@@ -27,5 +27,14 @@
     &nbsp;
     <input type="submit" name="submit" id="submit" value="Search">
   </form>
-  | <a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a>
+  | <a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a> |
+{% if user.is_authenticated %}
+  <form action="{% url django.contrib.auth.views.logout %}" method="POST">
+    <input type="submit" name="logout" value="Log Out" />
+  </form>
+{% else %}
+  <form action="{% url django.contrib.auth.views.login %}?next={{ request.get_full_path|urlencode }}" method="GET">
+    <input type="submit" name="login" value="Log In" />
+  </form>
+{% endif %}
 </div>
