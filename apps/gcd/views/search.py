@@ -72,10 +72,10 @@ def generic_by_name(request, name, q_obj, sort,
     return paginate_response(request, things, template, vars)
 
 def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
-    """Finds publishers that (probably) aren't imprints."""
+    #Finds publishers and imprints
 
     pubs = Publisher.objects.filter(
-      name__icontains = publisher_name, is_master = 1)
+      name__icontains = publisher_name)
     if (sort == ORDER_ALPHA):
         pubs = pubs.order_by('name', 'year_began')
     elif (sort == ORDER_CHRONO):

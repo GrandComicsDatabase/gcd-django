@@ -9,11 +9,11 @@
     <th> #&nbsp;Issues </th>
   </tr>
   {% for publisher in items %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
-    <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
-    <td>
     {% if not publisher.is_imprint %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
+      <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
+      <td>
       {% with publisher.imprint_set.count as imprint_count %}
         {% if imprint_count %}
           <a href="{{ publisher.get_absolute_url }}imprints/">{{ imprint_count }}</a>
@@ -21,11 +21,30 @@
           {{ imprint_count }}
         {% endif %}
       {% endwith %}
+      </td>
+      <td> {{ publisher.series_set.count }} </td>
+      <td> {{ publisher.computed_issue_count }} </td>
+    </tr>
     {% endif %}
-    </td>
-    <td> {{ publisher.series_set.count }} </td>
-    <td> {{ publisher.computed_issue_count }} </td>
+  {% endfor %}
+</table>
+<table class="listing">
+  <tr>
+    <th colspan="2"> Imprint </th>
+    <th> Parent </th>
+    <th> #&nbsp;Titles </th>
+    <th> #&nbsp;Issues </th>
   </tr>
+  {% for imprint in items %}
+    {% if imprint.is_imprint %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ imprint.country.code|lower }}.png" alt="{{ imprint.country.code|upper }}">
+      <td class="listing_publisher"> <a href="{{ imprint.get_absolute_url }}">{{ imprint.name }}</a> 
+      <td> <a href="{{ imprint.parent.get_absolute_url }}">{{ imprint.parent.name }}</a> 
+      <td> {{ imprint.imprint_series_set.count }} </td>
+      <td> {{ imprint.computed_issue_count }} </td>
+    </tr>
+    {% endif %}
   {% endfor %}
 </table>
 {% endblock %}
