@@ -165,9 +165,9 @@ def cover_upload(request, issue_id, add_variant=False):
     issue = Issue.objects.filter(id=int(issue_id))
     if len(issue) == 0:
         return render_to_response(error_template, {
-          'error_text' : 'Issue ID #' + issue_id  + ' does not exist.',
-          'media_url' : settings.MEDIA_URL
-          })    
+            'error_text': 'Issue ID #' + issue_id  + ' does not exist.',
+          },
+          context_instance=RequestContext(request))    
     else:
         issue = issue[0]
 
@@ -176,8 +176,8 @@ def cover_upload(request, issue_id, add_variant=False):
         return render_to_response(error_template, {
           'error_text' : 'Something wrong with issue ID #' + issue_id  + \
                         ' and its cover table, please contact the admins.',
-          'media_url' : settings.MEDIA_URL
-          })    
+          },
+          context_instance=RequestContext(request))
     else:
         cover = cover[0]
 
@@ -253,8 +253,8 @@ def cover_upload(request, issue_id, add_variant=False):
                                 "cover please contact GCD-admins." 
                     return render_to_response(error_template, {
                         'error_text' : info_text,
-                        'media_url' : settings.MEDIA_URL
-                        })
+                        },
+                        context_instance=RequestContext(request))
 
             # arguably a bit unlikely to happen with the current naming scheme
             if os.path.exists(destination_name):
@@ -277,8 +277,8 @@ def cover_upload(request, issue_id, add_variant=False):
                           % (issue.series, issue.id)
                         return render_to_response(error_template, {
                             'error_text' : info_text,
-                            'media_url' : settings.MEDIA_URL
-                            })
+                            },
+                            context_instance=RequestContext(request))
 
                     if add_variant:
                         # we need current scan in 400 width
@@ -355,7 +355,6 @@ def cover_upload(request, issue_id, add_variant=False):
                         series.gallery_present = True
                         series.save()
                     cover.modified = datetime.today()                    
-                    cover.modification_time = datetime.today().time()
                     cover.save()
 
                     if 'remember_me' in request.POST:
@@ -454,8 +453,8 @@ def mark_cover(request, issue_id):
         if len(issue) == 0:
             return render_to_response(error_template, {
               'error_text' : 'Issue ID #' + issue_id  + ' does not exist.',
-              'media_url' : settings.MEDIA_URL
-              })    
+              },
+              context_instance=RequestContext(request))
         else:
             issue = issue[0]
 
@@ -464,8 +463,8 @@ def mark_cover(request, issue_id):
             return render_to_response(error_template, {
               'error_text' : 'Something wrong with issue ID #' + issue_id  + \
                             ' and its cover table, please contact the admins.',
-              'media_url' : settings.MEDIA_URL
-              })    
+              },
+              context_instance=RequestContext(request))
         else:
             cover = cover[0]
         
@@ -484,9 +483,10 @@ def mark_cover(request, issue_id):
           context_instance=RequestContext(request)
         )        
     else:
-        return render_to_response('gcd/error.html', {
-          'error_text' : 'You are not allowed to mark covers for replacement.',
-          'media_url' : settings.MEDIA_URL
-          })
+        return render_to_response('gcd/error.html',
+          {
+            'error_text': 'You are not allowed to mark covers for replacement.',
+          },
+          context_instance=RequestContext(request))
 
 

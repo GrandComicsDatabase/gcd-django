@@ -1,0 +1,35 @@
+form {
+    margin-bottom: 1em;
+    display: inline;
+}
+
+form th {
+    vertical-align: top;
+    padding-bottom: 1em;
+}
+form td {
+    padding-bottom: 1em;
+}
+
+.errorlist {
+    list-style-type: none;
+    list-style-position: outside;
+    color: red;
+    font-weight: bold;
+    margin-top: 0;
+    padding-left: 0;
+}
+
+.queues {
+    margin-bottom: 1em;
+}
+
+.queues form {
+    margin: 0;
+    padding: 0;
+}
+
+.queues input {
+    font-size: 0.8em;
+    margin: 0;
+}

@@ -13,7 +13,7 @@ urlpatterns = patterns('',
     (r'^accounts/profile/$', 'apps.gcd.views.accounts.profile'),
 
     (r'^', include('apps.gcd.urls')),
-    # (r'^', include('apps.oi.urls')),
+    (r'^', include('apps.oi.urls')),
     # (r'^inducks/', include('apps.inducks.urls')),
 )
 

@@ -1,0 +1,19 @@
+{% extends "gcd/base_view.html" %}
+
+{% block title %}
+{{ user.indexer }} :: Reservations
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+{% with 'oi/bits/reserved_actions.html' as actions %}
+  {% include 'oi/bits/standard_queues.html' %}
+{% endwith %}
+{% endblock %}
+

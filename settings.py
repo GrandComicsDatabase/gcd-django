@@ -33,6 +33,7 @@ MIDDLEWARE_CLASSES = (
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.locale.LocaleMiddleware',
    'django.middleware.common.CommonMiddleware',
+   'django.middleware.transaction.TransactionMiddleware',
 )
 
 # The router where all our site URLs is defined.
@@ -50,7 +51,8 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     # 'django.contrib.sites',
-    # 'django.contrib.admin',
+    'django.contrib.admin',
+    'apps.oi',
     'apps.gcd',
 )
 

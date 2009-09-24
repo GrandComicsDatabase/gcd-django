@@ -1,0 +1,41 @@
+
+<!-- TODO: For now, the name links all go to "edit", but in the future
+     they need to go to previews when this is a pending/review queues page.
+  -->
+<div class="queues">
+<h2> Publishers </h2>
+{% with 'publisher' as object_type %}
+<table>
+  <tr>
+    <th> Name </th>
+    <th> Last Activity </th>
+    <th> Actions </th>
+  </tr>
+{% for publisher in publishers %}
+  <tr>
+    <td> <a href="{% url edit_publisher id=publisher.id %}">{{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.country.year_began|default:'founding year unknown' }})</a>
+    <td> {{ publisher.modified }} </td>
+    <td> {% with publisher.id as action_id %}{% include actions %}{% endwith %} </td>
+  </tr>
+{% endfor %}
+</table>
+{% endwith %}
+
+<h2> Imprints </h2>
+{% with 'publisher' as object_type %}
+<table>
+  <tr>
+    <th> Name </th>
+    <th> Last Activity </th>
+    <th> Actions </th>
+  </tr>
+{% for imprint in imprints %}
+  <tr>
+    <td> <a href="{% url edit_publisher id=imprint.id %}">{{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.country.year_began|default:'founding year unknown' }})</a>
+    <td> {{ imprint.modified }} </td>
+    <td> {% with imprint.id as action_id %}{% include actions %}{% endwith %} </td>
+  </tr>
+{% endfor %}
+</table>
+{% endwith %}
+</div>

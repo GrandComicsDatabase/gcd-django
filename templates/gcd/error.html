@@ -5,7 +5,7 @@
 {% endblock %}
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ media_url }}/css/gcd/default.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/default.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -14,11 +14,10 @@
 Error
 </div>
 </h1>
-<div class="item_id">
-<div class="left">
+
+<div class="error_message">
 {{ error_text }}
 </div>
-</div>
-&nbsp;
+
 {% endblock %}
 

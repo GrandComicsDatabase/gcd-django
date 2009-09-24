@@ -1,0 +1,92 @@
+{% extends "gcd/base_view.html" %}
+
+{% block title %}
+{% with revision.publisher as publisher %}
+  {% if publisher.is_imprint %}
+    Editing Publisher :: {{ publisher.parent.name }} :: Imprint :: {{ publisher.name }}
+  {% else %}
+    Editing Publisher :: {{ publisher.name }}
+  {% endif %}
+{% endwith %}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<!-- TODO: Not sure this elaborate status message stuff is necessary. -->
+{% if revision.deleted %}
+<p>
+  {% ifequal revision.state states.OPEN %}
+    There is an error with this revision.  Please contact a GCD editor
+    for assistance.
+  {% endifequal %}
+  {% ifequal revision.state states.PENDING %}
+    This revision has been marked as deleted and submitted for approval.
+    Undelete is not yet implemented.  If you want to cancel the deletion,
+    please contact a GCD editor.
+  {% endifequal %}
+  {% ifequal revision.state states.REVIEWING %}
+    This revision has been marked deleted and is being reviewed for approval
+    by GCD editor
+    <a href="mailto:{{ revision.approver.indexer.email }}">{{ revision.approver.indexer }}</a>.
+  {% endifequal %}
+  {% ifequal revision.state states.APPROVED %}
+    This deletion has been approved.
+    Undelete is not yet implemented- please contact a GCD editor if you
+    believe the deletion was in error.
+  {% endifequal %}
+  {% ifequal revision.state states.DISCARDED %}
+    This deletion has been discarded, which means that the assocaited
+    record has <strong>not</strong> been deleted.  Please reserve the
+    record again if you would like to make changes.
+  {% endifequal %}
+</p>
+{% else %}
+  {% ifequal revision.state states.OPEN %}
+<form action="/publisher/revision/{{ revision.id }}/process/" method="POST">
+<table>
+{{ form.as_table }}
+</table>
+<input type="submit" name="submit" value="Save and continue editing" />
+<input type="submit" name="submit" value="Submit changes for approval" />
+<input type="submit" name="submit" value="Discard changes and release reservation" />
+<input type="submit" name="submit" value="Delete publisher and submit for approval" />
+</form>
+  {% else %}
+    <p>
+    {% ifequal revision.state states.BASELINE %}
+      This revision is stored for future data migration, and is not intended
+      to be user-visibile.  This is not the revision you are looking for.
+      Move along :-)
+    {% endifequal %}
+    {% ifequal revision.state states.PENDING %}
+      This change has been submitted for approval, but is not yet under review.
+  <form action="/publisher/revision/{{ revision.id }}/process/" method="POST">
+  <input type="submit" name="submit" value="Retract change and edit further" />
+  </form>
+    {% endifequal %}
+    {% ifequal revision.state states.REVIEWING %}
+      This change has been submitted for approval, and is being reviewed by
+      GCD editor
+      <a href="mailto:{{ revision.approver.indexer.email }}">{{ revision.approver.indexer }}</a>.
+    {% endifequal %}
+    {% ifequal revision.state states.APPROVED %}
+      This revision has been approved.  If you would like to make further
+      changes, please reserve the record again.
+    {% endifequal %}
+    {% ifequal revision.state states.DISCARDED %}
+      This revision has been discarded.  This means that the changes have
+      <strong>not</strong> been applied to the original record.
+      If you would like to make changes, please reserve the record again.
+    {% endifequal %}
+    </p>
+  {% endifequal %}
+{% endif %}
+
+{% endblock %}

@@ -354,3 +354,41 @@ dl.pub_data dd {
     height: 1em;
 }
 
+#index_status {
+    float: left;
+    clear: both;
+    width: 100%;
+    padding: 0.4em 0 0.4em 0;
+    margin-top: 1em;
+}
+
+#index_status span {
+    margin-left: 0.4em;
+}
+
+.index_status_0 {
+    background-color: #EE7;
+}
+
+.index_status_1 {
+    background-color: #E77;
+}
+
+.index_status_2 {
+    background-color: #EA7;
+}
+
+#control_panel form {
+    margin-top: 1em;
+    float: left;
+    clear: both;
+}
+
+.error_message {
+    color: red;
+    font-weight: bold;
+    margin: 1em 0;
+    float: left;
+    clear: both;
+}
+

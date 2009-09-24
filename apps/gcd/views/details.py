@@ -487,5 +487,6 @@ def countries_in_use(request):
     else:
         return render_to_response('gcd/error.html', {
           'error_text' : 'You are not allowed to access this page.',
-          'media_url' : settings.MEDIA_URL
-          })
+          },
+          context_instance=RequestContext(request))
+

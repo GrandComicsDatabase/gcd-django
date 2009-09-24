@@ -29,6 +29,27 @@
 {% endwith %}
 {% endwith %}
 
+{% ifnotequal issue.index_status 3 %}
+<div id="index_status" class="index_status_{{ issue.index_status }}">
+<!-- Not trying to display the reservation holder now until we figure out
+     what to do with all the null and multiple reservations.
+  -->
+<span>
+{% ifequal issue.index_status 0 %}
+   This issue has not been indexed yet.  Please sign in and index it if you can!
+{% endifequal %}
+{% ifequal issue.index_status 1 %}
+   This issue is currently being edited by
+   {{ issue.reserver|default:"[no one, please contact the editors to fix this reservation]" }}
+   (since {{ issue.reservation_set.all.0.created }}, last edit {{ issue.reservation_set.all.0.modified|default:"[not recorded]" }})
+{% endifequal %}
+{% ifequal issue.index_status 2 %}
+   The index for this issue is awaiting editorial approval.
+{% endifequal %}
+</span>
+</div>
+{% endifnotequal %}
+
 <dl id="issue_data_list">
   <dt> {% trans "Price" %}:
   <dd id="issue_price"> {{ issue.price|default:"" }}
@@ -46,26 +67,6 @@
   <div id="format_tag">Format:&nbsp;</div>
   <div id="format_data">{{ issue.series.format }}</div>
 </div>
-
-{% ifnotequal issue.index_status 3 %}
-<div id="index_status" class="index_status_{{ issue.index_status }}">
-<!-- Not trying to display the reservation holder now until we figure out
-     what to do with all the null and multiple reservations.
-  -->
-<span>
-{% ifequal issue.index_status 0 %}
-   This issue has not been indexed yet.  Please sign in and index it if you can!
-{% endifequal %}
-{% ifequal issue.index_status 1 %}
-   This issue is currently being indexed by
-   {{ issue.reserver|default:"[no one, please contact the editors to fix this reservation]" }}.
-{% endifequal %}
-{% ifequal issue.index_status 2 %}
-   The index for this issue is awaiting editorial approval.
-{% endifequal %}
-</span>
-</div>
-{% endifnotequal %}
 
 </div> <!-- issue_data -->
 

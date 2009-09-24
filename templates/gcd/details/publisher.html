@@ -19,6 +19,33 @@
 
 {% include "gcd/bits/publisher_header.html" %}
 
+{% if publisher.reserved %}
+  {% with publisher.revisions.all.0 as revision %}
+    <div id="index_status" class="index_status_{{ revision.state }}">
+    <span>
+    {% ifequal revision.state 1 %}
+       This {% if publisher.is_imprint %}imprint{% else %}publisher{% endif %}
+        is currently being edited by
+       {{ revision.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
+       (since {{ revision.created }}, last edit {{ revision.modified }})
+    {% endifequal %}
+    {% ifequal revision.state 2 %}
+       Edits to this
+       {% if publisher.is_imprint %}imprint{% else %}publisher{% endif %}
+        are currently awaiting approval.
+    {% endifequal %}
+    </span>
+    </div>
+  {% endwith %}
+{% else %}
+  <div id="control_panel">
+  <form method="POST"
+        action="{% url reserve_publisher id=publisher.id %}">
+    <input id="edit" name="edit" type="submit" value="Edit" />
+  </form>
+  </div>
+{% endif %}
+
 <dl class="pub_data">
 {% if publisher.country %}
   <dt> Country:
