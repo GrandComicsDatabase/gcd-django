@@ -388,7 +388,9 @@ class PublisherRevision(Revision):
                 'Leave blank if the publisher is still active.')
     country = models.ForeignKey('gcd.Country',
                                 null=True, blank=True, db_index=True)
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True,
+      help_text='Anything that doesn\'t fit in other fields.  These notes '
+                'are part of the regular display.')
     url = models.URLField(null=True, blank=True,
       help_text='The official web site of the publisher.')
 

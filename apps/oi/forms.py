@@ -43,5 +43,7 @@ class PublisherRevisionForm(forms.ModelForm):
                                        'publishers generally should not set '
                                        'this field.')
 
-    comments = forms.CharField(widget=forms.Textarea)
-
+    comments = forms.CharField(widget=forms.Textarea,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
