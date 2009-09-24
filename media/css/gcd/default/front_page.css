@@ -1,0 +1,189 @@
+
+#between_header_footer{
+    margin-top: 3em;
+}
+
+#front_page_menu {
+    float: left;
+    clear: none;
+    width: 12em;
+    background-color: #77E;
+    margin-right: 3em;
+    margin-bottom: 1em;
+    font-weight: bold;
+    color: white;
+    padding: .4em;
+}
+#front_page_menu a {
+    display: block;
+    color: white;
+}
+#front_page_menu a:visited {
+    color: white;
+}
+#front_page_menu_header {
+    margin-left: auto;
+    margin-right: auto;
+    text-align:center;
+}
+#front_page_notice {
+    float: none;
+    border: solid 1px;
+    margin-left: 14em;
+    margin-right: 24em;
+/*    margin-bottom: 1em;
+    padding: .4em;
+    width: 30em; */
+}
+#front_page_notice_header {
+    font-weight:900;
+    margin: 0;
+    background-color: #ffA500;
+    color: black;
+    padding: 0.4em;
+}
+#front_page_notice_inner {
+   padding: .4em;
+}
+
+#front_page_content {
+    margin-top: 2em;
+    margin-left: 14em;
+    margin-right: 24em;
+    margin-bottom: 1em;
+/*    width: 30em;*/
+}
+
+#front_page_content_inner img {
+    float: left;
+    clear: none;
+    vertical-align:top;
+    margin-left: 0;
+    margin-top: 1em;
+    margin-right: 1em;
+    margin-bottom: 1em;
+   padding: 0;
+}
+
+#front_page_content_inner {
+    text-align: justify;
+    padding: .4em;
+}
+
+.front_page_central_box {
+    clear: none;
+    border: solid 1px;
+    margin-top: 1em;
+    margin-left: 14em;
+    margin-right: 24em;
+    margin-bottom: 1em;
+/*    padding: .4em;
+    width: 30em; */
+}
+
+
+.front_page_right_box {
+    border: solid 1px;
+    float: right;
+    width: 22em;
+    clear: right;
+/*    margin-top: 3em;
+    margin-left: 3em;*/
+    margin-bottom: 1em; 
+}
+.front_page_right_box_header{
+    font-weight: bold;
+    margin: 0;
+    padding: 0.4em;
+    background-color: #444;
+    color: white;
+}
+.front_page_right_box_inner {
+/*    margin-left: 1em;
+    margin-top: 1em;
+    margin-right: 1em;
+    margin-bottom: 1em;*/
+    padding: .4em;
+/*    width: 30em;*/
+}
+
+#front_page_disclaimer h4{
+    font-weight: bold;
+    text-align: center;
+}
+#front_page_disclaimer_signature{
+    font-style: italic;
+    text-align: right;
+}
+
+
+#search_box {
+    background-color: #77E;
+    color: black;
+    padding: 0.4em;
+    font-weight: bold;
+}
+
+#search_box form {
+    margin: 0;
+    display: inline;
+    padding: .4em;
+}
+
+#search_box input {
+    font-size: 0.8em;
+    text-align: right;
+}
+
+#search_box select {
+    font-size: 0.8em;
+}
+.search_message{
+}
+#search_box a {
+    text-align: right;
+    display: block;
+}
+#search_box :link {
+    color: black;
+}
+
+#search_box :visited {
+    color: black;
+}
+
+/* Sorry, Henry
+#search_bar2 {
+    background-color: #77E;
+    color: black;
+    padding: 0.4em;
+    font-weight: bold;
+}
+
+#search_bar2 form {
+    margin: 0;
+    display: inline;
+    padding: .4em;
+}
+
+#search_bar2 input {
+    font-size: 0.8em;
+}
+
+#search_bar2 select {
+    font-size: 0.8em;
+}
+.search_message{
+}
+#search_bar2 a {
+    text-align: center;
+    display: block;
+}
+#search_bar2 :link {
+    color: black;
+}
+
+#search_bar2 :visited {
+    color: black;
+}
+*/

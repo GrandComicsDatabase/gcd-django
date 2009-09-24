@@ -25,7 +25,7 @@ class LastUpdatedNode(template.Node):
     def __init__(self, issues):
         self.issues = issues
     def render(self, context):
-        return_string = "last updated indices:<br/>"
+        return_string = ""
         for i in self.issues:
             return_string += "<a href=\"" + i.get_absolute_url() + "\">" + \
                              esc(i.series) + " #" + esc(i.number) + "</a> (" + \

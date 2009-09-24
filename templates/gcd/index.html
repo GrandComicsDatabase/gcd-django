@@ -5,35 +5,44 @@
   <title> Grand Comic-Book Database </title>
   <link rel="stylesheet" type="text/css"
         href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/{{ style }}/front_page.css"/>
 </head>
 
 <body>
 <div id="sizing_base">
 
-{% include "gcd/bits/search_bar.html" %}
+<div id="between_header_footer">
+{% include "gcd/bits/front_page_menu.html" %}
 
-<p>
-<strong> Oops!  We're still working on the new GCD front page!  Sorry!
-Here are some links to start you off for now:</strong>
-</p>
-<p>
-<a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a>
-</p>
-<p>
-<a href="{% url apps.gcd.views.details.covers_to_replace %}">Covers marked for replacement</a>
-</p>
-<p>
-<a href="{% url apps.gcd.views.details.daily_covers %}">Cover uploaded today</a>
-</p>
-<p>
-<a href="http://docs.comics.org/">Documentation</a>
-</p>
+    <div class="front_page_right_box">
+        <div class="front_page_right_box_inner">
+        <a href="{% url apps.gcd.views.details.covers_to_replace %}">Covers marked for replacement</a><br>
+        <a href="{% url apps.gcd.views.details.daily_covers %}">See all covers uploaded today</a>
+        </div> <!-- front_page_right_box_inner -->
+    </div> <!-- front_page_right_box -->
+    <div class="front_page_right_box">
+        <div class="front_page_right_box_header">Last updated indices</div>
+        <div class="front_page_right_box_inner">
+            {% last_updated_issues %}
+        </div> <!-- front_page_right_box_inner -->
+    </div> <!-- front_page_right_box -->
+    <div class="front_page_central_box">
+{% include "gcd/bits/front_page_notice.html" %}
+    </div> <!-- front_page_central_box -->
+    <div class="front_page_central_box">
+{% include "gcd/bits/front_page_search_box.html" %}
+    </div> <!-- front_page_central_box -->
+{% include "gcd/bits/front_page_content.html" %}
 
-{% last_updated_issues %}
 
+
+
+
+</div><!-- between_header_footer -->
 <hr/>
 
-{% include "gcd/fine_print.html" %}
+{% include "gcd/front_page_fine_print.html" %}
 
 </div>
 </body>
