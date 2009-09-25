@@ -19,6 +19,7 @@
 
 {% block view_body %}
 
+<div class="edit">
 <!-- TODO: Not sure this elaborate status message stuff is necessary. -->
 {% if revision.deleted %}
 <p>
@@ -88,5 +89,6 @@
     </p>
   {% endifequal %}
 {% endif %}
+</div>
 
 {% endblock %}

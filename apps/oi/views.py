@@ -329,6 +329,7 @@ def show_pending(request):
         'imprints': PublisherRevision.objects.filter(
           state=states.PENDING,
           parent__isnull=False).order_by('modified'),
+        'approval_queue': True,
       },
       context_instance=RequestContext(request)
     )
@@ -347,6 +348,7 @@ def show_reviews(request):
           approver=request.user,
           state=states.REVIEWING,
           parent__isnull=False).order_by('modified'),
+        'approval_queue': True,
       },
       context_instance=RequestContext(request)
     )

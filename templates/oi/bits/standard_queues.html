@@ -8,12 +8,22 @@
 <table>
   <tr>
     <th> Name </th>
+  {% if approval_queue %}
+    <th> Indexer </th>
+  {% endif %}
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
 {% for publisher in publishers %}
   <tr>
-    <td> <a href="{% url edit_publisher id=publisher.id %}">{{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.country.year_began|default:'founding year unknown' }})</a>
+  {% if publisher.deleted %}
+    <td class="deleted"> {{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.year_began }}) [DELETED]</td>
+  {% else %}
+    <td> <a href="{% url edit_publisher id=publisher.id %}">{{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.year_began }})</a>
+  {% endif %}
+  {% if approval_queue %}
+    <td> {{ publisher.indexer.indexer }} </td>
+  {% endif %}
     <td> {{ publisher.modified }} </td>
     <td> {% with publisher.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>
@@ -26,12 +36,22 @@
 <table>
   <tr>
     <th> Name </th>
+  {% if approval_queue %}
+    <th> Indexer </th>
+  {% endif %}
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
 {% for imprint in imprints %}
   <tr>
-    <td> <a href="{% url edit_publisher id=imprint.id %}">{{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.country.year_began|default:'founding year unknown' }})</a>
+  {% if imprint.deleted %}
+    <td class="deleted"> {{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.year_began }}) [DELETED]</td>
+  {% else %}
+    <td> <a href="{% url edit_publisher id=imprint.id %}">{{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.year_began }})</a>
+  {% endif %}
+  {% if approval_queue %}
+    <td> {{ imprint.indexer.indexer }} </td>
+  {% endif %}
     <td> {{ imprint.modified }} </td>
     <td> {% with imprint.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>

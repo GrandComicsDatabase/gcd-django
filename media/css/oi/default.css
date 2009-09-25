@@ -20,8 +20,34 @@ form td {
     padding-left: 0;
 }
 
+.edit {
+    margin-bottom: 1em;
+}
+
+.deleted {
+    color: red;
+}
+
 .queues {
     margin-bottom: 1em;
+}
+
+.queues table {
+    border: solid black 2px;
+    border-collapse: collapse;
+}
+
+.queues th {
+    border: solid black 1px;
+    border-collapse: collapse;
+    padding: 0.4em;
+    background-color: #DDD;
+}
+
+.queues td {
+    border: solid black 1px;
+    border-collapse: collapse;
+    padding: 0.4em;
 }
 
 .queues form {
