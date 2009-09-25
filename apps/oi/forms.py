@@ -44,6 +44,7 @@ class PublisherRevisionForm(forms.ModelForm):
                                        'this field.')
 
     comments = forms.CharField(widget=forms.Textarea,
+                               required=False,
       help_text='Comments between the Indexer and Editor about the change. '
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
