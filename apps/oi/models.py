@@ -7,7 +7,7 @@ from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes import generic
 
 from apps.oi import states
-from apps.gcd.models import Publisher, Country
+from apps.gcd.models import *
 
 class RevisionComment(models.Model):
     """
@@ -117,6 +117,9 @@ class Revision(models.Model):
 
     indexer = models.ForeignKey('auth.User', db_index=True,
                                 related_name='reserved_%(class)s')
+    along_with = models.ManyToManyField(User,
+                                        related_name='%(class)s_assisting')
+    on_behalf_of = models.ManyToManyField(User, related_name='%(class)s_source')
 
     # Revisions don't get an approver until late in the workflow,
     # and for legacy cases we don't know who they were.
@@ -301,6 +304,27 @@ class Revision(models.Model):
         self.deleted = True
         self.save()
 
+class OngoingReservation(models.Model):
+    """
+    Represents the ongoing revision on all new issues in a series.
+
+    Whenever an issue is added to a series, if there is an ongoing reservation
+    for that series the issue is immediately reserved to the ongoing
+    reservation holder.
+    """
+    class Meta:
+        db_table = 'oi_ongoing_reservation'
+
+    indexer = models.ForeignKey(User, related_name='ongoing_reservations')
+    series = models.OneToOneField(Series, related_name='ongoing_reservation')
+    along_with = models.ManyToManyField(User, related_name='ongoing_assisting')
+    on_behalf_of = models.ManyToManyField(User, related_name='ongoing_source')
+
+    """
+    The creation timestamp for this reservation.
+    """
+    created = models.DateTimeField(auto_now_add=True, db_index=True, null=True)
+
 class PublisherRevisionManager(RevisionManager):
     """
     Custom manager allowing the cloning of revisions from existing rows.
@@ -405,8 +429,9 @@ class PublisherRevision(Revision):
     def __unicode__(self):
         return self.name
 
-    def commit_to_display(self):
+    def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
+
         pub.name = self.name
         pub.year_began = self.year_began
         pub.year_ended = self.year_ended
@@ -415,6 +440,9 @@ class PublisherRevision(Revision):
         pub.url = self.url
         pub.is_master = self.is_master
         pub.parent = self.parent
+
+        if clear_reservation:
+            pub.reserved = False
 
         pub.save()
 
@@ -441,6 +469,380 @@ class PublisherRevision(Revision):
 
         return self.url
 
+class SeriesRevisionManager(RevisionManager):
+    """
+    Custom manager allowing the cloning of revisions from existing rows.
+    """
+
+    def clone_revision(self, series, indexer, check=True, state=states.OPEN):
+        """
+        Given an existing Series instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        If there are no revisions, first save a baseline so that the pre-edit
+        values are preserved.
+        Entirely new series should be started by simply instantiating
+        a new SeriesRevision directly.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=series,
+                                              instance_class=Series,
+                                              instance_name='series',
+                                              indexer=indexer,
+                                              check=check,
+                                              state=state)
+
+    def _do_create_revision(self, publisher, indexer, state):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        kwargs = {}
+        if (state == states.BASELINE):
+            kwargs['created'] = publisher.created
+            kwargs['modified'] = publisher.modified
+        else:
+            kwargs['created'] = datetime.now()
+            kwargs['modified'] = kwargs['created']
+
+        revision = SeriesRevision(
+          # revision-specific fields:
+          series=series,
+          state=state,
+          indexer=indexer,
+
+          # copied fields:
+          name=series.name,
+          format=series.format,
+          notes=series.notes,
+          year_began=series.year_began,
+          year_ended=series.year_ended,
+          publication_dates=series.publication_dates,
+
+          publication_notes=series.publication_notes,
+          tracking_notes=series.tracking_notes,
+          first_issue=series.first_issue,
+          last_issue=series.last_issue,
+
+          country_code=series.country_code,
+          language_code=series.language_code,
+          publisher=series.publisher,
+          imprint=series.imprint,
+          **kwargs)
+
+        revision.save()
+        return revision
+
 class SeriesRevision:
-    pass
+    class Meta:
+        db_table = 'oi_series_revision'
+        ordering = ['-created', '-id']
+        permissions = (
+            ('can_reserve', 'can reserve a record for add, edit or delete'),
+            ('can_approve', 'can approve a change to a record'),
+            ('can_cancel', 'can cancel a pending change they did not open'),
+        )
+
+    objects=SeriesRevisionManager()
+
+    series = models.ForeignKey(Series, null=True, related_name='revisions')
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    format = models.CharField(max_length=255, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    year_began = models.IntegerField(null=True, blank=True)
+    year_ended = models.IntegerField(null=True, blank=True)
+    publication_dates = models.CharField(max_length=255, null=True, blank=True)
+
+    # Publication notes are not displayed in the current UI but may
+    # be accessed in the OI.
+    publication_notes = models.TextField(null=True, blank=True)
+
+    # Fields for tracking relationships between series.
+    # Crossref fields don't appear to really be used- nearly all null.
+    tracking_notes = models.TextField(null=True, blank=True)
+
+    # Issue tracking info that should probably be read from issues table.
+    # Note that in the issues table, issues can be 25 characters.
+    first_issue = models.CharField(max_length=10, null=True, blank=True)
+    last_issue = models.CharField(max_length=10, null=True, blank=True)
+
+    # Country info- for some reason not a foreign key to Countries table.
+    country_code = models.CharField(max_length=4, null=True, blank=True)
+    # Language info- for some reason not a foreign key to Languages table.
+    language_code = models.CharField(max_length=3, null=True, blank=True)
+
+    # Fields related to the publishers table.
+    publisher = models.ForeignKey(Publisher, null=True, blank=True,
+                                  related_name='series_revisions')
+    imprint = models.ForeignKey(Publisher,
+                                related_name='imprint_series_revisions',
+                                null=True)
+
+    def commit_to_display(self, clear_reservation=True):
+        series = self.series
+        if series is None:
+            series = Series()
+
+        series.name = self.name
+        series.format = self.format
+        series.notes = self.notes
+        series.year_began = self.year_began
+        series.year_ended = self.year_ended
+        series.publication_dates = self.publication_dates
+
+        series.publication_notes = self.publication_notes
+        series.tracking_notes = self.tracking_notes
+        series.first_issue = self.first_issue
+        series.last_issue = self.last_issue
+
+        series.country_code = self.country_code
+        series.language_code = self.language_code
+        series.publisher = self.publisher
+        series.imprint = self.imprint
+
+        if clear_reservation:
+            series.reserved = False
+
+        series.save()
+
+class IssueRevisionManager(RevisionManager):
+
+    def clone_revision(self, issue, indexer, check=True, state=states.OPEN):
+        """
+        Given an existing Issue instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        If there are no revisions, first save a baseline so that the pre-edit
+        values are preserved.
+        Entirely new issues should be started by simply instantiating
+        a new IssueRevision directly.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=issue,
+                                              instance_class=Issue,
+                                              instance_name='issue',
+                                              indexer=indexer,
+                                              check=check,
+                                              state=state)
+
+    def _do_create_revision(self, issue, indexer, state):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        kwargs = {}
+        if (state == states.BASELINE):
+            kwargs['created'] = issue.created
+            kwargs['modified'] = issue.modified
+        else:
+            kwargs['created'] = datetime.now()
+            kwargs['modified'] = kwargs['created']
+
+        revision = IssueRevision(
+          # revision-specific fields:
+          issue=issue,
+          state=state,
+          indexer=indexer,
+
+          # copied fields:
+          volume=issue.volume,
+          number=issue.number,
+          publication_date=issue.publication_date,
+          price=issue.price,
+          key_date=issue.key_date,
+          series=issue.series,
+          **kwargs)
+
+        revision.save()
+        return revision
+
+class IssueRevision(Revision):
+    class Meta:
+        db_table = 'oi_issue_revision'
+        ordering = ['-created', '-id']
+        permissions = (
+            ('can_reserve', 'can reserve a record for add, edit or delete'),
+            ('can_approve', 'can approve a change to a record'),
+            ('can_cancel', 'can cancel a pending change they did not open'),
+        )
+
+    objects = IssueRevisionManager()
+
+    issue = models.ForeignKey(Issue, null=True, related_name='revisions')
+
+    volume = models.IntegerField(max_length=255, null=True)
+    number = models.CharField(max_length=25, null=True)
+
+    publication_date = models.CharField(max_length=255, null=True)
+    price = models.CharField(max_length=25, null=True)
+    key_date = models.CharField(max_length=10, null=True)
+
+    series = models.ForeignKey(Series)
+
+    def commit_to_display(self, clear_reservation=True):
+        issue = self.issue
+        if issue is None:
+            issue = Issue()
+        issue.number = self.number
+        issue.volume = self.volume
+        issue.publication_date = self.publication_date
+        issue.price = self.price
+        issue.key_date = self.key_date,
+        issue.series = self.series
+
+        if clear_reservation:
+            issue.reserved = False
+
+        issue.save()
+
+class StoryRevisionManager(RevisionManager):
+
+    def clone_revision(self, story, indexer, issue_revision,
+                       check=True, state=states.OPEN):
+        """
+        Given an existing Story instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        If there are no revisions, first save a baseline so that the pre-edit
+        values are preserved.
+        Entirely new stories should be started by simply instantiating
+        a new StoryRevision directly.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=story,
+                                              instance_class=Story,
+                                              instance_name='story',
+                                              indexer=indexer,
+                                              check=check,
+                                              state=state,
+                                              issue_revision=issue_revision)
+
+    def _do_create_revision(self, story, issue_revision, indexer, state):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        kwargs = {}
+        if (state == states.BASELINE):
+            kwargs['created'] = issue.created
+            kwargs['modified'] = issue.modified
+        else:
+            kwargs['created'] = datetime.now()
+            kwargs['modified'] = kwargs['created']
+
+        revision = StoryRevision(
+          # revision-specific fields:
+          story=story,
+          issue_revision=issue_revision,
+          state=state,
+          indexer=indexer,
+
+          # copied fields:
+          title=story.title,
+          feature=story.feature,
+          page_count=story.page_count,
+          page_count_uncertain=story.page_count_uncertain,
+
+          script=story.script,
+          pencils=story.pencils,
+          inks=story.inks,
+          colors=story.colors,
+          letters=story.letters,
+
+          no_script=story.no_script,
+          no_pencils=story.no_pencils,
+          no_inks=story.no_inks,
+          no_colors=story.no_colors,
+          no_letters=story.no_letters,
+
+          editor=story.editor,
+          notes=story.notes,
+          synopsis=story.synopsis,
+          reprints=story.reprints,
+          genre=story.genre,
+          type=story.type,
+          job_number=story.job_number,
+          sequence_number=story.sequence_number,
+
+          issue=story.issue,
+          **kwargs)
+
+class StoryRevision(Revision):
+    class Meta:
+        db_table = 'oi_story_revision'
+        ordering = ['-created', '-id']
+        permissions = (
+            ('can_reserve', 'can reserve a record for add, edit or delete'),
+            ('can_approve', 'can approve a change to a record'),
+            ('can_cancel', 'can cancel a pending change they did not open'),
+        )
+
+    story = models.ForeignKey(Story, null=True, related_name='revisions')
+    issue_revision = models.ForeignKey('oi.IssueRevision',
+                                       related_name='story_revisions')
+
+    title = models.CharField(max_length=255, db_column='Title', null=True)
+    feature = models.CharField(max_length=255, db_column='Feature',
+                               null=True)
+    page_count = models.FloatField(db_column='Pg_Cnt', null=True)
+    page_count_uncertain = models.BooleanField(default=0)
+
+    characters = models.TextField(db_column='Char_App', null = True)
+
+    script = models.TextField(max_length=255, db_column='Script', null=True)
+    pencils = models.TextField(max_length=255, db_column='Pencils', null=True)
+    inks = models.TextField(max_length=255, db_column='Inks', null=True)
+    colors = models.TextField(max_length=255, db_column='Colors', null=True)
+    letters = models.TextField(max_length=255, db_column='Letters', null=True)
+
+    no_script = models.BooleanField(default=0)
+    no_pencils = models.BooleanField(default=0)
+    no_inks = models.BooleanField(default=0)
+    no_colors = models.BooleanField(default=0)
+    no_letters = models.BooleanField(default=0)
+
+    editor = models.TextField(max_length=255, db_column='Editing', null=True)
+    notes = models.TextField(max_length=255, db_column='Notes', null=True)
+    synopsis = models.TextField(max_length=255, db_column='Synopsis', null=True)
+    reprints = models.TextField(max_length=255, db_column='Reprints', null=True)
+    genre = models.CharField(max_length=255, db_column='Genre', null=True)
+    type = models.CharField(max_length=255, db_column='Type', null=True)
+    sequence_number = models.IntegerField(db_column='Seq_No', null=True)
+    job_number = models.CharField(max_length=25, db_column='JobNo', null=True)
+
+    issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
+
+    def commit_to_display(self, clear_reservation=True):
+        story = self.story
+        if story is None:
+            story = Story()
+
+        story.title = self.title
+        story.feature = self.feature
+        story.page_count = self.page_count
+        story.page_count_uncertain = self.page_count_uncertain
+
+        story.script = self.script
+        story.pencils = self.pencils
+        story.inks = self.inks
+        story.colors = self.colors
+        story.letters = self.letters
+
+        story.no_script = self.no_script
+        story.no_pencils = self.no_pencils
+        story.no_inks = self.no_inks
+        story.no_colors = self.no_colors
+        story.no_letters = self.no_letters
+
+        story.editor = self.editor
+        story.notes = self.notes
+        story.synopsis = self.synopsis
+        story.reprints = self.reprints
+        story.genre = self.genre
+        story.type = self.type
+        story.job_number = self.job_number
+        story.sequence_number = self.sequence_number
+
+        if clear_reservation:
+            story.reserved = False
+
+        story.save()
 
