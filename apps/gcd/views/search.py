@@ -1,4 +1,6 @@
-"""View methods related to displaying search and search results pages."""
+"""
+View methods related to displaying search and search results pages.
+"""
 
 from re import *
 from urllib import urlopen, quote
@@ -19,6 +21,8 @@ from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch
 from apps.gcd.views.details import issue 
 
+class SearchError(Exception):
+    pass
 
 def generic_by_name(request, name, q_obj, sort,
                     class_=Story,
@@ -184,7 +188,8 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
                 .filter(number__exact = issue_nr)
     
     if things.count() == 1: # if one display the issue
-        return issue(request,things[0].id)
+        return HttpResponseRedirect(urlresolvers.reverse(issue,
+                                    kwargs={ 'issue_id': things[0].id }))
     else: # if more or none use issue_list.html from search
         p = QuerySetPaginator(things, 100)
         page_num = 1
@@ -249,7 +254,7 @@ def search(request):
 
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
-                           kwargs = { param_type: quote(request.GET['query'] \
+                           kwargs = { param_type: quote(request.GET['query'].strip() \
                                                         .encode('utf-8')),
                                       'sort': request.GET['sort'] }))
 
@@ -283,48 +288,70 @@ def process_advanced(request):
     context = {}
     op = str(data['method'] or 'iregex')
 
-    stq_obj = search_stories(data, op)
-    iq_obj = search_issues(data, op, stq_obj)
-    sq_obj = search_series(data, op, iq_obj)
-    pq_obj = search_publishers(data, op, sq_obj)
-    terms = compute_order(data)
+    try:
+        stq_obj = search_stories(data, op)
+        iq_obj = search_issues(data, op)
+        sq_obj = search_series(data, op)
+        pq_obj = search_publishers(data, op)
+        query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj)
+        terms = compute_order(data)
+    except SearchError, se:
+        return render_to_response(
+          'gcd/search/advanced.html',
+          {
+            'form': form,
+            'style': 'default',
+            'error_text': '%s' % se,
+          },
+          context_instance=RequestContext(request))
 
+    if (not query) and terms:
+        return render_to_response(
+          'gcd/search/advanced.html',
+          {
+            'form': form,
+            'style': 'default',
+            'error_text': "Please enter at least one search term "
+                          "or clear the 'ordering' fields.  Ordered searches "
+                          "must have at least one search term."
+          },
+          context_instance=RequestContext(request))
+        
     items = []
     list_template = None
     if data['target'] == 'publisher':
-        if pq_obj:
-            filter = Publisher.objects.filter(pq_obj)
+        if query:
+            filter = Publisher.objects.filter(query)
         else:
             filter = Publisher.objects.all()
-        items = filter.order_by(*terms).select_related('country')
+        items = filter.order_by(*terms).select_related('country').distinct()
         template = 'gcd/search/publisher_list.html'
 
     elif data['target'] == 'series':
-        query = combine_q(data, sq_obj, pq_obj)
         if query:
             filter = Series.objects.filter(query)
         else:
             filter = Series.objects.all()
-        items = filter.order_by(*terms).select_related('publisher')
+        items = filter.order_by(*terms).select_related('publisher').distinct()
 
         template = 'gcd/search/series_list.html'
 
     elif data['target'] == 'issue':
-        query = combine_q(data, iq_obj, sq_obj, pq_obj)
         if query:
             filter = Issue.objects.filter(query)
         else:
             filter = Issue.objects.all()
-        items = filter.order_by(*terms).select_related('series__publisher')
+        items = filter.order_by(*terms).select_related(
+          'series__publisher').distinct()
         template = 'gcd/search/issue_list.html',
 
     elif data['target'] == 'sequence':
-        query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj)
         if query:
             filter = Story.objects.filter(query)
         else:
             filter = Story.objects.all()
-        items = filter.order_by(*terms).select_related('issue__series')
+        items = filter.order_by(*terms).select_related(
+          'issue__series__publisher').distinct()
         template = 'gcd/search/content_list.html'
 
     item_name = data['target']
@@ -356,11 +383,12 @@ def process_advanced(request):
 
 
 def combine_q(data, *qobjs):
-    """When targeting a table other than the top table in the hierarchy
-    (publishers), the queries objects against all higher tables must
-    be anded as they will be run using JOINs in a single query.  The method
-    compute_prefix adjusted the query terms to work with the JOIN as they
-    were added in each of the search_* methods."""
+    """
+    The queries against each table must be anded as they will be run using
+    JOINs in a single query.  The method compute_prefix adjusted the query
+    terms to work with the JOIN as they were added in each of the
+    search_* methods.
+    """
     filtered = filter(lambda x: x != None, qobjs)
     if filtered:
         return reduce(lambda x, y: x & y, filtered)
@@ -369,9 +397,11 @@ def combine_q(data, *qobjs):
 
 def search_dates(data, formatter=lambda d: d.year,
                  start_name='year_began', end_name='year_ended'):
-    """Add query terms for date ranges, which may have either or both
+    """
+    Add query terms for date ranges, which may have either or both
     endpoints, or may be absent.  Note that strftime cannot handle
-    years before 1900, hence the formatter callable."""
+    years before 1900, hence the formatter callable.
+    """
 
     # TODO: Could probably use __range operator if end dates were more
     #       reliable / structured.
@@ -402,118 +432,105 @@ def search_dates(data, formatter=lambda d: d.year,
     return q_and_only
 
 
-def search_publishers(data, op, series_q=None):
-    """Handle publisher fields, running a subquery against series if needed."""
+def search_publishers(data, op):
+    """
+    Handle publisher fields.
+    """
     target = data['target']
     prefix = compute_prefix(target, 'publisher')
 
     q_and_only = []
+    if data['country']:
+        q_and_only.append(Q(**{ '%scountry__code__in' % prefix:
+                                data['country'] }))
     if target == 'publisher':
-        if data['country']:
-            q_and_only.append(Q(country__code__in=data['country']))
-#        q_and_only.extend(search_dates(data))
-
-        # Filtering imprints on/off really only makes sense if we're
-        # searching for publishers. Currently we don't support searching
-        # on a s
-        if not data['imprints']:
-            q_and_only.append(Q(**{ '%sparent' % prefix : 0 }))
+        q_and_only.extend(search_dates(data,
+                                       start_name='%syear_began' % prefix,
+                                       end_name='%syear_ended' % prefix))
 
     q_objs = []
     if data['pub_name']:
-        q_objs.append(Q(**{ '%sname__%s' % (prefix, op) : data['pub_name'] }))
+        pub_name_q = Q(**{ '%sname__%s' % (prefix, op) : data['pub_name'] })
+        if target == 'publisher':
+            q_objs.append(pub_name_q)
+        else:
+            imprint_prefix = compute_prefix(target, 'series')
+            imprint_q = Q(**{ '%simprint__name__%s' % (imprint_prefix, op) :
+                              data['pub_name'] })
+            q_objs.append(pub_name_q | imprint_q)
 
-    predecessor_objs = None
-    if series_q and target == 'publisher':
-        predecessor_objs = Series.objects
-
-    return compute_qobj(data, q_and_only, q_objs,
-                        predecessor_objs, series_q, 'publisher_id')
+    return compute_qobj(data, q_and_only, q_objs)
 
 
-def search_series(data, op, issues_q=None):
-    """Handle series fields, running a subquery against issues if needed."""
+def search_series(data, op):
+    """
+    Handle series fields.
+    """
     target = data['target']
     prefix = compute_prefix(target, 'series')
 
     q_and_only = []
-    if target != 'publisher':
-        if data['country']:
-            country_qargs = { '%scountry_code__in' % prefix : data['country'] }
-            q_and_only.append(Q(**country_qargs))
-#        q_and_only.extend(search_dates(data))
+    if target == 'series':
+        q_and_only.extend(search_dates(data,
+                                       start_name='%syear_began' % prefix,
+                                       end_name='%syear_ended' % prefix))
 
     if data['language']:
         language_qargs = { '%slanguage_code__in' % prefix : data['language'] }
         q_and_only.append(Q(**language_qargs))
 
-#    if data['indexer']:
-#        indexer_qargs = {
-#            '%sindex_credit_set__indexer__in' %prefix : data['indexer']
-#        }
-#        q_and_only.append(Q(**indexer_qargs))
-
     q_objs = []
     if data['series']:
         q_objs.append(Q(**{ '%sname__%s' % (prefix, op) : data['series'] }))
-#    if data['format']:
-#        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op) :  data['format'] }))
-#    if data['series_notes']:
-#        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op) :
-#                            data['series_notes'] }))
-#    if data['tracking_notes']:
-#        q_objs.append(Q(**{ '%stracking_notes__%s' % (prefix, op) :
-#                             data['tracking_notes']}))
+    if data['format']:
+        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op) :  data['format'] }))
+    if data['series_notes']:
+        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op) :
+                            data['series_notes'] }))
+    if data['tracking_notes']:
+        q_objs.append(Q(**{ '%stracking_notes__%s' % (prefix, op) :
+                             data['tracking_notes']}))
 
-    predecessor_objs = None
-    if issues_q and (target == 'series' or target == 'publisher'):
-        predecessor_objs = Issue.objects
-
-    return compute_qobj(data, q_and_only, q_objs,
-                        predecessor_objs, issues_q, 'series_id')
+    return compute_qobj(data, q_and_only, q_objs)
 
 
 def search_issues(data, op, stories_q=None):
-    """Handle issue fields, running a subquery against stories if needed."""
+    """
+    Handle issue fields.
+    """
     target = data['target']
     prefix = compute_prefix(target, 'issue')
 
     q_and_only = []
-#    if target == 'issue' or target == 'feature' or target == 'sequence':
-#        date_formatter = lambda d: '%04d.%02d.%02d' % (d.year, d.month, d.day)
-#        q_and_only.extend(search_dates(data, date_formatter,
-#                                       '%skey_date' % prefix,
-#                                       '%skey_date' % prefix))
+    if target == 'issue' or target == 'feature' or target == 'sequence':
+        date_formatter = lambda d: '%04d.%02d.%02d' % (d.year, d.month, d.day)
+        q_and_only.extend(search_dates(data, date_formatter,
+                                       '%skey_date' % prefix,
+                                       '%skey_date' % prefix))
 
-        # 3 indicates an approved index.  TODO: constants.
-        # TODO: Too many indexes are being re-indexed, which takes valid
-        # TODO: expected results out of the search.  So don't do this yet.
-        # q_and_only.append(Q(**{ '%sindex_status' % prefix : 3 }))
+    if data['price']:
+        q_and_only.append(Q(**{ '%sprice__%s' % (prefix, op): data['price'] }))
 
     q_objs = []
-#    if data['issues']:
-#        q_objs.append(handle_issue_numbers(data, prefix))
-#    if data['issue_date']:
-#        q_objs.append(
-#          Q(**{ '%spublication_date__%s' % (prefix, op) : data['issue_date'] }))
+    if data['issues']:
+        q_objs.append(handle_issue_numbers(data, prefix))
+    if data['issue_date']:
+        q_objs.append(
+          Q(**{ '%spublication_date__%s' % (prefix, op) : data['issue_date'] }))
+    if data['cover_needed']:
+        q_objs.append(Q(**{ '%scover__has_image' % prefix : False }) | 
+                      Q(**{ '%scover__marked' % prefix : True }))
 
-    predecessor_objs = None
-    if stories_q and (target == 'issue' or
-                      target == 'series' or
-                      target == 'publisher'):
-        predecessor_objs = Story.objects
-
-    return compute_qobj(data, q_and_only, q_objs,
-                        predecessor_objs, stories_q, 'issue_id')
+    return compute_qobj(data, q_and_only, q_objs)
 
 
 def handle_issue_numbers(data, prefix):
-    """The issue number field accepts issues, hyphenated issue ranges,
+    """
+    The issue number field accepts issues, hyphenated issue ranges,
     and comma-separated lists of either form.  Large numeric ranges
     result in large lists passed to the IN clause due to issue numbers
     not really being numeric in our data set.
     """
-
     # Commas can be backslash-escaped, and a literal backslash before
     # a comma can itself be escaped.  Backslashes elsewhere must not
     # be escaped.  This could be handled more consistently and intuitively.
@@ -543,50 +560,75 @@ def handle_issue_numbers(data, prefix):
 
 
 def search_stories(data, op):
-    """Build the query against the story table.  As it is the lowest
-    table in the hierarchy, there are no possible subqueries to run."""
+    """
+    Build the query against the story table.  As it is the lowest
+    table in the hierarchy, there are no possible subqueries to run.
+    """
+    target = data['target']
+    prefix = compute_prefix(target, 'sequence')
+
     q_objs = []
-    for field in ('feature', 'title', # 'type',
+    for field in ('feature', 'title', 'genre',
                   'script', 'pencils', 'inks',
                   'colors', 'letters', 'job_number', 'characters',
                   'synopsis', 'reprints', 'notes'):
         if data[field]:
-            q_objs.append(Q(**{ '%s__%s' % (field, op) : data[field] }))
+            q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op) :
+                                data[field] }))
 
-    for field in ('issue_editor',): # , 'issue_notes', 'issue_reprints'):
+    if data['type']:
+        q_objs.append(Q(**{ '%stype__in' % prefix : data['type'] }))
+
+    for field in ('issue_editor', 'issue_notes', 'issue_reprints'):
         if data[field]:
             m = match(r'issue_(?P<column>.+)', field)
-            kwargs = {'%s__%s' % (m.group('column'), op) : data[field],
-                      'sequence_number' : 0}
+            column = m.group('column')
+            kwargs = {'%s%s__%s' % (prefix, column, op) : data[field],
+                      '%ssequence_number' % prefix : 0}
             q_objs.append(Q(**kwargs))
 
     if data['story_editor']:
-        q_objs.append(Q(**{ 'editor__%s' % op : data['story_editor'] }) & \
-                      ~Q(sequence_number=0))
+        q_objs.append(Q(**{ '%seditor__%s' % (prefix, op) :
+                            data['story_editor'] }))
 
-#    if data['pages']:
-#        range_match = match(r'(?P<begin>\d+)\s*-\s*(?P<end>\d+)$',
-#                            data['pages'])
-#        if range_match:
-#            num_range = range(int(range_match.group('begin')),
-#                              int(range_match.group('end')) + 1)
-#            q_objs.append(Q(page_count__in=num_range))
-#        
-#    if data['issue_pages']:
-#        range_match = match(r'(?P<begin>\d+)\s*-\s*(?P<end>\d+)$',
-#                            data['issue_pages'])
-#        if range_match:
-#            num_range = range(int(range_match.group('begin')),
-#                              int(range_match.group('end')) + 1)
-#            q_objs.append(Q(page_count__in=num_range, sequence_number=0))
-#        else:
-#            q_objs.append(Q(page_count=data['issue_pages'], sequence_number=0))
+    try:
+        page_range_regexp = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
+        if data['pages'] is not None and data['pages'] != '':
+            range_match = match(page_range_regexp, data['pages'])
+            if range_match:
+                page_start = float(range_match.group('begin'))
+                page_end = float(range_match.group('end'))
+                q_objs.append(Q(**{ '%spage_count__range' % prefix :
+                                    (page_start, page_end) }) &
+                              ~Q(**{ '%ssequence_number' % prefix : 0 }))
+            else:
+                q_objs.append(Q(**{ '%spage_count' % prefix :
+                                    float(data['pages']) }) &
+                              ~Q(**{ '%ssequence_number' % prefix : 0 }))
+
+        if data['issue_pages'] is not None and data['issue_pages'] != '':
+            range_match = match(page_range_regexp, data['issue_pages'])
+            if range_match:
+                page_start = float(range_match.group('begin'))
+                page_end = float(range_match.group('end'))
+                q_objs.append(Q(**{ '%spage_count__range' % prefix :
+                                    (page_start, page_end) }) &
+                              Q(**{ '%ssequence_number' % prefix : 0 }))
+            else:
+                q_objs.append(Q(**{ '%spage_count' % prefix :
+                                    float(data['issue_pages']) }) &
+                              Q(**{ '%ssequence_number' % prefix : 0 }))
+
+    except ValueError:
+        raise SearchError, ("Page count must be a decimal number or a pair of "
+                            "decimal numbers separated by a hyphen.")
 
     return compute_qobj(data, [], q_objs)
 
 
 def compute_prefix(target, current):
-    """Advanced search allows searching on any of four tables in a
+    """
+    Advanced search allows searching on any of four tables in a
     hierarchy using fields from any of those tables.  Depending on
     the relative positioning of the table you're searching in to
     the table that has the field you're searching with, you may need
@@ -595,11 +637,7 @@ def compute_prefix(target, current):
     This function works out the realtionship-following prefixes, where
     'current' is the table whose fields are being processed, and 'target'
     is the table the search will ultimately run against.
-
-    Note that this only really applies when you are matching against fields
-    further up the hierarchy than the table on which you are searching.
-    For handling fields lower in the hierarchy, see the subquery logic
-    in compute_qobj."""
+    """
     if current == 'publisher':
         if target == 'series':
             return 'publisher__'
@@ -607,36 +645,30 @@ def compute_prefix(target, current):
             return 'series__publisher__'
         if target == 'sequence' or target == 'feature':
             return 'issue__series__publisher__'
-    if current == 'series':
-        if target == 'issue':
+    elif current == 'series':
+        if target in ('issue', 'publisher'):
             return 'series__'
         if target == 'sequence' or target == 'feature':
             return 'issue__series__'
-    if current == 'issue':
-        if target == 'sequence' or target == 'feature':
+    elif current == 'issue':
+        if target in ('sequence', 'feature', 'series'):
             return 'issue__'
+        if target == 'publisher':
+            return 'series__issue__'
+    elif current == 'sequence':
+        if target == 'issue':
+            return 'story__'
+        if target == 'series':
+            return 'issue__story__'
+        if target == 'publisher':
+            return 'series__issue__story__'
     return ''
 
 
-def compute_qobj(data, q_and_only, q_objs,
-                 objects=None, subquery=None, colname=None):
-    """Combines the various sorts of query objects in a standard way,
-    and runs a subquery if necessary to restrict the selection of elements
-    from a higher table to those matched by elements of a lower table, i.e.
-    restrict the set of Publishers selected to only those that published
-    Series matching the passed-in subquery.
-
-    Note that this only handles restricting a higher table by fields
-    on a lower table.  For handling searching a lower table with fields
-    on a higher table, see compute_prefix."""
-    if objects:
-        # Select only the requested column name/value pairs from the table.
-        columns = objects.filter(subquery).values(colname).distinct()
-
-        # Extract the values from the pairs and use in the next query.
-        ids = map(lambda x: x[colname], columns.values())
-        q_and_only.append(Q(id__in=ids))
-
+def compute_qobj(data, q_and_only, q_objs):
+    """
+    Combines the various sorts of query objects in a standard way.
+    """
     q_combined = None
     if q_objs:
         # Should be bool, but is string.  TODO: Find out why.
@@ -653,12 +685,14 @@ def compute_qobj(data, q_and_only, q_objs,
 
 
 def compute_order(data):
-    """Figures out how to apply the ordering terms to the table the
+    """
+    Figures out how to apply the ordering terms to the table the
     final query will run against.  Unlike the 'compute' methods for
     searching, compute_order will ignore orderings that don't apply
     to the primary search table.  This is arguably a bug, or at least
     unduly confusing.  The computation is also an inelegant application
-    of brute force."""
+    of brute force.
+    """
 
     target = data['target']
     terms = []
@@ -674,8 +708,6 @@ def compute_order(data):
                 terms.append('year_began')
             elif order == 'country':
                 terms.append('country__code')
-            elif order == 'language':
-                terms.append('language__code')
 
         elif target == 'series':
             if order == 'date':

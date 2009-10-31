@@ -49,6 +49,16 @@ fieldset.control label {
     width: 10em;
 }
 
+div.search_left {
+    width: 49%;
+    float: left;
+}
+
+div.search_right {
+    width: 49%;
+    float: right;
+}
+
 input {
     margin-bottom: 0.2em;
 }
@@ -67,29 +77,20 @@ fieldset.sequence {
     padding-bottom: 1em;
 }
 
-fieldset.publisher {
-}
-
 fieldset fieldset {
     margin: 0 3% 1em 3%;
-    width: 94%
+    width: 94%;
 }
 
-.control {
-    border: none;
+
+fieldset.control {
+    width: 100%;
 }
-.control ol {
-    margin: 0;
-    padding-left: 0;
+
+fieldset.ordering {
+    width: 100%;
 }
-.control li {
-    margin-left: 0;
-}
-.control label {
-    width: 6.5em;
-    text-align: left;
-    font-weight: bold;
-}
+
 
 /******************************************************************/
 
@@ -267,3 +268,8 @@ fieldset.control .errorlist {
 #blithering li {
     margin-bottom: 0.5em;
 }
+
+#advanced_search_form fieldset.submit {
+    clear: both;
+}
+

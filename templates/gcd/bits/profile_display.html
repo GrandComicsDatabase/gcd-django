@@ -1,0 +1,29 @@
+{% load accounts %}
+
+<ul>
+  <li> First Name: {{ profile_user.first_name }}<br/>
+  <li> Last Name: {{ profile_user.last_name }}
+{% if user|can_view_profile_details:profile_user %}
+  <li> Email: {{ profile_user.email }}<br/>
+{% endif %}
+  <li> Country: <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ profile_user.indexer.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
+       {{ profile_user.indexer.country }} <br>
+  <li> Languages:
+    {% with profile_user.indexer.languages.all as languages %}
+      {% if languages.count %}
+        <ul>
+          {% for language in languages %}
+            <li> {{ language }}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  <li> Groups:
+    <ul>
+      {% for group in profile_user.groups.all %}
+        <li> {{ group }}
+      {% endfor %}
+    </ul>
+  <li>
+</ul>
+

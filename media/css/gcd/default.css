@@ -15,6 +15,18 @@ body {
     float: right;
 }
 
+/*
+ * This is intended to be so horribly, jarringly unatractive that
+ * you can't possibly fail to notice it.
+ */
+#beta_warning {
+    font-size: 1.5em;
+    background-color: red;
+    color: yellow;
+    border: dashed 4px black;
+    margin-bottom: 1em;
+}
+
 h1 {
     font-size: 2em;
     clear: both;
@@ -73,6 +85,14 @@ img .cover_img {
 
 #item_id_footer {
     border: solid 1px black;
+    margin-bottom: 1em;
+}
+
+#item_id_footer_replace_top {
+    border: solid 1px black;
+}
+
+#item_id_footer_replace_bottom {
     margin-bottom: 1em;
 }
 
@@ -157,6 +177,7 @@ h1#search_id {
 }
 
 #search_bar img {
+    display: inline;
     height: 2em;
     position: relative;
     top: 0.5em;
@@ -176,24 +197,26 @@ h1#search_id {
     background-color: #77E;
     color: black;
     margin-bottom: 1em;
-    padding-bottom: 0.5em;
+    padding: 0.6em;
     vertical-align: center;
     border: solid 1px;
     width: 100%;
 }
 
 #plain_bar img {
-    font-weight: bold;
     height: 2em;
     position: relative;
-    top: 0.3em;
-    margin-top: -0.3em;
-    margin-left: 0.5em;
+    top: 0.5em;
+    margin-top: -0.5em;
 }
 
 #plain_bar span {
-    font-size: 2em;
+    font-size: 1.2em;
     font-weight: bold;
+}
+
+#plain_bar :visited {
+    color: black;
 }
 
 .fine_print {
@@ -210,7 +233,7 @@ table#covers {
 }
 
 table#covers td.marked {
-    background-color: #77E;
+    background-color: #DDD;
 }
 
 .no_cover {
@@ -219,6 +242,7 @@ table#covers td.marked {
 
 .cover_links {
     font-size: 0.7em;
+    white-space: nowrap;
 }
 
 .cover_caption {
@@ -320,6 +344,10 @@ div.list_table_header {
     margin-top: 0;
 }
 
+.listing dl.credits {
+    margin-bottom: 0;
+}
+
 .listing dl.credits dt {
     float: left;
     clear: both;
@@ -327,7 +355,6 @@ div.list_table_header {
 }
 
 .listing dl.credits dd {
-    float: left;
     margin: 0;
 }
 
@@ -360,6 +387,11 @@ dl.pub_data dd {
     width: 100%;
     padding: 0.4em 0 0.4em 0;
     margin-top: 1em;
+    border: solid black 1px;
+}
+
+#index_status_inner {
+    margin: 0 0.4em 0 0.4em;
 }
 
 #index_status span {
@@ -384,11 +416,26 @@ dl.pub_data dd {
     clear: both;
 }
 
+.message {
+    font-weight: bold;
+}
+
 .error_message {
     color: red;
     font-weight: bold;
     margin: 1em 0;
     float: left;
     clear: both;
+}
+
+.footer_disclaimer {
+    font-size: 0.8em;
+    color: #666;
+    margin-bottom: 0.5em; /* space to google ad */
+}
+
+a.new_window {
+    padding-right: 13px; 
+    background: transparent no-repeat right center url(external.png); 
 }
 

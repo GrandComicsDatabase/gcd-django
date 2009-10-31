@@ -8,8 +8,6 @@
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/covers.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -27,17 +25,20 @@
   {% for cover, issue, tag in tags %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
-      <br/>
+      <br>
       <span class="cover_links">Zoom:
         <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
         <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span>
       <div class="cover_caption">
-        {% if can_mark and not cover.marked %}
-        <a href="{% url apps.gcd.views.covers.mark_cover issue_id=issue.id %}">mark for replacement</a><br>
-        {% endif %}
-        <span class="cover_number">Issue {{ issue.number }}</span> <br/>
+        <span class="cover_number">Issue {{ issue.number }}</span>
         {% if issue.publication_date %}
-        <span class="cover_date">{{ issue.publication_date }}</span>
+        <br><span class="cover_date">{{ issue.publication_date }}</span>
+        {% endif %}
+        {% if can_mark and not cover.marked %}
+        <br><a href="{% url apps.gcd.views.covers.mark_cover issue_id=issue.id %}">Mark for replacement</a>
+        {% endif %}
+        {% if cover.marked %}
+        <br><a href="{% url apps.gcd.views.covers.cover_upload issue_id=issue.id %}">Replace cover</a>
         {% endif %}
       </div>
     </td>

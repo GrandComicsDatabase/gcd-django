@@ -36,8 +36,7 @@ class Series(models.Model):
     tracking_notes = models.TextField(db_column='Tracking', null=True)
 
     # Fields related to cover image galleries.
-    gallery_present = models.CharField(max_length=3, db_column='HasGallery',
-                                       null=True)
+    has_gallery = models.BooleanField(db_column='HasGallery')
 
     # Fields related to indexing activities.
     # Only "reserved" is in active use.  "open_reserve" is a legacy field

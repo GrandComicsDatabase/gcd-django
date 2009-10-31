@@ -22,7 +22,7 @@
     {% if not series.scan_needed %}
     <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
     {% else %}
-      {% if series.scan_count %}
+      {% if series.has_gallery %}
         <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
         {{ series.scan_count}}</a>
         (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need 

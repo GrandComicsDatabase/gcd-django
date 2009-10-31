@@ -1,3 +1,4 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/DTD/strict.dtd"> 
 {% load statustags %}
 
 <html>
@@ -7,45 +8,129 @@
         href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
   <link rel="stylesheet" type="text/css"
         href="{{ MEDIA_URL }}/css/gcd/{{ style }}/front_page.css"/>
+  <!--[if lt IE 7]>
+    <style type="text/css">
+    #colleft {
+    margin-left:-100%;
+    }</style>
+  <![endif]-->
+  <link rel="shortcut icon" href="{{ MEDIA_URL }}/img/favicon.ico"/>
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <meta name="google-site-verification" content="-VePWukP1NFX6riu1afP-0T1Coj9bvQMeuhKoOx1KgU" />
 </head>
 
 <body>
 <div id="sizing_base">
 
-<div id="between_header_footer">
-{% include "gcd/bits/front_page_menu.html" %}
 
-    <div class="front_page_right_box">
-        <div class="front_page_right_box_inner">
-        <a href="{% url apps.gcd.views.details.covers_to_replace %}">Covers marked for replacement</a><br>
-        <a href="{% url apps.gcd.views.details.daily_covers %}">See all covers uploaded today</a>
-        </div> <!-- front_page_right_box_inner -->
-    </div> <!-- front_page_right_box -->
-    <div class="front_page_right_box">
-        <div class="front_page_right_box_header">Last updated indices</div>
-        <div class="front_page_right_box_inner">
-            {% last_updated_issues %}
-        </div> <!-- front_page_right_box_inner -->
-    </div> <!-- front_page_right_box -->
-<!--
-    <div class="front_page_central_box">
-{% include "gcd/bits/front_page_notice.html" %}
-    </div> <!-- front_page_central_box -->
--->
-    <div class="front_page_central_box">
-{% include "gcd/bits/front_page_search_box.html" %}
-    </div> <!-- front_page_central_box -->
-{% include "gcd/bits/front_page_content.html" %}
+<!-- 3 column layout with two fixed width sidebars from
+http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
+<div id="main_body"> 
+  {% if BETA %}
+    <div id="front_page_beta">
+      {% include "gcd/bits/beta_banner.html" %}
+    </div>
+  {% endif %}
+    <div id="colmid"> 
+        <div id="colleft">
+            <div id="col1wrap"> 
+                <div id="center_column"> 
+                    <!-- Center Column start --> 
+                    <div class="front_page_central">
+                        <div class="front_page_central_box">
+                            {% include "gcd/bits/front_page_search_box.html" %}
+                        </div>
+                    </div>
+                    <div class="front_page_central">
+                        {% include "gcd/bits/front_page_content.html" %}
+                    </div>
+                    <!-- Center Column end --> 
+                </div> 
+            </div> 
 
+            <div id="left_column"> 
+                <!-- Left Column start --> 
+                <div class="front_page_left_box">
+                    {% include "gcd/bits/front_page_menu.html" %}
+                </div>
+                <div class="front_page_left_box">
+                    <div class="box_header">
+                        Login
+                    </div>
+                    <div class="box_inner">
+                        {% include "gcd/bits/front_page_login.html" %}
+                    </div>
+                </div>
+                <div class="front_page_left_box">
+                    <div class="box_header">
+                        Disclaimer
+                    </div>
+                    <div class="box_inner">
+                        <div class="disclaimer_text">
+                            The Grand Comic-Book Database Project (GCD) is a volunteer project with the goal of documenting and indexing all comics for the free use of scholars, historians, researchers, and fans.
+                        </div>
+                        <div class="disclaimer_text">
+                            The GCD acknowledges that the all-encompassing research nature of the project may result in the posting of cover scans for comics with images that some may find objectionable.
+                        </div>
+                        <div class="disclaimer_text message">
+                            Viewer discretion is advised.
+                        </div>
+                        <div id="front_page_disclaimer_signature">
+                            The Grand Comic-Book Database Team
+                        </div>
+                    </div>
+                </div>
+                <!-- Left Column end --> 
+            </div>
 
+            <div id="right_column"> 
+                <!-- Right Column start --> 
+                <div class="front_page_right_box">
+                    <div class="box_header">
+                        Useful Links
+                    </div>
+                    <div id="useful_links_inner" class="box_inner">
+                      <ul>
+                        <li><a href="{% url apps.gcd.views.details.daily_covers %}">Today's covers</a>
+                        <li><a href="{% url apps.gcd.views.details.covers_to_replace %}">Covers to replace</a>
+                      </ul>
+                    </div>
+                </div>
+                <div class="front_page_right_box">
+                    <div class="box_header">
+                        Last Updated Indices
+                    </div>
+                    <div class="box_inner">
+                        Index updating is suspended until mid-November while we
+                        write and test the new data entry application.
+                    </div>
+                    <div class="box_inner">
+                        Public beta coming soon!
+                    </div>
+                </div>
+                <div class="front_page_right_box">
+                    <div class="box_header">
+                        Statistics
+                    </div>
+                    <div class="box_inner">
+                        5135 publishers<br>
+                        38220 series<br>
+                        513493 issues<br>
+                        243950 covers<br>
+                        746994 stories<br>
+                    </div>
+                </div>
+                <!-- Right Column end --> 
+            </div> 
+        </div> <!-- id="colleft"-->
+    </div> <!-- id="colmid"-->
+</div> <!-- id="main_body"-->
 
-
-</div><!-- between_header_footer -->
-<hr/>
-
-{% include "gcd/front_page_fine_print.html" %}
-
+<div id="footer">
+    {% include "gcd/bits/legalese.html" %}
 </div>
+
+</div><!-- id="sizing_base" -->
 </body>
 </html>

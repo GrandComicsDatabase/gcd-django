@@ -29,7 +29,7 @@ class LastUpdatedNode(template.Node):
         for i in self.issues:
             return_string += "<a href=\"" + i.get_absolute_url() + "\">" + \
                              esc(i.series) + " #" + esc(i.number) + "</a> (" + \
-                             esc(i.series.publisher.name) + ")<br/>"
+                             esc(i.series.publisher.name) + ")<br/><br/>"
         return mark_safe(return_string)
 
 

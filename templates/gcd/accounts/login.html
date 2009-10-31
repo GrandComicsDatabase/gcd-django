@@ -1,1 +1,18 @@
+{% extends "gcd/base_view.html" %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+<p>
 {% include "gcd/accounts/login_form.html" %}
+</p>
+<p>
+<a href="{% url forgot_password %}">Forgot password?</a>
+</p>
+<p>
+<a href="{% url register %}">Register a new account</a>
+</p>
+{% endblock %}

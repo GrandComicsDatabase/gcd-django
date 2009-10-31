@@ -1,4 +1,5 @@
 import re
+from urllib import quote
 from django.http import HttpResponsePermanentRedirect
 
 
@@ -19,7 +20,6 @@ def publisher(request):
         return HttpResponsePermanentRedirect('/publisher/' + get_id)
 
     return HttpResponsePermanentRedirect("/")
-
 
 def series(request):
     """
@@ -134,10 +134,11 @@ def search(request):
 
         if 'sort' in request.GET:
              return HttpResponsePermanentRedirect(search_type + \
-                    "/name/" + request.GET['query'] + '/sort/' + request.GET['sort'])
+                    "/name/" + quote(request.GET['query'].encode('utf-8')) + \
+                    '/sort/' + request.GET['sort'])
         else:
              return HttpResponsePermanentRedirect(search_type + \
-                    "/name/" + request.GET['query'])
+                    "/name/" + quote(request.GET['query'].encode('utf-8')))
 
     return HttpResponsePermanentRedirect("/")
 

@@ -11,8 +11,6 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }}
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/cover.css"/>
-<link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}/css/gcd/{{ style }}/cover_upload.css"/>
 {% endblock %}
 
@@ -31,7 +29,14 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }}
         <h2>{{ info }}<br/></h2>
      {% endif %}
 <div>
-
+  {% ifequal upload_type 'variant' %}
+    <div id="variant_info">
+    Variant cover uploading has been <strong>temporarily</strong> disabled
+    as it proved to be a source of much confusion.  It will return when the
+    rest of the new Online Indexing system is released around mid-Novwember.  We apologize for the inconvenience and confusion.
+    </div>
+  {% else  %}
+    
     <fieldset class="universal">
     <ol>
     {% ifequal upload_type 'variant' %}
@@ -50,9 +55,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }}
    <div id="display_cover">
     {{ display_cover }}
     <div class="issue_cover_links">
-      {% if issue.cover.has_large %}
       <a href="{{ issue.get_absolute_url }}cover/4/?style=default">Zoom</a>
-      {% endif %}
     </div>
     {% ifequal upload_type 'replacement' %}
     If you are replacing a cover, make sure the new cover is better than the one that is already there.
@@ -62,7 +65,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }}
     {% endifequal %}   
     </div> <!-- cover -->
    {% endif %}
-
+  {% endifequal %}
 </div> <!-- main -->
 <p/>
 <div id="guidelines">

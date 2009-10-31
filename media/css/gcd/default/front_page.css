@@ -1,189 +1,252 @@
+/* 3 column layout with two fixed width sidebars from
+http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm
+with some changes for our env*/
 
-#between_header_footer{
-    margin-top: 3em;
-}
-
-#front_page_menu {
-    float: left;
-    clear: none;
-    width: 12em;
-    background-color: #77E;
-    margin-right: 3em;
-    margin-bottom: 1em;
-    font-weight: bold;
-    color: white;
-    padding: .4em;
-}
-#front_page_menu a {
-    display: block;
-    color: white;
-}
-#front_page_menu a:visited {
-    color: white;
-}
-#front_page_menu_header {
-    margin-left: auto;
-    margin-right: auto;
-    text-align:center;
-}
-#front_page_notice {
-    float: none;
-    border: solid 1px;
-    margin-left: 14em;
-    margin-right: 24em;
-/*    margin-bottom: 1em;
-    padding: .4em;
-    width: 30em; */
-}
-#front_page_notice_header {
-    font-weight:900;
-    margin: 0;
-    background-color: #ffA500;
-    color: black;
-    padding: 0.4em;
-}
-#front_page_notice_inner {
-   padding: .4em;
+body {
+    margin:0;
+    padding:0;
+    border:0;           /* This removes the border around the viewport in old versions of IE */
+    width:95%;
+    background:#fff;
+    min-width:45em;     /* Minimum width of layout - remove line if not required [15 + 45 + 24]*/
+                        /* The min-width property does not work in old versions of Internet Explorer */
 }
 
-#front_page_content {
+#main_body {
     margin-top: 2em;
-    margin-left: 14em;
-    margin-right: 24em;
-    margin-bottom: 1em;
-/*    width: 30em;*/
+    margin-bottom: 2em;
+    position:relative;      /* This fixes the IE7 overflow hidden bug and stops the layout jumping out of place */
+    clear:both;
+    float:left;
+    width:100%;             /* width of whole page */
+    overflow:hidden;        /* This chops off any overhanging divs */
 }
 
-#front_page_content_inner img {
-    float: left;
-    clear: none;
-    vertical-align:top;
-    margin-left: 0;
-    margin-top: 1em;
-    margin-right: 1em;
-    margin-bottom: 1em;
-   padding: 0;
+#colmid {
+    float:left;
+    width:200%;
+    margin-left:-15em;      /* Width of right column [1 + 15 + 1]*/
+    position:relative;
+    right:100%;
 }
 
-#front_page_content_inner {
-    text-align: justify;
-    padding: .4em;
+#colleft {
+    float:left;
+    width:100%;
+    margin-left:-50%;
+    position:relative;
+    left:30em;;              /* Left column width + right column width  [15 + 15]*/
 }
 
-.front_page_central_box {
-    clear: none;
+#col1wrap {
+    float:left;
+    width:50%;
+    position:relative;
+    right:15em;             /* Width of left column  [1 + 13 + 2]*/
+    padding-bottom:1em;     /* Centre column bottom padding. Leave it out if it's zero */
+}
+
+#center_column {
+                            /* Centre column side padding:*/
+    margin-left: 16em;      /* Left padding = left column width + centre column left padding width*/
+    margin-right: 16em;     /* Right padding = right column width + centre column right padding width */
+    position:relative;
+    left:200%;
+    overflow:hidden;
+}
+
+#left_column {
+    float:left;
+    float:right;            /* This overrides the float:left above */
+    width:13em;             /* Width of left column content (left column width minus left and right padding)*/
+    position:relative;
+    right:1em;              /* Width of the left-had side padding on the left column */
+}
+
+#right_column {
+    float:left;
+    float:right;            /* This overrides the float:left above */
+    width:13em;             /* Width of right column content (right column width minus left and right padding)*/
+    margin-right:3em;       /* Width of right column right-hand padding + left column left and right padding*/
+    position:relative;
+    left:50%;
+}
+
+#footer {
+    clear:left;
+    float:left;
+    width:98%;
+    border-top:1px solid black;
+    margin: 1em;
+}
+
+/* start of css that is not from the other site*/
+
+.front_page_left_box {
     border: solid 1px;
-    margin-top: 1em;
-    margin-left: 14em;
-    margin-right: 24em;
+    width: 13em;
     margin-bottom: 1em;
-/*    padding: .4em;
-    width: 30em; */
 }
 
-
-.front_page_right_box {
-    border: solid 1px;
-    float: right;
-    width: 22em;
-    clear: right;
-/*    margin-top: 3em;
-    margin-left: 3em;*/
-    margin-bottom: 1em; 
-}
-.front_page_right_box_header{
+.box_header {
     font-weight: bold;
-    margin: 0;
     padding: 0.4em;
     background-color: #444;
     color: white;
 }
-.front_page_right_box_inner {
-/*    margin-left: 1em;
-    margin-top: 1em;
-    margin-right: 1em;
-    margin-bottom: 1em;*/
-    padding: .4em;
-/*    width: 30em;*/
+
+.box_inner {
+    padding: 0.4em;
+    background-color: white;
 }
 
-#front_page_disclaimer h4{
+#front_page_menu {
+    background-color: #77E;
+    font-weight: bold;
+    padding: 0.4em;
+}
+
+#front_page_menu_header {
+    margin-top: 0.5em;
+    margin-bottom: 1.5em;
+    text-align: center;
+}
+
+#front_page_menu a {
+    display: block;
+    color: white;
+}
+
+#front_page_menu form {
+    text-align: center;
+}
+
+#front_page_login{
+    text-align: right;
+}
+
+#front_page_login input {
+    width: 6em;
+}
+
+.front_page_central {
+    background-color: white;
+    margin-bottom: 1em;
+}
+
+.front_page_central_box {
+    border: solid 1px;
+}
+
+#search_box {
+    background-color: #77E;
+    color: white;
+    padding: 0.4em;
+    font-weight: bold;
+}
+
+#search_box form input#query {
+    width: 14em;
+}
+
+#search_box table {
+    width: 100%;
+}
+
+#search_box a {
+    color: white;
+}
+
+#search_box .first_line {
+    margin-bottom: 0.5em;
+}
+
+#front_page_notice_header {
+    font-weight:900;
+    margin: 0;
+    background-color: #ffA500;
+    padding: 0.4em;
+}
+
+#front_page_notice_inner {
+    padding: .4em;
+}
+
+#front_page_content_inner img {
+    float: left;
+    margin-right: 1em;
+}
+
+#front_page_disclaimer h4 {
     font-weight: bold;
     text-align: center;
 }
-#front_page_disclaimer_signature{
+
+#front_page_disclaimer_signature {
     font-style: italic;
     text-align: right;
 }
 
+.front_page_right_box {
+    clear: right;
+    border: solid 1px;
+    width: 13em;
+    margin-bottom: 1em;
+}
 
-#search_box {
-    background-color: #77E;
-    color: black;
-    padding: 0.4em;
+.announcement dd {
+    margin-bottom: 1em;
+}
+
+.disclaimer_text {
+    margin-bottom: 1em;
+}
+
+#useful_links_inner ul {
+    list-style: none;
+    margin: 0 0.4em 0 0;
+    padding: 0;
+}
+
+#useful_links_inner li {
+    margin-bottom: 0.4em;
+}
+
+#forgot_password {
+    font-size: small;
+}
+
+#register {
+    font-size: small;
+}
+
+.instructions {
+    border: solid 4px #77E;
+    padding: 0.5em;
+}
+
+.important {
     font-weight: bold;
+    font-style: italic;
 }
 
-#search_box form {
-    margin: 0;
-    display: inline;
-    padding: .4em;
-}
-
-#search_box input {
-    font-size: 0.8em;
-    text-align: right;
-}
-
-#search_box select {
-    font-size: 0.8em;
-}
-.search_message{
-}
-#search_box a {
-    text-align: right;
-    display: block;
-}
-#search_box :link {
-    color: black;
-}
-
-#search_box :visited {
-    color: black;
-}
-
-/* Sorry, Henry
-#search_bar2 {
-    background-color: #77E;
-    color: black;
+#advanced_link {
+    background-color: #FFA500;
     padding: 0.4em;
-    font-weight: bold;
+    border: solid 1px black;
 }
 
-#search_bar2 form {
-    margin: 0;
-    display: inline;
-    padding: .4em;
-}
-
-#search_bar2 input {
-    font-size: 0.8em;
-}
-
-#search_bar2 select {
-    font-size: 0.8em;
-}
-.search_message{
-}
-#search_bar2 a {
-    text-align: center;
-    display: block;
-}
-#search_bar2 :link {
+#advanced_link a {
     color: black;
 }
 
-#search_bar2 :visited {
-    color: black;
+/*
+ * This doesn't quite line up with the column margins,
+ * but that's OK.  It's not actually supposed to be pretty,
+ * it's supposed to be glaringly obvious/ugly so you notice it.
+ */
+#front_page_beta {
+    margin-left: 1em;
+    margin-right: 1em;
 }
-*/
+

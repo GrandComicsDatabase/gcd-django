@@ -59,11 +59,14 @@ class Publisher(models.Model):
 
         return self.url
 
-    def __unicode__(self):
+    def get_full_name(self):
         if self.is_imprint():
             if self.parent_id:
                 return '%s: %s' % (self.parent.name, self.name)
             return '*GCD ORPHAN IMPRINT: %s' % (self.name)
+        return self.name
+
+    def __unicode__(self):
         return self.name
 
     def computed_issue_count(self):

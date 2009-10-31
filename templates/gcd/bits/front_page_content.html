@@ -1,9 +1,70 @@
-<div id="front_page_content">
-    <div id="front_page_content_inner"><img src="{{ MEDIA_URL }}/97_4_00000000001.jpg" HEIGHT="281", WIDTH="200">
-If you're wondering what the GCD is all about, please have a look at the &quot;About the GCD&quot; before you start looking through our site. If you like what you see, join our mailing lists and hang out with the rest of us!<br>We're always looking for contributing indexers, so if you can spare some time to index your favourite books or provide some cover scans, please contact our editors (have a peek in &quot;Contacting us&quot;).
+<div id="front_page_content_inner">
+<div class="announcement">
+<h2>Welcome to the new Grand Comic-Book Database!</h2>
+<p>
+We've always been the go-to site for the wealth of our comic book information, but now we've made changes to make our site even more useful!
+<div class="instructions">
+<span class="important">To get started, enter some terms in the search box above.</span>  Keep in mind that the search string is interpreted literally, including punctuation.  So <em>All Star</em> and <em>All-Star</em> are two different searches, and <em>Justice America</em> won't match <em>Justice Society of America</em>.  We plan to implement modern keyword-driven search as soon as we can (which means in the first half of 2010).
+<br><br>
+All of our content and search features are available
+<span class="important">without logging in</span>.
+</div>
+<p>
+Here's an overview of the changes:
+  <dl>
+  <dt>Increased Stability
+  <dd>The site is now hosted by servers in a data center, which will result in increased availability and stability.  Much less "Database Offline" (we hope :-)
+  
+  <dt>New, Easier to Read Layout
+  <dd>The user interface has been completely rewritten, with an eye toward laying out the data in a more organized manner.  For instance: Credits are now separated out from other content information, and a long Table of Contents no longer makes the page longer.
+  
+  <dt>Advanced Search
+  <dd>The ability to mix and match what items to search for.  The advanced search page will get more attention in a future release, but already adds many new search capabilities.
+  
+  <dt>Issue to issue navigation
+  <dd>The ability to move from one issue's contents directly to the next (or previous, or any issue in the same series)
+  
+  <dt>Variant cover upload support
+  <dt><em>Temporarily disabled due to confusion over usage- will return later this month</em>
+  <dd>The ability to add a variant cover for an issue without having to have an editor mark the existing cover, resizing and stacking the images, and then submitting.
+  
+  <dt>Indexer names listed better
+  <dd>Indexers are now credited on a per issue basis (when known)
+  
+  <dt>Bugs Fixed
+  <dd>There have been some longtime bugs that are now fixed:
+    <ul>
+      <li>Subsequent pages of a large search always used to overlap the results with the previous page
+      <li>When searching by publisher and then seeing the titles published by that publisher, for large publishers the list was truncated
+      <li>There were separate sequencing orders for the covers and the issues, which meant they weren't always in sync (especially for unindexed issues mixed with indexed ones)
+    </ul>
+</dl>
 
-        <div id="front_page_disclaimer"><h4>Disclaimer:</h4>
-The Grand Comic-Book Database Project (GCD) is a volunteer project with the stated goal to document and index all comic books for the free use of scholars, historians, researchers, and fans of all types. The GCD acknowledges that the all-encompassing research nature of the project may result in the posting of cover scans for comics which could contain depictions that some may find objectionable. Viewer discretion is advised.</div>
-        <div id="front_page_disclaimer_signature">The Grand Comic-Book Database Team</div>
-    </div> <!-- front_page_content_inner -->
-</div> <!-- front_page_content -->
+<h3>Please Note</h3>
+<p>
+Some of the code for this conversion is still being finished.  Because of this, the ability to add new and edit existing data (the old "Online Interface") is not quite ready (with the exception of cover uploads).  It is now expected to be ready around mid-November.  Until then, there will be no data fixes or new issues indexed.  Please bear with us.
+
+<h3>Coming Soon</h3>
+<ul>
+  <li>The ability to Modify an index (or any data) directly in place (queued up for approval).
+  <li>Continued improvements to Advanced Search.
+</ul>
+
+<h3>Future Plans (first half of 2010 and later)</h3>
+<ul>
+  <li>Linking of reprints back to the original (or forward to the reprint)
+  <li>Continued improvements to Advanced Search, including using external tools to gain functionality such as fuzzy matches.
+  <li>Coding to a new database design (already mostly worked out), with changes like:
+    <ul>
+      <li>The ability to have an issue appear in more than one series (for dual numbered books such as Star Wars: Empire / Star Wars: Rebellion, and for flip books).
+      <li>The ability to have different cover titles and indicia titles for the same book (for titles such as "Captain America: Reborn" vs "Reborn")
+      <li>More tailored separation between periodicals and books (present more logically)
+      <li>User preferences: The ability to tailor what information is shown (such as only story content, non-story but no ad content, etc.)
+    </ul>
+</ul>
+<p>
+As this is all new code, there are bound to be some bugs.  Please <a href="http://errors.comics.org/enter_bug.cgi">let us know</a>!
+</p>
+</div>
+
+</div>

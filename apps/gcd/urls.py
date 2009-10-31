@@ -57,6 +57,9 @@ urlpatterns = patterns('',
     (r'^series/(?P<series_id>\d+)/scans/$',
      'apps.gcd.views.details.scans'),
 
+    (r'^series/(?P<series_id>\d+)/backup_scans/$',
+     'apps.gcd.views.covers.backup_scans'),
+
     # Issue
     (r'^issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue'),
     (r'^issue/$', 'apps.gcd.views.details.issue_form'),
@@ -171,4 +174,8 @@ urlpatterns = patterns('',
 urlpatterns += patterns('django.views.generic.simple',
     ('^covers_for_replacement.lasso/$', 'redirect_to', 
      {'url' : '/covers_to_replace/' }),
+    ('^index.lasso/$', 'redirect_to', {'url' : '/' }),
+    ('^donate.lasso/$', 'redirect_to', {'url' : '/donate/' }),
+    (r'^graphics/covers/', 'redirect_to', {'url' : None}),
+    ('^coversubmit/index.lasso/$', 'redirect_to', {'url' : None})
 )

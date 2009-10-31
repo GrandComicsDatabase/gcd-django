@@ -1,6 +1,6 @@
 {% extends "gcd/base.html" %}
 
-{% load credits %}
+{% load forms %}
 
 {% block title %} GCD :: Advanced Search {% endblock %}
 
@@ -18,24 +18,57 @@
 {% endwith %}
 
 <div id="blithering">
-<p>
-<strong>Please Pardon the Rough Edges!</strong>
-</p>
-<p>
-We're still working on this form in order to make it more usable and
-support the most options that we can and still deliver good performance.
-</p>
+Advanced Search is still somewhat experimental and has some known bugs
+and limitations:
+<ul>
+  <li> The default ordering of the search results sorts according to series 
+       name and issue date.
+       This ordering is not very useful if you search for publishers, you might
+       want to change it under "Ordering".
+  <li> All "contains" searches match exact substrings.  Punctuation is not
+       ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
+       two different searches.
+  <li> There's no way to search for multiple values in a field (for instance,
+       while you can search for stories written or penciled by someone,
+       you cannot search for stories penciled by either Jack Kirby or
+       Joe Simon.
+  <li> Searching by date is somewhat tricky.  Supported formats include
+       "year.month.day", "year-month-day", "month/day/year",
+       "month-name day, year", "day month-name, year" and just plain year.
+  <li> Date searching for series and stories uses a hidden field that is
+       not always filled out.  This is the same field used for sorting by
+       date, which is why sometimes several out-of-sequence results will
+       appear at the beginning of the list.  It is also possible to search
+       an issue's cover date as a text field without any conversion to an
+       actual date.
+</ul>
 </div>
-<form action="{% url apps.gcd.views.search.process_advanced %}" method="get">
+
+{% if error_text %}
+<div class="error_message">
+{{ error_text }}
+</div>
+{% endif %}
+{{ form.non_field_errors }}
+<form id="advanced_search_form"
+      action="{% url apps.gcd.views.search.process_advanced %}"
+      method="get">
+<div>
+<fieldset class="submit">
+  <input type="submit" value="Search">
+</fieldset>
+</div>
+<div class="search_left">
 <fieldset class="control">
-<!-- TODO: why did I put this style attr here? -->
-<legend style="visibility:hidden">Search Control</legend>
+<legend>Search Control</legend>
 <ol>
   {{ form.target|show_form }}
   {{ form.method|show_form }}
   {{ form.logic|show_form }}
 </ol>
 </fieldset>
+</div>
+<div class="search_right">
 <fieldset class="ordering">
 <legend>Ordering</legend>
 <ol>
@@ -44,80 +77,17 @@ support the most options that we can and still deliver good performance.
   {{ form.order3|show_form }}
 </ol>
 </fieldset>
+</div>
 
-{% comment %}
-<fieldset class="universal">
-<legend>Universal Fields</legend>
-<ol>
-  {{ form.start_date|show_form }}
-  {{ form.end_date|show_form }}
-  {{ form.country|show_form }}
-  {{ form.language|show_form }}
-</ol>
-</fieldset>
-{% endcomment %}
-
-<fieldset class="publisher" id="publisher_fieldset">
-  <legend>
-    Publisher Fields
-  </legend>
-  <ol>
-    {{ form.pub_name|show_form }}
-    {{ form.imprints|show_form }}
-    {{ form.country|show_form }}
-{% comment %}
-    {{ form.pub_notes|show_form }}
-{% endcomment %}
-  </ol>
-</fieldset>
-
-<fieldset class="series" id="series_fieldset">
-  <legend>
-    Series Fields
-  </legend>
-
-  <ol id="series_list">
-    {{ form.series|show_form }}
-{% comment %}
-    {{ form.series_notes|show_form }}
-    {{ form.tracking_notes|show_form }}
-    {{ form.publication_notes|show_form }}
-    {{ form.indexer|show_form }}
-{% endcomment %}
-    {{ form.language|show_form }}
-  </ol>
-</fieldset>
-
-<fieldset class="issue" id="issue_fieldset">
-  <legend>
-    Issue Fields
-  </legend>
-  <ol>
-{% comment %}
-    {{ form.issues|show_form }}
-    {{ form.issue_date|show_form }}
-    {{ form.price|show_form }}
-    {{ form.issue_pages|show_form }}
-    {{ form.format|show_form }}
-{% endcomment %}
-    {{ form.issue_editor|show_form }}
-{% comment %}
-    {{ form.issue_notes|show_form }}
-    {{ form.issue_reprints|show_form }}
-{% endcomment %}
-  </ol>
-</fieldset>
-
+<div class="search_left">
 <fieldset class="sequence">
   <legend> Story Fields </legend>
   <ol>
     {{ form.title|show_form }}
     {{ form.feature|show_form }}
     {{ form.job_number|show_form }}
-{% comment %}
     {{ form.type|show_form }}
     {{ form.pages|show_form }}
-{% endcomment %}
   </ol>
 
   <fieldset class="credits">
@@ -132,7 +102,6 @@ support the most options that we can and still deliver good performance.
     </ol>
   </fieldset>
 
-{% comment %}
   <fieldset class="contents">
     <legend> Contents </legend>
     <ol>
@@ -148,12 +117,65 @@ support the most options that we can and still deliver good performance.
       {{ form.notes|show_form }}
     </ol>
   </fieldset>
-{% endcomment %}
+</fieldset>
+</div>
+
+<div class="search_right">
+<fieldset class="universal">
+<legend>Date Fields</legend>
+<ol>
+  {{ form.start_date|show_form }}
+  {{ form.end_date|show_form }}
+</ol>
 </fieldset>
 
+<fieldset class="publisher" id="publisher_fieldset">
+  <legend>
+    Publisher Fields
+  </legend>
+  <ol>
+    {{ form.pub_name|show_form }}
+    {{ form.country|show_form }}
+    {{ form.pub_notes|show_form }}
+  </ol>
+</fieldset>
+
+<fieldset class="series" id="series_fieldset">
+  <legend>
+    Series Fields
+  </legend>
+
+  <ol id="series_list">
+    {{ form.series|show_form }}
+    {{ form.series_notes|show_form }}
+    {{ form.tracking_notes|show_form }}
+    {{ form.publication_notes|show_form }}
+    {{ form.language|show_form }}
+  </ol>
+</fieldset>
+
+<fieldset class="issue" id="issue_fieldset">
+  <legend>
+    Issue Fields
+  </legend>
+  <ol>
+    {{ form.issues|show_form }}
+    {{ form.issue_date|show_form }}
+    {{ form.price|show_form }}
+    {{ form.issue_pages|show_form }}
+    {{ form.format|show_form }}
+    {{ form.issue_editor|show_form }}
+    {{ form.issue_notes|show_form }}
+    {{ form.issue_reprints|show_form }}
+    {{ form.cover_needed|show_form }} 
+  </ol>
+</fieldset>
+</div>
+<div class='search_left'>
 <fieldset class="submit">
   <input type="submit" value="Search">
 </fieldset>
+</div>
 </form>
 {% endblock %}
 

@@ -1,40 +1,25 @@
 <div id="search_bar">
   <form action="{% url apps.gcd.views.search.search %}" method="get">
-    <a href="{% url apps.gcd.views.index %}"><img src="{{ MEDIA_URL }}/img/logo_icon.gif" alt="GCD" style="border:0;"/></a>
+    <a href="{% url apps.gcd.views.index %}"><img src="{{ MEDIA_URL }}/img/logo_icon.png" alt="GCD" style="border:0;"/></a>
     | <a href="/">Home</a> |
-    <span class="search_message">Search for:</span>
-    <input type="text" name="query" id="query" size="15"> in
-    <select name="type" size="1">
-        <option value="writer"> Writer
-        <option value="penciller"> Penciller
-        <option value="inker"> Inker
-        <option value="editor"> Editor
-        <option value="letterer"> Letterer
-        <option value="colorist"> Colorist
-        <option value="credit"> Any credit
-        <option value="publisher"> Publisher
-        <option value="story"> Story title
-        <option value="feature"> Feature
-        <option value="series" selected> Comic Book title
-        <option value="character"> Character
-        <option value="job_number"> Job Number
-    </select>
-    Order by:
-    <select name="sort" size="1">
-        <option value="alpha" selected> Name
-        <option value="chrono"> Year
-    </select>
+    <span class="search_message">Search</span>
+    {% include "gcd/bits/search_for.html" %}
+    <input type="text" name="query" id="query" size="15">
+    Sort by
+    {% include "gcd/bits/search_order.html" %}
     &nbsp;
-    <input type="submit" name="submit" id="submit" value="Search">
+    <input type="submit" name="submit" id="submit" value="Go">
   </form>
   | <a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a> |
 {% if user.is_authenticated %}
-  <form action="{% url django.contrib.auth.views.logout %}" method="POST">
+  <form action="{% url logout %}" method="POST">
     <input type="submit" name="logout" value="Log Out" />
+    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
   </form>
 {% else %}
-  <form action="{% url django.contrib.auth.views.login %}?next={{ request.get_full_path|urlencode }}" method="GET">
+  <form action="{% url login %}" method="GET">
     <input type="submit" name="login" value="Log In" />
+    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
   </form>
 {% endif %}
 </div>

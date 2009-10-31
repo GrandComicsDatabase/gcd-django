@@ -8,8 +8,6 @@
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/covers.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -70,5 +68,30 @@
   {% endfor %}
   </tr>
 </table>
+
+<div id="item_id_footer_replace_top" class="item_id">
+  {% if page %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endif %}
+</div>
+<div id="item_id_footer_replace_bottom" class="item_id">
+  <div class="left pagination">
+  {% if starts_with %}
+  <a href="../../">all marked covers</a>
+  {% endif %}
+  {% for letter in "ABCDEFGHIJKLMNOPQRSTUVXYZ"|make_list %}
+  |
+  {% ifequal letter starts_with %}
+  {{ letter }}
+  {% else %}
+  {% if starts_with %}
+  <a href="../{{ letter }}">{{ letter }}</a>
+  {% else %}
+  <a href="with/{{ letter }}">{{ letter }}</a>  
+  {% endif %}
+  {% endifequal %}
+  {% endfor %}
+  </div>
+</div>
 
 {% endblock %}

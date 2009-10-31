@@ -4,7 +4,7 @@
 
 import re
 from urllib import urlopen
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
 from django.db.models import Q
 from django.conf import settings
@@ -13,7 +13,7 @@ from django.core.paginator import QuerySetPaginator
 from django.shortcuts import render_to_response, \
                              get_object_or_404, \
                              get_list_or_404
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Story, \
@@ -96,21 +96,18 @@ def series(request, series_id):
     covers = series.cover_set.select_related('issue')
     
     try:
-        cover = covers.filter(has_image = '1')[0]
+        cover = covers.filter(has_image = True)[0]
+        image_tag = get_image_tag(series_id = int(series_id),
+                                  cover = cover,
+                                  zoom_level = ZOOM_MEDIUM,
+                                  alt_text = 'First Issue Cover')
     except IndexError:
-        try:
-            cover = covers[0]
-        except IndexError:
-            cover = None
+        image_tag = ''
         
     try:
         country = Country.objects.get(code__iexact = series.country_code).name
     except:
         country = series.country_code
-    image_tag = get_image_tag(series_id = int(series_id),
-                              cover = cover,
-                              zoom_level = ZOOM_MEDIUM,
-                              alt_text = 'First Issue Cover')
 
     # TODO: Fix language table hookup- why is this not a foreign key?
     # For now if we can't get a match in the table then just use the
@@ -260,7 +257,11 @@ def daily_covers(request, show_date=None):
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 5
     style = get_style(request)
-    covers = Cover.objects.filter(modified=requested_date)
+
+    covers = Cover.objects.filter(modified__range=(\
+                                  datetime.combine(requested_date, time.min),
+                                  datetime.combine(requested_date, time.max)))
+
     covers = covers.filter(has_image=True)
     covers = covers.order_by("issue__series__publisher__name",
                              "issue__series__name",
@@ -358,6 +359,9 @@ def issue_form(request):
     a better way to propagate the 'style' parameter.
     """
     params = request.GET.copy()
+    if 'id' not in params:
+        raise Http404
+
     id = params['id']
     del params['id']
     return HttpResponseRedirect(

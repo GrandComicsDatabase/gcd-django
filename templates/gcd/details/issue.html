@@ -34,9 +34,10 @@
 <!-- Not trying to display the reservation holder now until we figure out
      what to do with all the null and multiple reservations.
   -->
+<div id="index_status_inner">
 <span>
 {% ifequal issue.index_status 0 %}
-   This issue has not been indexed yet.  Please sign in and index it if you can!
+   This issue has not been indexed yet.  Please edit it if you can provide any information.
 {% endifequal %}
 {% ifequal issue.index_status 1 %}
    This issue is currently being edited by
@@ -48,13 +49,15 @@
 {% endifequal %}
 </span>
 </div>
+</div>
 {% endifnotequal %}
 
 <dl id="issue_data_list">
   <dt> {% trans "Price" %}:
   <dd id="issue_price"> {{ issue.price|default:"" }}
   <dt> {% trans "Pages" %}:
-  <dd id="issue_pages"> {{ cover_story.page_count }}
+  <dd id="issue_pages">
+    {% if cover_story.page_count %}{{ cover_story.page_count }}{% endif %}
     {% if cover_story.page_count_uncertain %}?{% endif %}
   {{ cover_story|show_credit:"editor" }}
 </dl>
@@ -79,6 +82,7 @@
       <ol>
         {% for story in stories %}
         <li class="{% cycle 'odd' 'even' %}">
+          {{ forloop.counter }}.
           <span class="toc_story_title">
           <a href="#{{ story.id }}">{% if story.title %}
             {{ story.title }}
@@ -99,14 +103,14 @@
       <div id="indexers_header">{% trans "This issue was most recently indexed by:" %}</div>
       <ul>
         {% for credit in oi_indexers %}
-          <li> {{ credit.name }}
+          <li> {{ credit }}
         {% endfor %}
       </ul>
       {% endif %}
       <div id="indexers_header">{% trans "Issues in this series have been indexed by:" %}</div>
       <ul>
         {% for credit in issue.series.index_credit_set.all.select_related %}
-          <li> {{ credit.indexer.name }}
+          <li> {{ credit.indexer }}
         {% endfor %}
       </ul>
     </div> <!-- index_credits -->
@@ -115,21 +119,25 @@
 
   <div id="cover">
     {% if issue.cover.has_image %}
-      {{ image_tag }}
+      <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">{{ image_tag }}</a>
     {% else %}
       <a href="{{ issue.cover.get_status_url }}">{{ image_tag }}</a>
     {% endif %}
     <div class="issue_cover_links">
-      {% if issue.cover.has_large %}
+      {% if issue.cover.has_image %}
         View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
         <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
+      <br>
+      {% if issue.cover.marked %}
+      <a href="{% url apps.gcd.views.covers.cover_upload issue_id=issue.id%}?style={{ style }}">Replace cover</a>
+      <br>
       {% endif %}
-      <br>
-      <a href="{% url apps.gcd.views.covers.variant_upload issue_id=issue.id%}?style={{ style }}">Add Variant Cover</a>
-      <br>
-      <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover Gallery</a>
+      {% endif %}
+      {% if issue.series.has_gallery %}
+      <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover gallery</a>
+      {% endif %}
     </div>
-    <div class="disclaimer">
+    <div id="cover_disclaimer">
     Cover thumbnails are used for identification purposes only. All rights to 
     cover images reserved by the respective copyright holders. 
     </div>

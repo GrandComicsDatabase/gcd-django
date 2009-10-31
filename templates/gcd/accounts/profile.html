@@ -1,22 +1,77 @@
 {% extends "gcd/base_view.html" %}
 
+{% load forms %}
+
 {% block css %}
   <link rel="stylesheet" type="text/css"
         href="{{ MEDIA_URL }}/css/gcd/default.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/default/issue.css"/>
-  <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/default/single_story.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/default/accounts.css"/>
 {% endblock %}
+
+{% block title %} GCD User :: {{ profile_user }} {% endblock %}
 
 {% block view_body %}
 
+<p class="message">
+Please note:  Online Indexing is currently disabled while we complete the new implementation.  It is expected to return by mid-November.
+</p>
+
+{% if error_list %}
+<ul class="error_message">
+{% for error in error_list %}
+  <li> {{ error }} </li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% include 'gcd/bits/profile_limits.html' %}
+
+{% if form %}
+</form>
+<form action="/accounts/profile/{{ profile_user.id|default:user.id }}/" method="POST">
+<fieldset>
+<legend>Personal Information</legend>
+<ol>
+  {{ form.email|show_form }}
+  {{ form.first_name|show_form }}
+  {{ form.last_name|show_form }}
+  {{ form.country|show_form }}
+  {{ form.languages|show_form }}
+  {{ form.interests|show_form }}
+</ol>
+</fieldset>
+<fieldset>
+<legend>Change Password</legend>
+<div class="instructions">
+Leave all three fields blank to leave your password unchanged.
+</div>
+<ol>
+  {{ form.old_password|show_form }}
+  {{ form.new_password|show_form }}
+  {{ form.confirm_new_password|show_form }}
+</ol>
+</fieldset>
 <p>
-Username: {{ user.username }}<br/>
-Name: {{ user.indexer }}<br/>
-Email: {{ user.email }}<br/>
-Country: {{ user.indexer.country_code }} <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ user.indexer.country_code|lower }}.png" alt="{{ country }}" class="embedded_flag"><br>
-Groups: {% for group in user.groups.all %}{{ group }} {% endfor %}
+<input type="submit" value="Save"></td>
+</p>
+</form>
+{% else %}
+{% include 'gcd/bits/profile_display.html' %}
+
+{% ifequal profile_user user %}
+<form action="{% url edit_profile user_id=profile_user.id %}" method="GET">
+<input type="submit" value="Edit Profile">
+</form>
+{% endifequal %}
+
+{% endif %}
+
+<a href="/queues/reserved/">My reservations</a><br>
+{% if perms.oi.can_approve %}
+<a href="/queues/pending/">Pending queue</a><br>
+<a href="/queues/reviews/">My reviews</a><br>
+{% endif %}
 </p>
 
 {% endblock %}

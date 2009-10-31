@@ -6,6 +6,8 @@ from os import environ # helps determine MEDIA_URL.
 DEBUG          = True
 TEMPLATE_DEBUG = DEBUG
 
+BETA = False
+
 # Set to True to avoid hitting comics.org for every cover image.
 # If True, the same cover image will be used for every issue.
 FAKE_COVER_IMAGES = False
@@ -29,6 +31,7 @@ DATABASE_PORT     = ''
 
 # middleware settings, LocalMiddleware is for internationalisation
 MIDDLEWARE_CLASSES = (
+   'django.contrib.csrf.middleware.CsrfMiddleware',
    'django.contrib.sessions.middleware.SessionMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.locale.LocaleMiddleware',
@@ -41,7 +44,7 @@ ROOT_URLCONF = 'urls'
 
 # Email these if there's a site exception and debug isn't on.
 ADMINS = (
-    ('Henry Andrews', 'andrews_henry at yahoo.com'),
+    ('GCD Admins', 'sysadmin@comics.org'),
 )
 MANAGERS = ADMINS
 
@@ -50,10 +53,9 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    # 'django.contrib.sites',
     'django.contrib.admin',
-    'apps.oi',
     'apps.gcd',
+    'apps.oi',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -71,10 +73,14 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',
     'django.core.context_processors.request',
+    'apps.gcd.context_processors.beta',
 )
 
 AUTH_PROFILE_MODULE = 'gcd.Indexer'
-
+AUTHENTICATION_BACKENDS = (
+    'apps.gcd.backends.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 # Corresponds to the django_site database table. As far
 # as I know, we won't be using this for the GCD.
@@ -83,6 +89,24 @@ SITE_ID = 1
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 TIME_ZONE = 'GMT'
+
+DEFAULT_FROM_EMAIL = 'GCD Contact <gcd-contact@googlegroups.com>'
+EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
+EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
+EMAIL_CONTACT = 'gcd-contact@googlegroups.com'
+
+# Number of days for which a registraton confirmation token is valid.
+REGISTRATION_EXPIRATION_DELTA = 2
+RESERVE_MAX_INITIAL = 1
+RESERVE_MAX_PROBATION = 5
+RESERVE_MAX_DEFAULT = 20
+
+RESERVE_MAX_ONGOING_INITIAL = 0
+RESERVE_MAX_ONGOING_PROBATION = 2
+RESERVE_MAX_ONGOING_DEFAULT = 10
+
+SITE_URL = 'http://www.comics.org/'
+SITE_NAME = 'Grand Comic-Book Database'
 
 # get local settings, will override settings from here
 try:

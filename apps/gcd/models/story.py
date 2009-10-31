@@ -44,18 +44,10 @@ class Story(models.Model):
     sequence_number = models.IntegerField(db_column='Seq_No', null=True)
     job_number = models.CharField(max_length=25, db_column='JobNo', null=True)
 
-    # I believe this counts issues this appears in (i.e. reprints)
-    issue_count = models.IntegerField(db_column = 'IssueCount', null = True)
-
-
     # Fields from issue (foreign key plus duplicates/caches).
     issue = models.ForeignKey(Issue,
                               db_column = 'IssueID',
                               null = True)
-
-    # Fields from series.  Should be a foreign key but apparently somtimes
-    # violates that constraint so kept only as an integer.  Needs work.
-    series = models.IntegerField(db_column = 'SeriesID', null = True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=0)

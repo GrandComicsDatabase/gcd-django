@@ -32,7 +32,7 @@ def show_credit(story, credit):
         target = credit[4:]
         credit_string = ''
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editor']:
-            if story.__dict__[c].find(target) != -1:
+            if story.__dict__[c].lower().find(target.lower()) != -1:
               credit_string += ' ' + __format_credit(story, c, style)
         return credit_string
 
@@ -41,13 +41,6 @@ def show_credit(story, credit):
 
     else:
         return ""
-
-def show_form(field):
-    """
-    For showing form fields for credits and similar fields.
-    """
-    return mark_safe('<li>' + field.label_tag() + unicode(field) + \
-                     unicode(field.errors))
 
 def __credit_visible(value):
     """
@@ -118,7 +111,6 @@ def show_issue_number(issue_number):
             esc(issue_number) + '</span>')
 
 register.filter(show_credit)
-register.filter(show_form)
 register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)

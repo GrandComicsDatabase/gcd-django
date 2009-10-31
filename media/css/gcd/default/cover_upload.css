@@ -34,6 +34,12 @@ label {
     color: red;
 }
 
+#variant_info{
+    margin-top: 6em;
+    border: solid 2px red;
+    padding: 3px;
+}
+
 #display_cover {
     margin: 1em 0;
     padding: 0;

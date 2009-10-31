@@ -1,0 +1,43 @@
+{% extends "gcd/base_view.html" %}
+
+{% load forms %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/default.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/default/accounts.css"/>
+{% endblock %}
+
+{% block title %} GCD :: Mentor an Indexer {% endblock %}
+
+{% block view_body %}
+
+{% if indexer.mentor %}
+  {% ifequal indexer.mentor user %}
+    <p class="message">
+    You are mentoring this Indexer
+    </p>
+  {% else %}
+    <p class="message">
+    This Indexer is being mentored by {{ indexer.mentor.indexer }}
+    </p>
+  {% endifequal %}
+{% else %}
+  {% if indexer.is_new %}
+    <form action="{% url mentor indexer_id=indexer.id %}" method="POST">
+      <input type="submit" value="Mentor this Indexer">
+    </form>
+  {% else %}
+    <p class="message">
+    This Indexer does not require a Mentor
+    </p>
+  {% endif %}
+{% endif %}
+
+{% with indexer.user as profile_user %}
+  {% include 'gcd/bits/profile_limits.html' %}
+  {% include 'gcd/bits/profile_display.html' %}
+{% endwith %}
+
+{% endblock %}

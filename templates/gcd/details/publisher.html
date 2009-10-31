@@ -46,33 +46,37 @@
   </div>
 {% endif %}
 
-<dl class="pub_data">
-{% if publisher.country %}
-  <dt> Country:
-  <dd> {{ publisher.country.name }}
-{% endif %}
+<div>
+  <dl class="pub_data">
+  {% if publisher.country %}
+    <dt> Country:
+    <dd> {{ publisher.country.name }}
+  {% endif %}
 
-{% if publisher.has_imprints %}
-  <dt> Imprints:
-  <dd> <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_set.count }}</a>
-{% endif %}
+  {% if publisher.has_imprints %}
+    <dt> Imprints:
+    <dd> <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_set.count }}</a>
+  {% endif %}
 
-{% if publisher.notes %}
-  <dt> Notes:
-  <dd> {{ publisher.notes|linebreaksbr }}
-{% endif %}
+  {% if publisher.notes %}
+    <dt> Notes:
+    <dd> {{ publisher.notes|linebreaksbr }}
+  {% endif %}
 
-{% if publisher.url %}
-  <dt> Web Site:
-  <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
-{% endif %}
+  {% if publisher.url %}
+    <dt> Web Site:
+    <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
+  {% endif %}
 
 {% ifequal page.object_list.count 0 %}
-  <dt> Titles:
-  <dd> None
-</dl>
+    <dt> Titles:
+    <dd> None
+  </dl>
+</div>
 {% else %}
-</dl>
+  </dl>
+</div>
+
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Title </th>
@@ -81,7 +85,7 @@
     <th> Covers </th>
     <th> Published </th>
   </tr>
-{% for series in page.object_list %}
+  {% for series in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}
@@ -89,7 +93,7 @@
     {% if not series.scan_needed %}
     <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
     {% else %}
-      {% if series.scan_count %}
+      {% if series.has_gallery %}
         <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
         {{ series.scan_count}}</a>
         (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need 
@@ -100,7 +104,7 @@
     {% endif %}
     <td> {{ series.publication_dates }} </td>
   </tr>
-{% endfor %}
+  {% endfor %}
 </table>
 {% endifequal %}
 

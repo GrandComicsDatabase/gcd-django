@@ -85,7 +85,7 @@ div#format {
 #story_toc ol {
     margin: 0;
     padding: 0;
-    list-style-position: inside;
+    list-style: none;
 }
 
 #story_toc ol li {
@@ -117,10 +117,6 @@ div#format {
     clear: left;
     font-size: 0.75em;
     width: 100%;
-}
-
-#cover_disclaimer {
-    margin-bottom: 0.4em;
 }
 
 #cover_credits { /* center */
@@ -156,8 +152,8 @@ div#format {
 }
 
 #cover_disclaimer {
-    font-size: 0.75em;
-    color: #CCC;
+    font-size: 0.8em;
+    color: #BBB;
 }
 
 #index_credits {

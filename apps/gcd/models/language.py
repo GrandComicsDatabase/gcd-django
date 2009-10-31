@@ -11,5 +11,5 @@ class Language(models.Model):
         app_label = 'gcd'
 
     def __unicode__(self):
-        return self.language + " (" + self.code + ")"
+        return self.name
 

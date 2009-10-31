@@ -1,7 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Strict//EN">
 <html>
 <head>
-<title>{% block title %}{% endblock %}</title>
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="shortcut icon" href="{{ MEDIA_URL }}/img/favicon.ico"/>
 
 {% comment %}
 Having trouble with block / ifnotequal interactions.  Need to investigate.
@@ -13,6 +14,9 @@ For now, just a simple single block for all CSS, despite redundancy.
 
 <body>
 <div id="sizing_base">
+{% if BETA %}
+  {% include "gcd/bits/beta_banner.html" %}
+{% endif %}
 {% block body %}{% endblock %}
 
 {% include "gcd/fine_print.html" %}

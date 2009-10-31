@@ -15,25 +15,26 @@
 
 {% include "gcd/bits/publisher_header.html" %}
 
-<dl class="pub_data">
-{% if publisher.country %}
-  <dt> Country:
-  <dd> {{ publisher.country.name }}
-{% endif %}
+<div>
+  <dl class="pub_data">
+  {% if publisher.country %}
+    <dt> Country:
+    <dd> {{ publisher.country.name }}
+  {% endif %}
 
-{% if publisher.notes %}
-  <dt> Notes:
-  <dd> {{ publisher.notes|linebreaksbr }}
-{% endif %}
+  {% if publisher.notes %}
+    <dt> Notes:
+    <dd> {{ publisher.notes|linebreaksbr }}
+  {% endif %}
 
-{% if publisher.url %}
-  <dt> Web Site:
-  <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
-{% endif %}
-</dl>
+  {% if publisher.url %}
+    <dt> Web Site:
+    <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
+  {% endif %}
+  </dl>
+</div>
 
 {% if publisher.has_imprints %}
-</dl>
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Imprint </th>

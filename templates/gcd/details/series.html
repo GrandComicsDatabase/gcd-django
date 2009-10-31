@@ -20,12 +20,14 @@
 
 {% include "gcd/bits/series_issue_header.html" %}
 <div class="clear">
+{% if series.has_gallery %}
 <div id="series_cover">
   {{ image_tag }}
 <p>
 <a href="{{ series.get_absolute_url }}covers/?style={{ style }}">See cover gallery</a>
 </p>
 </div>
+{%endif %}
 
 <div id="series_data">
 <dl>

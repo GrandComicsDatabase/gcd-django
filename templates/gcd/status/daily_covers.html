@@ -8,8 +8,6 @@
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/gcd/{{ style }}/covers.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -44,8 +42,9 @@
         <option value="10">{% trans 'October' %}</option>
         <option value="11">{% trans 'November' %}</option>
         <option value="12">{% trans 'December' %}</option>
-      <input type="text" name="day" id="day" size="2"/>
-      <input type="submit" value="{% trans 'Go' %}"/>
+      </select>
+      <input type="text" name="day" id="day" size="2">
+      <input type="submit" value="{% trans 'Go' %}">
     </form>
   {% if date_after %}
    | <a href="{% url apps.gcd.views.details.daily_covers show_date=date_after %}">{% trans "Day after" %} &gt;</a>
@@ -72,13 +71,16 @@
 <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
 <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span> <br/>
       <div class="cover_caption">
-        {% if can_mark and not cover.marked %}
-        <a href="{% url apps.gcd.views.covers.mark_cover issue_id=issue.id %}">mark for replacement</a><br>
-        {% endif %}
         {{ issue.series.name }} #{{ issue.number }}<br/>
-        ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br/>
+        ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br>
         {% if issue.publication_date %}
-        <span class="cover_date">{{ issue.publication_date }}</span>
+        <span class="cover_date">{{ issue.publication_date }}</span><br>
+        {% endif %}
+        {% if can_mark and not cover.marked %}
+        <a href="{% url apps.gcd.views.covers.mark_cover issue_id=issue.id %}">Mark for replacement</a>
+        {% endif %}
+        {% if cover.marked %}
+        <a href="{% url apps.gcd.views.covers.cover_upload issue_id=issue.id %}">Replace cover</a>
         {% endif %}
       </div>
     </td>
@@ -89,6 +91,12 @@
   {% endfor %}
   </tr>
 </table>
+
+<div id="item_id_footer" class="item_id">
+  {% if page %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endif %}
+</div>
 
 {% endblock %}
 

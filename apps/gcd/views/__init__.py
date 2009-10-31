@@ -1,8 +1,18 @@
+import sha
+from random import random
+
+from urllib import quote
 from django.conf import settings
+from django.core import urlresolvers
 from django.core.paginator import QuerySetPaginator
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response
+from django.utils.safestring import mark_safe
+
+from pagination import DiggPaginator
+
+from apps.gcd.models import Errors
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -19,14 +29,15 @@ def index(request):
                               context_instance=RequestContext(request))
       
 
-PAGE_DELTA = 2
 def paginate_response(request, queryset, template, vars, page_size=100,
                       callback_key=None, callback=None):
     """
-    Quick hack to implement direct page links, needs revisiting later
-    or we should reconsider using another library such as DiggPaginator.
+    Uses DiggPaginator from
+    http://bitbucket.org/miracle2k/djutils/src/tip/djutils/pagination.py.
+    We could reconsider writing our own code.
     """
-    p = QuerySetPaginator(queryset, page_size)
+
+    p = DiggPaginator(queryset, page_size, body=5, padding=2)
 
     page_num = 1
     redirect = None
@@ -43,37 +54,55 @@ def paginate_response(request, queryset, template, vars, page_size=100,
     if redirect is not None:
         args = request.GET.copy()
         args['page'] = redirect
-        return HttpResponseRedirect(request.path + '?' + args.urlencode())
+        return HttpResponseRedirect(quote(request.path.encode('UTF-8')) +
+                                    u'?' + args.urlencode())
 
     page = p.page(page_num)
 
-    page_min = page_num - PAGE_DELTA
-    low_page_range = ()
-    if page_min <= 1 + PAGE_DELTA:
-        page_min = 1
-    else:
-        low_page_range = range(1, PAGE_DELTA +1)
-
-    page_max = page_num + PAGE_DELTA
-    high_page_range = ()
-    if page_max >= p.num_pages - PAGE_DELTA:
-        page_max = p.num_pages
-    else:
-        high_page_range = range(p.num_pages - PAGE_DELTA +1,
-                                p.num_pages + 1)
     vars['items'] = page.object_list
     vars['paginator'] = p
     vars['page'] = page
     vars['page_number'] = page_num
-    vars['ranges'] = { 'low': low_page_range,
-                       'current': range(page_min, page_max + 1),
-                       'current_max': page_max,
-                       'high': high_page_range,
-                     }
 
     if callback_key is not None:
         vars[callback_key] = callback(page)
 
     return render_to_response(template, vars,
+                              context_instance=RequestContext(request))
+
+
+def render_error(request, error_text, redirect=True, is_safe = False):
+    if redirect:
+        if error_text != '':
+            salt = sha.new(str(random())).hexdigest()[:5]
+            key = sha.new(salt + error_text).hexdigest()
+            Errors.objects.create(error_key=key, is_safe=is_safe,
+                                  error_text=error_text,)
+            return HttpResponseRedirect(
+              urlresolvers.reverse('error') +
+              u'?error_key=' + key)
+
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('error'))
+    else:
+        return error_view(request, error_text)
+
+
+def error_view(request, error_text = ''):
+    if error_text == '':
+        if 'error_key' not in request.GET:
+            error_text = 'Unknown error.'
+        else:
+            key = request.GET['error_key']
+            errors = Errors.objects.filter(error_key=key)
+            if errors.count() == 1:
+                error_text = unicode(errors[0])
+                if errors[0].is_safe:
+                     error_text = mark_safe(error_text)
+                errors[0].delete()
+            else:
+                error_text = 'Unknown error.'
+    return render_to_response('gcd/error.html',
+                              { 'error_text': error_text },
                               context_instance=RequestContext(request))
 
