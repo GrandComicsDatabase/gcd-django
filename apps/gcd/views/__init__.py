@@ -12,7 +12,7 @@ from django.utils.safestring import mark_safe
 
 from pagination import DiggPaginator
 
-from apps.gcd.models import Errors
+from apps.gcd.models import Error
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -76,7 +76,7 @@ def render_error(request, error_text, redirect=True, is_safe = False):
         if error_text != '':
             salt = sha.new(str(random())).hexdigest()[:5]
             key = sha.new(salt + error_text).hexdigest()
-            Errors.objects.create(error_key=key, is_safe=is_safe,
+            Error.objects.create(error_key=key, is_safe=is_safe,
                                   error_text=error_text,)
             return HttpResponseRedirect(
               urlresolvers.reverse('error') +
@@ -94,7 +94,7 @@ def error_view(request, error_text = ''):
             error_text = 'Unknown error.'
         else:
             key = request.GET['error_key']
-            errors = Errors.objects.filter(error_key=key)
+            errors = Error.objects.filter(error_key=key)
             if errors.count() == 1:
                 error_text = unicode(errors[0])
                 if errors[0].is_safe:

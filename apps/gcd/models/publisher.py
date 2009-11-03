@@ -4,34 +4,31 @@ from django.core.exceptions import ObjectDoesNotExist
 
 class Publisher(models.Model):
     class Meta:
-        db_table = 'publishers'
         ordering = ['name']
         app_label = 'gcd'
 
-    id = models.AutoField(primary_key=True, db_column='ID')
-
     # Core publisher fields.
-    name = models.CharField(max_length=255, db_column='PubName', null=True)
-    year_began = models.IntegerField(db_column='YearBegan', null=True)
-    year_ended = models.IntegerField(db_column='YearEnded', null=True)
-    country = models.ForeignKey(Country, db_column='CountryID', null=True)
-    notes = models.TextField(db_column='Notes', null=True)
-    url = models.URLField(db_column='web', null=True)
+    name = models.CharField(max_length=255, db_index=True)
+    year_began = models.IntegerField(db_index=True, null=True)
+    year_ended = models.IntegerField(null=True)
+    country = models.ForeignKey(Country)
+    notes = models.TextField(null=True)
+    url = models.URLField(null=True)
 
-    # Cached counts.  Not guaranteed to be accurate in a production dump.
-    imprint_count = models.IntegerField(db_column='ImprintCount', null=True)
-    series_count = models.IntegerField(db_column='BookCount', null=True)
-    issue_count = models.IntegerField(db_column='IssueCount', null=True)
+    # Cached counts.
+    imprint_count = models.IntegerField()
+    series_count = models.IntegerField()
+    issue_count = models.IntegerField()
 
     # Fields about relating publishers/imprints to each other.
-    is_master = models.NullBooleanField(db_column='Master')
-    parent = models.ForeignKey('self', db_column='ParentID',
-                               null=True, related_name='imprint_set')
+    is_master = models.BooleanField(db_index=True)
+    parent = models.ForeignKey('self', null=True,
+                               related_name='imprint_set')
 
     # Fields related to change management.
     reserved = models.BooleanField(default=0, db_index=True)
-    created = models.DateField(auto_now_add=True, null=True)
-    modified = models.DateField(db_column='Modified', auto_now=True, null=True)
+    created = models.DateField(auto_now_add=True)
+    modified = models.DateField(auto_now=True)
 
     def __unicode__(self):
         return self.name

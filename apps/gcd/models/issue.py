@@ -3,51 +3,34 @@ from django.db import models
 from series import Series
 
 class Issue(models.Model):
-    """ issue from gcd database"""
-
     class Meta:
-        db_table = 'issues'
         app_label = 'gcd'
-        ordering = ['key_date']
-
-    class Admin:
-        pass
-
-    id = models.AutoField(primary_key=True, db_column='ID')
+        ordering = ['series', 'sort_code']
 
     # Core issue attributes.
     # Note that volume is not consistently used at this time, and
-    # is usually included in 'issue' when it is of critical importance.
-    volume = models.IntegerField(max_length=255, db_column='VolumeNum',
-                                 null=True)
-    number = models.CharField(max_length=25, db_column='Issue',
-                              null=True)
-    # Note that in stories, publication_date is limited to 50 chars.
-    publication_date = models.CharField(max_length=255,
-                                        db_column='Pub_Date',
-                                        null=True)
-    price = models.CharField(max_length=25, db_column='Price', null=True)
-    story_count = models.IntegerField(db_column='storycount', null=True)
-    key_date = models.CharField(max_length=10, db_column='Key_Date',
-                                null=True)
+    # is usually included in 'number' when it is of critical importance.
+    volume = models.IntegerField(max_length=255, db_index=True)
+    number = models.CharField(max_length=25, null=True, db_index=True)
+    publication_date = models.CharField(max_length=255, null=True)
+    price = models.CharField(max_length=255, null=True)
+    story_count = models.IntegerField(null=True)
+    key_date = models.CharField(max_length=10, null=True)
+    sort_code = models.IntegerField(db_index=True)
 
     # Fields related to indexing activities.
     # Only "reserved" is in active use, the others are legacy fields
     # used only by migration scripts.
-    reserved = models.BooleanField(default=0)
-    index_status = models.IntegerField(db_column='IndexStatus', null=True)
-    reserve_status = models.IntegerField(db_column='ReserveStatus',
-                                         null=True)
+    reserved = models.BooleanField(default=0, db_index=True)
+    index_status = models.IntegerField(null=True)
+    reserve_status = models.IntegerField(db_index=True)
+    reserve_check = models.NullBooleanField(db_index=True)
 
-    # Attributes from series table. First is foreign key, rest are
-    # dupes and seem to be ignored in the lasso implementation
-    series = models.ForeignKey(Series,
-                               db_column='SeriesID')
+    series = models.ForeignKey(Series)
 
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True, null=True)
-    modified = models.DateTimeField(db_column='Modified',
-                                    auto_now=True, null=True)
+    modified = models.DateTimeField(auto_now=True, null=True, db_index=True)
     
     def index_status_description(self):
         """Text form of status.  If clauses arranged in order of most

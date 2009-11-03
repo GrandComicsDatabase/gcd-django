@@ -4,25 +4,22 @@ from indexer import Indexer
 from series import Series
 
 class IndexCredit(models.Model):
-    """ indexing credits from gcd database"""
+    """
+    Series-level indexing credits from gcd database.
+    No longer updated, but used for historical crediting.
+    """
 
     class Meta:
-        db_table = 'IndexCredit'
+        db_table = 'gcd_series_indexers'
         app_label = 'gcd'
 
     class Admin:
         pass
 
-    id = models.AutoField(primary_key = True, db_column = 'ID')
+    indexer = models.ForeignKey(Indexer, related_name='index_credit_set')
+    series = models.ForeignKey(Series, related_name='index_credit_set')
+    run = models.CharField(max_length=255, null=True)
+    notes = models.TextField(null=True)
 
-    indexer = models.ForeignKey(Indexer, db_column = 'IndexerID',
-                                related_name = 'index_credit_set')
-    series = models.ForeignKey(Series, db_column = 'SeriesID',
-                               related_name = 'index_credit_set')
-    run = models.CharField(max_length = 255, db_column = 'Run', null = True)
-    notes = models.TextField(db_column = 'Notes', null = True)
-    comment = models.TextField(db_column = 'Comment', null = True)
-
-    modified = models.DateField(db_column = 'DateMod',
-                                auto_now = True, null = True)
+    modified = models.DateTimeField(auto_now=True)
 

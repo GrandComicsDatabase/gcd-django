@@ -32,11 +32,11 @@ def show_credit(story, credit):
         target = credit[4:]
         credit_string = ''
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editor']:
-            if story.__dict__[c].lower().find(target.lower()) != -1:
+            if getattr(story, c).lower().find(target.lower()) != -1:
               credit_string += ' ' + __format_credit(story, c, style)
         return credit_string
 
-    elif story.__dict__.has_key(credit):
+    elif hasattr(story, credit):
         return __format_credit(story, credit, style)
 
     else:
@@ -51,7 +51,7 @@ def __credit_visible(value):
 
 
 def __format_credit(story, credit, style):
-    credit_value = story.__dict__[credit]
+    credit_value = getattr(story, credit)
     if not __credit_visible(credit_value):
         return ''
 
@@ -84,27 +84,25 @@ def __format_credit(story, credit, style):
 # these next three might better fit into a different file
 
 def show_country(series):
-    """ Translate country code into country name."""
-    try:
-        country = Country.objects.get(code__iexact = series.country_code).name
-    except:
-        country = series.country_code
-    return country
+    """
+    Translate country code into country name.
+    Formerly had to do real work when we did not have foreign keys.
+    """
+    return unicode(series.country)
 
 
 def show_language(series):
-    """ Translate country code into country name."""
-    # see comment in series of details.py
-    try:
-        lobj = Language.objects.get(code__iexact = series.language_code)
-        language = lobj.name
-    except:
-        language = series.language_code
-    return language
+    """
+    Translate country code into country name.
+    Formerly had to do real work when we did not have foreign keys.
+    """
+    return unicode(series.language)
 
 def show_issue_number(issue_number):
-    """ Return issue number, but maybe not """
-    if issue_number == 'nn' or issue_number == '[nn]':
+    """
+    Return issue number, unless it is marked as not having one.
+    """
+    if issue_number == '[nn]':
         return ''
     else: 
         return mark_safe('<span id="issue_number"><span class="p">#</span>' + \
@@ -114,3 +112,4 @@ register.filter(show_credit)
 register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)
+

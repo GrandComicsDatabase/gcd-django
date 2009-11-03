@@ -10,4 +10,4 @@ from cover import Cover
 from indexer import Indexer
 from indexcredit import IndexCredit
 from reservation import Reservation
-from errors import Errors
+from error import Error

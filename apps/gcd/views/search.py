@@ -476,7 +476,7 @@ def search_series(data, op):
                                        end_name='%syear_ended' % prefix))
 
     if data['language']:
-        language_qargs = { '%slanguage_code__in' % prefix : data['language'] }
+        language_qargs = { '%slanguage__code__in' % prefix : data['language'] }
         q_and_only.append(Q(**language_qargs))
 
     q_objs = []
@@ -707,7 +707,7 @@ def compute_order(data):
             if order == 'date':
                 terms.append('year_began')
             elif order == 'country':
-                terms.append('country__code')
+                terms.append('country__name')
 
         elif target == 'series':
             if order == 'date':
@@ -715,9 +715,9 @@ def compute_order(data):
             elif order == 'publisher':
                 terms.append('publisher')
             elif order == 'country':
-                terms.append('country_code')
+                terms.append('country__name')
             elif order == 'language':
-                terms.append('language_code')
+                terms.append('language__name')
             
         elif target == 'issue':
             if order == 'date':
@@ -727,9 +727,9 @@ def compute_order(data):
             elif order == 'publisher':
                 terms.append('series__publisher')
             elif order == 'country':
-                terms.append('series__country_code')
+                terms.append('series__country__name')
             elif order == 'language':
-                terms.append('series__language_code')
+                terms.append('series__language__name')
             
         elif target == 'sequence' or target == 'feature':
             if order == 'publisher':
@@ -739,9 +739,9 @@ def compute_order(data):
             elif order == 'date':
                 terms.append('issue__key_date')
             elif order == 'country':
-                terms.append('issue__series__country_code')
+                terms.append('issue__series__country__name')
             elif order == 'language':
-                terms.append('issue__series__language_code')
+                terms.append('issue__series__language__name')
             else:
                 terms.append(order)
 

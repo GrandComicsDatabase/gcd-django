@@ -384,11 +384,6 @@ class PublisherRevision(Revision):
     class Meta:
         db_table = 'oi_publisher_revision'
         ordering = ['-created', '-id']
-        permissions = (
-            ('can_reserve', 'can reserve a record for add, edit or delete'),
-            ('can_approve', 'can approve a change to a record'),
-            ('can_cancel', 'can cancel a pending change they did not open'),
-        )
 
     objects=PublisherRevisionManager()
 
@@ -523,8 +518,8 @@ class SeriesRevisionManager(RevisionManager):
           first_issue=series.first_issue,
           last_issue=series.last_issue,
 
-          country_code=series.country_code,
-          language_code=series.language_code,
+          country=series.country,
+          language=series.language,
           publisher=series.publisher,
           imprint=series.imprint,
           **kwargs)
@@ -536,11 +531,6 @@ class SeriesRevision:
     class Meta:
         db_table = 'oi_series_revision'
         ordering = ['-created', '-id']
-        permissions = (
-            ('can_reserve', 'can reserve a record for add, edit or delete'),
-            ('can_approve', 'can approve a change to a record'),
-            ('can_cancel', 'can cancel a pending change they did not open'),
-        )
 
     objects=SeriesRevisionManager()
 
@@ -566,10 +556,11 @@ class SeriesRevision:
     first_issue = models.CharField(max_length=10, null=True, blank=True)
     last_issue = models.CharField(max_length=10, null=True, blank=True)
 
-    # Country info- for some reason not a foreign key to Countries table.
-    country_code = models.CharField(max_length=4, null=True, blank=True)
-    # Language info- for some reason not a foreign key to Languages table.
-    language_code = models.CharField(max_length=3, null=True, blank=True)
+    # Country and Language info.
+    country = models.ForeignKey(Country, null=True, blank=True,
+                                related_name='series_revisions')
+    language = models.ForeignKey(Language, null=True, blank=True,
+                                 related_name='series_revisions')
 
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher, null=True, blank=True,
@@ -595,8 +586,8 @@ class SeriesRevision:
         series.first_issue = self.first_issue
         series.last_issue = self.last_issue
 
-        series.country_code = self.country_code
-        series.language_code = self.language_code
+        series.country = self.country
+        series.language = self.language
         series.publisher = self.publisher
         series.imprint = self.imprint
 
@@ -649,6 +640,7 @@ class IssueRevisionManager(RevisionManager):
           publication_date=issue.publication_date,
           price=issue.price,
           key_date=issue.key_date,
+          sort_code=issue.sort_code,
           series=issue.series,
           **kwargs)
 
@@ -659,11 +651,6 @@ class IssueRevision(Revision):
     class Meta:
         db_table = 'oi_issue_revision'
         ordering = ['-created', '-id']
-        permissions = (
-            ('can_reserve', 'can reserve a record for add, edit or delete'),
-            ('can_approve', 'can approve a change to a record'),
-            ('can_cancel', 'can cancel a pending change they did not open'),
-        )
 
     objects = IssueRevisionManager()
 
@@ -675,6 +662,7 @@ class IssueRevision(Revision):
     publication_date = models.CharField(max_length=255, null=True)
     price = models.CharField(max_length=25, null=True)
     key_date = models.CharField(max_length=10, null=True)
+    sort_code = models.IntegerField()
 
     series = models.ForeignKey(Series)
 
@@ -687,6 +675,7 @@ class IssueRevision(Revision):
         issue.publication_date = self.publication_date
         issue.price = self.price
         issue.key_date = self.key_date,
+        issue.sort_code = self.sort_code,
         issue.series = self.series
 
         if clear_reservation:
@@ -769,11 +758,6 @@ class StoryRevision(Revision):
     class Meta:
         db_table = 'oi_story_revision'
         ordering = ['-created', '-id']
-        permissions = (
-            ('can_reserve', 'can reserve a record for add, edit or delete'),
-            ('can_approve', 'can approve a change to a record'),
-            ('can_cancel', 'can cancel a pending change they did not open'),
-        )
 
     story = models.ForeignKey(Story, null=True, related_name='revisions')
     issue_revision = models.ForeignKey('oi.IssueRevision',

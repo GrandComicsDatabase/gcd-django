@@ -104,21 +104,6 @@ def series(request, series_id):
     except IndexError:
         image_tag = ''
         
-    try:
-        country = Country.objects.get(code__iexact = series.country_code).name
-    except:
-        country = series.country_code
-
-    # TODO: Fix language table hookup- why is this not a foreign key?
-    # For now if we can't get a match in the table then just use the
-    # code as itis.
-    language = series.language_code
-    try:
-        lobj = Language.objects.get(code__iexact = series.language_code)
-        language = lobj.name
-    except:
-        pass
-
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
 
@@ -130,8 +115,8 @@ def series(request, series_id):
         'series' : series,
         'covers' : covers,
         'image_tag' : image_tag,
-        'country' : country,
-        'language' : language,
+        'country' : series.country,
+        'language' : series.language,
         'table_width': table_width,
         'error_subject': '%s' % series,
         'style' : style
@@ -139,8 +124,9 @@ def series(request, series_id):
       context_instance=RequestContext(request))
 
 def status(request, series_id):
-    """Display the index status matrix for a series."""
-
+    """
+    Display the index status matrix for a series.
+    """
     series = get_object_or_404(Series, id = series_id)
     # Cover sort codes are more reliable than issue key dates,
     # and the 'select_related' optimization only works in this direction.
@@ -469,22 +455,11 @@ def countries_in_use(request):
 
     if request.user.is_authenticated() and \
       request.user.groups.filter(name='admin'):
-        codes_from_series = list(set(Series.objects.all().\
-                                values_list('country_code', flat='True')))
-        codes_from_indexers = list(set(Indexer.objects.all().\
-                                values_list('country_code', flat='True')))
-        used_country_codes = list(set(codes_from_indexers+codes_from_series))
-        used_countries = []
-        for i in used_country_codes:
-            try: # there is none
-                country = Country.objects.filter(code=i.lower())
-                if country.count():
-                    used_countries.append(country[0])
-                else:
-                    used_countries.append(i)
-            except AttributeError:
-                used_countries.append(i)
-        used_countries = set(used_countries)
+        countries_from_series = list(set(Series.objects.all().
+                                         values_list('country', flat=True)))
+        countries_from_indexers = list(set(Indexer.objects.all().
+                                           values_list('country', flat=True)))
+        used_countries = list(set(countries_from_indexers + countries_from_series))
         return render_to_response('gcd/admin/countries.html',
                                   {'countries' : used_countries },
                                   context_instance=RequestContext(request))
