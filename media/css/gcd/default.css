@@ -27,6 +27,22 @@ body {
     margin-bottom: 1em;
 }
 
+#preview_banner {
+    font-weight: bold;
+    background-color: orange;
+    border: solid 1px black;
+    padding: 0.3em 0 0.3em 0;
+    margin-bottom: 0.5em;
+}
+
+#preview_banner_inner {
+    padding: 0 0.3em 0 0.3em;
+}
+
+.preview {
+    background-color: #FFE944;
+}
+
 h1 {
     font-size: 2em;
     clear: both;
@@ -410,10 +426,29 @@ dl.pub_data dd {
     background-color: #EA7;
 }
 
-#control_panel form {
-    margin-top: 1em;
+div.ongoing_status {
     float: left;
     clear: both;
+    background-color: #AEA;
+    margin-top: 1em;
+    padding-top: 0.4em;
+    padding-bottom: 0.4em;
+    width: 100%;
+}
+
+.control_panel {
+    clear: both;
+}
+
+.control_panel form {
+    margin-top: 1em;
+    margin-right: 1em;
+    float: left;
+    display: inline;
+}
+
+.control_panel input {
+    display: inline;
 }
 
 .message {

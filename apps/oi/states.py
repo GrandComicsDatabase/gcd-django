@@ -38,3 +38,13 @@ Approval was not granted, no further work will be done.
 """
 DISCARDED = 6
 
+DISPLAY_NAME = {
+    UNRESERVED: 'Available',
+    BASELINE: 'Baseline',
+    OPEN: 'Editing',
+    PENDING: 'Pending Review',
+    REVIEWING: 'Under Review',
+    APPROVED: 'Approved',
+    DISCARDED: 'Discarded',
+}
+

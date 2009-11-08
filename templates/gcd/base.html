@@ -13,9 +13,12 @@ For now, just a simple single block for all CSS, despite redundancy.
 </head>
 
 <body>
-<div id="sizing_base">
+<div id="sizing_base" {% if preview %} class="preview" {% endif %}>
 {% if BETA %}
   {% include "gcd/bits/beta_banner.html" %}
+{% endif %}
+{% if preview %}
+  {% include "gcd/bits/preview_banner.html" %}
 {% endif %}
 {% block body %}{% endblock %}
 

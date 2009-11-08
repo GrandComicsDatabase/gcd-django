@@ -10,7 +10,7 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.utils.safestring import mark_safe
 
-from pagination import DiggPaginator
+from apps.gcd.views.pagination import DiggPaginator
 
 from apps.gcd.models import Error
 

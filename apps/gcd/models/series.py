@@ -16,7 +16,7 @@ class Series(models.Model):
     notes = models.TextField(null=True)
     year_began = models.IntegerField(db_index=True)
     year_ended = models.IntegerField(null=True)
-    publication_dates = models.CharField(max_length=255, null=True)
+    is_current = models.BooleanField()
     issue_count = models.IntegerField(null=True)
 
     # Publication notes are not displayed in the current UI but may
@@ -35,11 +35,6 @@ class Series(models.Model):
     # used only by migration scripts.
     reserved = models.BooleanField(default=0, db_index=True)
     open_reserve = models.IntegerField(null=True)
-
-    # Issue tracking info that should probably be read from issues table.
-    # Note that in the issues table, issues can be 25 characters.
-    first_issue = models.CharField(max_length=50, null=True)
-    last_issue = models.CharField(max_length=50, null=True)
 
     # Country and Language info.
     country = models.ForeignKey(Country)

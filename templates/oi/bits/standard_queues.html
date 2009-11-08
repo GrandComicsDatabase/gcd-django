@@ -11,6 +11,7 @@
   {% if approval_queue %}
     <th> Indexer </th>
   {% endif %}
+    <th> State </th>
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
@@ -19,11 +20,16 @@
   {% if publisher.deleted %}
     <td class="deleted"> {{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.year_began }}) [DELETED]</td>
   {% else %}
+    {% ifequal link_target 'preview' %}
+    <td> <a href="{% url preview_publisher id=publisher.id %}">{{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.year_began }})</a>
+    {% else %}
     <td> <a href="{% url edit_publisher id=publisher.id %}">{{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.year_began }})</a>
+    {% endifequal %}
   {% endif %}
   {% if approval_queue %}
     <td> {{ publisher.indexer.indexer }} </td>
   {% endif %}
+    <td> {{ publisher.display_state }}
     <td> {{ publisher.modified }} </td>
     <td> {% with publisher.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>
@@ -39,6 +45,7 @@
   {% if approval_queue %}
     <th> Indexer </th>
   {% endif %}
+    <th> State </th>
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
@@ -47,15 +54,55 @@
   {% if imprint.deleted %}
     <td class="deleted"> {{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.year_began }}) [DELETED]</td>
   {% else %}
+    {% ifequal link_target 'preview' %}
+    <td> <a href="{% url preview_publisher id=imprint.id %}">{{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.year_began }})</a>
+    {% else %}
     <td> <a href="{% url edit_publisher id=imprint.id %}">{{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.year_began }})</a>
+    {% endifequal %}
   {% endif %}
   {% if approval_queue %}
     <td> {{ imprint.indexer.indexer }} </td>
   {% endif %}
+    <td> {{ imprint.display_state }} </td>
     <td> {{ imprint.modified }} </td>
     <td> {% with imprint.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>
 {% endfor %}
 </table>
 {% endwith %}
+
+<h2> Series </h2>
+{% with 'series' as object_type %}
+<table>
+  <tr>
+    <th> Name </th>
+  {% if approval_queue %}
+    <th> Indexer </th>
+  {% endif %}
+    <th> State </th>
+    <th> Last Activity </th>
+    <th> Actions </th>
+  </tr>
+{% for s in series %}
+  <tr>
+  {% if s.deleted %}
+    <td class="deleted"> {{ s }} [DELETED]</td>
+  {% else %}
+    {% ifequal link_target 'preview' %}
+    <td> <a href="{% url preview_series id=s.id %}">{{ s }}</a>
+    {% else %}
+    <td> <a href="{% url edit_series id=s.id %}">{{ s }}</a>
+    {% endifequal %}
+  {% endif %}
+  {% if approval_queue %}
+    <td> {{ s.indexer.indexer }} </td>
+  {% endif %}
+    <td> {{ s.display_state }} </td>
+    <td> {{ s.modified }} </td>
+    <td> {% with s.id as action_id %}{% include actions %}{% endwith %} </td>
+  </tr>
+{% endfor %}
+</table>
+{% endwith %}
+
 </div>

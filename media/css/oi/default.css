@@ -1,3 +1,33 @@
+/* Search or plain header bars that appear at the top of nearly every page. */
+
+.oi_bar {
+    clear: both;
+    background-color: #DDD;
+    color: black;
+    margin-bottom: 1em;
+    vertical-align: center;
+    border: solid 1px;
+    padding: 0.6em 0 0.6em 0;
+    font-weight: bold;
+    width: 100%;
+}
+
+.oi_bar :link {
+    color: black;
+}
+
+.oi_bar :visited {
+    color: black;
+}
+
+.oi_bar_title {
+    padding: 0.6em;  /* 0 0.6em 0 0.6em; */
+    margin: 0;
+    margin-right: 0.6em;
+    background-color: black;
+    color: white;
+}
+
 form {
     margin-bottom: 1em;
     display: inline;

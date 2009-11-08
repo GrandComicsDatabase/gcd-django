@@ -6,12 +6,16 @@
 {% ifnotequal paginate_only 1 %}
 <h1 class="item_id">
   <div class="left">
+  {% if preview %}
+    {% if publisher.parent %}{{ publisher.parent }} :{% endif %} {{ publisher }}
+  {% else %}
     {% if publisher.is_imprint %}
       <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
       <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
     {% else %}
       <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
     {% endif %}
+  {% endif %}
   </div>
 </h1>
 {% endifnotequal %}
@@ -19,7 +23,7 @@
 <div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
      class="item_id">
 {% ifnotequal paginate_only 1 %}
-  <div class="left">{{ publisher.year_began }} - {{ publisher.year_end }}</div>
+  <div class="left">{{ publisher.year_began }} - {{ publisher.year_ended|default:'' }}</div>
 {% endifnotequal %}
   {% include "gcd/bits/pagination_bar.html" %}
 </div>

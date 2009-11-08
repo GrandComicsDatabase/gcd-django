@@ -1,4 +1,11 @@
-{% extends "gcd/base_view.html" %}
+{% extends "oi/base_view.html" %}
+<!--
+Account organization is messedup, leading to this template reaching over
+into the OI app as well as the GCD app for CSS and the base template.
+It should either be factored into a third app or made part of the OI,
+but there's just not enough time to rework it since this code base is supposed
+to have a limited lifespan anyway.
+  -->
 
 {% load forms %}
 
@@ -7,6 +14,8 @@
         href="{{ MEDIA_URL }}/css/gcd/default.css"/>
   <link rel="stylesheet" type="text/css"
         href="{{ MEDIA_URL }}/css/gcd/default/accounts.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/oi/default.css"/>
 {% endblock %}
 
 {% block title %} GCD User :: {{ profile_user }} {% endblock %}
@@ -66,12 +75,5 @@ Leave all three fields blank to leave your password unchanged.
 {% endifequal %}
 
 {% endif %}
-
-<a href="/queues/reserved/">My reservations</a><br>
-{% if perms.oi.can_approve %}
-<a href="/queues/pending/">Pending queue</a><br>
-<a href="/queues/reviews/">My reviews</a><br>
-{% endif %}
-</p>
 
 {% endblock %}

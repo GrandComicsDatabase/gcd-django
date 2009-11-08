@@ -12,13 +12,15 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
 {% endblock %}
 
 {% block view_body %}
 
 {% include "gcd/bits/publisher_header.html" %}
 
+{% if not preview %}
+<div class="control_panel">
 {% if publisher.reserved %}
   {% with publisher.revisions.all.0 as revision %}
     <div id="index_status" class="index_status_{{ revision.state }}">
@@ -38,12 +40,22 @@
     </div>
   {% endwith %}
 {% else %}
-  <div id="control_panel">
   <form method="POST"
         action="{% url reserve_publisher id=publisher.id %}">
     <input id="edit" name="edit" type="submit" value="Edit" />
   </form>
-  </div>
+{% endif %}
+{% if publisher.is_master %}
+<form method="GET"
+      action="{% url add_imprint parent_id=publisher.id %}">
+  <input id="add" name="add" type="submit" value="Add imprint" />
+</form>
+{% endif %}
+<form method="GET"
+      action="{% url add_series publisher_id=publisher.id %}">
+  <input id="add" name="add" type="submit" value="Add series" />
+</form>
+</div>
 {% endif %}
 
 <div>
@@ -83,7 +95,6 @@
     <th> Year </th>
     <th> #&nbsp;Issues </th>
     <th> Covers </th>
-    <th> Published </th>
   </tr>
   {% for series in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
@@ -102,7 +113,6 @@
         <td> <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
       {% endif %}
     {% endif %}
-    <td> {{ series.publication_dates }} </td>
   </tr>
   {% endfor %}
 </table>

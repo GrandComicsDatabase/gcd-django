@@ -3,6 +3,7 @@ from django.db import models
 class Country(models.Model):
     class Meta:
         app_label = 'gcd'
+        ordering = ('name',)
 
     class Admin:
         pass

@@ -1,0 +1,11 @@
+{% extends "gcd/base.html" %}
+
+{% block body %}
+  {% include "gcd/bits/search_bar.html" %}
+  {% include "oi/bits/oi_bar.html" %}
+
+  {% block view_body %}{% endblock %}
+
+  {% include "oi/bits/oi_bar.html" %}
+  {% include "gcd/bits/search_bar.html" %}
+{% endblock %}

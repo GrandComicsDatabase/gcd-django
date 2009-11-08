@@ -1,0 +1,25 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Adding {{ object_name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Adding {{ object_name }}</h1>
+
+<form action="{{ object_url }}" method="POST">
+{% include object_form_template %}
+<input type="submit" name="add" value="Add {{ object_name }}"></input>
+<input type="submit" name="discard" value="Cancel"></input>
+</form>
+
+{% endblock %}

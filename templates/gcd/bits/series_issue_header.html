@@ -5,7 +5,11 @@
 <h1 class="item_id">
 <div class="left" id="series_and_issue">
   <span id="series_name">
+  {% if preview %}
+    {{ series.name }}
+  {% else %}
     <a href="{{ series.get_absolute_url }}">{{ series.name }}</a>
+  {% endif %}
   </span>
   {% if issue_number %}
   {{ issue_number|show_issue_number }}
@@ -24,12 +28,16 @@
 
 {% ifnotequal paginate_only 1 %}
   <div class="left" class="item_data">
+  {% if preview %}
+    {{ series.publisher }} {% if series.imprint %}{{ series.imprint }}{% endif %}
+  {% else %}
     <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a>,
     <!-- use imprint_id to avoid a needless DB lookup on imprint_id = 0
          If we used NULL for "no imprint" this wouldn't be a problem.  -->
     {% if series.imprint_id %}
       <a href="{{ series.imprint.get_absolute_url }}">{{ series.imprint }}</a> imprint,
     {% endif %}
+  {% endif %}
     {{ series.year_began }} Series<br/>
   </div>
   <div class="right" id="language_country">

@@ -33,15 +33,13 @@ def get_style(request):
 
 
 def publisher(request, publisher_id):
-    """Display the details page for a Publisher."""
-
+    """
+    Display the details page for a Publisher.
+    """
     style = get_style(request)
     pub = get_object_or_404(Publisher, id = publisher_id)
 
-    vars = { 'publisher' : pub,
-             'error_subject' : pub,
-             'style' : style,
-             'media_url' : settings.MEDIA_URL }
+    vars = { 'publisher': pub, 'error_subject': pub }
     return paginate_response(request, pub.series_set.order_by('name'),
                              'gcd/details/publisher.html', vars)
 
@@ -49,14 +47,11 @@ def imprint(request, imprint_id):
     """
     Display the details page for an Imprint.
     """
-
     style = get_style(request)
     imprint = get_object_or_404(Publisher, id = imprint_id)
     imprint_series = imprint.imprint_series_set.order_by('name')
 
-    vars = { 'publisher' : imprint,
-             'error_subject': '%s' % imprint,
-             'style' : style }
+    vars = { 'publisher' : imprint, 'error_subject': '%s' % imprint }
     return paginate_response(request,
                              imprint_series,
                              'gcd/details/publisher.html',
@@ -92,15 +87,21 @@ def series(request, series_id):
     Display the details page for a series.
     """
     
-    series = get_object_or_404(Series, id = series_id)
+    series = get_object_or_404(Series, id=series_id)
+    return show_series(request, series)
+
+def show_series(request, series, preview=False):
+    """
+    Handle the main work of displaying a series.  Also used by OI previews.
+    """
     covers = series.cover_set.select_related('issue')
     
     try:
-        cover = covers.filter(has_image = True)[0]
-        image_tag = get_image_tag(series_id = int(series_id),
-                                  cover = cover,
-                                  zoom_level = ZOOM_MEDIUM,
-                                  alt_text = 'First Issue Cover')
+        cover = covers.filter(has_image=True)[0]
+        image_tag = get_image_tag(series_id=series.id,
+                                  cover=cover,
+                                  zoom_level=ZOOM_MEDIUM,
+                                  alt_text='First Issue Cover')
     except IndexError:
         image_tag = ''
         
@@ -112,14 +113,15 @@ def series(request, series_id):
     return render_to_response(
       'gcd/details/series.html',
       {
-        'series' : series,
-        'covers' : covers,
-        'image_tag' : image_tag,
-        'country' : series.country,
-        'language' : series.language,
+        'series': series,
+        'covers': covers,
+        'image_tag': image_tag,
+        'country': series.country,
+        'language': series.language,
         'table_width': table_width,
         'error_subject': '%s' % series,
-        'style' : style
+        'style': style,
+        'preview': preview,
       },
       context_instance=RequestContext(request))
 
@@ -127,7 +129,7 @@ def status(request, series_id):
     """
     Display the index status matrix for a series.
     """
-    series = get_object_or_404(Series, id = series_id)
+    series = get_object_or_404(Series, id=series_id)
     # Cover sort codes are more reliable than issue key dates,
     # and the 'select_related' optimization only works in this direction.
     covers = series.cover_set.select_related('issue')
@@ -137,10 +139,10 @@ def status(request, series_id):
     style = get_style(request)
 
     return render_to_response('gcd/status/status.html', {
-      'series' : series,
-      'covers' : covers,
-      'table_width' : table_width,
-      'style' : style },
+      'series': series,
+      'covers': covers,
+      'table_width': table_width,
+      'style': style },
       context_instance=RequestContext(request))
 
 def scans(request, series_id):

@@ -1,4 +1,4 @@
-{% extends "gcd/base_view.html" %}
+{% extends "oi/base_view.html" %}
 
 {% block title %}
 {{ user.indexer }} :: Reviews
@@ -12,8 +12,12 @@
 {% endblock %}
 
 {% block view_body %}
+<h1> Changes Under Review </h1>
+
 {% with 'oi/bits/approval_actions.html' as actions %}
+{% with 'preview' as link_target %}
   {% include 'oi/bits/standard_queues.html' %}
+{% endwith %}
 {% endwith %}
 {% endblock %}
 

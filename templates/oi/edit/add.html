@@ -1,0 +1,29 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Add New Records
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<form action="{% url add_publisher %}" method="GET">
+<input type="submit" value="Add Publisher"></input>
+</form>
+
+<p>
+Currently, you must add imprints from the page of their parent publisher,
+series from their imprint page (if they are published on an imprint) or
+publisher page (if they do not have an imprint), and issues from their
+series page.  This restriction will be lifted when the ability to change
+a parent linke (such as a series' publisher) in the edit form.
+</p>
+
+{% endblock %}
+

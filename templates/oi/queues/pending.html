@@ -1,4 +1,4 @@
-{% extends "gcd/base_view.html" %}
+{% extends "oi/base_view.html" %}
 
 {% block title %}
 Changes Pending Review
@@ -12,8 +12,11 @@ Changes Pending Review
 {% endblock %}
 
 {% block view_body %}
+<h1> Changes Pending Review </h1>
 {% with 'oi/bits/pending_actions.html' as actions %}
+{% with 'preview' as link_target %}
   {% include 'oi/bits/standard_queues.html' %}
+{% endwith %}
 {% endwith %}
 {% endblock %}
 

@@ -1,13 +1,7 @@
-{% extends "gcd/base_view.html" %}
+{% extends "oi/base_view.html" %}
 
 {% block title %}
-{% with revision.publisher as publisher %}
-  {% if publisher.is_imprint %}
-    Editing Publisher :: {{ publisher.parent.name }} :: Imprint :: {{ publisher.name }}
-  {% else %}
-    Editing Publisher :: {{ publisher.name }}
-  {% endif %}
-{% endwith %}
+Editing {{ object_name }} :: {{ object }}
 {% endblock %}
 
 {% block css %}
@@ -15,9 +9,12 @@
       href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
 {% endblock %}
 
 {% block view_body %}
+<h1>Editing {{ object_name }} :: {{ object }}</h1>
 
 <div class="edit">
 <!-- TODO: Not sure this elaborate status message stuff is necessary. -->
@@ -50,14 +47,10 @@
 </p>
 {% else %}
   {% ifequal revision.state states.OPEN %}
-<form action="/publisher/revision/{{ revision.id }}/process/" method="POST">
-<table>
-{{ form.as_table }}
-</table>
-<input type="submit" name="submit" value="Save and continue editing" />
-<input type="submit" name="submit" value="Submit changes for approval" />
-<input type="submit" name="submit" value="Discard changes and release reservation" />
-<input type="submit" name="submit" value="Delete publisher and submit for approval" />
+<form action="{{ object_url }}" method="POST">
+{% include object_form_template %}
+<input type="submit" name="submit" value="Submit changes for approval"></input>
+<input type="submit" name="discard" value="Discard all changes"></input>
 </form>
   {% else %}
     <p>
@@ -68,9 +61,13 @@
     {% endifequal %}
     {% ifequal revision.state states.PENDING %}
       This change has been submitted for approval, but is not yet under review.
-  <form action="/publisher/revision/{{ revision.id }}/process/" method="POST">
-  <input type="submit" name="submit" value="Retract change and edit further" />
-  </form>
+      {% ifequal revision.indexer user %}
+        <form action="{{ object_url }}" method="POST">
+          <input type="submit" name="retract" value="Retract change and edit further" />
+          <label for="comments">Comments</label>
+          <input type="textarea" name="comments">
+        </form>
+      {% endifequal %}
     {% endifequal %}
     {% ifequal revision.state states.REVIEWING %}
       This change has been submitted for approval, and is being reviewed by

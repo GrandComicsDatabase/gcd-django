@@ -12,6 +12,7 @@
   </form>
   | <a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a> |
 {% if user.is_authenticated %}
+  <a href="{% url view_profile user_id=user.id %}">Profile</a> |
   <form action="{% url logout %}" method="POST">
     <input type="submit" name="logout" value="Log Out" />
     <input type="hidden" name="next" value="{{ request.get_full_path }}" />

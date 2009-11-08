@@ -1,7 +1,7 @@
-{% extends "gcd/base_view.html" %}
+{% extends "oi/base_view.html" %}
 
 {% block title %}
-{{ user.indexer }} :: Reservations
+{{ user.indexer }} :: Editing Queue
 {% endblock %}
 
 {% block css %}
@@ -12,8 +12,12 @@
 {% endblock %}
 
 {% block view_body %}
-{% with 'oi/bits/reserved_actions.html' as actions %}
+<h1> Records You Are Editing </h1>
+
+{% with 'oi/bits/editing_actions.html' as actions %}
+{% with 'edit' as link_target %}
   {% include 'oi/bits/standard_queues.html' %}
+{% endwith %}
 {% endwith %}
 {% endblock %}
 

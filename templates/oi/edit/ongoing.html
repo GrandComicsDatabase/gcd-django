@@ -1,0 +1,38 @@
+{% extends "gcd/base_view.html" %}
+
+{% block title %}
+  Ongoing Reservations
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Reserve Ongoing Series</h1>
+
+<div class="edit">
+<div class="edit">
+You may place an ongoing reservation on a series, which will cause all new
+issues added to that series to immediately be reserved to you.  There is a limit
+on how many ongoing reservations an indexer can have at once.  If you believe
+you can keep up with more series than the default limit, contact an editor
+about having your limit increased.
+</div>
+
+{% if message %}
+  <div class="info">
+    {{ message }}
+  </div>
+{% endif %}
+<form action="" method="POST">
+  <table>
+    {{ form.as_table }}
+  </table>
+</form>
+</div>
+{% endblock %}
+

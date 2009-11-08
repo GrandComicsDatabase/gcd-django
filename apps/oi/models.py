@@ -82,14 +82,13 @@ class RevisionManager(models.Manager):
                                     indexer=indexer,
                                     state=states.BASELINE)
 
-        # TODO: Use transaction for the rest if we go to InnoDB.
         revision = self._do_create_revision(instance,
                                             indexer=indexer,
                                             state=state)
         revision.comments.create(commenter=indexer,
-                                 text='Reserved',
+                                 text='Editing',
                                  old_state=states.UNRESERVED,
-                                 new_state=states.OPEN)
+                                 new_state=revision.state)
 
         # Mark as reserved *after* cloning the revision in order to avoid
         # overwriting the modified timestamp in the case of a BASELINE
@@ -151,6 +150,48 @@ class Revision(models.Model):
     """
     modified = models.DateTimeField(db_index=True, null=True)
 
+    def display_state(self):
+        """
+        Return the display text for the state.
+        Makes it much easier to display state information in templates.
+        """
+        return states.DISPLAY_NAME[self.state]
+
+    def save_added_revision(self, indexer, comments, **kwargs):
+        """
+        Add the remaining arguments and many to many relations for an unsaved
+        added revision produced by a model form.  The general workflow should be:
+
+        revision = form.save(commit=False)
+        revision.save_added_revision(indexer=request.user) # optionally with kwargs
+
+        Since this prevents the form from adding any many to many relationships,
+        the _do_save_added_revision method on each concrete revision class
+        needs be certain to save any such relations that come from the form.
+        """
+        if not isinstance(indexer, User):
+            raise TypeError, "Please supply a valid indexer."
+
+        self.indexer = indexer
+        self.state = states.OPEN
+        self.created = datetime.now()
+        self.modified = self.created
+        self._do_complete_added_revision(**kwargs)
+        self.save()
+        self.comments.create(commenter=indexer,
+                             text=comments,
+                             old_state=states.UNRESERVED,
+                             new_state=self.state)
+
+    def _do_complete_added_revision(self, **kwargs):
+        """
+        Hook for indiividual revisions to process additional parameters
+        necessary to create a new revision representing an added record.
+        By default no additional processing is done, so subclasses are
+        free to override this method without calling it on the parent class.
+        """
+        pass
+
     def submit(self, notes=''):
         """
         Submit changes for approval.
@@ -208,10 +249,9 @@ class Revision(models.Model):
 
         self.state = states.DISCARDED
         self.save()
-        self.publisher.reserved = False
-        self.publisher.save()
+        self._do_unreserve()
 
-    def examine(self, approver, notes=''):
+    def assign(self, approver, notes=''):
         """
         Set an approver who will examine the changes in this pending revision.
 
@@ -357,6 +397,8 @@ class PublisherRevisionManager(RevisionManager):
             kwargs['created'] = publisher.created
             kwargs['modified'] = publisher.modified
         else:
+            # publishers go straight into PENDING so override non-BASELINE states.
+            state = states.PENDING
             kwargs['created'] = datetime.now()
             kwargs['modified'] = kwargs['created']
 
@@ -421,11 +463,45 @@ class PublisherRevision(Revision):
                                null=True, blank=True, db_index=True,
                                related_name='imprint_revisions')
 
+    # Fake an imprint set for the preview page.
+    def _imprint_set(self):
+        if self.publisher is None:
+            return Publisher.object.filter(pk__isnull=True)
+        return self.publisher.imprint_set
+    imprint_set = property(_imprint_set)
+
+    def _series_set(self):
+        if self.publisher is None:
+            return Series.objects.filter(pk__isnull=True)
+        return self.publisher.series_set
+    series_set = property(_series_set)
+
+    def _imprint_series_set(self):
+        if self.publisher is None:
+            return Series.objects.filter(pk__isnull=True)
+        return self.publisher.imprint_series_set
+    imprint_series_set = property(_imprint_series_set)
+
+
+
     def __unicode__(self):
-        return self.name
+        if self.publisher is None:
+            return self.name
+        return unicode(self.publisher)
 
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
+        if pub is None:
+            pub = Publisher(imprint_count=0,
+                            series_count=0,
+                            issue_count=0)
+            if self.parent:
+                self.parent.imprint_count += 1
+        elif self.deleted:
+            if self.parent:
+                self.parent.imprint_count -= 1
+            pub.delete()
+            return
 
         pub.name = self.name
         pub.year_began = self.year_began
@@ -440,6 +516,13 @@ class PublisherRevision(Revision):
             pub.reserved = False
 
         pub.save()
+        if self.publisher is None:
+            self.publisher = pub
+
+    def _do_unreserve(self):
+        if self.publisher is not None:
+            self.publisher.reserved = False
+            self.publisher.save()
 
     def has_imprints(self):
         return self.imprint_set.count() > 0
@@ -464,6 +547,19 @@ class PublisherRevision(Revision):
 
         return self.url
 
+    def _do_complete_added_revision(self, parent=None):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.parent = parent
+        if self.parent is None:
+            self.is_master = True
+
+        # Publishers go straight into PENDING
+        self.state = states.PENDING
+
+
 class SeriesRevisionManager(RevisionManager):
     """
     Custom manager allowing the cloning of revisions from existing rows.
@@ -487,15 +583,17 @@ class SeriesRevisionManager(RevisionManager):
                                               check=check,
                                               state=state)
 
-    def _do_create_revision(self, publisher, indexer, state):
+    def _do_create_revision(self, series, indexer, state):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
         kwargs = {}
         if (state == states.BASELINE):
-            kwargs['created'] = publisher.created
-            kwargs['modified'] = publisher.modified
+            kwargs['created'] = series.created
+            kwargs['modified'] = series.modified
         else:
+            # series go straight into PENDING so override non-BASELINE states.
+            state = states.PENDING
             kwargs['created'] = datetime.now()
             kwargs['modified'] = kwargs['created']
 
@@ -511,12 +609,10 @@ class SeriesRevisionManager(RevisionManager):
           notes=series.notes,
           year_began=series.year_began,
           year_ended=series.year_ended,
-          publication_dates=series.publication_dates,
+          is_current=series.is_current,
 
           publication_notes=series.publication_notes,
           tracking_notes=series.tracking_notes,
-          first_issue=series.first_issue,
-          last_issue=series.last_issue,
 
           country=series.country,
           language=series.language,
@@ -527,7 +623,7 @@ class SeriesRevisionManager(RevisionManager):
         revision.save()
         return revision
 
-class SeriesRevision:
+class SeriesRevision(Revision):
     class Meta:
         db_table = 'oi_series_revision'
         ordering = ['-created', '-id']
@@ -541,7 +637,7 @@ class SeriesRevision:
     notes = models.TextField(null=True, blank=True)
     year_began = models.IntegerField(null=True, blank=True)
     year_ended = models.IntegerField(null=True, blank=True)
-    publication_dates = models.CharField(max_length=255, null=True, blank=True)
+    is_current = models.BooleanField()
 
     # Publication notes are not displayed in the current UI but may
     # be accessed in the OI.
@@ -550,11 +646,6 @@ class SeriesRevision:
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
     tracking_notes = models.TextField(null=True, blank=True)
-
-    # Issue tracking info that should probably be read from issues table.
-    # Note that in the issues table, issues can be 25 characters.
-    first_issue = models.CharField(max_length=10, null=True, blank=True)
-    last_issue = models.CharField(max_length=10, null=True, blank=True)
 
     # Country and Language info.
     country = models.ForeignKey(Country, null=True, blank=True,
@@ -569,22 +660,60 @@ class SeriesRevision:
                                 related_name='imprint_series_revisions',
                                 null=True)
 
+    # Fake the issue and cover sets and a few other fields for the preview page.
+    def _issue_set(self):
+        if self.series is None:
+            return Issue.objects.filter(pk__isnull=True)
+        return self.series.issue_set
+    issue_set = property(_issue_set)
+
+    def _cover_set(self):
+        if self.series is None:
+            return Cover.objects.filter(pk__isnull=True)
+        return self.series.cover_set
+    cover_set = property(_cover_set)
+
+    def _has_gallery(self):
+        if self.series is None:
+            return False
+        return self.series.has_gallery
+    has_gallery = property(_has_gallery)
+
+    def _do_complete_added_revision(self, publisher, imprint=None):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.is_master = True
+        if imprint is not None:
+            self.is_master = False
+
+        self.publisher = publisher
+        self.imprint = imprint
+
+        # Series go straight into PENDING
+        self.state = states.PENDING
+
     def commit_to_display(self, clear_reservation=True):
         series = self.series
         if series is None:
-            series = Series()
+            series = Series(issue_count=0)
+            self.publisher.series_count += 1
+        elif self.deleted:
+            self.publisher.series_count -= 1
+            self.publisher.issue_count -= series.issue_count
+            series.delete()
+            return
 
         series.name = self.name
         series.format = self.format
         series.notes = self.notes
         series.year_began = self.year_began
         series.year_ended = self.year_ended
-        series.publication_dates = self.publication_dates
+        series.is_current = self.is_current
 
         series.publication_notes = self.publication_notes
         series.tracking_notes = self.tracking_notes
-        series.first_issue = self.first_issue
-        series.last_issue = self.last_issue
 
         series.country = self.country
         series.language = self.language
@@ -595,6 +724,18 @@ class SeriesRevision:
             series.reserved = False
 
         series.save()
+        if self.series is None:
+            self.series = series
+
+    def _do_unreserve(self):
+        if self.series is not None:
+            self.series.reserved = False
+            self.series.save()
+
+    def __unicode__(self):
+        if self.series is None:
+            return u'%s (%s series) [ADD]' % (self.name, self.year_began)
+        return unicode(self.series)
 
 class IssueRevisionManager(RevisionManager):
 
@@ -682,6 +823,9 @@ class IssueRevision(Revision):
             issue.reserved = False
 
         issue.save()
+
+    def __unicode__(self):
+        return unicode(self.issue)
 
 class StoryRevisionManager(RevisionManager):
 
@@ -829,4 +973,7 @@ class StoryRevision(Revision):
             story.reserved = False
 
         story.save()
+
+    def __unicode__(self):
+        return unicode(self.story)
 
