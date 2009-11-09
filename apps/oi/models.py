@@ -222,6 +222,20 @@ class Revision(models.Model):
         """
         pass
 
+    def _check_approver(self):
+        """
+        Check for a mentor, set to approver if necessary, and return the
+        appropriate state for a submitted change.
+        """
+        if self.approver is None and self.indexer.indexer.is_new and \
+           self.indexer.mentor is not None:
+            self.approver = self.indexer.mentor
+
+        new_state = states.PENDING
+        if self.approver is not None:
+            new_state = states.REVIEWING
+        return new_state
+        
     def submit(self, notes=''):
         """
         Submit changes for approval.
@@ -234,11 +248,13 @@ class Revision(models.Model):
         if self.state != states.OPEN:
             raise ValueError, "Only OPEN changes can be submitted for approval."
 
+        new_state = self._check_approver()
+
         self.comments.create(commenter=self.indexer,
                              text=notes,
                              old_state=self.state,
-                             new_state=states.PENDING)
-        self.state = states.PENDING
+                             new_state=new_state)
+        self.state = new_state
         self.save()
 
     def retract(self, notes=''):
@@ -590,8 +606,8 @@ class PublisherRevision(Revision):
         if self.parent is None:
             self.is_master = True
 
-        # Publishers go straight into PENDING
-        self.state = states.PENDING
+        # Publishers go straight into PENDING or REVIEWING
+        self.state = self._check_approver()
 
 
 class SeriesRevisionManager(RevisionManager):
@@ -726,8 +742,8 @@ class SeriesRevision(Revision):
         self.publisher = publisher
         self.imprint = imprint
 
-        # Series go straight into PENDING
-        self.state = states.PENDING
+        # Series go straight into PENDING or REVIEWING
+        self.state = self._check_approver()
 
     def commit_to_display(self, clear_reservation=True):
         series = self.series
