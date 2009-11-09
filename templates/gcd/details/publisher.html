@@ -67,7 +67,11 @@
 
   {% if publisher.has_imprints %}
     <dt> Imprints:
+    {% if preview %}
+    <dd> {{ publisher.imprint_set.count }}
+    {% else %}
     <dd> <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_set.count }}</a>
+    {% endif %}
   {% endif %}
 
   {% if publisher.notes %}

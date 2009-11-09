@@ -150,6 +150,36 @@ class Revision(models.Model):
     """
     modified = models.DateTimeField(db_index=True, null=True)
 
+    def _source(self):
+        """
+        The thing of which this is a revision.
+        Since this is different for each revision, the subclass must override this.
+        """
+        raise NotImplementedError
+
+    # Note: lambda required so that polymorphism works.
+    source = property(lambda self: self._source())
+
+    def queue_name(self):
+        """
+        Long name form to display in queues.
+        This allows revision objects to use their linked object's __unicode__
+        method for compatibility in preview pages, but display a more
+        verbose form in places like queues that need them.
+
+        Derived classes should override _queue_name to supply a base string
+        other than the standard unicode representation.
+        """
+        uni = self._queue_name()
+        if self.source is None:
+            uni += u' [ADDED]'
+        if self.deleted:
+            uni += u' [DELETED]'
+        return uni
+
+    def _queue_name(self):
+        return unicode(self)
+
     def display_state(self):
         """
         Return the display text for the state.
@@ -239,8 +269,8 @@ class Revision(models.Model):
         This may be done either by the indexer, effectively releasign the
         reservation, or by an approver, effectively canceling it.
         """
-        if self.state not in (states.OPEN, states.PENDING):
-            raise ValueError, "Only OPEN or PENDING changes may be discarded."
+        if self.state not in (states.OPEN, states.REVIEWING):
+            raise ValueError, "Only OPEN or REVIEWING changes may be discarded."
 
         self.comments.create(commenter=discarder,
                              text=notes,
@@ -259,7 +289,7 @@ class Revision(models.Model):
         the examiner's approval queue.
         """
         if self.state != states.PENDING:
-            raise ValueError, "Only PENDING changes can be approved."
+            raise ValueError, "Only PENDING changes can be reviewed."
 
         # TODO: check that the approver has approval priviliges.
         if not isinstance(approver, User):
@@ -397,8 +427,6 @@ class PublisherRevisionManager(RevisionManager):
             kwargs['created'] = publisher.created
             kwargs['modified'] = publisher.modified
         else:
-            # publishers go straight into PENDING so override non-BASELINE states.
-            state = states.PENDING
             kwargs['created'] = datetime.now()
             kwargs['modified'] = kwargs['created']
 
@@ -463,6 +491,9 @@ class PublisherRevision(Revision):
                                null=True, blank=True, db_index=True,
                                related_name='imprint_revisions')
 
+    def _source(self):
+        return self.publisher
+
     # Fake an imprint set for the preview page.
     def _imprint_set(self):
         if self.publisher is None:
@@ -489,6 +520,9 @@ class PublisherRevision(Revision):
             return self.name
         return unicode(self.publisher)
 
+    def _queue_name(self):
+        return u'%s (%s, %s)' % (self.name, self.year_began,
+                                 self.country.code.upper())
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
         if pub is None:
@@ -592,8 +626,6 @@ class SeriesRevisionManager(RevisionManager):
             kwargs['created'] = series.created
             kwargs['modified'] = series.modified
         else:
-            # series go straight into PENDING so override non-BASELINE states.
-            state = states.PENDING
             kwargs['created'] = datetime.now()
             kwargs['modified'] = kwargs['created']
 
@@ -659,6 +691,9 @@ class SeriesRevision(Revision):
     imprint = models.ForeignKey(Publisher,
                                 related_name='imprint_series_revisions',
                                 null=True)
+
+    def _source(self):
+        return self.series
 
     # Fake the issue and cover sets and a few other fields for the preview page.
     def _issue_set(self):

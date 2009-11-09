@@ -4,6 +4,7 @@ from django.conf import settings
 from django.views.generic.simple import direct_to_template
 
 from apps.oi import views as oi_views
+from apps.oi import states
 
 urlpatterns = patterns('',
     # General-purpose new record add page.
@@ -62,23 +63,31 @@ urlpatterns = patterns('',
         { 'model_name': 'series' }, name='approve_series'),
     url(r'^series/revision/(?P<id>\d+)/disapprove/$', oi_views.disapprove,
         { 'model_name': 'series' }, name='disapprove_series'),
-    url(r'series/add/publisher/(?P<publisher_id>\d+)/$',
+    url(r'^series/add/publisher/(?P<publisher_id>\d+)/$',
         oi_views.add_series,
         name='add_series'),
     url(r'^series/revision/(?P<id>\d+)/preview/$', oi_views.preview,
         { 'model_name': 'series' }, name='preview_series'),
 
     # Issue URLs
-    url(r'series/(?P<series_id>\d+)/add_issues/$', oi_views.add_issues,
+    url(r'^series/(?P<series_id>\d+)/add_issues/$', oi_views.add_issues,
         name='add_issues'),
+
+    url(r'^(?P<model_name>\w+)/revision/(?P<id>\d+)/edit/$', oi_views.edit,
+        name='edit_revision'),
+    url(r'^(?P<model_name>\w+)/revision/(?P<id>\d+)/preview/$', oi_views.edit,
+        name='preview_revision'),
 
     url(r'^ongoing/$', oi_views.ongoing),
 
-    url(r'^queues/editing/$', oi_views.show_editing,
+    url(r'^queues/editing/$', oi_views.show_queue,
+       {'queue_name': 'editing', 'state': states.OPEN },
         name='editing'),
-    url(r'^queues/pending/$', oi_views.show_pending,
+    url(r'^queues/pending/$', oi_views.show_queue,
+       {'queue_name': 'pending', 'state': states.PENDING },
         name='pending'),
-    url(r'^queues/reviews/$', oi_views.show_reviews,
+    url(r'^queues/reviews/$', oi_views.show_queue,
+       {'queue_name': 'reviews', 'state': states.REVIEWING },
         name='reviewing'),
 )
 

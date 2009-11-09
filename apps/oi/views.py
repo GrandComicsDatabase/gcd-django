@@ -476,72 +476,47 @@ def ongoing(request, user_id=None):
 ##############################################################################
 
 @permission_required('gcd.can_reserve')
-def show_editing(request):
+def show_queue(request, queue_name, state):
+    kwargs = {}
+    if 'pending' != queue_name:
+        kwargs['indexer'] = request.user
+
     return render_to_response(
-      'oi/queues/editing.html',
+      'oi/queues/%s.html' % queue_name,
       {
         'indexer': request.user,
-        'publishers': PublisherRevision.objects.filter(
-          indexer=request.user,
-          state=states.OPEN,
-          is_master=True).order_by('modified'),
-        'imprints': PublisherRevision.objects.filter(
-          indexer=request.user,
-          state=states.OPEN,
-          parent__isnull=False).order_by('modified'),
-        'series': SeriesRevision.objects.filter(
-          indexer=request.user,
-          state=states.OPEN).order_by('modified'),
-        'issues': IssueRevision.objects.filter(
-          indexer=request.user,
-          state=states.OPEN).order_by('modified'),
-      },
-      context_instance=RequestContext(request)
-    )
-
-@permission_required('gcd.can_approve')
-def show_pending(request):
-    return render_to_response(
-      'oi/queues/pending.html',
-      {
-        'publishers': PublisherRevision.objects.filter(
-          state=states.PENDING,
-          is_master=True).order_by('modified'),
-        'imprints': PublisherRevision.objects.filter(
-          state=states.PENDING,
-          parent__isnull=False).order_by('modified'),
-        'series': SeriesRevision.objects.filter(
-          indexer=request.user,
-          state=states.PENDING).order_by('modified'),
-        'issues': IssueRevision.objects.filter(
-          indexer=request.user,
-          state=states.PENDING).order_by('modified'),
-        'approval_queue': True,
-      },
-      context_instance=RequestContext(request)
-    )
-
-@permission_required('gcd.can_approve')
-def show_reviews(request):
-    return render_to_response(
-      'oi/queues/reviews.html',
-      {
-        'approver': request.user,
-        'publishers': PublisherRevision.objects.filter(
-          approver=request.user,
-          state=states.REVIEWING,
-          is_master=True).order_by('modified'),
-        'imprints': PublisherRevision.objects.filter(
-          approver=request.user,
-          state=states.REVIEWING,
-          parent__isnull=False).order_by('modified'),
-        'series': SeriesRevision.objects.filter(
-          indexer=request.user,
-          state=states.REVIEWING).order_by('modified'),
-        'issues': IssueRevision.objects.filter(
-          indexer=request.user,
-          state=states.REVIEWING).order_by('modified'),
-        'approval_queue': True,
+        'data': [
+          {
+            'object_name': 'Publishers',
+            'object_type': 'publisher',
+            'objects': PublisherRevision.objects.filter(
+                         state=state,
+                         is_master=True,
+                         **kwargs).order_by('modified'),
+          },
+          {
+            'object_name': 'Imprints',
+            'object_type': 'publisher',
+            'objects': PublisherRevision.objects.filter(
+                         state=state,
+                         parent__isnull=False,
+                         **kwargs).order_by('modified'),
+          },
+          {
+            'object_name': 'Series',
+            'object_type': 'series',
+            'objects': SeriesRevision.objects.filter(
+                         state=state,
+                         **kwargs).order_by('modified'),
+          },
+          {
+            'object_name': 'Issues',
+            'object_type': 'issue',
+            'objects': IssueRevision.objects.filter(
+                         state=state,
+                         **kwargs).order_by('modified'),
+          },
+        ],
       },
       context_instance=RequestContext(request)
     )

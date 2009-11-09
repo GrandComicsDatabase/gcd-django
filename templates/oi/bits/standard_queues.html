@@ -1,10 +1,7 @@
 
-<!-- TODO: For now, the name links all go to "edit", but in the future
-     they need to go to previews when this is a pending/review queues page.
-  -->
 <div class="queues">
-<h2> Publishers </h2>
-{% with 'publisher' as object_type %}
+{% for section in data %}
+<h2> {{ section.object_name }} </h2>
 <table>
   <tr>
     <th> Name </th>
@@ -15,94 +12,28 @@
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
-{% for publisher in publishers %}
+{% for object in section.objects %}
   <tr>
-  {% if publisher.deleted %}
-    <td class="deleted"> {{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.year_began }}) [DELETED]</td>
+  {% ifequal link_target 'preview' %}
+    <td> <a href="{% url preview_revision model_name=section.object_type,id=object.id %}">{{ object.queue_name }}</a>
   {% else %}
-    {% ifequal link_target 'preview' %}
-    <td> <a href="{% url preview_publisher id=publisher.id %}">{{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.year_began }})</a>
-    {% else %}
-    <td> <a href="{% url edit_publisher id=publisher.id %}">{{ publisher.name }} ({{ publisher.country.name }}, {{ publisher.year_began }})</a>
-    {% endifequal %}
-  {% endif %}
+    <td> <a href="{% url edit_revision model_name=section.object_type,id=object.id %}">{{ object.queue_name }}</a>
+  {% endifequal %}
   {% if approval_queue %}
-    <td> {{ publisher.indexer.indexer }} </td>
+    <td> {{ object.indexer.indexer }} </td>
   {% endif %}
-    <td> {{ publisher.display_state }}
-    <td> {{ publisher.modified }} </td>
-    <td> {% with publisher.id as action_id %}{% include actions %}{% endwith %} </td>
+    <td> {{ object.display_state }} </td>
+    <td> {{ object.modified }} </td>
+{% with section.object_type as object_type %}
+    <td> {% with object.id as action_id %}{% include actions %}{% endwith %} </td>
+{% endwith %}
   </tr>
 {% endfor %}
 </table>
-{% endwith %}
-
-<h2> Imprints </h2>
-{% with 'publisher' as object_type %}
-<table>
-  <tr>
-    <th> Name </th>
-  {% if approval_queue %}
-    <th> Indexer </th>
-  {% endif %}
-    <th> State </th>
-    <th> Last Activity </th>
-    <th> Actions </th>
-  </tr>
-{% for imprint in imprints %}
-  <tr>
-  {% if imprint.deleted %}
-    <td class="deleted"> {{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.year_began }}) [DELETED]</td>
-  {% else %}
-    {% ifequal link_target 'preview' %}
-    <td> <a href="{% url preview_publisher id=imprint.id %}">{{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.year_began }})</a>
-    {% else %}
-    <td> <a href="{% url edit_publisher id=imprint.id %}">{{ imprint.name }} ({{ imprint.country.name }}, {{ imprint.year_began }})</a>
-    {% endifequal %}
-  {% endif %}
-  {% if approval_queue %}
-    <td> {{ imprint.indexer.indexer }} </td>
-  {% endif %}
-    <td> {{ imprint.display_state }} </td>
-    <td> {{ imprint.modified }} </td>
-    <td> {% with imprint.id as action_id %}{% include actions %}{% endwith %} </td>
-  </tr>
+{% empty %}
+<p>
+All queues are empty.
+</p>
 {% endfor %}
-</table>
-{% endwith %}
-
-<h2> Series </h2>
-{% with 'series' as object_type %}
-<table>
-  <tr>
-    <th> Name </th>
-  {% if approval_queue %}
-    <th> Indexer </th>
-  {% endif %}
-    <th> State </th>
-    <th> Last Activity </th>
-    <th> Actions </th>
-  </tr>
-{% for s in series %}
-  <tr>
-  {% if s.deleted %}
-    <td class="deleted"> {{ s }} [DELETED]</td>
-  {% else %}
-    {% ifequal link_target 'preview' %}
-    <td> <a href="{% url preview_series id=s.id %}">{{ s }}</a>
-    {% else %}
-    <td> <a href="{% url edit_series id=s.id %}">{{ s }}</a>
-    {% endifequal %}
-  {% endif %}
-  {% if approval_queue %}
-    <td> {{ s.indexer.indexer }} </td>
-  {% endif %}
-    <td> {{ s.display_state }} </td>
-    <td> {{ s.modified }} </td>
-    <td> {% with s.id as action_id %}{% include actions %}{% endwith %} </td>
-  </tr>
-{% endfor %}
-</table>
-{% endwith %}
 
 </div>
