@@ -478,8 +478,10 @@ def ongoing(request, user_id=None):
 @permission_required('gcd.can_reserve')
 def show_queue(request, queue_name, state):
     kwargs = {}
-    if 'pending' != queue_name:
+    if 'editing' == queue_name:
         kwargs['indexer'] = request.user
+    if 'reviews' == queue_name:
+        kwargs['approver'] = request.user
 
     return render_to_response(
       'oi/queues/%s.html' % queue_name,
