@@ -32,6 +32,8 @@ class RevisionComment(models.Model):
         django comments system copies over a number of fields that we would
         not want copied in case they change (email, for instance).
     """
+    class Meta:
+        ordering = ['created']
 
     commenter = models.ForeignKey(User)
     text = models.TextField()
@@ -43,6 +45,12 @@ class RevisionComment(models.Model):
     old_state = models.IntegerField()
     new_state = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True, editable=False)
+
+    def display_old_state(self):
+        return states.DISPLAY_NAME[self.old_state]
+
+    def display_new_state(self):
+        return states.DISPLAY_NAME[self.new_state]
 
 class RevisionManager(models.Manager):
     """
@@ -785,7 +793,7 @@ class SeriesRevision(Revision):
 
     def __unicode__(self):
         if self.series is None:
-            return u'%s (%s series) [ADD]' % (self.name, self.year_began)
+            return u'%s (%s series)' % (self.name, self.year_began)
         return unicode(self.series)
 
 class IssueRevisionManager(RevisionManager):

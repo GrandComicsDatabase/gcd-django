@@ -9,9 +9,12 @@
       href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/queues.css"/>
 {% endblock %}
 
 {% block view_body %}
+<div class="queues">
 <h1> Changes Under Review </h1>
 
 {% with 'oi/bits/approval_actions.html' as actions %}
@@ -19,5 +22,6 @@
   {% include 'oi/bits/standard_queues.html' %}
 {% endwith %}
 {% endwith %}
+</div>
 {% endblock %}
 

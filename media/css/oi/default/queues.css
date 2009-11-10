@@ -1,31 +1,41 @@
-input.wide {
-    width: 60em;
-}
-
-input.year{
-    width: 6em;
-}
-
-.edit {
+.queues {
     margin-bottom: 1em;
+    font-size: smaller;
 }
 
-table.comments {
+.queues table {
     border: solid black 2px;
     border-collapse: collapse;
-    margin-bottom: 1em;
 }
 
-table.comments th {
+.queues th {
     border: solid black 1px;
     border-collapse: collapse;
     padding: 0.4em;
     background-color: #DDD;
 }
 
-table.comments td {
+.queues td {
     border: solid black 1px;
     border-collapse: collapse;
     padding: 0.4em;
+}
+
+.queues form {
+    margin: 0;
+    padding: 0;
+}
+
+.queues input {
+    font-size: 0.8em;
+    margin: 0;
+}
+
+.label_binding {
+    white-space: nowrap;
+}
+
+input.comments {
+    width: 40em;
 }
 

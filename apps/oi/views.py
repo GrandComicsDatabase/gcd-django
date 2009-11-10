@@ -317,10 +317,12 @@ def process(request, id, model_name):
 
     if form.is_valid():
         revision = form.save(commit=False)
-        revision.comments.create(commenter=request.user,
-                                 text=form.cleaned_data['comments'],
-                                 old_state=revision.state,
-                                 new_state=revision.state)
+        comments = form.cleaned_data['comments']
+        if comments is not None and comments != '':
+            revision.comments.create(commenter=request.user,
+                                     text=form.cleaned_data['comments'],
+                                     old_state=revision.state,
+                                     new_state=revision.state)
         revision.save()
         if hasattr(revision, 'save_m2m'):
             revision.save_m2m()
@@ -486,6 +488,7 @@ def show_queue(request, queue_name, state):
     return render_to_response(
       'oi/queues/%s.html' % queue_name,
       {
+        'queue_name': queue_name,
         'indexer': request.user,
         'data': [
           {

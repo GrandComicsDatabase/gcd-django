@@ -1,14 +1,15 @@
-
-<div class="queues">
 {% for section in data %}
 <h2> {{ section.object_name }} </h2>
 <table>
   <tr>
-    <th> Name </th>
-  {% if approval_queue %}
-    <th> Indexer </th>
-  {% endif %}
+    <th> Name {{ queue_name|default:'bugger' }}</th>
+  {% ifnotequal queue_name 'editing' %}
+    <th> Indexer</th>
+  {% endifnotequal %}
+    <th> Approver</th>
+  {% ifequal queue_name 'editing' %}
     <th> State </th>
+  {% endifequal %}
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
@@ -19,10 +20,13 @@
   {% else %}
     <td> <a href="{% url edit_revision model_name=section.object_type,id=object.id %}">{{ object.queue_name }}</a>
   {% endifequal %}
-  {% if approval_queue %}
+  {% ifnotequal queue_name 'editing' %}
     <td> {{ object.indexer.indexer }} </td>
-  {% endif %}
+  {% endifnotequal %}
+    <td> {{ object.approver.indexer|default:'None' }} </td>
+  {% ifequal queue_name 'editing' %}
     <td> {{ object.display_state }} </td>
+  {% endifequal %}
     <td> {{ object.modified }} </td>
 {% with section.object_type as object_type %}
     <td> {% with object.id as action_id %}{% include actions %}{% endwith %} </td>
@@ -36,4 +40,3 @@ All queues are empty.
 </p>
 {% endfor %}
 
-</div>
