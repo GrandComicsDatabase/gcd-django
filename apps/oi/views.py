@@ -94,7 +94,7 @@ def edit(request, id, model_name):
     if 'Publisher' == object_name and revision.parent is not None:
         object_name = 'Imprint'
 
-    return render_to_response(edit_template,
+    response= render_to_response(edit_template,
                              {
                                'revision': revision,
                                'object': getattr(revision, model_name),
@@ -106,6 +106,8 @@ def edit(request, id, model_name):
                                'states': states,
                               },
                               context_instance=RequestContext(request))
+    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    return response
 
 @permission_required('gcd.can_reserve')
 def submit(request, id, model_name):
