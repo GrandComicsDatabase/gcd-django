@@ -168,6 +168,27 @@ class Revision(models.Model):
     # Note: lambda required so that polymorphism works.
     source = property(lambda self: self._source())
 
+    def compare_changes(self):
+        """
+        Set up the 'changed' property so that it can be accessed conveniently
+        from a template.  Template calling limitations prevent just
+        using a parameter to compare one field at a time.
+        """
+        self._changes = {}
+        for field_name in self._field_list():
+            new = getattr(self, field_name)
+            if self.source is None:
+                if new:
+                    self._changes[field_name] = True
+                else:
+                    self._changes[field_name] = False
+            elif new != getattr(self.source, field_name):
+                self._changes[field_name] = True
+            else:
+                self._changes[field_name] = False
+
+    changed = property(lambda self: self._changes)
+
     def queue_name(self):
         """
         Long name form to display in queues.
@@ -547,6 +568,11 @@ class PublisherRevision(Revision):
     def _queue_name(self):
         return u'%s (%s, %s)' % (self.name, self.year_began,
                                  self.country.code.upper())
+
+    def _field_list(self):
+        return ('name', 'year_began', 'year_ended', 'country',
+                'notes', 'url', 'is_master', 'parent')
+
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
         if pub is None:
@@ -737,6 +763,20 @@ class SeriesRevision(Revision):
             return False
         return self.series.has_gallery
     has_gallery = property(_has_gallery)
+
+    def _field_list(self):
+        return ('name',
+                'format',
+                'year_began',
+                'year_ended',
+                'is_current',
+                'publisher',
+                'imprint',
+                'country',
+                'language',
+                'publication_notes',
+                'tracking_notes',
+                'notes',)
 
     def _do_complete_added_revision(self, publisher, imprint=None):
         """

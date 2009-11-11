@@ -49,24 +49,7 @@ Editing {{ object_name }} :: {{ object }}
   {% ifequal revision.state states.OPEN %}
 <form action="{{ object_url }}" method="POST">
 {% include object_form_template %}
-<table class="comments">
-<tr>
-  <th> Commenter </th>
-  <th> Old State </th>
-  <th> New State </th>
-  <th> Comment </th>
-  <th> Timestamp </th>
-</tr>
-{% for comment in revision.comments.all %}
-<tr>
-  <td> {{ comment.commenter.indexer }} </td>
-  <td> {{ comment.display_old_state }} </td>
-  <td> {{ comment.display_new_state }} </td>
-  <td> {{ comment.text }} </td>
-  <td> {{ comment.created }} </td>
-</tr>
-{% endfor %}
-</table>
+{% include 'oi/bits/comments.html' %}
 
 <input type="submit" name="submit" value="Submit changes for approval"></input>
 <input type="submit" name="discard" value="Discard all changes"></input>

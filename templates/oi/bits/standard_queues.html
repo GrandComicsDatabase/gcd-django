@@ -16,7 +16,7 @@
 {% for object in section.objects %}
   <tr>
   {% ifequal link_target 'preview' %}
-    <td> <a href="{% url preview_revision model_name=section.object_type,id=object.id %}">{{ object.queue_name }}</a>
+    <td> <a href="{% url compare_revision model_name=section.object_type,id=object.id %}">{{ object.queue_name }}</a>
   {% else %}
     <td> <a href="{% url edit_revision model_name=section.object_type,id=object.id %}">{{ object.queue_name }}</a>
   {% endifequal %}

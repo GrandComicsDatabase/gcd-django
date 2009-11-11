@@ -310,6 +310,18 @@ def process(request, id, model_name):
     if 'disapprove' in request.POST:
         return disapprove(request, id, model_name)
 
+    if 'add_comment' in request.POST:
+        revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
+        comments = request.POST['comments']
+        if comments is not None and comments != '':
+            revision.comments.create(commenter=request.user,
+                                     text=comments,
+                                     old_state=revision.state,
+                                     new_state=revision.state)
+            # Just add comments, don't touch other fields.
+            return HttpResponseRedirect(urlresolvers.reverse(compare,
+              kwargs={ 'model_name': model_name, 'id': id }))
+        
     # Saving is the default action.
     form = FORM_CLASSES[model_name](
     request.POST,
@@ -320,9 +332,10 @@ def process(request, id, model_name):
         comments = form.cleaned_data['comments']
         if comments is not None and comments != '':
             revision.comments.create(commenter=request.user,
-                                     text=form.cleaned_data['comments'],
+                                     text=comments,
                                      old_state=revision.state,
                                      new_state=revision.state)
+
         revision.save()
         if hasattr(revision, 'save_m2m'):
             revision.save_m2m()
@@ -482,49 +495,60 @@ def show_queue(request, queue_name, state):
     kwargs = {}
     if 'editing' == queue_name:
         kwargs['indexer'] = request.user
+        kwargs['state__in'] = (states.OPEN, states.PENDING, states.REVIEWING)
+    else:
+        kwargs['state'] = state
+
     if 'reviews' == queue_name:
         kwargs['approver'] = request.user
+
+    publishers = PublisherRevision.objects.filter(is_master=True,
+                                                  **kwargs)
+    imprints = PublisherRevision.objects.filter(parent__isnull=False,
+                                                **kwargs)
+    series = SeriesRevision.objects.filter(**kwargs)
+    issues = IssueRevision.objects.filter(**kwargs)
 
     return render_to_response(
       'oi/queues/%s.html' % queue_name,
       {
         'queue_name': queue_name,
         'indexer': request.user,
+        'states': states,
         'data': [
           {
             'object_name': 'Publishers',
             'object_type': 'publisher',
-            'objects': PublisherRevision.objects.filter(
-                         state=state,
-                         is_master=True,
-                         **kwargs).order_by('modified'),
+            'objects': publishers.order_by('modified'),
           },
           {
             'object_name': 'Imprints',
             'object_type': 'publisher',
-            'objects': PublisherRevision.objects.filter(
-                         state=state,
-                         parent__isnull=False,
-                         **kwargs).order_by('modified'),
+            'objects': imprints.order_by('modified'),
           },
           {
             'object_name': 'Series',
             'object_type': 'series',
-            'objects': SeriesRevision.objects.filter(
-                         state=state,
-                         **kwargs).order_by('modified'),
+            'objects': series.order_by('modified'),
           },
           {
             'object_name': 'Issues',
             'object_type': 'issue',
-            'objects': IssueRevision.objects.filter(
-                         state=state,
-                         **kwargs).order_by('modified'),
+            'objects': issues.order_by('modified'),
           },
         ],
       },
       context_instance=RequestContext(request)
     )
+
+@login_required
+def compare(request, id, model_name):
+    revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
+    revision.compare_changes()
+    template = 'oi/edit/compare_%s.html' % model_name
+    return render_to_response(template,
+                              { 'revision': revision, 'states': states },
+                              context_instance=RequestContext(request))
 
 @login_required
 def preview(request, id, model_name):

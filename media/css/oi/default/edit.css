@@ -10,12 +10,14 @@ input.year{
     margin-bottom: 1em;
 }
 
+table.comparison,
 table.comments {
     border: solid black 2px;
     border-collapse: collapse;
     margin-bottom: 1em;
 }
 
+table.comparison th,
 table.comments th {
     border: solid black 1px;
     border-collapse: collapse;
@@ -23,9 +25,35 @@ table.comments th {
     background-color: #DDD;
 }
 
+table.comparison td,
 table.comments td {
     border: solid black 1px;
     border-collapse: collapse;
     padding: 0.4em;
+}
+
+/* Capital True and False because these values come from Python booleans. */
+table.comparison tr.True {
+    background-color: yellow;
+}
+
+table.comparison td.field_name {
+    font-weight: bold;    
+}
+
+.comparison_highlight {
+    border: solid black 1px;
+    padding: 0.2em;
+    background-color: yellow;
+}
+
+form#review {
+    margin-bottom: 1em;
+}
+
+form#review textarea {
+    height: 10em;
+    width: 60em;
+    margin-bottom: 1em;
 }
 

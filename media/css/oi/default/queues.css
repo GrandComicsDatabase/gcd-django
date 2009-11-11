@@ -1,6 +1,5 @@
 .queues {
     margin-bottom: 1em;
-    font-size: smaller;
 }
 
 .queues table {
@@ -24,6 +23,7 @@
 .queues form {
     margin: 0;
     padding: 0;
+    display: inline;
 }
 
 .queues input {
@@ -36,6 +36,6 @@
 }
 
 input.comments {
-    width: 40em;
+    width: 20em;
 }
 

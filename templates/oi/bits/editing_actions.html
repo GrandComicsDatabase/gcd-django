@@ -1,9 +1,20 @@
-<!-- TODO: use the URL resolver somehow -->
-<form action="/{{ object_type }}/revision/{{ action_id }}/process/" method="POST">
+
+{% ifequal object.state states.REVIEWING %}
+  No actions available
+{% else %}
+<form action="{% url process_revision model_name=object_type,id=action_id %}"
+      method="POST">
+{% ifequal object.state states.OPEN %}
   <input type="submit" name="discard" value="Discard"></input>
+{% else %}
+  {% ifequal object.state states.PENDING %}
+  <input type="submit" name="retract" value="Retract and edit further"></input>
+  {% endifequal %}
+{% endifequal %}
   <span class="label_binding">
     <label for="comments">Comments:</label>
     <input type="text" name="comments" class="comments" />
   </span>
 </form>
+{% endifequal %}
 

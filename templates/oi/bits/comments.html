@@ -1,0 +1,19 @@
+<table class="comments">
+<tr>
+  <th> Commenter </th>
+  <th> Old State </th>
+  <th> New State </th>
+  <th> Comment </th>
+  <th> Timestamp </th>
+</tr>
+{% for comment in revision.comments.all %}
+<tr>
+  <td> {{ comment.commenter.indexer }} </td>
+  <td> {{ comment.display_old_state }} </td>
+  <td> {{ comment.display_new_state }} </td>
+  <td> {{ comment.text }} </td>
+  <td> {{ comment.created }} </td>
+</tr>
+{% endfor %}
+</table>
+

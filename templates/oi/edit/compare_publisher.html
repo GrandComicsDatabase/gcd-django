@@ -1,0 +1,96 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Reviewing :: {{ revision }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<p>
+Changed fields are <span class="comparison_highlight">highlighted.</span>
+</p>
+
+<table class="comparison">
+  <tr>
+    <th> Field </th>
+    <th> Current </th>
+    <th> Change </th>
+  <tr>
+  <tr class="{{ revision.changed.name }}">
+    <td class="field_name"> Name </td>
+    <td> {{ revision.publisher.name }} </td>
+    <td> {{ revision.name }} </td>
+  </tr>
+  <tr class="{{ revision.changed.year_began }}">
+    <td class="field_name"> Year Began </td>
+    <td> {{ revision.publisher.year_began }} </td>
+    <td> {{ revision.year_began }} </td>
+  </tr>
+  <tr class="{{ revision.changed.year_ended }}">
+    <td class="field_name"> Year Ended </td>
+    <td> {{ revision.publisher.year_ended }} </td>
+    <td> {{ revision.year_ended }} </td>
+  </tr>
+  <tr class="{{ revision.changed.country }}">
+    <td class="field_name"> Country </td>
+    <td> {{ revision.publisher.country }} </td>
+    <td> {{ revision.country }} </td>
+  </tr>
+  <tr class="{{ revision.changed.is_master }}">
+    <td class="field_name"> Master? </td>
+{% if not revision.publisher %}
+    <td> </td>
+{% else %}
+    <td> {% if revision.publisher.is_master %} Yes {% else %} No {% endif %} </td>
+{% endif %}
+    <td> {% if revision.is_master %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr class="{{ revision.changed.parent }}">
+    <td class="field_name"> Parent </td>
+    <td> {{ revision.publisher.parent }} </td>
+    <td> {{ revision.parent }} </td>
+  </td>
+  <tr class="{{ revision.changed.url }}">
+    <td class="field_name"> URL </td>
+    <td> {{ revision.publisher.url }} </td>
+    <td> {{ revision.url }} </td>
+  </tr>
+  <tr class="{{ revision.changed.notes }}"> 
+    <td class="field_name"> Notes </td>
+    <td> {{ revision.publisher.notes }} </td>
+    <td> {{ revision.notes }} </td>
+  </tr>
+</table>
+
+{% include 'oi/bits/comments.html' %}
+
+<p>
+<a href="{% url preview_publisher id=revision.id %}" target=_blank>Preview</a>
+(opens in a new window)
+</p>
+
+<form id="review" action="{% url process_publisher id=revision.id %}" method="POST">
+  <div>
+  <label for="comments">Comment:</label> <br>
+  <textarea id="comments" name="comments"></textarea>
+  </div>
+{% ifequal request.user revision.approver %}
+{% ifequal revision.state states.REVIEWING %}
+  <input type="submit" name="approve" value="Approve"></input>
+  <input type="submit" name="disapprove" value="Send Back to Indexer"></input>
+  <input type="submit" name="cancel" value="Reject Permanently"></input>
+{% endifequal %}
+{% endifequal %}
+  <input type="submit" name="add_comment" value="Add Comment"></input>
+</form>
+{% endblock %}
+

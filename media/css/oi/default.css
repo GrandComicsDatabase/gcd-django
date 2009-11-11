@@ -28,11 +28,6 @@
     color: white;
 }
 
-form {
-    margin-bottom: 1em;
-    display: inline;
-}
-
 form th {
     vertical-align: top;
     padding-bottom: 1em;
