@@ -59,6 +59,11 @@ def reserve(request, id, model_name):
     if request.method != 'POST':
         return _cant_get(request)
 
+    if display_obj.reserved:
+        return render_error(request,
+          'Cannot create a new revision for "%s" as it is already reserved.' %
+          display_obj)
+
     revision = REVISION_CLASSES[model_name].objects.clone_revision(
       display_obj, indexer=request.user)
     return HttpResponseRedirect(urlresolvers.reverse(target_view,
