@@ -553,9 +553,11 @@ def compare(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     revision.compare_changes()
     template = 'oi/edit/compare_%s.html' % model_name
-    return render_to_response(template,
-                              { 'revision': revision, 'states': states },
-                              context_instance=RequestContext(request))
+    response = render_to_response(template,
+                                  { 'revision': revision, 'states': states },
+                                  context_instance=RequestContext(request))
+    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    return response
 
 @login_required
 def preview(request, id, model_name):
