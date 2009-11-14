@@ -98,11 +98,19 @@ def show_series(request, series, preview=False):
     
     try:
         cover = covers.filter(has_image=True)[0]
-        image_tag = get_image_tag(series_id=series.id,
+        series_id = series.id
+        if preview:
+            if series.series:
+                series_id = series.series.id
+            else:
+                raise ValueError
+
+        image_tag = get_image_tag(series_id=series_id,
                                   cover=cover,
                                   zoom_level=ZOOM_MEDIUM,
                                   alt_text='First Issue Cover')
-    except IndexError:
+
+    except (IndexError, ValueError):
         image_tag = ''
         
     # TODO: Figure out optimal table width and/or make it user controllable.
@@ -403,6 +411,12 @@ def issue(request, issue_id):
     Display the issue details page, including story details.
     """
     issue = get_object_or_404(Issue, id = issue_id)
+    return show_issue(request, issue)
+
+def show_issue(request, issue, preview=False):
+    """
+    Handle the main work of displaying an issue.  Also used by OI previews.
+    """
     cover = issue.cover
     image_tag = get_image_tag(series_id=issue.series.id,
                               cover=cover,

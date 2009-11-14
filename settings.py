@@ -73,7 +73,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',
     'django.core.context_processors.request',
-    'apps.gcd.context_processors.beta',
+    'apps.gcd.context_processors.gcd',
 )
 
 AUTH_PROFILE_MODULE = 'gcd.Indexer'

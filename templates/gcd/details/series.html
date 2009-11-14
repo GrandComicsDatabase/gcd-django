@@ -26,56 +26,39 @@
 
 {% if not preview %}
 <div class="control_panel">
-{% if series.reserved %}
-  {% with series.revisions.all.0 as revision %}
-    <div id="index_status" class="index_status_{{ revision.state }}">
-    <span>
-    {% ifequal revision.state 1 %}
-       This {% if series.is_imprint %}imprint{% else %}series{% endif %}
-        is currently being edited by
-       {{ revision.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
-       (since {{ revision.created }}, last edit {{ revision.modified }})
-    {% endifequal %}
-    {% ifequal revision.state 2 %}
-       Edits to this
-       {% if series.is_imprint %}imprint{% else %}series{% endif %}
-        are currently awaiting approval.
-    {% endifequal %}
-    </span>
-    </div>
+  {% with series as object %}
+  {% with 'Series' as object_name %}
+  {% with 'series' as object_class %}
+    {% include "gcd/bits/status_banner.html" %}
   {% endwith %}
-{% else %}
-  <form method="POST"
-        action="{% url reserve_series id=series.id %}">
-    <input id="edit" name="edit" type="submit" value="Edit" />
-  </form>
-{% endif %}
-
-{% if series.is_current %}
+  {% endwith %}
+  {% endwith %}
+  {% if series.is_current %}
   <div class="ongoing_status">
     The ongoing issue reservation for this series is held by
     {{ series.ongoing_reservation.indexer.indexer }}.
     No one else may currently add issues.
   </div>
-  {% ifequal user series.ongoing_reservation.indexer %}
+    {% ifequal user series.ongoing_reservation.indexer %}
     <form method="POST"
           action="{% url add_issues series_id=series.id %}">
       <input id="add" name="add" type="submit" value="Add issues" />
     </form>
-  {% endifequal %}
-{% else %}
-{% if series.ongoing_reservation %}
+    {% endifequal %}
+  {% else %}
+  {% if series.ongoing_reservation %}
     <form method="POST"
           action="{% url apps.oi.views.ongoing %}">
       <input id="series" name="series" type="hidden" value="{{ series.id }}" />
-      <input id="reserve" name="reserve" type="submit" value="Reserve all new issues" />
+      <input id="reserve" name="reserve" type="submit"
+             value="Reserve all new issues" />
     </form>
-{% endif %} <!-- series.is_current -->
+  {% endif %} <!-- series.is_current -->
     <form method="POST"
           action="{% url add_issues series_id=series.id %}">
       <input id="add" name="add" type="submit" value="Add issues" />
     </form>
-{% endif %} <!-- series.ongoing_reservation -->
+  {% endif %} <!-- series.ongoing_reservation -->
 {% endif %} <!-- not preview -->
 
 <div class="clear">
@@ -83,7 +66,11 @@
 <div id="series_cover">
   {{ image_tag }}
 <p>
+{% if preview %}
+<a href="{{ series.source.get_absolute_url }}covers/?style={{ style|default:'default' }}">See cover gallery</a>
+{% else %}
 <a href="{{ series.get_absolute_url }}covers/?style={{ style|default:'default' }}">See cover gallery</a>
+{% endif %}
 </p>
 </div>
 {%endif %}

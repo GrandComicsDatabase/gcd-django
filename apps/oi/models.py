@@ -58,7 +58,7 @@ class RevisionManager(models.Manager):
     """
 
     def clone_revision(self, instance, instance_class, instance_name,
-                       indexer, check=True, state=states.OPEN):
+                       indexer, check=True, state=states.OPEN, **kwargs):
         """
         Given an existing instance, create a new revision based on it.
 
@@ -88,11 +88,13 @@ class RevisionManager(models.Manager):
                 self.clone_revision(instance,
                                     check=False,
                                     indexer=indexer,
-                                    state=states.BASELINE)
+                                    state=states.BASELINE,
+                                    **kwargs)
 
         revision = self._do_create_revision(instance,
                                             indexer=indexer,
-                                            state=state)
+                                            state=state,
+                                            **kwargs)
         revision.comments.create(commenter=indexer,
                                  text='Editing',
                                  old_state=states.UNRESERVED,
@@ -104,6 +106,15 @@ class RevisionManager(models.Manager):
         instance.reserved = True
         instance.save()
         return revision
+
+    def active(self):
+        """
+        For use on the revisions relation from display objects
+        where reserved == True.
+        Throws the DoesNotExist or MultipleObjectsReturned exceptions on
+        the appropriate Revision subclass, as it calls get() underneath.
+        """
+        return self.get(state__in=states.ACTIVE)
 
 class Revision(models.Model):
     """
@@ -154,9 +165,10 @@ class Revision(models.Model):
 
     """
     The modification timestamp for this revision.
-    Not automatic so we can handle baseline revisions.
+    TODO: Come up with something for baseline revisions.  For now it doesn't
+    really matter what's in the modified field for them.
     """
-    modified = models.DateTimeField(db_index=True, null=True)
+    modified = models.DateTimeField(auto_now=True, db_index=True, null=True)
 
     def _source(self):
         """
@@ -324,7 +336,9 @@ class Revision(models.Model):
 
         self.state = states.DISCARDED
         self.save()
-        self._do_unreserve()
+        if self.source is not None:
+            self.source.reserved = False
+            self.source.save()
 
     def assign(self, approver, notes=''):
         """
@@ -463,7 +477,7 @@ class PublisherRevisionManager(RevisionManager):
                                               check=check,
                                               state=state)
 
-    def _do_create_revision(self, publisher, indexer, state):
+    def _do_create_revision(self, publisher, indexer, state, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
@@ -602,11 +616,7 @@ class PublisherRevision(Revision):
         pub.save()
         if self.publisher is None:
             self.publisher = pub
-
-    def _do_unreserve(self):
-        if self.publisher is not None:
-            self.publisher.reserved = False
-            self.publisher.save()
+            self.save()
 
     def has_imprints(self):
         return self.imprint_set.count() > 0
@@ -615,10 +625,12 @@ class PublisherRevision(Revision):
         return self.parent_id is not None and self.parent_id != 0
 
     def get_absolute_url(self):
+        if self.publisher is None:
+            return "/publisher/revision/%i/preview" % self.id
         if self.is_imprint():
-            return "/imprint/%i/" % self.id
+            return "/imprint/%i/" % self.publisher.id
         else:
-            return "/publisher/%i/" % self.id
+            return "/publisher/%i/" % self.publisher.id
 
     def get_official_url(self):
         try:
@@ -667,7 +679,7 @@ class SeriesRevisionManager(RevisionManager):
                                               check=check,
                                               state=state)
 
-    def _do_create_revision(self, series, indexer, state):
+    def _do_create_revision(self, series, indexer, state, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
@@ -825,11 +837,12 @@ class SeriesRevision(Revision):
         series.save()
         if self.series is None:
             self.series = series
+            self.save()
 
-    def _do_unreserve(self):
-        if self.series is not None:
-            self.series.reserved = False
-            self.series.save()
+    def get_absolute_url(self):
+        if self.series is None:
+            return "/series/revision/%i/preview" % self.id
+        return "/series/%i/" % self.series.id
 
     def __unicode__(self):
         if self.series is None:
@@ -856,7 +869,7 @@ class IssueRevisionManager(RevisionManager):
                                               check=check,
                                               state=state)
 
-    def _do_create_revision(self, issue, indexer, state):
+    def _do_create_revision(self, issue, indexer, state, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
@@ -880,7 +893,6 @@ class IssueRevisionManager(RevisionManager):
           publication_date=issue.publication_date,
           price=issue.price,
           key_date=issue.key_date,
-          sort_code=issue.sort_code,
           series=issue.series,
           **kwargs)
 
@@ -902,26 +914,75 @@ class IssueRevision(Revision):
     publication_date = models.CharField(max_length=255, null=True)
     price = models.CharField(max_length=25, null=True)
     key_date = models.CharField(max_length=10, null=True)
-    sort_code = models.IntegerField()
 
     series = models.ForeignKey(Series)
 
+    def _sort_code(self):
+        if self.issue is None:
+            return 0
+        return self.issue.sort_code
+    sort_code = property(_sort_code)
+
+    def _story_set(self):
+        if self.issue is None:
+            return Story.objects.filter(pk__isnull=True)
+        return self.issue.story_set
+    story_set = property(_story_set)
+
+    def _cover(self):
+        if self.issue is None:
+            # TODO: This is a problem as there should always be a cover.
+            # TODO: Deal with after reorganized covers table is done.
+            # TODO: How do we initialize cover on add anyway?  Add not working
+            # TODO: yet so it doesn't matter until we get there.
+            return None
+        return self.issue.cover
+    cover = property(_cover)
+
+    def _reservation_set(self):
+        # Just totally fake this for now.
+        return Reservation.objects.filter(pk__isnull=True)
+    reservation_set = property(_reservation_set)
+
+    def _field_list(self):
+        return ('volume', 'number', 'publication_date',
+                'price', 'key_date', 'series')
+
+    def _source(self):
+        return self.issue
+
+    def ordered_story_revisions(self):
+        return self.story_revisions.all().order_by('sequence_number')
+
     def commit_to_display(self, clear_reservation=True):
         issue = self.issue
+
+        if series is None:
+            series = Series(issue_count=0)
         if issue is None:
             issue = Issue()
+            self.series.issue_count += 1
+            self.series.publisher.issue_count += 1
+        elif self.deleted:
+            self.series.issue_count -= 1
+            self.series.publisher.issue_count -= 1
+            series.delete()
+            return
+
         issue.number = self.number
         issue.volume = self.volume
         issue.publication_date = self.publication_date
         issue.price = self.price
         issue.key_date = self.key_date,
-        issue.sort_code = self.sort_code,
         issue.series = self.series
 
         if clear_reservation:
             issue.reserved = False
 
         issue.save()
+        if self.issue is None:
+            self.issue = issue
+            self.save()
 
     def __unicode__(self):
         return unicode(self.issue)
@@ -939,6 +1000,10 @@ class StoryRevisionManager(RevisionManager):
         Entirely new stories should be started by simply instantiating
         a new StoryRevision directly.
         """
+        ir = issue_revision
+        if state == states.BASELINE:
+            ir = story.issue.revisions.get(state=states.BASELINE)
+
         return RevisionManager.clone_revision(self,
                                               instance=story,
                                               instance_class=Story,
@@ -946,16 +1011,16 @@ class StoryRevisionManager(RevisionManager):
                                               indexer=indexer,
                                               check=check,
                                               state=state,
-                                              issue_revision=issue_revision)
+                                              issue_revision=ir)
 
-    def _do_create_revision(self, story, issue_revision, indexer, state):
+    def _do_create_revision(self, story, issue_revision, indexer, state, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
         kwargs = {}
         if (state == states.BASELINE):
-            kwargs['created'] = issue.created
-            kwargs['modified'] = issue.modified
+            kwargs['created'] = story.created
+            kwargs['modified'] = story.modified
         else:
             kwargs['created'] = datetime.now()
             kwargs['modified'] = kwargs['created']
@@ -997,28 +1062,32 @@ class StoryRevisionManager(RevisionManager):
           issue=story.issue,
           **kwargs)
 
+        revision.save()
+        return revision
+
 class StoryRevision(Revision):
     class Meta:
         db_table = 'oi_story_revision'
         ordering = ['-created', '-id']
 
+    objects = StoryRevisionManager()
+
     story = models.ForeignKey(Story, null=True, related_name='revisions')
     issue_revision = models.ForeignKey('oi.IssueRevision',
                                        related_name='story_revisions')
 
-    title = models.CharField(max_length=255, db_column='Title', null=True)
-    feature = models.CharField(max_length=255, db_column='Feature',
-                               null=True)
-    page_count = models.FloatField(db_column='Pg_Cnt', null=True)
+    title = models.CharField(max_length=255, null=True)
+    feature = models.CharField(max_length=255, null=True)
+    page_count = models.FloatField(null=True)
     page_count_uncertain = models.BooleanField(default=0)
 
-    characters = models.TextField(db_column='Char_App', null = True)
+    characters = models.TextField(null = True)
 
-    script = models.TextField(max_length=255, db_column='Script', null=True)
-    pencils = models.TextField(max_length=255, db_column='Pencils', null=True)
-    inks = models.TextField(max_length=255, db_column='Inks', null=True)
-    colors = models.TextField(max_length=255, db_column='Colors', null=True)
-    letters = models.TextField(max_length=255, db_column='Letters', null=True)
+    script = models.TextField(max_length=255, null=True)
+    pencils = models.TextField(max_length=255, null=True)
+    inks = models.TextField(max_length=255, null=True)
+    colors = models.TextField(max_length=255, null=True)
+    letters = models.TextField(max_length=255, null=True)
 
     no_script = models.BooleanField(default=0)
     no_pencils = models.BooleanField(default=0)
@@ -1026,16 +1095,48 @@ class StoryRevision(Revision):
     no_colors = models.BooleanField(default=0)
     no_letters = models.BooleanField(default=0)
 
-    editor = models.TextField(max_length=255, db_column='Editing', null=True)
-    notes = models.TextField(max_length=255, db_column='Notes', null=True)
-    synopsis = models.TextField(max_length=255, db_column='Synopsis', null=True)
-    reprints = models.TextField(max_length=255, db_column='Reprints', null=True)
-    genre = models.CharField(max_length=255, db_column='Genre', null=True)
-    type = models.CharField(max_length=255, db_column='Type', null=True)
-    sequence_number = models.IntegerField(db_column='Seq_No', null=True)
-    job_number = models.CharField(max_length=25, db_column='JobNo', null=True)
+    editor = models.TextField(max_length=255, db_column='editing', null=True)
+    notes = models.TextField(max_length=255, null=True)
+    synopsis = models.TextField(max_length=255, null=True)
+    reprints = models.TextField(max_length=255, db_column='reprint_notes',
+                                null=True)
+    genre = models.CharField(max_length=255, null=True)
+    type = models.CharField(max_length=255, null=True)
+    sequence_number = models.IntegerField(null=True)
+    job_number = models.CharField(max_length=25, null=True)
 
     issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
+
+    def _field_list(self):
+        return (
+          'title',
+          'feature',
+          'page_count',
+          'page_count_uncertain',
+          'characters',
+          'script',
+          'pencils',
+          'inks',
+          'colors',
+          'letters',
+          'no_script',
+          'no_pencils',
+          'no_inks',
+          'no_colors',
+          'no_letters',
+          'editor',
+          'notes',
+          'synopsis',
+          'reprints',
+          'genre',
+          'type',
+          'sequence_number',
+          'job_number',
+          'issue',
+        )
+
+    def _source(self):
+        return self.story
 
     def commit_to_display(self, clear_reservation=True):
         story = self.story
@@ -1072,6 +1173,10 @@ class StoryRevision(Revision):
             story.reserved = False
 
         story.save()
+
+        if self.story is None:
+            self.story = story
+            self.save()
 
     def __unicode__(self):
         return unicode(self.story)

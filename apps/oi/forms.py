@@ -126,11 +126,62 @@ class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
         fields = (
-            'volume',
             'number',
+            'volume',
             'price',
             'publication_date',
             'key_date',
-            'sort_code',
         )
+
+    number = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+      help_text='The issue number (or other label) as it appears in the indicia. '
+                'If there is no indicia the cover number may be used. '
+                'Series that number by year (mosty European series) should write '
+                'the year after a slash: "4/2009" for issue #4 in publication year '
+                '2009.  Place brackets around an issue number if it is not '
+                'printed in the indicia.  Use "[nn]" if there is no number '
+                'printed anywhere on the issue.')
+
+    volume = forms.IntegerField(
+      help_text='Volume number.  Not currently displayed.  For trade paperbacks or '
+                'other items with volume numbers but not issue numbers, put the '
+                'number in both fields.  For series that restart their numbers '
+                'each new volume, put the number in this field and also put it '
+                'in the issue number field: "v4#1" for volume 4 number 1.  If the '
+                'volume number does not fall into either of these categories, put '
+                'it in this field but not in the number field.  If there is no '
+                'volume number, leave this field blank.')
+
+    price = forms.CharField(
+      help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
+                '"2.99 CAD" for $2.99 Canadian.  Use a format like '
+                '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
+                'Use "0.00 FREE" for free issues. '
+                'Separate multple prices with a semicolon.  Use parentheses after '
+                'the currency code for notes: "2.99 USD; 3.99 USD (newsstand)" '
+                'Use country codes after the currency code if more than one price '
+                'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
+
+    publication_date = forms.CharField(
+      widget=forms.TextInput(attrs={'class': 'wide'}),
+      help_text='The publicaton date as printed on the comic, except with the '
+                'name of the month (if any) spelled out.  Any part of the date '
+                'that is not printed on the comic but is known should be put '
+                'in square brackets, such as "[January] 2009".  Do NOT use the '
+                'shipping date in this field, only the publication date.')
+
+    key_date = forms.CharField(widget=forms.TextInput(attrs={'class': 'key_date'}),
+      help_text='Special date form used for sorting:  YYYY.MM.DD where the day '
+                '(DD) shoud be 00 for monthly books, and use arbitrary numbers '
+                'such as 10, 20, 30 to indicate an "early" "mid" or "late" month '
+                'cover date.  For the month (MM) on quarterlies, use 04 for '
+                'Spring, 07 for Summer, 10 for Fall and 01 or 12 for Winter.  For '
+                'annuals use a month of 00 or 13 or whatever sorts it best.  When '
+                'in doubt, use anything that produces the correct sorting.')
+
+    comments = forms.CharField(widget=forms.Textarea,
+                               required=False,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
 

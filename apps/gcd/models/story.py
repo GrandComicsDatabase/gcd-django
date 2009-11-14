@@ -6,6 +6,7 @@ from issue import Issue
 class Story(models.Model):
     class Meta:
         app_label = 'gcd'
+        ordering = ['sequence_number']
 
     # Core story fields.
     feature = models.CharField(max_length=255, null=True)

@@ -21,40 +21,30 @@
 
 {% if not preview %}
 <div class="control_panel">
-{% if publisher.reserved %}
-  {% with publisher.revisions.all.0 as revision %}
-    <div id="index_status" class="index_status_{{ revision.state }}">
-    <span>
-    {% ifequal revision.state 1 %}
-       This {% if publisher.is_imprint %}imprint{% else %}publisher{% endif %}
-        is currently being edited by
-       {{ revision.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
-       (since {{ revision.created }}, last edit {{ revision.modified }})
-    {% endifequal %}
-    {% ifequal revision.state 2 %}
-       Edits to this
-       {% if publisher.is_imprint %}imprint{% else %}publisher{% endif %}
-        are currently awaiting approval.
-    {% endifequal %}
-    </span>
-    </div>
+  {% with publisher as object %}
+  {% with 'publisher' as object_class %}
+  {% if publisher.parent %}
+    {% with 'Imprint' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+  {% else %}
+    {% with 'Publisher' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+  {% endif %}
   {% endwith %}
-{% else %}
-  <form method="POST"
-        action="{% url reserve_publisher id=publisher.id %}">
-    <input id="edit" name="edit" type="submit" value="Edit" />
+  {% endwith %}
+
+  {% if publisher.is_master %}
+  <form method="GET"
+        action="{% url add_imprint parent_id=publisher.id %}">
+    <input id="add" name="add" type="submit" value="Add imprint" />
   </form>
-{% endif %}
-{% if publisher.is_master %}
-<form method="GET"
-      action="{% url add_imprint parent_id=publisher.id %}">
-  <input id="add" name="add" type="submit" value="Add imprint" />
-</form>
-{% endif %}
-<form method="GET"
-      action="{% url add_series publisher_id=publisher.id %}">
-  <input id="add" name="add" type="submit" value="Add series" />
-</form>
+  {% endif %}
+  <form method="GET"
+        action="{% url add_series publisher_id=publisher.id %}">
+    <input id="add" name="add" type="submit" value="Add series" />
+  </form>
 </div>
 {% endif %}
 

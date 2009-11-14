@@ -48,3 +48,5 @@ DISPLAY_NAME = {
     DISCARDED: 'Discarded',
 }
 
+ACTIVE = (OPEN, PENDING, REVIEWING)
+

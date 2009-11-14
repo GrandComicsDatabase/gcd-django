@@ -1,7 +1,10 @@
 from django.conf import settings
+from apps.oi import states
 
-def beta(request):
+def gcd(request):
+    stuff = { 'states': states }
+
     if hasattr(settings, 'BETA'):
-        return { 'BETA': settings.BETA }
-    return { 'BETA': False }
+        stuff['BETA'] = settings.BETA
+    return stuff
 

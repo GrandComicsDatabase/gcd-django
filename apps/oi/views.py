@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 
 from apps.gcd.models import *
 from apps.gcd.views import render_error, paginate_response
-from apps.gcd.views.details import show_series
+from apps.gcd.views.details import show_series, show_issue
 from apps.oi.models import *
 from apps.oi.forms import *
 
@@ -33,6 +33,7 @@ DISPLAY_CLASSES = {
 FORM_CLASSES = {
     'publisher': PublisherRevisionForm,
     'series': SeriesRevisionForm,
+    'issue': IssueRevisionForm,
 }
 
 ##############################################################################
@@ -53,8 +54,6 @@ def _cant_get(request):
 
 @permission_required('gcd.can_reserve')
 def reserve(request, id, model_name):
-    target_view = 'edit_%s' % model_name
-
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
     if request.method != 'POST':
         return _cant_get(request)
@@ -66,17 +65,27 @@ def reserve(request, id, model_name):
 
     revision = REVISION_CLASSES[model_name].objects.clone_revision(
       display_obj, indexer=request.user)
-    return HttpResponseRedirect(urlresolvers.reverse(target_view,
-                                             kwargs={ 'id': revision.id }))
+    if model_name == 'issue':
+        for story in revision.issue.story_set.all():
+           StoryRevision.objects.clone_revision(story=story,
+                                                indexer=request.user,
+                                                issue_revision=revision)
+
+    return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
+      kwargs={ 'model_name': model_name, 'id': revision.id }))
 
 # TODO: What is the point of this method?  I can't remember...
 @permission_required('gcd.can_reserve')
 def direct_edit(request, id, model_name):
+    # Since I can't remember what this is, let's see if I can find out:
+    raise Exception, "Henry can't remember why this function exists"
+
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
     if display_obj.revisions.count() > 0:
         return HttpResponseRedirect(
-          urlresolvers.reverse('edit_%s' % model_name,
+          urlresolvers.reverse('edit_revision',
                                kwargs={
+                                 'model_name': model_name,
                                  'id': display_obj.revisions.all()[0].id,
                                }))
     return render_to_response(
@@ -88,9 +97,9 @@ def direct_edit(request, id, model_name):
 def edit(request, id, model_name):
     edit_template = 'oi/edit/frame.html'
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
-
-    url = urlresolvers.reverse('process_%s' % model_name,
+    url = urlresolvers.reverse('process_revision',
                                kwargs={
+                                 'model_name': model_name,
                                  'id': revision.id,
                                })
     template = 'oi/edit/%s_form.html' % model_name
@@ -133,6 +142,10 @@ def submit(request, id, model_name):
     if form.is_valid():
         revision = form.save()
         revision.submit(notes=form.cleaned_data['comments'])
+        if model_name == 'issue':
+            for story_revision in revision.story_revisions.all():
+                story_revision.submit()
+
         return HttpResponseRedirect(
           urlresolvers.reverse('editing'))
     else:
@@ -159,6 +172,10 @@ def retract(request, id, model_name):
           {'error_message': 'A change may only be retracted by its author.'},
           context_instance=RequestContext(request))
     revision.retract(notes=request.POST['comments'])
+    if model_name == 'issue':
+        for story_revision in revision.story_revisions.all():
+            story_revision.retract()
+
     return HttpResponseRedirect(
       urlresolvers.reverse('editing'))
 
@@ -186,6 +203,10 @@ def discard(request, id, model_name):
           context_instance=RequestContext(request))
 
     revision.discard(discarder=request.user, notes=request.POST['comments'])
+    if model_name == 'issue':
+        for story_revision in revision.story_revisions.all():
+            story_revision.discard()
+
     return HttpResponseRedirect(
       urlresolvers.reverse('editing'))
 
@@ -199,6 +220,9 @@ def assign(request, id, model_name):
 
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     revision.assign(approver=request.user, notes=request.POST['comments'])
+    if model_name == 'issue':
+        for story_revision in revision.story_revisions.all():
+            story_revision.assign()
 
     return HttpResponseRedirect(
       urlresolvers.reverse('reviewing'))
@@ -218,6 +242,9 @@ def release(request, id, model_name):
           context_instance=RequestContext(request))
         
     revision.release(notes=request.POST['comments'])
+    if model_name == 'issue':
+        for story_revision in revision.story_revisions.all():
+            story_revision.release()
 
     return HttpResponseRedirect(
       urlresolvers.reverse('reviewing'))
@@ -236,6 +263,9 @@ def approve(request, id, model_name):
           'A change may only be approved by its approver.')
 
     revision.approve(notes=request.POST['comments'])
+    if model_name == 'issue':
+        for story_revision in revision.story_revisions.all():
+            story_revision.approve()
 
     return HttpResponseRedirect(
       urlresolvers.reverse('reviewing'))
@@ -260,6 +290,9 @@ def disapprove(request, id, model_name):
                             'the comments field for the explanation.')
 
     revision.disapprove(notes=request.POST['comments'])
+    if model_name == 'issue':
+        for story_revision in revision.story_revisions.all():
+            story_revision.disapprove()
 
     return HttpResponseRedirect(
       urlresolvers.reverse('reviewing'))
@@ -277,6 +310,11 @@ def delete(request, id, model_name):
         return render_to_response('gcd/error.html',
           {'error_message': 'Only the reservation holder may delete a record.'},
           context_instance=RequestContext(request))
+    if model_name == 'issue':
+        # For now, refuse to delete stories with issues.  TODO: Revisit.
+        if revision.story_revisions.count():
+            return render_error(request,
+              "Cannot delete issue while stories are still attached.")
     revision.mark_deleted()
 
     return HttpResponseRedirect(
@@ -349,8 +387,8 @@ def process(request, id, model_name):
         if 'queue' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse('editing'))
         else:
-            return HttpResponseRedirect(
-              urlresolvers.reverse('edit_%s' % model_name, kwargs={ 'id': id }))
+            return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
+              kwargs={ 'model_name': model_name, 'id': id }))
     else:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         return render_to_response('oi/edit/frame.html',
@@ -553,8 +591,11 @@ def compare(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     revision.compare_changes()
     template = 'oi/edit/compare_%s.html' % model_name
+
     response = render_to_response(template,
-                                  { 'revision': revision, 'states': states },
+                                  { 'revision': revision,
+                                    'model_name': model_name,
+                                    'states': states },
                                   context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
@@ -580,5 +621,6 @@ def preview(request, id, model_name):
         )
     if 'series' == model_name:
         return show_series(request, revision, True)
-
+    if 'issue' == model_name:
+        return show_issue(request, revision, True)
 

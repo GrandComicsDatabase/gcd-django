@@ -9,48 +9,33 @@
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/{{ style|default:"default" }}.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/{{ style }}/issue.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/{{ style|default:"default" }}/issue.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/{{ style }}/single_story.css"/>
+        href="{{ MEDIA_URL }}/css/gcd/{{ style|default:"default" }}/single_story.css"/>
 {% endblock %}
 
 {% block view_body %}
 
 <div id="issue_data">
-{% comment %}
-  Can withs be condensed?  To tired to look it up right now.
-{% endcomment %}
-
 {% with issue.series as series %}
 {% with issue.number as issue_number %}
   {% include "gcd/bits/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}
 
-{% ifnotequal issue.index_status 3 %}
-<div id="index_status" class="index_status_{{ issue.index_status }}">
-<!-- Not trying to display the reservation holder now until we figure out
-     what to do with all the null and multiple reservations.
-  -->
-<div id="index_status_inner">
-<span>
-{% ifequal issue.index_status 0 %}
-   This issue has not been indexed yet.  Please edit it if you can provide any information.
-{% endifequal %}
-{% ifequal issue.index_status 1 %}
-   This issue is currently being edited by
-   {{ issue.reserver|default:"[no one, please contact the editors to fix this reservation]" }}
-   (since {{ issue.reservation_set.all.0.created }}, last edit {{ issue.reservation_set.all.0.modified|default:"[not recorded]" }})
-{% endifequal %}
-{% ifequal issue.index_status 2 %}
-   The index for this issue is awaiting editorial approval.
-{% endifequal %}
-</span>
+{% if not preview %}
+<div class="control_panel">
+  {% with issue as object %}
+  {% with 'Issue' as object_name %}
+  {% with 'issue' as object_class %}
+    {% include "gcd/bits/status_banner.html" %}
+  {% endwith %}
+  {% endwith %}
+  {% endwith %}
 </div>
-</div>
-{% endifnotequal %}
+{% endif %}
 
 <dl id="issue_data_list">
   <dt> {% trans "Price" %}:
