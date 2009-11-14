@@ -23,8 +23,7 @@
             <!-- needs to be stuck together to get display spacing right. -->
             {% if story.feature %} / {% endif %}
             {% if story.type %}{{ story.type }} / {% endif %}
-            {% if story.page_count %}{{ story.page_count }}{% endif %}
-            {% if story.page_count_uncertain %}?{% endif %}
+            {{ story|show_page_count }}
             {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
               page{{ suffix }}
             {% endblocktrans %}

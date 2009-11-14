@@ -41,9 +41,7 @@
   <dt> {% trans "Price" %}:
   <dd id="issue_price"> {{ issue.price|default:"" }}
   <dt> {% trans "Pages" %}:
-  <dd id="issue_pages">
-    {% if cover_story.page_count %}{{ cover_story.page_count }}{% endif %}
-    {% if cover_story.page_count_uncertain %}?{% endif %}
+  <dd id="issue_pages"> {{ cover_story|show_page_count }}
   {{ cover_story|show_credit:"editor" }}
 </dl>
 <!-- IE6 didn't like various attempts to get the sometimes very long

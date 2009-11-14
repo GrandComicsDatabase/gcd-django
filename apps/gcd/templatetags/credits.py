@@ -108,8 +108,23 @@ def show_issue_number(issue_number):
         return mark_safe('<span id="issue_number"><span class="p">#</span>' + \
             esc(issue_number) + '</span>')
 
+def show_page_count(story):
+    """
+    Return a properly formatted page count, with "?" as needed.
+    """
+    if story.page_count is None:
+        if story.page_count_uncertain:
+            return u'?'
+        return ''
+
+    p = re.sub(r'\.?0+$', '', unicode(story.page_count))
+    if story.page_count_uncertain:
+        p = u'%s ?' % p
+    return p
+
 register.filter(show_credit)
 register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)
+register.filter(show_page_count)
 
