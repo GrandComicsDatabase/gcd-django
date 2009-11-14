@@ -254,7 +254,7 @@ def daily_covers(request, show_date=None):
     covers = covers.order_by("issue__series__publisher__name",
                              "issue__series__name",
                              "issue__series__year_began",
-                             "issue__number")
+                             "issue__sort_code")
 
     # TODO: once we have permissions 'can_mark' should be one
     if request.user.is_authenticated() and \
