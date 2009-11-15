@@ -103,10 +103,9 @@ def show_issue_number(issue_number):
     Return issue number, unless it is marked as not having one.
     """
     if issue_number == '[nn]':
-        return ''
-    else: 
-        return mark_safe('<span id="issue_number"><span class="p">#</span>' + \
-            esc(issue_number) + '</span>')
+        return u''
+    return mark_safe('<span id="issue_number"><span class="p">#</span>' + \
+        esc(issue_number) + '</span>')
 
 def show_page_count(story):
     """

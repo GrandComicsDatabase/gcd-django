@@ -128,6 +128,7 @@ class IssueRevisionForm(forms.ModelForm):
         fields = (
             'number',
             'volume',
+            'display_volume_with_number',
             'price',
             'publication_date',
             'key_date',
@@ -143,14 +144,17 @@ class IssueRevisionForm(forms.ModelForm):
                 'printed anywhere on the issue.')
 
     volume = forms.IntegerField(
-      help_text='Volume number.  Not currently displayed.  For trade paperbacks or '
-                'other items with volume numbers but not issue numbers, put the '
-                'number in both fields.  For series that restart their numbers '
-                'each new volume, put the number in this field and also put it '
-                'in the issue number field: "v4#1" for volume 4 number 1.  If the '
-                'volume number does not fall into either of these categories, put '
-                'it in this field but not in the number field.  If there is no '
-                'volume number, leave this field blank.')
+      help_text='Volume number (only numeric volumes allowed at this time). '
+                'For collections or other items that only have a volume number, '
+                'put the same number in both this field and the issue number '
+                'and do *not* check "Display volume with number". '
+                'If there is no volume, leave this field blank.')
+
+    display_volume_with_number = forms.BooleanField(required=False,
+      help_text='Check to cause the site to display the volume as part of the '
+                'issue number.  For example with a volume of "2" and an issue '
+                'number of "1", checking this box will display "v2#1" instead '
+                'of just "1" in the status grids and issues lists for the series.')
 
     price = forms.CharField(
       help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
@@ -163,7 +167,6 @@ class IssueRevisionForm(forms.ModelForm):
                 'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
     publication_date = forms.CharField(
-      widget=forms.TextInput(attrs={'class': 'wide'}),
       help_text='The publicaton date as printed on the comic, except with the '
                 'name of the month (if any) spelled out.  Any part of the date '
                 'that is not printed on the comic but is known should be put '

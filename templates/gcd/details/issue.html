@@ -4,7 +4,7 @@
 {% load credits %}
 
 {% block title %}
-  GCD :: Issue :: {{ issue.series.name }} #{{ issue.number }}
+  GCD :: Issue :: {{ issue.series.name }} #{{ issue.display_number }}
 {% endblock %}
 
 {% block css %}
@@ -20,7 +20,7 @@
 
 <div id="issue_data">
 {% with issue.series as series %}
-{% with issue.number as issue_number %}
+{% with issue.display_number as issue_number %}
   {% include "gcd/bits/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}
@@ -150,7 +150,7 @@
 
 {% with 1 as paginate_only %}
 {% with issue.series as series %}
-{% with issue.number as issue_number %}
+{% with issue.display_number as issue_number %}
   {% include "gcd/bits/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}

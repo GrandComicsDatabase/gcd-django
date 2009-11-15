@@ -35,6 +35,11 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <td> {{ revision.issue.volume }} </td>
     <td> {{ revision.volume }} </td>
   </tr>
+  <tr class="{{ revision.changed.display_volume_with_number }}">
+    <td class="field_name"> Display volume with number </td>
+    <td> {% if revision.issue.display_volume_with_number %} Yes {% else %} No {% endif %} </td>
+    <td> {% if revision.display_volume_with_number %} Yes {% else %} No {% endif %} </td>
+  </tr>
   <tr class="{{ revision.changed.price }}">
     <td class="field_name"> Price </td>
     <td> {{ revision.issue.price }} </td>

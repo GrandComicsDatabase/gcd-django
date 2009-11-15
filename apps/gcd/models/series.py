@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 
-from country import Country
-from language import Language
-from publisher import Publisher
+from apps.gcd.models.country import Country
+from apps.gcd.models.language import Language
+from apps.gcd.models.publisher import Publisher
 
 class Series(models.Model):
     class Meta:
@@ -14,9 +14,16 @@ class Series(models.Model):
     name = models.CharField(max_length=255, null=True, db_index=True)
     format = models.CharField(max_length=255, null=True)
     notes = models.TextField(null=True)
+
     year_began = models.IntegerField(db_index=True)
     year_ended = models.IntegerField(null=True)
     is_current = models.BooleanField()
+    publication_dates = models.CharField(max_length=255, null=True)
+
+    first_issue = models.ForeignKey('Issue', null=True,
+      related_name='first_issue_series_set')
+    last_issue = models.ForeignKey('Issue', null=True,
+      related_name='last_issue_series_set')
     issue_count = models.IntegerField(null=True)
 
     # Publication notes are not displayed in the current UI but may

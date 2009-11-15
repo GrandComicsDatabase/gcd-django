@@ -205,7 +205,7 @@ def discard(request, id, model_name):
     revision.discard(discarder=request.user, notes=request.POST['comments'])
     if model_name == 'issue':
         for story_revision in revision.story_revisions.all():
-            story_revision.discard()
+            story_revision.discard(discarder=request.user)
 
     return HttpResponseRedirect(
       urlresolvers.reverse('editing'))
@@ -222,7 +222,7 @@ def assign(request, id, model_name):
     revision.assign(approver=request.user, notes=request.POST['comments'])
     if model_name == 'issue':
         for story_revision in revision.story_revisions.all():
-            story_revision.assign()
+            story_revision.assign(approver=request.user)
 
     return HttpResponseRedirect(
       urlresolvers.reverse('reviewing'))

@@ -267,6 +267,10 @@ class Revision(models.Model):
         """
         Check for a mentor, set to approver if necessary, and return the
         appropriate state for a submitted change.
+
+        Set last issue even if we are part of a current series, because
+        the is_current flag denotes that already and we may want to use the
+        last issue to date sometimes.
         """
         if self.approver is None and self.indexer.indexer.is_new and \
            self.indexer.mentor is not None:
@@ -890,6 +894,7 @@ class IssueRevisionManager(RevisionManager):
           # copied fields:
           volume=issue.volume,
           number=issue.number,
+          display_volume_with_number=issue.display_volume_with_number,
           publication_date=issue.publication_date,
           price=issue.price,
           key_date=issue.key_date,
@@ -910,12 +915,21 @@ class IssueRevision(Revision):
 
     volume = models.IntegerField(max_length=255, null=True)
     number = models.CharField(max_length=25, null=True)
+    display_volume_with_number = models.BooleanField()
 
     publication_date = models.CharField(max_length=255, null=True)
     price = models.CharField(max_length=25, null=True)
     key_date = models.CharField(max_length=10, null=True)
 
     series = models.ForeignKey(Series)
+
+    # TODO: It's not a good idea to replicate this logic here, but
+    # TODO: we can't simply call it as there may not be an issue defined
+    # TODO: yet.  Need to figure out a better arrangement.
+    def display_number(self):
+        if self.display_volume_with_number:
+            return u'v%s#%s' % (self.volume, self.number)
+        return self.number
 
     def _sort_code(self):
         if self.issue is None:
@@ -945,8 +959,8 @@ class IssueRevision(Revision):
     reservation_set = property(_reservation_set)
 
     def _field_list(self):
-        return ('volume', 'number', 'publication_date',
-                'price', 'key_date', 'series')
+        return ('volume', 'number', 'display_volume_with_number',
+                'publication_date', 'price', 'key_date', 'series')
 
     def _source(self):
         return self.issue
@@ -957,8 +971,6 @@ class IssueRevision(Revision):
     def commit_to_display(self, clear_reservation=True):
         issue = self.issue
 
-        if series is None:
-            series = Series(issue_count=0)
         if issue is None:
             issue = Issue()
             self.series.issue_count += 1
@@ -966,14 +978,16 @@ class IssueRevision(Revision):
         elif self.deleted:
             self.series.issue_count -= 1
             self.series.publisher.issue_count -= 1
-            series.delete()
+            issue.delete()
+            self._check_first_last()
             return
 
         issue.number = self.number
         issue.volume = self.volume
+        issue.display_volume_with_number = self.display_volume_with_number
         issue.publication_date = self.publication_date
         issue.price = self.price
-        issue.key_date = self.key_date,
+        issue.key_date = self.key_date
         issue.series = self.series
 
         if clear_reservation:
@@ -983,6 +997,21 @@ class IssueRevision(Revision):
         if self.issue is None:
             self.issue = issue
             self.save()
+
+        # TODO: Currently can't change sort code here so really only need
+        # TODO: to call when issue added (deleted covered above).
+        # TODO: But this may change?  Just call for now.
+        self._check_first_last()
+
+    def _check_first_last(self):
+        issues = self.series.issue_set.order_by('sort_code')
+        if issues.count() == 0:
+            self.series.first_issue = None
+            self.series.last_issue = None
+        else:
+            self.series.first_issue = issues[0]
+            self.series.last_issue = issues[len(issues) - 1]
+        self.series.save()
 
     def __unicode__(self):
         return unicode(self.issue)
@@ -1078,7 +1107,8 @@ class StoryRevision(Revision):
 
     title = models.CharField(max_length=255, null=True)
     feature = models.CharField(max_length=255, null=True)
-    page_count = models.FloatField(null=True)
+    page_count = models.DecimalField(max_digits=10, decimal_places=3,
+                                     null=True)
     page_count_uncertain = models.BooleanField(default=0)
 
     characters = models.TextField(null = True)

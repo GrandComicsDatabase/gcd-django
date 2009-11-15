@@ -12,6 +12,7 @@ class Issue(models.Model):
     # is usually included in 'number' when it is of critical importance.
     volume = models.IntegerField(max_length=255, db_index=True)
     number = models.CharField(max_length=25, null=True, db_index=True)
+    display_volume_with_number = models.BooleanField(default=False)
     publication_date = models.CharField(max_length=255, null=True)
     price = models.CharField(max_length=255, null=True)
     story_count = models.IntegerField(null=True)
@@ -32,6 +33,11 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True, null=True)
     modified = models.DateTimeField(auto_now=True, null=True, db_index=True)
     
+    def display_number(self):
+        if self.display_volume_with_number:
+            return u'v%s#%s' % (self.volume, self.number)
+        return self.number
+
     def index_status_description(self):
         """Text form of status.  If clauses arranged in order of most
         likely case to least."""
