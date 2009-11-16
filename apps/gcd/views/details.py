@@ -457,6 +457,7 @@ def show_issue(request, issue, preview=False):
         'oi_indexers' : oi_indexers,
         'image_tag': image_tag,
         'error_subject': '%s' % issue,
+        'preview': preview,
         'style': style,
       },
       context_instance=RequestContext(request))

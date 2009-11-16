@@ -11,7 +11,8 @@ input.year{
 }
 
 table.comparison,
-table.comments {
+table.comments,
+table.story_list {
     border: solid black 2px;
     border-collapse: collapse;
     margin-bottom: 1em;
@@ -23,6 +24,10 @@ table.comments th {
     border-collapse: collapse;
     padding: 0.4em;
     background-color: #DDD;
+}
+
+table.editing th {
+    text-align: right;
 }
 
 table.comparison td,
@@ -47,13 +52,23 @@ table.comparison td.field_name {
     background-color: yellow;
 }
 
+table.story_list td {
+    border-bottom: solid 1px;
+    padding-left: 0.5em;
+}
+
 form#review {
     margin-bottom: 1em;
 }
 
+table.editing textarea,
 form#review textarea {
     height: 10em;
     width: 60em;
     margin-bottom: 1em;
+}
+
+.no_data {
+    font-style: italic;
 }
 

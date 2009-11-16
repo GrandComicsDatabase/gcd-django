@@ -10,7 +10,7 @@ class Story(models.Model):
 
     # Core story fields.
     feature = models.CharField(max_length=255, null=True)
-    page_count = models.DecimalField(max_digits=10, decimal_places=3,
+    page_count = models.DecimalField(max_digits=10, decimal_places=4,
                                      null=True, db_index=True)
     page_count_uncertain = models.BooleanField(default=0, db_index=True)
 
@@ -55,15 +55,15 @@ class Story(models.Model):
                self.inks or \
                self.colors or \
                self.letters or \
-               (self.editor and (self.sequence_number > 0)) or \
-               self.job_number
+               (self.editor and (self.sequence_number > 0))
 
     def has_content(self):
         """Simplifies UI checks for conditionals.  Content fields"""
         return self.genre or \
                self.characters or \
                self.synopsis or \
-               self.reprints
+               self.reprints or \
+               self.job_number
 
     def has_data(self):
         """Simplifies UI checks for conditionals.  All non-heading fields"""

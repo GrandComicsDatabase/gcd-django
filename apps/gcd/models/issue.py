@@ -33,10 +33,11 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True, null=True)
     modified = models.DateTimeField(auto_now=True, null=True, db_index=True)
     
-    def display_number(self):
+    def _display_number(self):
         if self.display_volume_with_number:
             return u'v%s#%s' % (self.volume, self.number)
         return self.number
+    display_number = property(_display_number)
 
     def index_status_description(self):
         """Text form of status.  If clauses arranged in order of most
@@ -68,5 +69,5 @@ class Issue(models.Model):
         return "/issue/%i/" % self.id
 
     def __unicode__(self):
-        return u'%s #%s' % (self.series, self.number)
+        return u'%s #%s' % (self.series, self.display_number)
 

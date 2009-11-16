@@ -57,6 +57,17 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   </td>
 </table>
 
+{% for story_revision in revision.ordered_story_revisions %}
+  {% comment %}
+    story_revision.compare_changes needs to be called here because
+    calling ordered_story_revisions re-fetches the objects from the
+    database, which clears the changed dictionary.  Need to think
+    about this whole setup a bit more, but this works for now.
+  {% endcomment %}
+  {{ story_revision.compare_changes|default:'' }}
+  {% include 'oi/edit/compare_story.html' %}
+{% endfor %}
+
 {% include 'oi/bits/comments.html' %}
 
 <p>

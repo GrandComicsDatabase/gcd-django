@@ -34,6 +34,7 @@ FORM_CLASSES = {
     'publisher': PublisherRevisionForm,
     'series': SeriesRevisionForm,
     'issue': IssueRevisionForm,
+    'story': StoryRevisionForm,
 }
 
 ##############################################################################
@@ -95,20 +96,22 @@ def direct_edit(request, id, model_name):
 
 @permission_required('gcd.can_reserve')
 def edit(request, id, model_name):
-    edit_template = 'oi/edit/frame.html'
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
+    form = FORM_CLASSES[model_name](instance=revision)
+    return _display_edit_form(request, revision, model_name, form)
+
+def _display_edit_form(request, revision, model_name, form):
     url = urlresolvers.reverse('process_revision',
                                kwargs={
                                  'model_name': model_name,
                                  'id': revision.id,
                                })
     template = 'oi/edit/%s_form.html' % model_name
-    form = FORM_CLASSES[model_name](instance=revision)
     object_name = model_name.capitalize()
     if 'Publisher' == object_name and revision.parent is not None:
         object_name = 'Imprint'
 
-    response= render_to_response(edit_template,
+    response= render_to_response('oi/edit/frame.html',
                              {
                                'revision': revision,
                                'object': getattr(revision, model_name),
@@ -149,13 +152,7 @@ def submit(request, id, model_name):
         return HttpResponseRedirect(
           urlresolvers.reverse('editing'))
     else:
-        return render_to_response('oi/edit/frame.html',
-                                  {
-                                    'revision': revision,
-                                    'form': form,
-                                    'states': states
-                                  },
-                                  context_instance=RequestContext(request))
+        return _display_edit_form(request, revision, model_name, form)
         
 
 @permission_required('gcd.can_reserve')
@@ -331,29 +328,34 @@ def process(request, id, model_name):
     if request.method != 'POST':
         return _cant_get(request)
 
-    if 'delete' in request.POST:
-        return delete(request, id, model_name)
+    # Stories go through most state transitions with their issue, so don't
+    # allow them to get moved separately here.
+    if model_name != 'story':
+        # Deleting stories should work, but haven't set up the rest of the
+        # necessary code yet so stuff it in here for now.
+        if 'delete' in request.POST:
+            return delete(request, id, model_name)
 
-    if 'submit' in request.POST:
-        return submit(request, id, model_name)
+        if 'submit' in request.POST:
+            return submit(request, id, model_name)
 
-    if 'retract' in request.POST:
-        return retract(request, id, model_name)
+        if 'retract' in request.POST:
+            return retract(request, id, model_name)
 
-    if 'discard' in request.POST or 'cancel' in request.POST:
-        return discard(request, id, model_name)
+        if 'discard' in request.POST or 'cancel' in request.POST:
+            return discard(request, id, model_name)
 
-    if 'assign' in request.POST:
-        return assign(request, id, model_name)
+        if 'assign' in request.POST:
+            return assign(request, id, model_name)
 
-    if 'release' in request.POST:
-        return release(request, id, model_name)
+        if 'release' in request.POST:
+            return release(request, id, model_name)
 
-    if 'approve' in request.POST:
-        return approve(request, id, model_name)
+        if 'approve' in request.POST:
+            return approve(request, id, model_name)
 
-    if 'disapprove' in request.POST:
-        return disapprove(request, id, model_name)
+        if 'disapprove' in request.POST:
+            return disapprove(request, id, model_name)
 
     if 'add_comment' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
@@ -367,10 +369,13 @@ def process(request, id, model_name):
             return HttpResponseRedirect(urlresolvers.reverse(compare,
               kwargs={ 'model_name': model_name, 'id': id }))
         
-    # Saving is the default action.
-    form = FORM_CLASSES[model_name](
-    request.POST,
-    instance=REVISION_CLASSES[model_name].objects.get(id=id))
+    if 'save' not in request.POST and 'save_return' not in request.POST and \
+       'queue' not in request.POST:
+        return render_error('Unknown action requested!  Please try again. '
+          'If this error message persists, please contact an Editor.')
+
+    form = FORM_CLASSES[model_name](request.POST,
+      instance=REVISION_CLASSES[model_name].objects.get(id=id))
 
     if form.is_valid():
         revision = form.save(commit=False)
@@ -386,18 +391,16 @@ def process(request, id, model_name):
             revision.save_m2m()
         if 'queue' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse('editing'))
-        else:
+        if 'save' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
               kwargs={ 'model_name': model_name, 'id': id }))
+        if 'save_return' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
+              kwargs={ 'model_name': 'issue', 'id': revision.issue_revision.id }))
+
     else:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
-        return render_to_response('oi/edit/frame.html',
-                                  {
-                                    'revision': revision,
-                                    'form': form,
-                                    'states': states
-                                  },
-                                  context_instance=RequestContext(request))
+        return _display_edit_form(request, revision, model_name, form)
 
 ##############################################################################
 # Adding Items
@@ -590,6 +593,7 @@ def show_queue(request, queue_name, state):
 def compare(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     revision.compare_changes()
+
     template = 'oi/edit/compare_%s.html' % model_name
 
     response = render_to_response(template,

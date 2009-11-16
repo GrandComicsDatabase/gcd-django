@@ -186,20 +186,20 @@ class Revision(models.Model):
         from a template.  Template calling limitations prevent just
         using a parameter to compare one field at a time.
         """
-        self._changes = {}
+        self.changed = {}
         for field_name in self._field_list():
             new = getattr(self, field_name)
             if self.source is None:
                 if new:
-                    self._changes[field_name] = True
+                    self.changed[field_name] = True
                 else:
-                    self._changes[field_name] = False
+                    self.changed[field_name] = False
             elif new != getattr(self.source, field_name):
-                self._changes[field_name] = True
+                self.changed[field_name] = True
             else:
-                self._changes[field_name] = False
+                self.changed[field_name] = False
 
-    changed = property(lambda self: self._changes)
+    # changed = property(lambda self: self._changes)
 
     def queue_name(self):
         """
@@ -752,11 +752,10 @@ class SeriesRevision(Revision):
                                  related_name='series_revisions')
 
     # Fields related to the publishers table.
-    publisher = models.ForeignKey(Publisher, null=True, blank=True,
+    publisher = models.ForeignKey(Publisher,
                                   related_name='series_revisions')
-    imprint = models.ForeignKey(Publisher,
-                                related_name='imprint_series_revisions',
-                                null=True)
+    imprint = models.ForeignKey(Publisher, null=True, blank=True,
+                                related_name='imprint_series_revisions')
 
     def _source(self):
         return self.series
@@ -913,23 +912,26 @@ class IssueRevision(Revision):
 
     issue = models.ForeignKey(Issue, null=True, related_name='revisions')
 
-    volume = models.IntegerField(max_length=255, null=True)
+    volume = models.IntegerField(max_length=255, null=True, blank=True)
     number = models.CharField(max_length=25, null=True)
     display_volume_with_number = models.BooleanField()
 
-    publication_date = models.CharField(max_length=255, null=True)
-    price = models.CharField(max_length=25, null=True)
-    key_date = models.CharField(max_length=10, null=True)
+    publication_date = models.CharField(max_length=255, null=True, blank=True)
+    price = models.CharField(max_length=25, null=True, blank=True)
+    key_date = models.CharField(max_length=10, null=True, blank=True)
 
-    series = models.ForeignKey(Series)
+    series = models.ForeignKey(Series, related_name='issue_revisions')
 
-    # TODO: It's not a good idea to replicate this logic here, but
-    # TODO: we can't simply call it as there may not be an issue defined
-    # TODO: yet.  Need to figure out a better arrangement.
-    def display_number(self):
+    def _display_number(self):
+        """
+        Implemented separately because it needs to use the revision's
+        display field and not the source's.  Although the actual contstruction
+        of the string should really be factored out somewhere for consistency.
+        """
         if self.display_volume_with_number:
             return u'v%s#%s' % (self.volume, self.number)
         return self.number
+    display_number = property(_display_number)
 
     def _sort_code(self):
         if self.issue is None:
@@ -938,9 +940,7 @@ class IssueRevision(Revision):
     sort_code = property(_sort_code)
 
     def _story_set(self):
-        if self.issue is None:
-            return Story.objects.filter(pk__isnull=True)
-        return self.issue.story_set
+        return self.story_revisions
     story_set = property(_story_set)
 
     def _cover(self):
@@ -1014,7 +1014,10 @@ class IssueRevision(Revision):
         self.series.save()
 
     def __unicode__(self):
-        return unicode(self.issue)
+        """
+        Re-impliment locally instead of using self.issue because it may change.
+        """
+        return u'%s #%s' % (self.series, self.display_number)
 
 class StoryRevisionManager(RevisionManager):
 
@@ -1082,6 +1085,7 @@ class StoryRevisionManager(RevisionManager):
           editor=story.editor,
           notes=story.notes,
           synopsis=story.synopsis,
+          characters=story.characters,
           reprints=story.reprints,
           genre=story.genre,
           type=story.type,
@@ -1101,23 +1105,24 @@ class StoryRevision(Revision):
 
     objects = StoryRevisionManager()
 
-    story = models.ForeignKey(Story, null=True, related_name='revisions')
+    story = models.ForeignKey(Story, null=True,
+                              related_name='revisions')
     issue_revision = models.ForeignKey('oi.IssueRevision',
                                        related_name='story_revisions')
 
-    title = models.CharField(max_length=255, null=True)
-    feature = models.CharField(max_length=255, null=True)
-    page_count = models.DecimalField(max_digits=10, decimal_places=3,
-                                     null=True)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    feature = models.CharField(max_length=255, null=True, blank=True)
+    page_count = models.DecimalField(max_digits=10, decimal_places=4,
+                                     null=True, blank=True)
     page_count_uncertain = models.BooleanField(default=0)
 
-    characters = models.TextField(null = True)
+    characters = models.TextField(null=True, blank=True)
 
-    script = models.TextField(max_length=255, null=True)
-    pencils = models.TextField(max_length=255, null=True)
-    inks = models.TextField(max_length=255, null=True)
-    colors = models.TextField(max_length=255, null=True)
-    letters = models.TextField(max_length=255, null=True)
+    script = models.TextField(max_length=255, null=True, blank=True)
+    pencils = models.TextField(max_length=255, null=True, blank=True)
+    inks = models.TextField(max_length=255, null=True, blank=True)
+    colors = models.TextField(max_length=255, null=True, blank=True)
+    letters = models.TextField(max_length=255, null=True, blank=True)
 
     no_script = models.BooleanField(default=0)
     no_pencils = models.BooleanField(default=0)
@@ -1125,17 +1130,18 @@ class StoryRevision(Revision):
     no_colors = models.BooleanField(default=0)
     no_letters = models.BooleanField(default=0)
 
-    editor = models.TextField(max_length=255, db_column='editing', null=True)
-    notes = models.TextField(max_length=255, null=True)
-    synopsis = models.TextField(max_length=255, null=True)
+    editor = models.TextField(max_length=255, null=True, blank=True,
+                              db_column='editing')
+    notes = models.TextField(max_length=255, null=True, blank=True)
+    synopsis = models.TextField(max_length=255, null=True, blank=True)
     reprints = models.TextField(max_length=255, db_column='reprint_notes',
-                                null=True)
-    genre = models.CharField(max_length=255, null=True)
-    type = models.CharField(max_length=255, null=True)
-    sequence_number = models.IntegerField(null=True)
-    job_number = models.CharField(max_length=25, null=True)
+                                null=True, blank=True)
+    genre = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    sequence_number = models.IntegerField(null=True, blank=True)
+    job_number = models.CharField(max_length=25, null=True, blank=True)
 
-    issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
+    issue = models.ForeignKey(Issue, related_name='story_revisions')
 
     def _field_list(self):
         return (
@@ -1194,6 +1200,7 @@ class StoryRevision(Revision):
         story.notes = self.notes
         story.synopsis = self.synopsis
         story.reprints = self.reprints
+        story.characters = self.characters
         story.genre = self.genre
         story.type = self.type
         story.job_number = self.job_number
@@ -1207,6 +1214,24 @@ class StoryRevision(Revision):
         if self.story is None:
             self.story = story
             self.save()
+
+    def has_credits(self):
+        return self.script or \
+               self.pencils or \
+               self.inks or \
+               self.colors or \
+               self.letters or \
+               (self.editor and (self.sequence_number > 0))
+               
+    def has_content(self):
+        return self.genre or \
+               self.characters or \
+               self.synopsis or \
+               self.reprints or \
+               self.job_number
+
+    def has_data(self):
+        return self.has_credits() or self.has_content() or self.notes
 
     def __unicode__(self):
         return unicode(self.story)

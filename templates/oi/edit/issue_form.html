@@ -1,32 +1,5 @@
-<table>
+<table class="editing">
 {{ form.as_table }}
 
 </table>
-
-<p>
-<em>Coming soon (we hope): The ability to edit all stories inline with the
-issue data</em>
-</p>
-<p>
-<em>Coming sooner: The ability to add, delete or re-order stories.</em>
-</p>
-<table>
-{% for story in revision.ordered_story_revisions %}
-  <tr>
-    <td>
-      {{ story.sequence_number }}.
-      {{ story.title|default:'<span class="no_data">no title</span>' }}
-      ({{ story.feature|default:'<span class="no_data">no feature</span>' }})
-    </td>
-    <td>
-      <form style="display:inline;" method="GET"
-            action="{% url edit_revision model_name='story',id=story.id %}">
-        <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
-               value="Edit">
-        </input>
-      </form>
-    </td>
-  </li>
-{% endfor %}
-</ul>
 

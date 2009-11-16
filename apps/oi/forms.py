@@ -143,7 +143,7 @@ class IssueRevisionForm(forms.ModelForm):
                 'printed in the indicia.  Use "[nn]" if there is no number '
                 'printed anywhere on the issue.')
 
-    volume = forms.IntegerField(
+    volume = forms.IntegerField(required=False,
       help_text='Volume number (only numeric volumes allowed at this time). '
                 'For collections or other items that only have a volume number, '
                 'put the same number in both this field and the issue number '
@@ -156,7 +156,7 @@ class IssueRevisionForm(forms.ModelForm):
                 'number of "1", checking this box will display "v2#1" instead '
                 'of just "1" in the status grids and issues lists for the series.')
 
-    price = forms.CharField(
+    price = forms.CharField(required=False,
       help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
                 '"2.99 CAD" for $2.99 Canadian.  Use a format like '
                 '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
@@ -166,14 +166,15 @@ class IssueRevisionForm(forms.ModelForm):
                 'Use country codes after the currency code if more than one price '
                 'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
-    publication_date = forms.CharField(
+    publication_date = forms.CharField(required=False,
       help_text='The publicaton date as printed on the comic, except with the '
                 'name of the month (if any) spelled out.  Any part of the date '
                 'that is not printed on the comic but is known should be put '
                 'in square brackets, such as "[January] 2009".  Do NOT use the '
                 'shipping date in this field, only the publication date.')
 
-    key_date = forms.CharField(widget=forms.TextInput(attrs={'class': 'key_date'}),
+    key_date = forms.CharField(required=False,
+      widget=forms.TextInput(attrs={'class': 'key_date'}),
       help_text='Special date form used for sorting:  YYYY.MM.DD where the day '
                 '(DD) shoud be 00 for monthly books, and use arbitrary numbers '
                 'such as 10, 20, 30 to indicate an "early" "mid" or "late" month '
@@ -181,6 +182,100 @@ class IssueRevisionForm(forms.ModelForm):
                 'Spring, 07 for Summer, 10 for Fall and 01 or 12 for Winter.  For '
                 'annuals use a month of 00 or 13 or whatever sorts it best.  When '
                 'in doubt, use anything that produces the correct sorting.')
+
+    comments = forms.CharField(widget=forms.Textarea,
+                               required=False,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
+
+class StoryRevisionForm(forms.ModelForm):
+    class Meta:
+        model = StoryRevision
+        fields = (
+          'title',
+          'type',
+          'feature',
+          'page_count',
+          'page_count_uncertain',
+          'script',
+          'no_script',
+          'pencils',
+          'no_pencils',
+          'inks',
+          'no_inks',
+          'colors',
+          'no_colors',
+          'letters',
+          'no_letters',
+          'editor',
+          'genre',
+          'characters',
+          'job_number',
+          'reprints',
+          'synopsis',
+          'notes',
+        )
+
+    title = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                            required=False)
+    page_count_uncertain = forms.BooleanField(required=False,
+      help_text="Check if you do not know or aren't sure about the page count.")
+
+    script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                             required=False)
+    pencils = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                              required=False)
+    inks = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                           required=False)
+    colors = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                             required=False)
+    letters = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                              required=False)
+    editor = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                             required=False)
+
+    no_script = forms.BooleanField(required=False,
+      help_text='Check if there is no script or plot to credit, i.e. for a '
+                'cover or single-page illustration.  Leave the script field blank.')
+    no_pencils = forms.BooleanField(required=False,
+      help_text='Check if there is no penciler to credit, i.e. for an '
+                'unillustrated text article.  Leave the pencils field blank.')
+    no_inks = forms.BooleanField(required=False,
+      help_text='Check if there is no inker to credit, i.e. for an '
+                'unillustrated text article.  Leave the inks field blank.')
+    no_colors = forms.BooleanField(required=False,
+      help_text='Check if there is no colorist to credit, i.e. for a '
+                'black-and-white comic.  Leave the colors field blank.')
+    no_letters = forms.BooleanField(required=False,
+      help_text='Check if there is no lettering to credit. Leave the letters box '
+                'blank.  However, if the only letters are produced as normal '
+                'printed text rather than comic-style lettering, put the word '
+                '"typeset" in the letters field and do not check this box.')
+
+    type = forms.ChoiceField(choices=(
+        (u'cover', u'Cover'),
+        (u'story', u'Story'),
+        (u'text story', u'Text Story'),
+        (u'text article', u'Text Article'),
+        (u'photo story', u'Photo Story'),
+        (u'activity', u'Activity'),
+        (u'ad', u'Advertisement'),
+        (u'bio', u'Biography (nonfictional)'),
+        (u'cartoon', 'Cartoon'),
+        (u'profile', u'Character Profile'),
+        (u'cover reprint', u'Cover Reprint (on interior page)'),
+        (u'credits', u'Credits'),
+        (u'filler', u'Filler'),
+        (u'foreward', u'Forward, Introduction, Preface, Afterward'),
+        (u'pinup', u'Illustration'),
+        (u'insert', u'Insert or Dust Jacket'),
+        (u'letters', u'Letters Page'),
+        (u'promo', u'Promo (by the issue\'s publisher)'),
+        (u'psa', u'Public Service Announcement'),
+        (u'recap', u'Recap'),
+        (u'backcovers', u'-- DO NOT USE / PLEASE FIX -- Back Cover')),
+        help_text='Choose the most appropriate available type')
 
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,

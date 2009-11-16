@@ -1,5 +1,7 @@
 {% extends "oi/base_view.html" %}
 
+{% load credits %}
+
 {% block title %}
 Editing {{ object_name }} :: {{ object }}
 {% endblock %}
@@ -99,5 +101,35 @@ Editing {{ object_name }} :: {{ object }}
   {% endifequal %}
 {% endif %}
 </div>
+
+{% ifequal object_class "issue" %}
+{% ifequal revision.state states.OPEN %}
+{% ifequal revision.indexer user %}
+<p>
+<em>Coming soon: The ability to add, delete or re-order stories.</em>
+</p>
+<table class="story_list">
+{% for story in revision.ordered_story_revisions %}
+  <tr>
+    <td>
+      {{ story.sequence_number }}.
+      {{ story.title|default:'<span class="no_data">no title</span>' }}
+      ({{ story.feature|default:'<span class="no_data">no feature</span>' }})
+      {{ story.type }}, {{ story|show_page_count }}p
+    </td>
+    <td>
+      <form style="display:inline;" method="GET"
+            action="{% url edit_revision model_name='story',id=story.id %}">
+        <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
+               value="Edit">
+        </input>
+      </form>
+    </td>
+  </li>
+{% endfor %}
+</table>
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
 
 {% endblock %}
