@@ -273,8 +273,8 @@ class Revision(models.Model):
         last issue to date sometimes.
         """
         if self.approver is None and self.indexer.indexer.is_new and \
-           self.indexer.mentor is not None:
-            self.approver = self.indexer.mentor
+           self.indexer.indexer.mentor is not None:
+            self.approver = self.indexer.indexer.mentor
 
         new_state = states.PENDING
         if self.approver is not None:
