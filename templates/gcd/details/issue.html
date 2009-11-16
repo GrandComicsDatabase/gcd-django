@@ -38,6 +38,14 @@
 {% endif %}
 
 <dl id="issue_data_list">
+{% if issue.volume %}
+  <dt> {% trans "Volume" %}:
+  <dd id="volume"> {{ issue.volume }}
+{% endif %}
+{% ifequal issue.volume 0 %}
+  <dt> {% trans "Volume" %}:
+  <dd id="volume"> {{ issue.volume }}
+{% endifequal %}
   <dt> {% trans "Price" %}:
   <dd id="issue_price"> {{ issue.price|default:"" }}
   <dt> {% trans "Pages" %}:

@@ -76,6 +76,8 @@ class AdvancedSearch(forms.Form):
                                         required=False)
 
     issues = forms.CharField(label='Issues', required=False)
+    # Volume is a char field to allow ranges and lists.
+    volume = forms.CharField(label='Volume', required=False)
     price = forms.CharField(required=False)
     issue_pages = forms.CharField(required=False)
     issue_notes = forms.CharField(label='Issue Notes', required=False)
