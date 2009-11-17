@@ -1,4 +1,4 @@
-<h3> Sequence {{ story.sequence_number }} </h3>
+<h3> Sequence {{ story_revision.sequence_number }} </h3>
 
 <table class="comparison">
   <tr>
@@ -6,6 +6,11 @@
     <th> Current </th>
     <th> Change </th>
   <tr>
+  <tr class="{{ story_revision.changed.sequence_number }}">
+    <td class="field_name"> Sequence Number </td>
+    <td> {{ story_revision.story.sequence_number }} </td>
+    <td> {{ story_revision.sequence_number }} </td>
+  </tr>
   <tr class="{{ story_revision.changed.title }}">
     <td class="field_name"> Title </td>
     <td> {{ story_revision.story.title }} </td>
@@ -122,4 +127,8 @@
     <td> {{ story_revision.notes }} </td>
   </tr>
 </table>
+
+{% with story_revision as revision %}
+{% include 'oi/bits/comments.html' %}
+{% endwith %}
 

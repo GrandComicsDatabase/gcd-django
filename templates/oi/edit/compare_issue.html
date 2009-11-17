@@ -57,6 +57,8 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   </td>
 </table>
 
+<hr>
+
 {% for story_revision in revision.ordered_story_revisions %}
   {% comment %}
     story_revision.compare_changes needs to be called here because
@@ -66,8 +68,11 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   {% endcomment %}
   {{ story_revision.compare_changes|default:'' }}
   {% include 'oi/edit/compare_story.html' %}
+
+<hr>
 {% endfor %}
 
+<h3> Issue Comments </h3>
 {% include 'oi/bits/comments.html' %}
 
 <p>
