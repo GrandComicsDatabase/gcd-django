@@ -81,6 +81,48 @@ def __format_credit(story, credit, style):
            dt + '<span class="credit_label">' + label + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
+def show_credit_status(story):
+    """
+    Display a set of letters indicating which of the required credit fields
+    have been filled out.  Technically, the editor field is not required but
+    it has historically been displayed as wel.
+    """
+    status = []
+    required_remaining = 5
+    if story.sequence_number == 0:
+        required_remaining += 1
+
+    if story.script or story.no_script:
+        status.append('S')
+        required_remaining -= 1
+
+    if story.pencils or story.no_pencils:
+        status.append('P')
+        required_remaining -= 1
+
+    if story.inks or story.no_inks:
+        status.append('I')
+        required_remaining -= 1
+
+    if story.colors or story.no_colors:
+        status.append('C')
+        required_remaining -= 1
+
+    if story.letters or story.no_letters:
+        status.append('L')
+        required_remaining -= 1
+
+    if story.editor:
+        status.append('E')
+        if story.sequence_number == 0:
+            required_remaining -= 1
+
+    snippet = '[<span class="%s">' % \
+              ('incomplete' if required_remaining else 'complete')
+    snippet += ' '.join(status)
+    snippet += '</span>]'
+    return mark_safe(snippet)
+
 # these next three might better fit into a different file
 
 def show_country(series):
@@ -125,6 +167,7 @@ def show_page_count(story):
     return p
 
 register.filter(show_credit)
+register.filter(show_credit_status)
 register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)

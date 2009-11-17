@@ -117,6 +117,7 @@ Editing {{ object_name }} :: {{ object }}
       ({{ story.feature|default:'<span class="no_data">no feature</span>' }})
       {{ story.type }}, {{ story|show_page_count }}p
     </td>
+    <td>{{ story|show_credit_status }}</td>
     <td>
       <form style="display:inline;" method="GET"
             action="{% url edit_revision model_name='story',id=story.id %}">
@@ -131,5 +132,16 @@ Editing {{ object_name }} :: {{ object }}
 {% endifequal %}
 {% endifequal %}
 {% endifequal %}
+
+{% ifnotequal object_class "story" %}
+<p>
+<a href="{% url compare_revision model_name=object_class,id=revision.id %}"
+   target="_blank">Compare changes to original</a> (opens in new window)
+</p>
+<p>
+<a href="{% url preview_revision model_name=object_class,id=revision.id %}"
+   target="_blank">Preview changes</a> (opens in new window)
+</p>
+{% endifnotequal %}
 
 {% endblock %}
