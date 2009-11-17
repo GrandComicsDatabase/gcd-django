@@ -357,6 +357,13 @@ def process(request, id, model_name):
         if 'disapprove' in request.POST:
             return disapprove(request, id, model_name)
 
+    elif 'cancel_return' in request.POST:
+        # Story forms can navigate back to issues without saving.
+        revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
+        return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
+          kwargs={ 'model_name': 'issue', 'id': revision.issue_revision.id }))
+
+
     if 'add_comment' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         comments = request.POST['comments']
@@ -371,7 +378,7 @@ def process(request, id, model_name):
         
     if 'save' not in request.POST and 'save_return' not in request.POST and \
        'queue' not in request.POST:
-        return render_error('Unknown action requested!  Please try again. '
+        return render_error(request, 'Unknown action requested!  Please try again. '
           'If this error message persists, please contact an Editor.')
 
     form = FORM_CLASSES[model_name](request.POST,
