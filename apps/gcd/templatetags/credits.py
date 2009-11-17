@@ -117,8 +117,10 @@ def show_credit_status(story):
         if story.sequence_number == 0:
             required_remaining -= 1
 
-    snippet = '[<span class="%s">' % \
-              ('incomplete' if required_remaining else 'complete')
+    completion = 'complete'
+    if required_remaining:
+        completion = 'incomplete'
+    snippet = '[<span class="%s">' % completion
     snippet += ' '.join(status)
     snippet += '</span>]'
     return mark_safe(snippet)
