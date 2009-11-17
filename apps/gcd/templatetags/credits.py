@@ -111,10 +111,13 @@ def show_page_count(story):
     """
     Return a properly formatted page count, with "?" as needed.
     """
+    if story is None:
+        return u''
+
     if story.page_count is None:
         if story.page_count_uncertain:
             return u'?'
-        return ''
+        return u''
 
     p = re.sub(r'\.?0+$', '', unicode(story.page_count))
     if story.page_count_uncertain:
