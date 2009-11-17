@@ -64,7 +64,7 @@
               <option value="{{ other_issue.id }}"
                 {% ifequal issue.id other_issue.id %}
                       selected
-                {% endifequal %}>{{ other_issue.number }}</option>
+                {% endifequal %}>{{ other_issue.display_number }}</option>
             {% endfor %}
           </select>
           <input type="submit" value="{% trans 'Go' %}"/>

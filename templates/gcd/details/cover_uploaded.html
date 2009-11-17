@@ -1,7 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% block title %} 
-GCD :: Cover for {{ issue.series.name }} #{{ issue.number }} 
+GCD :: Cover for {{ issue.series.name }} #{{ issue.display_number }} 
 {% endblock %}
 
 {% block css %}
@@ -20,7 +20,7 @@ Cover {{ already }} uploaded for
 </h1>
 <div class="item_id">
 <div class="left">
-{{ issue.series.name }} #{{ issue.number }}
+{{ issue.series.name }} #{{ issue.display_number }}
 </div>
 </div>
 
@@ -37,7 +37,7 @@ Cover {{ already }} uploaded for
   Other covers needed
    <ul>
   {% for cover_needed in covers_needed %}
-  <li><a href="{{ cover_needed.get_status_url }}">{{ cover_needed.issue.series }} #{{ cover_needed.issue.number }}</a>
+  <li><a href="{{ cover_needed.get_status_url }}">{{ cover_needed.issue.series }} #{{ cover_needed.issue.display_number }}</a>
   {% if cover_needed.marked %}
     ( marked for replacement )
   {% endif %}

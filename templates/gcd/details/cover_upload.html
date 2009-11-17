@@ -4,7 +4,7 @@
 {% load credits %}
 
 {% block title %} 
-GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }} 
+GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }} 
 {% endblock %}
 
 {% block css %}
@@ -22,7 +22,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.number }}
 </h1>
 <div class="item_id">
 <div class="left">
-{{ issue.series.name }} #{{ issue.number }}
+{{ issue.series.name }} #{{ issue.display_number }}
 </div>
 </div>
      {% if info %}

@@ -13,7 +13,7 @@
     <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
     <td> <a href="{{ issue.series.get_absolute_url }}">{{ issue.series.name }}</a>
          ({{ issue.series.year_began }} series) 
-         <a href="{{ issue.get_absolute_url }}">#{{ issue.number }}</a> </td>
+         <a href="{{ issue.get_absolute_url }}">#{{ issue.display_number }}</a> </td>
     <td> {{ issue.publication_date|default:"" }} </td>
   </tr>
 {% endfor %}

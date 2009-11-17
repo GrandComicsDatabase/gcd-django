@@ -1,7 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% block title %} 
-GCD :: Cover for {{ issue.series.name }} #{{ issue.number }} 
+GCD :: Cover for {{ issue.series.name }} #{{ issue.display_number }} 
 {% endblock %}
 
 {% block css %}
@@ -20,7 +20,7 @@ Cover marked for replacement
 </h1>
 <div class="item_id">
 <div class="left">
-{{ issue.series.name }} #{{ issue.number }}
+{{ issue.series.name }} #{{ issue.display_number }}
 </div>
 </div>
 

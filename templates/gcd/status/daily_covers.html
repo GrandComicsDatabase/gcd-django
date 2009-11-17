@@ -71,7 +71,7 @@
 <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
 <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span> <br/>
       <div class="cover_caption">
-        {{ issue.series.name }} #{{ issue.number }}<br/>
+        {{ issue.series.name }} #{{ issue.display_number }}<br/>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br>
         {% if issue.publication_date %}
         <span class="cover_date">{{ issue.publication_date }}</span><br>

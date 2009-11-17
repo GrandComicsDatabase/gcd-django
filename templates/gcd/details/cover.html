@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block title %}
-  GCD :: Cover :: {{ issue.series.name }} #{{ issue.number }}
+  GCD :: Cover :: {{ issue.series.name }} #{{ issue.display_number }}
 {% endblock %}
 
 {% block css %}
@@ -14,7 +14,7 @@
 {% block view_body %}
 
 {% with issue.series as series %}
-{% with issue.number as issue_number %}
+{% with issue.display_number as issue_number %}
   {% include "gcd/bits/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}
@@ -29,7 +29,7 @@
 
 {% with 1 as paginate_only %}
 {% with issue.series as series %}
-{% with issue.number as issue_number %}
+{% with issue.display_number as issue_number %}
   {% include "gcd/bits/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}

@@ -30,7 +30,7 @@
         <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
         <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span>
       <div class="cover_caption">
-        <span class="cover_number">Issue {{ issue.number }}</span>
+        <span class="cover_number">Issue {{ issue.display_number }}</span>
         {% if issue.publication_date %}
         <br><span class="cover_date">{{ issue.publication_date }}</span>
         {% endif %}
@@ -52,7 +52,7 @@
 
 {% with 1 as paginate_only %}
 {% with issue.series as series %}
-{% with issue.number as issue_number %}
+{% with issue.display_number as issue_number %}
   {% include "gcd/bits/series_issue_header.html" %}
 {% endwith %}
 {% endwith %}
