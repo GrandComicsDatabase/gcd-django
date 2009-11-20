@@ -94,8 +94,9 @@ def show_series(request, series, preview=False):
     """
     Handle the main work of displaying a series.  Also used by OI previews.
     """
-    covers = series.cover_set.select_related('issue')
-    
+    covers = series.cover_set.all()
+    issues = series.issue_set.all()
+ 
     try:
         cover = covers.filter(has_image=True)[0]
         series_id = series.id
@@ -122,6 +123,7 @@ def show_series(request, series, preview=False):
       'gcd/details/series.html',
       {
         'series': series,
+        'issues': issues,
         'covers': covers,
         'image_tag': image_tag,
         'country': series.country,
@@ -138,9 +140,7 @@ def status(request, series_id):
     Display the index status matrix for a series.
     """
     series = get_object_or_404(Series, id=series_id)
-    # Cover sort codes are more reliable than issue key dates,
-    # and the 'select_related' optimization only works in this direction.
-    covers = series.cover_set.select_related('issue')
+    issues = series.issue_set.all()
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -148,7 +148,7 @@ def status(request, series_id):
 
     return render_to_response('gcd/status/status.html', {
       'series': series,
-      'covers': covers,
+      'issues': issues,
       'table_width': table_width,
       'style': style },
       context_instance=RequestContext(request))
@@ -295,7 +295,7 @@ def cover(request, issue_id, size):
 
     issue = get_object_or_404(Issue, id = issue_id)
     cover = issue.cover
-    [prev_issue, next_issue] = get_prev_next_issue(issue.series, cover)
+    [prev_issue, next_issue] = get_prev_next_issue(issue)
 
     cover_tag = get_image_tag(issue.series_id, cover,
                               "Cover Image", int(size))
@@ -364,45 +364,24 @@ def issue_form(request):
       urlresolvers.reverse(issue, kwargs={ 'issue_id': id }) +
       '?' + params.urlencode())
 
-def get_prev_next_issue(series, cover):
+def get_prev_next_issue(issue):
     """
-    Find the issues immediately before and after the issue with the given cover.
+    Find the issues immediately before and after the given issue.
     """
 
     prev_issue = None
     next_issue = None
-    if cover.code != None:
-        # Get sorted cover_set for series and find previous and next issue
-        # TODO:  It would be more efficient to store next/prev issue ids
-        # in the the issue DB record and avoid these queries.
-        cover_list = series.cover_set.all()
+
+    earlier_issues = \
+      issue.series.issue_set.filter(sort_code__lt=issue.sort_code)
+    earlier_issues = earlier_issues.order_by('-sort_code')
+    if earlier_issues:
+        prev_issue = earlier_issues[0]     
     
-        earlier_covers = \
-          series.cover_set.filter(code__lt = cover.code)
-        earlier_covers = earlier_covers.order_by('-code')
-        
-        later_covers = series.cover_set.filter(code__gt = cover.code)
-        later_covers = later_covers.order_by('code')
-        
-        # covers <-> issues is not really one-to-one.  Selecting back
-        # along a one-to-one relationship when the other side is not
-        # present seems to lead to Django attempting to select the
-        # entire table.  Carefully saving off the issue's ID and then
-        # filtering (*not* getting) that issue correctly deals with 
-        # nonexistant issues.  
-        # TODO: Find a less fragile solution.  Or fix the database.
-        try:
-            earlier_id = earlier_covers[0].issue_id
-            earlier_list = Issue.objects.filter(id=earlier_id)
-            prev_issue = earlier_list[0]
-        except IndexError:
-            pass
-        try:
-            later_id = later_covers[0].issue_id
-            later_list = Issue.objects.filter(id=later_id)
-            next_issue = later_list[0]
-        except IndexError:
-            pass
+    later_issues = issue.series.issue_set.filter(sort_code__gt=issue.sort_code)
+    later_issues = later_issues.order_by('sort_code')
+    if later_issues:
+        next_issue = later_issues[0]
 
     return [prev_issue, next_issue]
 
@@ -425,7 +404,7 @@ def show_issue(request, issue, preview=False):
     style = get_style(request)
 
     series = issue.series
-    [prev_issue, next_issue] = get_prev_next_issue(series, cover)
+    [prev_issue, next_issue] = get_prev_next_issue(issue)
 
     # TODO: Since the number of stories per issue is typically fairly small,
     # it seems more efficient to grab the whole list and only do one database

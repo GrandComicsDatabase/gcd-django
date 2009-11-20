@@ -8,7 +8,7 @@ from series import Series
 class Cover(models.Model):
     class Meta:
         app_label = 'gcd'
-        ordering = ['code']
+        ordering = ['issue']
 
     # The issue field should be considered the primary link.  Series is legacy.
     series = models.ForeignKey(Series)
