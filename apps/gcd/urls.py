@@ -30,10 +30,17 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.publishers_by_name'),
     (r'^publisher/name/(?P<publisher_name>.+)/$',
      'apps.gcd.views.search.publishers_by_name'),
+    (r'^publisher/(?P<publisher_id>\d+)/indicia_publishers/$',
+     'apps.gcd.views.details.indicia_publishers'),
+    (r'^publisher/(?P<publisher_id>\d+)/brands/$',
+     'apps.gcd.views.details.brands'),
     (r'^publisher/(?P<publisher_id>\d+)/imprints/$',
      'apps.gcd.views.details.imprints'),
 
-    # Imprint
+    (r'^brand/(?P<brand_id>\d+)/$',
+     'apps.gcd.views.details.brand'),
+    (r'^indicia_publisher/(?P<indicia_publisher_id>\d+)/$',
+     'apps.gcd.views.details.indicia_publisher'),
     (r'^imprint/(?P<imprint_id>\d+)/$',
      'apps.gcd.views.details.imprint'),
 

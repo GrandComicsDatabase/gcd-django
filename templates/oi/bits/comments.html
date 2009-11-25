@@ -6,7 +6,7 @@
   <th> Comment </th>
   <th> Timestamp </th>
 </tr>
-{% for comment in revision.comments.all %}
+{% for comment in changeset.comments.all %}
 <tr>
   <td> {{ comment.commenter.indexer }} </td>
   <td> {{ comment.display_old_state }} </td>

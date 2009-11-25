@@ -27,32 +27,27 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   <tr>
   <tr class="{{ revision.changed.name }}">
     <td class="field_name"> Name </td>
-    <td> {{ revision.publisher.name }} </td>
+    <td> {{ revision.source.name }} </td>
     <td> {{ revision.name }} </td>
   </tr>
   <tr class="{{ revision.changed.year_began }}">
     <td class="field_name"> Year Began </td>
-    <td> {{ revision.publisher.year_began }} </td>
+    <td> {{ revision.source.year_began }} </td>
     <td> {{ revision.year_began }} </td>
   </tr>
   <tr class="{{ revision.changed.year_ended }}">
     <td class="field_name"> Year Ended </td>
-    <td> {{ revision.publisher.year_ended }} </td>
+    <td> {{ revision.source.year_ended }} </td>
     <td> {{ revision.year_ended }} </td>
-  </tr>
-  <tr class="{{ revision.changed.country }}">
-    <td class="field_name"> Country </td>
-    <td> {{ revision.publisher.country }} </td>
-    <td> {{ revision.country }} </td>
   </tr>
   <tr class="{{ revision.changed.url }}">
     <td class="field_name"> URL </td>
-    <td> {{ revision.publisher.url }} </td>
+    <td> {{ revision.source.url }} </td>
     <td> {{ revision.url }} </td>
   </tr>
   <tr class="{{ revision.changed.notes }}"> 
     <td class="field_name"> Notes </td>
-    <td> {{ revision.publisher.notes }} </td>
+    <td> {{ revision.source.notes }} </td>
     <td> {{ revision.notes }} </td>
   </tr>
 </table>
@@ -60,7 +55,7 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
 {% include 'oi/bits/comments.html' %}
 
 <p>
-<a href="{% url preview_revision id=revision.id,model_name='publisher' %}" target=_blank>Preview</a>
+<a href="{% url preview_revision id=revision.id,model_name='brand' %}" target=_blank>Preview</a>
 (opens in a new window)
 </p>
 

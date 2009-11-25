@@ -17,6 +17,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Story, \
+                            IndiciaPublisher, Brand, \
                             Country, Language, Indexer, IndexCredit, Cover
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, \
@@ -43,6 +44,37 @@ def publisher(request, publisher_id):
     return paginate_response(request, pub.series_set.order_by('name'),
                              'gcd/details/publisher.html', vars)
 
+def indicia_publisher(request, indicia_publisher_id):
+    """
+    Display the details page for an Indicia Publisher.
+    """
+    style = get_style(request)
+    indicia_publisher = get_object_or_404(
+      IndiciaPublisher, id = indicia_publisher_id)
+    indicia_publisher_issues = indicia_publisher.issue_set.order_by(
+      'series__name', 'sort_code')
+
+    vars = { 'indicia_publisher' : indicia_publisher,
+             'error_subject': '%s' % indicia_publisher }
+    return paginate_response(request,
+                             indicia_publisher_issues,
+                             'gcd/details/indicia_publisher.html',
+                             vars)
+
+def brand(request, brand_id):
+    """
+    Display the details page for a Brand.
+    """
+    style = get_style(request)
+    brand = get_object_or_404(Brand, id = brand_id)
+    brand_issues = brand.issue_set.order_by('series__name', 'sort_code')
+
+    vars = { 'brand' : brand, 'error_subject': '%s' % brand }
+    return paginate_response(request,
+                             brand_issues,
+                             'gcd/details/brand.html',
+                             vars)
+
 def imprint(request, imprint_id):
     """
     Display the details page for an Imprint.
@@ -56,6 +88,54 @@ def imprint(request, imprint_id):
                              imprint_series,
                              'gcd/details/publisher.html',
                              vars)
+
+def brands(request, publisher_id):
+    """
+    Finds brands of a publisher.
+    """
+
+    publisher = get_object_or_404(Publisher, id = publisher_id)
+    brands = publisher.brands.all()
+
+    sort = ORDER_ALPHA
+    if 'sort' in request.GET:
+        sort = request.GET['sort']
+
+    if (sort == ORDER_CHRONO):
+        brands = brands.order_by('year_began', 'name')
+    else:
+        brands = brands.order_by('name', 'year_began')
+
+    return paginate_response(request, brands, 'gcd/details/brands.html', {
+      'publisher' : publisher,
+      'error_subject' : '%s brands' % publisher,
+      'brands' : brands,
+    })
+
+def indicia_publishers(request, publisher_id):
+    """
+    Finds brands of a publisher.
+    """
+
+    publisher = get_object_or_404(Publisher, id = publisher_id)
+    indicia_publishers = publisher.indicia_publishers.all()
+
+    sort = ORDER_ALPHA
+    if 'sort' in request.GET:
+        sort = request.GET['sort']
+
+    if (sort == ORDER_CHRONO):
+        indicia_publishers = indicia_publishers.order_by('year_began', 'name')
+    else:
+        indicia_publishers = indicia_publishers.order_by('name', 'year_began')
+
+    return paginate_response(request, indicia_publishers,
+      'gcd/details/indicia_publishers.html',
+      {
+        'publisher' : publisher,
+        'error_subject' : '%s brands' % publisher,
+        'indicia_publishers' : indicia_publishers,
+      })
 
 def imprints(request, publisher_id):
     """

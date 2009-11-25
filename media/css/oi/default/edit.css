@@ -72,3 +72,11 @@ form#review textarea {
     font-style: italic;
 }
 
+.complete {
+    color: green;
+}
+
+.incomplete {
+    color: red;
+}
+

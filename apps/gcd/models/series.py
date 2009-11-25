@@ -11,28 +11,28 @@ class Series(models.Model):
         ordering = ['name', 'year_began']
     
     # Core series fields.
-    name = models.CharField(max_length=255, null=True, db_index=True)
-    format = models.CharField(max_length=255, null=True)
-    notes = models.TextField(null=True)
+    name = models.CharField(max_length=255, db_index=True)
+    format = models.CharField(max_length=255)
+    notes = models.TextField()
 
     year_began = models.IntegerField(db_index=True)
     year_ended = models.IntegerField(null=True)
     is_current = models.BooleanField()
-    publication_dates = models.CharField(max_length=255, null=True)
+    publication_dates = models.CharField(max_length=255)
 
     first_issue = models.ForeignKey('Issue', null=True,
       related_name='first_issue_series_set')
     last_issue = models.ForeignKey('Issue', null=True,
       related_name='last_issue_series_set')
-    issue_count = models.IntegerField(null=True)
+    issue_count = models.IntegerField()
 
     # Publication notes are not displayed in the current UI but may
     # be accessed in the OI.
-    publication_notes = models.TextField(null=True)
+    publication_notes = models.TextField()
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
-    tracking_notes = models.TextField(null=True)
+    tracking_notes = models.TextField()
 
     # Fields related to cover image galleries.
     has_gallery = models.BooleanField(db_index=True)
@@ -53,8 +53,8 @@ class Series(models.Model):
                                 related_name='imprint_series_set')
 
     # Fields related to change management.
-    created = models.DateTimeField(auto_now_add=True, null=True)
-    modified = models.DateTimeField(auto_now=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
     def get_absolute_url(self):
         return "/series/%i/" % self.id

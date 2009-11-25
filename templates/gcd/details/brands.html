@@ -1,0 +1,60 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+
+{% block title %}
+  GCD :: Publisher :: {{ publisher.name }} :: Brands
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% include "gcd/bits/publisher_header.html" %}
+
+<div>
+  <dl class="pub_data">
+  {% if publisher.country %}
+    <dt> Country:
+    <dd> {{ publisher.country.name }}
+  {% endif %}
+
+  {% if publisher.notes %}
+    <dt> Notes:
+    <dd> {{ publisher.notes|linebreaksbr }}
+  {% endif %}
+
+  {% if publisher.url %}
+    <dt> Web Site:
+    <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
+  {% endif %}
+  </dl>
+</div>
+
+{% if publisher.brand_count %}
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Brand </th>
+    <th> Issues </th>
+  </tr>
+{% for brand in brands %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a> </td>
+    <td> {{ brand.issue_set.count }} </td>
+  </tr>
+{% endfor %}
+</table>
+{% else %}
+  <dt> Brands:
+  <dd> None
+</dl>
+{% endif %}
+
+{% with 1 as paginate_only %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+
+{% endblock %}

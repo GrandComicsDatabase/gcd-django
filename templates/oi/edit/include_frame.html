@@ -1,0 +1,20 @@
+<form action="{% url process id=changeset.id %}" method="POST">
+  <table class="editing">
+  {{ form.as_table }}
+  </table>
+  {% include 'oi/bits/comments.html' %}
+
+  {% ifequal revision.source_label "story" %}
+<input type="submit" name="save" value="Save and continue editing"></input>
+<input type="submit" name="save_return" value="Save and return to issue"></input>
+<input type="submit" name="cancel_return"
+       value="Return to issue without saving"></input>
+  {% else %}
+    {% ifequal revision.source_label "issue" %}
+<input type="submit" name="save" value="Save and continue editing"></input>
+    {% endifequal %}
+<input type="submit" name="submit" value="Submit changes for approval"></input>
+<input type="submit" name="discard" value="Discard all changes"></input>
+  {% endifequal %}
+</form>
+

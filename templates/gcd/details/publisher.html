@@ -21,6 +21,9 @@
 
 {% if not preview %}
 <div class="control_panel">
+  {% if publisher.is_master %}
+  {% comment %} For now, don't allow any action on imprints. {% endcomment %}
+
   {% with publisher as object %}
   {% with 'publisher' as object_class %}
   {% if publisher.parent %}
@@ -35,24 +38,43 @@
   {% endwith %}
   {% endwith %}
 
-  {% if publisher.is_master %}
   <form method="GET"
-        action="{% url add_imprint parent_id=publisher.id %}">
-    <input id="add" name="add" type="submit" value="Add imprint" />
+        action="{% url add_indicia_publisher parent_id=publisher.id %}">
+    <input id="add" name="add" type="submit" value="Add indicia publisher" />
   </form>
-  {% endif %}
+  <form method="GET"
+        action="{% url add_brand parent_id=publisher.id %}">
+    <input id="add" name="add" type="submit" value="Add brand" />
+  </form>
   <form method="GET"
         action="{% url add_series publisher_id=publisher.id %}">
     <input id="add" name="add" type="submit" value="Add series" />
   </form>
+  {% endif %}
 </div>
 {% endif %}
 
 <div>
   <dl class="pub_data">
-  {% if publisher.country %}
-    <dt> Country:
-    <dd> {{ publisher.country.name }}
+  <dt> Country:
+  <dd> {{ publisher.country.name }}
+
+  {% if publisher.indicia_publisher_count %}
+    <dt> Indicia Publishers:
+    {% if preview %}
+    <dd> {{ publisher.indicia_publisher_count }}
+    {% else %}
+    <dd> <a href="{{ publisher.get_absolute_url }}indicia_publishers/">{{ publisher.indicia_publisher_count }}</a>
+    {% endif %}
+  {% endif %}
+
+  {% if publisher.brand_count %}
+    <dt> Brands:
+    {% if preview %}
+    <dd> {{ publisher.brand_count }}
+    {% else %}
+    <dd> <a href="{{ publisher.get_absolute_url }}brands/">{{ publisher.brand_count }}</a>
+    {% endif %}
   {% endif %}
 
   {% if publisher.has_imprints %}
@@ -115,5 +137,6 @@
 {% with 1 as paginate_only %}
 {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
+</div>
 
 {% endblock %}

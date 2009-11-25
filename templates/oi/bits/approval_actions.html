@@ -1,8 +1,4 @@
-<!-- TODO: use the URL resolver somehow -->
-<form action="/{{ object_type }}/revision/{{ action_id }}/process/" method="POST">
-  <input type="submit" name="approve" value="Approve changes" />
-  <input type="submit" name="disapprove" value="Send back to indexer" />
-  <input type="submit" name="cancel" value="Reject changes" />
+<form action="{% url process id=changeset.id %}" method="POST">
   <input type="submit" name="release" value="Release to general queue" />
   <span class="label_binding">
     <label for="comments">Comments:</label>

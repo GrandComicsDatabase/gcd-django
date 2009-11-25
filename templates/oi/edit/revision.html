@@ -1,7 +1,9 @@
 {% extends "oi/base_view.html" %}
 
+{% load credits %}
+
 {% block title %}
-Adding {{ object_name }}
+{{ changeset }}
 {% endblock %}
 
 {% block css %}
@@ -14,15 +16,21 @@ Adding {{ object_name }}
 {% endblock %}
 
 {% block view_body %}
-<h1>Adding {{ object_name }}</h1>
+<h1> {{ revision }} </h1>
 
 <div class="edit">
-<form action="{{ object_url }}" method="POST">
+
+<form action="{% url process_revision model_name=revision.source_name,id=revision.id %}" method="POST">
   <table class="editing">
   {{ form.as_table }}
   </table>
-  <input type="submit" name="add" value="{{ action_label}} {{ object_name }}"></input>
-  <input type="submit" name="discard" value="Cancel"></input>
+  {% include 'oi/bits/comments.html' %}
+
+<input type="submit" name="save" value="Save and continue editing"></input>
+<input type="submit" name="save_return" value="Save and return to changeset"></input>
+<input type="submit" name="cancel_return"
+       value="Return to changeset without saving"></input>
 </form>
 </div>
 {% endblock %}
+

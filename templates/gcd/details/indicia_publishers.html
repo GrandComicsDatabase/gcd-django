@@ -1,0 +1,60 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+
+{% block title %}
+  GCD :: Publisher :: {{ publisher.name }} :: Indicia Publishers
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% include "gcd/bits/publisher_header.html" %}
+
+<div>
+  <dl class="pub_data">
+  {% if publisher.country %}
+    <dt> Country:
+    <dd> {{ publisher.country.name }}
+  {% endif %}
+
+  {% if publisher.notes %}
+    <dt> Notes:
+    <dd> {{ publisher.notes|linebreaksbr }}
+  {% endif %}
+
+  {% if publisher.url %}
+    <dt> Web Site:
+    <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
+  {% endif %}
+  </dl>
+</div>
+
+{% if publisher.indicia_publisher_count %}
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Indicia Publisher </th>
+    <th> Issues </th>
+  </tr>
+{% for indicia_publisher in indicia_publishers %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ indicia_publisher.get_absolute_url }}">{{ indicia_publisher.name }}</a> </td>
+    <td> {{ indicia_publisher.issue_set.count }} </td>
+  </tr>
+{% endfor %}
+</table>
+{% else %}
+  <dt> Indicia Publishers:
+  <dd> None
+</dl>
+{% endif %}
+
+{% with 1 as paginate_only %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+
+{% endblock %}

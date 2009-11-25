@@ -433,11 +433,20 @@ dl.pub_data dd {
 div.ongoing_status {
     float: left;
     clear: both;
-    background-color: #AEA;
-    margin-top: 1em;
-    padding-top: 0.4em;
-    padding-bottom: 0.4em;
     width: 100%;
+    padding: 0.4em 0 0.4em 0;
+    margin-top: 1em;
+    border: solid black 1px;
+    background-color: #AEA;
+}
+
+div.ongoing_status span {
+    margin-left: 0.4em;
+}
+
+div.ongoing_status form {
+    display: inline;
+    float: none;
 }
 
 .control_panel {

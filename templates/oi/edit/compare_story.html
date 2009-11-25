@@ -16,6 +16,11 @@
     <td> {{ story_revision.story.title }} </td>
     <td> {{ story_revision.title }} </td>
   </tr>
+  <tr class="{{ story_revision.changed.title_inferred }}">
+    <td class="field_name"> Unofficial title? </td>
+    <td> {% if story_revision.story.title_inferred %} Yes {% else %} No {% endif %} </td>
+    <td> {% if story_revision.title_inferred %} Yes {% else %} No {% endif %} </td>
+  </tr>
   <tr class="{{ story_revision.changed.feature }}">
     <td class="field_name"> Feature </td>
     <td> {{ story_revision.story.feature }} </td>
@@ -127,8 +132,4 @@
     <td> {{ story_revision.notes }} </td>
   </tr>
 </table>
-
-{% with story_revision as revision %}
-{% include 'oi/bits/comments.html' %}
-{% endwith %}
 

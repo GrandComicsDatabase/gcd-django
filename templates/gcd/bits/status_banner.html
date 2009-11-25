@@ -1,20 +1,22 @@
 {% if object.reserved %}
   {% with object.revisions.active as revision %}
-<div id="index_status" class="index_status_{{ revision.state }}"><span>
-    {% ifequal revision.state states.OPEN %}
+  {% with revision.changeset as changeset %}
+<div id="index_status" class="index_status_{{ changeset.state }}"><span>
+    {% ifequal changeset.state states.OPEN %}
   This {{ object_name }} is currently being edited by
-  {{ revision.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
+  {{ changeset.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
   (since {{ revision.created }}, last edit {{ revision.modified }})
     {% endifequal %}
-    {% ifequal revision.state states.PENDING %}
+    {% ifequal changeset.state states.PENDING %}
   Edits to this {{ object_name }}
   are currently awaiting review by a GCD Editor
     {% endifequal %}
-    {% ifequal revision.state states.REVIEWING %}
+    {% ifequal changeset.state states.REVIEWING %}
   Edits to this {{ object_name }}
-  are being reviewed by GCD Editor {{ revision.approver.indexer }}
+  are being reviewed by GCD Editor {{ changeset.approver.indexer }}
     {% endifequal %}
 </span></div>
+  {% endwith %}
   {% endwith %}
 {% else %}
   <form method="POST"

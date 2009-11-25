@@ -1,5 +1,4 @@
-<!-- TODO: use the URL resolver somehow -->
-<form action="/{{ object_type }}/revision/{{ action_id }}/process/" method="POST">
+<form action="{% url process id=changeset.id %}" method="POST">
   <input type="submit" name="discard" value="Discard all changes"></input>
   <label for="comments">Comments:</label>
   <input type="text" name="comments"></input>

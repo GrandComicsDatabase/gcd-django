@@ -26,6 +26,19 @@
 
 {% if not preview %}
 <div class="control_panel">
+  {% if series.is_current and series.ongoing_reservation %}
+    <div class="ongoing_status"><span>
+      The ongoing issue reservation for this series is held by
+      {{ series.ongoing_reservation.indexer.indexer }}.
+    {% ifequal request.user series.ongoing_reservation.indexer %}
+      <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
+        <input id="delete_ongoing" name="delete_ongoing" type="submit"
+               value="Delete ongoing reservation">
+        </input>
+      </form>
+    {% endifequal %}
+    </span></div>
+  {% endif %}
   {% with series as object %}
   {% with 'Series' as object_name %}
   {% with 'series' as object_class %}
@@ -33,32 +46,21 @@
   {% endwith %}
   {% endwith %}
   {% endwith %}
-  {% if series.is_current %}
-  <div class="ongoing_status">
-    The ongoing issue reservation for this series is held by
-    {{ series.ongoing_reservation.indexer.indexer }}.
-    No one else may currently add issues.
-  </div>
-    {% ifequal user series.ongoing_reservation.indexer %}
-    <form method="POST"
-          action="{% url add_issues series_id=series.id %}">
-      <input id="add" name="add" type="submit" value="Add issues" />
-    </form>
-    {% endifequal %}
-  {% else %}
-  {% if series.ongoing_reservation %}
+  {% if series.is_current and not series.ongoing_reservation %}
     <form method="POST"
           action="{% url apps.oi.views.ongoing %}">
-      <input id="series" name="series" type="hidden" value="{{ series.id }}" />
+      <input id="series" name="series" type="hidden" value="{{ series.id }}">
+      </input>
       <input id="reserve" name="reserve" type="submit"
-             value="Reserve all new issues" />
+             value="Reserve all new issues">
+      </input>
     </form>
-  {% endif %} <!-- series.is_current -->
-    <form method="POST"
-          action="{% url add_issues series_id=series.id %}">
-      <input id="add" name="add" type="submit" value="Add issues" />
-    </form>
-  {% endif %} <!-- series.ongoing_reservation -->
+  {% endif %}
+  <form method="POST"
+        action="{% url add_issues series_id=series.id %}">
+    <input id="add" name="add" type="submit" value="Add issues">
+    </input>
+  </form>
 </div>
 {% endif %} <!-- not preview -->
 

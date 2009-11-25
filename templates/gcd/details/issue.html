@@ -49,18 +49,41 @@
   <dt> {% trans "Price" %}:
   <dd id="issue_price"> {{ issue.price|default:"" }}
   <dt> {% trans "Pages" %}:
-  <dd id="issue_pages"> {{ cover_story|show_page_count }}
-  {{ cover_story|show_credit:"editor" }}
+  <dd id="issue_pages"> {{ issue|show_page_count }}
+{% if issue.indicia_frequency %}
+  <dt> {% trans "Indicia frequency" %}:
+  <dd id="indicia_frequency"> {{ issue.indicia_frequency }}
+{% endif %}
+  {{ issue|show_credit:"editing" }}
+<br>
+{% if issue.size %}
+  <dt> {% trans "Size" %}:
+  <dd id="size"> {{ issue.size }}
+{% endif %}
+{% if issue.paper_stock %}
+  <dt> {% trans "Paper" %}:
+  <dd id="paper"> {{ issue.paper_stock }}
+{% endif %}
+{% if issue.binding %}
+  <dt> {% trans "Binding" %}:
+  <dd id="binding"> {{ issue.binding }}
+{% endif %}
+{% if issue.printing_process %}
+  <dt> {% trans "Printing process" %}:
+  <dd id="printing_process"> {{ issue.printing_process }}
+{% endif %}
 </dl>
 <!-- IE6 didn't like various attempts to get the sometimes very long
      "Format" field to lay out nicely.  And even in Firefox it was
      problematic to get it to act ideally.  So it's a specially styled
      'div' instead of part of the 'dl'.
   -->
+{% if issue.series.format %}
 <div id="format">
   <div id="format_tag">Format:&nbsp;</div>
   <div id="format_data">{{ issue.series.format }}</div>
 </div>
+{% endif %}
 
 </div> <!-- issue_data -->
 
@@ -75,11 +98,7 @@
         <li class="{% cycle 'odd' 'even' %}">
           {{ forloop.counter }}.
           <span class="toc_story_title">
-          <a href="#{{ story.id }}">{% if story.title %}
-            {{ story.title }}
-          {% else %}
-            <span class="toc_story_title">[ no title ]</span>
-          {% endif %}</a></span> <br/>
+          <a href="#{{ story.id }}">{{ story|show_title }}</a></span> <br/>
           {% if story.feature %}
           <span class="toc_story_feature">
           {{ story.feature}}</span>

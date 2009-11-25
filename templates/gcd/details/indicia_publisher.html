@@ -1,0 +1,83 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+
+{% block title %}
+GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% with indicia_publisher as publisher %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+
+{% if not preview %}
+<div class="control_panel">
+  {% with indicia_publisher as object %}
+  {% with 'indicia_publisher' as object_class %}
+  {% with 'Indicia Publisher' as object_name %}
+    {% include "gcd/bits/status_banner.html" %}
+  {% endwith %}
+  {% endwith %}
+  {% endwith %}
+{% endif %}
+
+<div>
+  <dl class="pub_data">
+  {% if indicia_publisher.is_surrogate %}
+  <dt> Surrogate:
+  <dd>
+  This company was a surrogate for {{ indicia_publisher.parent }}, meaning that it 
+  published material on behalf of {{ indicia_publisher.parent }} but was not
+  directly associated with it.
+  {% endif %}
+  <dt> Country:
+  <dd> {{ indicia_publisher.country.name }}
+
+  {% if indicia_publisher.notes %}
+    <dt> Notes:
+    <dd> {{ indicia_publisher.notes|linebreaksbr }}
+  {% endif %}
+
+  {% if indicia_publisher.url %}
+    <dt> Web Site:
+    <dd> <a href="{{ indicia_publisher.url }}">{{ indicia_publisher.url }}</a>
+  {% endif %}
+
+{% ifequal page.object_list.count 0 %}
+    <dt> Issues:
+    <dd> None
+  </dl>
+</div>
+{% else %}
+  </dl>
+</div>
+
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Issue </th>
+    <th> Publication Date </th>
+  </tr>
+  {% for issue in page.object_list %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a> </td>
+    <td> {{ issue.publication_date }}
+  </tr>
+  {% endfor %}
+</table>
+{% endifequal %}
+
+{% with 1 as paginate_only %}
+{% with indicia_publisher as publisher %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+{% endwith %}
+</div>
+
+{% endblock %}

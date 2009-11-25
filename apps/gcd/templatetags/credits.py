@@ -31,7 +31,7 @@ def show_credit(story, credit):
     if credit.startswith('any:'):
         target = credit[4:]
         credit_string = ''
-        for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editor']:
+        for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
             if getattr(story, c).lower().find(target.lower()) != -1:
               credit_string += ' ' + __format_credit(story, c, style)
         return credit_string
@@ -60,7 +60,7 @@ def __format_credit(story, credit, style):
     else:
         label = _(credit.title()) + ':'
 
-    if (credit == 'reprints'):
+    if (credit == 'reprint_notes'):
         label = _('Reprinted:')
         values = split_reprint_string(credit_value)
         credit_value = '<ul>'
@@ -84,8 +84,9 @@ def __format_credit(story, credit, style):
 def show_credit_status(story):
     """
     Display a set of letters indicating which of the required credit fields
-    have been filled out.  Technically, the editor field is not required but
-    it has historically been displayed as wel.
+    have been filled out.  Technically, the editing field is not required but
+    it has historically been displayed as well.  The required editing field
+    is now directly on the issue record.
     """
     status = []
     required_remaining = 5
@@ -112,10 +113,8 @@ def show_credit_status(story):
         status.append('L')
         required_remaining -= 1
 
-    if story.editor:
+    if story.editing or story.no_editing:
         status.append('E')
-        if story.sequence_number == 0:
-            required_remaining -= 1
 
     completion = 'complete'
     if required_remaining:
@@ -168,10 +167,21 @@ def show_page_count(story):
         p = u'%s ?' % p
     return p
 
+def show_title(story):
+    """
+    Return a properly formatted title.
+    """
+    if story.title == '':
+        return u'[no title indexed]'
+    if story.title_inferred:
+        return u'[%s]' % story.title
+    return story.title
+
 register.filter(show_credit)
 register.filter(show_credit_status)
 register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)
 register.filter(show_page_count)
+register.filter(show_title)
 

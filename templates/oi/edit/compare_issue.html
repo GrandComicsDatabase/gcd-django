@@ -35,26 +35,66 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <td> {{ revision.issue.volume }} </td>
     <td> {{ revision.volume }} </td>
   </tr>
+  <tr class="{{ revision.changed.no_volume }}">
+    <td class="field_name"> No volume </td>
+    <td> {% if revision.issue.no_volume %} Yes {% else %} No {% endif %} </td>
+    <td> {% if revision.no_volume %} Yes {% else %} No {% endif %} </td>
+  </tr>
   <tr class="{{ revision.changed.display_volume_with_number }}">
     <td class="field_name"> Display volume with number </td>
     <td> {% if revision.issue.display_volume_with_number %} Yes {% else %} No {% endif %} </td>
     <td> {% if revision.display_volume_with_number %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr class="{{ revision.changed.publication_date }}">
+    <td class="field_name"> Publication date </td>
+    <td> {{ revision.issue.publication_date }} </td>
+    <td> {{ revision.publication_date }} </td>
+  </tr>
+  <tr class="{{ revision.changed.indicia_frequency }}">
+    <td class="field_name"> Indicia frequency </td>
+    <td> {{ revision.issue.indicia_frequency }} </td>
+    <td> {{ revision.indicia_frequency }} </td>
+  </tr>
+  <tr class="{{ revision.changed.key_date }}">
+    <td class="field_name"> Key date </td>
+    <td> {{ revision.issue.key_date }} </td>
+    <td> {{ revision.key_date }} </td>
+  </tr>
+  <tr class="{{ revision.changed.indicia_publisher}}">
+    <td class="field_name"> Indicia publisher </td>
+    <td> {{ revision.issue.indicia_publisher }} </td>
+    <td> {{ revision.indicia_publisher }} </td>
+  </tr>
+  <tr class="{{ revision.changed.brand}}">
+    <td class="field_name"> Brand </td>
+    <td> {{ revision.issue.brand }} </td>
+    <td> {{ revision.brand }} </td>
   </tr>
   <tr class="{{ revision.changed.price }}">
     <td class="field_name"> Price </td>
     <td> {{ revision.issue.price }} </td>
     <td> {{ revision.price }} </td>
   </tr>
-  <tr class="{{ revision.changed.publication_date }}">
-    <td class="field_name"> Publication Date </td>
-    <td> {{ revision.issue.publication_date }} </td>
-    <td> {{ revision.publication_date }} </td>
+  <tr class="{{ revision.changed.size }}">
+    <td class="field_name"> Size </td>
+    <td> {{ revision.issue.size }} </td>
+    <td> {{ revision.size }} </td>
   </tr>
-  <tr class="{{ revision.changed.key_date }}">
-    <td class="field_name"> Key Date </td>
-    <td> {{ revision.issue.key_date }} </td>
-    <td> {{ revision.key_date }} </td>
-  </td>
+  <tr class="{{ revision.changed.binding }}">
+    <td class="field_name"> Binding </td>
+    <td> {{ revision.issue.binding }} </td>
+    <td> {{ revision.binding }} </td>
+  </tr>
+  <tr class="{{ revision.changed.paper_stock }}">
+    <td class="field_name"> Paper stock</td>
+    <td> {{ revision.issue.paper_stock }} </td>
+    <td> {{ revision.paper_stock }} </td>
+  </tr>
+  <tr class="{{ revision.changed.printing_process }}">
+    <td class="field_name"> Printing Process </td>
+    <td> {{ revision.issue.printing_process }} </td>
+    <td> {{ revision.printing_process }} </td>
+  </tr>
 </table>
 
 <hr>
@@ -72,7 +112,7 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
 <hr>
 {% endfor %}
 
-<h3> Issue Comments </h3>
+<h3> Comments </h3>
 {% include 'oi/bits/comments.html' %}
 
 <p>
@@ -80,13 +120,13 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
 (opens in a new window)
 </p>
 
-<form id="review" action="{% url process_revision model_name=model_name,id=revision.id %}" method="POST">
+<form id="review" action="{% url process id=changeset.id %}" method="POST">
   <div>
   <label for="comments">Comment:</label> <br>
   <textarea id="comments" name="comments"></textarea>
   </div>
-{% ifequal request.user revision.approver %}
-{% ifequal revision.state states.REVIEWING %}
+{% ifequal request.user changeset.approver %}
+{% ifequal changeset.state states.REVIEWING %}
   <input type="submit" name="approve" value="Approve"></input>
   <input type="submit" name="disapprove" value="Send Back to Indexer"></input>
   <input type="submit" name="cancel" value="Reject Permanently"></input>

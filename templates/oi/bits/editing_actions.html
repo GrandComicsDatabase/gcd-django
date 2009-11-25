@@ -1,13 +1,13 @@
 
-{% ifequal object.state states.REVIEWING %}
+{% ifequal changeset.state states.REVIEWING %}
   No actions available
 {% else %}
-<form action="{% url process_revision model_name=object_type,id=action_id %}"
+<form action="{% url process id=changeset.id %}"
       method="POST">
-{% ifequal object.state states.OPEN %}
+{% ifequal changeset.state states.OPEN %}
   <input type="submit" name="discard" value="Discard"></input>
 {% else %}
-  {% ifequal object.state states.PENDING %}
+  {% ifequal changeset.state states.PENDING %}
   <input type="submit" name="retract" value="Retract and edit further"></input>
   {% endifequal %}
 {% endifequal %}

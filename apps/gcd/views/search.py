@@ -133,7 +133,7 @@ def letterer_by_name(request, letterer, sort=ORDER_ALPHA):
 
 
 def editor_by_name(request, editor, sort=ORDER_ALPHA):
-    q_obj = Q(editor__icontains = editor)
+    q_obj = Q(editing__icontains = editor)
     return generic_by_name(request, editor, q_obj, sort, credit="editor")
 
 
@@ -144,7 +144,8 @@ def story_by_credit(request, name, sort=ORDER_ALPHA):
             Q(inks__icontains = name) | \
             Q(colors__icontains = name) | \
             Q(letters__icontains = name) | \
-            Q(editor__icontains = name)
+            Q(editing__icontains = name) | \
+            Q(issue__editing__icontains = name)
     return generic_by_name(request, name, q_obj, sort, credit=('any:'+name))
 
 
@@ -161,7 +162,7 @@ def story_by_job_number_name(request, number, sort=ORDER_ALPHA):
                            kwargs={ 'number': number, 'sort': sort }))
 
 def story_by_reprint(request, reprints, sort=ORDER_ALPHA):
-    q_obj = Q(reprints__icontains = reprints)
+    q_obj = Q(reprint_notes__icontains = reprints)
     return generic_by_name(request, reprints, q_obj, sort)
 
 
@@ -522,6 +523,26 @@ def search_issues(data, op, stories_q=None):
     if data['cover_needed']:
         q_objs.append(Q(**{ '%scover__has_image' % prefix : False }) | 
                       Q(**{ '%scover__marked' % prefix : True }))
+    if data['issue_editing']:
+        q_objs.append(Q(**{ '%editing__icontains' % prefix:
+                            data['issue_editing'] }))
+    if data['issue_notes']:
+        q_objs.append(Q(**{ '%notes__icontains' % prefix: data['issue_notes'] }))
+
+    try:
+        if data['issue_pages'] is not None and data['issue_pages'] != '':
+            range_match = match(page_range_regexp, data['issue_pages'])
+            if range_match:
+                page_start = float(range_match.group('begin'))
+                page_end = float(range_match.group('end'))
+                q_objs.append(Q(**{ '%spage_count__range' % prefix :
+                                    (page_start, page_end) }))
+            else:
+                q_objs.append(Q(**{ '%spage_count' % prefix :
+                                    float(data['issue_pages']) }))
+    except ValueError:
+        raise SearchError, ("Page count must be a decimal number or a pair of "
+                            "decimal numbers separated by a hyphen.")
 
     return compute_qobj(data, q_and_only, q_objs)
 
@@ -600,7 +621,7 @@ def search_stories(data, op):
     for field in ('feature', 'title', 'genre',
                   'script', 'pencils', 'inks',
                   'colors', 'letters', 'job_number', 'characters',
-                  'synopsis', 'reprints', 'notes'):
+                  'synopsis', 'reprint_notes', 'notes'):
         if data[field]:
             q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op) :
                                 data[field] }))
@@ -608,17 +629,9 @@ def search_stories(data, op):
     if data['type']:
         q_objs.append(Q(**{ '%stype__in' % prefix : data['type'] }))
 
-    for field in ('issue_editor', 'issue_notes', 'issue_reprints'):
-        if data[field]:
-            m = match(r'issue_(?P<column>.+)', field)
-            column = m.group('column')
-            kwargs = {'%s%s__%s' % (prefix, column, op) : data[field],
-                      '%ssequence_number' % prefix : 0}
-            q_objs.append(Q(**kwargs))
-
-    if data['story_editor']:
-        q_objs.append(Q(**{ '%seditor__%s' % (prefix, op) :
-                            data['story_editor'] }))
+    if data['story_editing']:
+        q_objs.append(Q(**{ '%sediting__%s' % (prefix, op) :
+                            data['story_editing'] }))
 
     try:
         page_range_regexp = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
@@ -628,25 +641,10 @@ def search_stories(data, op):
                 page_start = float(range_match.group('begin'))
                 page_end = float(range_match.group('end'))
                 q_objs.append(Q(**{ '%spage_count__range' % prefix :
-                                    (page_start, page_end) }) &
-                              ~Q(**{ '%ssequence_number' % prefix : 0 }))
+                                    (page_start, page_end) }))
             else:
                 q_objs.append(Q(**{ '%spage_count' % prefix :
-                                    float(data['pages']) }) &
-                              ~Q(**{ '%ssequence_number' % prefix : 0 }))
-
-        if data['issue_pages'] is not None and data['issue_pages'] != '':
-            range_match = match(page_range_regexp, data['issue_pages'])
-            if range_match:
-                page_start = float(range_match.group('begin'))
-                page_end = float(range_match.group('end'))
-                q_objs.append(Q(**{ '%spage_count__range' % prefix :
-                                    (page_start, page_end) }) &
-                              Q(**{ '%ssequence_number' % prefix : 0 }))
-            else:
-                q_objs.append(Q(**{ '%spage_count' % prefix :
-                                    float(data['issue_pages']) }) &
-                              Q(**{ '%ssequence_number' % prefix : 0 }))
+                                    float(data['pages']) }))
 
     except ValueError:
         raise SearchError, ("Page count must be a decimal number or a pair of "

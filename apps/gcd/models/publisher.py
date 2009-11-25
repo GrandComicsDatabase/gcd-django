@@ -2,18 +2,31 @@ from django.db import models
 from country import Country
 from django.core.exceptions import ObjectDoesNotExist
 
-class Publisher(models.Model):
+class BasePublisher(models.Model):
     class Meta:
-        ordering = ['name']
-        app_label = 'gcd'
+        abstract = True
 
     # Core publisher fields.
     name = models.CharField(max_length=255, db_index=True)
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
+    notes = models.TextField()
+    url = models.URLField()
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=0, db_index=True)
+    created = models.DateField(auto_now_add=True)
+    modified = models.DateField(auto_now=True)
+
+    def __unicode__(self):
+        return self.name
+
+class Publisher(BasePublisher):
+    class Meta:
+        ordering = ['name']
+        app_label = 'gcd'
+
     country = models.ForeignKey(Country)
-    notes = models.TextField(null=True)
-    url = models.URLField(null=True)
 
     # Cached counts.
     imprint_count = models.IntegerField()
@@ -25,13 +38,16 @@ class Publisher(models.Model):
     parent = models.ForeignKey('self', null=True,
                                related_name='imprint_set')
 
-    # Fields related to change management.
-    reserved = models.BooleanField(default=0, db_index=True)
-    created = models.DateField(auto_now_add=True)
-    modified = models.DateField(auto_now=True)
-
     def __unicode__(self):
         return self.name
+
+    def _indicia_publisher_count(self):
+        return self.indicia_publishers.count()
+    indicia_publisher_count = property(_indicia_publisher_count)
+
+    def _brand_count(self):
+        return self.brands.count()
+    brand_count = property(_brand_count)
 
     def has_imprints(self):
         return self.imprint_set.count() > 0
@@ -46,14 +62,13 @@ class Publisher(models.Model):
             return "/publisher/%i/" % self.id
 
     def get_official_url(self):
-        try:
-            if not self.url.lower().startswith("http://"):
-                self.url = "http://" + self.url
-                #TODO: auto fix urls ?
-                #self.save()
-        except:
-            return ""
-
+        """
+        TODO: This needs to be retired now that the data has been cleaned up.
+        If we want to ensure '' instead of None we should set the db column
+        to NOT NULL default ''.
+        """
+        if self.url is None:
+            return ''
         return self.url
 
     def get_full_name(self):
@@ -63,9 +78,7 @@ class Publisher(models.Model):
             return '*GCD ORPHAN IMPRINT: %s' % (self.name)
         return self.name
 
-    def __unicode__(self):
-        return self.name
-
+    # TODO: Should be able to remove this.  Verify we're not using it anywhere.
     def computed_issue_count(self):
         # issue_count is not accurate, but computing is slow.
         return self.issue_count or 0
@@ -76,4 +89,33 @@ class Publisher(models.Model):
         # for series in self.series_set.all():
         #     num_issues += series.issue_set.count()
         # return num_issues
+
+class IndiciaPublisher(BasePublisher):
+    class Meta:
+        db_table = 'gcd_indicia_publisher'
+        ordering = ['name']
+        app_label = 'gcd'
+
+    parent = models.ForeignKey(Publisher, related_name='indicia_publishers')
+    is_surrogate = models.BooleanField(db_index=True)
+    country = models.ForeignKey(Country)
+
+    def get_absolute_url(self):
+        return "/indicia_publisher/%i/" % self.id
+
+    def __unicode__(self):
+        return self.name
+
+class Brand(BasePublisher):
+    class Meta:
+        ordering = ['name']
+        app_label = 'gcd'
+
+    parent = models.ForeignKey(Publisher, related_name='brands')
+
+    def get_absolute_url(self):
+        return self.name
+
+    def __unicode__(self):
+        return u'%s: %s' % (self.parent.name, self.name)
 

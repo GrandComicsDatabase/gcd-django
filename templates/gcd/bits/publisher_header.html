@@ -9,7 +9,7 @@
   {% if preview %}
     {% if publisher.parent %}{{ publisher.parent }} :{% endif %} {{ publisher }}
   {% else %}
-    {% if publisher.is_imprint %}
+    {% if publisher.parent %}
       <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
       <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
     {% else %}

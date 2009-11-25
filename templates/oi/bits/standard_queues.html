@@ -6,31 +6,29 @@
   {% ifnotequal queue_name 'editing' %}
     <th> Indexer</th>
   {% endifnotequal %}
+  {% ifnotequal queue_name 'reviews' %}
     <th> Approver</th>
-  {% ifequal queue_name 'editing' %}
     <th> State </th>
-  {% endifequal %}
+  {% endifnotequal %}
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
-{% for object in section.objects %}
+{% for changeset in section.changesets %}
   <tr>
   {% ifequal link_target 'preview' %}
-    <td> <a href="{% url compare_revision model_name=section.object_type,id=object.id %}">{{ object.queue_name }}</a>
+    <td> <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
   {% else %}
-    <td> <a href="{% url edit_revision model_name=section.object_type,id=object.id %}">{{ object.queue_name }}</a>
+    <td> <a href="{% url edit id=changeset.id %}">{{ changeset.queue_name }}</a>
   {% endifequal %}
   {% ifnotequal queue_name 'editing' %}
-    <td> {{ object.indexer.indexer }} </td>
+    <td> {{ changeset.indexer.indexer }} </td>
   {% endifnotequal %}
-    <td> {{ object.approver.indexer|default:'None' }} </td>
-  {% ifequal queue_name 'editing' %}
-    <td> {{ object.display_state }} </td>
-  {% endifequal %}
-    <td> {{ object.modified }} </td>
-{% with section.object_type as object_type %}
-    <td> {% with object.id as action_id %}{% include actions %}{% endwith %} </td>
-{% endwith %}
+  {% ifnotequal queue_name 'reviews' %}
+    <td> {{ changeset.approver.indexer|default:'None' }} </td>
+    <td> {{ changeset.display_state }} </td>
+  {% endifnotequal %}
+    <td> {{ changeset.modified }} </td>
+    <td> {% with changeset.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>
 {% endfor %}
 </table>

@@ -5,11 +5,7 @@
     <div class="single_story">
       <a name="{{ story.id }}"></a>
       <h2 class="sequence header title">
-        {% if story.title %}
-          <span class="title left">{{ story.title }}</span>
-        {% else %}
-            <span class="title left">[ no title ]</span>
-        {% endif %}
+        {{ story|show_title }}
         <span class="right"><a href="#toc">(Table of Contents)</a></span>
       </h2>
       <h3 class="sequence_header feature">
@@ -17,26 +13,18 @@
         {% if story.feature %}
           <span class="feature">{{ story.feature }}</span>
         {% endif %}
-        {% if not is_cover %}
-          {% if story.type or story.page_count %}
-            <span class="type">
-            <!-- needs to be stuck together to get display spacing right. -->
-            {% if story.feature %} / {% endif %}
-            {% if story.type %}{{ story.type }} / {% endif %}
-            {{ story|show_page_count }}
-            {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
-              page{{ suffix }}
-            {% endblocktrans %}
-            </span>
-          {%endif %}
-        {% else %}
-            <span class="type">
-            <!-- needs to be stuck together to get display spacing right. -->
-            {% if story.feature %} / {% endif %}
-            {% if story.type %}{{ story.type }}{% endif %}
-            </span>
-        {% endif %}
-        </span><span class="right"><a href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}%23{{ story.id }}&amp;short_desc={{ error_subject|urlencode }}%20-%20{{story.title|urlencode}}" target="_blank">(report information)</a></span>
+        {% if story.type or story.page_count %}
+          <span class="type">
+          <!-- needs to be stuck together to get display spacing right. -->
+          {% if story.feature %} / {% endif %}
+          {% if story.type %}{{ story.type }} / {% endif %}
+          {{ story|show_page_count }}
+          {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
+            page{{ suffix }}
+          {% endblocktrans %}
+          </span>
+        {%endif %}
+        </span><span class="right"><a href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}%23{{ story.id }}&amp;short_desc={{ error_subject|urlencode }}%20-%20{{story|show_title|urlencode}}" target="_blank">(report information)</a></span>
       </h3>
 
       {% if story.has_credits %}
@@ -47,9 +35,7 @@
         {{ story|show_credit:"inks" }}
         {{ story|show_credit:"colors" }}
         {{ story|show_credit:"letters" }}
-      {% if not is_cover %}
-        {{ story|show_credit:"editor" }}
-      {% endif %}
+        {{ story|show_credit:"editing" }}
         {{ story|show_credit:"job_number" }}
       </dl>
       {% endif %}
@@ -60,10 +46,16 @@
           {{ story|show_credit:"genre,short" }}
           {{ story|show_credit:"characters"|linebreaksbr }}
           {{ story|show_credit:"synopsis"|linebreaksbr }}
-          {{ story|show_credit:"reprints"|linebreaksbr }}
+          {{ story|show_credit:"reprint_notes"|linebreaksbr }}
         </dl>
       {% endif %}
 
+      {% ifequal story.sequence_number 0 %}
+        {% if story.issue.notes %}
+          <h3 class="notes_header"> Issue Notes </h3>
+          <p>{{ story.issue.notes|linebreaksbr }}
+        {% endif %}
+      {% endifequal %}
       {% if story.notes %}
         <h3 class="notes_header"> Indexer Notes </h3>
         <p>{{ story.notes|linebreaksbr }}</p>

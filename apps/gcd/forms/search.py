@@ -12,7 +12,7 @@ ORDERINGS = [['', '--'],
              ['inks', 'Inker'],
              ['colors', 'Colorist'],
              ['letters', 'Letterer'],
-             ['editor', 'Editor'],
+             ['editing', 'Editing'],
              ['job_number', 'Job Number']]
 
 DATE_FORMATS = ['%Y.%m.%d', '%Y-%m-%d',
@@ -81,8 +81,7 @@ class AdvancedSearch(forms.Form):
     price = forms.CharField(required=False)
     issue_pages = forms.CharField(required=False)
     issue_notes = forms.CharField(label='Issue Notes', required=False)
-    issue_reprints = forms.CharField(label='Issue Reprints', required=False)
-    issue_editor = forms.CharField(required=False)
+    issue_editing = forms.CharField(required=False)
     issue_date = forms.CharField(label='Cover Date', required=False)
 
     cover_needed = forms.BooleanField(label="Cover is Needed", 
@@ -123,13 +122,13 @@ class AdvancedSearch(forms.Form):
     inks = forms.CharField(required=False)
     colors = forms.CharField(required=False)
     letters = forms.CharField(required=False)
-    story_editor = forms.CharField(required=False)
+    story_editing = forms.CharField(required=False)
     job_number = forms.CharField(label='Job Number', required=False)
 
     genre = forms.CharField(required=False)
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
-    reprints = forms.CharField(required=False)
+    reprint_notes = forms.CharField(required=False)
 
     notes = forms.CharField(label='Notes', required=False)
 

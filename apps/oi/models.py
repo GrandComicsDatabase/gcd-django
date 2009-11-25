@@ -1,6 +1,9 @@
 from datetime import datetime
+import itertools
+import operator
 
 from django.db import models
+from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
@@ -9,127 +12,20 @@ from django.contrib.contenttypes import generic
 from apps.oi import states
 from apps.gcd.models import *
 
-class RevisionComment(models.Model):
-    """
-    Comment class for revision management.
+class ChangesetCountManager(models.Manager):
+    def get_query_set(self):
+        q = models.Manager.get_query_set(self)
+        return q.annotate(
+          publisher_revision_count=Count('publisherrevisions'),
+          indicia_publisher_revision_count=Count('indiciapublisherrevisions'),
+          brand_revision_count=Count('brandrevisions'),
+          series_revision_count=Count('seriesrevisions'),
+          issue_revision_count=Count('issuerevisions'),
+          story_revision_count=Count('storyrevisions'))
 
-    We are not using Django's comments contrib package for several reasons:
-
-    1.  Additional fields- we want to associate comments with state transitions,
-        which also tells us who made the comment (since currently comments can
-        only be made by the person changing the revision state, or by the
-        indexer when saving intermediate edits.
-
-        TODO: The whole bit where the indexer can end up tacking on a bunch
-        of comments rather than having just one that they build up and edit
-        and send in with the submission is not quite right.  Needs work still.
-
-    2.  We don't need the anti-spam measures as these will not be accessible
-        by the general public.  If we get a spammer with an account we'll have
-        bigger problems than comments, and other ways to deal with them.
-
-    3.  Unneeded fields.  This isn't really an obstacle to use, but the
-        django comments system copies over a number of fields that we would
-        not want copied in case they change (email, for instance).
-    """
-    class Meta:
-        ordering = ['created']
-
-    commenter = models.ForeignKey(User)
-    text = models.TextField()
-
-    content_type = models.ForeignKey(content_models.ContentType)
-    revision_id = models.PositiveIntegerField(db_index=True)
-    revision = generic.GenericForeignKey('content_type', 'revision_id')
-
-    old_state = models.IntegerField()
-    new_state = models.IntegerField()
-    created = models.DateTimeField(auto_now_add=True, editable=False)
-
-    def display_old_state(self):
-        return states.DISPLAY_NAME[self.old_state]
-
-    def display_new_state(self):
-        return states.DISPLAY_NAME[self.new_state]
-
-class RevisionManager(models.Manager):
-    """
-    Custom manager base class for revisions.
-    """
-
-    def clone_revision(self, instance, instance_class, instance_name,
-                       indexer, check=True, state=states.OPEN, **kwargs):
-        """
-        Given an existing instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
-        Entirely new publishers should be started by simply instantiating
-        a new PublisherRevision directly.
-        """
-
-        if not isinstance(indexer, User):
-            raise TypeError, "Please supply a valid indexer."
-        if not isinstance(instance, instance_class):
-            raise TypeError, "Please supply a valid %s." % instance_class
-
-        if check:
-            prior_revisions = self.filter(
-              **{instance_name: instance})
-
-            if prior_revisions.count() == 0:
-                # Establish a baseline revision for this publisher before
-                # creating the new about-to-be-edited revision.
-                # TODO: technically it's wrong to set the indexer like this,
-                # but since baseline revisions have a special state it's
-                # easy to find and fix later when we migrate the Log tables.
-                # And this way we can avoid yet another NULLable field.
-                self.clone_revision(instance,
-                                    check=False,
-                                    indexer=indexer,
-                                    state=states.BASELINE,
-                                    **kwargs)
-
-        revision = self._do_create_revision(instance,
-                                            indexer=indexer,
-                                            state=state,
-                                            **kwargs)
-        revision.comments.create(commenter=indexer,
-                                 text='Editing',
-                                 old_state=states.UNRESERVED,
-                                 new_state=revision.state)
-
-        # Mark as reserved *after* cloning the revision in order to avoid
-        # overwriting the modified timestamp in the case of a BASELINE
-        # revision.
-        instance.reserved = True
-        instance.save()
-        return revision
-
-    def active(self):
-        """
-        For use on the revisions relation from display objects
-        where reserved == True.
-        Throws the DoesNotExist or MultipleObjectsReturned exceptions on
-        the appropriate Revision subclass, as it calls get() underneath.
-        """
-        return self.get(state__in=states.ACTIVE)
-
-class Revision(models.Model):
-    """
-    Mixin abstract base class implementing the workflow of a revisable object.
-
-    This holds the data while it is being edited, and remains in the table
-    as a history of each given edit, including those that are discarded.
-
-    A state column trackes the progress of the revision, which should eventually
-    end in either the APPROVED or DISCARDED state.  A special case is the
-    BASELINE state which is a marker for future database migration work
-    during the New Fun release.
-    """
-    class Meta:
-        abstract = True
+class Changeset(models.Model):
+    objects = models.Manager()
+    counted_objects = ChangesetCountManager()
 
     state = models.IntegerField(db_index=True)
 
@@ -139,87 +35,65 @@ class Revision(models.Model):
                                         related_name='%(class)s_assisting')
     on_behalf_of = models.ManyToManyField(User, related_name='%(class)s_source')
 
-    # Revisions don't get an approver until late in the workflow,
+    # Changesets don't get an approver until late in the workflow,
     # and for legacy cases we don't know who they were.
     approver = models.ForeignKey('auth.User',  db_index=True,
                                  related_name='approved_%(class)s', null=True)
 
-    comments = generic.GenericRelation(RevisionComment,
-                                       content_type_field='content_type',
-                                       object_id_field='revision_id')
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+    modified = models.DateTimeField(auto_now=True, db_index=True)
 
-    """
-    If true, this revision deletes the object in question.  Other fields
-    should not contain changes but should instead be a record of the object
-    at the time of deletion and therefore match the previous revision.
-    If changes are present, then they were never actually published and
-    should be ignored in terms of history.
-    """
-    deleted = models.BooleanField(default=0)
+    def __init__(self, *args, **kwargs):
+        models.Model.__init__(self, *args, **kwargs)
+        self._is_inline = None
+        self._inline_revision = None
 
-    """
-    The creation timestamp for this revision.
-    Not automatic so we can handle baseline revisions.
-    """
-    created = models.DateTimeField(db_index=True, null=True)
+    def _revision_sets(self):
+        return (self.publisherrevisions.all(),
+                self.indiciapublisherrevisions.all(),
+                self.brandrevisions.all(),
+                self.seriesrevisions.all(),
+                self.issuerevisions.all(),
+                self.storyrevisions.all())
 
-    """
-    The modification timestamp for this revision.
-    TODO: Come up with something for baseline revisions.  For now it doesn't
-    really matter what's in the modified field for them.
-    """
-    modified = models.DateTimeField(auto_now=True, db_index=True, null=True)
-
-    def _source(self):
+    def _revisions(self):
         """
-        The thing of which this is a revision.
-        Since this is different for each revision, the subclass must override this.
+        Fake up an iterable (not actually a list) of all revisions,
+        in canonical order.
+        TODO: This is probably too database-intensive, unless chain doesn't
+        evalate each queryset until it needs to.  Which it might.
         """
-        raise NotImplementedError
+        return itertools.chain(*self._revision_sets())
+    revisions = property(_revisions)
 
-    # Note: lambda required so that polymorphism works.
-    source = property(lambda self: self._source())
+    def revision_count(self):
+        return reduce(operator.add,
+                      map(lambda rs: rs.count(), self._revision_sets()))
 
-    def compare_changes(self):
+    def inline(self):
         """
-        Set up the 'changed' property so that it can be accessed conveniently
-        from a template.  Template calling limitations prevent just
-        using a parameter to compare one field at a time.
+        If true, edit the revisions of the changeset inline in the changeset page.
+        Otherwise, render a page for the changeset that links to a separate edit
+        page for each revision.
         """
-        self.changed = {}
-        for field_name in self._field_list():
-            new = getattr(self, field_name)
-            if self.source is None:
-                if new:
-                    self.changed[field_name] = True
-                else:
-                    self.changed[field_name] = False
-            elif new != getattr(self.source, field_name):
-                self.changed[field_name] = True
+        if self._is_inline is None:
+            if self.revision_count() == 1:
+                self._is_inline = True
             else:
-                self.changed[field_name] = False
+                self._is_inline = False
+        return self._is_inline
 
-    # changed = property(lambda self: self._changes)
+    def inline_revision(self):
+        if self.inline():
+            if self._inline_revision is None:
+                self._inline_revision = self.revisions.next()
+        return self._inline_revision
 
     def queue_name(self):
-        """
-        Long name form to display in queues.
-        This allows revision objects to use their linked object's __unicode__
-        method for compatibility in preview pages, but display a more
-        verbose form in places like queues that need them.
-
-        Derived classes should override _queue_name to supply a base string
-        other than the standard unicode representation.
-        """
-        uni = self._queue_name()
-        if self.source is None:
-            uni += u' [ADDED]'
-        if self.deleted:
-            uni += u' [DELETED]'
-        return uni
-
-    def _queue_name(self):
-        return unicode(self)
+        if self.inline():
+            return self.revisions.next().queue_name()
+        # TODO: Fix big hack:
+        return self.issuerevisions.all()[0].queue_name()
 
     def display_state(self):
         """
@@ -227,41 +101,6 @@ class Revision(models.Model):
         Makes it much easier to display state information in templates.
         """
         return states.DISPLAY_NAME[self.state]
-
-    def save_added_revision(self, indexer, comments, **kwargs):
-        """
-        Add the remaining arguments and many to many relations for an unsaved
-        added revision produced by a model form.  The general workflow should be:
-
-        revision = form.save(commit=False)
-        revision.save_added_revision(indexer=request.user) # optionally with kwargs
-
-        Since this prevents the form from adding any many to many relationships,
-        the _do_save_added_revision method on each concrete revision class
-        needs be certain to save any such relations that come from the form.
-        """
-        if not isinstance(indexer, User):
-            raise TypeError, "Please supply a valid indexer."
-
-        self.indexer = indexer
-        self.state = states.OPEN
-        self.created = datetime.now()
-        self.modified = self.created
-        self._do_complete_added_revision(**kwargs)
-        self.save()
-        self.comments.create(commenter=indexer,
-                             text=comments,
-                             old_state=states.UNRESERVED,
-                             new_state=self.state)
-
-    def _do_complete_added_revision(self, **kwargs):
-        """
-        Hook for indiividual revisions to process additional parameters
-        necessary to create a new revision representing an added record.
-        By default no additional processing is done, so subclasses are
-        free to override this method without calling it on the parent class.
-        """
-        pass
 
     def _check_approver(self):
         """
@@ -340,9 +179,10 @@ class Revision(models.Model):
 
         self.state = states.DISCARDED
         self.save()
-        if self.source is not None:
-            self.source.reserved = False
-            self.source.save()
+        for revision in self.revisions:
+            if revision.source is not None:
+                revision.source.reserved = False
+                revision.source.save()
 
     def assign(self, approver, notes=''):
         """
@@ -394,7 +234,10 @@ class Revision(models.Model):
                              text=notes,
                              old_state=self.state,
                              new_state=states.APPROVED)
-        self.commit_to_display()
+
+        for revision in self.revisions:
+            revision.commit_to_display()
+
         self.state = states.APPROVED
         self.save()
 
@@ -434,8 +277,219 @@ class Revision(models.Model):
                              old_state=self.state,
                              new_state=states.PENDING)
         self.state = states.PENDING
+        for revision in self.revisions:
+            revision.mark_deleted()
+
+        self.save()
+
+    def __unicode__(self):
+        uni = u'Changeset %d' % self.id
+        if self.inline():
+            uni += u': %s' % self.revisions.next()
+        return uni
+
+class ChangesetComment(models.Model):
+    """
+    Comment class for revision management.
+
+    We are not using Django's comments contrib package for several reasons:
+
+    1.  Additional fields- we want to associate comments with state transitions,
+        which also tells us who made the comment (since currently comments can
+        only be made by the person changing the revision state, or by the
+        indexer when saving intermediate edits.
+
+        TODO: The whole bit where the indexer can end up tacking on a bunch
+        of comments rather than having just one that they build up and edit
+        and send in with the submission is not quite right.  Needs work still.
+
+    2.  We don't need the anti-spam measures as these will not be accessible
+        by the general public.  If we get a spammer with an account we'll have
+        bigger problems than comments, and other ways to deal with them.
+
+    3.  Unneeded fields.  This isn't really an obstacle to use, but the
+        django comments system copies over a number of fields that we would
+        not want copied in case they change (email, for instance).
+    """
+    class Meta:
+        db_table = 'oi_changeset_comment'
+        ordering = ['created']
+
+    commenter = models.ForeignKey(User)
+    text = models.TextField()
+
+    changeset = models.ForeignKey(Changeset, related_name='comments')
+
+    old_state = models.IntegerField()
+    new_state = models.IntegerField()
+    created = models.DateTimeField(auto_now_add=True, editable=False)
+
+    def display_old_state(self):
+        return states.DISPLAY_NAME[self.old_state]
+
+    def display_new_state(self):
+        return states.DISPLAY_NAME[self.new_state]
+
+class RevisionManager(models.Manager):
+    """
+    Custom manager base class for revisions.
+    """
+
+    def clone_revision(self, instance, instance_class,
+                       changeset, check=True, **kwargs):
+        """
+        Given an existing instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        If there are no revisions, first save a baseline so that the pre-edit
+        values are preserved.
+        Entirely new publishers should be started by simply instantiating
+        a new PublisherRevision directly.
+        """
+        if not isinstance(instance, instance_class):
+            raise TypeError, "Please supply a valid %s." % instance_class
+
+        revision = self._do_create_revision(instance,
+                                            changeset=changeset,
+                                            **kwargs)
+        # Mark as reserved *after* cloning the revision in order to avoid
+        # overwriting the modified timestamp in the case of a BASELINE
+        # revision.
+        instance.reserved = True
+        instance.save()
+        return revision
+
+    def active(self):
+        """
+        For use on the revisions relation from display objects
+        where reserved == True.
+        Throws the DoesNotExist or MultipleObjectsReturned exceptions on
+        the appropriate Revision subclass, as it calls get() underneath.
+        """
+        return self.get(changeset__state__in=states.ACTIVE)
+
+class Revision(models.Model):
+    """
+    Abstract base class implementing the workflow of a revisable object.
+
+    This holds the data while it is being edited, and remains in the table
+    as a history of each given edit, including those that are discarded.
+
+    A state column trackes the progress of the revision, which should eventually
+    end in either the APPROVED or DISCARDED state.  A special case is the
+    BASELINE state which is a marker for future database migration work
+    during the New Fun release.
+    """
+    class Meta:
+        abstract = True
+
+    changeset = models.ForeignKey(Changeset, related_name='%(class)ss')
+
+    """
+    If true, this revision deletes the object in question.  Other fields
+    should not contain changes but should instead be a record of the object
+    at the time of deletion and therefore match the previous revision.
+    If changes are present, then they were never actually published and
+    should be ignored in terms of history.
+    """
+    deleted = models.BooleanField(default=0)
+
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+    modified = models.DateTimeField(auto_now=True, db_index=True)
+
+    def _source(self):
+        """
+        The thing of which this is a revision.
+        Since this is different for each revision, the subclass must override this.
+        """
+        raise NotImplementedError
+
+    # Note: lambda required so that polymorphism works.
+    source = property(lambda self: self._source())
+
+    def _source_name(self):
+        """
+        Used to key lookups in various shared view methods.
+        """
+        raise NotImplementedError
+
+    # Note: lambda required so that polymorphism works.
+    source_name = property(lambda self: self._source_name())
+
+    def mark_deleted(self, notes=''):
+        """
+        Mark this revision as deleted, meaning that instead of copying it
+        back to the display table, the display table entry will be removed
+        when the revision is committed.
+        """
         self.deleted = True
         self.save()
+
+    def compare_changes(self):
+        """
+        Set up the 'changed' property so that it can be accessed conveniently
+        from a template.  Template calling limitations prevent just
+        using a parameter to compare one field at a time.
+        """
+        self.changed = {}
+        for field_name in self._field_list():
+            new = getattr(self, field_name)
+            if self.source is None:
+                if new:
+                    self.changed[field_name] = True
+                else:
+                    self.changed[field_name] = False
+            elif new != getattr(self.source, field_name):
+                self.changed[field_name] = True
+            else:
+                self.changed[field_name] = False
+
+    # changed = property(lambda self: self._changes)
+
+    def queue_name(self):
+        """
+        Long name form to display in queues.
+        This allows revision objects to use their linked object's __unicode__
+        method for compatibility in preview pages, but display a more
+        verbose form in places like queues that need them.
+
+        Derived classes should override _queue_name to supply a base string
+        other than the standard unicode representation.
+        """
+        uni = self._queue_name()
+        if self.source is None:
+            uni += u' [ADDED]'
+        if self.deleted:
+            uni += u' [DELETED]'
+        return uni
+
+    def _queue_name(self):
+        return unicode(self)
+
+    def save_added_revision(self, changeset, **kwargs):
+        """
+        Add the remaining arguments and many to many relations for an unsaved
+        added revision produced by a model form.  The general workflow should be:
+
+        revision = form.save(commit=False)
+        revision.save_added_revision() # optionally with kwargs
+
+        Since this prevents the form from adding any many to many relationships,
+        the _do_save_added_revision method on each concrete revision class
+        needs be certain to save any such relations that come from the form.
+        """
+        self.changeset = changeset
+        self._do_complete_added_revision(**kwargs)
+        self.save()
+
+    def _do_complete_added_revision(self, **kwargs):
+        """
+        Hook for indiividual revisions to process additional parameters
+        necessary to create a new revision representing an added record.
+        By default no additional processing is done, so subclasses are
+        free to override this method without calling it on the parent class.
+        """
+        pass
 
 class OngoingReservation(models.Model):
     """
@@ -456,56 +510,79 @@ class OngoingReservation(models.Model):
     """
     The creation timestamp for this reservation.
     """
-    created = models.DateTimeField(auto_now_add=True, db_index=True, null=True)
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
 
-class PublisherRevisionManager(RevisionManager):
+class PublisherRevisionManagerBase(RevisionManager):
+    def _base_field_kwargs(self, instance):
+        return {
+          'name': instance.name,
+          'year_began': instance.year_began,
+          'year_ended': instance.year_ended,
+          'notes': instance.notes,
+          'url': instance.url,
+        }
+
+class PublisherRevisionBase(Revision):
+    class Meta:
+        abstract = True
+
+    name = models.CharField(max_length=255, blank=True, db_index=True)
+
+    year_began = models.IntegerField(null=True, blank=True, db_index=True,
+      help_text='The first year in which the publisher was active.')
+    year_ended = models.IntegerField(null=True, blank=True,
+      help_text='The last year in which the publisher was active. '
+                'Leave blank if the publisher is still active.')
+    notes = models.TextField(blank=True,
+      help_text='Anything that doesn\'t fit in other fields.  These notes '
+                'are part of the regular display.')
+    url = models.URLField(blank=True,
+      help_text='The official web site of the publisher.')
+
+    def _assign_base_fields(self, target):
+        target.name = self.name
+        target.year_began = self.year_began
+        target.year_ended = self.year_ended
+        target.notes = self.notes
+        target.url = self.url
+
+    def _field_list(self):
+        return ('name', 'year_began', 'year_ended', 'notes', 'url')
+
+    def __unicode__(self):
+        if self.source is None:
+            return self.name
+        return unicode(self.source)
+
+class PublisherRevisionManager(PublisherRevisionManagerBase):
     """
     Custom manager allowing the cloning of revisions from existing rows.
     """
 
-    def clone_revision(self, publisher, indexer, check=True, state=states.OPEN):
+    def clone_revision(self, publisher, changeset):
         """
         Given an existing Publisher instance, create a new revision based on it.
 
         This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
         Entirely new publishers should be started by simply instantiating
         a new PublisherRevision directly.
         """
-        return RevisionManager.clone_revision(self,
+        return PublisherRevisionManagerBase.clone_revision(self,
                                               instance=publisher,
                                               instance_class=Publisher,
-                                              instance_name='publisher',
-                                              indexer=indexer,
-                                              check=check,
-                                              state=state)
+                                              changeset=changeset)
 
-    def _do_create_revision(self, publisher, indexer, state, **ignore):
+    def _do_create_revision(self, publisher, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = {}
-        if (state == states.BASELINE):
-            kwargs['created'] = publisher.created
-            kwargs['modified'] = publisher.modified
-        else:
-            kwargs['created'] = datetime.now()
-            kwargs['modified'] = kwargs['created']
+        kwargs = self._base_field_kwargs(publisher)
 
         revision = PublisherRevision(
-          # revision-specific fields:
           publisher=publisher,
-          state=state,
-          indexer=indexer,
+          changeset=changeset,
 
-          # copied fields:
-          name=publisher.name,
-          year_began=publisher.year_began,
-          year_ended=publisher.year_ended,
           country=publisher.country,
-          notes=publisher.notes,
-          url=publisher.url,
           is_master=publisher.is_master,
           parent=publisher.parent,
           **kwargs)
@@ -513,40 +590,18 @@ class PublisherRevisionManager(RevisionManager):
         revision.save()
         return revision
 
-class PublisherRevision(Revision):
+class PublisherRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_publisher_revision'
         ordering = ['-created', '-id']
 
     objects=PublisherRevisionManager()
 
-    # Can be null in the case of adding an entirely new publisher.
     publisher=models.ForeignKey('gcd.Publisher', null=True,
                                 related_name='revisions')
 
-    # Core publisher fields.
-    name = models.CharField(max_length=255, null=True, blank=True,
-                            db_index=True,
-      help_text="The publisher's name.  For master publishers, use the most "
-                'common form of the name, i.e. "DC" rather than '
-                '"D.C. Comics, Inc." or "DC Comics".  For imprints, use the '
-                'name exactly as it appears (in the indicia for indicia '
-                'publishers, in the logo for cover imprints).')
+    country = models.ForeignKey('gcd.Country', db_index=True)
 
-    year_began = models.IntegerField(null=True, blank=True, db_index=True,
-      help_text='The first year in which the publisher was active.')
-    year_ended = models.IntegerField(null=True, blank=True,
-      help_text='The last year in which the publisher was active. '
-                'Leave blank if the publisher is still active.')
-    country = models.ForeignKey('gcd.Country',
-                                null=True, blank=True, db_index=True)
-    notes = models.TextField(null=True, blank=True,
-      help_text='Anything that doesn\'t fit in other fields.  These notes '
-                'are part of the regular display.')
-    url = models.URLField(null=True, blank=True,
-      help_text='The official web site of the publisher.')
-
-    # Fields about relating publishers/imprints to each other.
     is_master = models.BooleanField(default=0, db_index=True,
       help_text='Check if this is a top-level publisher that may contain '
                 'imprints.')
@@ -556,6 +611,9 @@ class PublisherRevision(Revision):
 
     def _source(self):
         return self.publisher
+
+    def _source_name(self):
+        return 'publisher'
 
     # Fake an imprint set for the preview page.
     def _imprint_set(self):
@@ -576,20 +634,15 @@ class PublisherRevision(Revision):
         return self.publisher.imprint_series_set
     imprint_series_set = property(_imprint_series_set)
 
-
-
-    def __unicode__(self):
-        if self.publisher is None:
-            return self.name
-        return unicode(self.publisher)
-
     def _queue_name(self):
         return u'%s (%s, %s)' % (self.name, self.year_began,
                                  self.country.code.upper())
 
     def _field_list(self):
-        return ('name', 'year_began', 'year_ended', 'country',
-                'notes', 'url', 'is_master', 'parent')
+        fields = []
+        fields.extend(PublisherRevisionBase._field_list(self))
+        fields.extend(('country', 'is_master', 'parent'))
+        return fields
 
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
@@ -605,12 +658,8 @@ class PublisherRevision(Revision):
             pub.delete()
             return
 
-        pub.name = self.name
-        pub.year_began = self.year_began
-        pub.year_ended = self.year_ended
+        self._assign_base_fields(pub)
         pub.country = self.country
-        pub.notes = self.notes
-        pub.url = self.url
         pub.is_master = self.is_master
         pub.parent = self.parent
 
@@ -622,6 +671,18 @@ class PublisherRevision(Revision):
             self.publisher = pub
             self.save()
 
+    def _indicia_publisher_count(self):
+        if self.source is None:
+            return 0
+        return self.source.indicia_publisher_count
+    indicia_publisher_count = property(_indicia_publisher_count)
+
+    def _brand_count(self):
+        if self.source is None:
+            return 0
+        return self.source.brand_count
+    brand_count = property(_brand_count)
+
     def has_imprints(self):
         return self.imprint_set.count() > 0
 
@@ -631,20 +692,15 @@ class PublisherRevision(Revision):
     def get_absolute_url(self):
         if self.publisher is None:
             return "/publisher/revision/%i/preview" % self.id
-        if self.is_imprint():
-            return "/imprint/%i/" % self.publisher.id
-        else:
-            return "/publisher/%i/" % self.publisher.id
+        return self.publisher.get_absolute_url()
 
     def get_official_url(self):
-        try:
-            if not self.url.lower().startswith("http://"):
-                self.url = "http://" + self.url
-                #TODO: auto fix urls ?
-                #self.save()
-        except:
-            return ""
-
+        """
+        TODO: See the apps.gcd.models.Publisher class for plans for removal
+        of this method.
+        """
+        if self.url is None:
+            return ''
         return self.url
 
     def _do_complete_added_revision(self, parent=None):
@@ -656,16 +712,215 @@ class PublisherRevision(Revision):
         if self.parent is None:
             self.is_master = True
 
-        # Publishers go straight into PENDING or REVIEWING
-        self.state = self._check_approver()
+class IndiciaPublisherRevisionManager(PublisherRevisionManagerBase):
 
+    def clone_revision(self, indicia_publisher, changeset):
+        """
+        Given an existing Publisher instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        Entirely new publishers should be started by simply instantiating
+        a new PublisherRevision directly.
+        """
+        return PublisherRevisionManagerBase.clone_revision(self,
+                                              instance=indicia_publisher,
+                                              instance_class=IndiciaPublisher,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, indicia_publisher, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        kwargs = self._base_field_kwargs(indicia_publisher)
+
+        revision = IndiciaPublisherRevision(
+          indicia_publisher=indicia_publisher,
+          changeset=changeset,
+
+          is_surrogate=indicia_publisher.is_surrogate,
+          country=indicia_publisher.country,
+          parent=indicia_publisher.parent,
+          **kwargs)
+
+        revision.save()
+        return revision
+
+class IndiciaPublisherRevision(PublisherRevisionBase):
+    class Meta:
+        db_table = 'oi_indicia_publisher_revision'
+        ordering = ['-created', '-id']
+
+    objects = IndiciaPublisherRevisionManager()
+
+    indicia_publisher = models.ForeignKey('gcd.IndiciaPublisher', null=True,
+                                           related_name='revisions')
+
+    is_surrogate = models.BooleanField(db_index=True)
+
+    country = models.ForeignKey('gcd.Country', db_index=True,
+                                related_name='indicia_publishers_revisions')
+
+    parent = models.ForeignKey('gcd.Publisher',
+                               null=True, blank=True, db_index=True,
+                               related_name='indicia_publisher_revisions')
+
+    def _source(self):
+        return self.indicia_publisher
+
+    def _source_name(self):
+        return 'indicia_publisher'
+
+    def _field_list(self):
+        fields = []
+        fields.extend(PublisherRevisionBase._field_list(self))
+        fields.extend(('is_surrogate', 'country', 'parent'))
+        return fields
+
+    def _queue_name(self):
+        return u'%s (%s, %s)' % (self.name, self.year_began,
+                                 self.country.code.upper())
+
+    def _issue_set(self):
+        if self.indicia_publisher is None:
+            return Issue.objects.filter(pk__isnull=True)
+        return self.indicia_publisher.series_set
+    issue_set = property(_issue_set)
+
+    def _do_complete_added_revision(self, parent):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.parent = parent
+
+    def commit_to_display(self, clear_reservation=True):
+        ipub = self.indicia_publisher
+        if ipub is None:
+            ipub = IndiciaPublisher()
+        elif self.deleted:
+            ipub.delete()
+            return
+
+        self._assign_base_fields(ipub)
+        ipub.is_surrogate = self.is_surrogate
+        ipub.country = self.country
+        ipub.parent = self.parent
+
+        if clear_reservation:
+            ipub.reserved = False
+
+        ipub.save()
+        if self.indicia_publisher is None:
+            self.indicia_publisher = ipub
+            self.save()
+
+    def get_absolute_url(self):
+        if self.indicia_publisher is None:
+            return "/indicia_publisher/revision/%i/preview" % self.id
+        return self.indicia_publisher.get_absolute_url()
+
+class BrandRevisionManager(PublisherRevisionManagerBase):
+
+    def clone_revision(self, brand, changeset):
+        """
+        Given an existing Publisher instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        Entirely new publishers should be started by simply instantiating
+        a new PublisherRevision directly.
+        """
+        return PublisherRevisionManagerBase.clone_revision(self,
+                                                           instance=brand,
+                                                           instance_class=Brand,
+                                                           changeset=changeset)
+
+    def _do_create_revision(self, brand, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        kwargs = self._base_field_kwargs(brand)
+
+        revision = BrandRevision(
+          brand=brand,
+          changeset=changeset,
+
+          parent=brand.parent,
+          **kwargs)
+
+        revision.save()
+        return revision
+
+class BrandRevision(PublisherRevisionBase):
+    class Meta:
+        db_table = 'oi_brand_revision'
+        ordering = ['-created', '-id']
+
+    objects = BrandRevisionManager()
+
+    brand = models.ForeignKey('gcd.Brand', null=True, related_name='revisions')
+
+    parent = models.ForeignKey('gcd.Publisher',
+                               null=True, blank=True, db_index=True,
+                               related_name='brand_revisions')
+
+    def _source(self):
+        return self.brand
+
+    def _source_name(self):
+        return 'brand'
+
+    def _field_list(self):
+        fields = []
+        fields.extend(PublisherRevisionBase._field_list(self))
+        fields.append('parent')
+        return fields
+
+    def _queue_name(self):
+        return u'%s (%s)' % (self.name, self.year_began)
+
+    def _issue_set(self):
+        if self.brand is None:
+            return Issue.objects.filter(pk__isnull=True)
+        return self.brand.series_set
+    issue_set = property(_issue_set)
+
+    def _do_complete_added_revision(self, parent):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.parent = parent
+
+    def commit_to_display(self, clear_reservation=True):
+        brand = self.brand
+        if brand is None:
+            brand = Brand()
+        elif self.deleted:
+            brand.delete()
+            return
+
+        self._assign_base_fields(brand)
+        brand.parent = self.parent
+
+        if clear_reservation:
+            brand.reserved = False
+
+        brand.save()
+        if self.brand is None:
+            self.brand = brand
+            self.save()
+
+    def get_absolute_url(self):
+        if self.brand is None:
+            return "/brand/revision/%i/preview" % self.id
+        return self.brand.get_absolute_url()
 
 class SeriesRevisionManager(RevisionManager):
     """
     Custom manager allowing the cloning of revisions from existing rows.
     """
 
-    def clone_revision(self, series, indexer, check=True, state=states.OPEN):
+    def clone_revision(self, series, changeset):
         """
         Given an existing Series instance, create a new revision based on it.
 
@@ -678,28 +933,16 @@ class SeriesRevisionManager(RevisionManager):
         return RevisionManager.clone_revision(self,
                                               instance=series,
                                               instance_class=Series,
-                                              instance_name='series',
-                                              indexer=indexer,
-                                              check=check,
-                                              state=state)
+                                              changeset=changeset)
 
-    def _do_create_revision(self, series, indexer, state, **ignore):
+    def _do_create_revision(self, series, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = {}
-        if (state == states.BASELINE):
-            kwargs['created'] = series.created
-            kwargs['modified'] = series.modified
-        else:
-            kwargs['created'] = datetime.now()
-            kwargs['modified'] = kwargs['created']
-
         revision = SeriesRevision(
           # revision-specific fields:
           series=series,
-          state=state,
-          indexer=indexer,
+          changeset=changeset,
 
           # copied fields:
           name=series.name,
@@ -715,8 +958,7 @@ class SeriesRevisionManager(RevisionManager):
           country=series.country,
           language=series.language,
           publisher=series.publisher,
-          imprint=series.imprint,
-          **kwargs)
+          imprint=series.imprint)
 
         revision.save()
         return revision
@@ -730,26 +972,25 @@ class SeriesRevision(Revision):
 
     series = models.ForeignKey(Series, null=True, related_name='revisions')
 
-    name = models.CharField(max_length=255, null=True, blank=True)
-    format = models.CharField(max_length=255, null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
-    year_began = models.IntegerField(null=True, blank=True)
+    name = models.CharField(max_length=255, blank=True)
+    format = models.CharField(max_length=255, blank=True)
+    year_began = models.IntegerField(blank=True)
     year_ended = models.IntegerField(null=True, blank=True)
     is_current = models.BooleanField()
 
     # Publication notes are not displayed in the current UI but may
     # be accessed in the OI.
-    publication_notes = models.TextField(null=True, blank=True)
+    publication_notes = models.TextField(blank=True)
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
-    tracking_notes = models.TextField(null=True, blank=True)
+    tracking_notes = models.TextField(blank=True)
+
+    notes = models.TextField(blank=True)
 
     # Country and Language info.
-    country = models.ForeignKey(Country, null=True, blank=True,
-                                related_name='series_revisions')
-    language = models.ForeignKey(Language, null=True, blank=True,
-                                 related_name='series_revisions')
+    country = models.ForeignKey(Country, related_name='series_revisions')
+    language = models.ForeignKey(Language, related_name='series_revisions')
 
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher,
@@ -759,6 +1000,9 @@ class SeriesRevision(Revision):
 
     def _source(self):
         return self.series
+
+    def _source_name(self):
+        return 'series'
 
     # Fake the issue and cover sets and a few other fields for the preview page.
     def _issue_set(self):
@@ -798,15 +1042,8 @@ class SeriesRevision(Revision):
         Do the necessary processing to complete the fields of a new
         series revision for adding a record before it can be saved.
         """
-        self.is_master = True
-        if imprint is not None:
-            self.is_master = False
-
         self.publisher = publisher
         self.imprint = imprint
-
-        # Series go straight into PENDING or REVIEWING
-        self.state = self._check_approver()
 
     def commit_to_display(self, clear_reservation=True):
         series = self.series
@@ -845,7 +1082,7 @@ class SeriesRevision(Revision):
     def get_absolute_url(self):
         if self.series is None:
             return "/series/revision/%i/preview" % self.id
-        return "/series/%i/" % self.series.id
+        return self.series.get_absolute_url()
 
     def __unicode__(self):
         if self.series is None:
@@ -854,7 +1091,7 @@ class SeriesRevision(Revision):
 
 class IssueRevisionManager(RevisionManager):
 
-    def clone_revision(self, issue, indexer, check=True, state=states.OPEN):
+    def clone_revision(self, issue, changeset):
         """
         Given an existing Issue instance, create a new revision based on it.
 
@@ -867,38 +1104,37 @@ class IssueRevisionManager(RevisionManager):
         return RevisionManager.clone_revision(self,
                                               instance=issue,
                                               instance_class=Issue,
-                                              instance_name='issue',
-                                              indexer=indexer,
-                                              check=check,
-                                              state=state)
+                                              changeset=changeset)
 
-    def _do_create_revision(self, issue, indexer, state, **ignore):
+    def _do_create_revision(self, issue, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = {}
-        if (state == states.BASELINE):
-            kwargs['created'] = issue.created
-            kwargs['modified'] = issue.modified
-        else:
-            kwargs['created'] = datetime.now()
-            kwargs['modified'] = kwargs['created']
-
         revision = IssueRevision(
           # revision-specific fields:
           issue=issue,
-          state=state,
-          indexer=indexer,
+          changeset=changeset,
 
           # copied fields:
-          volume=issue.volume,
           number=issue.number,
+          volume=issue.volume,
+          no_volume=issue.no_volume,
           display_volume_with_number=issue.display_volume_with_number,
           publication_date=issue.publication_date,
           price=issue.price,
           key_date=issue.key_date,
+          indicia_frequency=issue.indicia_frequency,
           series=issue.series,
-          **kwargs)
+          indicia_publisher=issue.indicia_publisher,
+          brand=issue.brand,
+          page_count=issue.page_count,
+          page_count_uncertain=issue.page_count_uncertain,
+          size=issue.size,
+          binding=issue.binding,
+          paper_stock=issue.paper_stock,
+          printing_process=issue.printing_process,
+          editing=issue.editing,
+          notes=issue.notes)
 
         revision.save()
         return revision
@@ -912,15 +1148,31 @@ class IssueRevision(Revision):
 
     issue = models.ForeignKey(Issue, null=True, related_name='revisions')
 
+    number = models.CharField(max_length=50)
     volume = models.IntegerField(max_length=255, null=True, blank=True)
-    number = models.CharField(max_length=25, null=True)
-    display_volume_with_number = models.BooleanField()
+    no_volume = models.BooleanField(default=0)
+    display_volume_with_number = models.BooleanField(default=0)
 
-    publication_date = models.CharField(max_length=255, null=True, blank=True)
-    price = models.CharField(max_length=25, null=True, blank=True)
-    key_date = models.CharField(max_length=10, null=True, blank=True)
+    publication_date = models.CharField(max_length=255, blank=True)
+    indicia_frequency = models.CharField(max_length=255, blank=True)
+    key_date = models.CharField(max_length=10, blank=True)
+
+    price = models.CharField(max_length=25, blank=True)
+    page_count = models.DecimalField(max_digits=10, decimal_places=3,
+                                     null=True, blank=True)
+    page_count_uncertain = models.BooleanField(default=0)
+    size = models.CharField(max_length=255, blank=True)
+    paper_stock = models.CharField(max_length=255, blank=True)
+    binding = models.CharField(max_length=255, blank=True)
+    printing_process = models.CharField(max_length=255, blank=True)
+
+    editing = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
 
     series = models.ForeignKey(Series, related_name='issue_revisions')
+    indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True,
+                                          related_name='issue_revisions')
+    brand = models.ForeignKey(Brand, null=True, related_name='issue_revisions')
 
     def _display_number(self):
         """
@@ -940,7 +1192,7 @@ class IssueRevision(Revision):
     sort_code = property(_sort_code)
 
     def _story_set(self):
-        return self.story_revisions
+        return self.ordered_story_revisions()
     story_set = property(_story_set)
 
     def _cover(self):
@@ -959,14 +1211,31 @@ class IssueRevision(Revision):
     reservation_set = property(_reservation_set)
 
     def _field_list(self):
-        return ('volume', 'number', 'display_volume_with_number',
-                'publication_date', 'price', 'key_date', 'series')
+        return ('volume', 'number', 'no_volume', 'display_volume_with_number',
+                'publication_date', 'key_date', 'indicia_frequency',
+                'price', 'page_count', 'page_count_uncertain',
+                'size', 'binding', 'paper_stock', 'printing_process',
+                'series', 'indicia_publisher', 'brand')
 
     def _source(self):
         return self.issue
 
+    def _source_name(self):
+        return 'issue'
+
+    def _do_complete_added_revision(self, series):
+        """
+        Do the necessary processing to complete the fields of a new
+        issue revision for adding a record before it can be saved.
+        """
+        self.series = series
+
     def ordered_story_revisions(self):
-        return self.story_revisions.all().order_by('sequence_number')
+        if self.source is None:
+            stories = self.changset.storyrevisions.filter(issue__isnull=True)
+        else:
+            stories = self.changeset.storyrevisions.filter(issue=self.source)
+        return stories.order_by('sequence_number')
 
     def commit_to_display(self, clear_reservation=True):
         issue = self.issue
@@ -984,11 +1253,27 @@ class IssueRevision(Revision):
 
         issue.number = self.number
         issue.volume = self.volume
+        issue.no_volume = self.no_volume
         issue.display_volume_with_number = self.display_volume_with_number
+
         issue.publication_date = self.publication_date
-        issue.price = self.price
+        issue.indicia_frequency = self.indicia_frequency
         issue.key_date = self.key_date
+
+        issue.price = self.price
+        issue.page_count = self.page_count
+        issue.page_count_uncertain = self.page_count_uncertain
+        issue.size = self.size
+        issue.binding = self.binding
+        issue.paper_stock = self.paper_stock
+        issue.printing_process = self.printing_process
+
+        issue.editing = self.editing
+        issue.notes = self.notes
+
         issue.series = self.series
+        issue.indicia_publisher = self.indicia_publisher
+        issue.brand = self.brand
 
         if clear_reservation:
             issue.reserved = False
@@ -1021,8 +1306,7 @@ class IssueRevision(Revision):
 
 class StoryRevisionManager(RevisionManager):
 
-    def clone_revision(self, story, indexer, issue_revision,
-                       check=True, state=states.OPEN):
+    def clone_revision(self, story, changeset):
         """
         Given an existing Story instance, create a new revision based on it.
 
@@ -1032,40 +1316,23 @@ class StoryRevisionManager(RevisionManager):
         Entirely new stories should be started by simply instantiating
         a new StoryRevision directly.
         """
-        ir = issue_revision
-        if state == states.BASELINE:
-            ir = story.issue.revisions.get(state=states.BASELINE)
-
         return RevisionManager.clone_revision(self,
                                               instance=story,
                                               instance_class=Story,
-                                              instance_name='story',
-                                              indexer=indexer,
-                                              check=check,
-                                              state=state,
-                                              issue_revision=ir)
+                                              changeset=changeset)
 
-    def _do_create_revision(self, story, issue_revision, indexer, state, **ignore):
+    def _do_create_revision(self, story, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = {}
-        if (state == states.BASELINE):
-            kwargs['created'] = story.created
-            kwargs['modified'] = story.modified
-        else:
-            kwargs['created'] = datetime.now()
-            kwargs['modified'] = kwargs['created']
-
         revision = StoryRevision(
           # revision-specific fields:
           story=story,
-          issue_revision=issue_revision,
-          state=state,
-          indexer=indexer,
+          changeset=changeset,
 
           # copied fields:
           title=story.title,
+          title_inferred=story.title_inferred,
           feature=story.feature,
           page_count=story.page_count,
           page_count_uncertain=story.page_count_uncertain,
@@ -1075,28 +1342,34 @@ class StoryRevisionManager(RevisionManager):
           inks=story.inks,
           colors=story.colors,
           letters=story.letters,
+          editing=story.editing,
 
           no_script=story.no_script,
           no_pencils=story.no_pencils,
           no_inks=story.no_inks,
           no_colors=story.no_colors,
           no_letters=story.no_letters,
+          no_editing=story.no_editing,
 
-          editor=story.editor,
           notes=story.notes,
           synopsis=story.synopsis,
           characters=story.characters,
-          reprints=story.reprints,
+          reprint_notes=story.reprint_notes,
           genre=story.genre,
           type=story.type,
           job_number=story.job_number,
           sequence_number=story.sequence_number,
 
-          issue=story.issue,
-          **kwargs)
+          issue=story.issue)
 
         revision.save()
         return revision
+
+    def has_format(self):
+        return self.size or \
+               self.binding or \
+               self.paper_stock or \
+               self.printing_process
 
 class StoryRevision(Revision):
     class Meta:
@@ -1107,45 +1380,44 @@ class StoryRevision(Revision):
 
     story = models.ForeignKey(Story, null=True,
                               related_name='revisions')
-    issue_revision = models.ForeignKey('oi.IssueRevision',
-                                       related_name='story_revisions')
 
-    title = models.CharField(max_length=255, null=True, blank=True)
-    feature = models.CharField(max_length=255, null=True, blank=True)
-    page_count = models.DecimalField(max_digits=10, decimal_places=4,
+    title = models.CharField(max_length=255, blank=True)
+    title_inferred = models.BooleanField(default=0, db_index=True)
+    feature = models.CharField(max_length=255, blank=True)
+    type = models.ForeignKey(StoryType)
+    sequence_number = models.IntegerField()
+
+    page_count = models.DecimalField(max_digits=10, decimal_places=3,
                                      null=True, blank=True)
     page_count_uncertain = models.BooleanField(default=0)
 
-    characters = models.TextField(null=True, blank=True)
-
-    script = models.TextField(max_length=255, null=True, blank=True)
-    pencils = models.TextField(max_length=255, null=True, blank=True)
-    inks = models.TextField(max_length=255, null=True, blank=True)
-    colors = models.TextField(max_length=255, null=True, blank=True)
-    letters = models.TextField(max_length=255, null=True, blank=True)
+    script = models.TextField(blank=True)
+    pencils = models.TextField(blank=True)
+    inks = models.TextField(blank=True)
+    colors = models.TextField(blank=True)
+    letters = models.TextField(blank=True)
+    editing = models.TextField(blank=True)
 
     no_script = models.BooleanField(default=0)
     no_pencils = models.BooleanField(default=0)
     no_inks = models.BooleanField(default=0)
     no_colors = models.BooleanField(default=0)
     no_letters = models.BooleanField(default=0)
+    no_editing = models.BooleanField(default=0)
 
-    editor = models.TextField(max_length=255, null=True, blank=True,
-                              db_column='editing')
-    notes = models.TextField(max_length=255, null=True, blank=True)
-    synopsis = models.TextField(max_length=255, null=True, blank=True)
-    reprints = models.TextField(max_length=255, db_column='reprint_notes',
-                                null=True, blank=True)
-    genre = models.CharField(max_length=255, null=True, blank=True)
-    type = models.CharField(max_length=255, null=True, blank=True)
-    sequence_number = models.IntegerField(null=True, blank=True)
-    job_number = models.CharField(max_length=25, null=True, blank=True)
+    job_number = models.CharField(max_length=25, blank=True)
+    genre = models.CharField(max_length=255, blank=True)
+    characters = models.TextField(blank=True)
+    synopsis = models.TextField(blank=True)
+    reprint_notes = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
 
     issue = models.ForeignKey(Issue, related_name='story_revisions')
 
     def _field_list(self):
         return (
           'title',
+          'title_inferred',
           'feature',
           'page_count',
           'page_count_uncertain',
@@ -1155,15 +1427,16 @@ class StoryRevision(Revision):
           'inks',
           'colors',
           'letters',
+          'editing',
           'no_script',
           'no_pencils',
           'no_inks',
           'no_colors',
           'no_letters',
-          'editor',
+          'no_editing',
           'notes',
           'synopsis',
-          'reprints',
+          'reprint_notes',
           'genre',
           'type',
           'sequence_number',
@@ -1174,12 +1447,26 @@ class StoryRevision(Revision):
     def _source(self):
         return self.story
 
+    def _source_name(self):
+        return 'story'
+
+    def _do_complete_added_revision(self, issue):
+        """
+        Do the necessary processing to complete the fields of a new
+        story revision for adding a record before it can be saved.
+        """
+        self.issue = issue
+
     def commit_to_display(self, clear_reservation=True):
         story = self.story
         if story is None:
             story = Story()
+        elif self.deleted:
+            story.delete()
+            return
 
         story.title = self.title
+        story.title_inferred = self.title_inferred
         story.feature = self.feature
         story.page_count = self.page_count
         story.page_count_uncertain = self.page_count_uncertain
@@ -1189,17 +1476,18 @@ class StoryRevision(Revision):
         story.inks = self.inks
         story.colors = self.colors
         story.letters = self.letters
+        story.editing = self.editing
 
         story.no_script = self.no_script
         story.no_pencils = self.no_pencils
         story.no_inks = self.no_inks
         story.no_colors = self.no_colors
         story.no_letters = self.no_letters
+        story.no_editing = self.no_editing
 
-        story.editor = self.editor
         story.notes = self.notes
         story.synopsis = self.synopsis
-        story.reprints = self.reprints
+        story.reprint_notes = self.reprint_notes
         story.characters = self.characters
         story.genre = self.genre
         story.type = self.type
@@ -1221,13 +1509,13 @@ class StoryRevision(Revision):
                self.inks or \
                self.colors or \
                self.letters or \
-               (self.editor and (self.sequence_number > 0))
+               self.editing
                
     def has_content(self):
         return self.genre or \
                self.characters or \
                self.synopsis or \
-               self.reprints or \
+               self.reprint_notes or \
                self.job_number
 
     def has_data(self):

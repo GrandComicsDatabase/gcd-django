@@ -1,0 +1,147 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+
+{% block title %}
+{{ changeset }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1> {{ changeset }} </h1>
+
+<div class="edit">
+<p>
+{% ifequal changeset.state states.BASELINE %}
+  This changeset is stored for future data migration, and is not intended
+  to be user-visibile.  This is not the changeset you are looking for.
+  Move along :-)
+{% endifequal %}
+{% ifequal changeset.state states.PENDING %}
+  This change has been submitted for approval, but is not yet under review.
+  {% ifequal changeset.indexer user %}
+    <form action="{% url process id=changeset.id %}" method="POST">
+      <input type="submit" name="retract" value="Retract change and edit further" />
+      <label for="comments">Comments</label>
+      <input type="textarea" name="comments">
+    </form>
+  {% endifequal %}
+{% endifequal %}
+{% ifequal changeset.state states.REVIEWING %}
+  This change has been submitted for approval, and is being reviewed by
+  GCD editor {{ changeset.approver.indexer }}.
+{% endifequal %}
+{% ifequal changeset.state states.APPROVED %}
+  This change has been approved.  If you would like to make further
+  changes, please reserve the record again.
+{% endifequal %}
+{% ifequal changeset.state states.DISCARDED %}
+  This change has been discarded.  This means that the changes have
+  <strong>not</strong> been applied to the original record.
+  If you would like to make changes, please reserve the record again.
+{% endifequal %}
+</p>
+
+{% ifequal changeset.state states.OPEN %}
+  {% if changeset.inline %}
+    {% include "oi/edit/include_frame.html" %}
+  {% else %}
+    {% if changeset.publisherrevisions.count %}
+      <p class="error">Publishers not supported in group changesets.</p>
+    {% endif %}
+    {% if changeset.indiciapublisherrevisions.count %}
+      <p class="error">Indicia publishers not supported in group changesets.</p>
+    {% endif %}
+    {% if changeset.brandrevisions.count %}
+      <p class="error">Brands not supported in group changesets.</p>
+    {% endif %}
+    {% if changeset.seriesrevisions.count %}
+      <p class="error">Series not supported in group changesets.</p>
+    {% endif %}
+
+    {% comment %}
+      For now, assume the app ensures that there are either many issues and
+      no stories, or one issue and optionally stories that may be assumed to
+      be associated with that issue.
+
+      Also, the issue table should not be of class "story_list", need to fix
+      either name or usage.
+    {% endcomment %}
+    {% if changeset.issuerevisions.count %}
+    <table class="story_list">
+      {% for issue in changeset.issuerevisions.all %}
+      <tr>
+        <td>
+          {{ issue }}
+        </td>
+        <td>
+          <form style="display:inline;" method="GET"
+                action="{% url edit_revision model_name='issue',id=issue.id %}">
+            <input type="submit" id="edit_issue_{{ issue.id }}"
+                   name="edit_issue_{{ issue.id }}" value="Edit issue fields">
+            </input>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+{% comment %}
+      <tr>
+        <td> <em>Coming soon: inserting a story between existing sequences without having to move all the other numbers one by one</em></td>
+        <td>
+      <!-- TODO: nasty hack to get the issue. -->
+      <form style="display:inline;" method="GET"
+            action="{% url add_story issue_id=changeset.issuerevisions.all.0.id,changeset_id=changeset.id %}">
+        <input type="submit" id="add_story" name="add" value="Add story">
+        </input>
+      </form>
+       </td>
+    </tr>
+{% endcomment %}
+    </table>  
+    {% endif %}
+    {% if changeset.storyrevisions.count %}
+    <table class="story_list">
+      {% for story in changeset.issuerevisions.all.0.ordered_story_revisions %}
+      <tr>
+        <td>
+          {{ story.sequence_number }}.
+          {{ story.title|default:'<span class="no_data">no title</span>' }}
+          ({{ story.feature|default:'<span class="no_data">no feature</span>' }})
+          {{ story.type }}, {{ story|show_page_count }}p
+        </td>
+        <td>{{ story|show_credit_status }}</td>
+        <td>
+          <form style="display:inline;" method="GET"
+                action="{% url edit_revision model_name='story',id=story.id %}">
+            <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
+                   value="Edit">
+            </input>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    {% include 'oi/bits/comments.html' %}
+
+    <form method="POST" action="{% url process id=changeset.id %}">
+      <label for="comments"> Comments:</label>
+      <textarea name="comments" id="comments"></textarea>
+      <input type="submit" name="submit" value="Submit changes for approval"></input>
+      <input type="submit" name="discard" value="Discard all changes"></input>
+    </form>
+
+    {% endif %}
+  {% endif %}
+{% endifequal %}
+</div>
+{% endblock %}
+
