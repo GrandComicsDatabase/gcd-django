@@ -48,14 +48,17 @@ def indicia_publisher(request, indicia_publisher_id):
     """
     Display the details page for an Indicia Publisher.
     """
-    style = get_style(request)
     indicia_publisher = get_object_or_404(
       IndiciaPublisher, id = indicia_publisher_id)
+    return show_indicia_publisher(request, indicia_publisher)
+
+def show_indicia_publisher(request, indicia_publisher, preview=False):
     indicia_publisher_issues = indicia_publisher.issue_set.order_by(
       'series__name', 'sort_code')
 
     vars = { 'indicia_publisher' : indicia_publisher,
-             'error_subject': '%s' % indicia_publisher }
+             'error_subject': '%s' % indicia_publisher,
+             'preview': preview }
     return paginate_response(request,
                              indicia_publisher_issues,
                              'gcd/details/indicia_publisher.html',
@@ -65,11 +68,13 @@ def brand(request, brand_id):
     """
     Display the details page for a Brand.
     """
-    style = get_style(request)
     brand = get_object_or_404(Brand, id = brand_id)
+    return show_brand(request, brand)
+
+def show_brand(request, brand, preview=False):
     brand_issues = brand.issue_set.order_by('series__name', 'sort_code')
 
-    vars = { 'brand' : brand, 'error_subject': '%s' % brand }
+    vars = { 'brand' : brand, 'error_subject': '%s' % brand, 'preview': preview }
     return paginate_response(request,
                              brand_issues,
                              'gcd/details/brand.html',

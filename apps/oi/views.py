@@ -12,7 +12,8 @@ from django.contrib.auth.decorators import login_required, permission_required
 
 from apps.gcd.models import *
 from apps.gcd.views import render_error, paginate_response
-from apps.gcd.views.details import show_series, show_issue
+from apps.gcd.views.details import show_indicia_publisher, show_brand, \
+                                   show_series, show_issue
 from apps.oi.models import *
 from apps.oi.forms import *
 
@@ -764,6 +765,10 @@ def preview(request, id, model_name):
             'preview': True,
           },
         )
+    if 'indicia_publisher' == model_name:
+        return show_indicia_publisher(request, revision, True)
+    if 'brand' == model_name:
+        return show_brand(request, revision, True)
     if 'series' == model_name:
         return show_series(request, revision, True)
     if 'issue' == model_name:

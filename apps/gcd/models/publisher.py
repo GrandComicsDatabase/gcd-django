@@ -114,8 +114,8 @@ class Brand(BasePublisher):
     parent = models.ForeignKey(Publisher, related_name='brands')
 
     def get_absolute_url(self):
-        return self.name
+        return "/brand/%i/" % self.id
 
     def __unicode__(self):
-        return u'%s: %s' % (self.parent.name, self.name)
+        return self.name
 
