@@ -171,6 +171,8 @@ def show_title(story):
     """
     Return a properly formatted title.
     """
+    if story is None:
+        return u''
     if story.title == '':
         return u'[no title indexed]'
     if story.title_inferred:
