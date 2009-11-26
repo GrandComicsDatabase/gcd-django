@@ -12,20 +12,7 @@ from django.contrib.contenttypes import generic
 from apps.oi import states
 from apps.gcd.models import *
 
-class ChangesetCountManager(models.Manager):
-    def get_query_set(self):
-        q = models.Manager.get_query_set(self)
-        return q.annotate(
-          publisher_revision_count=Count('publisherrevisions'),
-          indicia_publisher_revision_count=Count('indiciapublisherrevisions'),
-          brand_revision_count=Count('brandrevisions'),
-          series_revision_count=Count('seriesrevisions'),
-          issue_revision_count=Count('issuerevisions'),
-          story_revision_count=Count('storyrevisions'))
-
 class Changeset(models.Model):
-    objects = models.Manager()
-    counted_objects = ChangesetCountManager()
 
     state = models.IntegerField(db_index=True)
 

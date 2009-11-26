@@ -655,28 +655,36 @@ def delete_ongoing(request, series_id):
 
 @permission_required('gcd.can_reserve')
 def show_queue(request, queue_name, state):
+    kwargs = {}
     if 'editing' == queue_name:
-        changes = Changeset.counted_objects.filter(
-          indexer=request.user, state__in=states.ACTIVE)
+        kwargs['indexer'] = request.user
+        kwargs['state__in'] = states.ACTIVE
     if 'pending' == queue_name:
-        changes = Changeset.counted_objects.filter(
-          state__in=(states.PENDING, states.REVIEWING))
+        kwargs['state__in'] = (states.PENDING, states.REVIEWING)
     if 'reviews' == queue_name:
-        changes = Changeset.counted_objects.filter(
-          approver=request.user, state=states.REVIEWING)
+        kwargs['approver'] = request.user
+        kwargs['state'] = states.REVIEWING
 
-    publishers = changes.filter(publisher_revision_count=1)
-    indicia_publishers = changes.filter(indicia_publisher_revision_count=1)
-    brands = changes.filter(brand_revision_count=1)
-    series = changes.filter(series_revision_count=1)
+    publishers = Changeset.objects.annotate(
+      publisher_revision_count=Count('publisherrevisions')).filter(
+      publisher_revision_count=1, **kwargs)
 
-    # For some reason that is completely escaping me, issue_revision_count
-    # is busted.  TODO: fix this massive hack before doing bulk adds.
-    # issues = changes.filter(issue_revision_count=1)
-    # Also just turn off bulk issue adds as we don't have the form anyway.
-    bulk_issue_adds = changes.filter(pk__isnull=True)
-    issues = [i for i in
-              changes.exclude(issue_revision_count=0).order_by('modified')]
+    indicia_publishers = Changeset.objects.annotate(
+      indicia_publisher_revision_count=Count('indiciapublisherrevisions')).filter(
+      indicia_publisher_revision_count=1, **kwargs)
+
+    brands = Changeset.objects.annotate(
+      brand_revision_count=Count('brandrevisions')).filter(
+      brand_revision_count=1, **kwargs)
+
+    series = Changeset.objects.annotate(
+      series_revision_count=Count('seriesrevisions')).filter(
+      series_revision_count=1, **kwargs)
+
+    issue_annotated = Changeset.objects.annotate(
+      issue_revision_count=Count('issuerevisions'))
+    bulk_issue_adds = issue_annotated.filter(issue_revision_count__gt=1, **kwargs)
+    issues = issue_annotated.filter(issue_revision_count=1, **kwargs)
 
     return render_to_response(
       'oi/queues/%s.html' % queue_name,
