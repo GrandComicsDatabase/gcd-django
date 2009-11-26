@@ -75,6 +75,16 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <td> {{ revision.issue.price }} </td>
     <td> {{ revision.price }} </td>
   </tr>
+  <tr class="{{ revision.changed.page_count }}">
+    <td class="field_name"> Page count </td>
+    <td> {{ revision.issue.page_count }} </td>
+    <td> {{ revision.page_count }} </td>
+  </tr>
+  <tr class="{{ revision.changed.page_count_uncertain }}">
+    <td class="field_name"> Page count uncertain </td>
+    <td> {% if revision.issue.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
+    <td> {% if revision.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
+  </tr>
   <tr class="{{ revision.changed.size }}">
     <td class="field_name"> Size </td>
     <td> {{ revision.issue.size }} </td>
@@ -94,6 +104,21 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <td class="field_name"> Printing Process </td>
     <td> {{ revision.issue.printing_process }} </td>
     <td> {{ revision.printing_process }} </td>
+  </tr>
+  <tr class="{{ revision.changed.editing }}">
+    <td class="field_name"> Editing </td>
+    <td> {{ revision.issue.editing }} </td>
+    <td> {{ revision.editing }} </td>
+  </tr>
+  <tr class="{{ revision.changed.no_editing }}">
+    <td class="field_name"> No editing </td>
+    <td> {% if revision.issue.no_editing %} X {% endif %} </td>
+    <td> {% if revision.no_editing %} X {% endif %} </td>
+  </tr>
+  <tr class="{{ revision.changed.notes }}">
+    <td class="field_name"> Notes </td>
+    <td> {{ revision.issue.notes }} </td>
+    <td> {{ revision.notes }} </td>
   </tr>
 </table>
 

@@ -91,10 +91,15 @@
     <td> {% if story_revision.story.no_letters %} X {% endif %} </td>
     <td> {% if story_revision.no_letters %} X {% endif %} </td>
   </tr>
-  <tr class="{{ story_revision.changed.editor }}">
+  <tr class="{{ story_revision.changed.editing }}">
     <td class="field_name"> Editing </td>
-    <td> {{ story_revision.story.editor }} </td>
-    <td> {{ story_revision.editor }} </td>
+    <td> {{ story_revision.story.editing }} </td>
+    <td> {{ story_revision.editing }} </td>
+  </tr>
+  <tr class="{{ story_revision.changed.no_editing }}">
+    <td class="field_name"> No editing </td>
+    <td> {% if story_revision.story.no_editing %} X {% endif %} </td>
+    <td> {% if story_revision.no_editing %} X {% endif %} </td>
   </tr>
   <tr class="{{ story_revision.changed.type }}">
     <td class="field_name"> Type </td>

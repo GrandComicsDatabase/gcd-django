@@ -1134,6 +1134,7 @@ class IssueRevisionManager(RevisionManager):
           paper_stock=issue.paper_stock,
           printing_process=issue.printing_process,
           editing=issue.editing,
+          no_editing=issue.no_editing,
           notes=issue.notes)
 
         revision.save()
@@ -1167,6 +1168,7 @@ class IssueRevision(Revision):
     printing_process = models.CharField(max_length=255, blank=True)
 
     editing = models.TextField(blank=True)
+    no_editing = models.BooleanField(default=0)
     notes = models.TextField(blank=True)
 
     series = models.ForeignKey(Series, related_name='issue_revisions')
@@ -1215,6 +1217,7 @@ class IssueRevision(Revision):
                 'publication_date', 'key_date', 'indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
                 'size', 'binding', 'paper_stock', 'printing_process',
+                'editing', 'no_editing', 'notes',
                 'series', 'indicia_publisher', 'brand')
 
     def _source(self):
@@ -1269,6 +1272,7 @@ class IssueRevision(Revision):
         issue.printing_process = self.printing_process
 
         issue.editing = self.editing
+        issue.no_editing = self.no_editing
         issue.notes = self.notes
 
         issue.series = self.series

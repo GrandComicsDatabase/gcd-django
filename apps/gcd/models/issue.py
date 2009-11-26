@@ -30,6 +30,7 @@ class Issue(models.Model):
     printing_process = models.CharField(max_length=255)
 
     editing = models.TextField()
+    no_editing = models.BooleanField(default=0)
     notes = models.TextField()
 
     # Fields related to indexing activities.

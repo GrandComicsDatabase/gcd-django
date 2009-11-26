@@ -170,7 +170,9 @@ def get_series_revision_form(publisher=None, source=None):
                 format = forms.CharField(
                   widget=forms.TextInput(attrs={'class': 'wide'}),
                   required=False,
-                  help_text='Check with an editor before modifying this field.')
+                  help_text='Check with an editor before modifying this field.  '
+                            'Most of what used to go here should now go in the '
+                            'size, paper and binding fields at the issue level.')
 
         return RuntimeSeriesRevisionForm
 
@@ -266,8 +268,8 @@ class IssueRevisionForm(forms.ModelForm):
             'size',
             'binding',
             'paper_stock',
-            'printing_process',
             'editing',
+            'no_editing',
             'notes',
         )
 
@@ -339,20 +341,23 @@ class IssueRevisionForm(forms.ModelForm):
     binding = forms.CharField(required=False,
       help_text='A description of the binding.  A pamphlet stapled through the '
                 'spine with the staple ends inside the center fold is considered '
-                '"saddle-stitched".')
+                '"saddle-stitched".  Pages stapled near the spine with the '
+                'staple ends coming out the back cover are "stapled".  Other '
+                'values for this field include "squarebound", "trade paperback", '
+                '"hardcover", etc.')
 
     paper_stock = forms.CharField(required=False,
       help_text='The type of paper (i.e. "newsprint", "glossy" or the name of '
                 'a particular stock if known) used for the comic.  If the cover '
-                'is of unusual stock that may be noted here as well.')
-
-    printing_process = forms.CharField(required=False,
-      help_text='Color vs black-and-white printing.  Note that a book with only '
-                'shades of one color still uses a color printing process.')
+                'is of different stock that may be noted here as well, i.e. '
+                '"newsprint, glossy cover"')
 
     editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
       help_text='The editor and any similar credits for the whole issue.  If no '
                 'overall editor is known put a question mark in the field.')
+    no_editing = forms.BooleanField(required=False,
+      help_text='Check if there is no editor or similar credit (such as '
+                'publisher) for the issue as a whole.')
 
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
@@ -434,6 +439,9 @@ class StoryRevisionForm(forms.ModelForm):
                 'blank.  However, if the only letters are produced as normal '
                 'printed text rather than comic-style lettering, put the word '
                 '"typeset" in the letters field and do not check this box.')
+    no_editing = forms.BooleanField(required=False,
+      help_text='Check if there is no separate editor for this sequence. '
+                'This is common when there is an editor for the whole issue.')
 
     type = forms.ModelChoiceField(queryset=StoryType.objects.all(),
       empty_label=None,
