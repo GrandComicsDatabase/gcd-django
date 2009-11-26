@@ -32,7 +32,7 @@ _local_scans_by_id = '/img/gcd/covers_by_id/'
 # Entries in this tuple match the server_version column of the covers table.
 # Note that there is no sever version 0 recorded.
 _server_prefixes = ['',
-                    'http://images.comics.org/img/gcd/covers/',
+                    'http://images.comics.org/img/gcd/covers_by_id/',
                     'http://www.gcdcovers.com/graphics/covers/',
                     settings.MEDIA_URL + _local_scans_by_id]
 
