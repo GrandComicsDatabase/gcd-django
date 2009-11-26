@@ -37,7 +37,7 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
         return get_issue_revision_form(**kwargs)
 
     if model_name == 'story':
-        return StoryRevisionForm
+        return get_story_revision_form(revision, **kwargs)
 
     raise NotImplementedError
 
@@ -364,6 +364,16 @@ class IssueRevisionForm(forms.ModelForm):
       help_text='Comments between the Indexer and Editor about the change. '
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
+
+def get_story_revision_form(revision=None):
+    if revision is None:
+        class RuntimeStoryRevisionForm(StoryRevisionForm):
+            # Make indexers consciously choose a type by allowing an empty
+            # initial value.
+            type = forms.ModelChoiceField(queryset=StoryType.objects.all(),
+              help_text='Choose the most appropriate available type')
+        return RuntimeStoryRevisionForm
+    return StoryRevisionForm
 
 class StoryRevisionForm(forms.ModelForm):
     class Meta:

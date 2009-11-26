@@ -1220,12 +1220,19 @@ class IssueRevision(Revision):
         """
         self.series = series
 
-    def ordered_story_revisions(self):
+    def _story_revisions(self):
         if self.source is None:
-            stories = self.changset.storyrevisions.filter(issue__isnull=True)
-        else:
-            stories = self.changeset.storyrevisions.filter(issue=self.source)
-        return stories.order_by('sequence_number')
+            return self.changset.storyrevisions.filter(issue__isnull=True)
+        return self.changeset.storyrevisions.filter(issue=self.source)
+
+    def ordered_story_revisions(self):
+        return self._story_revisions().order_by('sequence_number')
+
+    def next_sequence_number(self):
+        stories = self._story_revisions()
+        if stories.count():
+            return stories.order_by('-sequence_number')[0].sequence_number + 1
+        return 0
 
     def commit_to_display(self, clear_reservation=True):
         issue = self.issue
@@ -1459,6 +1466,7 @@ class StoryRevision(Revision):
         story.title = self.title
         story.title_inferred = self.title_inferred
         story.feature = self.feature
+        story.issue = self.issue
         story.page_count = self.page_count
         story.page_count_uncertain = self.page_count_uncertain
 

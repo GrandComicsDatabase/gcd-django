@@ -92,19 +92,27 @@
         </td>
       </tr>
       {% endfor %}
-{% comment %}
       <tr>
-        <td> <em>Coming soon: inserting a story between existing sequences without having to move all the other numbers one by one</em></td>
-        <td>
-      <!-- TODO: nasty hack to get the issue. -->
+      <!-- TODO: fix nasty hacks to get the issue.
+           Currently assuming that there is only one issue revision and it
+           is not a newly added one (it has a source issue).
+        -->
+      {% with changeset.issuerevisions.all.0 as issue_revision %}
       <form style="display:inline;" method="GET"
-            action="{% url add_story issue_id=changeset.issuerevisions.all.0.id,changeset_id=changeset.id %}">
-        <input type="submit" id="add_story" name="add" value="Add story">
-        </input>
+            action="{% url add_story issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+        <td colspan="2" align="left">
+          <input type="submit" id="add_story" name="add" value="Add story">
+          </input>
+          Sequence number:
+          <input type="text" size="4"
+                 id="added_sequence_number"
+                 name="added_sequence_number"
+                 value="{{ issue_revision.next_sequence_number }}">
+          </input>
+        </td>
       </form>
-       </td>
-    </tr>
-{% endcomment %}
+      {% endwith %}
+      </tr>
     </table>  
     {% endif %}
     {% if changeset.storyrevisions.count %}

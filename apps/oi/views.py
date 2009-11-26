@@ -563,16 +563,34 @@ def add_issues(request, series_id):
 
 @permission_required('gcd.can_reserve')
 def add_story(request, issue_id, changeset_id):
-
     changeset = get_object_or_404(Changeset, id=changeset_id)
     # Process add form if this is a POST.
     try:
         issue = Issue.objects.get(id=issue_id)
         if request.method != 'POST':
-            form = StoryRevisionForm()
+            seq = request.GET['added_sequence_number']
+            if seq != '':
+                try:
+                    seq_num = int(seq)
+                    initial = {'sequence_number': seq_num }
+                    if seq_num == 0:
+                        # Do not default other sequences, because if we do we
+                        # will get a lot of people leaving the default values
+                        # by accident.  Only sequence zero is predictable.
+                        initial['type'] = StoryType.objects.get(name='cover').id
+                        initial['no_script'] = True
+                    form = get_story_revision_form()(initial=initial)
+                except ValueError:
+                    return render_error("Sequence number must be a whole number.")
+            else:
+                form = get_story_revision_form()()
             return _display_add_story_form(request, issue, form, changeset_id)
 
-        form = StoryRevisionForm(request.POST)
+        if 'cancel_return' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse('edit',
+              kwargs={ 'id': changeset_id }))
+
+        form = get_story_revision_form()(request.POST)
         if not form.is_valid():
             return _display_add_story_form(request, issue, form, changeset_id)
 
