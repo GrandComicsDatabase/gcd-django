@@ -52,6 +52,7 @@ fieldset.control label {
 div.search_left {
     width: 49%;
     float: left;
+    clear: left;
 }
 
 div.search_right {

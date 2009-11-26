@@ -128,20 +128,23 @@
   </div> <!-- story_sidebar -->
 
   <div id="cover">
-    {% if issue.cover.has_image %}
+    {% if issue.cover_set.latest.has_image %}
       <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">{{ image_tag }}</a>
     {% else %}
       <a href="{{ issue.cover.get_status_url }}">{{ image_tag }}</a>
     {% endif %}
     <div class="issue_cover_links">
-      {% if issue.cover.has_image %}
+      {% if issue.cover_set.latest.has_image %}
         View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
         <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
       <br>
-      {% if issue.cover.marked %}
-      <a href="{% url apps.gcd.views.covers.cover_upload issue_id=issue.id%}?style={{ style }}">Replace cover</a>
+      {% comment %}TODO: What to do when we have variants ?{% endcomment %}
+      {% ifequal issue.cover_set.count 1 %}
+      {% if issue.cover_set.latest.marked %}
+      <a href="{{ issue.cover_set.latest.get_status_url }}?style={{ style }}">Replace cover</a>
       <br>
       {% endif %}
+      {% endifequal %}
       {% endif %}
       {% if issue.series.has_gallery %}
       <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover gallery</a>

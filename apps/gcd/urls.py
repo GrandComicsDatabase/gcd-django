@@ -64,9 +64,6 @@ urlpatterns = patterns('',
     (r'^series/(?P<series_id>\d+)/scans/$',
      'apps.gcd.views.details.scans'),
 
-    (r'^series/(?P<series_id>\d+)/backup_scans/$',
-     'apps.gcd.views.covers.backup_scans'),
-
     # Issue
     (r'^issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue'),
     (r'^issue/$', 'apps.gcd.views.details.issue_form'),
@@ -143,8 +140,8 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.daily_covers', name='covers_by_date'),
 
     # upload of covers
-    (r'^cover_upload/(?P<issue_id>\d+)/$', 'apps.gcd.views.covers.cover_upload'),
-    (r'^variant_upload/(?P<issue_id>\d+)/$',
+    (r'^cover_upload/(?P<cover_id>\d+)/$', 'apps.gcd.views.covers.cover_upload'),
+    (r'^variant_upload/(?P<cover_id>\d+)/$',
       'apps.gcd.views.covers.variant_upload'),
 
     # list covers marked for replacement
@@ -152,7 +149,7 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.covers_to_replace'),    
     (r'^covers_to_replace/with/(?P<starts_with>.+)/$',
      'apps.gcd.views.details.covers_to_replace'),    
-    (r'^mark_cover/(?P<issue_id>.+)/$', 'apps.gcd.views.covers.mark_cover'),
+    (r'^mark_cover/(?P<cover_id>.+)/$', 'apps.gcd.views.covers.mark_cover'),
 
     # Reprints
     (r'^reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',

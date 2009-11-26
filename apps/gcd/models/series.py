@@ -66,7 +66,7 @@ class Series(models.Model):
         return self.cover_set.filter(has_image='1').count()
 
     def scan_needed(self):
-        return self.issue_count - self.scan_count() + self.marked_scan_count()
+        return self.cover_set.exclude(has_image='1', marked=False).count()
 
     def __unicode__(self):
         return '%s (%s series)' % (self.name, self.year_began)

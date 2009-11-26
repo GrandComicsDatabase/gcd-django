@@ -459,6 +459,17 @@ def search_publishers(data, op):
             imprint_q = Q(**{ '%simprint__name__%s' % (imprint_prefix, op) :
                               data['pub_name'] })
             q_objs.append(pub_name_q | imprint_q)
+    # one more like this and we should refactor the code :-)
+    if data['pub_notes']:
+        pub_notes_q = Q(**{ '%snotes__%s' % (prefix, op) :
+                            data['pub_notes'] })
+        if target == 'publisher':
+            q_objs.append(pub_notes_q)
+        else:
+            imprint_prefix = compute_prefix(target, 'series')
+            imprint_q = Q(**{ '%simprint__notes__%s' % (imprint_prefix, op) :
+                              data['pub_notes'] })
+            q_objs.append(pub_notes_q | imprint_q)
 
     return compute_qobj(data, q_and_only, q_objs)
 

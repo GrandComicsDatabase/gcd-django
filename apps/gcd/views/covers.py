@@ -2,7 +2,7 @@
 import re
 from urllib import urlopen, urlretrieve, quote
 import Image
-import os
+import os, shutil
 import codecs
 from datetime import datetime
 
@@ -27,54 +27,42 @@ ZOOM_LARGE = 4
 
 # where to put our covers,
 _local_new_scans = '/img/gcd/new_covers/'
-_local_scans = '/img/gcd/covers/'
+_local_scans_by_id = '/img/gcd/covers_by_id/'
 
 # Entries in this tuple match the server_version column of the covers table.
 # Note that there is no sever version 0 recorded.
 _server_prefixes = ['',
                     'http://images.comics.org/img/gcd/covers/',
                     'http://www.gcdcovers.com/graphics/covers/',
-                    settings.MEDIA_URL + _local_scans]
+                    settings.MEDIA_URL + _local_scans_by_id]
 
-def get_image_tag(series_id, cover, alt_text, zoom_level, no_cache = False):
+def get_image_tag(cover, alt_text, zoom_level, no_cache = False):
     if cover is None:
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
                'img/nocover.gif" alt="No image yet" class="cover_img"/>')
 
-    if settings.FAKE_COVER_IMAGES:
-        if zoom_level == ZOOM_SMALL:
-            return mark_safe('<img src="' +settings.MEDIA_URL + \
-                   'img/placeholder_small.jpg" width="100" class="cover_img"/>')
-        if zoom_level == ZOOM_MEDIUM:
-            return mark_safe('<img src="' + settings.MEDIA_URL + \
-                   'img/placeholder_medium.jpg" width="200" class="cover_img"/>')
-        if zoom_level == ZOOM_LARGE:
-            return mark_safe('<img src="' + settings.MEDIA_URL + \
-                   'img/placeholder_large.jpg" width="400" class="cover_img"/>')
 
-    width = ''
     if zoom_level == ZOOM_SMALL:
-        width = 'width="100"'
-        if not (cover.has_image):
-            return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
-                   'img/nocover_small.png" alt="No image yet" class="cover_img"/>')
+        width = 100
+        size = 'small'
     elif zoom_level == ZOOM_MEDIUM:
-        width = 'width="200"'
-        if not (cover.has_image):
-            return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
-                   'img/nocover_medium.png" alt="No image yet" class="cover_img"/>')
+        width = 200
+        size = 'medium'
     elif zoom_level == ZOOM_LARGE:
-        width = 'width="400"'
-        if not (cover.has_image):
-            return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
-                   'img/nocover_large.png" alt="No image yet" class="cover_img"/>')
+        width = 400
+        size = 'large'
+    width_string = 'width="' + str(width) + '"'
 
-    if (zoom_level == ZOOM_SMALL):
-        suffix = "%d/%d_%s.jpg" % (series_id, series_id, cover.code)
-    else:
-        suffix = "%d/" % series_id
-        suffix = suffix + "%d00/" % zoom_level
-        suffix = suffix + "%d_%d_%s.jpg" % (series_id, zoom_level, cover.code)
+    if not (cover.has_image):
+        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+               'img/nocover_' + size +'.png" alt="No image yet"' + \
+               width_string + 'class="cover_img">')
+
+    if settings.FAKE_COVER_IMAGES:
+        return mark_safe('<img src="' +settings.MEDIA_URL + \
+               'img/placeholder_' + size + '.jpg"' + width_string + 'class="cover_img">')
+
+    suffix = "%d/w%d/%d.jpg" % (int(cover.id/1000), width, cover.id)
 
     # For replacement and variant cover uploads we should make sure that no 
     # cached cover is displayed. Adding a changing query string seems the
@@ -87,7 +75,17 @@ def get_image_tag(series_id, cover, alt_text, zoom_level, no_cache = False):
     img_url = _server_prefixes[1] + suffix
 
     return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) + \
-           '" ' + width + ' class="cover_img"/>')
+           '" ' + width_string + ' class="cover_img"/>')
+
+
+def get_image_tags_per_issue(issue, alt_text, zoom_level):
+    covers = issue.cover_set.all()
+    tag = ''
+    for cover in covers:
+        tag += get_image_tag(cover=cover, zoom_level=zoom_level, 
+                             alt_text=alt_text)
+    return mark_safe(tag)
+
 
 def get_image_tags_per_page(page, series=None):
     """
@@ -102,58 +100,60 @@ def get_image_tags_per_page(page, series=None):
             cover_series = cover.series
         issue = cover.issue
         alt_string = cover_series.name + ' #' + issue.number
-        cover_tags.append([cover, issue, get_image_tag(cover_series.id,
-                                                       cover,
+        cover_tags.append([cover, issue, get_image_tag(cover,
                                                        alt_string,
                                                        ZOOM_SMALL)])
     return cover_tags
 
 
-def backups(filename): 
-    return filename.find('backup') > 0
-
-
-def backup_scans(request, series_id):
-    """
-    Display the backed up cover scans for a series.
-    """
-
-    if request.user.is_authenticated() and \
-      request.user.groups.filter(name='editor'):
-        files = os.listdir(settings.MEDIA_ROOT + _local_scans + str(series_id) + "/400")
-        backup_files = filter(backups, files) 
-
-        return render_to_response('gcd/status/backup_scans.html', {
-          'series_id' : series_id,
-          'covers' : backup_files},
-          context_instance=RequestContext(request))
-    else:
-        return render_error(request,
-          'You are not allowed to access this page.', redirect=False)
-
-def check_series_cover_dir(series):
-    """
-    Checks if the necessary cover directories exist and creates
-    them if necessary.
-    """
-
-    scan_dir = settings.MEDIA_ROOT + _local_scans + str(series.id)
+def _create_cover_dir(scan_dir):
     if not os.path.isdir(scan_dir):
         if os.path.exists(scan_dir):
             return False
         else:
             os.mkdir(scan_dir)
-    if not os.path.isdir(scan_dir + "/200"):
-        if os.path.exists(scan_dir + "/200"):
-            return False
-        else:
-            os.mkdir(scan_dir + "/200")
-    if not os.path.isdir(scan_dir + "/400"):
-        if os.path.exists(scan_dir + "/400"): 
-            return False
-        else:
-            os.mkdir(scan_dir + "/400")
     return True
+
+def check_cover_dir(cover):
+    """
+    Checks if the necessary cover directories exist and creates
+    them if necessary.
+    """
+
+    scan_dir = settings.MEDIA_ROOT + _local_scans_by_id + str(int(cover.id/1000))
+    if not _create_cover_dir(scan_dir):
+        return False
+    if not _create_cover_dir(scan_dir + "/uploads"):
+        return False
+    if not _create_cover_dir(scan_dir + "/w100"):
+        return False
+    if not _create_cover_dir(scan_dir + "/w200"):
+        return False
+    if not _create_cover_dir(scan_dir + "/w400"):
+        return False
+    return True
+
+
+def generate_sizes(cover, im):
+    if im.mode != "RGB":
+        im = im.convert("RGB")
+    scaled_name = settings.MEDIA_ROOT + _local_scans_by_id + \
+      str(int(cover.id/1000)) + "/w100/" + str(cover.id) + ".jpg"
+    size = 100,int(100./im.size[0]*im.size[1])
+    scaled = im.resize(size,Image.ANTIALIAS)
+    scaled.save(scaled_name)
+
+    scaled_name = settings.MEDIA_ROOT + _local_scans_by_id + \
+      str(int(cover.id/1000)) + "/w200/" + str(cover.id) + ".jpg"
+    size = 200,int(200./im.size[0]*im.size[1])
+    scaled = im.resize(size,Image.ANTIALIAS)
+    scaled.save(scaled_name)
+
+    scaled_name = settings.MEDIA_ROOT + _local_scans_by_id + \
+      str(int(cover.id/1000)) + "/w400/" + str(cover.id) + ".jpg"
+    size = 400,int(400./im.size[0]*im.size[1])
+    scaled = im.resize(size,Image.ANTIALIAS)
+    scaled.save(scaled_name)
 
 
 class UploadScanForm(forms.Form):
@@ -166,7 +166,7 @@ class UploadScanForm(forms.Form):
                                      required=False)
 
 
-def cover_upload(request, issue_id, add_variant=False):
+def cover_upload(request, cover_id, add_variant=False):
     """
     Handles uploading of covers be it
     - first upload
@@ -179,15 +179,8 @@ def cover_upload(request, issue_id, add_variant=False):
     style = 'default'
 
     # check for issue and cover
-    issue = get_object_or_404(Issue, id=issue_id)
-    cover = Cover.objects.filter(issue=issue)
-    if len(cover) == 0:
-        return render_error(request,
-          'Something wrong with issue ID #' + issue_id  + \
-          ' and its cover table, please contact the admins.')
-    else:
-        cover = cover[0]
-
+    cover = get_object_or_404(Cover, id=cover_id)
+    issue = cover.issue
 
     if add_variant and not cover.has_image:
         error_text = "No cover present for %s. You cannot upload a variant." \
@@ -196,7 +189,7 @@ def cover_upload(request, issue_id, add_variant=False):
 
     # check that we are actually allowed to upload
     if cover.has_image and not cover.marked and not add_variant:
-        tag = get_image_tag(issue.series.id, cover, "existing cover", 2)
+        tag = get_image_tag(cover, "existing cover", 2)
         covers_needed = Cover.objects.filter(issue__series=issue.series)
         covers_needed = covers_needed.exclude(marked=False, 
                                               has_image=True)
@@ -214,12 +207,12 @@ def cover_upload(request, issue_id, add_variant=False):
 
     # check what kind of upload
     if cover.has_image and cover.marked and not add_variant:
-        display_cover = get_image_tag(issue.series.id, cover,
-                                      "cover to replace", 2, no_cache = True)
+        display_cover = get_image_tag(cover, "cover to replace", 2, 
+                                      no_cache = True)
         upload_type = 'replacement'
     elif add_variant:
-        display_cover = get_image_tag(issue.series.id, cover,
-                                      "first cover", 2, no_cache = True)
+        display_cover = get_image_tag(cover, "first cover", 2, 
+                                      no_cache = True)
         upload_type = 'variant'
     else:
         display_cover = None
@@ -247,6 +240,7 @@ def cover_upload(request, issue_id, add_variant=False):
         if not form.is_valid():
             return render_to_response(upload_template, {
                                       'form': form.as_ul(),
+                                      'cover' : cover,
                                       'issue' : issue,
                                       'style' : style,
                                       'display_cover' : display_cover,
@@ -259,11 +253,12 @@ def cover_upload(request, issue_id, add_variant=False):
             scan = request.FILES['scan']
             contributor = '%s (%s)' % (request.POST['name'],
                                        request.POST['email'])
-            # put new covers into media/_local_new_scans/monthname_year/
-            # name <issue_id>_<series_name>_#<issue_number>_<date>_<time>.<ext>
-            scan_name = str(issue.series.id) + "_" + str(issue.id) + "_" + \
-                        uni(issue).replace(' ','_').replace('/','-') + \
-                        "_" + datetime.today().strftime('%Y%m%d_%H%M%S')
+            # at first (in case something goes wrong) put new covers into 
+            # media/<_local_new_scans>/<monthname>_<year>/ 
+            # with name 
+            # <cover_id>_<date>_<time>.<ext>
+            scan_name = str(cover.id) + "_" + \
+                        upload_datetime.strftime('%Y%m%d_%H%M%S')
             upload_dir = settings.MEDIA_ROOT + _local_new_scans + \
                          upload_datetime.strftime('%B_%Y/').lower()
             destination_name = upload_dir + scan_name + \
@@ -291,83 +286,49 @@ def cover_upload(request, issue_id, add_variant=False):
                 im = Image.open(destination.name)
                 if im.size[0] >= 400:
                     # generate the sizes we are using
-                    if check_series_cover_dir(issue.series) == False:
-                        error_text = "Problem with file storage for series " + \
-                          "'%s', id #%d, please report an error." \
-                          % (issue.series, issue.id)
+                    if check_cover_dir(cover) == False:
+                        error_text = "Problem with file storage for cover " + \
+                          "with id %d for %s, please report an error." \
+                          % (cover.id, uni(issue))
                         return render_error(request, error_text, redirect=False)
 
-                    if add_variant or upload_type == 'replacement':
-                        suffix = "%d/400/" % issue.series_id
-                        suffix = suffix + "%d_4_%s.jpg" % (issue.series.id,
-                                                           cover.code)
-                        current_im_name = settings.MEDIA_ROOT + \
-                                            _local_scans + suffix
-                        # check for existence, otherwise get from server
-                        if not os.path.exists(current_im_name):
-                            error_text = "Problem with existing file for series " + \
-                              "'%s', id #%d, please report an error." \
-                              % (issue.series, issue.id)
-                            return render_error(request, error_text, 
-                                                redirect=False)
-                            # use this for debugging locally
-                            # img_url = _server_prefixes[cover.server_version] \
-                            #          + suffix
-                            # urlretrieve(img_url,current_im_name)
-                        im_old = Image.open(current_im_name)
+                    base_dir = str(int(cover.id/1000))
+                    if upload_type == 'replacement':
+                        # if we don't have the original file copy it from w400
+                        # otherwise do nothing, old cover file stays due to
+                        # datetime string in the filename
+                        if not cover.file_extension: 
+                            sub_dir = "/w400/"
+                            extension = ".jpg"
+                            current_im_name = settings.MEDIA_ROOT + \
+                                              _local_scans_by_id + base_dir + \
+                                              sub_dir + str(cover.id) + extension
+                            # check for existence
+                            if not os.path.exists(current_im_name):
+                                error_text = "Problem with existing file for cover " + \
+                                  "with id %d for %s, please report an error." \
+                                  % (cover.id, uni(issue))
+                                return render_error(request, error_text, 
+                                                    redirect=False)
+                                # use this for debugging locally
+                                # img_url = _server_prefixes[cover.server_version] \
+                                #          + suffix
+                                # urlretrieve(img_url,current_im_name)
 
-                        # backup current scan
-                        backup_name = os.path.splitext(current_im_name)[0] + \
-                          "_" + upload_datetime.strftime('%Y%m%d_%H%M%S') + \
-                          "_backup.jpg"
-                        im_old.save(backup_name)
+                            backup_name = settings.MEDIA_ROOT + \
+                              _local_scans_by_id + base_dir + \
+                              "/uploads/" + str(cover.id) + \
+                              cover.modified.strftime('_%Y%m%d_%H%M%S') + \
+                              extension
+                            shutil.copy(current_im_name, backup_name)
         
-                    # im_old is kept from before
                     if add_variant:
-                        # we need current scan in 400 width
-                        temp = tempfile.NamedTemporaryFile(suffix='.jpg')
-                        size = 400,int(400./im.size[0]*im.size[1])
-                        scaled = im.resize(size,Image.ANTIALIAS)
-
-                        # and do the stacking
-                        h = im_old.size[1]+scaled.size[1]
-                        stacked = Image.new('RGBA',(400,h))
-                        stacked.paste(im_old,(0,0))
-                        stacked.paste(scaled,(0,im_old.size[1]))
-                        im = stacked
-                        variants = codecs.open( settings.MEDIA_ROOT + \
-                                   _local_new_scans + "variant_covers", 
-                                   "a", "utf-8" )
-                        save_text = "series: " + str(issue.series.id) + \
-                                    " issue: " + str(issue.id) + "\n"
-                        save_text = uni(save_text) + "--old: " + \
-                                    uni(backup_name) + "\n--old-uploader: " + \
-                                    uni(cover.contributor) + "\n--add: " + \
-                                    uni(destination_name) + "\n"
-                        variants.write(save_text)
-                        variants.close()
+                        return render_error(request, 
+                          'Adding variant covers is not yet implemented.',
+                          redirect=False)
 
                     # generate different sizes
-                    scaled_name = settings.MEDIA_ROOT + _local_scans + \
-                      str(issue.series.id) + "/" + str(issue.series.id) + \
-                      "_" + cover.code + ".jpg"
-                    size = 100,int(100./im.size[0]*im.size[1])
-                    scaled = im.resize(size,Image.ANTIALIAS)
-                    scaled.save(scaled_name)
-
-                    scaled_name = settings.MEDIA_ROOT + _local_scans + \
-                      str(issue.series.id) + "/200/" + str(issue.series.id) + \
-                      "_2_" + cover.code + ".jpg"
-                    size = 200,int(200./im.size[0]*im.size[1])
-                    scaled = im.resize(size,Image.ANTIALIAS)
-                    scaled.save(scaled_name)
-
-                    scaled_name = settings.MEDIA_ROOT + _local_scans + \
-                      str(issue.series.id) + "/400/" + str(issue.series.id) + \
-                      "_4_" + cover.code + ".jpg"
-                    size = 400,int(400./im.size[0]*im.size[1])
-                    scaled = im.resize(size,Image.ANTIALIAS)
-                    scaled.save(scaled_name)
+                    generate_sizes(cover, im)
 
                     # set cover table values
                     cover.server_version = 1
@@ -378,14 +339,22 @@ def cover_upload(request, issue_id, add_variant=False):
                         series = cover.series
                         series.has_gallery = True
                         series.save()
-                    cover.modified = upload_datetime                    
+                    cover.modified = upload_datetime    
+                    cover.extension = os.path.splitext(destination_name)[1]
+                    im_name = settings.MEDIA_ROOT + \
+                              _local_scans_by_id + base_dir + "/uploads/" + \
+                              str(cover.id) + upload_datetime. \
+                              strftime('_%Y%m%d_%H%M%S') + cover.extension
+
+                    shutil.move(destination_name, im_name)
                     cover.save()
+
                     store_count = codecs.open(settings.MEDIA_ROOT + \
-                                  _local_scans + "cover_count", "w", "utf-8")
+                                  _local_new_scans + "cover_count", "w", "utf-8")
                     store_count.write(str(Cover.objects.filter(has_image=True)\
                                                                .count()))
                     store_count.close()
- 
+
                     if 'remember_me' in request.POST:
                         request.session['gcd_uploader_name'] = \
                           request.POST['name']
@@ -395,8 +364,7 @@ def cover_upload(request, issue_id, add_variant=False):
                         request.session.pop('gcd_uploader_name','')
                         request.session.pop('gcd_uploader_email','')
 
-                    tag = get_image_tag(issue.series.id, cover, 
-                                        "uploaded cover", 2)
+                    tag = get_image_tag(cover, "uploaded cover", 2)
                 else:
                     os.remove(destination.name)
                     info_text = "Image is too small, only " + str(im.size) + \
@@ -404,6 +372,7 @@ def cover_upload(request, issue_id, add_variant=False):
                     return render_to_response(upload_template, {
                       'form': form.as_ul(),
                       'info' : info_text,
+                      'cover' : cover,
                       'display_cover' : display_cover,
                       'upload_type' : upload_type,
                       'issue' : issue,
@@ -431,6 +400,7 @@ def cover_upload(request, issue_id, add_variant=False):
                   'form': form.as_ul(),
                   'info' : 'Error: File \"' + scan.name + \
                            '" is not a valid picture.',
+                  'cover' : cover,
                   'issue' : issue,
                   'display_cover' : display_cover,
                   'upload_type' : upload_type,
@@ -440,6 +410,7 @@ def cover_upload(request, issue_id, add_variant=False):
         else: # there is a pretty good chance we never end up here
             return render_to_response(upload_template, { 
               'form': form.as_ul(), 
+              'cover' : cover,
               'issue' : issue,
               'style' : style},
               context_instance=RequestContext(request))
@@ -461,6 +432,7 @@ def cover_upload(request, issue_id, add_variant=False):
         # display the form
         return render_to_response(upload_template, {
                                   'form': form.as_ul(), 
+                                  'cover' : cover,
                                   'issue' : issue,
                                   'display_cover' : display_cover,
                                   'upload_type' : upload_type,
@@ -468,13 +440,13 @@ def cover_upload(request, issue_id, add_variant=False):
                                   context_instance=RequestContext(request))
 
 
-def variant_upload(request, issue_id):
+def variant_upload(request, cover_id):
     """ handle uploads of variant covers"""
 
-    return cover_upload(request, issue_id, add_variant=True)
+    return cover_upload(request, cover_id, add_variant=True)
 
 
-def mark_cover(request, issue_id):
+def mark_cover(request, cover_id):
     """
     marks the cover of the issue for replacement
     """
@@ -483,16 +455,7 @@ def mark_cover(request, issue_id):
     if request.user.is_authenticated() and \
       request.user.groups.filter(name='editor'):
         # check for issue and cover
-        issue = get_object_or_404(Issue, id=issue_id)
-
-        cover = Cover.objects.filter(issue=issue)
-        if len(cover) == 0:
-            return render_error(request, 
-              'Something wrong with issue ID #' + issue_id  + \
-              ' and its cover table, please contact the admins.', 
-              redirect=False)
-        else:
-            cover = cover[0]
+        cover = get_object_or_404(Cover, id=cover_id)
         
         cover.marked = True
         cover.save()
@@ -501,14 +464,13 @@ def mark_cover(request, issue_id):
         if request.META.has_key('HTTP_REFERER'):
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
         else:
-            cover_tag = get_image_tag(issue.series_id, cover,
-                                      "Cover Image", 2)
+            cover_tag = get_image_tag(cover, "Cover Image", 2)
             return render_to_response(
               'gcd/details/cover_marked.html',
               {
-                'issue': issue,
+                'issue': cover.issue,
                 'cover_tag': cover_tag,
-                'error_subject': '%s cover' % issue,
+                'error_subject': '%s cover' % cover.issue,
                 'style': 'default',
               },
               context_instance=RequestContext(request)

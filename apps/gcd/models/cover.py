@@ -9,18 +9,24 @@ class Cover(models.Model):
     class Meta:
         app_label = 'gcd'
         ordering = ['issue']
+        get_latest_by = "id"
+        permissions = (
+            ('can_upload_cover', 'can upload cover'),
+        )
 
     # The issue field should be considered the primary link.  Series is legacy.
     series = models.ForeignKey(Series)
-    issue = models.OneToOneField(Issue)
+    issue = models.ForeignKey(Issue)
 
     # Fields directly related to cover images
-    code = models.CharField(max_length=50)
+    #code = models.CharField(max_length=50)
     has_image = models.BooleanField()
     marked = models.BooleanField(default=0)
 
     server_version = models.IntegerField()
     contributor = models.CharField(max_length=255, null=True)
+    file_extension = models.CharField(max_length = 10)
+    variant_code = models.CharField(max_length = 2, null = True)
 
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True, null=True)
@@ -30,7 +36,7 @@ class Cover(models.Model):
         if self.marked or not self.has_image:
             return urlresolvers.reverse(
                 'apps.gcd.views.covers.cover_upload',
-                kwargs={'issue_id': self.issue.id} )
+                kwargs={'cover_id': self.id} )
         else:
             return self.issue.get_absolute_url()
 

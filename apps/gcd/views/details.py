@@ -21,6 +21,7 @@ from apps.gcd.models import Publisher, Series, Issue, Story, \
                             Country, Language, Indexer, IndexCredit, Cover
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, \
+                                  get_image_tags_per_issue, \
                                   get_image_tags_per_page, \
                                   ZOOM_SMALL, \
                                   ZOOM_MEDIUM, \
@@ -179,9 +180,9 @@ def show_series(request, series, preview=False):
     """
     Handle the main work of displaying a series.  Also used by OI previews.
     """
-    covers = series.cover_set.all()
+    covers = series.cover_set.select_related('issue').exclude(variant_code = '1')
     issues = series.issue_set.all()
- 
+    
     try:
         cover = covers.filter(has_image=True)[0]
         series_id = series.id
@@ -191,8 +192,7 @@ def show_series(request, series, preview=False):
             else:
                 raise ValueError
 
-        image_tag = get_image_tag(series_id=series_id,
-                                  cover=cover,
+        image_tag = get_image_tag(cover=cover,
                                   zoom_level=ZOOM_MEDIUM,
                                   alt_text='First Issue Cover')
 
@@ -379,11 +379,11 @@ def cover(request, issue_id, size):
     """
 
     issue = get_object_or_404(Issue, id = issue_id)
-    cover = issue.cover
+    cover = issue.cover_set.all()[0]
     [prev_issue, next_issue] = get_prev_next_issue(issue)
 
-    cover_tag = get_image_tag(issue.series_id, cover,
-                              "Cover Image", int(size))
+    cover_tag = get_image_tags_per_issue(issue, "Cover Image", 
+                                         int(size))
     style = get_style(request)
 
     extra = 'cover/' + size + '/' # TODO: remove abstraction-breaking hack.
@@ -481,11 +481,9 @@ def show_issue(request, issue, preview=False):
     """
     Handle the main work of displaying an issue.  Also used by OI previews.
     """
-    cover = issue.cover
-    image_tag = get_image_tag(series_id=issue.series.id,
-                              cover=cover,
-                              zoom_level=ZOOM_SMALL,
-                              alt_text='Cover Thumbnail')
+    image_tag = get_image_tags_per_issue(issue=issue,
+                                         zoom_level=ZOOM_SMALL,
+                                         alt_text='Cover Thumbnail')
     style = get_style(request)
 
     series = issue.series
@@ -540,7 +538,13 @@ def countries_in_use(request):
                                          values_list('country', flat=True)))
         countries_from_indexers = list(set(Indexer.objects.all().
                                            values_list('country', flat=True)))
-        used_countries = list(set(countries_from_indexers + countries_from_series))
+        countries_from_publishers = list(set(Publisher.objects.all().
+                                             values_list('country', flat=True)))
+        used_ids = list(set(countries_from_indexers + \
+                                     countries_from_series + \
+                                     countries_from_publishers))
+        used_countries = [Country.objects.filter(id=id)[0] for id in used_ids]
+        
         return render_to_response('gcd/admin/countries.html',
                                   {'countries' : used_countries },
                                   context_instance=RequestContext(request))

@@ -15,7 +15,7 @@
 {% include "gcd/bits/series_issue_header.html" %}
 
 <div id="info_links">
-  <a href="{{series.get_absolute_url}}scans/?style={{ style }}">Cover Scan Status</a> ({{ series.scan_count }} of {{ series.issue_count }} covers available)
+  <a href="{{series.get_absolute_url}}scans/?style={{ style }}">Cover Scan Status</a> ({{ series.scan_count }} cover{{ series.scan_count|pluralize }} for {{ series.issue_count }} issue{{ series.issue_count|pluralize }} available)
   <br/>
   <a href="{{ series.get_absolute_url }}status/?style={{ style}}">Index Status</a>
 </div>
@@ -35,10 +35,10 @@
         <br><span class="cover_date">{{ issue.publication_date }}</span>
         {% endif %}
         {% if can_mark and not cover.marked %}
-        <br><a href="{% url apps.gcd.views.covers.mark_cover issue_id=issue.id %}">Mark for replacement</a>
+        <br><a href="{% url apps.gcd.views.covers.mark_cover cover_id=cover.id %}">Mark for replacement</a>
         {% endif %}
         {% if cover.marked %}
-        <br><a href="{% url apps.gcd.views.covers.cover_upload issue_id=issue.id %}">Replace cover</a>
+        <br><a href="{{ cover.get_status_url }}">Replace cover</a>
         {% endif %}
       </div>
     </td>

@@ -103,10 +103,9 @@ def register(request):
                                   context_instance=RequestContext(request))
 
     cd = form.cleaned_data
-    if settings.BETA:
-        email_users = User.objects.filter(email=cd['email'])
-        if email_users.count():
-            return handle_existing_account(request, email_users)
+    email_users = User.objects.filter(email=cd['email'])
+    if email_users.count():
+        return handle_existing_account(request, email_users)
 
     # To make a unique username, take the first 20 characters before the "@"
     # in the email address, and tack on a number if that username is already

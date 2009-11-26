@@ -194,6 +194,19 @@ body {
     margin-bottom: 1em;
 }
 
+.front_page_right_box_notice {
+    clear: right;
+    border: solid 1px #ffA500;
+    width: 13em;
+    margin-bottom: 1em;
+}
+
+.box_notice_header {
+    font-weight: bold;
+    padding: 0.4em;
+    background-color: #ffA500;
+}
+
 .announcement dd {
     margin-bottom: 1em;
 }
