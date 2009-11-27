@@ -457,7 +457,7 @@ def show_issue(request, issue, preview=False):
     # TODO: This code is awkward, but too tired to restructure now.
     cover_issue = issue
     image_tag = None
-    if preview and not issue.issue:
+    if preview:
         if issue.issue:
             cover_issue = issue.issue
         else:
