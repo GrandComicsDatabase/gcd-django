@@ -79,8 +79,11 @@ def get_image_tag(cover, alt_text, zoom_level, no_cache = False):
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level):
-    covers = issue.cover_set.all()
     tag = ''
+    if issue is None:
+        covers = (None,)
+    else:
+        covers = issue.cover_set.all()
     for cover in covers:
         tag += get_image_tag(cover=cover, zoom_level=zoom_level, 
                              alt_text=alt_text)

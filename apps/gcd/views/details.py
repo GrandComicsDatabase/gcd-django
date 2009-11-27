@@ -454,22 +454,13 @@ def show_issue(request, issue, preview=False):
     """
     Handle the main work of displaying an issue.  Also used by OI previews.
     """
-    # TODO: This code is awkward, but too tired to restructure now.
     cover_issue = issue
-    image_tag = None
     if preview:
-        if issue.issue:
-            cover_issue = issue.issue
-        else:
-            # TODO: width should not be hardcoded, but not a big issue right now.
-            image_tag = mark_safe(
-              '<img src="%s" alt="placeholder" width="100" class="cover_img"/>' %
-              settings.PLACEHOLDER_COVER_URL)
+        cover_issue = issue.issue
 
-    if image_tag is None:
-        image_tag = get_image_tags_per_issue(issue=cover_issue,
-                                             zoom_level=ZOOM_SMALL,
-                                             alt_text='Cover Thumbnail')
+    image_tag = get_image_tags_per_issue(issue=cover_issue,
+                                         zoom_level=ZOOM_SMALL,
+                                         alt_text='Cover Thumbnail')
     style = get_style(request)
 
     series = issue.series
