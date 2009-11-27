@@ -26,6 +26,14 @@ table.comments th {
     background-color: #DDD;
 }
 
+th.comment_text {
+    width: 50%;
+}
+td.comment_text {
+    width: 50%;
+    background-color: yellow;
+}
+
 table.editing th {
     text-align: right;
 }
