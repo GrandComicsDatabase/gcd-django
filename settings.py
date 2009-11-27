@@ -96,8 +96,7 @@ EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_CONTACT = 'gcd-contact@googlegroups.com'
 
 # What you see when you preview a new issue.
-# TODO: put something real here, not the leech image.
-PLACEHOLDER_COVER_URL = "%simg/nocover_small.png" % MEDIA_URL
+PLACEHOLDER_COVER_URL = "%simg/nocover_small.png" % MEDIA_ROOT
 
 # Number of days for which a registraton confirmation token is valid.
 REGISTRATION_EXPIRATION_DELTA = 2
