@@ -37,9 +37,9 @@ class Issue(models.Model):
     # Only "reserved" is in active use, the others are legacy fields
     # used only by migration scripts.
     reserved = models.BooleanField(default=0, db_index=True)
-    index_status = models.IntegerField(null=True)
-    reserve_status = models.IntegerField(db_index=True)
-    reserve_check = models.NullBooleanField(db_index=True)
+    index_status = models.IntegerField(default=0, null=True)
+    reserve_status = models.IntegerField(default=0, db_index=True)
+    reserve_check = models.NullBooleanField(default=0, db_index=True)
 
     # Series and publisher links
     series = models.ForeignKey(Series)
@@ -73,6 +73,27 @@ class Issue(models.Model):
                self.binding or \
                self.paper_stock or \
                self.printing_process
+
+    def get_prev_next_issue(self):
+        """
+        Find the issues immediately before and after the given issue.
+        """
+
+        prev_issue = None
+        next_issue = None
+
+        earlier_issues = \
+          self.series.issue_set.filter(sort_code__lt=self.sort_code)
+        earlier_issues = earlier_issues.order_by('-sort_code')
+        if earlier_issues:
+            prev_issue = earlier_issues[0]     
+        
+        later_issues = self.series.issue_set.filter(sort_code__gt=self.sort_code)
+        later_issues = later_issues.order_by('sort_code')
+        if later_issues:
+            next_issue = later_issues[0]
+
+        return [prev_issue, next_issue]
 
     def reserver(self):
         """

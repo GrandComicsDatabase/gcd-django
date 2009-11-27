@@ -442,6 +442,9 @@ def add_publisher(request):
         form = get_publisher_revision_form()()
         return _display_add_publisher_form(request, form)
 
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('add_publisher'))
+
     form = get_publisher_revision_form()(request.POST)
     if not form.is_valid():
         return _display_add_publisher_form(request, form)
@@ -478,6 +481,11 @@ def add_indicia_publisher(request, parent_id):
         if request.method != 'POST':
             form = get_indicia_publisher_revision_form()()
             return _display_add_indicia_publisher_form(request, parent, form)
+
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'apps.gcd.views.details.publisher',
+              kwargs={ 'publisher_id': parent_id }))
 
         form = get_indicia_publisher_revision_form()(request.POST)
         if not form.is_valid():
@@ -520,6 +528,11 @@ def add_brand(request, parent_id):
         if request.method != 'POST':
             form = get_brand_revision_form()()
             return _display_add_brand_form(request, parent, form)
+
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'apps.gcd.views.details.publisher',
+              kwargs={ 'publisher_id': parent_id }))
 
         form = get_brand_revision_form()(request.POST)
         if not form.is_valid():
@@ -570,6 +583,11 @@ def add_series(request, publisher_id):
             form = get_series_revision_form(publisher)()
             return _display_add_series_form(request, publisher, imprint, form)
 
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'apps.gcd.views.details.publisher',
+              kwargs={ 'publisher_id': parent_id }))
+
         form = get_series_revision_form(publisher)(request.POST)
         if not form.is_valid():
             return _display_add_series_form(request, publisher, imprint, form)
@@ -605,8 +623,53 @@ def _display_add_series_form(request, publisher, imprint, form):
       context_instance=RequestContext(request))
 
 @permission_required('gcd.can_reserve')
-def add_issues(request, series_id):
-    return render_error(request, 'Adding issues is not yet implemented.')
+def add_issue(request, series_id, sort_after=None):
+    series = get_object_or_404(Series, id=series_id)
+    form_class = get_revision_form(model_name='issue',
+                                   series=series,
+                                   publisher=series.publisher)
+
+    if request.method != 'POST':
+        reversed_issues = series.issue_set.order_by('-sort_code')
+        initial = {}
+        if reversed_issues.count():
+            initial['after'] = reversed_issues[0].id
+        form = form_class(initial=initial)
+        return _display_add_issue_form(request, series, form)
+
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'apps.gcd.views.details.series',
+          kwargs={ 'series_id': series_id }))
+
+    form = form_class(request.POST)
+    if not form.is_valid():
+        return _display_add_issue_form(request, series, form)
+
+    changeset = Changeset(indexer=request.user, state=states.OPEN)
+    changeset.save()
+    changeset.comments.create(commenter=request.user,
+                              text=form.cleaned_data['comments'],
+                              old_state=states.UNRESERVED,
+                              new_state=changeset.state)
+    revision = form.save(commit=False)
+    revision.save_added_revision(changeset=changeset,
+                                 series=series)
+    return submit(request, changeset.id)
+
+def _display_add_issue_form(request, series, form):
+    kwargs = {
+        'series_id': series.id,
+    }
+    url = urlresolvers.reverse('add_issue', kwargs=kwargs)
+    return render_to_response('oi/edit/add_frame.html',
+      {
+        'object_name': 'Issue',
+        'object_url': url,
+        'action_label': 'Submit new',
+        'form': form,
+      },
+      context_instance=RequestContext(request))
 
 @permission_required('gcd.can_reserve')
 def add_story(request, issue_id, changeset_id):

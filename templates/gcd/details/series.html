@@ -56,9 +56,9 @@
       </input>
     </form>
   {% endif %}
-  <form method="POST"
-        action="{% url add_issues series_id=series.id %}">
-    <input id="add" name="add" type="submit" value="Add issues">
+  <form method="GET"
+        action="{% url add_issue series_id=series.id %}">
+    <input id="add" name="add" type="submit" value="Add issue">
     </input>
   </form>
 </div>

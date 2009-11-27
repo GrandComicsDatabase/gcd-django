@@ -85,26 +85,6 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <td> {% if revision.issue.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
     <td> {% if revision.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
   </tr>
-  <tr class="{{ revision.changed.size }}">
-    <td class="field_name"> Size </td>
-    <td> {{ revision.issue.size }} </td>
-    <td> {{ revision.size }} </td>
-  </tr>
-  <tr class="{{ revision.changed.binding }}">
-    <td class="field_name"> Binding </td>
-    <td> {{ revision.issue.binding }} </td>
-    <td> {{ revision.binding }} </td>
-  </tr>
-  <tr class="{{ revision.changed.paper_stock }}">
-    <td class="field_name"> Paper stock</td>
-    <td> {{ revision.issue.paper_stock }} </td>
-    <td> {{ revision.paper_stock }} </td>
-  </tr>
-  <tr class="{{ revision.changed.printing_process }}">
-    <td class="field_name"> Printing Process </td>
-    <td> {{ revision.issue.printing_process }} </td>
-    <td> {{ revision.printing_process }} </td>
-  </tr>
   <tr class="{{ revision.changed.editing }}">
     <td class="field_name"> Editing </td>
     <td> {{ revision.issue.editing }} </td>

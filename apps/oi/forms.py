@@ -34,7 +34,7 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name == 'issue':
         if revision is not None and 'publisher' not in kwargs:
             kwargs['publisher'] = revision.series.publisher
-        return get_issue_revision_form(**kwargs)
+        return get_issue_revision_form(revision=revision, **kwargs)
 
     if model_name == 'story':
         return get_story_revision_form(revision, **kwargs)
@@ -234,7 +234,26 @@ class SeriesRevisionForm(forms.ModelForm):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
-def get_issue_revision_form(publisher):
+def _get_issue_fields():
+    return [
+        'number',
+        'volume',
+        'display_volume_with_number',
+        'no_volume',
+        'indicia_publisher',
+        'brand',
+        'publication_date',
+        'key_date',
+        'indicia_frequency',
+        'price',
+        'page_count',
+        'page_count_uncertain',
+        'editing',
+        'no_editing',
+        'notes',
+    ]
+
+def get_issue_revision_form(publisher, series=None, revision=None):
     class RuntimeIssueRevisionForm(IssueRevisionForm):
         indicia_publisher = forms.ModelChoiceField(required=False,
           queryset=IndiciaPublisher.objects.filter(parent=publisher),
@@ -247,31 +266,26 @@ def get_issue_revision_form(publisher):
                     "if any. Some U.S. golden age publishers did not put any "
                     "identifiable brand marks on their comics.")
 
+    if revision is None:
+        add_fields = ['after']
+        add_fields.extend(_get_issue_fields())
+        class RuntimeAddIssueRevisionForm(RuntimeIssueRevisionForm):
+            class Meta:
+                model = IssueRevision
+                fields = add_fields
+
+            after = forms.ModelChoiceField(required=False,
+              queryset=Issue.objects.filter(series=series).order_by('sort_code'),
+              empty_label="[add as first issue]",
+              label = "Add this issue after")
+        return RuntimeAddIssueRevisionForm
+            
     return RuntimeIssueRevisionForm
 
 class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
-        fields = (
-            'number',
-            'volume',
-            'display_volume_with_number',
-            'no_volume',
-            'indicia_publisher',
-            'brand',
-            'publication_date',
-            'key_date',
-            'indicia_frequency',
-            'price',
-            'page_count',
-            'page_count_uncertain',
-            'size',
-            'binding',
-            'paper_stock',
-            'editing',
-            'no_editing',
-            'notes',
-        )
+        fields = _get_issue_fields()
 
     number = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
       help_text='The issue number (or other label) as it appears in the indicia. '
@@ -334,25 +348,8 @@ class IssueRevisionForm(forms.ModelForm):
     page_count_uncertain = forms.BooleanField(required=False,
       help_text="Check if you do not know or aren't sure about the page count.")
 
-    size = forms.CharField(required=False,
-      help_text='Either the name of a standard size (i.e. U.S. Golden Age) or '
-                'width x height in inches or centimeters as appropriate.')
-
-    binding = forms.CharField(required=False,
-      help_text='A description of the binding.  A pamphlet stapled through the '
-                'spine with the staple ends inside the center fold is considered '
-                '"saddle-stitched".  Pages stapled near the spine with the '
-                'staple ends coming out the back cover are "stapled".  Other '
-                'values for this field include "squarebound", "trade paperback", '
-                '"hardcover", etc.')
-
-    paper_stock = forms.CharField(required=False,
-      help_text='The type of paper (i.e. "newsprint", "glossy" or the name of '
-                'a particular stock if known) used for the comic.  If the cover '
-                'is of different stock that may be noted here as well, i.e. '
-                '"newsprint, glossy cover"')
-
     editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+      required=False,
       help_text='The editor and any similar credits for the whole issue.  If no '
                 'overall editor is known put a question mark in the field.')
     no_editing = forms.BooleanField(required=False,

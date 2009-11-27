@@ -15,6 +15,7 @@ from django.shortcuts import render_to_response, \
                              get_list_or_404
 from django.http import HttpResponseRedirect, Http404
 from django.template import RequestContext
+from django.utils.safestring import mark_safe
 
 from apps.gcd.models import Publisher, Series, Issue, Story, \
                             IndiciaPublisher, Brand, \
@@ -373,7 +374,7 @@ def cover(request, issue_id, size):
 
     issue = get_object_or_404(Issue, id = issue_id)
     cover = issue.cover_set.all()[0]
-    [prev_issue, next_issue] = get_prev_next_issue(issue)
+    [prev_issue, next_issue] = issue.get_prev_next_issue()
 
     cover_tag = get_image_tags_per_issue(issue, "Cover Image", 
                                          int(size))
@@ -442,27 +443,6 @@ def issue_form(request):
       urlresolvers.reverse(issue, kwargs={ 'issue_id': id }) +
       '?' + params.urlencode())
 
-def get_prev_next_issue(issue):
-    """
-    Find the issues immediately before and after the given issue.
-    """
-
-    prev_issue = None
-    next_issue = None
-
-    earlier_issues = \
-      issue.series.issue_set.filter(sort_code__lt=issue.sort_code)
-    earlier_issues = earlier_issues.order_by('-sort_code')
-    if earlier_issues:
-        prev_issue = earlier_issues[0]     
-    
-    later_issues = issue.series.issue_set.filter(sort_code__gt=issue.sort_code)
-    later_issues = later_issues.order_by('sort_code')
-    if later_issues:
-        next_issue = later_issues[0]
-
-    return [prev_issue, next_issue]
-
 def issue(request, issue_id):
     """
     Display the issue details page, including story details.
@@ -474,20 +454,26 @@ def show_issue(request, issue, preview=False):
     """
     Handle the main work of displaying an issue.  Also used by OI previews.
     """
+    # TODO: This code is awkward, but too tired to restructure now.
     cover_issue = issue
-    if preview:
+    image_tag = None
+    if preview and not issue.issue:
         if issue.issue:
             cover_issue = issue.issue
         else:
-            raise ValueError
+            # TODO: width should not be hardcoded, but not a big issue right now.
+            image_tag = mark_safe(
+              '<img src="%s" alt="placeholder" width="100" class="cover_img"/>' %
+              settings.PLACEHOLDER_COVER_URL)
 
-    image_tag = get_image_tags_per_issue(issue=cover_issue,
-                                         zoom_level=ZOOM_SMALL,
-                                         alt_text='Cover Thumbnail')
+    if image_tag is None:
+        image_tag = get_image_tags_per_issue(issue=cover_issue,
+                                             zoom_level=ZOOM_SMALL,
+                                             alt_text='Cover Thumbnail')
     style = get_style(request)
 
     series = issue.series
-    [prev_issue, next_issue] = get_prev_next_issue(issue)
+    [prev_issue, next_issue] = issue.get_prev_next_issue()
 
     # TODO: Since the number of stories per issue is typically fairly small,
     # it seems more efficient to grab the whole list and only do one database

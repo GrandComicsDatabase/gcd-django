@@ -3,7 +3,7 @@ import itertools
 import operator
 
 from django.db import models
-from django.db.models import Count
+from django.db.models import F, Count
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
@@ -1139,6 +1139,11 @@ class IssueRevision(Revision):
 
     issue = models.ForeignKey(Issue, null=True, related_name='revisions')
 
+    # If not null, insert or move the issue after the given issue
+    # when saving back the the DB. If null, place at the beginning of
+    # the series.
+    after = models.ForeignKey(Issue, null=True, related_name='after_revisions')
+
     number = models.CharField(max_length=50)
     volume = models.IntegerField(max_length=255, null=True, blank=True)
     no_volume = models.BooleanField(default=0)
@@ -1202,6 +1207,14 @@ class IssueRevision(Revision):
         return Reservation.objects.filter(pk__isnull=True)
     reservation_set = property(_reservation_set)
 
+    def get_prev_next_issue(self):
+        if self.issue is not None:
+            return self.issue.get_prev_next_issue()
+        if self.after is not None:
+            [p, n] = self.after.get_prev_next_issue()
+            return [self.after, n]
+        return [None, None]
+
     def _field_list(self):
         return ('volume', 'number', 'no_volume', 'display_volume_with_number',
                 'publication_date', 'key_date', 'indicia_frequency',
@@ -1225,7 +1238,7 @@ class IssueRevision(Revision):
 
     def _story_revisions(self):
         if self.source is None:
-            return self.changset.storyrevisions.filter(issue__isnull=True)
+            return self.changeset.storyrevisions.filter(issue__isnull=True)
         return self.changeset.storyrevisions.filter(issue=self.source)
 
     def ordered_story_revisions(self):
@@ -1241,9 +1254,28 @@ class IssueRevision(Revision):
         issue = self.issue
 
         if issue is None:
-            issue = Issue()
+            if self.after is None:
+                after_code = -1
+            else:
+                after_code = self.after.sort_code
+
+            # sort_codes tend to be sequential, so just always increment them
+            # out of the way.
+            later_issues = Issue.objects.filter(
+              series=self.series,
+              sort_code__gt=after_code).order_by('-sort_code')
+
+            # There must be a way to do this in bulk, but I can't find it in
+            # the docs now.  TODO: try again after sleep.
+            for later_issue in later_issues:
+                later_issue.sort_code = F('sort_code') + 1
+                later_issue.save()
+
+            issue = Issue(sort_code=after_code + 1)
+
             self.series.issue_count += 1
             self.series.publisher.issue_count += 1
+
         elif self.deleted:
             self.series.issue_count -= 1
             self.series.publisher.issue_count -= 1
@@ -1281,6 +1313,10 @@ class IssueRevision(Revision):
 
         issue.save()
         if self.issue is None:
+            # TODO: Remove cover code (and maybe series?) when we can.
+            issue.cover_set.create(code='000', series=self.series,
+                                   modified=datetime.now())
+
             self.issue = issue
             self.save()
 

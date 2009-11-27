@@ -19,11 +19,11 @@ class Cover(models.Model):
     issue = models.ForeignKey(Issue)
 
     # Fields directly related to cover images
-    #code = models.CharField(max_length=50)
-    has_image = models.BooleanField()
+    code = models.CharField(max_length=50)
+    has_image = models.BooleanField(default=0)
     marked = models.BooleanField(default=0)
 
-    server_version = models.IntegerField()
+    server_version = models.IntegerField(default=1)
     contributor = models.CharField(max_length=255, null=True)
     file_extension = models.CharField(max_length = 10)
     variant_code = models.CharField(max_length = 2, null = True)
