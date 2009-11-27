@@ -64,7 +64,8 @@ class Changeset(models.Model):
         page for each revision.
         """
         if self._is_inline is None:
-            if self.revision_count() == 1:
+            if (self.revision_count() == 1 and
+                self.issuerevisions.count() == 0):
                 self._is_inline = True
             else:
                 self._is_inline = False
@@ -270,10 +271,12 @@ class Changeset(models.Model):
         self.save()
 
     def __unicode__(self):
-        uni = u'Changeset %d' % self.id
         if self.inline():
-            uni += u': %s' % self.revisions.next()
-        return uni
+            return  unicode(self.inline_revision())
+        # For now, the only non-inline changesets are single issue ones.
+        if self.issuerevisions.count():
+            return unicode(self.issuerevisions.all()[0])
+        return 'Changeset: %d' % self.id
 
 class ChangesetComment(models.Model):
     """

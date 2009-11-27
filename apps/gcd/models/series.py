@@ -26,8 +26,7 @@ class Series(models.Model):
       related_name='last_issue_series_set')
     issue_count = models.IntegerField()
 
-    # Publication notes are not displayed in the current UI but may
-    # be accessed in the OI.
+    # Publication notes may be merged with regular notes in the near future.
     publication_notes = models.TextField()
 
     # Fields for tracking relationships between series.
