@@ -1,0 +1,73 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Mentoring New Indexers
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/queues.css"/>
+{% endblock %}
+
+{% block view_body %}
+<div class="queues">
+<h2>My mentees</h2>
+<table>
+  <tr>
+    <th> Indexer </th>
+    <th> Country </th>
+    <th> Actions </th>
+  </tr>
+{% for indexer in my_mentees %}
+  <tr>
+    <td><a href="{% url view_profile user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
+    <td>{{ indexer.indexer.country }}</td>
+    <td> 
+      <form method="POST" action="{% url mentor_not_new indexer_id=indexer.indexer.id %}">
+        <input type="submit" name="mentor_not_new" value="No longer needs mentoring"></input>
+      </form>
+    </td>
+  </tr>
+{% endfor %}
+</table>
+<h2>New indexers needing a mentor</h2>
+<table>
+  <tr>
+    <th> Indexer </th>
+    <th> Country </th>
+    <th> Interests </th>
+    <th> Actions </th>
+  </tr>
+{% for indexer in new_indexers %}
+  <tr>
+    <td><a href="{% url mentor indexer_id=indexer.indexer.id %}">{{ indexer.indexer }}</a><br></td>
+    <td>{{ indexer.indexer.country }}</td>
+    <td width="45%">{{ indexer.indexer.interests }}</td>
+    <td> <form action="{% url mentor indexer_id=indexer.indexer.id %}" method="POST">
+      <input type="submit" value="Mentor this Indexer">
+    </form></td>
+  </tr>
+{% endfor %}
+</table>
+<h2>New indexers with a mentor</h2>
+<table>
+  <tr>
+    <th> Indexer </th>
+    <th> Country </th>
+    <th> Mentor </th>
+  </tr>
+{% for indexer in mentees %}
+  <tr>
+    <td><a href="{% url view_profile user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
+    <td>{{ indexer.indexer.country }}</td>
+    <td> <a href="{% url view_profile user_id=indexer.indexer.mentor.id %}">{{ indexer.indexer.mentor.indexer }}</a></td>
+  </tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}
+

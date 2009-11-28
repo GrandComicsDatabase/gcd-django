@@ -13,6 +13,8 @@
 
 {% block view_body %}
 
+<p><a href="{% url mentoring %}">New Indexers Mentoring Overview</a></p> 
+
 {% if indexer.mentor %}
   {% ifequal indexer.mentor user %}
     <p class="message">
@@ -34,7 +36,6 @@
     </p>
   {% endif %}
 {% endif %}
-
 {% with indexer.user as profile_user %}
   {% include 'gcd/bits/profile_limits.html' %}
   {% include 'gcd/bits/profile_display.html' %}

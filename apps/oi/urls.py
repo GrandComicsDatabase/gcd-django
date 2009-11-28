@@ -12,6 +12,9 @@ urlpatterns = patterns('',
         { 'template': 'oi/edit/add.html' },
         name='add'),
 
+    url(r'^mentoring/$', oi_views.mentoring,
+        name='mentoring'),
+
     # Publisher URLs
     url(r'^publisher/add/$',
         oi_views.add_publisher,

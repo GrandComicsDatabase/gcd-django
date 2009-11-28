@@ -158,7 +158,7 @@ thanks,
            settings.SITE_NAME,
            settings.SITE_URL)
 
-        changeset.indexer.email_user('GCD Change to review', email_body, 
+        changeset.approver.email_user('GCD Change to review', email_body, 
           'GCD Online Indexing <no-reply@comics.org>')
         
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
@@ -909,4 +909,26 @@ def preview(request, id, model_name):
         return show_series(request, revision, True)
     if 'issue' == model_name:
         return show_issue(request, revision, True)
+
+##############################################################################
+# Mentoring 
+##############################################################################
+
+@permission_required('gcd.can_mentor')
+def mentoring(request):
+    new_indexers = User.objects.filter(indexer__mentor=None) \
+                               .filter(indexer__is_new=True)
+    my_mentees = User.objects.filter(indexer__mentor=request.user) \
+                             .filter(indexer__is_new=True)
+    mentees = User.objects.exclude(indexer__mentor=None) \
+                          .filter(indexer__is_new=True) \
+                          .exclude(indexer__mentor=request.user)
+    
+    return render_to_response('oi/queues/mentoring.html',
+      {
+        'new_indexers': new_indexers,
+        'my_mentees': my_mentees,
+        'mentees': mentees,
+      },
+      context_instance=RequestContext(request))
 

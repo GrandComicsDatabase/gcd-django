@@ -384,11 +384,32 @@ def mentor(request, indexer_id):
           'You are not allowed to mentor new Indexers', redirect=False)
 
     indexer = get_object_or_404(Indexer, id=indexer_id)
-    if request.method == 'POST':
+    if request.method == 'POST' and indexer.mentor is None:
         indexer.mentor = request.user
         indexer.save()
-    
+        # I kinda assume the HTTP_REFERER is always present, but just in case
+        if request.META.has_key('HTTP_REFERER'):
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
     return render_to_response('gcd/accounts/mentor.html',
                               { 'indexer' : indexer },
                               context_instance=RequestContext(request))
+
+@login_required
+def mentor_not_new(request, indexer_id):
+    if not request.user.has_perm('gcd.can_mentor'):
+        return render_error(request,
+          'You are not allowed to mentor new Indexers', redirect=False)
+
+    indexer = get_object_or_404(Indexer, id=indexer_id)
+    if indexer.mentor != request.user:
+        return render_error(request,
+          'You are not allowed to change the state of this new Indexer', 
+          redirect=False)
+    else:
+        if request.method == 'POST':
+            indexer.is_new = False
+            indexer.save()
+    
+    return HttpResponseRedirect(urlresolvers.reverse('mentoring'))
 

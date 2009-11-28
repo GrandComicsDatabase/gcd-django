@@ -8,4 +8,7 @@
   <a href="{% url reviewing %}">Reviewing</a> |
 {% endif %}
   <a href="{% url add %}">Add New</a> |
+{% if perms.gcd.can_mentor %}
+  <a href="{% url mentoring %}">Mentoring</a> |
+{% endif %}
 </div>
