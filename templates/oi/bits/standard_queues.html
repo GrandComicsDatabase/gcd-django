@@ -1,4 +1,5 @@
 {% for section in data %}
+{% if section.changesets.count %}
 <h2> {{ section.object_name }} </h2>
 <table>
   <tr>
@@ -32,6 +33,7 @@
   </tr>
 {% endfor %}
 </table>
+{% endif %}
 {% empty %}
 <p>
 All queues are empty.
