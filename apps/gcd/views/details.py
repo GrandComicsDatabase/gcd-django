@@ -27,6 +27,8 @@ from apps.gcd.views.covers import get_image_tag, \
                                   ZOOM_SMALL, \
                                   ZOOM_MEDIUM, \
                                   ZOOM_LARGE
+from apps.oi import states
+from apps.oi.models import IssueRevision
 
 def get_style(request):
     style = 'default'
@@ -483,6 +485,10 @@ def show_issue(request, issue, preview=False):
     oi_indexers = []
     for i in res:
         oi_indexers.append(i.indexer)
+    res = IssueRevision.objects.filter(issue=issue)\
+                               .filter(changeset__state=states.APPROVED)
+    for i in res:
+        oi_indexers.append(i.changeset.indexer.indexer)
     oi_indexers = list(set(oi_indexers))
 
     return render_to_response(
