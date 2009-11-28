@@ -90,8 +90,6 @@ def show_credit_status(story):
     """
     status = []
     required_remaining = 5
-    if story.sequence_number == 0:
-        required_remaining += 1
 
     if story.script or story.no_script:
         status.append('S')
