@@ -683,7 +683,7 @@ class StoryRevisionForm(forms.ModelForm):
     title = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                             required=False,
       help_text='If the title is not listed, use the first line of dialog, '
-                'place it in double quotes and check the next box.  Do *not* '
+                'place it in "quotation marks" and check the next box.  Do *not* '
                 'place the title in brackets.')
     title_inferred = forms.BooleanField(required=False,
       label='Unofficial title',
