@@ -605,7 +605,9 @@ def add_series(request, publisher_id):
               'the indicia publisher(s) and/or brand(s) at the issue level.')
 
         if request.method != 'POST':
-            form = get_series_revision_form(publisher)()
+            initial = {}
+            initial['country'] = publisher.country.id
+            form = get_series_revision_form(publisher)(initial=initial)
             return _display_add_series_form(request, publisher, imprint, form)
 
         if 'cancel' in request.POST:
