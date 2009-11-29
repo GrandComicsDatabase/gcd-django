@@ -158,7 +158,7 @@ thanks,
            settings.SITE_NAME,
            settings.SITE_URL)
 
-        changeset.approver.email_user('GCD Change to review', email_body, 
+        changeset.approver.email_user('GCD change to review', email_body, 
           'GCD Online Indexing <no-reply@comics.org>')
         
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
@@ -234,13 +234,38 @@ def discard(request, id):
           context_instance=RequestContext(request))
 
     if request.user != changeset.indexer and not request.POST['comments']:
-        return render_to_response('gcd/error.html',
-          {'error_message': 'You must explain why you are discarding this '
+        return render_error(request,
+                            'You must explain why you are rejecting this '
                             'change.  Please press the "back" button and use '
-                            'the comments field for the explanation.' },
-          context_instance=RequestContext(request))
+                            'the comments field for the explanation.' )
 
-    changeset.discard(discarder=request.user, notes=request.POST['comments'])
+    notes = request.POST['comments']
+    changeset.discard(discarder=request.user, notes=notes)
+
+    if request.user != changeset.indexer:
+        email_body = """
+Hello from the %s!
+
+
+  Your change for "%s" was rejected by GCD editor %s with the comment "%s". 
+
+If you disagree please either contact the editor directly via the e-mail 
+%s or post a message on the main mailing-list 
+which is also reachable via http://groups.google.com/group/gcd-main.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+           unicode(changeset),
+           unicode(changeset.approver.indexer),
+           notes,
+           changeset.approver.email,
+           settings.SITE_NAME,
+           settings.SITE_URL)
+
+        changeset.indexer.email_user('GCD change rejected', email_body, 
+          'GCD Online Indexing <no-reply@comics.org>')
 
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
@@ -334,7 +359,7 @@ thanks,
        settings.SITE_NAME,
        settings.SITE_URL)
 
-    changeset.indexer.email_user('GCD Change sent back', email_body, 
+    changeset.indexer.email_user('GCD change sent back', email_body, 
       'GCD Online Indexing <no-reply@comics.org>')
 
     return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
