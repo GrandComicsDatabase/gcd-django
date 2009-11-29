@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.db.models import Count, F
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
@@ -166,19 +168,12 @@ def get_series_revision_form(publisher=None, source=None):
                 imprint = forms.ModelChoiceField(required=False,
                   queryset=Publisher.objects.filter(is_master=False,
                                                     parent=publisher))
-            if source.format != '':
-                format = forms.CharField(
-                  widget=forms.TextInput(attrs={'class': 'wide'}),
-                  required=False,
-                  help_text='Check with an editor before modifying this field.  '
-                            'Most of what used to go here should now go in the '
-                            'size, paper and binding fields at the issue level.')
-
         return RuntimeSeriesRevisionForm
 
 def _get_series_fields(source=None):
     fields = [
       'name',
+      'format',
       'year_began',
       'year_ended',
       'is_current',
@@ -188,12 +183,9 @@ def _get_series_fields(source=None):
       'tracking_notes',
       'notes',
     ]
-    if source is None or (source.format == '' and source.imprint is None):
+    if source is None or source.imprint is None:
         return fields
-    if source.format != '':
-        fields.append('format')
-    if source.imprint is not None:
-        fields.append('imprint')
+    fields.append('imprint')
     return fields
 
 class SeriesRevisionForm(forms.ModelForm):
@@ -228,6 +220,15 @@ class SeriesRevisionForm(forms.ModelForm):
 
     country = forms.ModelChoiceField(queryset=Country.objects.exclude(code='xx'))
 
+    format = forms.CharField(
+      widget=forms.TextInput(attrs={'class': 'wide'}),
+      required=False,
+      help_text='This is a compount field that holds size, binding, '
+                'paper stock and other information, separated by '
+                'semi-colons.  Consult the wiki for specifics.  This '
+                'field is being replaced by several individual fields '
+                'in the near future.')
+
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
       help_text='Comments between the Indexer and Editor about the change. '
@@ -236,6 +237,7 @@ class SeriesRevisionForm(forms.ModelForm):
 
 def _get_issue_fields():
     return [
+        'request_reservation',
         'number',
         'volume',
         'display_volume_with_number',
@@ -278,6 +280,18 @@ def get_issue_revision_form(publisher, series=None, revision=None):
               queryset=Issue.objects.filter(series=series).order_by('sort_code'),
               empty_label="[add as first issue]",
               label = "Add this issue after")
+
+            # TODO: revisit when we decide about 1-1 try/catch annoyances.
+            try:
+                o = series.ongoing_reservation
+            except OngoingReservation.DoesNotExist:
+                reservation_requested = forms.BooleanField(required=False,
+                  label = 'Request reservation',
+                  help_text='Check this box to have this issue reserved to you '
+                            'automatically when it is approved, unless someone '
+                            'has acquired the series\' ongoing reservation before '
+                            'then. *NOTE: NOT IMPLEMENTED YET*')
+
         return RuntimeAddIssueRevisionForm
             
     return RuntimeIssueRevisionForm
@@ -326,7 +340,8 @@ class IssueRevisionForm(forms.ModelForm):
                 '(DD) shoud be 00 for monthly books, and use arbitrary numbers '
                 'such as 10, 20, 30 to indicate an "early" "mid" or "late" month '
                 'cover date.  For the month (MM) on quarterlies, use 04 for '
-                'Spring, 07 for Summer, 10 for Fall and 01 or 12 for Winter.  For '
+                'Spring, 07 for Summer, 10 for Fall and 01 or 12 for Winter (in '
+                'the northern hemisphere, shift accordingly in the southern).  For '
                 'annuals use a month of 00 or 13 or whatever sorts it best.  When '
                 'in doubt, use anything that produces the correct sorting.')
 
@@ -361,6 +376,268 @@ class IssueRevisionForm(forms.ModelForm):
       help_text='Comments between the Indexer and Editor about the change. '
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
+
+def get_bulk_issue_revision_form(series, method):
+    if method == 'number':
+        base = WholeNumberIssueRevisionForm
+    elif method == 'volume':
+        base = PerVolumeIssueRevisionForm
+    elif method == 'year':
+        base = PerYearIssueRevisionForm
+    elif method == 'year_volume':
+        base = PerYearVolumeIssueRevisionForm
+    else:
+        return render_error(request, 'Unknown method of adding issues.')
+
+    class RuntimeBulkIssueRevisionForm(base):
+        after = forms.ModelChoiceField(required=False,
+          queryset=Issue.objects.filter(series=series).order_by('sort_code'),
+          empty_label="[add as initial issues]",
+          label = "Add these issue after")
+
+        brand = forms.ModelChoiceField(required=False,
+          queryset=Brand.objects.filter(parent=series.publisher))
+
+        indicia_publisher = forms.ModelChoiceField(required=False,
+          queryset=IndiciaPublisher.objects.filter(parent=series.publisher))
+
+    return RuntimeBulkIssueRevisionForm
+
+class BulkIssueRevisionForm(forms.Form):
+    first_number = forms.IntegerField(required=False,
+      help_text='If blank, starts with the number after the issue specified '
+                'in the "Add issues after" field, or "1" if '
+                'inserting issues at the beginning')
+
+    number_of_issues = forms.IntegerField(min_value=1)
+
+    indicia_frequency = forms.CharField(required=False)
+
+    price = forms.CharField(required=False)
+
+    page_count = forms.DecimalField(required=False,
+                                    max_digits=10, decimal_places=3)
+    page_count_uncertain = forms.BooleanField(required=False)
+
+    editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                              required=False)
+    no_editing = forms.BooleanField(required=False)
+
+    comments = forms.CharField(widget=forms.Textarea,
+                               required=False,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
+
+    def _shared_key_order(self):
+        return ['brand', 'indicia_publisher', 'indicia_frequency',
+                'price', 'page_count', 'page_count_uncertain',
+                'editing', 'no_editing', 'comments']
+
+class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
+
+    volume = forms.IntegerField(required=False)
+
+    no_volume = forms.BooleanField(required=False)
+
+    display_volume_with_number = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(WholeNumberIssueRevisionForm, self).__init__(*args, **kwargs)
+        ordering = ['after', 'number_of_issues', 'first_number',
+                    'volume', 'no_volume', 'display_volume_with_number']
+        ordering.extend(self._shared_key_order())
+        self.fields.keyOrder = ordering
+
+    def clean(self):
+        cd = self.cleaned_data
+
+        if cd['volume'] is not None and cd['no_volume']:
+            raise forms.ValidationError('You cannot specify a volume and check '
+              '"no volume" at the same time')
+
+        if cd['editing'] is not None and cd['no_editing']:
+            raise forms.ValidationError('You cannot specify an editing credit and '
+              'check "no editing" at the same time')
+
+        if cd['first_number'] is None and cd['after'] is not None:
+            try:
+                cd['first_number'] = int(cd['after'].number) + 1
+            except ValueError:
+                raise forms.ValidationError('When adding new issues following  an '
+                  'existing issue, the issue after which you are adding the new '
+                  'issues must have a whole number as the issue number')
+        elif cd['first_number'] is None:
+            cd['first_number'] = 1
+
+        return cd
+        
+class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
+    first_volume = forms.IntegerField(required=False,
+      help_text='If blank, first volume is calculated from the issue specified '
+                'in the "Add issues after" field, or "1" if inserting at the '
+                'beginning')
+
+    issues_per_volume = forms.IntegerField(min_value=1, initial=12,
+      help_text='Number of issues in each volume')
+
+    def __init__(self, *args, **kwargs):
+        super(PerVolumeIssueRevisionForm, self).__init__(*args, **kwargs)
+        ordering = ['after', 'number_of_issues', 'first_number',
+                    'first_volume', 'issues_per_volume']
+        ordering.extend(self._shared_key_order())
+        self.fields.keyOrder = ordering
+
+    def clean(self):
+        cd = self.cleaned_data
+        basics = (cd['first_number'], cd['first_volume'])
+        if None in basics and cd['after'] is not None:
+            if filter(lambda x: x is not None, basics):
+                raise forms.ValidationError('When adding issues following an '
+                  'existing issue, both of "first number" and "first volume" '
+                  'must be specified, or both must be left blank.')
+
+        if cd['first_number'] is None and cd['after'] is not None:
+            try:
+                cd['first_number'] = ((int(cd['after'].number) + 1) %
+                                      cd['issues_per_volume'])
+                if cd['first_number'] == 0:
+                    cd['first_number'] = cd['issues_per_volume']
+            except ValueError:
+                raise forms.ValidationError('When adding issues following an '
+                  'existing issue, the issue after which you are inserting '
+                  'the new issues must have a whole number for the issue '
+                  'number (even if it displays like "v1#1")')
+
+            if cd['after'].volume is None:
+                raise forms.ValidationError('When adding issues following an '
+                  'existing issue, the issue after which you are inserting '
+                  'the new issues must have a volume.')
+
+            cd['first_volume'] = cd['after'].volume
+            if cd['first_number'] == 1:
+                cd['first_volume'] += 1
+
+        elif cd['after'] is None:
+            if cd['first_number'] is None:
+                cd['first_number'] = 1
+            if cd['first_volume'] is None:
+                cd['first_volume'] = 1
+
+        return cd
+
+class PerYearIssueRevisionForm(BulkIssueRevisionForm):
+    first_number = forms.IntegerField(required=False,
+      help_text='First issue number (the portion before the "/").  '
+                'If blank, starts with the number after the issue specified '
+                'in the "Add issues after" field, or "1" if inserting issues '
+                'at the beginning.')
+    first_year = forms.IntegerField(required=False,
+      help_text='If blank, first year is calculated from the issue specified '
+                'in the "Add issues after" field.  If inserting at the begninning '
+                'of the series, this field is required')
+
+    issues_per_year = forms.IntegerField(min_value=1, initial=12,
+      help_text='Number of issues in each year')
+
+    volume = forms.IntegerField(required=False)
+
+    no_volume = forms.BooleanField(required=False)
+
+    display_volume_with_number = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(PerYearIssueRevisionForm, self).__init__(*args, **kwargs)
+        ordering = ['after', 'number_of_issues',
+                    'first_number', 'first_year', 'issues_per_year',
+                    'volume', 'no_volume', 'display_volume_with_number']
+        ordering.extend(self._shared_key_order())
+        self.fields.keyOrder = ordering
+
+    def clean(self):
+        cd = self.cleaned_data
+        basics = (cd['first_number'], cd['first_year'])
+        if None in basics and cd['after'] is not None:
+            if filter(lambda x: x is not None, basics):
+                raise forms.ValidationError('When adding issues following an '
+                  'existing issue, both of "first number" and "first year" '
+                  'must be specified, or both must be left blank.')
+
+        if cd['after'] is None and cd['first_year'] is None:
+            raise forms.ValidationError('When inserting issues at the beginning '
+              'of a series, the first year must be specified.')
+
+        if cd['first_number'] is None and cd['after'] is not None:
+            cd = self._parse_year_and_number(cd, cd['issues_per_year'])
+        elif cd['first_number'] is None:
+            cd['first_number'] = 1
+
+        return cd
+
+    def _parse_year_and_number(self, cd, issues_per):
+        previous = cd['after'].number
+        m = re.match(r'(?P<number>\d+)/(?P<year>\d+)', previous)
+        if m is None:
+            raise forms.ValidationError('When adding based on the number of '
+             'a previous issue, theissue must start with a number, then '
+             'a forward slash, then a year, with no spaces: 1/1975')
+        cd['first_number'] = ((int(m.group('number')) + 1) %
+                              issues_per)
+        if cd['first_number'] == 0:
+            cd['first_number'] = issues_per
+
+        cd['first_year'] = int(m.group('year'))
+        if cd['first_number'] == 1:
+            cd['first_year'] += 1
+        return cd
+
+class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
+    first_volume = forms.IntegerField(required=False,
+      help_text='If blank, first volume is calculated from the issue specified '
+                'in the "Add issues after" field, or "1" if inserting at the '
+                'beginning')
+    issues_per_cycle = forms.IntegerField(min_value=1, initial=12,
+      help_text='Number of issues in each year/volume')
+
+    display_volume_with_number = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(PerYearIssueRevisionForm, self).__init__(*args, **kwargs)
+        ordering = ['after', 'number_of_issues',
+                    'first_number', 'first_year', 'first_volume',
+                    'issues_per_cycle', 'display_volume_with_number']
+        ordering.extend(self._shared_key_order())
+        self.fields.keyOrder = ordering
+
+    def clean(self):
+        cd = self.cleaned_data
+        basics = (cd['first_number'], cd['first_volume'], cd['first_year'])
+        if None in basics and cd['after'] is not None:
+            if filter(lambda x: x is not None, basics):
+                raise forms.ValidationError('When adding issues following an '
+                  'existing issue, all of "first number", "first volume" and '
+                  '"first year" must be specified, or all must be left blank.')
+        if cd['after'] is None and cd['first_year'] is None:
+            raise forms.ValidationError('When inserting issues at the beginning '
+              'of a series, the first year must be specified.')
+
+        if cd['first_number'] is None and cd['after'] is not None:
+            cd = self._parse_year_and_number(cd, cd['issues_per_cycle'])
+            if cd['after'].volume is None:
+                raise forms.ValidationError('When adding issues following an '
+                  'existing issue, the issue after which you are inserting '
+                  'the new issues must have a volume.')
+            cd['first_volume'] = cd['after'].volume
+            if cd['first_number'] == 1:
+                cd['first_volume'] += 1
+
+        elif cd['after'] is None:
+            if cd['first_number'] is None:
+                cd['first_number'] = 1
+            if cd['first_volume'] is None:
+                cd['first_volume'] = 1
+
+        return cd
 
 def get_story_revision_form(revision=None):
     if revision is None:

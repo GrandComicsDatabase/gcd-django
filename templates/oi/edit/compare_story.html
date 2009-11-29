@@ -11,6 +11,11 @@
     <td> {{ story_revision.story.sequence_number }} </td>
     <td> {{ story_revision.sequence_number }} </td>
   </tr>
+  <tr class="{{ story_revision.changed.type }}">
+    <td class="field_name"> Type </td>
+    <td> {{ story_revision.story.type }} </td>
+    <td> {{ story_revision.type }} </td>
+  </tr>
   <tr class="{{ story_revision.changed.title }}">
     <td class="field_name"> Title </td>
     <td> {{ story_revision.story.title }} </td>
@@ -26,11 +31,6 @@
     <td> {{ story_revision.story.feature }} </td>
     <td> {{ story_revision.feature }} </td>
   </tr>
-  <tr class="{{ story_revision.changed.issue }}">
-    <td class="field_name"> Issue </td>
-    <td> {{ story_revision.story.issue }} </td>
-    <td> {{ story_revision.issue }} </td>
-  </tr>
   <tr class="{{ story_revision.changed.page_count }}">
     <td class="field_name"> Page count </td>
     <td> {{ story_revision.story.page_count }} </td>
@@ -40,6 +40,11 @@
     <td class="field_name"> Page count uncertain </td>
     <td> {% if story_revision.story.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
     <td> {% if story_revision.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr class="{{ story_revision.changed.genre }}">
+    <td class="field_name"> Genre </td>
+    <td> {{ story_revision.story.genre }} </td>
+    <td> {{ story_revision.genre }} </td>
   </tr>
   <tr class="{{ story_revision.changed.script }}">
     <td class="field_name"> Script </td>
@@ -100,16 +105,6 @@
     <td class="field_name"> No editing </td>
     <td> {% if story_revision.story.no_editing %} X {% endif %} </td>
     <td> {% if story_revision.no_editing %} X {% endif %} </td>
-  </tr>
-  <tr class="{{ story_revision.changed.type }}">
-    <td class="field_name"> Type </td>
-    <td> {{ story_revision.story.type }} </td>
-    <td> {{ story_revision.type }} </td>
-  </tr>
-  <tr class="{{ story_revision.changed.genre }}">
-    <td class="field_name"> Genre </td>
-    <td> {{ story_revision.story.genre }} </td>
-    <td> {{ story_revision.genre }} </td>
   </tr>
   <tr class="{{ story_revision.changed.characters }}">
     <td class="field_name"> Characters </td>

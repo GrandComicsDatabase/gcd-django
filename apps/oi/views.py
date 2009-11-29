@@ -697,6 +697,174 @@ def _display_add_issue_form(request, series, form):
       context_instance=RequestContext(request))
 
 @permission_required('gcd.can_reserve')
+def add_issues(request, series_id, method=None):
+    if method is None:
+        return render_to_response('oi/edit/add_issues.html',
+                                  { 'series_id': series_id },
+                                  context_instance=RequestContext(request))
+
+    series = get_object_or_404(Series, id=series_id)
+    form_class = get_bulk_issue_revision_form(series=series, method=method)
+
+    if request.method != 'POST':
+        reversed_issues = series.issue_set.order_by('-sort_code')
+        initial = {}
+        if reversed_issues.count():
+            initial['after'] = reversed_issues[0].id
+        form = form_class(initial=initial)
+        return _display_bulk_issue_form(request, series, form, method)
+
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'apps.gcd.views.details.series',
+          kwargs={ 'series_id': series_id }))
+
+    form = form_class(request.POST)
+    if not form.is_valid():
+        return _display_bulk_issue_form(request, series, form, method)
+
+    changeset = Changeset(indexer=request.user, state=states.OPEN)
+    changeset.save()
+    changeset.comments.create(commenter=request.user,
+                              text=form.cleaned_data['comments'],
+                              old_state=states.UNRESERVED,
+                              new_state=changeset.state)
+    if method == 'number':
+        new_issues = _build_whole_numbered_issues(series, form, changeset)
+    elif method == 'volume':
+        new_issues = _build_per_volume_issues(series, form, changeset)
+    elif method == 'year':
+        new_issues = _build_per_year_issues(series, form, changeset)
+    elif method == 'year_volume':
+        new_issues = _build_per_year_volume_issues(series, form, changeset)
+    else:
+        return render_error(request,
+          'Unknown method for generating issues: %s' % method)
+
+    # "after" for the rest of the issues gets set when they are all
+    # committed to display.
+    new_issues[0].after = form.cleaned_data['after']
+    for revision in new_issues:
+        revision.save_added_revision(changeset=changeset, series=series)
+
+    return submit(request, changeset.id)
+
+def _build_whole_numbered_issues(series, form, changeset):
+    issue_revisions = []
+    cd = form.cleaned_data
+    first_number = cd['first_number']
+    increment = 0
+    for number in range(first_number, first_number + cd['number_of_issues']):
+        issue_revisions.append(_build_issue(form, revision_sort_code=increment,
+          number=number,
+          volume=cd['volume'],
+          no_volume=cd['no_volume'],
+          display_volume_with_number=cd['display_volume_with_number']))
+        increment += 1
+    return issue_revisions
+
+def _build_per_volume_issues(series, form, changeset):
+    issue_revisions = []
+    cd = form.cleaned_data
+    first_number = cd['first_number']
+    num_issues = cd['number_of_issues']
+    per_volume = cd['issues_per_volume']
+    current_volume = cd['first_volume']
+    for increment in range(0, num_issues):
+        current_number = (first_number + increment) % per_volume
+        if current_number == 0:
+            current_number = per_volume
+        elif increment > 0 and current_number == 1:
+            current_volume += 1
+        issue_revisions.append(_build_issue(form, revision_sort_code=increment,
+          number=current_number,
+          volume=current_volume,
+          no_volume=False,
+          display_volume_with_number=True))
+    return issue_revisions
+
+def _build_per_year_issues(series, form, changeset):
+    issue_revisions = []
+    cd = form.cleaned_data
+    first_number = cd['first_number']
+    num_issues = cd['number_of_issues']
+    per_year = cd['issues_per_year']
+    current_year = cd['first_year']
+    for increment in range(0, num_issues):
+        current_number = (first_number + increment) % per_year
+        if current_number == 0:
+            current_number = per_year
+        elif increment > 0 and current_number == 1:
+            current_year +=1
+        issue_revisions.append(_build_issue(form, revision_sort_code=increment,
+          number='%d/%d' % (current_number, current_year),
+          volume=cd['volume'],
+          no_volume=cd['no_volume'],
+          display_volume_with_number=cd['display_volume_with_number']))
+    return issue_revisions
+
+def _build_per_year_volume_issues(series, form, changeset):
+    issue_revisions = []
+    cd = form.cleaned_data
+    first_number = cd['first_number']
+    num_issues = cd['number_of_issues']
+    per_cycle = cd['issues_per_cycle']
+    current_year = cd['first_year']
+    current_volume = cd['first_volume']
+    for increment in range(0, num_issues):
+        current_number = (first_number + increment) % per_cycle
+        if current_number == 0:
+            current_number = per_cycle
+        elif increment > 0 and current_number == 1:
+            current_year +=1
+            current_volume +=1
+        issue_revisions.append(_build_issue(form, revision_sort_code=increment,
+          number='%d/%d' % (current_number, current_year),
+          volume=current_volume,
+          no_volume=False,
+          display_volume_with_number=cd['display_volume_with_number']))
+    return issue_revisions
+
+def _build_issue(form, revision_sort_code, number,
+                 volume, no_volume, display_volume_with_number):
+    cd = form.cleaned_data
+    # Don't specify series and changeset as save_added_revision handles that.
+    return IssueRevision(
+      number=number,
+      volume=volume,
+      no_volume=no_volume,
+      display_volume_with_number=display_volume_with_number,
+      indicia_publisher=cd['indicia_publisher'],
+      brand=cd['brand'],
+      indicia_frequency=cd['indicia_frequency'],
+      price=cd['price'],
+      page_count=cd['page_count'],
+      page_count_uncertain=cd['page_count_uncertain'],
+      editing=cd['editing'],
+      no_editing=cd['no_editing'],
+      revision_sort_code=revision_sort_code)
+    issue_revisions.append(revision)
+    return issue_revisons
+
+def _display_bulk_issue_form(request, series, form, method=None):
+    kwargs = {
+        'series_id': series.id,
+    }
+    url_name = 'add_issues'
+    if method is not None:
+        kwargs['method'] = method
+        url_name = 'add_multiple_issues'
+    url = urlresolvers.reverse(url_name, kwargs=kwargs)
+    return render_to_response('oi/edit/add_frame.html',
+      {
+        'object_name': 'Issues',
+        'object_url': url,
+        'action_label': 'Submit new',
+        'form': form,
+      },
+      context_instance=RequestContext(request))
+
+@permission_required('gcd.can_reserve')
 def add_story(request, issue_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     # Process add form if this is a POST.
@@ -886,17 +1054,18 @@ def compare(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     if changeset.inline():
         revision = changeset.inline_revision()
+    elif changeset.issuerevisions.count() > 0:
+        revision = changeset.issuerevisions.all()[0]
     else:
-        if changeset.issuerevisions.count() == 1:
-            revision = changeset.issuerevisions.all()[0]
-        else:
-            # TODO: What does compare look like for bulk skeleton adds?
-            raise NotImplementedError
+        raise NotImplementedError
 
     revision.compare_changes()
 
     model_name = revision.source_name
-    template = 'oi/edit/compare_%s.html' % model_name
+    if changeset.issuerevisions.count() > 1:
+        template = 'oi/edit/compare_issue_skeletons.html'
+    else:
+        template = 'oi/edit/compare_%s.html' % model_name
 
     response = render_to_response(template,
                                   { 'changeset': changeset,

@@ -77,11 +77,18 @@ class Changeset(models.Model):
                 self._inline_revision = self.revisions.next()
         return self._inline_revision
 
+    def ordered_issue_revisions(self):
+        """
+        Used in the display.  Natural revision order must be by timestamp.
+        """
+        return self.issuerevisions.order_by('revision_sort_code', 'id')
+
     def queue_name(self):
         if self.inline():
             return self.revisions.next().queue_name()
-        # TODO: Fix big hack:
-        return self.issuerevisions.all()[0].queue_name()
+        # if self.issuerevisions.count() > 0:
+            # pass # return self.issuerevisions.all()[0].queue_name()
+        return unicode(self)
 
     def display_state(self):
         """
@@ -223,8 +230,23 @@ class Changeset(models.Model):
                              old_state=self.state,
                              new_state=states.APPROVED)
 
-        for revision in self.revisions:
-            revision.commit_to_display()
+        issue_revision_count = self.issuerevisions.count() 
+        if issue_revision_count > 1:
+            # Bulk add of skeletons is relatively complicated.
+            # The first issue will have the "after" field set.  Later
+            # issues will need the "after" field set to the issue that was
+            # just created by the previous save.
+            previous_revision = None
+            for revision in self.issuerevisions.order_by('revision_sort_code'):
+                if previous_revision is None:
+                    revision.commit_to_display(space_count=issue_revision_count)
+                else:
+                    revision.after = previous_revision.issue
+                    revision.commit_to_display(space_count=0)
+                previous_revision = revision
+        else:
+            for revision in self.revisions:
+                revision.commit_to_display()
 
         self.state = states.APPROVED
         self.save()
@@ -273,9 +295,14 @@ class Changeset(models.Model):
     def __unicode__(self):
         if self.inline():
             return  unicode(self.inline_revision())
-        # For now, the only non-inline changesets are single issue ones.
-        if self.issuerevisions.count():
+        ir_count = self.issuerevisions.count() 
+        if ir_count == 1:
             return unicode(self.issuerevisions.all()[0])
+        if ir_count > 1:
+            first = self.issuerevisions.order_by('revision_sort_code')[0]
+            last = self.issuerevisions.order_by('-revision_sort_code')[0]
+            return '%s #%s - %s' % (first.series, first.display_number,
+                                                  last.display_number)
         return 'Changeset: %d' % self.id
 
 class ChangesetComment(models.Model):
@@ -787,7 +814,9 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         ipub = self.indicia_publisher
         if ipub is None:
             ipub = IndiciaPublisher()
+            self.parent.indicia_publisher_count += 1
         elif self.deleted:
+            self.parent.indicia_publisher_count -= 1
             ipub.delete()
             return
 
@@ -885,7 +914,9 @@ class BrandRevision(PublisherRevisionBase):
         brand = self.brand
         if brand is None:
             brand = Brand()
+            self.parent.brand_count += 1
         elif self.deleted:
+            self.parent.brand_count -= 1
             brand.delete()
             return
 
@@ -1144,6 +1175,16 @@ class IssueRevision(Revision):
     # the series.
     after = models.ForeignKey(Issue, null=True, related_name='after_revisions')
 
+    # This is used *only* for multiple issues within the same changeset.
+    # It does NOT correspond directly to gcd_issue.sort_code, which must be
+    # calculated at the time the revision is committed.
+    revision_sort_code = models.IntegerField(null=True)
+
+    # When adding an issue, this requests the reservation upon approval of
+    # the new issue.  The request will be granted unless an ongoing reservation
+    # is in place at the time of approval.
+    reservation_requested = models.BooleanField(default=0)
+
     number = models.CharField(max_length=50)
     volume = models.IntegerField(max_length=255, null=True, blank=True)
     no_volume = models.BooleanField(default=0)
@@ -1250,7 +1291,7 @@ class IssueRevision(Revision):
             return stories.order_by('-sequence_number')[0].sequence_number + 1
         return 0
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self, clear_reservation=True, space_count=1):
         issue = self.issue
 
         if issue is None:
@@ -1265,11 +1306,17 @@ class IssueRevision(Revision):
               series=self.series,
               sort_code__gt=after_code).order_by('-sort_code')
 
-            # There must be a way to do this in bulk, but I can't find it in
-            # the docs now.  TODO: try again after sleep.
-            for later_issue in later_issues:
-                later_issue.sort_code = F('sort_code') + 1
-                later_issue.save()
+            # Make space for the issue(s) being added.  The changeset will
+            # pass a larger number or zero in order to make all necessary
+            # space for a multiple add on the first pass, and then not
+            # have to update this for the remaining issues.
+            if space_count > 0:
+                # Unique constraint prevents us from doing this:
+                # later_issues.update(sort_code=F('sort_code') + space_count)
+                # which is vastly more efficient.  TODO: revisit.
+                for later_issue in later_issues:
+                    later_issue.sort_code += space_count
+                    later_issue.save()
 
             issue = Issue(sort_code=after_code + 1)
 
@@ -1498,9 +1545,22 @@ class StoryRevision(Revision):
         story = self.story
         if story is None:
             story = Story()
+            if self.type.name == 'story':
+                self.issue.story_type_count +=1
+                self.issue.save()
         elif self.deleted:
+            if story.type.name == 'story':
+                self.issue.story_type_count -=1
+                self.issue.save()
             story.delete()
             return
+
+        elif self.type.name == 'story' and story.type.name != 'story':
+            self.issue.story_type_count += 1
+            self.issue.save()
+        elif self.type.name != 'story' and story.type.name == 'story':
+            self.issue.story_type_count -= 1
+            self.issue.save()
 
         story.title = self.title
         story.title_inferred = self.title_inferred

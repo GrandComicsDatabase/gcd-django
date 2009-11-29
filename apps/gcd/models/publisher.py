@@ -29,9 +29,11 @@ class Publisher(BasePublisher):
     country = models.ForeignKey(Country)
 
     # Cached counts.
-    imprint_count = models.IntegerField()
-    series_count = models.IntegerField()
-    issue_count = models.IntegerField()
+    imprint_count = models.IntegerField(default=0)
+    brand_count = models.IntegerField(default=0)
+    indicia_publisher_count = models.IntegerField(default=0)
+    series_count = models.IntegerField(default=0)
+    issue_count = models.IntegerField(default=0)
 
     # Fields about relating publishers/imprints to each other.
     is_master = models.BooleanField(db_index=True)

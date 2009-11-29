@@ -46,6 +46,10 @@ class Issue(models.Model):
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     brand = models.ForeignKey(Brand, null=True)
 
+    # Count of stories of type "story" attached to this issue.
+    # Used to determine whether something has been indexed at all or not.
+    story_type_count = models.IntegerField(default=0, db_index=True)
+
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)

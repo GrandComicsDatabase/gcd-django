@@ -1,0 +1,152 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Reviewing :: {{ revision }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<p>
+This change adds the following issues:
+<table class="comparison">
+<tr>
+  <th> Volume </th>
+  <th> Issue Number</th>
+  <th> Display Number </th>
+  <th> Preview </th>
+</tr>
+{% for issue in changeset.ordered_issue_revisions %}
+<tr>
+  <td> {{ issue.volume }}
+  <td> {{ issue.number }}
+  <td> {{ issue.display_number }}
+  <td> <a href="{% url preview_revision model_name=model_name,id=issue.id %}" target=_blank>Preview</a>
+</tr>
+{% endfor %}
+</table>
+
+<p>
+The following fields are set for all issues in the issue range.  Keep in mind
+that publication date, key date and notes will always be blank:
+</p>
+
+<table class="comparison">
+  <tr>
+    <th> Field </th>
+    <th> Current </th>
+    <th> Change </th>
+  <tr>
+  <tr class="{{ revision.changed.no_volume }}">
+    <td class="field_name"> No volume </td>
+    <td> {% if revision.issue.no_volume %} Yes {% else %} No {% endif %} </td>
+    <td> {% if revision.no_volume %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr class="{{ revision.changed.display_volume_with_number }}">
+    <td class="field_name"> Display volume with number </td>
+    <td> {% if revision.issue.display_volume_with_number %} Yes {% else %} No {% endif %} </td>
+    <td> {% if revision.display_volume_with_number %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr class="{{ revision.changed.publication_date }}">
+    <td class="field_name"> Publication date </td>
+    <td> {{ revision.issue.publication_date }} </td>
+    <td> {{ revision.publication_date }} </td>
+  </tr>
+  <tr class="{{ revision.changed.indicia_frequency }}">
+    <td class="field_name"> Indicia frequency </td>
+    <td> {{ revision.issue.indicia_frequency }} </td>
+    <td> {{ revision.indicia_frequency }} </td>
+  </tr>
+  <tr class="{{ revision.changed.key_date }}">
+    <td class="field_name"> Key date </td>
+    <td> {{ revision.issue.key_date }} </td>
+    <td> {{ revision.key_date }} </td>
+  </tr>
+  <tr class="{{ revision.changed.indicia_publisher}}">
+    <td class="field_name"> Indicia publisher </td>
+    <td> {{ revision.issue.indicia_publisher }} </td>
+    <td> {{ revision.indicia_publisher }} </td>
+  </tr>
+  <tr class="{{ revision.changed.brand}}">
+    <td class="field_name"> Brand </td>
+    <td> {{ revision.issue.brand }} </td>
+    <td> {{ revision.brand }} </td>
+  </tr>
+  <tr class="{{ revision.changed.price }}">
+    <td class="field_name"> Price </td>
+    <td> {{ revision.issue.price }} </td>
+    <td> {{ revision.price }} </td>
+  </tr>
+  <tr class="{{ revision.changed.page_count }}">
+    <td class="field_name"> Page count </td>
+    <td> {{ revision.issue.page_count }} </td>
+    <td> {{ revision.page_count }} </td>
+  </tr>
+  <tr class="{{ revision.changed.page_count_uncertain }}">
+    <td class="field_name"> Page count uncertain </td>
+    <td> {% if revision.issue.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
+    <td> {% if revision.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr class="{{ revision.changed.editing }}">
+    <td class="field_name"> Editing </td>
+    <td> {{ revision.issue.editing }} </td>
+    <td> {{ revision.editing }} </td>
+  </tr>
+  <tr class="{{ revision.changed.no_editing }}">
+    <td class="field_name"> No editing </td>
+    <td> {% if revision.issue.no_editing %} X {% endif %} </td>
+    <td> {% if revision.no_editing %} X {% endif %} </td>
+  </tr>
+  <tr class="{{ revision.changed.notes }}">
+    <td class="field_name"> Notes </td>
+    <td> {{ revision.issue.notes }} </td>
+    <td> {{ revision.notes }} </td>
+  </tr>
+</table>
+
+<hr>
+
+{% for story_revision in revision.ordered_story_revisions %}
+  {% comment %}
+    story_revision.compare_changes needs to be called here because
+    calling ordered_story_revisions re-fetches the objects from the
+    database, which clears the changed dictionary.  Need to think
+    about this whole setup a bit more, but this works for now.
+  {% endcomment %}
+  {{ story_revision.compare_changes|default:'' }}
+  {% include 'oi/edit/compare_story.html' %}
+
+<hr>
+{% endfor %}
+
+<h3> Comments </h3>
+{% include 'oi/bits/comments.html' %}
+
+<p>
+(opens in a new window)
+</p>
+
+<form id="review" action="{% url process id=changeset.id %}" method="POST">
+  <div>
+  <label for="comments">Comment:</label> <br>
+  <textarea id="comments" name="comments"></textarea>
+  </div>
+{% ifequal request.user changeset.approver %}
+{% ifequal changeset.state states.REVIEWING %}
+  <input type="submit" name="approve" value="Approve"></input>
+  <input type="submit" name="disapprove" value="Send Back to Indexer"></input>
+  <input type="submit" name="cancel" value="Reject Permanently"></input>
+{% endifequal %}
+{% endifequal %}
+  <input type="submit" name="add_comment" value="Add Comment"></input>
+</form>
+{% endblock %}
+

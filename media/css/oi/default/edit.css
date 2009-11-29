@@ -10,6 +10,7 @@ input.year{
     margin-bottom: 1em;
 }
 
+table.add_issues,
 table.comparison,
 table.comments,
 table.story_list {
@@ -18,6 +19,7 @@ table.story_list {
     margin-bottom: 1em;
 }
 
+table.add_issues th,
 table.comparison th,
 table.comments th {
     border: solid black 1px;
@@ -38,6 +40,7 @@ table.editing th {
     text-align: right;
 }
 
+table.add_issues td,
 table.comparison td,
 table.comments td {
     border: solid black 1px;

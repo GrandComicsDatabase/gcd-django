@@ -34,6 +34,11 @@ urlpatterns = patterns('',
     # Issue URLs
     url(r'^series/(?P<series_id>\d+)/add_issue/$', oi_views.add_issue,
         name='add_issue'),
+    url(r'^series/(?P<series_id>\d+)/add_issues/$', oi_views.add_issues,
+        name='add_issues'),
+    url(r'^series/(?P<series_id>\d+)/add_issues/(?P<method>\w+)/$',
+        oi_views.add_issues,
+        name='add_multiple_issues'),
 
     url(r'^issue/(?P<issue_id>\d+)/add_story/(?P<changeset_id>\d+)$',
         oi_views.add_story,

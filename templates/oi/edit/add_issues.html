@@ -1,0 +1,90 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Add New Records
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<div class="edit">
+<p>
+Choose how many issues you want to add and with what numbering pattern.
+Irregularly numbered issues must be added one at a time.  Note that
+you may only request that an issue be reserved to you automatically upon
+approval when you add issues one at a time (and the parent series is not
+already under an ongoing reservation).
+</p>
+
+<table class="add_issues">
+<tr>
+  <td>
+    <form method="GET" action="{% url add_issue series_id=series_id %}">
+      <input id="add" type="submit" value="Add single">
+      </input>
+    </form>
+  </td>
+  <td> Add a single issue </td>
+  <td> 1 </td>
+</tr>
+
+<tr>
+  <td>
+    <form method="GET"
+          action="{% url add_multiple_issues method='number',series_id=series_id %}">
+      <input id="add" type="submit" value="Add multiple">
+      </input>
+    </form>
+  </td>
+  <td> Add multiple issues with whole issue numbers </td>
+  <td> 1, 2, 3, ... </td>
+</tr>
+
+<tr>
+  <td>
+    <form method="GET"
+          action="{% url add_multiple_issues method='volume',series_id=series_id %}">
+      <input id="add" type="submit" value="Add multiple">
+      </input>
+    </form>
+  </td>
+  <td> Add multiple issues that renumber with each volume </td>
+  <td> v1#1, v1#2, ..., v2#1, v2#2, ... </td>
+</tr>
+
+<tr>
+  <td>
+    <form method="GET"
+          action="{% url add_multiple_issues method='year',series_id=series_id %}">
+      <input id="add" type="submit" value="Add multiple">
+      </input>
+    </form>
+  </td>
+  <td> Add multiple issues that renumber with each year </td>
+  <td> 1/2000, 2/2000, ..., 1/2001, 2/2001, ... </td>
+</tr>
+
+<tr>
+  <td>
+    <form method="GET"
+          action="{% url add_multiple_issues method='year_volume',series_id=series_id %}">
+      <input id="add" type="submit" value="Add multiple">
+      </input>
+    </form>
+  </td>
+  <td> Add multiple issues that renumber with each year and volume </td>
+  <td> 1/2000, 2/2000, ... are all part of volume 1;
+       1/2001, 2/2001, ... are all part of volume 2; ... </td>
+</tr>
+</table>
+</div>
+{% endblock %}
+
