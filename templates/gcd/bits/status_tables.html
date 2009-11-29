@@ -11,10 +11,6 @@
 <p class="spacer"/>
 <table border="1" class="status">
   <tr>
-  <!-- Iterate over covers rather than issues because cover sort codes
-       are more reliable than key dates, and if both cover and issue
-       records are needed the queries are more optimal done from the
-       covers side. -->
   {% for issue in issues %}
     <td class="status_{% if issue.reserve_status %}{{ issue.index_status }}{% else %}0{% endif %}">
       <a href="{{ issue.get_absolute_url }}">{{ issue.display_number }}</a> </td>
