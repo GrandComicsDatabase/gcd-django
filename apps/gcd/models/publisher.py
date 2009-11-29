@@ -43,14 +43,6 @@ class Publisher(BasePublisher):
     def __unicode__(self):
         return self.name
 
-    def _indicia_publisher_count(self):
-        return self.indicia_publishers.count()
-    indicia_publisher_count = property(_indicia_publisher_count)
-
-    def _brand_count(self):
-        return self.brands.count()
-    brand_count = property(_brand_count)
-
     def has_imprints(self):
         return self.imprint_set.count() > 0
 
