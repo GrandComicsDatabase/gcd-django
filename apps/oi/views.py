@@ -1113,7 +1113,8 @@ def preview(request, id, model_name):
 @permission_required('gcd.can_mentor')
 def mentoring(request):
     new_indexers = User.objects.filter(indexer__mentor=None) \
-                               .filter(indexer__is_new=True)
+                               .filter(indexer__is_new=True) \
+                               .filter(is_active=True)
     my_mentees = User.objects.filter(indexer__mentor=request.user) \
                              .filter(indexer__is_new=True)
     mentees = User.objects.exclude(indexer__mentor=None) \
