@@ -237,7 +237,6 @@ class SeriesRevisionForm(forms.ModelForm):
 
 def _get_issue_fields():
     return [
-        'request_reservation',
         'number',
         'volume',
         'display_volume_with_number',
@@ -271,20 +270,21 @@ def get_issue_revision_form(publisher, series=None, revision=None):
     if revision is None:
         add_fields = ['after']
         add_fields.extend(_get_issue_fields())
+
+        # TODO: revisit when we decide about 1-1 try/catch annoyances.
+        can_request = False
+        try:
+            ignore = series.ongoing_reservation is not None
+        except OngoingReservation.DoesNotExist:
+            can_request = True
+            add_fields = ['reservation_requested'] + add_fields
+        
         class RuntimeAddIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta:
                 model = IssueRevision
                 fields = add_fields
 
-            after = forms.ModelChoiceField(required=False,
-              queryset=Issue.objects.filter(series=series).order_by('sort_code'),
-              empty_label="[add as first issue]",
-              label = "Add this issue after")
-
-            # TODO: revisit when we decide about 1-1 try/catch annoyances.
-            try:
-                o = series.ongoing_reservation
-            except OngoingReservation.DoesNotExist:
+            if can_request:
                 reservation_requested = forms.BooleanField(required=False,
                   label = 'Request reservation',
                   help_text='Check this box to have this issue reserved to you '
@@ -292,8 +292,13 @@ def get_issue_revision_form(publisher, series=None, revision=None):
                             'has acquired the series\' ongoing reservation before '
                             'then. *NOTE: NOT IMPLEMENTED YET*')
 
+            after = forms.ModelChoiceField(required=False,
+              queryset=Issue.objects.filter(series=series).order_by('sort_code'),
+              empty_label="[add as first issue]",
+              label = "Add this issue after")
+
         return RuntimeAddIssueRevisionForm
-            
+
     return RuntimeIssueRevisionForm
 
 class IssueRevisionForm(forms.ModelForm):
