@@ -1,5 +1,5 @@
 from django import forms
-from apps.gcd.models import Country, Language, Indexer
+from apps.gcd.models import Country, Language, Indexer, StoryType
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],
@@ -89,28 +89,7 @@ class AdvancedSearch(forms.Form):
 
 
     feature = forms.CharField(required=False)
-    type = forms.MultipleChoiceField(
-      choices=[['story', 'Story'],
-               ['text story', 'Text Story'],
-               ['photo story', 'Photo Story'],
-               ['cover', 'Cover'],
-               ['cover reprint', 'Cover Reprint'],
-               ['backcovers', 'Back Cover'],
-               ['cartoon', 'Cartoon'],
-               ['filler', 'Filler'],
-               ['pinup', 'Pin-Up'],
-               ['ad', 'Advertisement'],
-               ['promo', 'Promo'],
-               ['bio', 'Biography'],
-               ['profile', 'Character Profile'],
-               ['credits', 'Credits'],
-               ['letters', 'Letters Page'],
-               ['psa', 'Public Service Announcemnt'],
-               ['activity', 'Activity'],
-               ['insert', 'Insert'],
-               ['foreward', 'Foreword'],
-               ['recap', 'Recap']],
-      initial='story',
+    type = forms.ModelMultipleChoiceField(queryset=StoryType.objects.all(),
       widget=forms.SelectMultiple(attrs={'size' : '6'}),
       required=False)
 

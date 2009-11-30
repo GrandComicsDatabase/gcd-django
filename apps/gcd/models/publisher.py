@@ -94,6 +94,8 @@ class IndiciaPublisher(BasePublisher):
     is_surrogate = models.BooleanField(db_index=True)
     country = models.ForeignKey(Country)
 
+    issue_count = models.IntegerField(default=0)
+
     def get_absolute_url(self):
         return "/indicia_publisher/%i/" % self.id
 
@@ -106,6 +108,8 @@ class Brand(BasePublisher):
         app_label = 'gcd'
 
     parent = models.ForeignKey(Publisher, related_name='brands')
+
+    issue_count = models.IntegerField(default=0)
 
     def get_absolute_url(self):
         return "/brand/%i/" % self.id

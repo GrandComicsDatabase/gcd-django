@@ -7,8 +7,9 @@ class StoryType(models.Model):
     class Meta:
         app_label = 'gcd'
         db_table = 'gcd_story_type'
-        ordering = ['id']
+        ordering = ['sort_code']
     name = models.CharField(max_length=50, db_index=True, unique=True)
+    sort_code = models.IntegerField(unique=True)
 
     def __unicode__(self):
         return self.name

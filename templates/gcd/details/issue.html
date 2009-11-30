@@ -55,23 +55,6 @@
   <dd id="indicia_frequency"> {{ issue.indicia_frequency }}
 {% endif %}
   {{ issue|show_credit:"editing" }}
-<br>
-{% if issue.size %}
-  <dt> {% trans "Size" %}:
-  <dd id="size"> {{ issue.size }}
-{% endif %}
-{% if issue.paper_stock %}
-  <dt> {% trans "Paper" %}:
-  <dd id="paper"> {{ issue.paper_stock }}
-{% endif %}
-{% if issue.binding %}
-  <dt> {% trans "Binding" %}:
-  <dd id="binding"> {{ issue.binding }}
-{% endif %}
-{% if issue.printing_process %}
-  <dt> {% trans "Printing process" %}:
-  <dd id="printing_process"> {{ issue.printing_process }}
-{% endif %}
 </dl>
 <!-- IE6 didn't like various attempts to get the sometimes very long
      "Format" field to lay out nicely.  And even in Firefox it was

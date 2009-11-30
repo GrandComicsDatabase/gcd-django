@@ -24,10 +24,6 @@ class Issue(models.Model):
     price = models.CharField(max_length=255)
     page_count = models.DecimalField(max_digits=10, decimal_places=3, null=True)
     page_count_uncertain = models.BooleanField(default=0)
-    size = models.CharField(max_length=255)
-    paper_stock = models.CharField(max_length=255)
-    binding = models.CharField(max_length=255)
-    printing_process = models.CharField(max_length=255)
 
     editing = models.TextField()
     no_editing = models.BooleanField(default=0)
@@ -71,12 +67,6 @@ class Issue(models.Model):
             return 'reserved'
         if (self.index_status == 2):
             return 'pending'
-
-    def has_format(self):
-        return self.size or \
-               self.binding or \
-               self.paper_stock or \
-               self.printing_process
 
     def get_prev_next_issue(self):
         """

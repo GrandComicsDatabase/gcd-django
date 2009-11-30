@@ -811,6 +811,12 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         return self.indicia_publisher.series_set
     issue_set = property(_issue_set)
 
+    def _issue_count(self):
+        if self.indicia_publisher is None:
+            return 0
+        return self.indicia_publisher.issue_count
+    issue_count = property(_issue_count)
+
     def _do_complete_added_revision(self, parent):
         """
         Do the necessary processing to complete the fields of a new
@@ -917,6 +923,12 @@ class BrandRevision(PublisherRevisionBase):
             return Issue.objects.filter(pk__isnull=True)
         return self.brand.series_set
     issue_set = property(_issue_set)
+
+    def _issue_count(self):
+        if self.brand is None:
+            return 0
+        return self.brand.issue_count
+    issue_count = property(_issue_count)
 
     def _do_complete_added_revision(self, parent):
         """
@@ -1184,10 +1196,6 @@ class IssueRevisionManager(RevisionManager):
           brand=issue.brand,
           page_count=issue.page_count,
           page_count_uncertain=issue.page_count_uncertain,
-          size=issue.size,
-          binding=issue.binding,
-          paper_stock=issue.paper_stock,
-          printing_process=issue.printing_process,
           editing=issue.editing,
           no_editing=issue.no_editing,
           notes=issue.notes)
@@ -1232,10 +1240,6 @@ class IssueRevision(Revision):
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
                                      null=True, blank=True)
     page_count_uncertain = models.BooleanField(default=0)
-    size = models.CharField(max_length=255, blank=True)
-    paper_stock = models.CharField(max_length=255, blank=True)
-    binding = models.CharField(max_length=255, blank=True)
-    printing_process = models.CharField(max_length=255, blank=True)
 
     editing = models.TextField(blank=True)
     no_editing = models.BooleanField(default=0)
@@ -1294,7 +1298,6 @@ class IssueRevision(Revision):
         return ('volume', 'number', 'no_volume', 'display_volume_with_number',
                 'publication_date', 'key_date', 'indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
-                'size', 'binding', 'paper_stock', 'printing_process',
                 'editing', 'no_editing', 'notes',
                 'series', 'indicia_publisher', 'brand')
 
@@ -1398,10 +1401,6 @@ class IssueRevision(Revision):
         issue.price = self.price
         issue.page_count = self.page_count
         issue.page_count_uncertain = self.page_count_uncertain
-        issue.size = self.size
-        issue.binding = self.binding
-        issue.paper_stock = self.paper_stock
-        issue.printing_process = self.printing_process
 
         issue.editing = self.editing
         issue.no_editing = self.no_editing
@@ -1504,12 +1503,6 @@ class StoryRevisionManager(RevisionManager):
 
         revision.save()
         return revision
-
-    def has_format(self):
-        return self.size or \
-               self.binding or \
-               self.paper_stock or \
-               self.printing_process
 
 class StoryRevision(Revision):
     class Meta:
