@@ -223,7 +223,7 @@ class SeriesRevisionForm(forms.ModelForm):
     format = forms.CharField(
       widget=forms.TextInput(attrs={'class': 'wide'}),
       required=False,
-      help_text='This is a compount field that holds size, binding, '
+      help_text='This is a compound field that holds size, binding, '
                 'paper stock and other information, separated by '
                 'semi-colons.  Consult the wiki for specifics.  This '
                 'field is being replaced by several individual fields '
@@ -534,7 +534,7 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
                 'at the beginning.')
     first_year = forms.IntegerField(required=False,
       help_text='If blank, first year is calculated from the issue specified '
-                'in the "Add issues after" field.  If inserting at the begninning '
+                'in the "Add issues after" field.  If inserting at the beginning '
                 'of the series, this field is required')
 
     issues_per_year = forms.IntegerField(min_value=1, initial=12,
@@ -579,7 +579,7 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
         m = re.match(r'(?P<number>\d+)/(?P<year>\d+)', previous)
         if m is None:
             raise forms.ValidationError('When adding based on the number of '
-             'a previous issue, theissue must start with a number, then '
+             'a previous issue, the issue must start with a number, then '
              'a forward slash, then a year, with no spaces: 1/1975')
         cd['first_number'] = ((int(m.group('number')) + 1) %
                               issues_per)
