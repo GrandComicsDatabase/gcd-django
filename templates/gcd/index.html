@@ -1,5 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/DTD/strict.dtd"> 
 {% load statustags %}
+{% load humanize %}
 
 <html>
 <head>
@@ -121,11 +122,9 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                         Statistics
                     </div>
                     <div class="box_inner">
-                        5135 publishers<br>
-                        38220 series<br>
-                        513493 issues<br>
-                        243950 covers<br>
-                        746994 stories<br>
+                        {% for stat in stats %}
+                        {{ stat.count|intcomma }} {{ stat.name }}<br>
+                        {% endfor %}
                     </div>
                 </div>
                 <!-- Right Column end --> 

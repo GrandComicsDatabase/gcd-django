@@ -18,7 +18,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 from django.http import HttpResponseRedirect
 
-from apps.gcd.models import Cover, Series, Issue
+from apps.gcd.models import Cover, Series, Issue, CountStats
 from apps.gcd.views import render_error
 
 ZOOM_SMALL = 1
@@ -352,11 +352,9 @@ def cover_upload(request, cover_id, add_variant=False):
                     shutil.move(destination_name, im_name)
                     cover.save()
 
-                    store_count = codecs.open(settings.MEDIA_ROOT + \
-                                  _local_new_scans + "cover_count", "w", "utf-8")
-                    store_count.write(str(Cover.objects.filter(has_image=True)\
-                                                               .count()))
-                    store_count.close()
+                    cover_count = CountStats.objects.filter(name='covers')[0]
+                    cover_count.count += 1
+                    cover_count.save()
 
                     if 'remember_me' in request.POST:
                         request.session['gcd_uploader_name'] = \

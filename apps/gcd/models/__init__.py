@@ -11,3 +11,4 @@ from indexer import Indexer
 from indexcredit import IndexCredit
 from reservation import Reservation
 from error import Error
+from countstats import CountStats

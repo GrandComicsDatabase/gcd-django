@@ -669,9 +669,17 @@ class PublisherRevision(PublisherRevisionBase):
                             issue_count=0)
             if self.parent:
                 self.parent.imprint_count += 1
+            else:
+                publisher_count = CountStats.objects.get(name='publishers')
+                publisher_count.count += 1
+                publisher_count.save()
         elif self.deleted:
             if self.parent:
                 self.parent.imprint_count -= 1
+            else:
+                publisher_count = CountStats.objects.get(name='publishers')
+                publisher_count.count -= 1
+                publisher_count.save()
             pub.delete()
             return
 
@@ -815,8 +823,15 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         if ipub is None:
             ipub = IndiciaPublisher()
             self.parent.indicia_publisher_count += 1
+            publisher_count = CountStats.objects.get(name='indicia publishers')
+            publisher_count.count += 1
+            publisher_count.save()
+
         elif self.deleted:
             self.parent.indicia_publisher_count -= 1
+            publisher_count = CountStats.objects.get(name='indicia publishers')
+            publisher_count.count -= 1
+            publisher_count.save()
             ipub.delete()
             return
 
@@ -915,8 +930,15 @@ class BrandRevision(PublisherRevisionBase):
         if brand is None:
             brand = Brand()
             self.parent.brand_count += 1
+            publisher_count = CountStats.objects.get(name='brands')
+            publisher_count.count += 1
+            publisher_count.save()
+
         elif self.deleted:
             self.parent.brand_count -= 1
+            publisher_count = CountStats.objects.get(name='brands')
+            publisher_count.count -= 1
+            publisher_count.save()
             brand.delete()
             return
 
@@ -1071,10 +1093,22 @@ class SeriesRevision(Revision):
         if series is None:
             series = Series(issue_count=0)
             self.publisher.series_count += 1
+            if self.imprint:
+                self.imprint.series_count += 1
+                self.imprint.save()       
+            series_count = CountStats.objects.get(name='series')
+            series_count.count += 1
+            series_count.save()
         elif self.deleted:
             self.publisher.series_count -= 1
             self.publisher.issue_count -= series.issue_count
+            if self.imprint:
+                self.imprint.series_count -= 1
+                self.imprint.save()       
             series.delete()
+            series_count = CountStats.objects.get(name='series')
+            series_count.count -= 1
+            series_count.save()
             return
 
         series.name = self.name
@@ -1322,10 +1356,32 @@ class IssueRevision(Revision):
 
             self.series.issue_count += 1
             self.series.publisher.issue_count += 1
+            self.series.publisher.save()
+            if self.brand:
+                self.brand.issue_count += 1
+            if self.indicia_publisher:
+                self.indicia_publisher.issue_count += 1
+            if self.series.imprint:
+                self.series.imprint.issue_count += 1
+                self.series.imprint.save()       
+            issue_count = CountStats.objects.get(name='issues')
+            issue_count.count += 1
+            issue_count.save()
 
         elif self.deleted:
             self.series.issue_count -= 1
             self.series.publisher.issue_count -= 1
+            self.series.publisher.save()
+            if self.brand:
+                self.brand.issue_count -= 1
+            if self.indicia_publisher:
+                self.indicia_publisher.issue_count -= 1
+            if self.series.imprint:
+                self.series.imprint.issue_count -= 1
+                self.series.imprint.save()       
+            issue_count = CountStats.objects.get(name='issues')
+            issue_count.count -= 1
+            issue_count.save()
             issue.delete()
             self._check_first_last()
             return
@@ -1548,19 +1604,41 @@ class StoryRevision(Revision):
             if self.type.name == 'story':
                 self.issue.story_type_count +=1
                 self.issue.save()
+                if self.issue.story_type_count == 1:
+                    issue_count = CountStats.objects.get(name='issue indexes')
+                    issue_count.count += 1
+                    issue_count.save()
+            story_count = CountStats.objects.get(name='stories')
+            story_count.count += 1
+            story_count.save()
         elif self.deleted:
             if story.type.name == 'story':
                 self.issue.story_type_count -=1
                 self.issue.save()
+                if self.issue.story_type_count == 0:
+                    issue_count = CountStats.objects.get(name='issue indexes')
+                    issue_count.count -= 1
+                    issue_count.save()
+            story_count = CountStats.objects.get(name='stories')
+            story_count.count -= 1
+            story_count.save()
             story.delete()
             return
 
         elif self.type.name == 'story' and story.type.name != 'story':
             self.issue.story_type_count += 1
             self.issue.save()
+            if self.issue.story_type_count == 1:
+                issue_count = CountStats.objects.get(name='issue indexes')
+                issue_count.count += 1
+                issue_count.save()
         elif self.type.name != 'story' and story.type.name == 'story':
             self.issue.story_type_count -= 1
             self.issue.save()
+            if self.issue.story_type_count == 0:
+                issue_count = CountStats.objects.get(name='issue indexes')
+                issue_count.count -= 1
+                issue_count.save()
 
         story.title = self.title
         story.title_inferred = self.title_inferred

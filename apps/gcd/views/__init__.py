@@ -12,7 +12,7 @@ from django.utils.safestring import mark_safe
 
 from apps.gcd.views.pagination import DiggPaginator
 
-from apps.gcd.models import Error
+from apps.gcd.models import Error, CountStats
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -24,7 +24,9 @@ def index(request):
     if 'style' in request.GET:
         style = request.GET['style']
 
-    vars = { 'style' : style }
+    stats = CountStats.objects.all()
+
+    vars = { 'style' : style, 'stats' : stats }
     return render_to_response('gcd/index.html', vars,
                               context_instance=RequestContext(request))
       
