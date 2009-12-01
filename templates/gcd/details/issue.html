@@ -90,7 +90,7 @@
       </ol>
     </div> <!-- story_toc, a.k.a "right" -->
 
-    {% if issue.series.index_credit_set.all.select_related %}
+    {% if issue.series.index_credit_set.all.select_related or oi_indexers %}
     <div id="index_credits">
       {% if oi_indexers %}
       <div id="indexers_header">{% trans "This issue was most recently indexed by:" %}</div>
@@ -100,12 +100,14 @@
         {% endfor %}
       </ul>
       {% endif %}
+      {% if issue.series.index_credit_set.all.select_related %}
       <div id="indexers_header">{% trans "Issues in this series have been indexed by:" %}</div>
       <ul>
         {% for credit in issue.series.index_credit_set.all.select_related %}
           <li> {{ credit.indexer }}
         {% endfor %}
       </ul>
+      {% endif %}
     </div> <!-- index_credits -->
     {% endif %}
   </div> <!-- story_sidebar -->

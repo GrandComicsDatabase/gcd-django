@@ -26,7 +26,6 @@ class Cover(models.Model):
     server_version = models.IntegerField(default=1)
     contributor = models.CharField(max_length=255, null=True)
     file_extension = models.CharField(max_length = 10)
-    variant_code = models.CharField(max_length = 2, null = True)
 
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True, null=True)

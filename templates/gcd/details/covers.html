@@ -7,7 +7,7 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -15,9 +15,9 @@
 {% include "gcd/bits/series_issue_header.html" %}
 
 <div id="info_links">
-  <a href="{{series.get_absolute_url}}scans/?style={{ style }}">Cover Scan Status</a> ({{ series.scan_count }} cover{{ series.scan_count|pluralize }} for {{ series.issue_count }} issue{{ series.issue_count|pluralize }} available)
+  <a href="{{series.get_absolute_url}}scans/?style={{ style|default:'default' }}">Cover Scan Status</a> ({{ series.scan_count }} cover{{ series.scan_count|pluralize }} for {{ series.issue_count }} issue{{ series.issue_count|pluralize }} available)
   <br/>
-  <a href="{{ series.get_absolute_url }}status/?style={{ style}}">Index Status</a>
+  <a href="{{ series.get_absolute_url }}status/?style={{ style|default:'default' }}">Index Status</a>
 </div>
 
 <table id="covers">
@@ -27,8 +27,8 @@
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>
       <span class="cover_links">Zoom:
-        <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
-        <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span>
+        <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style|default:'default' }}">Medium</a>
+        <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}">Large</a></span>
       <div class="cover_caption">
         <span class="cover_number">Issue {{ issue.display_number }}</span>
         {% if issue.publication_date %}

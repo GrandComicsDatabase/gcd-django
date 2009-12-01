@@ -183,7 +183,7 @@ def show_series(request, series, preview=False):
     """
     Handle the main work of displaying a series.  Also used by OI previews.
     """
-    covers = series.cover_set.select_related('issue').exclude(variant_code = '1')
+    covers = series.cover_set.select_related('issue')
     issues = series.issue_set.all()
     
     try:
