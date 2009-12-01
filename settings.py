@@ -95,16 +95,19 @@ DEFAULT_FROM_EMAIL = 'GCD Contact <gcd-contact@googlegroups.com>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
 EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_CONTACT = 'gcd-contact@googlegroups.com'
+EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
 
 # Number of days for which a registraton confirmation token is valid.
 REGISTRATION_EXPIRATION_DELTA = 2
-RESERVE_MAX_INITIAL = 1
-RESERVE_MAX_PROBATION = 5
-RESERVE_MAX_DEFAULT = 20
 
+# These will do for new users only until the Board finishes setting the policy.
+# Pre-Vieux Bois users have very high numbers set via migration script.
+RESERVE_MAX_INITIAL = 1
+RESERVE_MAX_PROBATION = 6 # half-year monthly miniseries
+RESERVE_MAX_DEFAULT = 12 # full year of a monthly
 RESERVE_MAX_ONGOING_INITIAL = 0
 RESERVE_MAX_ONGOING_PROBATION = 2
-RESERVE_MAX_ONGOING_DEFAULT = 10
+RESERVE_MAX_ONGOING_DEFAULT = 4
 
 SITE_URL = 'http://www.comics.org/'
 SITE_NAME = 'Grand Comic-Book Database'

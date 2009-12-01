@@ -414,18 +414,19 @@ dl.pub_data dd {
     margin-left: 0.4em;
 }
 
-/* Un-indexed */
+.index_status_available,
 .index_status_0 {
     background-color: #EE7;
 }
 
-/* Open */
+.index_status_editing,
 .index_status_1 {
     background-color: #E77;
 }
 
-/* Pending (2) and Reviewing (4) */
+.index_status_reviewing,
 .index_status_4,
+.index_status_pending,
 .index_status_2 {
     background-color: #EA7;
 }

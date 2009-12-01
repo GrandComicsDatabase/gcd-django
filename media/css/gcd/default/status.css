@@ -3,18 +3,23 @@
  * CSS specific to the index status page.
  * ***************************************/
 
+.status_available,
 .status_0 {
     background-color: white;
 }
 
+.status_editing,
 .status_1 {
     background-color: #F30;
 }
 
+.status_pending,
+.status_reviewing,
 .status_2 {
     background-color: #F93;
 }
 
+.status_approved,
 .status_3 {
     /* background-color: #0B2; */
     background-color: #3C3;

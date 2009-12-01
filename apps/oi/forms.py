@@ -139,12 +139,27 @@ class BrandRevisionForm(forms.ModelForm):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
-def get_series_revision_form(publisher=None, source=None):
+def get_series_revision_form(publisher=None, source=None, indexer=None):
     if source is None:
+        can_request = None
+        series_fields = _get_series_fields(source)
+
+        if indexer is not None and indexer.indexer.can_reserve_another_ongoing():
+            can_request = True
+            series_fields = ['reservation_requested'] + series_fields
+
         class RuntimeAddSeriesRevisionForm(SeriesRevisionForm):
             class Meta:
                 model = SeriesRevision
-                fields = _get_series_fields(source)
+                fields = series_fields
+
+            if can_request:
+                reservation_requested = forms.BooleanField(required=False,
+                  label = 'Request reservation',
+                  help_text='Check this box to have the ongoing reservation for '
+                            'this series assigned to you when it is approved, '
+                            'unless you have gone over your ongoing reservation '
+                            'limit at that time.')
 
         return RuntimeAddSeriesRevisionForm
 
@@ -271,11 +286,8 @@ def get_issue_revision_form(publisher, series=None, revision=None):
         add_fields = ['after']
         add_fields.extend(_get_issue_fields())
 
-        # TODO: revisit when we decide about 1-1 try/catch annoyances.
         can_request = False
-        try:
-            ignore = series.ongoing_reservation is not None
-        except OngoingReservation.DoesNotExist:
+        if series.get_ongoing_reservation() is None:
             can_request = True
             add_fields = ['reservation_requested'] + add_fields
         
@@ -290,7 +302,7 @@ def get_issue_revision_form(publisher, series=None, revision=None):
                   help_text='Check this box to have this issue reserved to you '
                             'automatically when it is approved, unless someone '
                             'has acquired the series\' ongoing reservation before '
-                            'then. *NOTE: NOT IMPLEMENTED YET*')
+                            'then.')
 
             after = forms.ModelChoiceField(required=False,
               queryset=Issue.objects.filter(series=series).order_by('sort_code'),

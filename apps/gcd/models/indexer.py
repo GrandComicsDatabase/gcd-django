@@ -4,6 +4,9 @@ from django.contrib.auth.models import User
 
 from apps.gcd.models import Country, Language
 
+#TODO: Should not be importing from OI.  Reconsider app split.
+from apps.oi import states
+
 class Indexer(models.Model):
     """
     Indexer table that was originally the main accounts table in the GCD DB.
@@ -30,8 +33,8 @@ class Indexer(models.Model):
                                        db_table='gcd_indexer_languages')
     interests = models.TextField(null=True, blank=True)
 
-    max_reservations = models.IntegerField()
-    max_ongoing = models.IntegerField()
+    max_reservations = models.IntegerField(default=1)
+    max_ongoing = models.IntegerField(default=0)
 
     mentor = models.ForeignKey(User, related_name='mentees', null=True)
     is_new = models.BooleanField(db_index=True)
@@ -41,6 +44,19 @@ class Indexer(models.Model):
     registration_key = models.CharField(max_length=40, null=True,
                                         editable=False)
     registration_expires = models.DateField(null=True)
+
+    def can_reserve_another(self):
+        if self.is_new:
+            if (self.user.changesets.filter(state__in=states.ACTIVE).count() >=
+                self.max_reservations):
+                return False 
+        elif (self.user.changesets.filter(state=states.OPEN).count() >=
+              self.max_reservations):
+            return False 
+        return True
+
+    def can_reserve_another_ongoing(self):
+        return self.user.ongoing_reservations.count() < self.max_ongoing
 
     def __unicode__(self):
         if self.user.first_name and self.user.last_name:

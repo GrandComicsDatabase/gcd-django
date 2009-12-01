@@ -3,6 +3,10 @@ from django.db import models
 from publisher import IndiciaPublisher, Brand
 from series import Series
 
+# TODO: should not be importing oi app into gcd app, dependency should be
+# the other way around.  Probably.
+from apps.oi import states
+
 class Issue(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -56,17 +60,18 @@ class Issue(models.Model):
         return self.number
     display_number = property(_display_number)
 
-    def index_status_description(self):
-        """Text form of status.  If clauses arranged in order of most
-        likely case to least."""
-        if (self.index_status == 3):
-            return 'approved'
-        if (self.index_status == 0):
-            return 'no data'
-        if (self.index_status == 1):
-            return 'reserved'
-        if (self.index_status == 2):
-            return 'pending'
+    def index_status_name(self):
+        """
+        Text form of status.  If clauses arranged in order of most
+        likely case to least.
+        """
+        if self.reserved:
+            active =  self.revisions.get(changeset__state__in=states.ACTIVE)
+            return states.CSS_NAME[active.changeset.state]
+        else:
+            if self.story_type_count > 0:
+                return 'approved'
+            return 'available'
 
     def get_prev_next_issue(self):
         """

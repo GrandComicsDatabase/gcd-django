@@ -55,6 +55,15 @@ class Series(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
+    def get_ongoing_reservation(self):
+        """
+        TODO: Rethink usage of 1-1 relation.
+        """
+        try:
+            return self.ongoing_reservation
+        except models.ObjectDoesNotExist:
+            return None
+
     def get_absolute_url(self):
         return "/series/%i/" % self.id
 

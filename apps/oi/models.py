@@ -17,10 +17,10 @@ class Changeset(models.Model):
     state = models.IntegerField(db_index=True)
 
     indexer = models.ForeignKey('auth.User', db_index=True,
-                                related_name='reserved_%(class)s')
+                                related_name='changesets')
     along_with = models.ManyToManyField(User,
-                                        related_name='%(class)s_assisting')
-    on_behalf_of = models.ManyToManyField(User, related_name='%(class)s_source')
+                                        related_name='changesets_assisting')
+    on_behalf_of = models.ManyToManyField(User, related_name='changesets_source')
 
     # Changesets don't get an approver until late in the workflow,
     # and for legacy cases we don't know who they were.
@@ -1027,6 +1027,11 @@ class SeriesRevision(Revision):
 
     series = models.ForeignKey(Series, null=True, related_name='revisions')
 
+    # When adding a series, this requests the ongoing reservation upon approval of
+    # the new series.  The request will be granted unless the indexer has reached
+    # their maximum number of ongoing reservations at the time of approval.
+    reservation_requested = models.BooleanField(default=0)
+
     name = models.CharField(max_length=255, blank=True)
     format = models.CharField(max_length=255, blank=True)
     year_began = models.IntegerField(blank=True)
@@ -1077,6 +1082,11 @@ class SeriesRevision(Revision):
             return False
         return self.series.has_gallery
     has_gallery = property(_has_gallery)
+
+    def get_ongoing_revision(self):
+        if self.series is None:
+            return None
+        return self.series.get_ongoing_revision()
 
     def _field_list(self):
         return ('name',

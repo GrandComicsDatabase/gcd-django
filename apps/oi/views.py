@@ -62,12 +62,24 @@ def reserve(request, id, model_name):
           'Cannot create a new revision for "%s" as it is already reserved.' %
           display_obj)
 
-    # TODO: Create changeset, add "Editing." states.UNRESERVED => states.OPEN
-    # comments.
+    changeset = _do_reserve(request.user, display_obj, model_name)
+    if changeset is None:
+        return render_error(request,
+          'You have reached your limit of open changes.  You must '
+          'submit or discard some changes from your edit queue before you '
+          'can edit any more.  If you are a new user this number is very low '
+          'but will be increased as your first changes are approved.')
 
-    changeset = Changeset(indexer=request.user, state=states.OPEN)
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+      kwargs={ 'id': changeset.id }))
+
+def _do_reserve(indexer, display_obj, model_name):
+    if indexer.indexer.can_reserve_another() is False:
+        return None
+
+    changeset = Changeset(indexer=indexer, state=states.OPEN)
     changeset.save()
-    changeset.comments.create(commenter=request.user,
+    changeset.comments.create(commenter=indexer,
                               text='Editing',
                               old_state=states.UNRESERVED,
                               new_state=changeset.state)
@@ -78,9 +90,7 @@ def reserve(request, id, model_name):
     if model_name == 'issue':
         for story in revision.issue.story_set.all():
            StoryRevision.objects.clone_revision(story=story, changeset=changeset)
-
-    return HttpResponseRedirect(urlresolvers.reverse('edit',
-                                                     kwargs={ 'id': changeset.id }))
+    return changeset
 
 @permission_required('gcd.can_reserve')
 def edit_revision(request, id, model_name):
@@ -159,7 +169,7 @@ thanks,
            settings.SITE_URL)
 
         changeset.approver.email_user('GCD change to review', email_body, 
-          'GCD Online Indexing <no-reply@comics.org>')
+          settings.EMAIL_INDEXING)
         
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
@@ -265,7 +275,7 @@ thanks,
            settings.SITE_URL)
 
         changeset.indexer.email_user('GCD change rejected', email_body, 
-          'GCD Online Indexing <no-reply@comics.org>')
+          settings.EMAIL_INDEXING)
 
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
@@ -315,7 +325,104 @@ def approve(request, id):
 
     changeset.approve(notes=request.POST['comments'])
 
+    # Note that series ongoing reservations must be processed first, as
+    # they could potentially apply to the issue reservations if we ever
+    # implement complex changesets.
+    for series_revision in \
+        changeset.seriesrevisions.filter(deleted=False,
+                                         reservation_requested=True,
+                                         series__created__gt=F('created'),
+                                         series__is_current=True,
+                                         series__ongoing_reservation=None):
+        if (changeset.indexer.ongoing_reservations.count() >=
+            changeset.indexer.indexer.max_ongoing):
+            _send_declined_ongoing_email(changeset.indexer, series_revision.series)
+
+        ongoing = OngoingReservation(indexer=changeset.indexer,
+                                     series=series_revision.series)
+        ongoing.save()
+
+    for issue_revision in \
+        changeset.issuerevisions.filter(deleted=False,
+                                        reservation_requested=True,
+                                        issue__created__gt=F('created'),
+                                        series__ongoing_reservation=None):
+        new_change = _do_reserve(changeset.indexer, issue_revision.issue, 'issue')
+        if new_change is None:
+            _send_declined_reservation_email(changeset.indexer,
+                                             issue_revision.issue)
+
+    for issue_revision in \
+        changeset.issuerevisions.filter(deleted=False,
+                                        issue__created__gt=F('created'),
+                                        series__ongoing_reservation__isnull=False):
+        new_change = _do_reserve(issue_revision.series.ongoing_reservation.indexer,
+                                 issue_revision.issue, 'issue')
+        if new_change is None:
+            _send_declined_reservation_email(changeset.indexer,
+                                             issue_revision.issue)
+            
+    # Move brand new indexers to probationary status on first approval.
+    if changeset.indexer.indexer.max_reservations == settings.RESERVE_MAX_INITIAL:
+        i = changeset.indexer.indexer
+        i.max_reservations = settings.RESERVE_MAX_PROBATION
+        i.max_ongoing = settings.RESERVE_MAX_ONGOING_PROBATION
+        i.save()
+
     return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+
+def _send_declined_reservation_email(indexer, issue):
+    email_body = """
+Hello from the %s!
+
+
+  Your requested reservation of issue "%s" was declined because you have
+reached your maximum number of open changes.  Please visit your editing
+queue at %s%s and submit or discard some changes and then
+try your edit again.
+
+  Your maximum change limit starts low as a new user but is increased as
+more of your changes are approved.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+       issue,
+       settings.SITE_URL,
+       urlresolvers.reverse('editing'),
+       settings.SITE_NAME, settings.SITE_URL)
+
+    indexer.email_user('GCD automatic reservation declined',
+      email_body, 
+      settings.EMAIL_INDEXING)
+
+def _send_declined_ongoing_email(indexer, series):
+    course_of_action = ("Please contact a GCD Editor on the gcd_main group "
+                        "(http://groups.google.com/group/gcd-main/) "
+                        "if you would like to request a limit increase.")
+    if indexer.indexer.is_new:
+        course_of_action = ("As a new user you will gain the ability to hold "
+                            "series revisions as your initial changes get "
+                            "approved.")
+    email_body = """
+Hello from the %s!
+
+
+  Your requested ongoing reservation of series "%s" was declined because you have
+reached your maximum number of ongoing reservations.  %s
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+       series,
+       course_of_action,
+       settings.SITE_NAME, settings.SITE_URL)
+
+    indexer.email_user('GCD automatic reservation declined',
+      email_body, 
+      settings.EMAIL_INDEXING)
 
 @permission_required('gcd.can_approve')
 def disapprove(request, id):
@@ -360,7 +467,7 @@ thanks,
        settings.SITE_URL)
 
     changeset.indexer.email_user('GCD change sent back', email_body, 
-      'GCD Online Indexing <no-reply@comics.org>')
+      settings.EMAIL_INDEXING)
 
     return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
 
@@ -463,6 +570,13 @@ def process_revision(request, id, model_name):
 
 @permission_required('gcd.can_reserve')
 def add_publisher(request):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request,
+          'You have reached your limit of open changes.  You must '
+          'submit or discard some changes from your edit queue before you '
+          'can edit any more.  If you are a new user this number is very low '
+          'but will be increased as your first changes are approved.')
+
     if request.method != 'POST':
         form = get_publisher_revision_form()()
         return _display_add_publisher_form(request, form)
@@ -500,6 +614,13 @@ def _display_add_publisher_form(request, form):
 
 @permission_required('gcd.can_reserve')
 def add_indicia_publisher(request, parent_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request,
+          'You have reached your limit of open changes.  You must '
+          'submit or discard some changes from your edit queue before you '
+          'can edit any more.  If you are a new user this number is very low '
+          'but will be increased as your first changes are approved.')
+
     try:
         parent = Publisher.objects.get(id=parent_id, is_master=True)
 
@@ -547,6 +668,13 @@ def _display_add_indicia_publisher_form(request, parent, form):
 
 @permission_required('gcd.can_reserve')
 def add_brand(request, parent_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request,
+          'You have reached your limit of open changes.  You must '
+          'submit or discard some changes from your edit queue before you '
+          'can edit any more.  If you are a new user this number is very low '
+          'but will be increased as your first changes are approved.')
+
     try:
         parent = Publisher.objects.get(id=parent_id, is_master=True)
 
@@ -594,6 +722,12 @@ def _display_add_brand_form(request, parent, form):
 
 @permission_required('gcd.can_reserve')
 def add_series(request, publisher_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request,
+          'You have reached your limit of open changes.  You must '
+          'submit or discard some changes from your edit queue before you '
+          'can edit any more.  If you are a new user this number is very low '
+          'but will be increased as your first changes are approved.')
 
     # Process add form if this is a POST.
     try:
@@ -607,7 +741,8 @@ def add_series(request, publisher_id):
         if request.method != 'POST':
             initial = {}
             initial['country'] = publisher.country.id
-            form = get_series_revision_form(publisher)(initial=initial)
+            form = get_series_revision_form(publisher,
+                                            indexer=request.user)(initial=initial)
             return _display_add_series_form(request, publisher, imprint, form)
 
         if 'cancel' in request.POST:
@@ -615,7 +750,8 @@ def add_series(request, publisher_id):
               'apps.gcd.views.details.publisher',
               kwargs={ 'publisher_id': parent_id }))
 
-        form = get_series_revision_form(publisher)(request.POST)
+        form = get_series_revision_form(publisher,
+                                        indexer=request.user)(request.POST)
         if not form.is_valid():
             return _display_add_series_form(request, publisher, imprint, form)
 
@@ -651,6 +787,13 @@ def _display_add_series_form(request, publisher, imprint, form):
 
 @permission_required('gcd.can_reserve')
 def add_issue(request, series_id, sort_after=None):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request,
+          'You have reached your limit of open changes.  You must '
+          'submit or discard some changes from your edit queue before you '
+          'can edit any more.  If you are a new user this number is very low '
+          'but will be increased as your first changes are approved.')
+
     series = get_object_or_404(Series, id=series_id)
     form_class = get_revision_form(model_name='issue',
                                    series=series,
@@ -700,6 +843,13 @@ def _display_add_issue_form(request, series, form):
 
 @permission_required('gcd.can_reserve')
 def add_issues(request, series_id, method=None):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request,
+          'You have reached your limit of open changes.  You must '
+          'submit or discard some changes from your edit queue before you '
+          'can edit any more.  If you are a new user this number is very low '
+          'but will be increased as your first changes are approved.')
+
     if method is None:
         return render_to_response('oi/edit/add_issues.html',
                                   { 'series_id': series_id },
@@ -938,6 +1088,14 @@ def ongoing(request, user_id=None):
     Handle the ongoing reservatin page.  Display on GET.  On POST, process
     the form and re-display with error or success message as appropriate.
     """
+    if (request.user.ongoing_reservations.count() >=
+        request.user.indexer.max_ongoing):
+        return render_error(request, 'You have reached the maximum number of '
+          'ongoing reservations you can hold at this time.  If you are a new '
+          'user this number is very low or even zero, but will increase as your '
+          'first few changes are approved.',
+          redirect=False)
+
     form = OngoingReservationForm()
     message = ''
     if request.method == 'POST':

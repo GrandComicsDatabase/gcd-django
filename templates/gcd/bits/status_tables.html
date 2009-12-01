@@ -2,17 +2,17 @@
 
 <table border="1" class="status" id="key">
   <tr>
-    <td class="status_3"> Indexed </td>
-    <td class="status_2"> Pending Approval </td>
-    <td class="status_1"> Reserved </td>
-    <td class="status_0"> Skeleton Data Only </td>
+    <td class="status_approved"> Indexed </td>
+    <td class="status_pending"> Pending Approval </td>
+    <td class="status_editing"> Reserved </td>
+    <td class="status_available"> Skeleton Data Only </td>
   </tr>
 </table>
 <p class="spacer"/>
 <table border="1" class="status">
   <tr>
   {% for issue in issues %}
-    <td class="status_{% if issue.reserve_status %}{{ issue.index_status }}{% else %}0{% endif %}">
+    <td class="status_{{ issue.index_status_name }}">
       <a href="{{ issue.get_absolute_url }}">{{ issue.display_number }}</a> </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>

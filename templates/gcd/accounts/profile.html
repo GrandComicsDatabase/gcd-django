@@ -76,4 +76,13 @@ Leave all three fields blank to leave your password unchanged.
 
 {% endif %}
 
+{% if profile_user.ongoing_reservations.count %}
+<h3> Ongoing Reservations </h3>
+<ul>
+  {% for ongoing in profile_user.ongoing_reservations.all %}
+  <li> <a href="{{ ongoing.series.get_absolute_url }}">{{ ongoing.series }}</a>
+  {% endfor %}
+</ul>
+{% endif %}
+
 {% endblock %}
