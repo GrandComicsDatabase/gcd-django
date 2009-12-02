@@ -78,6 +78,8 @@ class AdvancedSearch(forms.Form):
     issues = forms.CharField(label='Issues', required=False)
     # Volume is a char field to allow ranges and lists.
     volume = forms.CharField(label='Volume', required=False)
+    brand = forms.CharField(required=False)
+    indicia_publisher = forms.CharField(label='Indicia Publisher', required=False)
     price = forms.CharField(required=False)
     issue_pages = forms.CharField(required=False)
     issue_notes = forms.CharField(label='Issue Notes', required=False)
@@ -86,7 +88,14 @@ class AdvancedSearch(forms.Form):
 
     cover_needed = forms.BooleanField(label="Cover is Needed", 
                                        required=False)
-
+    has_stories = forms.NullBooleanField(label="Has Stories", required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
+    indexer = forms.ModelMultipleChoiceField(required=False,
+      queryset=Indexer.objects.filter(registration_key=None).order_by(
+        'user__first_name', 'user__last_name'),
+      widget=forms.SelectMultiple(attrs={'size' : '6'}))
 
     feature = forms.CharField(required=False)
     type = forms.ModelMultipleChoiceField(queryset=StoryType.objects.all(),

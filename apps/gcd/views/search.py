@@ -4,6 +4,7 @@ View methods related to displaying search and search results pages.
 
 from re import *
 from urllib import urlopen, quote
+from decimal import Decimal
 
 from django.db.models import Q
 from django.conf import settings
@@ -20,6 +21,8 @@ from apps.gcd.models import Publisher, Series, Issue, Story
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch
 from apps.gcd.views.details import issue 
+
+PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
 
 class SearchError(Exception):
     pass
@@ -531,18 +534,34 @@ def search_issues(data, op, stories_q=None):
     if data['issue_date']:
         q_objs.append(
           Q(**{ '%spublication_date__%s' % (prefix, op) : data['issue_date'] }))
+    if data['brand']:
+        q_objs.append(
+          Q(**{ '%sbrand__name__%s' % (prefix, op) : data['brand'] }))
+    if data['indicia_publisher']:
+        q_objs.append(
+          Q(**{ '%sindicia_publisher__name__%s' % (prefix, op) :
+                data['indicia_publisher'] }))
     if data['cover_needed']:
         q_objs.append(Q(**{ '%scover__has_image' % prefix : False }) | 
                       Q(**{ '%scover__marked' % prefix : True }))
+    if data['has_stories'] is not None:
+        if data['has_stories'] is True:
+            q_objs.append(Q(**{ '%sstory_type_count__gt' % prefix : 0 }))
+        else:
+            q_objs.append(Q(**{ '%sstory_type_count' % prefix : 0 }))
+    if data['indexer']:
+        q_objs.append(
+          Q(**{ '%srevisions__changeset__indexer__indexer__in' % prefix:
+                data['indexer'] }))
     if data['issue_editing']:
-        q_objs.append(Q(**{ '%editing__icontains' % prefix:
+        q_objs.append(Q(**{ '%sediting__icontains' % prefix:
                             data['issue_editing'] }))
     if data['issue_notes']:
-        q_objs.append(Q(**{ '%notes__icontains' % prefix: data['issue_notes'] }))
+        q_objs.append(Q(**{ '%snotes__icontains' % prefix: data['issue_notes'] }))
 
     try:
         if data['issue_pages'] is not None and data['issue_pages'] != '':
-            range_match = match(page_range_regexp, data['issue_pages'])
+            range_match = match(PAGE_RANGE_REGEXP, data['issue_pages'])
             if range_match:
                 page_start = float(range_match.group('begin'))
                 page_end = float(range_match.group('end'))
@@ -550,7 +569,7 @@ def search_issues(data, op, stories_q=None):
                                     (page_start, page_end) }))
             else:
                 q_objs.append(Q(**{ '%spage_count' % prefix :
-                                    float(data['issue_pages']) }))
+                                    Decimal(data['issue_pages']) }))
     except ValueError:
         raise SearchError, ("Page count must be a decimal number or a pair of "
                             "decimal numbers separated by a hyphen.")
@@ -645,17 +664,16 @@ def search_stories(data, op):
                             data['story_editing'] }))
 
     try:
-        page_range_regexp = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
         if data['pages'] is not None and data['pages'] != '':
-            range_match = match(page_range_regexp, data['pages'])
+            range_match = match(PAGE_RANGE_REGEXP, data['pages'])
             if range_match:
-                page_start = float(range_match.group('begin'))
-                page_end = float(range_match.group('end'))
+                page_start = Decimal(range_match.group('begin'))
+                page_end = Decimal(range_match.group('end'))
                 q_objs.append(Q(**{ '%spage_count__range' % prefix :
                                     (page_start, page_end) }))
             else:
                 q_objs.append(Q(**{ '%spage_count' % prefix :
-                                    float(data['pages']) }))
+                                    Decimal(data['pages']) }))
 
     except ValueError:
         raise SearchError, ("Page count must be a decimal number or a pair of "

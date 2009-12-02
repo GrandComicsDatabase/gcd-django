@@ -41,6 +41,11 @@ and limitations:
        appear at the beginning of the list.  It is also possible to search
        an issue's cover date as a text field without any conversion to an
        actual date.
+  <li> At the moment you cannot directly search for Brands or Indicia Publishers
+       (which are recent, as in December 2009) additions to the site.  You can,
+       however, search for Brands and/or Indicia Publishers as issue fields.
+       The rest of the search functionality for these will be implemented
+       in the near future.
 </ul>
 </div>
 
@@ -162,12 +167,16 @@ and limitations:
     {{ form.issues|show_form }}
     {{ form.volume|show_form }}
     {{ form.issue_date|show_form }}
+    {{ form.brand|show_form }}
+    {{ form.indicia_publisher|show_form }}
     {{ form.price|show_form }}
     {{ form.issue_pages|show_form }}
     {{ form.format|show_form }}
     {{ form.issue_editing|show_form }}
     {{ form.issue_notes|show_form }}
     {{ form.cover_needed|show_form }} 
+    {{ form.has_stories|show_form }}
+    {{ form.indexer|show_form }}
   </ol>
 </fieldset>
 </div>
