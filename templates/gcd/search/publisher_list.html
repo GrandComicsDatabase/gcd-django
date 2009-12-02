@@ -4,9 +4,11 @@
 <table class="listing">
   <tr>
     <th colspan="2"> Publisher </th>
-    <th> #&nbsp;Imprints </th>
+    <th> #&nbsp;Brands </th>
+    <th> #&nbsp;Indicia Publishers </th>
     <th> #&nbsp;Titles </th>
     <th> #&nbsp;Issues </th>
+    <th> #&nbsp;Imprints </th>
   </tr>
   {% for publisher in items %}
     {% if not publisher.is_imprint %}
@@ -14,20 +16,68 @@
       <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
       <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
       <td>
-      {% with publisher.imprint_set.count as imprint_count %}
+        {% if publisher.brand_count %}
+          <a href="{{ publisher.get_absolute_url}}brands/">{{ publisher.brand_count }}</a>
+        {% else %}
+          {{ publisher.brand_count }}
+        {% endif %}
+      </td>
+      <td>
+        {% if publisher.indicia_publisher_count %}
+          <a href="{{ publisher.get_absolute_url}}indicia_publishers/">{{ publisher.indicia_publisher_count }}</a>
+        {% else %}
+          {{ publisher.indicia_publisher_count }}
+        {% endif %}
+      </td>
+      <td> {{ publisher.series_count }} </td>
+      <td> {{ publisher.issue_count }} </td>
+      <td>
         {% if imprint_count %}
-          <a href="{{ publisher.get_absolute_url }}imprints/">{{ imprint_count }}</a>
+          <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_count }}</a>
         {% else %}
           {{ imprint_count }}
         {% endif %}
-      {% endwith %}
       </td>
-      <td> {{ publisher.series_set.count }} </td>
-      <td> {{ publisher.computed_issue_count }} </td>
     </tr>
     {% endif %}
   {% endfor %}
 </table>
+
+{% comment %}
+Should integrate these onto this page, but pagination with three querysets
+is non-obvious.  Perhaps just add to simple search dropdown instead?
+
+<table class="listing">
+  <tr>
+    <th> Brand </th>
+    <th> Parent </th>
+    <th> #&nbsp;Issues </th>
+  </tr>
+  {% for brand in brands %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand }}</a> 
+    <td> <a href="{{ brand.parent.get_absolute_url }}">{{ brand.parent.name }}</a> 
+    <td> {{ brand.issue_count }} </td>
+  </tr>
+  {% endfor %}
+</table>
+<table class="listing">
+  <tr>
+    <th colspan="2"> Indicia Publisher </th>
+    <th> Parent </th>
+    <th> #&nbsp;Issues </th>
+  </tr>
+  {% for indpub in indpubs %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ indpub.country.code|lower }}.png" alt="{{ imprint.country.code|upper }}">
+    <td class="listing_publisher"> <a href="{{ indpub.get_absolute_url }}">{{ indpub }}</a> 
+    <td> <a href="{{ indpub.parent.get_absolute_url }}">{{ indpub.parent.name }}</a> 
+    <td> {{ indpub.issue_count }} </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endcomment %}
+
 <table class="listing">
   <tr>
     <th colspan="2"> Imprint </th>
@@ -41,8 +91,8 @@
       <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ imprint.country.code|lower }}.png" alt="{{ imprint.country.code|upper }}">
       <td class="listing_publisher"> <a href="{{ imprint.get_absolute_url }}">{{ imprint.name }}</a> 
       <td> <a href="{{ imprint.parent.get_absolute_url }}">{{ imprint.parent.name }}</a> 
-      <td> {{ imprint.imprint_series_set.count }} </td>
-      <td> {{ imprint.computed_issue_count }} </td>
+      <td> {{ imprint.series_count }} </td>
+      <td> {{ imprint.issue_count }} </td>
     </tr>
     {% endif %}
   {% endfor %}
