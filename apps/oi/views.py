@@ -850,9 +850,16 @@ def add_issues(request, series_id, method=None):
           'can edit any more.  If you are a new user this number is very low '
           'but will be increased as your first changes are approved.')
 
+    issue_annotated = Changeset.objects.annotate(
+      issue_revision_count=Count('issuerevisions'))
+    issue_adds = issue_annotated.filter(issue_revision_count__gte=1) \
+                                .filter(issuerevisions__issue=None) \
+                                .filter(issuerevisions__series__id=series_id) \
+                                .filter(state__in=states.ACTIVE)
     if method is None:
         return render_to_response('oi/edit/add_issues.html',
-                                  { 'series_id': series_id },
+                                  { 'series_id': series_id, 
+                                    'issue_adds' : issue_adds },
                                   context_instance=RequestContext(request))
 
     series = get_object_or_404(Series, id=series_id)

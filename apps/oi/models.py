@@ -86,8 +86,8 @@ class Changeset(models.Model):
     def queue_name(self):
         if self.inline():
             return self.revisions.next().queue_name()
-        # if self.issuerevisions.count() > 0:
-            # pass # return self.issuerevisions.all()[0].queue_name()
+        if self.issuerevisions.count() == 1:
+            return self.issuerevisions.all()[0].queue_name()
         return unicode(self)
 
     def display_state(self):

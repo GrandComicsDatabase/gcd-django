@@ -24,6 +24,15 @@ approval when you add issues one at a time (and the parent series is not
 already under an ongoing reservation).
 </p>
 
+{% if issue_adds %}
+<p>
+Current active issue adds for this series:<br>
+{% for add in issue_adds %}
+<a href="{% url compare id=add.id %}">{{ add }}</a><br>
+{% endfor %}
+</p>
+{% endif %}
+
 <table class="add_issues">
 <tr>
   <td>
