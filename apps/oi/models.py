@@ -669,6 +669,7 @@ class PublisherRevision(PublisherRevisionBase):
                             issue_count=0)
             if self.parent:
                 self.parent.imprint_count += 1
+                self.parent.save()
             else:
                 publisher_count = CountStats.objects.get(name='publishers')
                 publisher_count.count += 1
@@ -676,6 +677,7 @@ class PublisherRevision(PublisherRevisionBase):
         elif self.deleted:
             if self.parent:
                 self.parent.imprint_count -= 1
+                self.parent.save()
             else:
                 publisher_count = CountStats.objects.get(name='publishers')
                 publisher_count.count -= 1
@@ -829,12 +831,14 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         if ipub is None:
             ipub = IndiciaPublisher()
             self.parent.indicia_publisher_count += 1
+            self.parent.save()
             publisher_count = CountStats.objects.get(name='indicia publishers')
             publisher_count.count += 1
             publisher_count.save()
 
         elif self.deleted:
             self.parent.indicia_publisher_count -= 1
+            self.parent.save()
             publisher_count = CountStats.objects.get(name='indicia publishers')
             publisher_count.count -= 1
             publisher_count.save()
@@ -942,12 +946,14 @@ class BrandRevision(PublisherRevisionBase):
         if brand is None:
             brand = Brand()
             self.parent.brand_count += 1
+            self.parent.save()
             publisher_count = CountStats.objects.get(name='brands')
             publisher_count.count += 1
             publisher_count.save()
 
         elif self.deleted:
             self.parent.brand_count -= 1
+            self.parent.save()
             publisher_count = CountStats.objects.get(name='brands')
             publisher_count.count -= 1
             publisher_count.save()
@@ -1115,6 +1121,7 @@ class SeriesRevision(Revision):
         if series is None:
             series = Series(issue_count=0)
             self.publisher.series_count += 1
+            self.publisher.save()
             if self.imprint:
                 self.imprint.series_count += 1
                 self.imprint.save()       
@@ -1124,6 +1131,7 @@ class SeriesRevision(Revision):
         elif self.deleted:
             self.publisher.series_count -= 1
             self.publisher.issue_count -= series.issue_count
+            self.publisher.save()
             if self.imprint:
                 self.imprint.series_count -= 1
                 self.imprint.save()       
@@ -1372,8 +1380,10 @@ class IssueRevision(Revision):
             self.series.publisher.save()
             if self.brand:
                 self.brand.issue_count += 1
+                self.brand.save()
             if self.indicia_publisher:
                 self.indicia_publisher.issue_count += 1
+                self.indicia_publisher.save()
             if self.series.imprint:
                 self.series.imprint.issue_count += 1
                 self.series.imprint.save()       
@@ -1387,8 +1397,10 @@ class IssueRevision(Revision):
             self.series.publisher.save()
             if self.brand:
                 self.brand.issue_count -= 1
+                self.brand.save()
             if self.indicia_publisher:
                 self.indicia_publisher.issue_count -= 1
+                self.indicia_publisher.save()
             if self.series.imprint:
                 self.series.imprint.issue_count -= 1
                 self.series.imprint.save()       
