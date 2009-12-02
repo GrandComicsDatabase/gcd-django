@@ -98,6 +98,7 @@
            is not a newly added one (it has a source issue).
         -->
       {% with changeset.issuerevisions.all.0 as issue_revision %}
+      {% if issue_revision.issue %}
       <form style="display:inline;" method="GET"
             action="{% url add_story issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
         <td colspan="2" align="left">
@@ -111,6 +112,7 @@
           </input>
         </td>
       </form>
+      {% endif %}
       {% endwith %}
       </tr>
     </table>  
@@ -137,17 +139,26 @@
       </tr>
       {% endfor %}
     </table>
+    {% endif %}
 
     {% include 'oi/bits/comments.html' %}
 
     <form method="POST" action="{% url process id=changeset.id %}">
-      <label for="comments"> Comments:</label>
-      <textarea name="comments" id="comments"></textarea>
-      <input type="submit" name="submit" value="Submit changes for approval"></input>
-      <input type="submit" name="discard" value="Discard all changes"></input>
+    <table class="editing">
+      <tr>
+        <th> <label for="comments"> Comments:</label> </th>
+        <td>
+          <textarea name="comments" id="comments"></textarea>
+          <br>
+          Comments between the Indexer and Editor about the change.  These comments
+          are part of the public change history, but are not part of the regular
+          display.
+        </td>
+      </tr>
+    </table>
+    <input type="submit" name="submit" value="Submit changes for approval"></input>
+    <input type="submit" name="discard" value="Discard all changes"></input>
     </form>
-
-    {% endif %}
   {% endif %}
 {% endifequal %}
 </div>
