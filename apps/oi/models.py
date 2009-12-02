@@ -543,7 +543,7 @@ class PublisherRevisionBase(Revision):
     class Meta:
         abstract = True
 
-    name = models.CharField(max_length=255, blank=True, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
 
     year_began = models.IntegerField(null=True, blank=True, db_index=True,
       help_text='The first year in which the publisher was active.')
