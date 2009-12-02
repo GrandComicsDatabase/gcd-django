@@ -121,6 +121,9 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
 {% include 'oi/bits/comments.html' %}
 
 <p>
+{% ifequal user revision.changeset.indexer %}
+<a href="{% url edit id=revision.changeset.id %}">Edit changes</a> |
+{% endifequal %}
 <a href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview</a>
 (opens in a new window)
 </p>
