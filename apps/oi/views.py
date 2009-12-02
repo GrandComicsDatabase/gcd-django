@@ -288,6 +288,9 @@ def assign(request, id):
         return _cant_get(request)
 
     changeset = get_object_or_404(Changeset, id=id)
+    if request.user == changeset.indexer:
+        return render_error(request, 'You may not approve your own changes.')
+
     changeset.assign(approver=request.user, notes=request.POST['comments'])
 
     return HttpResponseRedirect(urlresolvers.reverse('reviewing'))

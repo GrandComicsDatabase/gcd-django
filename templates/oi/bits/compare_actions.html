@@ -13,7 +13,9 @@
 {% endifequal %}
 {% else %}
 {% if perms.gcd.can_approve %}
+{% ifnotequal user changeset.indexer %}
   <input type="submit" name="assign" value="Assign"></input>
+{% endifnotequal %}
 {% endif %}
 {% endif %}
   <input type="submit" name="add_comment" value="Add Comment"></input>
