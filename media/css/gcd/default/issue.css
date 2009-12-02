@@ -174,3 +174,23 @@ div#format {
     margin: 0.4em;
 }
 
+div.issue_notes {
+    border: solid black 1px;
+    float: left;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+div.issue_notes h3 {
+    clear: both;
+    background-color: #DDD;
+    padding: 0.2em 6px;
+    margin-top: 0;
+    margin-bottom: 0.15em;
+}
+
+div.issue_notes p {
+    padding: 0.2em 6px;
+    margin: 0 0 0.5em 0;
+}
+
