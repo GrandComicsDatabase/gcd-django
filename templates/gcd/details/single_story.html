@@ -50,22 +50,16 @@
         </dl>
       {% endif %}
 
-      {% ifequal story.sequence_number 0 %}
-        {% if story.issue.notes %}
-          <h3 class="notes_header"> Issue Notes </h3>
-          {% ifequal story.issue.notes story.notes %}
-            <p> [Issue notes are the same as the cover notes (see Indexer Notes
-                 below).  This may mean that
-                 one or both set of notes need editing as a result of our recent
-                 migration to having separate issue and cover notes.]
-          {% else %}
-            <p>{{ issue.notes|linebreaksbr }}
-          {% endifequal %}
-        {% endif %}
-      {% endifequal %}
       {% if story.notes %}
         <h3 class="notes_header"> Indexer Notes </h3>
+      {% ifequal story.issue.notes story.notes %}
+        <p> [Cover story notes are the same as the issue notes
+             (see Issue Notes above).  This may mean that
+             one or both set of notes need editing as a result of our recent
+             migration to having separate issue and cover notes.]
+      {% else %}
         <p>{{ story.notes|linebreaksbr }}</p>
+      {% endifequal %}
       {% endif %}
 
     </div>

@@ -55,6 +55,18 @@
   <dd id="indicia_frequency"> {{ issue.indicia_frequency }}
 {% endif %}
   {{ issue|show_credit:"editing" }}
+{% if issue.indicia_publisher or issue.brand %}
+</dl>
+<dl>
+{% endif %}
+{% if issue.brand %}
+  <dt> {% trans "Brand" %}:
+  <dd id="issue_brand"> {{ issue.brand }}
+{% endif %}
+{% if issue.indicia_publisher %}
+  <dt> {% trans "Indicia Publisher" %}:
+  <dd id="issue_indicia_publisher"> {{ issue.indicia_publisher }}
+{% endif %}
 </dl>
 <!-- IE6 didn't like various attempts to get the sometimes very long
      "Format" field to lay out nicely.  And even in Firefox it was
@@ -143,7 +155,12 @@
 
   <div id="cover_credits">
     <div id="cover_float_fixer">
-
+    {% if issue.notes %}
+    <div class="issue_notes">
+      <h3 class="notes_header"> Issue Notes </h3>
+        <p>{{ issue.notes|linebreaksbr }}
+    </div>
+    {% endif %} <!-- issue.notes -->
     {% with cover_story as story %}
     {% with 1 as is_cover %}
       {% include "gcd/details/single_story.html" %}
