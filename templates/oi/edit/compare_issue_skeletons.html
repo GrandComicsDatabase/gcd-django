@@ -16,7 +16,8 @@ Reviewing :: {{ revision }}
 {% block view_body %}
 
 <p>
-This change adds the following issues:
+This change adds the following issues after issue
+<span class="comparison_highlight">{{ changeset.ordered_issue_revisions.0.after }}</span>:
 <table class="comparison">
 <tr>
   <th> Volume </th>

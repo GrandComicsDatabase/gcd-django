@@ -77,6 +77,13 @@ class Changeset(models.Model):
                 self._inline_revision = self.revisions.next()
         return self._inline_revision
 
+    def singular(self):
+        """
+        Used for conditionals in templates, as bulk issue adds are treated 
+        differently.
+        """
+        return self.inline() or self.issuerevisions.count() == 1
+
     def ordered_issue_revisions(self):
         """
         Used in the display.  Natural revision order must be by timestamp.
@@ -460,8 +467,6 @@ class Revision(models.Model):
                 self.changed[field_name] = True
             else:
                 self.changed[field_name] = False
-
-    # changed = property(lambda self: self._changes)
 
     def queue_name(self):
         """
@@ -1254,7 +1259,7 @@ class IssueRevision(Revision):
     indicia_frequency = models.CharField(max_length=255, blank=True)
     key_date = models.CharField(max_length=10, blank=True)
 
-    price = models.CharField(max_length=25, blank=True)
+    price = models.CharField(max_length=255, blank=True)
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
                                      null=True, blank=True)
     page_count_uncertain = models.BooleanField(default=0)

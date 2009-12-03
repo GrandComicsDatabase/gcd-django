@@ -7,7 +7,9 @@
 {% ifequal request.user changeset.approver %}
 {% ifequal changeset.state states.REVIEWING %}
   <input type="submit" name="approve" value="Approve"></input>
+  {% if changeset.singular %}
   <input type="submit" name="disapprove" value="Send Back to Indexer"></input>
+  {% endif %}
   <input type="submit" name="cancel" value="Reject Permanently"></input>
 {% endifequal %}
 {% endifequal %}

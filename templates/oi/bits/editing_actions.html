@@ -8,7 +8,11 @@
   <input type="submit" name="discard" value="Discard"></input>
 {% else %}
   {% ifequal changeset.state states.PENDING %}
+    {% if changeset.singular %}
   <input type="submit" name="retract" value="Retract and edit further"></input>
+    {% else %}
+  No actions available
+    {% endif %}
   {% endifequal %}
 {% endifequal %}
   <span class="label_binding">

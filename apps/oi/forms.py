@@ -270,6 +270,9 @@ def _get_issue_fields():
     ]
 
 def get_issue_revision_form(publisher, series=None, revision=None):
+    if series is None and revision is not None:
+        series = revision.series
+
     class RuntimeIssueRevisionForm(IssueRevisionForm):
         indicia_publisher = forms.ModelChoiceField(required=False,
           queryset=IndiciaPublisher.objects.filter(parent=publisher),
@@ -282,7 +285,7 @@ def get_issue_revision_form(publisher, series=None, revision=None):
                     "if any. Some U.S. golden age publishers did not put any "
                     "identifiable brand marks on their comics.")
 
-    if revision is None:
+    if revision is None or revision.source is None:
         add_fields = ['after']
         add_fields.extend(_get_issue_fields())
 

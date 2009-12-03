@@ -25,6 +25,13 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <th> Current </th>
     <th> Change </th>
   <tr>
+  {% if not revision.source %}
+  <tr class="True">
+    <td class="field_name"> Add issue after </td>
+    <td> </td>
+    <td> {{ revision.after }}
+  </tr>
+  {% endif %}
   <tr class="{{ revision.changed.number }}">
     <td class="field_name"> Number </td>
     <td> {{ revision.issue.number }} </td>

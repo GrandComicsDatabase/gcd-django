@@ -22,6 +22,10 @@ from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch
 from apps.gcd.views.details import issue 
 
+# Should not be importing anything from oi, but we're doing this in several places.
+# TODO: states should probably live somewhere else.
+from apps.oi import states
+
 PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
 
 class SearchError(Exception):
@@ -552,7 +556,8 @@ def search_issues(data, op, stories_q=None):
     if data['indexer']:
         q_objs.append(
           Q(**{ '%srevisions__changeset__indexer__indexer__in' % prefix:
-                data['indexer'] }))
+                data['indexer'] }) &
+          Q(**{ '%srevisions__changeset__state' % prefix: states.APPROVED }))
     if data['issue_editing']:
         q_objs.append(Q(**{ '%sediting__icontains' % prefix:
                             data['issue_editing'] }))
