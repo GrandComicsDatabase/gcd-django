@@ -414,7 +414,7 @@ def get_bulk_issue_revision_form(series, method):
         after = forms.ModelChoiceField(required=False,
           queryset=Issue.objects.filter(series=series).order_by('sort_code'),
           empty_label="[add as initial issues]",
-          label = "Add these issue after")
+          label = "Add these issues after")
 
         brand = forms.ModelChoiceField(required=False,
           queryset=Brand.objects.filter(parent=series.publisher))
@@ -708,9 +708,9 @@ class StoryRevisionForm(forms.ModelForm):
                 'place the title in brackets.')
     title_inferred = forms.BooleanField(required=False,
       label='Unofficial title',
-      help_text='Check if the title was taken from the first line of dialog or '
-                'was made up (titles from dialog are preferred, and should be '
-                'enclosed in "double quotes"')
+      help_text='Check if the title was taken from the first line of dialogue or '
+                'was made up (titles from dialogue are preferred, and should be '
+                'enclosed in "quotation marks")')
     page_count_uncertain = forms.BooleanField(required=False,
       help_text="Check if you do not know or aren't sure about the page count.")
 

@@ -585,7 +585,7 @@ def add_publisher(request):
         return _display_add_publisher_form(request, form)
 
     if 'cancel' in request.POST:
-        return HttpResponseRedirect(urlresolvers.reverse('add_publisher'))
+        return HttpResponseRedirect(urlresolvers.reverse('add'))
 
     form = get_publisher_revision_form()(request.POST)
     if not form.is_valid():
@@ -1037,7 +1037,7 @@ def add_story(request, issue_id, changeset_id):
             if seq != '':
                 try:
                     seq_num = int(seq)
-                    initial = {'sequence_number': seq_num }
+                    initial = {'sequence_number': seq_num, 'no_editing' : True }
                     if seq_num == 0:
                         # Do not default other sequences, because if we do we
                         # will get a lot of people leaving the default values

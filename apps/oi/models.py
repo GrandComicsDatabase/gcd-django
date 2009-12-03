@@ -1466,7 +1466,7 @@ class IssueRevision(Revision):
 
     def __unicode__(self):
         """
-        Re-impliment locally instead of using self.issue because it may change.
+        Re-implement locally instead of using self.issue because it may change.
         """
         return u'%s #%s' % (self.series, self.display_number)
 
@@ -1717,6 +1717,9 @@ class StoryRevision(Revision):
     def has_data(self):
         return self.has_credits() or self.has_content() or self.notes
 
-    def __unicode__(self):
-        return unicode(self.story)
+    def __unicode__(self):    
+        """
+        Re-implement locally instead of using self.story because it may change.
+        """
+        return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
 
