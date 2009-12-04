@@ -4,7 +4,7 @@
   <textarea id="comments" name="comments"></textarea>
   </div>
 {% if changeset.approver %}
-{% ifequal request.user changeset.approver %}
+{% ifequal user changeset.approver %}
 {% ifequal changeset.state states.REVIEWING %}
   <input type="submit" name="approve" value="Approve"></input>
   {% if changeset.singular %}
@@ -14,11 +14,16 @@
 {% endifequal %}
 {% endifequal %}
 {% else %}
-{% if perms.gcd.can_approve %}
 {% ifnotequal user changeset.indexer %}
+{% if perms.gcd.can_approve %}
   <input type="submit" name="assign" value="Assign"></input>
-{% endifnotequal %}
 {% endif %}
+{% else %}
+{% ifequal changeset.state states.OPEN %}
+  <input type="submit" name="submit" value="Submit changes for approval"></input>
+  <input type="submit" name="discard" value="Discard all changes"></input>
+{% endifequal %}
+{% endifnotequal %}
 {% endif %}
   <input type="submit" name="add_comment" value="Add Comment"></input>
 </form>
