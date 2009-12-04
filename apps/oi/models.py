@@ -815,7 +815,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     def _issue_set(self):
         if self.indicia_publisher is None:
             return Issue.objects.filter(pk__isnull=True)
-        return self.indicia_publisher.series_set
+        return self.indicia_publisher.issue_set
     issue_set = property(_issue_set)
 
     def _issue_count(self):
@@ -930,7 +930,7 @@ class BrandRevision(PublisherRevisionBase):
     def _issue_set(self):
         if self.brand is None:
             return Issue.objects.filter(pk__isnull=True)
-        return self.brand.series_set
+        return self.brand.issue_set
     issue_set = property(_issue_set)
 
     def _issue_count(self):
