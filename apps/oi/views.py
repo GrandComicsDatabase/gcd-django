@@ -293,7 +293,8 @@ def assign(request, id):
 
     changeset.assign(approver=request.user, notes=request.POST['comments'])
 
-    return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    return HttpResponseRedirect(urlresolvers.reverse('compare', 
+                                             kwargs={'id': changeset.id }))
 
 @permission_required('gcd.can_approve')
 def release(request, id):
@@ -1177,7 +1178,7 @@ def show_queue(request, queue_name, state):
     bulk_issue_adds = issue_annotated.filter(issue_revision_count__gt=1, **kwargs)
     issues = issue_annotated.filter(issue_revision_count=1, **kwargs)
 
-    return render_to_response(
+    response = render_to_response(
       'oi/queues/%s.html' % queue_name,
       {
         'queue_name': queue_name,
@@ -1218,6 +1219,8 @@ def show_queue(request, queue_name, state):
       },
       context_instance=RequestContext(request)
     )
+    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    return response
 
 @login_required
 def compare(request, id):
