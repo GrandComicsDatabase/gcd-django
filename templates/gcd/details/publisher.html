@@ -24,35 +24,37 @@
   {% if publisher.is_master %}
   {% comment %} For now, don't allow any action on imprints. {% endcomment %}
 
-  {% with publisher as object %}
-  {% with 'publisher' as object_class %}
-  {% if publisher.parent %}
-    {% with 'Imprint' as object_name %}
-      {% include "gcd/bits/status_banner.html" %}
+    {% with publisher as object %}
+    {% with 'publisher' as object_class %}
+    {% if publisher.parent %}
+      {% with 'Imprint' as object_name %}
+        {% include "gcd/bits/status_banner.html" %}
+      {% endwith %}
+    {% else %}
+      {% with 'Publisher' as object_name %}
+        {% include "gcd/bits/status_banner.html" %}
+      {% endwith %}
+    {% endif %}
     {% endwith %}
-  {% else %}
-    {% with 'Publisher' as object_name %}
-      {% include "gcd/bits/status_banner.html" %}
     {% endwith %}
-  {% endif %}
-  {% endwith %}
-  {% endwith %}
 
-  <form method="GET"
-        action="{% url add_indicia_publisher parent_id=publisher.id %}">
-    <input id="add" name="add" type="submit" value="Add indicia publisher" />
-  </form>
-  <form method="GET"
-        action="{% url add_brand parent_id=publisher.id %}">
-    <input id="add" name="add" type="submit" value="Add brand" />
-  </form>
-  <form method="GET"
-        action="{% url add_series publisher_id=publisher.id %}">
-    <input id="add" name="add" type="submit" value="Add series" />
-  </form>
-  {% endif %}
+    {% if user.is_authenticated %}
+      <form method="GET"
+            action="{% url add_indicia_publisher parent_id=publisher.id %}">
+        <input id="add" name="add" type="submit" value="Add indicia publisher" />
+      </form>
+      <form method="GET"
+            action="{% url add_brand parent_id=publisher.id %}">
+        <input id="add" name="add" type="submit" value="Add brand" />
+      </form>
+      <form method="GET"
+            action="{% url add_series publisher_id=publisher.id %}">
+        <input id="add" name="add" type="submit" value="Add series" />
+      </form>
+    {% endif %} <!-- logged in -->
+  {% endif %} <!-- is master -->
 </div>
-{% endif %}
+{% endif %} <!-- not preview -->
 
 <div>
   <dl class="pub_data">

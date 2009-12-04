@@ -46,6 +46,7 @@
   {% endwith %}
   {% endwith %}
   {% endwith %}
+{% if user.is_authenticated %}
   {% if series.is_current and not series.ongoing_reservation %}
     <form method="POST"
           action="{% url apps.oi.views.ongoing %}">
@@ -61,6 +62,12 @@
     <input id="add" name="add" type="submit" value="Add issues">
     </input>
   </form>
+{% else %}
+<form action="{% url login %}" method="GET">
+  <input type="submit" name="login" value="Log in to edit" />
+  <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+</form>
+{% endif %} <!-- logged in -->
 </div>
 {% endif %} <!-- not preview -->
 

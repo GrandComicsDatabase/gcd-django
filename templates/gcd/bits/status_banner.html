@@ -19,9 +19,16 @@
   {% endwith %}
   {% endwith %}
 {% else %}
+  {% if user.is_authenticated %}
   <form method="POST"
         action="{% url reserve_revision model_name=object_class,id=object.id %}">
     <input id="edit" name="edit" type="submit" value="Edit"></input>
   </form>
+  {% else %}
+  <form action="{% url login %}" method="GET">
+    <input type="submit" name="login" value="Log in to edit" />
+    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+  </form>
+  {% endif %}
 {% endif %}
 
