@@ -14,7 +14,7 @@ Reviewing :: {{ revision }}
 {% endblock %}
 
 {% block view_body %}
-
+<h1>{{ changeset }}</h1>
 <p>
 This change adds the following issues after issue
 <span class="comparison_highlight">{{ changeset.ordered_issue_revisions.0.after }}</span>:

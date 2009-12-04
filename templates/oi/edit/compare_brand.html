@@ -14,7 +14,7 @@ Reviewing :: {{ revision }}
 {% endblock %}
 
 {% block view_body %}
-
+<h1>{{ revision }}</h1>
 <p>
 Changed fields are <span class="comparison_highlight">highlighted.</span>
 </p>
@@ -25,6 +25,11 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <th> Current </th>
     <th> Change </th>
   <tr>
+  <tr class="{{ revision.changed.parent }}">
+    <td class="field_name"> Parent publisher </td>
+    <td> {{ revision.source.parent }} </td>
+    <td> {{ revision.parent }} </td>
+  </tr>
   <tr class="{{ revision.changed.name }}">
     <td class="field_name"> Name </td>
     <td> {{ revision.source.name }} </td>
