@@ -292,6 +292,10 @@ def assign(request, id):
         return render_error(request, 'You may not approve your own changes.')
 
     changeset.assign(approver=request.user, notes=request.POST['comments'])
+    if changeset.indexer.indexer.is_new and \
+       changeset.indexer.indexer.mentor is None:
+        changeset.indexer.indexer.mentor = request.user
+        changeset.indexer.indexer.save()
 
     return HttpResponseRedirect(urlresolvers.reverse('compare', 
                                              kwargs={'id': changeset.id }))

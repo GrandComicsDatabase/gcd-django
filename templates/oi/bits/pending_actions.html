@@ -4,7 +4,13 @@
 {% if perms.gcd.can_approve %}
   {% ifnotequal changeset.indexer user %}
 <form action="{% url process id=changeset.id %}" method="POST">
-  <input type="submit" name="assign" value="Assign"></input>
+  <input type="submit" name="assign"
+    {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor %}
+    value="Assign and mentor"
+    {% else %}
+    value="Assign"
+    {% endif %}
+  ></input>
   <span class="label_binding">
     <label for="comments">Comments:</label>
     <input type="text" name="comments" class="comments" />
