@@ -28,7 +28,8 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   <tr class="{{ revision.changed.parent }}">
     <td class="field_name"> Parent publisher </td>
     <td> {{ revision.source.parent }} </td>
-    <td> {{ revision.parent }} </td>
+    <td> <a href="{{ revision.parent.get_absolute_url }}brands/" target=_blank>{{ revision.parent }}</a>
+(opens in a new window)</td>
   </tr>
   <tr class="{{ revision.changed.name }}">
     <td class="field_name"> Name </td>

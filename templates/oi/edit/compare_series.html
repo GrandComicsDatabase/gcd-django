@@ -52,7 +52,8 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   <tr class="{{ revision.changed.publisher }}">
     <td class="field_name"> Publisher </td>
     <td> {{ revision.series.publisher }} </td>
-    <td> {{ revision.publisher }} </td>
+<td> <a href="{{ revision.publisher.get_absolute_url }}" target=_blank>{{ revision.publisher }}</a>
+(opens in a new window)</td>
   </td>
   <tr class="{{ revision.changed.country }}">
     <td class="field_name"> Country </td>
