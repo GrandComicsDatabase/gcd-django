@@ -81,7 +81,7 @@ class AdvancedSearch(forms.Form):
     brand = forms.CharField(required=False)
     indicia_publisher = forms.CharField(label='Indicia Publisher', required=False)
     price = forms.CharField(required=False)
-    issue_pages = forms.CharField(required=False)
+    issue_pages = forms.DecimalField(required=False)
     issue_notes = forms.CharField(label='Issue Notes', required=False)
     issue_editing = forms.CharField(required=False)
     issue_date = forms.CharField(label='Cover Date', required=False)
@@ -103,7 +103,7 @@ class AdvancedSearch(forms.Form):
       required=False)
 
     title = forms.CharField(required=False)
-    pages = forms.CharField(required=False)
+    pages = forms.DecimalField(required=False)
 
     script = forms.CharField(required=False)
     pencils = forms.CharField(required=False)
