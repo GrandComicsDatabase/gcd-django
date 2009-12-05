@@ -121,6 +121,10 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
     class Meta:
         model = IndiciaPublisherRevision
         fields = _get_publisher_fields(middle=('is_surrogate', 'country'))
+    name = forms.CharField(max_length=255,
+      help_text='The name exactly as it appears in the indicia, including '
+                'punctuation, abbreviations, suffixes like ", Inc.", etc.  '
+                'Do not move articles to the end of the name.')
     is_surrogate = forms.BooleanField(required=False, label='Surrogate',
       help_text='Check if this was an independent company serving as a surrogate '
                 'for the master publisher, rather than a company belonging to the '
@@ -133,6 +137,19 @@ class BrandRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandRevision
         fields = ['name', 'year_began', 'year_ended', 'url', 'notes']
+    name = forms.CharField(max_length=255,
+      help_text='The name of the brand as it appears on the logo.  If the logo '
+                'does not use words, then the name of the brand as it is '
+                'commonly used.  Consult an editor if in doubt.')
+    year_began = forms.IntegerField(required=False,
+      help_text='The first year the brand was used.')
+    year_ended = forms.IntegerField(required=False,
+      help_text='The last year the brand was used.  Leave blank if currently '
+                'in use.')
+    url = forms.URLField(required=False,
+      help_text='The official web site of the brand.  Leave blank if the '
+                'publisher does not have a specific web site for the brand.')
+
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
       help_text='Comments between the Indexer and Editor about the change. '
