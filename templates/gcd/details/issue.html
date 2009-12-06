@@ -128,7 +128,7 @@
     {% if issue.cover_set.latest.has_image %}
       <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">{{ image_tag }}</a>
     {% else %}
-      <a href="{{ issue.cover.get_status_url }}">{{ image_tag }}</a>
+      <a href="{{ issue.cover_set.latest.get_status_url }}">{{ image_tag }}</a>
     {% endif %}
     <div class="issue_cover_links">
       {% if issue.cover_set.latest.has_image %}
