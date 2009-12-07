@@ -308,7 +308,7 @@ class Changeset(models.Model):
         if ir_count > 1:
             first = self.issuerevisions.order_by('revision_sort_code')[0]
             last = self.issuerevisions.order_by('-revision_sort_code')[0]
-            return '%s #%s - %s' % (first.series, first.display_number,
+            return u'%s #%s - %s' % (first.series, first.display_number,
                                                   last.display_number)
         return 'Changeset: %d' % self.id
 
