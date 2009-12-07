@@ -16,7 +16,8 @@ def last_updated_issues(parser, token):
         number = int(token.split_contents()[1])
     except:
         number = 5
-    issues = Issue.objects.filter(story_type_count__gt=0).order_by('-modified')
+    issues = Issue.objects.filter(story_type_count__gt=0, reserved=False)\
+				  .order_by('-modified')
     last_updated_issues = issues[:number]
     return LastUpdatedNode(last_updated_issues)
 
