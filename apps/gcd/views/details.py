@@ -519,7 +519,7 @@ def countries_in_use(request):
       request.user.groups.filter(name='admin'):
         countries_from_series = list(set(Series.objects.all().
                                          values_list('country', flat=True)))
-        countries_from_indexers = list(set(Indexer.objects.all().
+        countries_from_indexers = list(set(Indexer.objects.filter(user__is_active=True).
                                            values_list('country', flat=True)))
         countries_from_publishers = list(set(Publisher.objects.all().
                                              values_list('country', flat=True)))
