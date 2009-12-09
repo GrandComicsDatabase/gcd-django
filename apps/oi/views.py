@@ -178,7 +178,7 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
     if form.is_valid():
         revision = form.save(commit=False)
         changeset = revision.changeset
-        if 'comments' in form.cleaned_data:
+        if 'comments' in form.cleaned_data and 'submit' not in request.POST:
             comments = form.cleaned_data['comments']
             if comments is not None and comments != '':
                 changeset.comments.create(commenter=request.user,
@@ -291,7 +291,20 @@ def assign(request, id):
     if request.user == changeset.indexer:
         return render_error(request, 'You may not approve your own changes.')
 
-    changeset.assign(approver=request.user, notes=request.POST['comments'])
+    # TODO: rework error checking strategy.  This is a hack for the most
+    # common case but we probably shouldn't be doing this check in the
+    # model layer in the first place.  See tech bug #199.
+    try:
+        changeset.assign(approver=request.user, notes=request.POST['comments'])
+    except ValueError:
+        return render_error(request,
+          ('This change is already being reviewed by %s who may have assigned it '
+           'after you loaded the previous page.  This results in you seeing an '
+           '"Assign" button even though the change is under review. '
+           'Please use the back button to return to the Pending queue.') %
+          changeset.approver.indexer,
+          redirect=False)
+
     if changeset.indexer.indexer.is_new and \
        changeset.indexer.indexer.mentor is None:
         changeset.indexer.indexer.mentor = request.user
@@ -598,10 +611,6 @@ def add_publisher(request):
 
     changeset = Changeset(indexer=request.user, state=states.OPEN)
     changeset.save()
-    changeset.comments.create(commenter=request.user,
-                              text=form.cleaned_data['comments'],
-                              old_state=states.UNRESERVED,
-                              new_state=changeset.state)
     revision = form.save(commit=False)
     revision.save_added_revision(changeset=changeset,
                                  parent=None)
@@ -647,10 +656,6 @@ def add_indicia_publisher(request, parent_id):
 
         changeset = Changeset(indexer=request.user, state=states.OPEN)
         changeset.save()
-        changeset.comments.create(commenter=request.user,
-                                  text=form.cleaned_data['comments'],
-                                  old_state=states.UNRESERVED,
-                                  new_state=changeset.state)
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
                                      parent=parent)
@@ -701,10 +706,6 @@ def add_brand(request, parent_id):
 
         changeset = Changeset(indexer=request.user, state=states.OPEN)
         changeset.save()
-        changeset.comments.create(commenter=request.user,
-                                  text=form.cleaned_data['comments'],
-                                  old_state=states.UNRESERVED,
-                                  new_state=changeset.state)
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
                                      parent=parent)
@@ -765,10 +766,6 @@ def add_series(request, publisher_id):
 
         changeset = Changeset(indexer=request.user, state=states.OPEN)
         changeset.save()
-        changeset.comments.create(commenter=request.user,
-                                  text=form.cleaned_data['comments'],
-                                  old_state=states.UNRESERVED,
-                                  new_state=changeset.state)
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
                                      publisher=publisher,
@@ -826,10 +823,6 @@ def add_issue(request, series_id, sort_after=None):
 
     changeset = Changeset(indexer=request.user, state=states.OPEN)
     changeset.save()
-    changeset.comments.create(commenter=request.user,
-                              text=form.cleaned_data['comments'],
-                              old_state=states.UNRESERVED,
-                              new_state=changeset.state)
     revision = form.save(commit=False)
     revision.save_added_revision(changeset=changeset,
                                  series=series)
@@ -892,10 +885,6 @@ def add_issues(request, series_id, method=None):
 
     changeset = Changeset(indexer=request.user, state=states.OPEN)
     changeset.save()
-    changeset.comments.create(commenter=request.user,
-                              text=form.cleaned_data['comments'],
-                              old_state=states.UNRESERVED,
-                              new_state=changeset.state)
     if method == 'number':
         new_issues = _build_whole_numbered_issues(series, form, changeset)
     elif method == 'volume':
@@ -1064,10 +1053,11 @@ def add_story(request, issue_id, changeset_id):
         if not form.is_valid():
             return _display_add_story_form(request, issue, form, changeset_id)
 
-        changeset.comments.create(commenter=request.user,
-                                  text=form.cleaned_data['comments'],
-                                  old_state=states.UNRESERVED,
-                                  new_state=changeset.state)
+        if form.cleaned_data['comments']:
+            changeset.comments.create(commenter=request.user,
+                                      text=form.cleaned_data['comments'],
+                                      old_state=changeset.state,
+                                      new_state=changeset.state)
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
                                      issue=issue)
