@@ -67,18 +67,18 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   </tr>
   <tr class="{{ revision.changed.tracking_notes }}"> 
     <td class="field_name"> Tracking Notes </td>
-    <td> {{ revision.series.tracking_notes }} </td>
-    <td> {{ revision.tracking_notes }} </td>
+    <td> {{ revision.series.tracking_notes|linebreaksbr }} </td>
+    <td> {{ revision.tracking_notes|linebreaksbr }} </td>
   </tr>
   <tr class="{{ revision.changed.publication_notes }}"> 
     <td class="field_name"> Publication Notes </td>
-    <td> {{ revision.series.publication_notes }} </td>
-    <td> {{ revision.publication_notes }} </td>
+    <td> {{ revision.series.publication_notes|linebreaksbr }} </td>
+    <td> {{ revision.publication_notes|linebreaksbr }} </td>
   </tr>
   <tr class="{{ revision.changed.notes }}"> 
     <td class="field_name"> Notes </td>
-    <td> {{ revision.series.notes }} </td>
-    <td> {{ revision.notes }} </td>
+    <td> {{ revision.series.notes|linebreaksbr }} </td>
+    <td> {{ revision.notes|linebreaksbr }} </td>
   </tr>
 {% if revision.source.format or revision.changed.format %}
   <tr class="{{ revision.changed.format }}">

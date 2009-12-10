@@ -9,7 +9,7 @@
 {% for comment in changeset.comments.all %}
 <tr>
   <td> {{ comment.commenter.indexer }} </td>
-  <td class="comment_text"> {{ comment.text }} </td>
+  <td class="comment_text"> {{ comment.text|linebreaksbr }} </td>
   <td> {{ comment.created }} </td>
   <td> {{ comment.display_old_state }} </td>
   <td> {{ comment.display_new_state }} </td>
