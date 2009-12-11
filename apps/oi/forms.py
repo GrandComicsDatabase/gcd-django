@@ -490,6 +490,9 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
     def clean(self):
         cd = self.cleaned_data
 
+        if self._errors:
+            raise forms.ValidationError('Please correct the field errors.')
+            
         if cd['volume'] is not None and cd['no_volume']:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
@@ -528,6 +531,10 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
 
     def clean(self):
         cd = self.cleaned_data
+
+        if self._errors:
+            raise forms.ValidationError('Please correct the field errors.')
+            
         basics = (cd['first_number'], cd['first_volume'])
         if None in basics and cd['after'] is not None:
             if filter(lambda x: x is not None, basics):
@@ -594,6 +601,10 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
 
     def clean(self):
         cd = self.cleaned_data
+
+        if self._errors:
+            raise forms.ValidationError('Please correct the field errors.')
+            
         basics = (cd['first_number'], cd['first_year'])
         if None in basics and cd['after'] is not None:
             if filter(lambda x: x is not None, basics):
@@ -649,6 +660,10 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
     def clean(self):
         cd = self.cleaned_data
+
+        if self._errors:
+            raise forms.ValidationError('Please correct the field errors.')
+            
         basics = (cd['first_number'], cd['first_volume'], cd['first_year'])
         if None in basics and cd['after'] is not None:
             if filter(lambda x: x is not None, basics):

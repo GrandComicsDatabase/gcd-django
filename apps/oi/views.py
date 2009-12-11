@@ -575,6 +575,9 @@ def process(request, id):
 
 @permission_required('gcd.can_reserve')
 def process_revision(request, id, model_name):
+    if request.method != 'POST':
+        return _cant_get(request)
+
     if 'cancel_return' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         return HttpResponseRedirect(urlresolvers.reverse('edit',
@@ -584,6 +587,10 @@ def process_revision(request, id, model_name):
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         form = get_revision_form(revision)(request.POST, instance=revision)
         return _save(request, form=form, revision_id=id, model_name=model_name)
+
+    return render_error(request,
+      'Unknown action requested!  Please try again.  If this error message '
+      'persists, please contact an Editor.')
 
 ##############################################################################
 # Adding Items
@@ -757,7 +764,7 @@ def add_series(request, publisher_id):
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
               'apps.gcd.views.details.publisher',
-              kwargs={ 'publisher_id': parent_id }))
+              kwargs={ 'publisher_id': publisher_id }))
 
         form = get_series_revision_form(publisher,
                                         indexer=request.user)(request.POST)
