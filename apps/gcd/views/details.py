@@ -118,7 +118,6 @@ def brands(request, publisher_id):
     return paginate_response(request, brands, 'gcd/details/brands.html', {
       'publisher' : publisher,
       'error_subject' : '%s brands' % publisher,
-      'brands' : brands,
     })
 
 def indicia_publishers(request, publisher_id):
@@ -143,7 +142,6 @@ def indicia_publishers(request, publisher_id):
       {
         'publisher' : publisher,
         'error_subject' : '%s brands' % publisher,
-        'indicia_publishers' : indicia_publishers,
       })
 
 def imprints(request, publisher_id):
@@ -168,8 +166,7 @@ def imprints(request, publisher_id):
     return paginate_response(request, imps, 'gcd/details/imprints.html', {
       'publisher' : publisher,
       'error_subject' : '%s imprints' % publisher,
-      'imprints' : imps,
-      'style' : style })
+      })
 
 def series(request, series_id):
     """

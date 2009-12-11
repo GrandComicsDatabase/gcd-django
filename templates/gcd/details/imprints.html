@@ -41,7 +41,7 @@
     <th> Titles </th>
     <th> Issues </th>
   </tr>
-{% for imprint in imprints %}
+{% for imprint in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ imprint.get_absolute_url }}">{{ imprint.name }}</a> </td>
     <td> {{ imprint.imprint_series_set.count }} </td>

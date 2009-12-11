@@ -40,7 +40,7 @@
     <th> Indicia Publisher </th>
     <th> Issues </th>
   </tr>
-{% for indicia_publisher in indicia_publishers %}
+{% for indicia_publisher in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ indicia_publisher.get_absolute_url }}">{{ indicia_publisher.name }}</a> </td>
     <td> {{ indicia_publisher.issue_set.count }} </td>

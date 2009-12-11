@@ -40,7 +40,7 @@
     <th> Brand </th>
     <th> Issues </th>
   </tr>
-{% for brand in brands %}
+{% for brand in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a> </td>
     <td> {{ brand.issue_set.count }} </td>
