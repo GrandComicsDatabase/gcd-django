@@ -149,7 +149,7 @@ def submit(request, id):
 
     changeset.submit(notes=request.POST['comments'])
     if changeset.approver is not None:
-        email_body = """
+        email_body = u"""
 Hello from the %s!
 
 
@@ -253,7 +253,7 @@ def discard(request, id):
     changeset.discard(discarder=request.user, notes=notes)
 
     if request.user != changeset.indexer:
-        email_body = """
+        email_body = u"""
 Hello from the %s!
 
 
@@ -393,7 +393,7 @@ def approve(request, id):
     return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
 
 def _send_declined_reservation_email(indexer, issue):
-    email_body = """
+    email_body = u"""
 Hello from the %s!
 
 
@@ -426,7 +426,7 @@ def _send_declined_ongoing_email(indexer, series):
         course_of_action = ("As a new user you will gain the ability to hold "
                             "series revisions as your initial changes get "
                             "approved.")
-    email_body = """
+    email_body = u"""
 Hello from the %s!
 
 
@@ -467,7 +467,7 @@ def disapprove(request, id):
     notes = request.POST['comments']
     changeset.disapprove(notes=notes)
 
-    email_body = """
+    email_body = u"""
 Hello from the %s!
 
 

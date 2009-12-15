@@ -143,7 +143,7 @@ def register(request):
            'unlikely error, and it will probably go away if you try to '
            'register again.  We apologize for the inconvenience.  If it '
            'does not go away, please email <a href="mailto:%s">%s</a>.') %
-          (settings.EMAIL_CONTACT, settings.EMAIL_CONTACT),is_safe=True)
+          (settings.EMAIL_CONTACT, settings.EMAIL_CONTACT), is_safe=True)
 
     new_user.first_name = cd['first_name']
     new_user.last_name = cd['last_name']
@@ -168,7 +168,7 @@ def register(request):
     if cd['languages']:
         indexer.languages.add(*cd['languages'])
 
-    email_body = """
+    email_body = u"""
 Hello from the %s!
 
   We've received a request for an account using this email
@@ -216,7 +216,7 @@ def confirm_account(request, key):
         indexer.registration_expires = None
         indexer.save()
 
-        email_body = """
+        email_body = u"""
 We have a new Indexer!
 
 Name: %s
