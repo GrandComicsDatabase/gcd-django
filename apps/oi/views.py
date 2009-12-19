@@ -1047,7 +1047,8 @@ def add_story(request, issue_id, changeset_id):
                         initial['no_script'] = True
                     form = get_story_revision_form()(initial=initial)
                 except ValueError:
-                    return render_error("Sequence number must be a whole number.")
+                    return render_error(request,
+                                        "Sequence number must be a whole number.")
             else:
                 form = get_story_revision_form()()
             return _display_add_story_form(request, issue, form, changeset_id)
