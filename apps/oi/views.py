@@ -329,7 +329,10 @@ def release(request, id):
         
     changeset.release(notes=request.POST['comments'])
 
-    return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    if request.user.approved_changeset.filter(state=states.REVIEWING).count():
+        return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 @permission_required('gcd.can_approve')
 def approve(request, id):
@@ -390,7 +393,10 @@ def approve(request, id):
         i.max_ongoing = settings.RESERVE_MAX_ONGOING_PROBATION
         i.save()
 
-    return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    if request.user.approved_changeset.filter(state=states.REVIEWING).count():
+        return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 def _send_declined_reservation_email(indexer, issue):
     email_body = u"""
