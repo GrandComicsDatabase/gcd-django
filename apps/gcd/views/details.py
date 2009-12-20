@@ -482,8 +482,12 @@ def show_issue(request, issue, preview=False):
     oi_indexers = []
     for i in res:
         oi_indexers.append(i.indexer)
-    res = IssueRevision.objects.filter(issue=issue)\
-                               .filter(changeset__state=states.APPROVED)
+
+    if preview:    
+        res = IssueRevision.objects.filter(issue=issue.issue)
+    else:
+        res = IssueRevision.objects.filter(issue=issue)
+    res = res.filter(changeset__state=states.APPROVED)
     for i in res:
         oi_indexers.append(i.changeset.indexer.indexer)
     oi_indexers = list(set(oi_indexers))
