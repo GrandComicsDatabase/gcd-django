@@ -12,6 +12,7 @@
 
 {% ifequal changeset.state states.PENDING %}
 {% if perms.gcd.can_approve %}
+{% ifnotequal user changeset.indexer %}
   <input type="submit" name="assign"
     {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor %}
     value="Assign and mentor"
@@ -19,6 +20,7 @@
     value="Assign"
     {% endif %}
   ></input>
+{% endifnotequal %}
 {% endif %}
 {% endifequal %}
 
