@@ -1221,7 +1221,7 @@ def show_queue(request, queue_name, state):
           {
             'object_name': 'Issues',
             'object_type': 'issue',
-            'changesets': issues, # TODO: hack! issues.order_by('modified'),
+            'changesets': issues.order_by('state', 'modified'),
           },
         ],
       },
