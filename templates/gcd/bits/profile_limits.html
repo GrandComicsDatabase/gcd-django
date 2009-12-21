@@ -11,7 +11,15 @@
       {% if profile_user.indexer.is_new %}Yes{% else %}No{% endif %}
     </span>
   <li> Mentor:
-    <span class="data_value">{{ profile_user.indexer.mentor.indexer|default:"None" }}</span>
+    {% if profile_user.indexer.mentor %}
+    <span class="data_value"><a href="{% url view_profile user_id=profile_user.indexer.mentor.id %}">
+      {{ profile_user.indexer.mentor.indexer }}</a></span>
+    {% ifequal user profile_user %}
+    (<a href="mailto:{{ profile_user.indexer.mentor.email }}">{{ profile_user.indexer.mentor.email }}</a>)
+    {% endifequal %}
+    {% else %}
+    <span class="data_value">None</span>
+    {% endif %}
 </ul>
 {% endif %}
 

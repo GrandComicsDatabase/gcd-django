@@ -4,7 +4,7 @@
   <li> First Name: {{ profile_user.first_name }}<br/>
   <li> Last Name: {{ profile_user.last_name }}
 {% if user|can_view_profile_details:profile_user %}
-  <li> Email: {{ profile_user.email }}<br/>
+  <li> Email: <a href="mailto:{{ profile_user.email }}">{{ profile_user.email }}</a><br/>
 {% endif %}
   <li> Country: <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ profile_user.indexer.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
        {{ profile_user.indexer.country }} <br>
