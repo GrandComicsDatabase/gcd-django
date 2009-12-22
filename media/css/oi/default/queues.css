@@ -3,7 +3,7 @@
 }
 
 .queues table {
-    border: solid black 2px;
+    border: double black 2px;
     border-collapse: collapse;
 }
 

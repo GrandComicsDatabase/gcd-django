@@ -14,7 +14,7 @@ table.add_issues,
 table.comparison,
 table.comments,
 table.story_list {
-    border: solid black 2px;
+    border: double black 2px;
     border-collapse: collapse;
     margin-bottom: 1em;
 }

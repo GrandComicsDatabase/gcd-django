@@ -36,7 +36,7 @@ table.status {
     background-color: black;
     border-collapse: collapse;
     border-spacing: 0px;
-    border: solid black;
+    border: double black 2px;
     width: 50em;
     font-size: 0.85em;
     font-weight: bold;
