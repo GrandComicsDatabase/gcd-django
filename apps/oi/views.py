@@ -237,10 +237,10 @@ def discard(request, id):
     changeset = get_object_or_404(Changeset, id=id)
 
     if (request.user != changeset.indexer and
-        not request.user.has_perm('gcd.can_approve')):
+        request.user != changeset.approver):
         return render_to_response('gcd/error.html',
           { 'error_message':
-            'Only the author or an Editor can discard a change.' },
+            'Only the author or the assigned editor can discard a change.' },
           context_instance=RequestContext(request))
 
     if request.user != changeset.indexer and not request.POST['comments']:
@@ -277,7 +277,12 @@ thanks,
         changeset.indexer.email_user('GCD change rejected', email_body, 
           settings.EMAIL_INDEXING)
 
-    return HttpResponseRedirect(urlresolvers.reverse('editing'))
+        if request.user.approved_changeset.filter(state=states.REVIEWING).count():
+            return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('pending'))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
 @permission_required('gcd.can_approve')
 def assign(request, id):
@@ -496,7 +501,10 @@ thanks,
     changeset.indexer.email_user('GCD change sent back', email_body, 
       settings.EMAIL_INDEXING)
 
-    return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    if request.user.approved_changeset.filter(state=states.REVIEWING).count():
+        return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 # TODO: Figure out how to handle deletions.
 # @permission_required('gcd.can_reserve')
