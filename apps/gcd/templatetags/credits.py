@@ -3,6 +3,7 @@ import re
 
 from django import template
 from django.utils.translation import ugettext as _
+from django.utils.translation import ungettext 
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -148,7 +149,7 @@ def show_issue_number(issue_number):
     return mark_safe('<span id="issue_number"><span class="p">#</span>' + \
         esc(issue_number) + '</span>')
 
-def show_page_count(story):
+def show_page_count(story, show_page=False):
     """
     Return a properly formatted page count, with "?" as needed.
     """
@@ -163,6 +164,8 @@ def show_page_count(story):
     p = re.sub(r'\.?0+$', '', unicode(story.page_count))
     if story.page_count_uncertain:
         p = u'%s ?' % p
+    if show_page:
+        p = p + u' ' + ungettext('page', 'pages', story.page_count)
     return p
 
 def show_title(story):

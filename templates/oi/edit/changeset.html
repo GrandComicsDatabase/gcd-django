@@ -1,6 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% load credits %}
+{% load display %}
 
 {% block title %}
 {{ changeset }}
@@ -126,10 +127,7 @@
       {% for story in changeset.issuerevisions.all.0.ordered_story_revisions %}
       <tr>
         <td>
-          {{ story.sequence_number }}.
-          {{ story.title|default:'<span class="no_data">no title</span>' }}
-          ({{ story.feature|default:'<span class="no_data">no feature</span>' }})
-          {{ story.type }}, {{ story|show_page_count }}p
+          {{ story|show_story_short }}
         </td>
         <td>{{ story|show_credit_status }}</td>
         <td>

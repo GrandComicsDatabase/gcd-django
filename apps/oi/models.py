@@ -456,15 +456,18 @@ class Revision(models.Model):
         using a parameter to compare one field at a time.
         """
         self.changed = {}
+        self.is_changed = False
         for field_name in self._field_list():
             new = getattr(self, field_name)
             if self.source is None:
                 if new:
                     self.changed[field_name] = True
+                    self.is_changed = True
                 else:
                     self.changed[field_name] = False
             elif new != getattr(self.source, field_name):
                 self.changed[field_name] = True
+                self.is_changed = True
             else:
                 self.changed[field_name] = False
 
@@ -1276,7 +1279,7 @@ class IssueRevision(Revision):
     def _display_number(self):
         """
         Implemented separately because it needs to use the revision's
-        display field and not the source's.  Although the actual contstruction
+        display field and not the source's.  Although the actual construction
         of the string should really be factored out somewhere for consistency.
         """
         if self.display_volume_with_number:

@@ -35,11 +35,7 @@
     {% ifequal lower_type 'cover' %}
             <a href="{{ url }}cover/4/">{{ story.type }}</a>
          {% else %}
-            {{ story.type }} / {% if story.page_count %}{{ story.page_count }}
-              {% if story.page_count_uncertain %}?{% endif %}
-            {% blocktrans with story.page_count|ceil|pluralize as suffix %}
-              page{{ suffix }}
-            {% endblocktrans %}
+            {{ story.type }} / {% if story.page_count %}{{ story|show_page_count:1 }}
             {% endif %}
          {% endifequal %}
     {% endwith %}

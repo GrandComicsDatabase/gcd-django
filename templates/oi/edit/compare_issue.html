@@ -1,5 +1,7 @@
 {% extends "oi/base_view.html" %}
 
+{% load display %}
+
 {% block title %}
 Reviewing :: {{ revision }}
 {% endblock %}
@@ -14,9 +16,30 @@ Reviewing :: {{ revision }}
 {% endblock %}
 
 {% block view_body %}
-<h1>{{ revision }}</h1>
+<h1>
+{{ revision.series|absolute_url:'target="_blank"' }} 
+({{ revision.series.publisher|absolute_url:'target="_blank"' }}) 
+{% if revision.issue %}
+<a href="{{ revision.issue.get_absolute_url }}" target="_blank">#{{ revision.display_number }}</a>
+{% else %}
+#{{ revision.display_number }}
+{% endif %}
+</h1>
 <p>
 Changed fields are <span class="comparison_highlight">highlighted.</span>
+<a href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview</a> changes.
+{% if changeset.storyrevisions.count %}
+  {% if request.GET.collapse %}
+    <a href="{% url compare id=changeset.id %}">Expand compare view</a>.
+  {% else %}
+    <a href="{% url compare id=changeset.id %}?collapse=1">Collapse compare view</a>.
+  {% endif %}
+{% endif %}
+{% if revision.issue and revision.issue.cover_set.latest.has_image %}
+View the
+<a href="{{ revision.issue.get_absolute_url }}cover/4/" target="_blank">cover</a>.
+{% endif %}
+Links open in new windows.
 </p>
 
 <table class="comparison">
@@ -69,13 +92,13 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   </tr>
   <tr class="{{ revision.changed.indicia_publisher}}">
     <td class="field_name"> Indicia publisher </td>
-    <td> {{ revision.issue.indicia_publisher }} </td>
-    <td> {{ revision.indicia_publisher }} </td>
+    <td> {{ revision.issue.indicia_publisher|absolute_url:'target="_blank"'|default:"None" }} </td>
+    <td> {{ revision.indicia_publisher|absolute_url:'target="_blank"'|default:"None" }} </td>
   </tr>
   <tr class="{{ revision.changed.brand}}">
     <td class="field_name"> Brand </td>
-    <td> {{ revision.issue.brand }} </td>
-    <td> {{ revision.brand }} </td>
+    <td> {{ revision.issue.brand|absolute_url:'target="_blank"'|default:"None" }} </td>
+    <td> {{ revision.brand|absolute_url:'target="_blank"'|default:"None" }} </td>
   </tr>
   <tr class="{{ revision.changed.price }}">
     <td class="field_name"> Price </td>

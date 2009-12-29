@@ -1,6 +1,21 @@
+{% load credits %}
+{% load display %}
+
 <h3> Sequence {{ story_revision.sequence_number }} </h3>
 
 <table class="comparison">
+  {% if not story_revision.is_changed and request.GET.collapse %}
+      <h4> No changes to this sequence </h4>
+      <tr>
+        {% with story_revision.story as story %}
+        <td>
+          {{ story|show_story_short }}
+        </td>
+        <td>{{ story|show_credit_status }}</td>
+        <td> <a href="{% url compare id=revision.changeset.id %}">Expand compare view</a> </td>
+        {% endwith %} 
+      </tr>
+  {% else %}
   <tr>
     <th> Field </th>
     <th> Current </th>
@@ -131,5 +146,6 @@
     <td> {{ story_revision.story.notes|linebreaksbr }} </td>
     <td> {{ story_revision.notes|linebreaksbr }} </td>
   </tr>
+  {% endif %}
 </table>
 
