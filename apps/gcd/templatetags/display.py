@@ -8,7 +8,7 @@ from apps.gcd.templatetags.credits import show_page_count
 register = template.Library()
 
 def absolute_url(item, additional=''):
-    if item is not None:
+    if item is not None and hasattr(item, 'get_absolute_url'):
         if additional:
             return mark_safe(u'<a href="%s" %s>%s</a>' %
                              (item.get_absolute_url(), additional, esc(item)))

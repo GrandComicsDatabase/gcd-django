@@ -80,12 +80,12 @@ Non-default fields are <span class="comparison_highlight">highlighted.</span>
   </tr>
   <tr class="{{ revision.changed.indicia_publisher}}">
     <td class="field_name"> Indicia publisher </td>
-    <td> {{ revision.issue.indicia_publisher }} </td>
+    <td> {{ revision.issue.indicia_publisher|absolute_url:'target="_blank"'|default:"None" }} </td>
     <td> {{ revision.indicia_publisher|absolute_url:'target="_blank"'|default:"None" }} </td>
   </tr>
   <tr class="{{ revision.changed.brand}}">
     <td class="field_name"> Brand </td>
-    <td> {{ revision.issue.brand }} </td>
+    <td> {{ revision.issue.brand|absolute_url:'target="_blank"'|default:"None" }} </td>
     <td> {{ revision.brand|absolute_url:'target="_blank"'|default:"None" }} </td>
   </tr>
   <tr class="{{ revision.changed.price }}">
