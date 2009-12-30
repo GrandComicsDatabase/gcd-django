@@ -56,6 +56,7 @@
 </p>
 
 {% ifequal changeset.state states.OPEN %}
+{% ifequal changeset.indexer user %}
   {% if changeset.inline %}
     {% include "oi/edit/include_frame.html" %}
   {% else %}
@@ -168,6 +169,9 @@
     <input type="submit" name="discard" value="Discard all changes"></input>
     </form>
   {% endif %}
+{% else %}
+  This change has being edited by {{ changeset.indexer.indexer }}.
+{% endifequal %}
 {% endifequal %}
 </div>
 {% endblock %}
