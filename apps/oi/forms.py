@@ -760,24 +760,34 @@ class StoryRevisionForm(forms.ModelForm):
                              required=False)
 
     no_script = forms.BooleanField(required=False,
-      help_text='Check if there is no script or plot to credit, i.e. for a '
-                'cover or single-page illustration.  Leave the script field blank.')
+      help_text='Check this box if no script or plot exists for this sequence, e.g. for a '
+                'cover or single-page illustration. Leave the script field blank. '
+                'If the credit is relevant but unknown ignore this checkbox and enter a '
+                'question mark in the script field.')
     no_pencils = forms.BooleanField(required=False,
-      help_text='Check if there is no penciler to credit, i.e. for an '
-                'unillustrated text article.  Leave the pencils field blank.')
+      help_text='Check this box if no penciler exists for this sequence, e.g. for an '
+                'unillustrated text article. Leave the pencils field blank. '
+                'If the credit is relevant but unknown ignore this checkbox and enter a '
+                'question mark in the pencils field.')
     no_inks = forms.BooleanField(required=False,
-      help_text='Check if there is no inker to credit, i.e. for an '
-                'unillustrated text article.  Leave the inks field blank.')
+      help_text='Check this box if no inker exists for this sequence, e.g. for a '
+                'story colored straight from pencils. Leave the inks field blank. '
+                'If the credit is relevant but unknown ignore this checkbox and enter a '
+                'question mark in the inks field.')
     no_colors = forms.BooleanField(required=False,
-      help_text='Check if there is no colorist to credit, i.e. for a '
-                'black-and-white comic.  Leave the colors field blank.')
+      help_text='Check this box if no colorist exists for this sequence, e.g. for a '
+                'black-and-white comic. Leave the colors field blank. '
+                'If the credit is relevant but unknown ignore this checkbox and enter a '
+                'question mark in the colors field.')
     no_letters = forms.BooleanField(required=False,
-      help_text='Check if there is no lettering to credit. Leave the letters box '
+      help_text='Check this box if no lettering exists for this sequence. Leave the letters box '
                 'blank.  However, if the only letters are produced as normal '
                 'printed text rather than comic-style lettering, put the word '
-                '"typeset" in the letters field and do not check this box.')
+                '"typeset" in the letters field and do not check this box. '
+                'If the credit is relevant but unknown ignore this checkbox and enter a '
+                'question mark in the letters field.')
     no_editing = forms.BooleanField(required=False,
-      help_text='Check if there is no separate editor for this sequence. '
+      help_text='Check this box if there is no separate editor for this sequence. '
                 'This is common when there is an editor for the whole issue.')
 
     type = forms.ModelChoiceField(queryset=StoryType.objects.all(),
