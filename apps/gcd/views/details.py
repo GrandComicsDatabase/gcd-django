@@ -438,9 +438,12 @@ def issue_form(request):
 
     id = params['id']
     del params['id']
-    return HttpResponseRedirect(
-      urlresolvers.reverse(issue, kwargs={ 'issue_id': id }) +
-      '?' + params.urlencode())
+    try:
+        return HttpResponseRedirect(
+          urlresolvers.reverse(issue, kwargs={ 'issue_id': int(id) }) +
+          '?' + params.urlencode())
+    except ValueError:
+        raise Http404
 
 def issue(request, issue_id):
     """
