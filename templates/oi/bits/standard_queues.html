@@ -1,9 +1,12 @@
 {% for section in data %}
 {% if section.changesets.count %}
-<h2> {{ section.object_name }} </h2>
+<h2>
+  {{ section.object_name }}
+  ({{ section.changesets.count }} change{{ section.changesets.count|pluralize }})
+</h2>
 <table>
   <tr>
-    <th> Name {{ queue_name|default:'bugger' }}</th>
+    <th> Name {{ queue_name }}</th>
   {% ifnotequal queue_name 'editing' %}
     <th> Indexer</th>
   {% endifnotequal %}
