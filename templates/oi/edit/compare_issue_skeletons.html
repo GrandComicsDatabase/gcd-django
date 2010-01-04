@@ -18,11 +18,11 @@ Reviewing :: {{ revision }}
 {% block view_body %}
 <h1>{{ changeset }}</h1>
 <p>
-This change adds the following issues 
-to {{ revision.series|absolute_url:'target="_blank"' }}
+This change adds to {{ revision.series|absolute_url:'target="_blank"' }}
 published by {{ revision.series.publisher|absolute_url:'target="_blank"' }}
-(links open in new windows) after issue
-<span class="comparison_highlight">{{ changeset.ordered_issue_revisions.0.after }}</span>:
+after issue
+<span class="comparison_highlight">{{ changeset.ordered_issue_revisions.0.after }}</span>
+the following issues (links open in new windows):
 <table class="comparison">
 <tr>
   <th> Volume </th>
