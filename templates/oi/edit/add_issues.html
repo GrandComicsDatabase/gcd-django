@@ -26,7 +26,9 @@ already under an ongoing reservation).
 
 {% if issue_adds %}
 <p>
-Current active issue adds for this series:<br>
+If you want to add issues that must sort after any of the issues shown
+below in the list of current active issue adds for this series,
+you must wait until those issues are approved.<br>
 {% for add in issue_adds %}
 <a href="{% url compare id=add.id %}">{{ add }}</a><br>
 {% endfor %}
