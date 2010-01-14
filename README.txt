@@ -1,4 +1,4 @@
-This is a new implementation of the Grand Comic-Book Database in Python
+This is a new implementation of the Grand Comics Database in Python
 using the Django framework.
 
 Setup:

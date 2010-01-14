@@ -110,7 +110,7 @@ RESERVE_MAX_ONGOING_PROBATION = 2
 RESERVE_MAX_ONGOING_DEFAULT = 4
 
 SITE_URL = 'http://www.comics.org/'
-SITE_NAME = 'Grand Comic-Book Database'
+SITE_NAME = 'Grand Comics Database'
 
 # get local settings, will override settings from here
 try:
