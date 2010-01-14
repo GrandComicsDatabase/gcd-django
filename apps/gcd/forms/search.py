@@ -1,3 +1,5 @@
+from re import match
+from decimal import Decimal, InvalidOperation
 from django import forms
 from apps.gcd.models import Country, Language, Indexer, StoryType
 
@@ -23,6 +25,8 @@ DATE_FORMATS = ['%Y.%m.%d', '%Y-%m-%d',
                 '%B %d %Y', '%B %d, %Y',
                 '%d %B %Y', '%d %B, %Y',
                 '%Y']
+
+PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
 
 class AdvancedSearch(forms.Form):
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
@@ -81,7 +85,7 @@ class AdvancedSearch(forms.Form):
     brand = forms.CharField(required=False)
     indicia_publisher = forms.CharField(label='Indicia Publisher', required=False)
     price = forms.CharField(required=False)
-    issue_pages = forms.DecimalField(required=False)
+    issue_pages = forms.CharField(required=False)
     issue_notes = forms.CharField(label='Issue Notes', required=False)
     issue_editing = forms.CharField(required=False)
     issue_date = forms.CharField(label='Cover Date', required=False)
@@ -103,7 +107,7 @@ class AdvancedSearch(forms.Form):
       required=False)
 
     title = forms.CharField(required=False)
-    pages = forms.DecimalField(required=False)
+    pages = forms.CharField(required=False)
 
     script = forms.CharField(required=False)
     pencils = forms.CharField(required=False)
@@ -130,6 +134,32 @@ class AdvancedSearch(forms.Form):
       choices=([l.code, l.name] for l in Language.objects.order_by('name')),
       widget=forms.SelectMultiple(attrs={'size' : '4'}))
     alt_language = forms.CharField(label='', required=False, max_length=3)
+
+    def clean_pages(self):
+        pages_data = self.cleaned_data['pages']
+        if pages_data:
+            range_match = match(PAGE_RANGE_REGEXP, pages_data)
+            if not range_match:
+                try:
+                    Decimal(pages_data)
+                except InvalidOperation:
+                    raise forms.ValidationError(
+                          "Page count must be a decimal number or a pair of "
+                          "decimal numbers separated by a hyphen.")
+        return pages_data
+
+    def clean_issue_pages(self):
+        pages_data = self.cleaned_data['issue_pages']
+        if pages_data:
+            range_match = match(PAGE_RANGE_REGEXP, pages_data)
+            if not range_match:
+                try:
+                    Decimal(pages_data)
+                except InvalidOperation:
+                    raise forms.ValidationError(
+                          "Page count must be a decimal number or a pair of "
+                          "decimal numbers separated by a hyphen.")
+        return pages_data
 
     def clean(self):
         cleaned_data = self.cleaned_data

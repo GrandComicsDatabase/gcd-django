@@ -19,14 +19,12 @@ from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Story
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
-from apps.gcd.forms.search import AdvancedSearch
+from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP
 from apps.gcd.views.details import issue 
 
 # Should not be importing anything from oi, but we're doing this in several places.
 # TODO: states should probably live somewhere else.
 from apps.oi import states
-
-PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
 
 class SearchError(Exception):
     pass
@@ -568,8 +566,8 @@ def search_issues(data, op, stories_q=None):
         if data['issue_pages'] is not None and data['issue_pages'] != '':
             range_match = match(PAGE_RANGE_REGEXP, data['issue_pages'])
             if range_match:
-                page_start = float(range_match.group('begin'))
-                page_end = float(range_match.group('end'))
+                page_start = Decimal(range_match.group('begin'))
+                page_end = Decimal(range_match.group('end'))
                 q_objs.append(Q(**{ '%spage_count__range' % prefix :
                                     (page_start, page_end) }))
             else:
