@@ -2,6 +2,7 @@
 
 {% load i18n %}
 {% load credits %}
+{% load display %}
 
 {% block title %} GCD :: Series :: {{ series.name }} {% endblock %}
 
@@ -26,10 +27,13 @@
 
 {% if not preview %}
 <div class="control_panel">
-  {% if series.is_current and series.ongoing_reservation %}
-    <div class="ongoing_status"><span>
-      The ongoing issue reservation for this series is held by
-      {{ series.ongoing_reservation.indexer.indexer }}.
+  {% if series.ongoing_reservation %}
+    {% if series.is_current %}
+      <div class="ongoing_status"><span>
+        The ongoing issue reservation for this series is held by
+        {{ series.ongoing_reservation.indexer.indexer }}.
+      </span></div>
+    {% endif %}
     {% ifequal request.user series.ongoing_reservation.indexer %}
       <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
         <input id="delete_ongoing" name="delete_ongoing" type="submit"
@@ -37,7 +41,6 @@
         </input>
       </form>
     {% endifequal %}
-    </span></div>
   {% endif %}
   {% with series as object %}
   {% with 'Series' as object_name %}
