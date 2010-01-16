@@ -98,7 +98,7 @@ class AdvancedSearch(forms.Form):
                                    (False, "no"))))
     indexer = forms.ModelMultipleChoiceField(required=False,
       queryset=Indexer.objects.filter(registration_key=None).order_by(
-        'user__first_name', 'user__last_name'),
+        'user__first_name', 'user__last_name').select_related('user'),
       widget=forms.SelectMultiple(attrs={'size' : '6'}))
 
     feature = forms.CharField(required=False)
