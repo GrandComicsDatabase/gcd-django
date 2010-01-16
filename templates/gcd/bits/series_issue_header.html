@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load credits %}
+{% load display %}
 
 {% ifnotequal paginate_only 1 %}
 <h1 class="item_id">
@@ -28,54 +29,49 @@
 
 {% ifnotequal paginate_only 1 %}
   <div class="left" class="item_data">
-  {% if preview %}
-    {{ series.publisher }} {% if series.imprint %}{{ series.imprint }}{% endif %}
-  {% else %}
-    <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a>,
-    <!-- use imprint_id to avoid a needless DB lookup on imprint_id = 0
-         If we used NULL for "no imprint" this wouldn't be a problem.  -->
-    {% if series.imprint_id %}
-      <a href="{{ series.imprint.get_absolute_url }}">{{ series.imprint }}</a> imprint,
-    {% endif %}
+  {{ series.publisher|absolute_url }},
+  {% if series.imprint %}
+    {{ series.imprint|absolute_url }} imprint,
   {% endif %}
-    {{ series.year_began }} Series<br/>
+  {{ series.year_began }} Series
   </div>
   <div class="right" id="language_country">
-    {% if language %}
-      Published in {{ language }}
-    {% endif %}
-    {% if country %}
-      ({{ country }})
-      <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
-    {% endif %}
+  {% if language %}
+    Published in {{ language }}
+  {% endif %}
+  {% if country %}
+    ({{ country }})
+    <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
+  {% endif %}
   </div>
 {% endifnotequal %}
 
-  {% if issue_number %}
+{% if issue_number %}
   <div class="right" class="prev_next">
-      {% if prev_issue %}
-          <a href="{{ prev_issue.get_absolute_url }}{{ extra }}?style={{ style }}">&lt; {% trans "Previous Issue" %}</a>
-        |
-      {% endif %}
-        <form style="display:inline"
-              action="{% url apps.gcd.views.details.issue_form %}">
-          <select name="id" id="id">
-            {% for other_issue in series.issue_set.all %}
-              <option value="{{ other_issue.id }}"
-                {% ifequal issue.id other_issue.id %}
-                      selected
-                {% endifequal %}>{{ other_issue.display_number }}</option>
-            {% endfor %}
-          </select>
-          <input type="submit" value="{% trans 'Go' %}"/>
-        </form> 
-      {% if next_issue %}
-        |
-          <a href="{{ next_issue.get_absolute_url }}{{ extra }}?style={{ style }}">{% trans "Next Issue" %} &gt;</a>
-      {% endif %}
+  {% if prev_issue %}
+    <a href="{{ prev_issue.get_absolute_url }}{{ extra }}?style={{ style }}">&lt; {% trans "Previous Issue" %}</a>
+    |
+  {% endif %}
+    <form style="display:inline"
+          action="{% url apps.gcd.views.details.issue_form %}">
+      <select name="id" id="id">
+    {% for other_issue in series.issue_set.all %}
+        <option value="{{ other_issue.id }}"
+      {% ifequal issue.id other_issue.id %}
+                selected
+      {% endifequal %}>{{ other_issue.display_number }}</option>
+    {% endfor %}
+      </select>
+      <input type="submit" value="{% trans 'Go' %}"/>
+    </form> 
+  {% if next_issue %}
+    |
+    <a href="{{ next_issue.get_absolute_url }}{{ extra }}?style={{ style }}">{% trans "Next Issue" %} &gt;</a>
+  {% endif %}
   </div>
-  {% endif %}
-  {% if page %}
+{% endif %}
+{% if page %}
   {% include "gcd/bits/pagination_bar.html" %}
-  {% endif %}
+{% endif %}
 </div>
+
