@@ -144,7 +144,7 @@ def show_issue_number(issue_number):
     """
     Return issue number, unless it is marked as not having one.
     """
-    return mark_safe('<span id="issue_number"><span class="p">#</span>' + \
+    return mark_safe('<span class="issue_number"><span class="p">#</span>' + \
         esc(issue_number) + '</span>')
 
 def show_page_count(story, show_page=False):
