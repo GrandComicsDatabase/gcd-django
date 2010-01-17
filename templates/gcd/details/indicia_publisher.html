@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load i18n %}
+{% load display %}
 
 {% block title %}
 GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
@@ -14,7 +15,9 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
 {% block view_body %}
 
 {% with indicia_publisher as publisher %}
+{% with "Indicia Publisher" as description %}
 {% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
 {% endwith %}
 
 {% if not preview %}
@@ -64,11 +67,13 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
   <tr>
     <th> Issue </th>
     <th> Publication Date </th>
+    <th> Brand </th>
   </tr>
   {% for issue in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a> </td>
-    <td> {{ issue.publication_date }}
+    <td> {{ issue|show_issue }} </td>
+    <td> {{ issue.publication_date }} </td>
+    <td> {{ issue.brand|absolute_url }} </td>
   </tr>
   {% endfor %}
 </table>

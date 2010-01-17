@@ -15,6 +15,12 @@
     {% else %}
       <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
     {% endif %}
+    {% if extra %}
+      {{ extra }}
+    {% endif %}
+    {% if description %}
+      ({{ description }})
+    {% endif %}
   {% endif %}
   </div>
 </h1>

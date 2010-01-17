@@ -36,5 +36,15 @@ def show_story_short(story):
                                   show_page_count(story))
     return mark_safe(story_line)
 
+def show_issue(issue):
+    return mark_safe('<a href="%s">%s</a> (%s series) <a href="%s">#%s</a>' %
+                     (issue.series.get_absolute_url(),
+                      esc(issue.series.name),
+                      esc(issue.series.year_began),
+                      issue.get_absolute_url(),
+                      esc(issue.display_number)))
+
 register.filter(absolute_url)
 register.filter(show_story_short)
+register.filter(show_issue)
+

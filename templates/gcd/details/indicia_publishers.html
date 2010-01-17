@@ -13,37 +13,31 @@
 
 {% block view_body %}
 
+{% with "Indicia Publishers" as extra %}
 {% include "gcd/bits/publisher_header.html" %}
-
-<div>
-  <dl class="pub_data">
-  {% if publisher.country %}
-    <dt> Country:
-    <dd> {{ publisher.country.name }}
-  {% endif %}
-
-  {% if publisher.notes %}
-    <dt> Notes:
-    <dd> {{ publisher.notes|linebreaksbr }}
-  {% endif %}
-
-  {% if publisher.url %}
-    <dt> Web Site:
-    <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
-  {% endif %}
-  </dl>
+{% endwith %}
+<div class="publisher_list_control_panel">
+  <form method="GET"
+        action="{% url add_indicia_publisher parent_id=publisher.id %}">
+    <input id="add" name="add" type="submit" value="Add another indicia publisher" />
+  </form>
 </div>
-
 {% if publisher.indicia_publisher_count %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Indicia Publisher </th>
     <th> Issues </th>
+    <th> Year Began </th>
+    <th> Year Ended </th>
+    <th> Surrogate? </th>
   </tr>
 {% for indicia_publisher in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ indicia_publisher.get_absolute_url }}">{{ indicia_publisher.name }}</a> </td>
     <td> {{ indicia_publisher.issue_set.count }} </td>
+    <td> {{ indicia_publisher.year_began|default:"" }} </td>
+    <td> {{ indicia_publisher.year_ended|default:"" }} </td>
+    <td> {{ indicia_publisher.is_surrogate|yesno:"Yes,-" }} </td>
   </tr>
 {% endfor %}
 </table>

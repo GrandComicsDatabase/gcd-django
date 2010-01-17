@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load i18n %}
+{% load display %}
 
 {% block title %}
 GCD :: Brand :: {{ brand.name }}
@@ -14,7 +15,9 @@ GCD :: Brand :: {{ brand.name }}
 {% block view_body %}
 
 {% with brand as publisher %}
+{% with "Brand" as description %}
 {% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
 {% endwith %}
 
 {% if not preview %}
@@ -54,11 +57,13 @@ GCD :: Brand :: {{ brand.name }}
   <tr>
     <th> Issue </th>
     <th> Publication Date </th>
+    <th> Indicia Publisher </th>
   </tr>
   {% for issue in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a> </td>
-    <td> {{ issue.publication_date }}
+    <td> {{ issue|show_issue }} </td>
+    <td> {{ issue.publication_date }} </td>
+    <td> {{ issue.indicia_publisher|absolute_url }} </td>
   </tr>
   {% endfor %}
 </table>
@@ -71,3 +76,4 @@ GCD :: Brand :: {{ brand.name }}
 {% endwith %}
 
 {% endblock %}
+

@@ -461,6 +461,18 @@ div.ongoing_status form {
     display: inline;
 }
 
+.publisher_list_control_panel {
+    clear: both;
+}
+
+.publisher_list_control_panel form {
+    margin-top: 1em;
+    margin-right: 1em;
+    margin-bottom: 1em;
+    float: left;
+    display: inline;
+}
+
 .control_panel input {
     display: inline;
 }

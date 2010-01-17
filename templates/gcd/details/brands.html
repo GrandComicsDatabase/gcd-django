@@ -13,37 +13,29 @@
 
 {% block view_body %}
 
+{% with "Brands" as extra %}
 {% include "gcd/bits/publisher_header.html" %}
-
-<div>
-  <dl class="pub_data">
-  {% if publisher.country %}
-    <dt> Country:
-    <dd> {{ publisher.country.name }}
-  {% endif %}
-
-  {% if publisher.notes %}
-    <dt> Notes:
-    <dd> {{ publisher.notes|linebreaksbr }}
-  {% endif %}
-
-  {% if publisher.url %}
-    <dt> Web Site:
-    <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
-  {% endif %}
-  </dl>
+{% endwith %}
+<div class="publisher_list_control_panel">
+  <form method="GET"
+        action="{% url add_brand parent_id=publisher.id %}">
+    <input id="add" name="add" type="submit" value="Add another brand" />
+  </form>
 </div>
-
 {% if publisher.brand_count %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Brand </th>
     <th> Issues </th>
+    <th> Year Began</th>
+    <th> Year Ended</th>
   </tr>
 {% for brand in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a> </td>
     <td> {{ brand.issue_set.count }} </td>
+    <td> {{ brand.year_began|default:"" }}
+    <td> {{ brand.year_ended|default:"" }}
   </tr>
 {% endfor %}
 </table>
