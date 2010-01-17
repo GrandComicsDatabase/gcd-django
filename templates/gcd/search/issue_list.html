@@ -13,7 +13,7 @@
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ issue.series.country.code|lower }}.png" alt="{{ issue.series.country.code|upper }}">
     <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
-    <td> <a href="{{ issue|show_issue }} </td>
+    <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date|default:"" }} </td>
   </tr>
 {% endfor %}
