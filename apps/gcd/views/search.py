@@ -376,6 +376,7 @@ def process_advanced(request):
     get_copy.pop('page', None)
 
     context = {
+        'advanced_search': True,
         'item_name' : item_name,
         'plural_suffix' : plural_suffix,
         'heading' : data['target'].title() + ' Search Results',
