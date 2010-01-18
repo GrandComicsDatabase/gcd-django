@@ -812,8 +812,10 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         return fields
 
     def _queue_name(self):
-        return u'%s (%s, %s)' % (self.name, self.year_began,
-                                 self.country.code.upper())
+        return u'%s: %s (%s, %s)' % (self.parent.name,
+                                     self.name,
+                                     self.year_began,
+                                     self.country.code.upper())
 
     def _issue_set(self):
         if self.indicia_publisher is None:
@@ -928,7 +930,7 @@ class BrandRevision(PublisherRevisionBase):
         return fields
 
     def _queue_name(self):
-        return u'%s (%s)' % (self.name, self.year_began)
+        return u'%s: %s (%s)' % (self.parent.name, self.name, self.year_began)
 
     def _issue_set(self):
         if self.brand is None:
