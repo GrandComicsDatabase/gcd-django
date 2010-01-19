@@ -693,14 +693,24 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
         return cd
 
 def get_story_revision_form(revision=None):
-    if revision is None:
-        class RuntimeStoryRevisionForm(StoryRevisionForm):
-            # Make indexers consciously choose a type by allowing an empty
-            # initial value.
-            type = forms.ModelChoiceField(queryset=StoryType.objects.all(),
-              help_text='Choose the most appropriate available type')
-        return RuntimeStoryRevisionForm
-    return StoryRevisionForm
+    extra = {}
+    if revision is not None:
+        # Don't allow blanking out the type field.  However, when its a new store
+        # make indexers consciously choose a type by allowing an empty
+        # initial value.  So only set None if there is an existing story revision.
+        extra['empty_label'] = None
+
+    backcovers = '(backcovers) *do not use* / *please fix*'
+    queryset = StoryType.objects.all()
+    if revision is None or (revision is not None and
+                            revision.type.name != backcovers):
+        queryset = queryset.exclude(name=backcovers)
+
+    class RuntimeStoryRevisionForm(StoryRevisionForm):
+        type = forms.ModelChoiceField(queryset=queryset,
+          help_text='Choose the most appropriate available type',
+          **extra)
+    return RuntimeStoryRevisionForm
 
 class StoryRevisionForm(forms.ModelForm):
     class Meta:
@@ -737,7 +747,9 @@ class StoryRevisionForm(forms.ModelForm):
                             required=False,
       help_text='If the title is not listed, use the first line of dialog, '
                 'place it in "quotation marks" and check the next box.  Do *not* '
-                'place the title in brackets.')
+                'place the title in brackets.  Title is required for sequences of '
+                'type "story", "text story" and "text article", but may be left '
+                'blank for sequences of other types.')
     title_inferred = forms.BooleanField(required=False,
       label='Unofficial title',
       help_text='Check if the title was taken from the first line of dialogue or '
@@ -789,10 +801,6 @@ class StoryRevisionForm(forms.ModelForm):
     no_editing = forms.BooleanField(required=False,
       help_text='Check this box if there is no separate editor for this sequence. '
                 'This is common when there is an editor for the whole issue.')
-
-    type = forms.ModelChoiceField(queryset=StoryType.objects.all(),
-      empty_label=None,
-      help_text='Choose the most appropriate available type')
 
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
