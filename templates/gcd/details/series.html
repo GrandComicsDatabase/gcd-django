@@ -65,6 +65,13 @@
     <input id="add" name="add" type="submit" value="Add issues">
     </input>
   </form>
+  {% if perms.gcd.can_approve %}
+    <form method="GET"
+          action="{% url reorder_series series_id=series.id %}">
+      <input id="reorder" name="reorder" type="submit" value="Reorder issues">
+      </input>
+    </form>
+  {% endif %}
 {% else %}
 <form action="{% url login %}" method="GET">
   <input type="submit" name="login" value="Log in to edit" />

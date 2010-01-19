@@ -49,3 +49,11 @@ form td {
     color: red;
 }
 
+.instructions {
+    font-weight: bolder;
+}
+
+.important {
+    color: red;
+}
+

@@ -1,10 +1,12 @@
 import re
+import sys
 
 from django.core import urlresolvers
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
+from django.db.models import Min, Max
 from django.core.exceptions import *
 
 from django.contrib.auth.views import login
@@ -1156,6 +1158,137 @@ def delete_ongoing(request, series_id):
     return HttpResponseRedirect(urlresolvers.reverse(
       'apps.gcd.views.details.series',
       kwargs={ 'series_id': series.id }))
+
+##############################################################################
+# Reordering
+##############################################################################
+
+@permission_required('gcd.can_approve')
+def reorder_series(request, series_id):
+    series = get_object_or_404(Series, id=series_id)
+    if request.method != 'POST':
+        return render_to_response('oi/edit/reorder_series.html', 
+          { 'series': series,
+            'issue_list': [ (i, None) for i in series.issue_set.all() ] },
+          context_instance=RequestContext(request))
+
+    reorder_map = {}
+    reorder_list = []
+    sort_code_set = set()
+    for input in request.POST:
+        m = re.match(r'sort_code_(?P<issue_id>\d+)$', input)
+        if m:
+            issue_id = int(m.group('issue_id'))
+            sort_code =  float(request.POST[input])
+            if sort_code in sort_code_set:
+                return render_error(request,
+                  "Cannot have duplicate sort codes: %f" % sort_code,
+                  redirect=False)
+            sort_code_set.add(sort_code)
+
+            reorder_map[issue_id] = sort_code
+            reorder_list.append(issue_id)
+
+    def _compare_sort_input(a, b):
+        diff = reorder_map[a] - reorder_map[b]
+        if diff > 0:
+            return 1
+        if diff < 0:
+            return -1
+        return 0
+
+    reorder_list.sort(_compare_sort_input)
+
+    # Use in_bulk to ensure the specific issue order
+    issue_map = Issue.objects.in_bulk(reorder_list)
+    issues = [issue_map[issue_id] for issue_id in reorder_list]
+    return _reorder_series(request, series, issues)
+
+@permission_required('gcd.can_approve')
+def reorder_series_by_key_date(request, series_id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    series = get_object_or_404(Series, id=series_id)
+
+    issues = series.issue_set.order_by('key_date')
+    return _reorder_series(request, series, issues)
+
+@permission_required('gcd.can_approve')
+def reorder_series_by_issue_number(request, series_id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    series = get_object_or_404(Series, id=series_id)
+
+    reorder_map = {}
+    reorder_list = []
+    number_set = set()
+    try:
+        for issue in series.issue_set.all():
+            number = int(issue.number)
+            if number in number_set:
+                return render_error(request,
+                  "Cannot sort by issue with duplicate issue numbers: %i" % number,
+                  redirect=False)
+            reorder_map[number] = issue
+            reorder_list.append(number)
+
+        reorder_list.sort()
+        issues = [reorder_map[n] for n in reorder_list]
+        return _reorder_series(request, series, issues)
+
+    except ValueError:
+        return render_error(request,
+          "Cannot sort by issue numbers because they are not all whole numbers",
+          redirect=False)
+
+def _reorder_series(request, series, issues):
+    """
+    Internal method for actually changing the sort codes.
+    Note that the 'issues' parameter may be either an ordered queryset
+    or a plain list of issue objects.
+    """
+
+    # There's a "unique together" constraint on series_id and sort_code in
+    # the issue table, which is great for avoiding nonsensical sort_code
+    # situations that we had in the old system, but annoying when updating
+    # the codes.  Get around it by shifing the numbers down to starting
+    # at one if they'll fit, or up above the current range if not.  Given that
+    # the numbers were all set to consecutive ranges when we migrated to this
+    # system, and this code always produces consecutive ranges, the chances that
+    # we won't have room at one end or the other are very slight.
+    min = series.issue_set.aggregate(Min('sort_code'))['sort_code__min']
+    max = series.issue_set.aggregate(Max('sort_code'))['sort_code__max']
+    num_issues = series.issue_set.count() 
+
+    if num_issues < min:
+        current_code = 1
+    elif num_issues <= sys.maxint - max:
+        current_code = max + 1
+    else:
+        # This should be extremely rare, so let's not bother to code our way out.
+        return render_error(request,
+          "Cannot find room for rearranged sort codes, please contact an admin",
+          redirect=False)
+
+    issue_list = []
+    for issue in issues:
+        if 'commit' in request.POST:
+            issue.sort_code = current_code
+            issue.save()
+        else:
+            issue_list.append((issue, current_code))
+        current_code +=1
+
+    if 'commit' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'apps.gcd.views.details.series',
+          kwargs={ 'series_id': series.id }))
+
+    return render_to_response('oi/edit/reorder_series.html', 
+      { 'series': series,
+        'issue_list': issue_list },
+      context_instance=RequestContext(request))
+
 
 ##############################################################################
 # Queue Views
