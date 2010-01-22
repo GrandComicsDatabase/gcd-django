@@ -151,11 +151,15 @@ def submit(request, id):
 
     changeset.submit(notes=request.POST['comments'])
     if changeset.approver is not None:
+        if request.POST['comments']:
+            comment = u'The submission includes the comment:\n"%s"' % request.POST['comments'] 
+        else:
+            comment = ''   
         email_body = u"""
 Hello from the %s!
 
 
-  You have a change for "%s" by %s to review.
+  You have a change for "%s" by %s to review. %s
 
 Please go to %s to compare the changes.
 
@@ -165,6 +169,7 @@ thanks,
 """ % (settings.SITE_NAME,
            unicode(changeset),
            unicode(changeset.indexer.indexer),
+           comment,
            settings.SITE_URL.rstrip('/') +
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
            settings.SITE_NAME,
@@ -259,7 +264,8 @@ def discard(request, id):
 Hello from the %s!
 
 
-  Your change for "%s" was rejected by GCD editor %s with the comment "%s". 
+  Your change for "%s" was rejected by GCD editor %s with the comment:
+"%s"
 
 If you disagree please either contact the editor directly via the e-mail 
 %s or post a message on the main mailing-list 
@@ -484,7 +490,8 @@ def disapprove(request, id):
 Hello from the %s!
 
 
-  Your change for "%s" was sent back by GCD editor %s with the comment "%s". 
+  Your change for "%s" was sent back by GCD editor %s with the comment:
+"%s"
 
 Please go to %s to re-edit or reply.
 
