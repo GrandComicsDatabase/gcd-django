@@ -112,9 +112,17 @@ RESERVE_MAX_ONGOING_DEFAULT = 4
 SITE_URL = 'http://www.comics.org/'
 SITE_NAME = 'Grand Comics Database'
 
+# image directories
+COVERS_DIR = '/img/gcd/covers_by_id/'
+NEW_COVERS_DIR = '/img/gcd/new_covers/'
+
 # get local settings, will override settings from here
 try:
     from settings_local import *
 except ImportError, exp:
     pass
-
+try:
+    import more_settings
+    more_settings.modify(globals())
+except ImportError:
+    pass

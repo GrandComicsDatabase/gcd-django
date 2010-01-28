@@ -2,7 +2,7 @@ from datetime import datetime
 import itertools
 import operator
 
-from django.db import models
+from django.db import models, settings
 from django.db.models import F, Count
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
@@ -41,7 +41,8 @@ class Changeset(models.Model):
                 self.brandrevisions.all(),
                 self.seriesrevisions.all(),
                 self.issuerevisions.all(),
-                self.storyrevisions.all())
+                self.storyrevisions.all(),
+                self.coverrevisions.all())
 
     def _revisions(self):
         """
@@ -985,6 +986,111 @@ class BrandRevision(PublisherRevisionBase):
         if self.brand is None:
             return "/brand/revision/%i/preview" % self.id
         return self.brand.get_absolute_url()
+
+class CoverRevisionManager(RevisionManager):
+    """
+    Custom manager allowing the cloning of revisions from existing rows.
+    """
+
+    def clone_revision(self, cover, changeset):
+        """
+        Given an existing Cover instance, create a new revision based on it.
+
+        This new revision will be where the replacement is stored.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=cover,
+                                              instance_class=Cover,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, cover, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        revision = CoverRevision(
+          # revision-specific fields:
+          cover=cover,
+          changeset=changeset,
+
+          # copied fields:
+          issue=cover.issue)
+
+        revision.save()
+        return revision
+
+
+class CoverRevision(Revision):
+    class Meta:
+        db_table = 'oi_cover_revision'
+        ordering = ['-created', '-id']
+
+    objects=CoverRevisionManager()
+
+    cover = models.ForeignKey(Cover, null=True, related_name='revisions')
+    issue = models.ForeignKey(Issue, related_name='cover_revisions')
+
+    marked = models.BooleanField(default=0)
+    is_replacement = models.BooleanField(default=0)
+
+    file_source = models.CharField(max_length=255)
+
+    def _source(self):
+        return self.cover
+
+    def _source_name(self):
+        return 'cover'
+
+    def commit_to_display(self, clear_reservation=True):
+        # the file handling is in the view/covers code
+        cover = self.cover
+        if cover is None:
+            # there should only be one empty cover slot, if at all
+            cover = Cover.objects.filter(issue=self.issue, has_image=False)
+            if not cover:
+                cover = Cover(issue=self.issue)
+                cover.save()
+            else:
+                cover = cover[0]
+
+        #comment out for now, might use it for deleting of covers
+        #elif self.deleted:
+        #    cover.has_image = False
+        #    cover.save()
+        #    cover_count = CountStats.objects.get(name='covers')
+        #    cover_count.count -= 1
+        #    cover_count.save()
+        #    if cover.issue.series.scan_count() == 0:
+        #        series = cover.issue.series
+        #        series.has_gallery = False
+        #        series.save()
+        #    return
+
+        cover.has_image = True
+        cover.marked = self.marked
+        cover.last_upload = self.changeset.comments.latest('created').created
+        cover.save()
+        if self.cover is None:
+            self.cover = cover
+            self.save()
+            cover_count = CountStats.objects.get(name='covers')
+            cover_count.count += 1
+            cover_count.save()
+            if not cover.issue.series.has_gallery:
+                series = cover.issue.series
+                series.has_gallery = True
+                series.save()
+
+    def base_dir(self):
+        return settings.MEDIA_ROOT + settings.NEW_COVERS_DIR + \
+                 self.changeset.created.strftime('%B_%Y/').lower()
+
+    def get_absolute_url(self):
+        if self.cover is None:
+            return "/cover/revision/%i/preview" % self.id
+        return self.cover.get_absolute_url()
+
+    def __unicode__(self):
+        return unicode(self.issue)
 
 class SeriesRevisionManager(RevisionManager):
     """
