@@ -3,9 +3,20 @@ import re
 from django import forms
 from django.db.models import Count, F
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.forms.widgets import TextInput
 
 from apps.oi.models import *
 from apps.gcd.models import *
+from apps.gcd.templatetags.credits import format_page_count
+
+
+class PageCountInput(TextInput):
+    def _format_value(self, value):
+        return format_page_count(value)
+
+    def render(self, name, value, attrs=None):
+        value = self._format_value(value)
+        return super(TextInput, self).render(name, value, attrs)
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
     if revision is not None and model_name is None:
@@ -398,6 +409,7 @@ class IssueRevisionForm(forms.ModelForm):
                 'Use country codes after the currency code if more than one price '
                 'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
+    page_count = forms.DecimalField(widget=PageCountInput)
     page_count_uncertain = forms.BooleanField(required=False,
       help_text="Check if you do not know or aren't sure about the page count.")
 
@@ -755,6 +767,8 @@ class StoryRevisionForm(forms.ModelForm):
       help_text='Check if the title was taken from the first line of dialogue or '
                 'was made up (titles from dialogue are preferred, and should be '
                 'enclosed in "quotation marks")')
+
+    page_count = forms.DecimalField(widget=PageCountInput)
     page_count_uncertain = forms.BooleanField(required=False,
       help_text="Check if you do not know or aren't sure about the page count.")
 

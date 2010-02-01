@@ -48,8 +48,8 @@
   </tr>
   <tr class="{{ story_revision.changed.page_count }}">
     <td class="field_name"> Page count </td>
-    <td> {{ story_revision.story.page_count }} </td>
-    <td> {{ story_revision.page_count }} </td>
+    <td> {{ story_revision.story.page_count|format_page_count }} </td>
+    <td> {{ story_revision.page_count|format_page_count }} </td>
   </tr>
   <tr class="{{ story_revision.changed.page_count_uncertain }}">
     <td class="field_name"> Page count uncertain </td>

@@ -1,6 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% load display %}
+{% load credits %}
 
 {% block title %}
 Reviewing :: {{ revision }}
@@ -107,8 +108,13 @@ Links open in new windows.
   </tr>
   <tr class="{{ revision.changed.page_count }}">
     <td class="field_name"> Page count </td>
-    <td> {{ revision.issue.page_count }} </td>
-    <td> {{ revision.page_count }} </td>
+    <td> {{ revision.issue.page_count|format_page_count }} </td>
+    <td> {{ revision.page_count|format_page_count }} 
+         {% if changeset.storyrevisions.count %}
+         (total sum of story page counts:
+         {{ changeset.storyrevisions.all|sum_page_counts|format_page_count }})
+         {% endif %}
+    </td>
   </tr>
   <tr class="{{ revision.changed.page_count_uncertain }}">
     <td class="field_name"> Page count uncertain </td>

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+from decimal import Decimal
 
 from django import template
 from django.utils.translation import ugettext as _
@@ -159,12 +160,27 @@ def show_page_count(story, show_page=False):
             return u'?'
         return u''
 
-    p = re.sub(r'\.?0+$', '', unicode(story.page_count))
+    p = format_page_count(story.page_count)
     if story.page_count_uncertain:
         p = u'%s ?' % p
     if show_page:
         p = p + u' ' + ungettext('page', 'pages', story.page_count)
     return p
+
+def format_page_count(page_count):
+    if page_count:
+        return re.sub(r'\.?0+$', '', unicode(page_count))
+    else:
+        return u''
+
+def sum_page_counts(stories):
+    """
+    Return the sum of the story page counts.
+    """
+    count = Decimal(0)
+    for story in stories:
+        count += story.page_count
+    return count
 
 def show_title(story):
     """
@@ -184,5 +200,7 @@ register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)
 register.filter(show_page_count)
+register.filter(format_page_count)
+register.filter(sum_page_counts)
 register.filter(show_title)
 
