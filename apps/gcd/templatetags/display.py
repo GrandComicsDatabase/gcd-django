@@ -3,6 +3,7 @@ from django.utils.html import conditional_escape as esc
 
 from django import template
 
+from apps.oi.models import StoryRevision
 from apps.gcd.templatetags.credits import show_page_count
 
 register = template.Library()
@@ -32,9 +33,21 @@ def show_story_short(story):
     else:
         story_line = u'%s %s (%s)' % (esc(story_line), title, 
                                      '<span class="no_data">no feature</span>')
-    story_line = u'%s %s, %sp' % (story_line, story.type, 
-                                  show_page_count(story))
+    story_line = u'%s %s' % (story_line, story.type)
+    page_count = show_page_count(story)
+    if page_count:
+        story_line += ', %sp' % page_count
+    else:
+        story_line += '<span class="no_data">no page count</span>'
+
     return mark_safe(story_line)
+
+def show_revision_short(revision):
+    if revision is None:
+        return u''
+    if isinstance(revision, StoryRevision):
+        return show_story_short(revision)
+    return unicode(revision)
 
 def show_issue(issue):
     return mark_safe('<a href="%s">%s</a> (%s series) <a href="%s">#%s</a>' %
@@ -46,5 +59,6 @@ def show_issue(issue):
 
 register.filter(absolute_url)
 register.filter(show_story_short)
+register.filter(show_revision_short)
 register.filter(show_issue)
 

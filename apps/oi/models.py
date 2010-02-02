@@ -345,6 +345,10 @@ class ChangesetComment(models.Model):
 
     changeset = models.ForeignKey(Changeset, related_name='comments')
 
+    content_type = models.ForeignKey(content_models.ContentType)
+    revision_id = models.IntegerField(db_index=True)
+    revision = generic.GenericForeignKey('content_type', 'revision_id')
+
     old_state = models.IntegerField()
     new_state = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -418,6 +422,10 @@ class Revision(models.Model):
     should be ignored in terms of history.
     """
     deleted = models.BooleanField(default=0)
+
+    comments = generic.GenericRelation(ChangesetComment,
+                                       content_type_field='content_type',
+                                       object_id_field='revision_id')
 
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)

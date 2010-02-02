@@ -54,7 +54,8 @@ def generic_by_name(request, name, q_obj, sort,
         plural_suffix = 'y,ies'
 
         things = class_.objects.filter(q_obj)
-        things = things.select_related('issue__series__publisher')
+        things = things.select_related('issue__series__publisher',
+                                       'type')
 
         # TODO: This order_by stuff only works for Stories, which is 
         # TODO: OK for now, but might not always be.
@@ -69,7 +70,7 @@ def generic_by_name(request, name, q_obj, sort,
         heading = 'Story Search Results'
 
     else:
-        raise TypeError, "Usupported search target!"
+        raise TypeError, "Unsupported search target!"
 
     vars = { 'item_name': base_name,
              'plural_suffix': plural_suffix,
@@ -107,50 +108,50 @@ def character_by_name(request, character_name, sort=ORDER_ALPHA):
     is named are often not also listed under character appearances, this
     search looks at both the feature and characters fields."""
 
-    q_obj = Q(characters__icontains = character_name) | \
-            Q(feature__icontains = character_name)
+    q_obj = Q(characters__icontains=character_name) | \
+            Q(feature__icontains=character_name)
     return generic_by_name(request, character_name, q_obj, sort)
 
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):
-    q_obj = Q(script__icontains = writer)
+    q_obj = Q(script__icontains=writer)
     return generic_by_name(request, writer, q_obj, sort, credit="script")
 
 
 def penciller_by_name(request, penciller, sort=ORDER_ALPHA):
-    q_obj = Q(pencils__icontains = penciller)
+    q_obj = Q(pencils__icontains=penciller)
     return generic_by_name(request, penciller, q_obj, sort, credit="pencils")
 
 
 def inker_by_name(request, inker, sort=ORDER_ALPHA):
-    q_obj = Q(inks__icontains = inker)
+    q_obj = Q(inks__icontains=inker)
     return generic_by_name(request, inker, q_obj, sort, credit="inks")
 
 
 def colorist_by_name(request, colorist, sort=ORDER_ALPHA):
-    q_obj = Q(colors__icontains = colorist)
+    q_obj = Q(colors__icontains=colorist)
     return generic_by_name(request, colorist, q_obj, sort, credit="colors")
 
 
 def letterer_by_name(request, letterer, sort=ORDER_ALPHA):
-    q_obj = Q(letters__icontains = letterer)
+    q_obj = Q(letters__icontains=letterer)
     return generic_by_name(request, letterer, q_obj, sort, credit="letters")
 
 
 def editor_by_name(request, editor, sort=ORDER_ALPHA):
-    q_obj = Q(editing__icontains = editor)
+    q_obj = Q(editing__icontains=editor) | Q(issue__editing__icontains=editor)
     return generic_by_name(request, editor, q_obj, sort, credit="editor")
 
 
 def story_by_credit(request, name, sort=ORDER_ALPHA):
     """Implements the 'Any Credit' story search."""
-    q_obj = Q(script__icontains = name) | \
-            Q(pencils__icontains = name) | \
-            Q(inks__icontains = name) | \
-            Q(colors__icontains = name) | \
-            Q(letters__icontains = name) | \
-            Q(editing__icontains = name) | \
-            Q(issue__editing__icontains = name)
+    q_obj = Q(script__icontains=name) | \
+            Q(pencils__icontains=name) | \
+            Q(inks__icontains=name) | \
+            Q(colors__icontains=name) | \
+            Q(letters__icontains=name) | \
+            Q(editing__icontains=name) | \
+            Q(issue__editing__icontains=name)
     return generic_by_name(request, name, q_obj, sort, credit=('any:'+name))
 
 
@@ -357,7 +358,7 @@ def process_advanced(request):
         else:
             filter = Story.objects.all()
         items = filter.order_by(*terms).select_related(
-          'issue__series__publisher').distinct()
+          'issue__series__publisher', 'type').distinct()
         template = 'gcd/search/content_list.html'
 
     item_name = data['target']

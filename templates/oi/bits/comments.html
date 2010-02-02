@@ -1,7 +1,10 @@
+{% load display %}
+
 <table class="comments">
 <tr>
   <th> Commenter </th>
   <th class="comment_text"> Comment </th>
+  <th> Revision </th>
   <th> Timestamp </th>
   <th> Old State </th>
   <th> New State </th>
@@ -10,6 +13,7 @@
 <tr>
   <td> {{ comment.commenter.indexer }} </td>
   <td class="comment_text"> {{ comment.text|linebreaksbr }} </td>
+  <td class="comment_revision"> {{ comment.revision|show_revision_short }} </td>
   <td> {{ comment.created }} </td>
   <td> {{ comment.display_old_state }} </td>
   <td> {{ comment.display_new_state }} </td>

@@ -180,7 +180,6 @@ thanks,
         
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
-# TODO: changeset ID or revision ID?
 def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
     if form.is_valid():
         revision = form.save(commit=False)
@@ -188,10 +187,11 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
         if 'comments' in form.cleaned_data and 'submit' not in request.POST:
             comments = form.cleaned_data['comments']
             if comments is not None and comments != '':
-                changeset.comments.create(commenter=request.user,
-                                          text=comments,
-                                          old_state=changeset.state,
-                                          new_state=changeset.state)
+                revision.comments.create(commenter=request.user,
+                                         changeset=changeset,
+                                         text=comments,
+                                         old_state=changeset.state,
+                                         new_state=changeset.state)
 
         revision.save()
         if hasattr(revision, 'save_m2m'):
@@ -396,7 +396,8 @@ def approve(request, id):
         new_change = _do_reserve(issue_revision.series.ongoing_reservation.indexer,
                                  issue_revision.issue, 'issue')
         if new_change is None:
-            _send_declined_reservation_email(changeset.indexer,
+            _send_declined_reservation_email(issue_revision.series.\
+                                             ongoing_reservation.indexer,
                                              issue_revision.issue)
             
     # Move brand new indexers to probationary status on first approval.
@@ -544,7 +545,7 @@ def process(request, id):
     """
     Entry point for forms with multiple actions.
 
-    This handles saving (with no state change) directly, and routes
+    This handles adding comments (with no state change) directly, and routes
     the request to other views for all other cases.
     """
     if request.method != 'POST':
@@ -1084,14 +1085,15 @@ def add_story(request, issue_id, changeset_id):
         if not form.is_valid():
             return _display_add_story_form(request, issue, form, changeset_id)
 
-        if form.cleaned_data['comments']:
-            changeset.comments.create(commenter=request.user,
-                                      text=form.cleaned_data['comments'],
-                                      old_state=changeset.state,
-                                      new_state=changeset.state)
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
                                      issue=issue)
+        if form.cleaned_data['comments']:
+            revision.comments.create(commenter=request.user,
+                                     changeset=changeset,
+                                     text=form.cleaned_data['comments'],
+                                     old_state=changeset.state,
+                                     new_state=changeset.state)
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
 
