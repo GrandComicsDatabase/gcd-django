@@ -409,7 +409,8 @@ class IssueRevisionForm(forms.ModelForm):
                 'Use country codes after the currency code if more than one price '
                 'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
-    page_count = forms.DecimalField(widget=PageCountInput)
+    page_count = forms.DecimalField(widget=PageCountInput, required=False,
+                                    max_digits=10, decimal_places=3)
     page_count_uncertain = forms.BooleanField(required=False,
       help_text="Check if you do not know or aren't sure about the page count.")
 
@@ -768,7 +769,8 @@ class StoryRevisionForm(forms.ModelForm):
                 'was made up (titles from dialogue are preferred, and should be '
                 'enclosed in "quotation marks")')
 
-    page_count = forms.DecimalField(widget=PageCountInput)
+    page_count = forms.DecimalField(widget=PageCountInput, required=False,
+                                    max_digits=10, decimal_places=3)
     page_count_uncertain = forms.BooleanField(required=False,
       help_text="Check if you do not know or aren't sure about the page count.")
 
