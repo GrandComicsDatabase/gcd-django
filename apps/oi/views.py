@@ -1487,6 +1487,7 @@ def cover_compare(request, changeset, revision):
         if CoverRevision.objects.filter(issue=revision.issue).count() > 1:
             covers = CoverRevision.objects.filter(issue=revision.issue)
             covers = covers.exclude(id=revision.id).filter(cover=None)
+            covers = covers.filter(changeset__state__in=states.ACTIVE)
             covers = covers.order_by('created')
             for cover in covers:
                 pending_covers.append([cover, get_preview_image_tag(cover, 

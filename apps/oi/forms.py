@@ -1,6 +1,7 @@
 import re
 
 from django import forms
+from django.core import urlresolvers
 from django.db.models import Count, F
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.forms.widgets import TextInput
@@ -51,6 +52,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'story':
         return get_story_revision_form(revision, **kwargs)
+
+    if model_name == 'cover':
+        return get_cover_revision_form(revision, **kwargs)
 
     raise NotImplementedError
 
@@ -823,6 +827,20 @@ class StoryRevisionForm(forms.ModelForm):
       help_text='Comments between the Indexer and Editor about the change. '
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
+
+
+def get_cover_revision_form(revision=None):
+    compare_url = '<a href="' + urlresolvers.reverse('compare',
+      kwargs={ 'id': revision.changeset.id }) + '">Compare Change</a>'
+
+    class UploadScanCommentForm(forms.ModelForm):
+        comments = forms.CharField(widget=forms.Textarea,
+                                   required=False,
+          help_text='Comments between the Indexer and Editor about the change. '
+                    'These comments are part of the public change history, but '
+                    'are not part of the regular display. <p>%s</p>' \
+                    % compare_url)
+    return UploadScanCommentForm
 
 
 class UploadScanForm(forms.Form):
