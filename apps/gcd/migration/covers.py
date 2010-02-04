@@ -16,10 +16,9 @@ def create_cover_revision(cover):
     comment = changeset.comments.all()[0]
     comment.created = cover.modified
     comment.save()
-    revision=CoverRevision()
-    revision.save_added_revision(changeset=changeset, 
-                                 cover=cover, issue=cover.issue, 
-                                 file_source=cover.contributor)
+    revision=CoverRevision(changeset=changeset, 
+                           cover=cover, issue=cover.issue, 
+                           file_source=cover.contributor)
     revision.created=cover.modified
     revision.save()
 
