@@ -4,6 +4,7 @@ from django.conf import settings
 from django.views.generic.simple import direct_to_template
 
 from apps.oi import views as oi_views
+from apps.oi import covers as oi_covers
 from apps.oi import states
 
 urlpatterns = patterns('',
@@ -53,6 +54,22 @@ urlpatterns = patterns('',
         oi_views.add_story,
         name='add_story'),
 
+    # Cover URLs
+    url(r'^edit_covers/(?P<issue_id>\d+)/$', oi_covers.edit_covers,
+      name='edit_covers'),
+    url(r'^upload_cover/(?P<issue_id>\d+)/$', oi_covers.upload_cover,
+      name='upload_cover'),
+    url(r'^replace_cover/(?P<cover_id>\d+)/$', oi_covers.upload_cover, 
+      name='replace_cover'),
+    url(r'^mark_cover_revision/(?P<revision_id>.+)/$', oi_covers.mark_cover,
+      {'marked': True}, name='mark_cover_revision'),
+    url(r'^unmark_cover_revision/(?P<revision_id>.+)/$', oi_covers.mark_cover,
+      {'marked': False}, name='unmark_cover_revision'),
+    url(r'^mark_cover/(?P<cover_id>.+)/$', oi_covers.mark_cover,
+      {'marked': True}, name='mark_cover'),
+    url(r'^unmark_cover/(?P<cover_id>.+)/$', oi_covers.mark_cover, 
+      {'marked': False}, name='unmark_cover'),
+
     # Generic URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/reserve/$', oi_views.reserve,
         name='reserve_revision'),
@@ -82,6 +99,7 @@ urlpatterns = patterns('',
     url(r'^ongoing/(?P<series_id>\d+)/delete/$', oi_views.delete_ongoing,
         name='delete_ongoing'),
 
+    # queue URLs
     url(r'^queues/editing/$', oi_views.show_queue,
        {'queue_name': 'editing', 'state': states.OPEN },
         name='editing'),
@@ -91,5 +109,8 @@ urlpatterns = patterns('',
     url(r'^queues/reviews/$', oi_views.show_queue,
        {'queue_name': 'reviews', 'state': states.REVIEWING },
         name='reviewing'),
+    url(r'^queues/covers_pending/$', oi_views.show_queue,
+       {'queue_name': 'covers', 'state': states.PENDING },
+        name='pending_covers'),
 )
 

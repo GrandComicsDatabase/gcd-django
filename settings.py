@@ -113,6 +113,7 @@ SITE_URL = 'http://www.comics.org/'
 SITE_NAME = 'Grand Comics Database'
 
 # image directories
+IMAGE_SERVER_URL = 'http://images.comics.org/'
 COVERS_DIR = '/img/gcd/covers_by_id/'
 NEW_COVERS_DIR = '/img/gcd/new_covers/'
 

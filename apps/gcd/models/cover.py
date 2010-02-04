@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from django.db import models
+from django.db import models, settings
 from django.core import urlresolvers
 
 from issue import Issue
-from series import Series
 
 class Cover(models.Model):
     class Meta:
@@ -14,30 +13,34 @@ class Cover(models.Model):
             ('can_upload_cover', 'can upload cover'),
         )
 
-    # The issue field should be considered the primary link.  Series is legacy.
-    series = models.ForeignKey(Series)
+    # Cover belongs to an issue
     issue = models.ForeignKey(Issue)
 
     # Fields directly related to cover images
-    code = models.CharField(max_length=50)
     has_image = models.BooleanField(default=0)
     marked = models.BooleanField(default=0)
-
-    server_version = models.IntegerField(default=1)
-    contributor = models.CharField(max_length=255, null=True)
-    file_extension = models.CharField(max_length = 10)
+    limit_display = models.BooleanField(default=0)
 
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True, null=True)
-    modified = models.DateTimeField(null=True)
+    modified = models.DateTimeField(auto_now=True, null=True)
+    last_upload = models.DateTimeField(null=True)
+
+    def base_dir(self):
+        return settings.MEDIA_ROOT + settings.COVERS_DIR + \
+          str(int(self.id/1000))
 
     def get_status_url(self):
-        if self.marked or not self.has_image:
+        if self.marked and self.has_image:
             return urlresolvers.reverse(
-                'apps.gcd.views.covers.cover_upload',
+                'replace_cover',
                 kwargs={'cover_id': self.id} )
-        else:
+        elif self.has_image:
             return self.issue.get_absolute_url()
+        else:
+            return urlresolvers.reverse(
+                'upload_cover',
+                kwargs={'issue_id': self.issue.id} )
 
     def get_cover_status(self):
         import logging

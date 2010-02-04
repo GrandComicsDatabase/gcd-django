@@ -68,13 +68,17 @@ class Series(models.Model):
         return "/series/%i/" % self.id
 
     def marked_scan_count(self):
-        return self.cover_set.filter(marked=True, has_image='1').count()
-
+        from apps.gcd.models.cover import Cover
+        return Cover.objects.filter(issue__series=self, marked=True, 
+                                    has_image='1').count()
     def scan_count(self):
-        return self.cover_set.filter(has_image='1').count()
-
+        from apps.gcd.models.cover import Cover
+        return Cover.objects.filter(issue__series=self, 
+                                    has_image='1').count()
     def scan_needed(self):
-        return self.cover_set.exclude(has_image='1', marked=False).count()
+        from apps.gcd.models.cover import Cover
+        return Cover.objects.filter(issue__series=self).exclude(has_image='1', 
+                                                        marked=False).count()
 
     def __unicode__(self):
         return '%s (%s series)' % (self.name, self.year_began)

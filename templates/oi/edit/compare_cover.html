@@ -1,0 +1,131 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% block title %}
+Reviewing :: {{ revision }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>{{ revision }} 
+</h1>
+<h2>uploaded 
+  {% if revision.is_replacement %}
+replacement
+  {% else %}
+    {% if current_covers %}
+variant
+    {% endif %}
+{% endif %} cover </h2>
+<div id="cover_zoom">
+  <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a><br>
+      <div class="cover_caption">
+        uploaded on {{ revision.created }}<br>
+        {{ revision|show_cover_contributor }}
+        {% if revision.marked %}
+        <p><span class="comparison_highlight">cover is marked for replacement</span></p>
+            {% ifequal changeset.state states.REVIEWING %}
+            {% ifequal user changeset.approver %}
+            <a href="{% url unmark_cover_revision revision_id=revision.id %}">Remove mark for replacement</a>
+            {% endifequal %}
+            {% endifequal %}
+        {% else %}
+            {% ifequal changeset.state states.REVIEWING %}
+            {% ifequal user changeset.approver %}
+            <br><a href="{% url mark_cover_revision revision_id=revision.id %}">Mark for replacement</a>
+            {% endifequal %}
+            {% endifequal %}
+        {% endif %}
+        <br>
+      </div>
+</div>
+
+{% if current_covers %}
+{% if revision.is_replacement %}
+<h2> cover to be replaced </h2>
+{% else %}
+<h2> current cover{{ current_covers|length|pluralize }} </h2>
+{% endif %}
+<table id="covers">
+  <tr>
+  {% for cover, tag in current_covers %}
+    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+      <a href="{{ cover.issue.get_absolute_url }}">{{ tag }}</a>
+      <br>
+       <span class="cover_links">Zoom:
+<a href="{{ cover.issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}" target="_blank">Large</a> (opens in new window)</span> <br>
+   </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+    {% endif %}
+  {% endfor %}
+  </tr>
+</table>
+{% endif %}
+
+{% if pending_covers %}
+<h2> pending cover{{ pending_covers|length|pluralize }} </h2>
+<table id="covers">
+  <tr>
+  {% for cover, tag in pending_covers %}
+    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+      <a href="{% url compare id=cover.changeset.id %}">{{ tag }}</a>
+      <br>
+      <div class="cover_caption">
+        uploaded on {{ cover.created }}<br>
+        by {{ cover.changeset.indexer.indexer }}<br>
+      </div>
+    </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+    {% endif %}
+  {% endfor %}
+  </tr>
+</table>
+{% endif %}
+
+{% include 'oi/bits/comments.html' %}
+
+<form id="review" action="{% url process id=changeset.id %}" method="POST">
+  <div>
+  <label for="comments">Comment:</label> <br>
+  <textarea id="comments" name="comments"></textarea>
+  </div>
+{% ifequal changeset.state states.OPEN %}
+{% ifequal user changeset.indexer %}
+  <input type="submit" name="submit" value="Submit changes for approval"></input>
+  <input type="submit" name="discard" value="Discard all changes"></input>
+{% endifequal %}
+{% endifequal %}
+
+{% ifequal changeset.state states.PENDING %}
+{% if perms.gcd.can_approve %}
+{% ifnotequal user changeset.indexer %}
+  <input type="submit" name="assign" value="Assign"></input>
+{% endifnotequal %}
+{% endif %}
+{% endifequal %}
+
+{% ifequal changeset.state states.REVIEWING %}
+{% ifequal user changeset.approver %}
+  <input type="submit" name="approve" value="Approve"></input>
+  <input type="submit" name="disapprove" value="Send Back to Indexer"></input>
+  <input type="submit" name="cancel" value="Reject Permanently"></input>
+{% endifequal %}
+{% endifequal %}
+
+  <input type="submit" name="add_comment" value="Add Comment"></input>
+</form>
+
+{% endblock %}
+

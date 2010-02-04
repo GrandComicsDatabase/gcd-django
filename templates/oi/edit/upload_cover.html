@@ -1,0 +1,126 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+{% load display %}
+
+{% block title %} 
+GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }} 
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/cover_upload.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1 class="item_id" id="search_id">
+<div class="left">
+     Upload {{ upload_type }} cover for
+</div>
+</h1>
+<div class="item_id">
+<div class="left">
+{{ issue|absolute_url }}
+</div>
+</div>
+{% if info %}
+    <h2>{{ info }}<br/></h2>
+{% endif %}
+<div>    
+<fieldset class="universal">
+<ol>
+    {% ifequal upload_type 'replacement' %}
+        <form action="{% url replace_cover cover_id=cover.id %}" method="post" enctype="multipart/form-data">
+    {% else %}
+        <form action="{% url upload_cover issue_id=cover.issue.id %}" method="post" enctype="multipart/form-data">
+    {% endifequal %}
+    <table class="editing">
+    {{ form.as_table }}
+    </table>
+    <input type="submit" value="Upload">
+    </form>
+</ol>
+</fieldset>
+
+
+{% if replace_cover %} 
+    <div id="display_cover">
+    {{ replace_cover }}
+        <div class="issue_cover_links">
+          <a href="{{ issue.get_absolute_url }}cover/4/?style=default">Zoom</a>
+        </div>
+        If you are replacing a cover, make sure the new cover is better than the one that is already there.
+        </div> 
+    {% else %}
+    <div id="display_cover">
+        {% if current_covers %}
+            {{ current_covers|length }} current cover{{ current_covers|length|pluralize }} for this issue.
+        {% endif %}
+        {% if active_covers %}
+            <br>{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }} for this issue.
+        {% endif %}
+    </div>
+{% endif %}
+</div> <!-- main -->
+
+<div style="clear:both">
+{% if current_covers %}
+<h2> current cover{{ current_covers|length|pluralize }} </h2>
+<table id="covers">
+  <tr>
+  {% for cover, issue, tag in current_covers %}
+    <td class="cover_grid">
+      <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
+      <br>
+       <span class="cover_links">Zoom:
+<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}" target="_blank">Large</a> (opens in new window)</span> <br>
+   </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+    {% endif %}
+  {% endfor %}
+  </tr>
+</table>
+{% endif %}
+
+{% if active_covers %}
+<h2> pending cover{{ active_covers|length|pluralize }} </h2>
+<table id="covers">
+  <tr>
+  {% for cover, tag in active_covers %}
+    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+      <a href="{% url compare id=cover.changeset.id %}">{{ tag }}</a>
+    </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+    {% endif %}
+  {% endfor %}
+  </tr>
+</table>
+{% endif %}
+</div>
+<p/>
+<div id="guidelines">
+<B>Guidelines:</B>
+<UL>
+   <li>Please supply accurate scans that reflect the look of the actual cover.</li>
+   <li>The scan needs to be perfectly trimmed - no extra edges around - and not rotated in any way.</li>
+   <li>Please do not upload altered scans, scans with watermarks, scans of the cover reprinted in other comics, used for solicitation, etc.</li>
+   <li>Images must be at least 400 pixels wide, 1000 pixels wide is preferred. <br/> Do not blow up scans to meet this requirement as this results in muddy pictures.
+   <li>Note that support for wraparound covers will be added later.</li>
+   <li>Your username will be stored with the scan. Scan credits do not show on the site, but may in the future.</li>
+   <li>If you accidentally upload the wrong cover you can discard your scan from your <a href="{% url editing %}">editing queue<a>.</li>
+</UL>
+</div>
+</p>
+
+<p/>
+{% endblock %}
+

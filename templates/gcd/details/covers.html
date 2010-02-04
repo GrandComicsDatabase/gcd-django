@@ -34,12 +34,7 @@
         {% if issue.publication_date %}
         <br><span class="cover_date">{{ issue.publication_date }}</span>
         {% endif %}
-        {% if can_mark and not cover.marked %}
-        <br><a href="{% url apps.gcd.views.covers.mark_cover cover_id=cover.id %}">Mark for replacement</a>
-        {% endif %}
-        {% if cover.marked %}
-        <br><a href="{{ cover.get_status_url }}">Replace cover</a>
-        {% endif %}
+        <br><a href="{% url edit_covers issue_id=cover.issue.id %}">Add/replace cover</a>
       </div>
     </td>
     {% if forloop.counter|divisibleby:table_width %}

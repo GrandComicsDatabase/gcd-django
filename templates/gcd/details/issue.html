@@ -139,13 +139,7 @@
         View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
         <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
       <br>
-      {% comment %}TODO: What to do when we have variants ?{% endcomment %}
-      {% ifequal issue.cover_set.count 1 %}
-      {% if issue.cover_set.latest.marked %}
-      <a href="{{ issue.cover_set.latest.get_status_url }}?style={{ style }}">Replace cover</a>
-      <br>
-      {% endif %}
-      {% endifequal %}
+      <a href="{% url edit_covers issue_id=issue.id %}">Add/replace cover{{ issue.cover_set.count|pluralize }}</a><br>
       {% endif %}
       {% if issue.series.has_gallery %}
       <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover gallery</a>

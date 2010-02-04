@@ -1,0 +1,74 @@
+{% extends "oi/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+
+{% block title %} GCD :: Pending Covers {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<div class="item_id" id="item_id_footer_replace_top">
+  <div class="left">
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} covers pending for approval.
+  </div>
+  {% if page %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endif %}
+</div>
+
+<table id="covers">
+  <tr>
+  {% for cover, issue, tag in tags %}
+    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+      <a href="{% url compare id=cover.changeset.id %}">{{ tag }}</a>
+      <br/>
+      <div class="cover_caption">
+        {{ issue.series.name }} #{{ issue.display_number }}<br>
+        ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br>
+        {% if issue.publication_date %}
+        <span class="cover_date">{{ issue.publication_date }}</span><br>
+        {% endif %}
+        {{ cover.created }}<br>
+        {{ cover.changeset.indexer.indexer }}<br>
+        {% ifequal cover.changeset.state states.REVIEWING %}
+          reviewed by {{ cover.changeset.approver.indexer }}
+        {% else %}
+            {% if perms.gcd.can_approve %}
+              {% ifnotequal cover.changeset.indexer user %}
+<form action="{% url process id=cover.changeset.id %}" method="POST">
+  <input type="submit" name="assign" value="Assign"></input>
+  <input type="hidden" name="comments" value=""></input>
+</form>
+              {% else %}
+                No actions available
+              {% endifnotequal %}
+            {% else %}
+                No actions available
+            {% endif %}
+        {% endifequal %}
+      </div>
+    </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+    {% endif %}
+  {% endfor %}
+  </tr>
+</table>
+
+<div id="item_id_footer" class="item_id">
+  {% if page %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endif %}
+</div>
+
+{% endblock %}
+
+

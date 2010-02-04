@@ -824,3 +824,20 @@ class StoryRevisionForm(forms.ModelForm):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
+
+class UploadScanForm(forms.Form):
+    """ Form for cover uploads. """
+
+    scan = forms.ImageField(widget=forms.FileInput)
+    source = forms.CharField(label='Source', required=False, 
+      help_text='If you upload a scan from another website, please '
+                'ask for permission and mention the source.')
+    marked = forms.BooleanField(label="Mark cover", required=False,
+      help_text='Uploads of sub-standard scans for older and/or rare comics '
+                'are fine, but please mark them for replacement.')
+    comments = forms.CharField(widget=forms.Textarea,
+                               required=False,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
+

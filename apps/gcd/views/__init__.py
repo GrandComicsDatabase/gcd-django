@@ -87,6 +87,8 @@ def render_error(request, error_text, redirect=True, is_safe = False):
         else:
             return HttpResponseRedirect(urlresolvers.reverse('error'))
     else:
+        if is_safe:
+            error_text = mark_safe(error_text)
         return error_view(request, error_text)
 
 

@@ -4,6 +4,7 @@
   </span>
   <a href="{% url editing %}">Editing</a> |
   <a href="{% url pending %}">Pending</a> |
+  <a href="{% url pending_covers %}">Covers</a> |
 {% if perms.gcd.can_approve %}
   <a href="{% url reviewing %}">Reviewing</a> |
 {% endif %}

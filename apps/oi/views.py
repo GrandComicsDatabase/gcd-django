@@ -16,8 +16,11 @@ from apps.gcd.models import *
 from apps.gcd.views import render_error, paginate_response
 from apps.gcd.views.details import show_indicia_publisher, show_brand, \
                                    show_series, show_issue
+from apps.gcd.views.covers import get_image_tag, ZOOM_LARGE, ZOOM_MEDIUM, \
+                                  ZOOM_SMALL
 from apps.oi.models import *
 from apps.oi.forms import *
+from apps.oi.covers import get_preview_image_tag, copy_approved_cover
 
 REVISION_CLASSES = {
     'publisher': PublisherRevision,
@@ -319,7 +322,8 @@ def assign(request, id):
           redirect=False)
 
     if changeset.indexer.indexer.is_new and \
-       changeset.indexer.indexer.mentor is None:
+       changeset.indexer.indexer.mentor is None and\
+       changeset.coverrevisions.count() != 1:
         changeset.indexer.indexer.mentor = request.user
         changeset.indexer.indexer.save()
 
@@ -360,6 +364,10 @@ def approve(request, id):
         return render_error(request,
           'A change may only be approved by its approver.')
 
+    if changeset.state != states.REVIEWING or changeset.approver is None:
+        return render_error(request,
+          'Only REVIEWING changes with an approver can be approved.')
+
     changeset.approve(notes=request.POST['comments'])
 
     # Note that series ongoing reservations must be processed first, as
@@ -399,6 +407,11 @@ def approve(request, id):
             _send_declined_reservation_email(issue_revision.series.\
                                              ongoing_reservation.indexer,
                                              issue_revision.issue)
+
+    for cover_revision in \
+        changeset.coverrevisions.filter(deleted=False):
+        copy_approved_cover(cover_revision)
+
             
     # Move brand new indexers to probationary status on first approval.
     if changeset.indexer.indexer.max_reservations == settings.RESERVE_MAX_INITIAL:
@@ -1314,6 +1327,8 @@ def show_queue(request, queue_name, state):
     if 'reviews' == queue_name:
         kwargs['approver'] = request.user
         kwargs['state'] = states.REVIEWING
+    if 'covers' == queue_name:
+        return show_cover_queue(request)
 
     publishers = Changeset.objects.annotate(
       publisher_revision_count=Count('publisherrevisions')).filter(
@@ -1335,6 +1350,11 @@ def show_queue(request, queue_name, state):
       issue_revision_count=Count('issuerevisions'))
     bulk_issue_adds = issue_annotated.filter(issue_revision_count__gt=1, **kwargs)
     issues = issue_annotated.filter(issue_revision_count=1, **kwargs)
+
+    covers = Changeset.objects.annotate(
+      cover_revision_count=Count('coverrevisions')).filter(
+      cover_revision_count=1, **kwargs)
+
 
     response = render_to_response(
       'oi/queues/%s.html' % queue_name,
@@ -1373,6 +1393,11 @@ def show_queue(request, queue_name, state):
             'object_type': 'issue',
             'changesets': issues.order_by('state', 'modified'),
           },
+          {
+            'object_name': 'Covers',
+            'object_type': 'cover',
+            'changesets': covers.order_by('state', 'modified'),
+          },
         ],
       },
       context_instance=RequestContext(request)
@@ -1381,8 +1406,44 @@ def show_queue(request, queue_name, state):
     return response
 
 @login_required
+def show_cover_queue(request):
+    covers = Changeset.objects.annotate(
+      cover_revision_count=Count('coverrevisions')).filter(
+      cover_revision_count=1, state__in=(states.PENDING, states.REVIEWING))
+
+    cover_tags = []
+    for cover_changeset in covers:
+        cover = cover_changeset.coverrevisions.all()[0]
+        issue = cover.issue
+        cover_series = issue.series
+        alt_string = cover_series.name + ' #' + issue.number
+        cover_tags.append([cover, issue, get_preview_image_tag(cover,
+                                                       alt_string,
+                                                       ZOOM_SMALL)])
+
+    # TODO: Figure out optimal table width and/or make it user controllable.
+    table_width = 5
+
+    return paginate_response(
+      request,
+      covers,
+      'oi/queues/covers.html',
+      {
+        'table_width' : table_width,
+        'tags' : cover_tags, 
+      },
+      page_size=50)
+    return render_to_response('oi/queues/covers.html', {
+                              'tags' : cover_tags },
+                              context_instance=RequestContext(request))
+
+
+@login_required
 def compare(request, id):
     changeset = get_object_or_404(Changeset, id=id)
+    if changeset.coverrevisions.count() == 1:
+        return cover_compare(request, changeset, 
+                             changeset.coverrevisions.all()[0])
     if changeset.inline():
         revision = changeset.inline_revision()
     elif changeset.issuerevisions.count() > 0:
@@ -1406,6 +1467,57 @@ def compare(request, id):
                                   context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
+
+@login_required
+def cover_compare(request, changeset, revision):
+    cover_tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_LARGE)
+
+    current_covers = []
+    pending_covers = []
+    # active replacement 
+    if revision.cover and revision.changeset.state in states.ACTIVE: 
+        current_covers.append([revision.cover, get_image_tag(revision.cover, 
+                               "current cover to be replaced", ZOOM_LARGE)])
+    # active upload
+    elif revision.changeset.state in states.ACTIVE:
+        if revision.issue.cover_set.latest().has_image:
+            for cover in revision.issue.cover_set.all():
+                current_covers.append([cover, get_image_tag(cover, 
+                                       "current cover", ZOOM_MEDIUM)])
+        if CoverRevision.objects.filter(issue=revision.issue).count() > 1:
+            covers = CoverRevision.objects.filter(issue=revision.issue)
+            covers = covers.exclude(id=revision.id).filter(cover=None)
+            covers = covers.order_by('created')
+            for cover in covers:
+                pending_covers.append([cover, get_preview_image_tag(cover, 
+                                       "pending cover", ZOOM_MEDIUM)])
+    # approved/discarded
+    elif revision.changeset.state in states.CLOSED:
+        if revision.cover:
+            if CoverRevision.objects.filter(cover=revision.cover, 
+                                            created__lt=revision.created):
+                # this revision replaced a cover
+                old_cover = CoverRevision.objects.filter(cover=revision.cover, 
+                                created__lt=revision.created) \
+                                .order_by('-created')[0]
+                current_covers.append([old_cover, get_preview_image_tag(\
+                                       old_cover, "uploaded cover", 
+                                       ZOOM_LARGE)])
+    else: # did I miss something
+        raise NotImplementedError
+
+    response = render_to_response('oi/edit/compare_cover.html',
+                                  { 'changeset': changeset,
+                                    'cover_tag' : cover_tag,
+                                    'current_covers' : current_covers,
+                                    'pending_covers' : pending_covers,
+                                    'revision': revision,
+                                    'table_width': 5,
+                                    'states': states },
+                                  context_instance=RequestContext(request))
+    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    return response
+
 
 @login_required
 def preview(request, id, model_name):

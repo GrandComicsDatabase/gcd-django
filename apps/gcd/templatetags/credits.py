@@ -124,6 +124,20 @@ def show_credit_status(story):
     snippet += '</span>]'
     return mark_safe(snippet)
 
+
+def show_cover_contributor(cover_revision):
+    if cover_revision.file_source:
+        if cover_revision.changeset.indexer.id == 381: # anon user
+            # filter away '( email@domain.part )' for old contributions
+            text = cover_revision.file_source
+            return text[:text[:text.rfind('text')].rfind('(')]
+        else:
+            return unicode(cover_revision.changeset.indexer.indexer) + \
+              ' (from ' + cover_revision.file_source + ')'
+    else:
+        return cover_revision.changeset.indexer.indexer
+
+
 # these next three might better fit into a different file
 
 def show_country(series):
@@ -203,4 +217,4 @@ register.filter(show_page_count)
 register.filter(format_page_count)
 register.filter(sum_page_counts)
 register.filter(show_title)
-
+register.filter(show_cover_contributor)

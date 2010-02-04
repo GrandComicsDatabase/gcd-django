@@ -6,7 +6,11 @@
 <form action="{% url process id=changeset.id %}" method="POST">
   <input type="submit" name="assign"
     {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor %}
-    value="Assign and mentor"
+      {% ifequal section.object_name 'Covers' %}
+      value="Assign"
+      {% else %}
+      value="Assign and mentor"
+      {% endifequal %}
     {% else %}
     value="Assign"
     {% endif %}

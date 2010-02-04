@@ -38,7 +38,7 @@ def show_story_short(story):
     if page_count:
         story_line += ', %sp' % page_count
     else:
-        story_line += '<span class="no_data">no page count</span>'
+        story_line += '<span class="no_data"> no page count</span>'
 
     return mark_safe(story_line)
 

@@ -1,0 +1,49 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% block title %}
+Reviewing :: {{ revision }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h2>Covers for {{ issue }} 
+</h2>
+<a href="{% url upload_cover issue_id=issue.id %}">Add variant cover</a>
+
+<table id="covers">
+  <tr>
+  {% for cover, issue, tag in covers %}
+    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+      <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
+      <br>
+       <span class="cover_links">Zoom:
+<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}">Large</a><br>
+        {% if perms.gcd.can_approve %}
+        {% if not cover.marked %}
+<a href="{% url mark_cover cover_id=cover.id %}">Mark for replacement</a><br>
+        {% else %}
+<a href="{% url unmark_cover cover_id=cover.id %}">Remove mark for replacement</a><br>
+        {% endif %}
+        {% endif %}
+<a href="{% url replace_cover cover_id=cover.id %}">Replace cover</a>
+</span> 
+   </td>
+    {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+    {% endif %}
+  {% endfor %}
+  </tr>
+</table>
+
+{% endblock %}
+

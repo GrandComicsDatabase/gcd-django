@@ -180,7 +180,7 @@ def show_series(request, series, preview=False):
     """
     Handle the main work of displaying a series.  Also used by OI previews.
     """
-    covers = series.cover_set.select_related('issue')
+    covers = Cover.objects.filter(issue__series=series).select_related('issue')
     issues = series.issue_set.all()
     
     try:
@@ -237,7 +237,7 @@ def scans(request, series_id):
     """
 
     series = get_object_or_404(Series, id = series_id)
-    covers = series.cover_set.select_related('issue')
+    covers = Cover.objects.filter(issue__series=series).select_related('issue')
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -332,7 +332,7 @@ def daily_covers(request, show_date=None):
     table_width = 5
     style = get_style(request)
 
-    covers = Cover.objects.filter(modified__range=(\
+    covers = Cover.objects.filter(last_upload__range=(\
                                   datetime.combine(requested_date, time.min),
                                   datetime.combine(requested_date, time.max)))
 
@@ -372,11 +372,10 @@ def cover(request, issue_id, size):
     """
 
     issue = get_object_or_404(Issue, id = issue_id)
-    cover = issue.cover_set.all()[0]
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
-    cover_tag = get_image_tags_per_issue(issue, "Cover Image", 
-                                         int(size))
+    cover_tag = get_image_tags_per_issue(issue, "Cover Image", int(size))
+
     style = get_style(request)
 
     extra = 'cover/' + size + '/' # TODO: remove abstraction-breaking hack.
@@ -397,7 +396,7 @@ def cover(request, issue_id, size):
 
 def covers(request, series_id, style="default"):
     """
-    Display the index status matrix for a series.
+    Display the cover gallery for a series.
     """
 
     series = get_object_or_404(Series, id = series_id)
@@ -411,7 +410,9 @@ def covers(request, series_id, style="default"):
     else:
         can_mark = False
 
-    covers =series.cover_set.select_related('issue').filter(has_image = '1')
+    covers = Cover.objects.filter(issue__series=series)\
+                          .filter(has_image = '1').select_related('issue')
+
     style = get_style(request)
     vars = {
       'series': series,
