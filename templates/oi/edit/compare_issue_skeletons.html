@@ -88,6 +88,11 @@ Non-default fields are <span class="comparison_highlight">highlighted.</span>
     <td> {{ revision.issue.brand|absolute_url:'target="_blank"'|default:"None" }} </td>
     <td> {{ revision.brand|absolute_url:'target="_blank"'|default:"None" }} </td>
   </tr>
+  <tr class="{{ revision.changed.no_brand }}">
+    <td class="field_name"> No brand </td>
+    <td> {% if revision.issue.no_brand %} Yes {% else %} No {% endif %} </td>
+    <td> {% if revision.no_brand %} Yes {% else %} No {% endif %} </td>
+  </tr>
   <tr class="{{ revision.changed.price }}">
     <td class="field_name"> Price </td>
     <td> {{ revision.issue.price }} </td>

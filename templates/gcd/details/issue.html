@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load i18n %}
+{% load display %}
 {% load credits %}
 
 {% block title %}
@@ -40,15 +41,7 @@
 <dl id="issue_data_list">
 {% if not issue.no_volume %}
   <dt> {% trans "Volume" %}:
-  {% if issue.volume %}
-    <dd id="volume"> {{ issue.volume }}
-  {% else %}
-    {% ifequal issue.volume 0 %}
-      <dd id="volume"> {{ issue.volume }}
-    {% else %}
-      <dd id="volume"> ?
-    {% endifequal %}
-  {% endif %}
+  <dd> {{ issue|show_volume }}
 {% endif %}
   <dt> {% trans "Price" %}:
   <dd id="issue_price"> {{ issue.price|default:"" }}
@@ -59,17 +52,13 @@
   <dd id="indicia_frequency"> {{ issue.indicia_frequency }}
 {% endif %}
   {{ issue|show_credit:"editing" }}
-{% if issue.indicia_publisher or issue.brand %}
 </dl>
 <dl>
-{% endif %}
-{% if issue.brand %}
-  <dt> {% trans "Brand" %}:
-  <dd id="issue_brand"> {{ issue.brand }}
-{% endif %}
-{% if issue.indicia_publisher %}
   <dt> {% trans "Indicia Publisher" %}:
-  <dd id="issue_indicia_publisher"> {{ issue.indicia_publisher }}
+  <dd id="issue_indicia_publisher"> {{ issue.indicia_publisher|absolute_url|default:"?" }}
+{% if not issue.no_brand %}
+  <dt> {% trans "Brand" %}:
+  <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}
 {% endif %}
 </dl>
 <!-- IE6 didn't like various attempts to get the sometimes very long

@@ -88,14 +88,14 @@
     {% endif %}
   {% endif %}
 
-  {% if publisher.notes %}
-    <dt> Notes:
-    <dd> {{ publisher.notes|linebreaksbr }}
-  {% endif %}
-
   {% if publisher.url %}
     <dt> Web Site:
     <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
+  {% endif %}
+
+  {% if publisher.notes %}
+    <dt> Notes:
+    <dd> {{ publisher.notes|linebreaksbr }}
   {% endif %}
 
 {% ifequal page.object_list.count 0 %}

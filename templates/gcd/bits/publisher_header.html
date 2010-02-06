@@ -19,7 +19,7 @@
       {{ extra }}
     {% endif %}
     {% if description %}
-      ({{ description }})
+      (<a href="{{ publisher.parent.get_absolute_url }}{{ url_suffix }}/">{{ description }}</a>)
     {% endif %}
   {% endif %}
   </div>

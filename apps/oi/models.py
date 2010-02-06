@@ -1336,6 +1336,7 @@ class IssueRevisionManager(RevisionManager):
           series=issue.series,
           indicia_publisher=issue.indicia_publisher,
           brand=issue.brand,
+          no_brand=issue.no_brand,
           page_count=issue.page_count,
           page_count_uncertain=issue.page_count_uncertain,
           editing=issue.editing,
@@ -1391,6 +1392,7 @@ class IssueRevision(Revision):
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True,
                                           related_name='issue_revisions')
     brand = models.ForeignKey(Brand, null=True, related_name='issue_revisions')
+    no_brand = models.BooleanField(default=0, db_index=True)
 
     def _display_number(self):
         """
@@ -1441,7 +1443,7 @@ class IssueRevision(Revision):
                 'publication_date', 'key_date', 'indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
                 'editing', 'no_editing', 'notes',
-                'series', 'indicia_publisher', 'brand')
+                'series', 'indicia_publisher', 'brand', 'no_brand')
 
     def _source(self):
         return self.issue
@@ -1555,6 +1557,7 @@ class IssueRevision(Revision):
         issue.series = self.series
         issue.indicia_publisher = self.indicia_publisher
         issue.brand = self.brand
+        issue.no_brand = self.no_brand
 
         if clear_reservation:
             issue.reserved = False

@@ -120,6 +120,12 @@
   {% endif %}
 </dl>
 
+<h3 class="series_notes"> Series Details </h3>
+<ul>
+  <li> <a href="{% url series_details series_id=series.id %}">Details by Issue</a>
+  <li> <a href="{% url series_timeline series_id=series.id %}">Series Timeline </a>
+</ul>
+
 <div id="series_notes">
   {% if series.publication_notes %}
     <h3 class="series_notes"> Publication Notes </h3>

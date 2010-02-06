@@ -20,7 +20,8 @@ from django.utils.safestring import mark_safe
 from apps.gcd.models import Publisher, Series, Issue, Story, \
                             IndiciaPublisher, Brand, \
                             Country, Language, Indexer, IndexCredit, Cover
-from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
+from apps.gcd.views import render_error, paginate_response, \
+                           ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, \
                                   get_image_tags_per_issue, \
                                   get_image_tags_per_page, \
@@ -29,6 +30,8 @@ from apps.gcd.views.covers import get_image_tag, \
                                   ZOOM_LARGE
 from apps.oi import states
 from apps.oi.models import IssueRevision
+
+KEY_DATE_REGEXP = re.compile(r'^(?P<year>\d{4})\.(?P<month>\d{2})\.(?P<day>\d{2})$')
 
 def get_style(request):
     style = 'default'
@@ -210,6 +213,104 @@ def show_series(request, series, preview=False):
         'error_subject': '%s' % series,
         'style': style,
         'preview': preview,
+      },
+      context_instance=RequestContext(request))
+
+def series_details(request, series_id, by_date=False):
+    series = get_object_or_404(Series, id=series_id)
+
+    issues_by_date = []
+    issues_left_over = []
+    if by_date:
+        no_key_date_q = Q(key_date__isnull=True) | Q(key_date='')
+        prev_year = None
+        prev_month = None
+        for issue in series.issue_set.exclude(no_key_date_q).order_by('key_date'):
+            m = re.search(KEY_DATE_REGEXP, issue.key_date)
+            if m is None:
+                return render_error(request,
+                  "Bad key date for issue <a href=\"%s\">%s</a>: '%s'" %
+                    (issue.get_absolute_url(), issue, issue.key_date),
+                  redirect=False,
+                  is_safe=True)
+            year, month, day = m.groups()
+            month = int(month)
+            if month < 1:
+                month = 1
+            elif month > 12:
+                month = 12
+
+            # Note that we ignore the key_date's day field as it rarely indicates
+            # an actual day and we are not arranging the grid at the weekly level
+            # anyway.
+            try:
+                key_date = date(int(year), month, 1)
+            except ValueError, ve:
+                return render_error(request,
+                  "Unusable key date for issue <a href=\"%s\">%s</a>: '%s'" %
+                    (issue.get_absolute_url(), issue, issue.key_date),
+                  redirect=False,
+                  is_safe=True)
+
+            if prev_year == None:
+                issues_by_date.append({'date': key_date, 'issues': [issue] })
+
+            elif prev_year == key_date.year:
+                last_date_issues = issues_by_date[len(issues_by_date) - 1]
+                if prev_month == key_date.month:
+                    if key_date == last_date_issues['date']:
+                        # Add the issue to the list for the current date.
+                        last_date_issues['issues'].append(issue)
+                    else:
+                        # Add a new row for the issue.
+                        issues_by_date.append(
+                          {'date': key_date, 'issues': [issue] })
+                else:
+                    # Add rows for the skipped months.
+                    for month in range(prev_month + 1, key_date.month):
+                        issues_by_date.append({'date': date(prev_year, month, 1),
+                                               'issues': []})
+
+                    # Add the next issue.
+                    issues_by_date.append({'date': key_date, 'issues': [issue]})
+            else:
+                # Add rows for the rest of the months in the current year.
+                for month in range(prev_month + 1, 13):
+                    issues_by_date.append({'date': date(prev_year, month, 1),
+                                           'issues': []})
+
+                # Add twelve rows for each empty year.
+                for year in range(prev_year + 1, key_date.year):
+                    for month in range(1, 13):
+                        issues_by_date.append({'date': date(year, month, 1),
+                                               'issues': []})
+
+                # Add the skipped months in the year of the next issue.
+                for month in range(1, key_date.month):
+                    issues_by_date.append({'date': date(key_date.year, month, 1),
+                                           'issues': []})
+
+                # Add the next issue.
+                issues_by_date.append({'date': key_date, 'issues': [issue]})
+
+            prev_year = key_date.year
+            prev_month = key_date.month
+
+        issues_left_over = series.issue_set.filter(no_key_date_q)
+            
+    # These need to be numbers not True/False booleans so they work in the template.
+    num_issues = series.issue_count
+    volume_present = series.issue_set.filter(no_volume=True).count() - num_issues
+    brand_present = series.issue_set.filter(no_brand=True).count() - num_issues
+
+    return render_to_response('gcd/details/series_details.html',
+      {
+        'series': series,
+        'by_date': by_date,
+        'rows': issues_by_date,
+        'no_date_rows': issues_left_over,
+        'volume_present': volume_present,
+        'brand_present': brand_present,
       },
       context_instance=RequestContext(request))
 

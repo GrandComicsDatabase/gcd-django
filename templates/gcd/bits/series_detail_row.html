@@ -1,0 +1,23 @@
+{% load credits %}
+{% load display %}
+
+<tr class="row_even_{{ row_counter|divisibleby:"2" }}">
+  <td> {{ issue.key_date }} </td>
+  <td> {{ issue.publication_date|default:"" }} </td>
+  {% if volume_present %}
+    {% if issue.no_volume %}
+  <td>&nbsp;</td>
+    {% else %}
+  <td> {{ issue|show_volume }} </td>
+    {% endif %}
+  {% endif %}
+  <td> <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
+  <td> {{ issue.indicia_publisher|absolute_url|default:"?" }} </td>
+  {% if brand_present %}
+  <td> {{ issue.brand|absolute_url|default:"?" }} </td>
+  {% endif %}
+  <td> {{ issue|show_page_count }} </td>
+  <td> {{ issue.price|default:"" }} </td>
+  <td> {{ issue.indicia_frequency|default:"" }} </td>
+</tr>
+

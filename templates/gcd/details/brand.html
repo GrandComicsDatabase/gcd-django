@@ -16,7 +16,9 @@ GCD :: Brand :: {{ brand.name }}
 
 {% with brand as publisher %}
 {% with "Brand" as description %}
+{% with "brands" as url_suffix %}
 {% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
 {% endwith %}
 {% endwith %}
 
@@ -34,14 +36,14 @@ GCD :: Brand :: {{ brand.name }}
 
 <div>
   <dl class="pub_data">
-  {% if brand.notes %}
-    <dt> Notes:
-    <dd> {{ brand.notes|linebreaksbr }}
-  {% endif %}
-
   {% if brand.url %}
     <dt> Web Site:
     <dd> <a href="{{ brand.url }}">{{ brand.url }}</a>
+  {% endif %}
+
+  {% if brand.notes %}
+    <dt> Notes:
+    <dd> {{ brand.notes|linebreaksbr }}
   {% endif %}
 
 {% ifequal page.object_list.count 0 %}
@@ -63,7 +65,7 @@ GCD :: Brand :: {{ brand.name }}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date }} </td>
-    <td> {{ issue.indicia_publisher|absolute_url }} </td>
+    <td> {{ issue.indicia_publisher|absolute_url|default:"?" }} </td>
   </tr>
   {% endfor %}
 </table>

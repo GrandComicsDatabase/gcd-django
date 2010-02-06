@@ -49,6 +49,13 @@ def show_revision_short(revision):
         return show_story_short(revision)
     return unicode(revision)
 
+def show_volume(issue):
+    if issue.no_volume:
+        return u''
+    if issue.volume is None:
+        return u'?'
+    return issue.volume
+
 def show_issue(issue):
     return mark_safe('<a href="%s">%s</a> (%s series) <a href="%s">#%s</a>' %
                      (issue.series.get_absolute_url(),
@@ -60,5 +67,6 @@ def show_issue(issue):
 register.filter(absolute_url)
 register.filter(show_story_short)
 register.filter(show_revision_short)
+register.filter(show_volume)
 register.filter(show_issue)
 

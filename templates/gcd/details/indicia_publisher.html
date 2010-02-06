@@ -16,7 +16,9 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
 
 {% with indicia_publisher as publisher %}
 {% with "Indicia Publisher" as description %}
+{% with "indicia_publishers" as url_suffix %}
 {% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
 {% endwith %}
 {% endwith %}
 
@@ -44,14 +46,14 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
   <dt> Country:
   <dd> {{ indicia_publisher.country.name }}
 
-  {% if indicia_publisher.notes %}
-    <dt> Notes:
-    <dd> {{ indicia_publisher.notes|linebreaksbr }}
-  {% endif %}
-
   {% if indicia_publisher.url %}
     <dt> Web Site:
     <dd> <a href="{{ indicia_publisher.url }}">{{ indicia_publisher.url }}</a>
+  {% endif %}
+
+  {% if indicia_publisher.notes %}
+    <dt> Notes:
+    <dd> {{ indicia_publisher.notes|linebreaksbr }}
   {% endif %}
 
 {% ifequal page.object_list.count 0 %}
@@ -73,7 +75,9 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date }} </td>
-    <td> {{ issue.brand|absolute_url }} </td>
+    <td> {% if not issue.no_brand %}
+           {{ issue.brand|absolute_url|default:"?" }}
+         {% endif %} </td>
   </tr>
   {% endfor %}
 </table>

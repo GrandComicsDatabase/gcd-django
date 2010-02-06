@@ -334,11 +334,13 @@ table#covers td.marked {
     border-right: solid 1px;
 }
 
+tr.row_even_False,
 tr.listing_odd {
     background-color: #FFF;
     vertical-align: top;
 }
 
+tr.row_even_True,
 tr.listing_even {
     background-color: #DDD;
     vertical-align: top;

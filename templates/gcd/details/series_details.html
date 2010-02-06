@@ -1,0 +1,152 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+{% load display %}
+
+{% block title %} GCD :: Series :: {{ series.name }} :: {% if by_date %}Timeline{% else %}Details{% endif %} {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css">
+</link>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}/series.css">
+</link>
+{% endblock %}
+
+{% block view_body %}
+
+{% include "gcd/bits/series_issue_header.html" %}
+
+<div class="clear">
+
+<h3> Series {% if by_date %}Timeline{% else %}Details{% endif %} </h3>
+<p>
+{% if by_date %}
+  <a href="{% url series_details series_id=series.id %}">See series details by issue</a> (displays one row per issue with no gaps, by the regular issue sort order)
+{% else %}
+  <a href="{% url series_timeline series_id=series.id %}">See series timeline</a>
+  (depends on key dates being set correctly)
+{% endif %}
+</p>
+{% if by_date %}
+  {% if rows %}
+<p>
+This page attempts to show how the issues in this series were published over time
+by laying them out in a timeline with alternately gray or white rows roughly
+corresponding to months.  The correspondence is less accurate for bi-monthly,
+quarterly or annual books.  Weekly or other more-frequent-than-monthly issues
+are simply grouped into the same color row by month.
+<p>
+The timeline feature depends on the key date field to order issues into a timeline.
+Please note that if the key dates are not filled out to correspond to the
+publication months of the issues, then the timeline will not be accurate.
+</p>
+    {% if no_date_rows %}
+<p>
+Not all issues in this series have key dates, so not all can be sorted into
+a timeline.  The following issues can be sorted:
+</p>
+    {% endif %}
+  {% else %}
+<p>
+No issues in this series have key dates, so none can be sorted into a timeline.
+The following table is the same as the regular series detail table:
+</p>
+  {% endif %}
+{% endif %}
+
+<table class="listing">
+  <tr>
+    <th> Key Date </th>
+    <th> Pub. Date </th>
+{% if volume_present %}
+    <th> Volume </th>
+{% endif %}
+    <th> Issue </th>
+    <th> Indicia Publisher </th>
+{% if brand_present %}
+    <th> Brand </th>
+{% endif %}
+    <th> Pages </th>
+    <th> Price </th>
+    <th> Frequency </th>
+  </tr>
+
+{% comment %}
+Note that we do not use {% cycle %} to generate the alternating class rows
+because the various conditionals and nested loops confuse it.  Instead we
+use the loop counter of the correct (outermost or only) loop and the 
+divisible filter.
+{% endcomment %}
+{% if by_date %}
+  {% if rows %}
+    {% for row in rows %}
+      {% with forloop.counter as row_counter %}
+        {% for issue in row.issues %}
+          {% include "gcd/bits/series_detail_row.html" %}
+        {% empty %}
+  <tr class="row_even_{{ row_counter|divisibleby:"2" }}">
+    <td class="empty_month">{{ row.date|date:"Y.m.00" }}
+    <td>&nbsp;</td>
+          {% if volume_present %}
+    <td>&nbsp;</td>
+          {% endif %}
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+          {% if brand_present %}
+    <td>&nbsp;</td>
+          {% endif %}
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+  </tr>
+        {% endfor %}
+      {% endwith %}
+    {% endfor %}
+  {% endif %}
+
+  {% if rows and no_date_rows %}
+</table>
+<div class="left">
+These issues have no key date and cannot be placed in a timeline:
+</div>
+<table class="listing">
+  <tr>
+    <th> Key Date </th>
+    <th> Pub. Date </th>
+    {% if volume_present %}
+    <th> Volume </th>
+    {% endif %}
+    <th> Issue </th>
+    <th> Indicia Publisher </th>
+    {% if brand_present %}
+    <th> Brand </th>
+    {% endif %}
+    <th> Pages </th>
+    <th> Price </th>
+    <th> Frequency </th>
+  </tr>
+  {% endif %}
+
+  {% if no_date_rows %}
+    {% for issue in no_date_rows %}
+      {% with forloop.counter as row_counter %}
+        {% include "gcd/bits/series_detail_row.html" %}
+      {% endwith %}
+    {% endfor %}
+  {% endif %}
+
+{%else %}
+  {% for issue in series.issue_set.all %}
+    {% with forloop.counter as row_counter %}
+      {% include "gcd/bits/series_detail_row.html" %}
+    {% endwith %}
+  {% endfor %}
+{% endif %}
+</table>
+</div>
+
+{% endblock %}
+

@@ -290,6 +290,7 @@ def _get_issue_fields():
         'no_volume',
         'indicia_publisher',
         'brand',
+        'no_brand',
         'publication_date',
         'key_date',
         'indicia_frequency',
@@ -316,6 +317,9 @@ def get_issue_revision_form(publisher, series=None, revision=None):
           help_text="The publisher's logo or tagline on the cover of the comic, "
                     "if any. Some U.S. golden age publishers did not put any "
                     "identifiable brand marks on their comics.")
+        no_brand = forms.BooleanField(required=False,
+          help_text="Check this box if there is no publisher's logo or tagline "
+                    "on the comic.")
 
     if revision is None or revision.source is None:
         add_fields = ['after']
@@ -450,11 +454,21 @@ def get_bulk_issue_revision_form(series, method):
           empty_label="[add as initial issues]",
           label = "Add these issues after")
 
-        brand = forms.ModelChoiceField(required=False,
-          queryset=Brand.objects.filter(parent=series.publisher))
-
         indicia_publisher = forms.ModelChoiceField(required=False,
-          queryset=IndiciaPublisher.objects.filter(parent=series.publisher))
+          queryset=IndiciaPublisher.objects.filter(parent=series.publisher),
+          help_text='The exact corporation listed as the publisher in the indicia, '
+                    'if any.  If there is none, the copyright holder (if any) may '
+                    'be used, with a comment in the notes field')
+
+        brand = forms.ModelChoiceField(required=False,
+          queryset=Brand.objects.filter(parent=series.publisher),
+          help_text="The publisher's logo or tagline on the cover of the comic, "
+                    "if any. Some U.S. golden age publishers did not put any "
+                    "identifiable brand marks on their comics.")
+
+        no_brand = forms.BooleanField(required=False,
+          help_text="Check this box if there is no publisher's logo or tagline "
+                    "on the comic.")
 
     return RuntimeBulkIssueRevisionForm
 
@@ -466,17 +480,33 @@ class BulkIssueRevisionForm(forms.Form):
 
     number_of_issues = forms.IntegerField(min_value=1)
 
-    indicia_frequency = forms.CharField(required=False)
+    indicia_frequency = forms.CharField(required=False,
+      help_text='If relevant, the frequency of publication specified in the '
+                'indicia, which may not match the actual publication schedule. '
+                'This is most often found on U.S. ongoing series.')
 
-    price = forms.CharField(required=False)
+    price = forms.CharField(required=False,
+      help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
+                '"2.99 CAD" for $2.99 Canadian.  Use a format like '
+                '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
+                'Use "0.00 FREE" for free issues. '
+                'Separate multple prices with a semicolon.  Use parentheses after '
+                'the currency code for notes: "2.99 USD; 3.99 USD (newsstand)" '
+                'Use country codes after the currency code if more than one price '
+                'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
     page_count = forms.DecimalField(required=False,
                                     max_digits=10, decimal_places=3)
-    page_count_uncertain = forms.BooleanField(required=False)
+    page_count_uncertain = forms.BooleanField(required=False,
+      help_text="Check if you do not know or aren't sure about the page count.")
 
     editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-                              required=False)
-    no_editing = forms.BooleanField(required=False)
+      required=False,
+      help_text='The editor and any similar credits for the whole issue.  If no '
+                'overall editor is known put a question mark in the field.')
+    no_editing = forms.BooleanField(required=False,
+      help_text='Check if there is no editor or similar credit (such as '
+                'publisher) for the issue as a whole.')
 
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
@@ -485,22 +515,34 @@ class BulkIssueRevisionForm(forms.Form):
                 'are not part of the regular display.')
 
     def _shared_key_order(self):
-        return ['brand', 'indicia_publisher', 'indicia_frequency',
+        return ['indicia_publisher', 'brand', 'no_brand', 'indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
                 'editing', 'no_editing', 'comments']
 
 class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 
-    volume = forms.IntegerField(required=False)
+    volume = forms.IntegerField(required=False,
+      help_text='Volume number (only numeric volumes allowed at this time). '
+                'For collections or other items that only have a volume number, '
+                'put the same number in both this field and the issue number '
+                'and do *not* check "Display volume with number". ')
 
-    no_volume = forms.BooleanField(required=False)
+    display_volume_with_number = forms.BooleanField(required=False,
+      help_text='Check to cause the site to display the volume as part of the '
+                'issue number.  For example with a volume of "2" and an issue '
+                'number of "1", checking this box will display "v2#1" instead '
+                'of just "1" in the status grids and issues lists for the series.')
 
-    display_volume_with_number = forms.BooleanField(required=False)
+    no_volume = forms.BooleanField(required=False,
+      help_text='If there is no volume, check this box and leave the volume field '
+                'blank. This lets us distinguish between confirmed no-volume '
+                'issues and issues indexed before we started tracking volume.')
+
 
     def __init__(self, *args, **kwargs):
         super(WholeNumberIssueRevisionForm, self).__init__(*args, **kwargs)
         ordering = ['after', 'number_of_issues', 'first_number',
-                    'volume', 'no_volume', 'display_volume_with_number']
+                    'volume', 'display_volume_with_number', 'no_volume']
         ordering.extend(self._shared_key_order())
         self.fields.keyOrder = ordering
 
@@ -602,17 +644,29 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
     issues_per_year = forms.IntegerField(min_value=1, initial=12,
       help_text='Number of issues in each year')
 
-    volume = forms.IntegerField(required=False)
+    volume = forms.IntegerField(required=False,
+      help_text='Volume number (only numeric volumes allowed at this time). '
+                'For collections or other items that only have a volume number, '
+                'put the same number in both this field and the issue number '
+                'and do *not* check "Display volume with number". ')
 
-    no_volume = forms.BooleanField(required=False)
+    display_volume_with_number = forms.BooleanField(required=False,
+      help_text='Check to cause the site to display the volume as part of the '
+                'issue number.  For example with a volume of "2" and an issue '
+                'number of "1", checking this box will display "v2#1" instead '
+                'of just "1" in the status grids and issues lists for the series.')
 
-    display_volume_with_number = forms.BooleanField(required=False)
+    no_volume = forms.BooleanField(required=False,
+      help_text='If there is no volume, check this box and leave the volume field '
+                'blank. This lets us distinguish between confirmed no-volume '
+                'issues and issues indexed before we started tracking volume.')
+
 
     def __init__(self, *args, **kwargs):
         super(PerYearIssueRevisionForm, self).__init__(*args, **kwargs)
         ordering = ['after', 'number_of_issues',
                     'first_number', 'first_year', 'issues_per_year',
-                    'volume', 'no_volume', 'display_volume_with_number']
+                    'volume', 'display_volume_with_number', 'no_volume']
         ordering.extend(self._shared_key_order())
         self.fields.keyOrder = ordering
 
@@ -665,7 +719,11 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
     issues_per_cycle = forms.IntegerField(min_value=1, initial=12,
       help_text='Number of issues in each year/volume')
 
-    display_volume_with_number = forms.BooleanField(required=False)
+    display_volume_with_number = forms.BooleanField(required=False,
+      help_text='Check to cause the site to display the volume as part of the '
+                'issue number.  For example with a volume of "2" and an issue '
+                'number of "1", checking this box will display "v2#1" instead '
+                'of just "1" in the status grids and issues lists for the series.')
 
     def __init__(self, *args, **kwargs):
         super(PerYearIssueRevisionForm, self).__init__(*args, **kwargs)
