@@ -1,3 +1,4 @@
+{% load display %}
 {% for section in data %}
 {% if section.changesets.count %}
 <h2>
@@ -25,10 +26,10 @@
     <td> <a href="{% url edit id=changeset.id %}">{{ changeset.queue_name }}</a>
   {% endifequal %}
   {% ifnotequal queue_name 'editing' %}
-    <td> {{ changeset.indexer.indexer }} </td>
+    <td> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
   {% endifnotequal %}
   {% ifnotequal queue_name 'reviews' %}
-    <td> {{ changeset.approver.indexer|default:'None' }} </td>
+    <td> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
     <td> {{ changeset.display_state }} </td>
   {% endifnotequal %}
     <td> {{ changeset.modified }} </td>

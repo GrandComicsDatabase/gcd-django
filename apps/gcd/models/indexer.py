@@ -58,6 +58,9 @@ class Indexer(models.Model):
     def can_reserve_another_ongoing(self):
         return self.user.ongoing_reservations.count() < self.max_ongoing
 
+    def get_absolute_url(self):
+        return self.user.get_absolute_url()
+
     def __unicode__(self):
         if self.user.first_name and self.user.last_name:
             full_name = u'%s %s' % (self.user.first_name, self.user.last_name)

@@ -36,9 +36,9 @@
         <span class="cover_date">{{ issue.publication_date }}</span><br>
         {% endif %}
         {{ cover.created }}<br>
-        {{ cover.changeset.indexer.indexer }}<br>
+        {{ cover.changeset.indexer.indexer|absolute_url }}<br>
         {% ifequal cover.changeset.state states.REVIEWING %}
-          reviewed by {{ cover.changeset.approver.indexer }}
+          reviewed by {{ cover.changeset.approver.indexer|absolute_url }}
         {% else %}
             {% if perms.gcd.can_approve %}
               {% ifnotequal cover.changeset.indexer user %}

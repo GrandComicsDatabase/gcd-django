@@ -22,9 +22,9 @@ def show_story_short(story):
     story_line = u'%s.' % story.sequence_number
     if story.title:
         if story.title_inferred:
-            title = u'[%s]' % story.title
+            title = u'[%s]' % esc(story.title)
         else:
-            title = story.title
+            title = esc(story.title)
     else:
         title = '<span class="no_data">no title</span>'
     if story.feature:
