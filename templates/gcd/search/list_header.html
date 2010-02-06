@@ -17,3 +17,8 @@
   {% endwith %}
 </div>
 </div>
+{% ifnotequal paginator.num_pages 1 %}
+<div id="search_reminder">
+Too many results? Refine your search using the <a href="{% url apps.gcd.views.search.advanced_search %}">advanced search</a>.
+</div>
+{% endifnotequal %}

@@ -83,6 +83,10 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
+ABSOLUTE_URL_OVERRIDES = {
+    'auth.user': lambda o: "/accounts/profile/%d/" % o.id,
+}
+
 # Corresponds to the django_site database table. As far
 # as I know, we won't be using this for the GCD.
 SITE_ID = 1
