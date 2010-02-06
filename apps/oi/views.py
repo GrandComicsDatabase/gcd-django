@@ -1141,7 +1141,12 @@ def remove_story_revision(request, id):
         return render_error(request,
           'Only the reservation holder may remove stories.')
     if request.method != 'POST':
-        return _cant_get(request)
+        return render_to_response('oi/edit/remove_story_revision.html',
+        {
+            'story' : story,
+            'issue' : story.issue
+        },
+        context_instance=RequestContext(request))
     
     # we fully delete the freshly added sequence, but first check if a 
     # comment is attached.
