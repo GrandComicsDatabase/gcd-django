@@ -1,0 +1,48 @@
+{% extends "oi/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+
+{% block title %}
+  GCD :: Issue :: {{ issue.series.name }} #{{ issue.display_number }}
+{% endblock %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/{{ style|default:"default" }}.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/{{ style|default:"default" }}/issue.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/{{ style|default:"default" }}/single_story.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h3>
+Are you sure you want to remove the following story (sequence number: {{ story.sequence_number }}) from the edit of {{ issue }} ?
+</h3>
+<form style="display:inline;" method="POST"
+    action="{% url remove_story_revision id=story.id %}">
+<input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
+       value="Yes">
+</input>
+</form>
+<form style="display:inline;" method="GET"
+    action="{% url edit id=story.changeset.id %}">
+<input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
+       value="No">
+</input>
+</form>
+<hr class="divider">
+{% with 1 as preview %}
+<div id="story_data">
+  {% include "gcd/details/single_story.html" %}
+</div>
+{% endwith %}
+
+{% endblock %}
+

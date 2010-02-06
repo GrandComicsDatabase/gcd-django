@@ -54,6 +54,13 @@ urlpatterns = patterns('',
         oi_views.add_story,
         name='add_story'),
 
+    # Story URLs 
+    # can be changed to r'^(?P<model_name>\w+)/revision/(?P<id>\d+)/remove/
+    # later if needed
+    url(r'^story/revision/(?P<id>\d+)/remove/$', 
+        oi_views.remove_story_revision, 
+        name='remove_story_revision'),
+
     # Cover URLs
     url(r'^edit_covers/(?P<issue_id>\d+)/$', oi_covers.edit_covers,
       name='edit_covers'),

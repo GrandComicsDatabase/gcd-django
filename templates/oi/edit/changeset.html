@@ -138,6 +138,14 @@
                    value="Edit">
             </input>
           </form>
+          {% if not story.story %}
+          <form style="display:inline;" method="GET"
+                action="{% url remove_story_revision id=story.id %}">
+            <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
+                   value="Remove">
+            </input>
+          </form>
+          {% endif %}
         </td>
       </tr>
       {% endfor %}
@@ -172,6 +180,10 @@
 {% else %}
   This change has being edited by {{ changeset.indexer.indexer }}.
 {% endifequal %}
+{% else %} <!--- change is not OPEN --->
+        <p>
+        <a href="{% url compare id=changeset.id %}">Compare changes</a>
+        </p>
 {% endifequal %}
 </div>
 {% endblock %}

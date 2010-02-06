@@ -18,6 +18,7 @@ from apps.gcd.views.details import show_indicia_publisher, show_brand, \
                                    show_series, show_issue
 from apps.gcd.views.covers import get_image_tag, ZOOM_LARGE, ZOOM_MEDIUM, \
                                   ZOOM_SMALL
+from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
 from apps.oi.forms import *
 from apps.oi.covers import get_preview_image_tag, copy_approved_cover
@@ -45,12 +46,9 @@ DISPLAY_CLASSES = {
 ##############################################################################
 
 def _cant_get(request):
-    redirect = False
-    if request.method == "POST":
-        redirect = True
     return render_error(request,
       'This page may only be accessed through the proper form',
-       redirect=redirect)
+       redirect=False)
 
 ##############################################################################
 # Generic view functions
@@ -1067,6 +1065,9 @@ def _display_bulk_issue_form(request, series, form, method=None):
 @permission_required('gcd.can_reserve')
 def add_story(request, issue_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may add stories.')
     # Process add form if this is a POST.
     try:
         issue = Issue.objects.get(id=issue_id)
@@ -1129,6 +1130,43 @@ def _display_add_story_form(request, issue, form, changeset_id):
       },
       context_instance=RequestContext(request))
 
+##############################################################################
+# Removing Items from a Changeset
+##############################################################################
+
+@permission_required('gcd.can_reserve')
+def remove_story_revision(request, id):
+    story = get_object_or_404(StoryRevision, id=id)
+    if request.user != story.changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may remove stories.')
+    if request.method != 'POST':
+        return _cant_get(request)
+    
+    # we fully delete the freshly added sequence, but first check if a 
+    # comment is attached.
+    if story.comments.count():
+        comment = story.comments.latest('created')
+        # might be set anyway. But if we don't set it we would get <span ... 
+        # in the response and we cannot mark a comment as safe.
+        if not story.page_count:
+            story.page_count_uncertain = True
+        comment.text += '\nThe StoryRevision "%s" for which this comment was'\
+                        ' entered was removed.' % show_revision_short(story)
+        comment.revision_id = None
+        comment.save()
+    elif story.changeset.approver:
+        # changeset already was submitted once since it has an approver
+        # TODO not quite sure if we actually should add this comment
+        story.changeset.comments.create(commenter=story.changeset.indexer,
+                          text='The StoryRevision "%s" was removed.'\
+                            % show_revision_short(story),
+                          old_state=story.changeset.state,
+                          new_state=story.changeset.state)
+    story.delete()
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+      kwargs={ 'id': story.changeset.id }))
+        
 ##############################################################################
 # Ongoing Reservations
 ##############################################################################
