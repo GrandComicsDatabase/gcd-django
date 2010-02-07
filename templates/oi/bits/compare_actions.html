@@ -14,12 +14,16 @@
 {% if perms.gcd.can_approve %}
 {% ifnotequal user changeset.indexer %}
   <input type="submit" name="assign"
-    {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor %}
+    {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and not is_cover %}
     value="Assign and mentor"
     {% else %}
     value="Assign"
     {% endif %}
   ></input>
+{% else %}
+  {% if changeset.singular %}
+  <input type="submit" name="retract" value="Retract and edit further"></input>
+  {% endif %}
 {% endifnotequal %}
 {% endif %}
 {% endifequal %}

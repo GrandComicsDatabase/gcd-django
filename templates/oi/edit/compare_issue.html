@@ -43,6 +43,14 @@ View the
 Links open in new windows.
 </p>
 
+<p>
+{% ifequal user revision.changeset.indexer %}
+{% ifequal changeset.state states.OPEN %}
+<a href="{% url edit_revision model_name='issue',id=revision.id %}"> Edit issue data</a> 
+{% endifequal %}
+{% endifequal %}
+</p>
+
 <table class="comparison">
   <tr>
     <th> Field </th>
@@ -163,7 +171,9 @@ Links open in new windows.
 
 <p>
 {% ifequal user revision.changeset.indexer %}
+{% ifequal changeset.state states.OPEN %}
 <a href="{% url edit id=revision.changeset.id %}">Edit changes</a> |
+{% endifequal %}
 {% endifequal %}
 <a href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview</a>
 (opens in a new window)

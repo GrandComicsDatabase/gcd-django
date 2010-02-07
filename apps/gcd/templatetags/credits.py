@@ -193,7 +193,8 @@ def sum_page_counts(stories):
     """
     count = Decimal(0)
     for story in stories:
-        count += story.page_count
+        if story.page_count:
+            count += story.page_count
     return count
 
 def show_title(story):

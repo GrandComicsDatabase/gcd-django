@@ -91,3 +91,7 @@ form#review textarea {
     color: red;
 }
 
+span.story_edit {
+    font-weight: normal;
+    font-size: 0.9em;
+}

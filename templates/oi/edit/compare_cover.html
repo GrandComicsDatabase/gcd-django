@@ -96,36 +96,9 @@ variant
 
 {% include 'oi/bits/comments.html' %}
 
-<form id="review" action="{% url process id=changeset.id %}" method="POST">
-  <div>
-  <label for="comments">Comment:</label> <br>
-  <textarea id="comments" name="comments"></textarea>
-  </div>
-{% ifequal changeset.state states.OPEN %}
-{% ifequal user changeset.indexer %}
-  <input type="submit" name="submit" value="Submit changes for approval"></input>
-  <input type="submit" name="discard" value="Discard all changes"></input>
-{% endifequal %}
-{% endifequal %}
-
-{% ifequal changeset.state states.PENDING %}
-{% if perms.gcd.can_approve %}
-{% ifnotequal user changeset.indexer %}
-  <input type="submit" name="assign" value="Assign"></input>
-{% endifnotequal %}
-{% endif %}
-{% endifequal %}
-
-{% ifequal changeset.state states.REVIEWING %}
-{% ifequal user changeset.approver %}
-  <input type="submit" name="approve" value="Approve"></input>
-  <input type="submit" name="disapprove" value="Send Back to Indexer"></input>
-  <input type="submit" name="cancel" value="Reject Permanently"></input>
-{% endifequal %}
-{% endifequal %}
-
-  <input type="submit" name="add_comment" value="Add Comment"></input>
-</form>
+{% with 1 as is_cover %}
+{% include 'oi/bits/compare_actions.html' %}
+{% endwith %}
 
 {% endblock %}
 
