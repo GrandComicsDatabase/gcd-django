@@ -28,6 +28,14 @@
     color: white;
 }
 
+.oi_bar_title :link {
+    color: white;
+}
+
+.oi_bar_title :visited {
+    color: white;
+}
+
 form th {
     vertical-align: top;
     padding-bottom: 1em;
