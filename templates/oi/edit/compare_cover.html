@@ -17,14 +17,14 @@ Reviewing :: {{ revision }}
 {% block view_body %}
 <h1>{{ revision }} 
 </h1>
-<h2>uploaded 
-  {% if revision.is_replacement %}
-replacement
-  {% else %}
-    {% if current_covers %}
-variant
-    {% endif %}
-{% endif %} cover </h2>
+{% if revision.is_replacement %}
+<table id="covers">
+<tr>
+<td class="cover_grid{% if revision.marked %} marked{% endif %}">
+<h2> uploaded replacement cover </h2>
+{% else %}
+<h2> uploaded {% if current_covers %} variant {% endif %} cover </h2>
+{% endif %}
 <div id="cover_zoom">
   <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a><br>
       <div class="cover_caption">
@@ -47,13 +47,23 @@ variant
         <br>
       </div>
 </div>
+{% if revision.is_replacement %}
+</td>
+<td class="cover_grid{% if current_covers.0.0.marked %} marked{% endif %}">
+ <h2>cover to be replaced</h2>
+ <a href="{{ current_covers.0.0.issue.get_absolute_url }}">{{ current_covers.0.1 }}</a>
+ <br>
+ <span class="cover_links">Zoom:
+ <a href="{{ current_covers.0.0.zissue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}" target="_blank">Large</a> (opens in new window)</span> <br>
+</td>
+</tr>
+</table>
+{% else %}
+{% endif %}
 
 {% if current_covers %}
-{% if revision.is_replacement %}
-<h2> cover to be replaced </h2>
-{% else %}
+{% if not revision.is_replacement %}
 <h2> current cover{{ current_covers|length|pluralize }} </h2>
-{% endif %}
 <table id="covers">
   <tr>
   {% for cover, tag in current_covers %}
@@ -70,6 +80,7 @@ variant
   {% endfor %}
   </tr>
 </table>
+{% endif %}
 {% endif %}
 
 {% if pending_covers %}
