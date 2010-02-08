@@ -366,7 +366,34 @@ def approve(request, id):
         return render_error(request,
           'Only REVIEWING changes with an approver can be approved.')
 
-    changeset.approve(notes=request.POST['comments'])
+    notes = request.POST['comments']
+    changeset.approve(notes=notes)
+
+    if notes.strip():
+        email_body = u"""
+Hello from the %s!
+
+
+  Your change for "%s" was approved by GCD editor %s with the comment:
+"%s"
+
+You can view the full change at %s.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+           unicode(changeset),
+           unicode(changeset.approver.indexer),
+           notes,
+           settings.SITE_URL.rstrip('/') +
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+           settings.SITE_NAME,
+           settings.SITE_URL)
+
+        changeset.indexer.email_user('GCD change approved', email_body, 
+          settings.EMAIL_INDEXING)
+
 
     # Note that series ongoing reservations must be processed first, as
     # they could potentially apply to the issue reservations if we ever
@@ -406,10 +433,11 @@ def approve(request, id):
                                              ongoing_reservation.indexer,
                                              issue_revision.issue)
 
+    cover_was_approved = False
     for cover_revision in \
         changeset.coverrevisions.filter(deleted=False):
         copy_approved_cover(cover_revision)
-
+        cover_was_approved = True
             
     # Move brand new indexers to probationary status on first approval.
     if changeset.indexer.indexer.max_reservations == settings.RESERVE_MAX_INITIAL:
@@ -421,7 +449,11 @@ def approve(request, id):
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
-        return HttpResponseRedirect(urlresolvers.reverse('pending'))
+        # to avoid counting assume for now that cover queue is never empty
+        if cover_was_approved: 
+            return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 def _send_declined_reservation_email(indexer, issue):
     email_body = u"""
@@ -527,6 +559,55 @@ thanks,
     else:
         return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
+
+@permission_required('gcd.can_reserve')
+def add_comments(request, id):
+    """
+    Comment on a change and return to the compare page.
+    """
+    if request.method != 'POST':
+        return _cant_get(request)
+
+    changeset = get_object_or_404(Changeset, id=id)
+    comments = request.POST['comments']
+    if comments is not None and comments != '':
+        changeset.comments.create(commenter=request.user,
+                                  text=comments,
+                                  old_state=changeset.state,
+                                  new_state=changeset.state)
+
+        email_body = u"""
+Hello from the %s!
+
+
+  %s added a comment to the change "%s":
+"%s"
+
+You can view the full change at %s.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+           unicode(request.user.indexer),
+           unicode(changeset),
+           comments,
+           settings.SITE_URL.rstrip('/') +
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+           settings.SITE_NAME,
+           settings.SITE_URL)
+
+        if request.user != changeset.indexer:
+            changeset.indexer.email_user('GCD comment', email_body, 
+              settings.EMAIL_INDEXING)
+        if changeset.approver and request.user != changeset.approver:
+            changeset.approver.email_user('GCD comment', email_body, 
+              settings.EMAIL_INDEXING)
+
+    return HttpResponseRedirect(urlresolvers.reverse(compare,
+                                                     kwargs={ 'id': id }))
+
+
 # TODO: Figure out how to handle deletions.
 # @permission_required('gcd.can_reserve')
 # def delete(request, id, model_name):
@@ -595,15 +676,7 @@ def process(request, id):
         return disapprove(request, id)
 
     if 'add_comment' in request.POST:
-        changeset = get_object_or_404(Changeset, id=id)
-        comments = request.POST['comments']
-        if comments is not None and comments != '':
-            changeset.comments.create(commenter=request.user,
-                                      text=comments,
-                                      old_state=changeset.state,
-                                      new_state=changeset.state)
-            return HttpResponseRedirect(urlresolvers.reverse(compare,
-                                                             kwargs={ 'id': id }))
+        return add_comments(request, id)
         
     return render_error(request, 'Unknown action requested!  Please try again. '
       'If this error message persists, please contact an Editor.')
