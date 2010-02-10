@@ -105,6 +105,18 @@
         -->
       {% with changeset.issuerevisions.all.0 as issue_revision %}
       {% if issue_revision.issue %}
+      {% if not changeset.storyrevisions.count %}
+      </tr>
+      <td colspan="2" align="left">
+      <form style="display:inline;" method="POST" enctype="multipart/form-data"
+                action="{% url import_issue issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+            <input type="submit" value="Import issue"></input>
+            <input type="file" name="flatfile">
+            </input><br><a href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> (opens in a new window) about the file format for issue imports.
+      </form>
+      </td>
+      <tr>
+      {% endif %}
       <form style="display:inline;" method="GET"
             action="{% url add_story issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
         <td colspan="2" align="left">
@@ -150,6 +162,23 @@
       </tr>
       {% endfor %}
     </table>
+    {% endif %}
+
+    {% if changeset.issuerevisions.count %}
+    {% with changeset.issuerevisions.all.0 as issue_revision %}
+    {% if issue_revision.issue %}
+    <table class="story_list">
+      <td>
+      <form style="display:inline;" method="POST" enctype="multipart/form-data"
+                action="{% url import_stories issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+            <input type="submit" value="Import sequences"></input>
+            <input type="file" name="flatfile">
+            </input>
+      </form><br><a href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> (opens in a new window) about the file format for story imports.
+      </td>
+    </table>
+    {% endif %}
+    {% endwith %}
     {% endif %}
 
     {% include 'oi/bits/comments.html' %}

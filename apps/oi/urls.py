@@ -5,6 +5,7 @@ from django.views.generic.simple import direct_to_template
 
 from apps.oi import views as oi_views
 from apps.oi import covers as oi_covers
+from apps.oi import import_export as oi_import
 from apps.oi import states
 
 urlpatterns = patterns('',
@@ -50,9 +51,15 @@ urlpatterns = patterns('',
         oi_views.add_issues,
         name='add_multiple_issues'),
 
+    url(r'^issue/(?P<issue_id>\d+)/import_issue/(?P<changeset_id>\d+)/$', 
+        oi_import.import_issue_from_file, 
+        name='import_issue'),
     url(r'^issue/(?P<issue_id>\d+)/add_story/(?P<changeset_id>\d+)$',
         oi_views.add_story,
         name='add_story'),
+    url(r'^issue/(?P<issue_id>\d+)/import_stories/(?P<changeset_id>\d+)/$', 
+        oi_import.import_sequences_from_file, 
+        name='import_stories'),
 
     # Story URLs 
     # can be changed to r'^(?P<model_name>\w+)/revision/(?P<id>\d+)/remove/
