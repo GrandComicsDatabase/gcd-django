@@ -21,26 +21,26 @@ PUBLICATION_DATE = 4
 KEY_DATE = 5
 INDICIA_FREQUENCY = 6
 PRICE = 7
-PAGE_COUNT = 8
-EDITING = 9
-NOTES = 10
+ISSUE_PAGE_COUNT = 8
+ISSUE_EDITING = 9
+ISSUE_NOTES = 10
 
 TITLE = 0
 TYPE = 1
 FEATURE = 2
-PAGE_COUNT = 3
+STORY_PAGE_COUNT = 3
 SCRIPT = 4
 PENCILS = 5
 INKS = 6
 COLORIST = 7
 LETTERER = 8
-EDITOR = 9
+STORY_EDITING = 9
 GENRE = 10
 CHARACTER_APPEARANCE = 11
 JOB_NUMBER = 12
 REPRINT_INFO = 13
 SYNOPSIS = 14
-NOTES = 15
+STORY_NOTES = 15
 
 # order of the fields in line with the OI, but not
 # all fields (i.e. no_...) are present explicitly
@@ -105,7 +105,8 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         else:
             title_inferred = False
         feature = fields[FEATURE].strip()
-        page_count, page_count_uncertain = _check_page_count(fields[PAGE_COUNT])
+        page_count, page_count_uncertain = \
+          _check_page_count(fields[STORY_PAGE_COUNT])
         script, no_script = _check_for_none(fields[SCRIPT])
         if story_type == StoryType.objects.get(name='cover'):
             if not script:
@@ -114,13 +115,13 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         inks, no_inks = _check_for_none(fields[INKS])
         colors, no_colors = _check_for_none(fields[COLORIST])
         letters, no_letters = _check_for_none(fields[LETTERER])
-        editing, no_editing = _check_for_none(fields[EDITOR])
+        editing, no_editing = _check_for_none(fields[STORY_EDITING])
         genre = fields[GENRE].strip()
         characters = fields[CHARACTER_APPEARANCE].strip()
         job_number = fields[JOB_NUMBER].strip()
         reprint_notes = fields[REPRINT_INFO].strip()
         synopsis = fields[SYNOPSIS].strip()
-        notes = fields[NOTES].strip()
+        notes = fields[STORY_NOTES].strip()
 
         story_revision = StoryRevision(changeset=changeset,
                                        title=title, 
@@ -261,10 +262,10 @@ def import_issue_from_file(request, issue_id, changeset_id):
               .strip()
             issue_revision.price = issue_fields[PRICE].strip()
             issue_revision.page_count, issue_revision.page_count_uncertain =\
-              _check_page_count(issue_fields[PAGE_COUNT])
+              _check_page_count(issue_fields[ISSUE_PAGE_COUNT])
             issue_revision.editing, issue_revision.no_editing = \
-              _check_for_none(issue_fields[EDITING])
-            issue_revision.notes = issue_fields[NOTES].strip()
+              _check_for_none(issue_fields[ISSUE_EDITING])
+            issue_revision.notes = issue_fields[ISSUE_NOTES].strip()
             issue_revision.save()                        
             running_number = 0
             return _import_sequences(request, issue_id, changeset, 
