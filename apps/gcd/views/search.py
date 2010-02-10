@@ -140,7 +140,8 @@ def letterer_by_name(request, letterer, sort=ORDER_ALPHA):
 
 def editor_by_name(request, editor, sort=ORDER_ALPHA):
     q_obj = Q(editing__icontains=editor) | Q(issue__editing__icontains=editor)
-    return generic_by_name(request, editor, q_obj, sort, credit="editor")
+    return generic_by_name(request, editor, q_obj, sort, 
+                           credit="editing_search:"+editor)
 
 
 def story_by_credit(request, name, sort=ORDER_ALPHA):

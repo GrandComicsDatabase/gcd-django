@@ -38,6 +38,18 @@ def show_credit(story, credit):
               credit_string += ' ' + __format_credit(story, c, style)
         return credit_string
 
+    elif credit.startswith('editing_search:'):
+        target = credit[15:]
+        if story.editing.lower().find(target.lower()) != -1:
+            formatted_credit = __format_credit(story, 'editing', style)\
+                               .replace('Editing', 'Story editing')
+        else:
+            formatted_credit = ""
+        if story.issue.editing.lower().find(target.lower()) != -1:
+            formatted_credit += __format_credit(story.issue, 'editing', style)\
+                                .replace('Editing', 'Issue editing')
+        return formatted_credit
+
     elif hasattr(story, credit):
         return __format_credit(story, credit, style)
 
