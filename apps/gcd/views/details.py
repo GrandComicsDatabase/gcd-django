@@ -472,14 +472,18 @@ def cover(request, issue_id, size):
     Display the cover for a single issue on its own page.
     """
 
+    size = int(size)
+    if size not in [ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE]:
+	raise Http404
+
     issue = get_object_or_404(Issue, id = issue_id)
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
-    cover_tag = get_image_tags_per_issue(issue, "Cover Image", int(size))
+    cover_tag = get_image_tags_per_issue(issue, "Cover Image", size)
 
     style = get_style(request)
 
-    extra = 'cover/' + size + '/' # TODO: remove abstraction-breaking hack.
+    extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
     return render_to_response(
       'gcd/details/cover.html',
