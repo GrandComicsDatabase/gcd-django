@@ -2,8 +2,7 @@ from django.contrib.auth.models import User
 from apps.gcd.models import *
 from apps.oi.models import *
 
-def create_cover_revision(cover):
-    anon = User.objects.get(id=381)
+def create_cover_revision(cover, anon):
     changeset=Changeset(indexer=anon, approver=anon, state=states.APPROVED)
     changeset.save()
     changeset.created=cover.modified
@@ -19,12 +18,14 @@ def create_cover_revision(cover):
     revision=CoverRevision(changeset=changeset, 
                            cover=cover, issue=cover.issue, 
                            file_source=cover.contributor)
+    revision.save()
     revision.created=cover.modified
     revision.save()
 
 def convert_covers():
+    anon = User.objects.get(id=381)
     covers=Cover.objects.filter(has_image=True)
     for cover in covers.iterator():
-        create_cover_revision(cover)
+        create_cover_revision(cover, anon)
 
 convert_covers()
