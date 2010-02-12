@@ -10,7 +10,6 @@
 fieldset {
     margin: 1em 0;
     padding: 0;
-    pudding: vannila;
     overflow: hidden;
     border: solid black 1px;
 }
@@ -67,7 +66,7 @@ input {
 
 fieldset.submit {
     border-style: none;
-    margin 1em;
+    margin: 1em;
 }
 
 fieldset.submit input {

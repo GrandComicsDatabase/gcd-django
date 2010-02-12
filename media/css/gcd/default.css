@@ -178,7 +178,7 @@ h1#search_id {
     background-color: #77E;
     color: black;
     margin-bottom: 1em;
-    vertical-align: center;
+    vertical-align: middle;
     border: solid 1px;
     padding: 0.6em;
     font-weight: bold;
@@ -219,7 +219,7 @@ h1#search_id {
     color: black;
     margin-bottom: 1em;
     padding: 0.6em;
-    vertical-align: center;
+    vertical-align: middle;
     border: solid 1px;
     width: 100%;
 }
