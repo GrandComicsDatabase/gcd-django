@@ -45,13 +45,15 @@ publication months of the issues, then the timeline will not be accurate.
 </p>
     {% if no_date_rows %}
 <p>
-Not all issues in this series have key dates, so not all can be sorted into
-a timeline.  The following issues can be sorted:
+Not all issues in this series have {% if bad_dates %}usable{% endif %}
+key dates, so not all can be sorted into a timeline.  The following issues
+can be sorted:
 </p>
     {% endif %}
   {% else %}
 <p>
-No issues in this series have key dates, so none can be sorted into a timeline.
+No issues in this series have {% if bad_dates %}usable{% endif %} key dates,
+so none can be sorted into a timeline.
 The following table is the same as the regular series detail table:
 </p>
   {% endif %}
@@ -110,7 +112,8 @@ divisible filter.
   {% if rows and no_date_rows %}
 </table>
 <div class="left">
-These issues have no key date and cannot be placed in a timeline:
+These issues have no {% if bad_dates %}usable{% endif %} key date and
+cannot be placed in a timeline:
 </div>
 <table class="listing">
   <tr>
