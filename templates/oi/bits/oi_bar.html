@@ -11,5 +11,6 @@
   <a href="{% url add %}">Add New</a> |
 {% if perms.gcd.can_mentor %}
   <a href="{% url mentoring %}">Mentoring</a> |
+  <a href="{% url view_profile user_id=user.id %}">Profile</a> |
 {% endif %}
 </div>
