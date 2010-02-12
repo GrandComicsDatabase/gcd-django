@@ -17,7 +17,9 @@ Reviewing :: {{ revision }}
 {% block view_body %}
 <h2>Covers for {{ issue }} 
 </h2>
+{% if covers.0.0.has_image %}
 <a href="{% url upload_cover issue_id=issue.id %}">Add variant cover</a>
+{% endif %}
 
 <table id="covers">
   <tr>
@@ -27,6 +29,7 @@ Reviewing :: {{ revision }}
       <br>
        <span class="cover_links">Zoom:
 <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}">Large</a><br>
+     {% if cover.has_image %}
         {% if perms.gcd.can_approve %}
         {% if not cover.marked %}
 <a href="{% url mark_cover cover_id=cover.id %}">Mark for replacement</a><br>
@@ -35,6 +38,7 @@ Reviewing :: {{ revision }}
         {% endif %}
         {% endif %}
 <a href="{% url replace_cover cover_id=cover.id %}">Replace cover</a>
+      {% endif %}
 </span> 
    </td>
     {% if forloop.counter|divisibleby:table_width %}

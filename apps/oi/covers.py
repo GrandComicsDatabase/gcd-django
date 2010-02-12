@@ -342,6 +342,12 @@ def upload_cover(request, cover_id=None, issue_id=None):
                                       text=form.cleaned_data['comments'],
                                       old_state=states.UNRESERVED,
                                       new_state=changeset.state)
+
+            if 'remember_source' in request.POST:
+                request.session['oi_file_source'] = request.POST['source']
+            else:
+                request.session.pop('oi_file_source','')
+
             # what other covers do we need
             # TODO change this code, show different selection
             covers_needed = Cover.objects.filter(issue__series = \
@@ -358,7 +364,13 @@ def upload_cover(request, cover_id=None, issue_id=None):
               context_instance=RequestContext(request))
     # request is a GET for the form
     else:
-        form = UploadScanForm()
+        if 'oi_file_source' in request.session:
+            vars = {'source' : request.session['oi_file_source'],
+                    'remember_source' : True}
+        else:
+            vars = None
+        form = UploadScanForm(initial=vars)
+
         # display the form
         return render_to_response(upload_template, {
                                   'form': form, 
@@ -380,9 +392,11 @@ def mark_cover(request, marked, cover_id=None, revision_id=None):
 
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
+        if cover.has_image:
+            cover.marked = marked
     else:
         cover = get_object_or_404(CoverRevision, id=revision_id)
-    cover.marked = marked
+        cover.marked = marked
     cover.save()
 
     # Typically present, but not for direct URLs

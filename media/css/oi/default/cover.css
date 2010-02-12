@@ -62,4 +62,15 @@ label {
     clear: both;
 }
 
+div.cover_large {
+    text-align: center;
+    margin-bottom: 1em;
+}
+
+div.cover_large img {
+    border: solid 1px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
 

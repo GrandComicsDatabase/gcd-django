@@ -12,11 +12,14 @@ Reviewing :: {{ revision }}
       href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/cover.css"/>
 {% endblock %}
 
 {% block view_body %}
 <h1>{{ revision }} 
 </h1>
+
 {% if revision.is_replacement %}
 <table id="covers">
 <tr>
@@ -25,7 +28,7 @@ Reviewing :: {{ revision }}
 {% else %}
 <h2> uploaded {% if current_covers %} variant {% endif %} cover </h2>
 {% endif %}
-<div id="cover_zoom">
+<div class="cover_large">
   <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a><br>
       <div class="cover_caption">
         uploaded on {{ revision.created }}<br>
@@ -47,15 +50,17 @@ Reviewing :: {{ revision }}
         <br>
       </div>
 </div>
+
 {% if revision.is_replacement %}
 </td>
 <td class="cover_grid{% if current_covers.0.0.marked %} marked{% endif %}">
  <h2>cover to be replaced</h2>
+ <div class="cover_large">
  <a href="{{ current_covers.0.0.issue.get_absolute_url }}">{{ current_covers.0.1 }}</a>
+ </div>
 </td>
 </tr>
 </table>
-{% else %}
 {% endif %}
 
 {% if current_covers %}

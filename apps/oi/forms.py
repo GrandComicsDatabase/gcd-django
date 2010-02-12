@@ -907,7 +907,10 @@ class UploadScanForm(forms.Form):
     scan = forms.ImageField(widget=forms.FileInput)
     source = forms.CharField(label='Source', required=False, 
       help_text='If you upload a scan from another website, please '
-                'ask for permission and mention the source.')
+                'ask for permission and mention the source. If you upload '
+                'on behalf of someone you can mention this here as well.')
+    remember_source = forms.BooleanField(label='Remember the source', 
+                                         required=False)
     marked = forms.BooleanField(label="Mark cover", required=False,
       help_text='Uploads of sub-standard scans for older and/or rare comics '
                 'are fine, but please mark them for replacement.')
