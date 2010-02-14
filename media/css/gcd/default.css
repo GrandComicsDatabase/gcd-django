@@ -413,6 +413,10 @@ dl.pub_data dd {
     border: solid black 1px;
 }
 
+#index_status :visited,:link {
+    color: black;
+}
+
 #index_status_inner {
     margin: 0 0.4em 0 0.4em;
 }

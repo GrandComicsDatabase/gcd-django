@@ -5,15 +5,26 @@
     {% ifequal changeset.state states.OPEN %}
   This {{ object_name }} is currently being edited by
   {{ changeset.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
-  (since {{ revision.created }}, last edit {{ revision.modified }})
+  (since {{ revision.created }},  
+      {% ifequal changeset.indexer request.user %}
+<a href="{% url edit id=changeset.id %}"> edit this change</a>)
+      {% else %}
+last edit {{ revision.modified }})
+      {% endifequal %}
     {% endifequal %}
     {% ifequal changeset.state states.PENDING %}
   Edits to this {{ object_name }}
   are currently awaiting review by a GCD Editor
+      {% if request.user.is_authenticated %}
+  (<a href="{% url compare id=changeset.id %}">view the edits</a>)
+      {% endif %}
     {% endifequal %}
     {% ifequal changeset.state states.REVIEWING %}
   Edits to this {{ object_name }}
   are being reviewed by GCD Editor {{ changeset.approver.indexer }}
+      {% if request.user.is_authenticated %}
+  (<a href="{% url compare id=changeset.id %}">view the edits</a>)
+      {% endif %}
     {% endifequal %}
 </span></div>
   {% endwith %}
