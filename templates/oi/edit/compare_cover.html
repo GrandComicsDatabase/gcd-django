@@ -107,7 +107,9 @@ Reviewing :: {{ revision }}
 </table>
 {% endif %}
 
+{% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}
+{% endwith %}
 
 {% with 1 as is_cover %}
 {% include 'oi/bits/compare_actions.html' %}

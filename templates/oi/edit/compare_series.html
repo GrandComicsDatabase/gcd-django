@@ -96,7 +96,9 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
 {% endif %}
 </table>
 
+{% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}
+{% endwith %}
 
 <p>
 <a href="{% url preview_revision model_name='series',id=revision.id %}" target=_blank>Preview</a>

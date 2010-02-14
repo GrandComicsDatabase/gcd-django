@@ -72,7 +72,9 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
   </tr>
 </table>
 
+{% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}
+{% endwith %}
 
 <p>
 <a href="{% url preview_revision id=revision.id,model_name='indicia_publisher' %}" target=_blank>Preview</a>

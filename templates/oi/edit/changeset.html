@@ -181,7 +181,9 @@
     {% endwith %}
     {% endif %}
 
+    {% with changeset.comments as comments %}
     {% include 'oi/bits/comments.html' %}
+    {% endwith %}
     {% ifequal changeset.issuerevisions.count 1 %}
         <p>
         <a href="{% url compare id=changeset.id %}">Compare changes</a> | 

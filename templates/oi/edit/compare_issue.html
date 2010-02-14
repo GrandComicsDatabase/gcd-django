@@ -52,6 +52,7 @@ Links open in new windows.
 </p>
 
 <table class="comparison">
+<a name="{{ revision.id }}"></a>
   <tr>
     <th> Field </th>
     <th> Current </th>
@@ -151,6 +152,14 @@ Links open in new windows.
   </tr>
 </table>
 
+{% if revision.comments.count %}
+{% with revision.comments as comments %}
+{% with 1 as no_links %}
+{% include 'oi/bits/comments.html' %}
+{% endwith %}
+{% endwith %}
+{% endif %}
+
 <hr>
 
 {% for story_revision in revision.ordered_story_revisions %}
@@ -167,7 +176,9 @@ Links open in new windows.
 {% endfor %}
 
 <h3> Comments </h3>
+{% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}
+{% endwith %}
 
 <p>
 {% ifequal user revision.changeset.indexer %}

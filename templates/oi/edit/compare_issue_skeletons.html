@@ -141,7 +141,9 @@ Non-default fields are <span class="comparison_highlight">highlighted.</span>
 {% endfor %}
 
 <h3> Comments </h3>
+{% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}
+{% endwith %}
 
 {% include 'oi/bits/compare_actions.html' %}
 

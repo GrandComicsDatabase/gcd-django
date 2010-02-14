@@ -2,6 +2,7 @@
 {% load display %}
 
 <h3> Sequence {{ story_revision.sequence_number }} 
+<a name="{{ story_revision.id }}"></a>
 {% ifequal user revision.changeset.indexer %}
 {% ifequal changeset.state states.OPEN %}
 <span class="story_edit">
@@ -157,3 +158,10 @@
   {% endif %}
 </table>
 
+{% if story_revision.comments.count %}
+{% with story_revision.comments as comments %}
+{% with 1 as no_links %}
+{% include 'oi/bits/comments.html' %}
+{% endwith %}
+{% endwith %}
+{% endif %}
