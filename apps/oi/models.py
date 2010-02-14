@@ -1565,8 +1565,7 @@ class IssueRevision(Revision):
         issue.save()
         if self.issue is None:
             # TODO: Remove cover code (and maybe series?) when we can.
-            issue.cover_set.create(code='000', series=self.series,
-                                   modified=datetime.now())
+            issue.cover_set.create(modified=datetime.now())
 
             self.issue = issue
             self.save()
