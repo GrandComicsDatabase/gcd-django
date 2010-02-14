@@ -69,15 +69,16 @@ def get_preview_image_tag(revision, alt_text, zoom_level, no_cache=False):
             # It is the real uploaded file for uploads on the new server, and
             # the large scan for older uploads, copied on replacement.
             suffix = "/uploads/%d_%s" % (revision.cover.id, 
-                     revision.cover.last_upload.strftime('%Y%m%d_%H%M%S'))
+                     revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
             if revision.created > datetime(2009,10,2,14,0,0):
                 filename = glob.glob(revision.cover.base_dir() + suffix + '*')[0]
                 file_extension = os.path.splitext(filename)[1]
             else:
                 file_extension = ".jpg"
             # TODO:
-            suffix = "%d/uploads/%d_%s" % (int(revision.cover.id/1000), revision.cover.id,
-                     revision.created.strftime('%Y%m%d_%H%M%S'))
+            suffix = "%d/uploads/%d_%s" % (int(revision.cover.id/1000), 
+                     revision.cover.id,
+                     revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
             img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR +\
                       suffix + file_extension
             return mark_safe('<img src="' + img_url + '" alt="' + \
@@ -121,7 +122,7 @@ def copy_approved_cover(cover_revision):
         if old_cover.created <= datetime(2009,10,2,14,0,0):
             # uploaded file too old, not stored, copy large file
             suffix = "/uploads/%d_%s.jpg" % (cover.id, 
-                     old_cover.created.strftime('%Y%m%d_%H%M%S'))
+                     old_cover.changeset.created.strftime('%Y%m%d_%H%M%S'))
             target_name = cover.base_dir() + suffix
             source_name = cover.base_dir() + "/w400/%d.jpg" % cover.id
             shutil.move(source_name, target_name)
@@ -130,7 +131,7 @@ def copy_approved_cover(cover_revision):
                             str(cover_revision.id) + '*')[0]
 
     target_name = "%s/uploads/%d_%s%s" % (cover.base_dir(), cover.id, 
-                    cover.last_upload.strftime('%Y%m%d_%H%M%S'),
+                    cover_revision.changeset.created.strftime('%Y%m%d_%H%M%S'),
                     os.path.splitext(source_name)[1])
     shutil.move(source_name, target_name)
 
