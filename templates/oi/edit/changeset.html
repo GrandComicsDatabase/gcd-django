@@ -151,7 +151,7 @@
             </input>
           </form>
           {% if not story.story %}
-          <form style="display:inline;" method="GET"
+          <form class="story_remove" method="GET"
                 action="{% url remove_story_revision id=story.id %}">
             <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
                    value="Remove">

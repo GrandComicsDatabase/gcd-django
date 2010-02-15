@@ -68,6 +68,11 @@ table.story_list td {
     padding-left: 0.5em;
 }
 
+form.story_remove{
+    display: inline;
+    padding-left: 2em;
+}
+
 form#review {
     margin-bottom: 1em;
 }
