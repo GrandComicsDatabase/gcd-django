@@ -268,6 +268,8 @@ Hello from the %s!
   Your change for "%s" was rejected by GCD editor %s with the comment:
 "%s"
 
+You can view the full change at %s.
+
 If you disagree please either contact the editor directly via the e-mail 
 %s or post a message on the main mailing-list 
 which is also reachable via http://groups.google.com/group/gcd-main.
@@ -279,6 +281,8 @@ thanks,
            unicode(changeset),
            unicode(changeset.approver.indexer),
            notes,
+           settings.SITE_URL.rstrip('/') +
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
            changeset.approver.email,
            settings.SITE_NAME,
            settings.SITE_URL)
@@ -291,6 +295,34 @@ thanks,
         else:
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
     else:
+        if changeset.approver:
+            if request.POST['comments']:
+                comment = u'The discard includes the comment:\n"%s"' % \
+                          request.POST['comments'] 
+            else:
+                comment = ''   
+            email_body = u"""
+Hello from the %s!
+
+
+  The change for "%s" by %s which you were reviewing was discarded. %s
+
+You can view the full change at %s.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+               unicode(changeset),
+               unicode(changeset.indexer.indexer),
+               comment,
+               settings.SITE_URL.rstrip('/') +
+                 urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+               settings.SITE_NAME,
+               settings.SITE_URL)
+
+            changeset.approver.email_user('Reviewed GCD change discarded', 
+              email_body, settings.EMAIL_INDEXING)
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
 @permission_required('gcd.can_approve')
