@@ -173,6 +173,37 @@ def edit_covers(request, issue_id):
       context_instance=RequestContext(request)
     )
 
+
+@login_required
+def uploaded_cover(request, revision_id):
+    """
+    On successful upload display the cover and show further possibilities
+    """
+    uploaded_template = 'oi/edit/upload_cover_complete.html'
+ 
+    # what other covers do we need
+    # TODO change this code
+    # - show different selection
+    # - links to next issue
+    # - upload another variant
+    # - add discard button for undo of wrong upload
+    # - ...
+    revision = get_object_or_404(CoverRevision, id=revision_id)
+    if revision.cover:
+        issue = revision.cover.issue
+    else:
+        issue = revision.issue
+
+    covers_needed = Cover.objects.filter(issue__series=issue.series).\
+                      exclude(marked=False, has_image=True)[:15]
+    tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
+    return render_to_response(uploaded_template, {
+              'covers_needed' :  covers_needed,
+              'issue' : issue,
+              'tag'   : tag},
+              context_instance=RequestContext(request))
+
+
 @login_required
 def upload_cover(request, cover_id=None, issue_id=None):
     """
@@ -187,7 +218,6 @@ def upload_cover(request, cover_id=None, issue_id=None):
         raise ValueError
 
     upload_template = 'oi/edit/upload_cover.html'
-    uploaded_template = 'oi/edit/upload_cover_complete.html'
     style = 'default'
 
     # set cover, issue, covers, replace_cover, upload_type
@@ -349,20 +379,9 @@ def upload_cover(request, cover_id=None, issue_id=None):
             else:
                 request.session.pop('oi_file_source','')
 
-            # what other covers do we need
-            # TODO change this code, show different selection
-            covers_needed = Cover.objects.filter(issue__series = \
-              issue.series).exclude(marked = False, has_image = True)
-            covers_needed = covers_needed.exclude(marked = False,
-                                                  has_image = True)[:15]
-            tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
-            return render_to_response(uploaded_template, {
-              'cover' : cover,
-              'covers_needed' :  covers_needed,
-              'issue' : issue,
-              'tag'   : tag,
-              'style' : style},
-              context_instance=RequestContext(request))
+            return HttpResponseRedirect(urlresolvers.reverse('upload_cover_complete',
+                kwargs={'revision_id': revision.id} ))
+
     # request is a GET for the form
     else:
         if 'oi_file_source' in request.session:
