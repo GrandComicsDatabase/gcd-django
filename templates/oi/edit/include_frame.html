@@ -2,7 +2,9 @@
   <table class="editing">
   {{ form.as_table }}
   </table>
+  {% with changeset.comments as comments %}
   {% include 'oi/bits/comments.html' %}
+  {% endwith %}
 
   {% ifequal revision.source_label "story" %}
 <input type="submit" name="save" value="Save and continue editing"></input>

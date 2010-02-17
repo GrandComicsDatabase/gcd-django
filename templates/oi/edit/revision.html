@@ -24,7 +24,9 @@
   <table class="editing">
   {{ form.as_table }}
   </table>
+  {% with changeset.comments as comments %}
   {% include 'oi/bits/comments.html' %}
+  {% endwith %}
 
 <input type="submit" name="save" value="Save and continue editing"></input>
 <input type="submit" name="save_return" value="Save and return to changeset"></input>
