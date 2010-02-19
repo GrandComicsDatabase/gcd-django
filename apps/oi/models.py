@@ -1201,12 +1201,6 @@ class SeriesRevision(Revision):
         return self.series.issue_set
     issue_set = property(_issue_set)
 
-    def _cover_set(self):
-        if self.series is None:
-            return Cover.objects.filter(pk__isnull=True)
-        return self.series.cover_set
-    cover_set = property(_cover_set)
-
     def _has_gallery(self):
         if self.series is None:
             return False

@@ -191,7 +191,12 @@ def show_series(request, series, preview=False):
     """
     Handle the main work of displaying a series.  Also used by OI previews.
     """
-    covers = Cover.objects.filter(issue__series=series).select_related('issue')
+    if preview:
+        covers = Cover.objects.filter(issue__series=series.series)\
+                 .select_related('issue')
+    else:
+        covers = Cover.objects.filter(issue__series=series)\
+                 .select_related('issue')
     issues = series.issue_set.all()
     
     try:
