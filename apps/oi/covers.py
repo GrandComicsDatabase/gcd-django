@@ -41,7 +41,7 @@ NEW_COVERS_LOCATION = settings.IMAGE_SERVER_URL + settings.NEW_COVERS_DIR
 # only while testing:
 NEW_COVERS_LOCATION = settings.MEDIA_URL + LOCAL_NEW_SCANS
 
-def get_preview_image_tag(revision, alt_text, zoom_level, no_cache=False):
+def get_preview_image_tag(revision, alt_text, zoom_level):
     if revision is None:
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
                'img/nocover.gif" alt="No image yet" class="cover_img"/>')
@@ -89,6 +89,25 @@ def get_preview_image_tag(revision, alt_text, zoom_level, no_cache=False):
           revision.changeset.created.strftime('%B_%Y/').lower() + suffix
         return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) \
                + '" ' + width_string + ' class="cover_img"/>')
+
+
+def get_preview_image_tags_per_page(page, series=None):
+    """
+    Produces a list of cover tags for the pending covers in a page.
+    Intended for use as a callback with paginate_response().
+    """
+
+    cover_tags = []
+    for change in page.object_list:
+        # TODO if we ever do bulk uploads of covers this might need to change,
+        # although we might generate one changeset for each cover there as well
+        cover = change.coverrevisions.all()[0]
+        issue = cover.issue
+        alt_string = issue.series.name + ' #' + issue.number
+        cover_tags.append([cover, issue, get_preview_image_tag(cover,
+                                                               alt_string,
+                                                               ZOOM_SMALL)])
+    return cover_tags
 
 
 def _create_cover_dir(scan_dir):

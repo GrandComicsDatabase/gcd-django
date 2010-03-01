@@ -21,7 +21,8 @@ from apps.gcd.views.covers import get_image_tag, ZOOM_LARGE, ZOOM_MEDIUM, \
 from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
 from apps.oi.forms import *
-from apps.oi.covers import get_preview_image_tag, copy_approved_cover
+from apps.oi.covers import get_preview_image_tag, \
+                           get_preview_image_tags_per_page, copy_approved_cover
 
 REVISION_CLASSES = {
     'publisher': PublisherRevision,
@@ -1559,16 +1560,6 @@ def show_cover_queue(request):
       cover_revision_count=Count('coverrevisions')).filter(
       cover_revision_count=1, state__in=(states.PENDING, states.REVIEWING))
 
-    cover_tags = []
-    for cover_changeset in covers:
-        cover = cover_changeset.coverrevisions.all()[0]
-        issue = cover.issue
-        cover_series = issue.series
-        alt_string = cover_series.name + ' #' + issue.number
-        cover_tags.append([cover, issue, get_preview_image_tag(cover,
-                                                       alt_string,
-                                                       ZOOM_SMALL)])
-
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 5
 
@@ -1578,13 +1569,10 @@ def show_cover_queue(request):
       'oi/queues/covers.html',
       {
         'table_width' : table_width,
-        'tags' : cover_tags, 
       },
-      page_size=50)
-    return render_to_response('oi/queues/covers.html', {
-                              'tags' : cover_tags },
-                              context_instance=RequestContext(request))
-
+      page_size=50,
+      callback_key='tags',
+      callback=get_preview_image_tags_per_page)
 
 @login_required
 def compare(request, id):
