@@ -14,7 +14,11 @@
   <td> <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
   <td> {{ issue.indicia_publisher|absolute_url|default:"?" }} </td>
   {% if brand_present %}
+    {% if issue.no_brand %}
+  <td>&nbsp;</td>
+    {% else %}
   <td> {{ issue.brand|absolute_url|default:"?" }} </td>
+    {% endif %}
   {% endif %}
   <td> {{ issue|show_page_count }} </td>
   <td> {{ issue.price|default:"" }} </td>
