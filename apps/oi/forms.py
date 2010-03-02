@@ -399,8 +399,9 @@ class IssueRevisionForm(forms.ModelForm):
                 'cover date.  For the month (MM) on quarterlies, use 04 for '
                 'Spring, 07 for Summer, 10 for Fall and 01 or 12 for Winter (in '
                 'the northern hemisphere, shift accordingly in the southern).  For '
-                'annuals use a month of 00 or 13 or whatever sorts it best.  When '
-                'in doubt, use anything that produces the correct sorting.')
+                'annuals use a month of 00 or 13 or whatever sorts it best.  If '
+                'and only if none of these rules fit, use anything that produces '
+                'the correct sorting.')
 
     indicia_frequency = forms.CharField(required=False,
       help_text='If relevant, the frequency of publication specified in the '
@@ -418,7 +419,10 @@ class IssueRevisionForm(forms.ModelForm):
                 'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
-                                    max_digits=10, decimal_places=3)
+                                    max_digits=10, decimal_places=3,
+      help_text="Count of all pages in the issue, including the covers but "
+                "excluding dust jackets and inserts.  A single sheet of paper "
+                "folded in half would count as 4 pages.")
     page_count_uncertain = forms.BooleanField(required=False,
       help_text="Check if you do not know or aren't sure about the page count.")
 
@@ -496,7 +500,11 @@ class BulkIssueRevisionForm(forms.Form):
                 'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
     page_count = forms.DecimalField(required=False,
-                                    max_digits=10, decimal_places=3)
+                                    max_digits=10, decimal_places=3,
+      help_text="Count of all pages in the issue, including the covers but "
+                "excluding dust jackets and inserts.  A single sheet of paper "
+                "folded in half would count as 4 pages.")
+
     page_count_uncertain = forms.BooleanField(required=False,
       help_text="Check if you do not know or aren't sure about the page count.")
 
