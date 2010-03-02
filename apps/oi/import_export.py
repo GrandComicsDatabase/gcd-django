@@ -1,3 +1,8 @@
+import sys
+import re
+import tempfile
+import os
+from codecs import EncodedFile, BOM_UTF16
 from decimal import Decimal, InvalidOperation
 
 from django.http import HttpResponseRedirect
@@ -42,6 +47,149 @@ REPRINT_INFO = 13
 SYNOPSIS = 14
 STORY_NOTES = 15
 
+# based on http://www.smontanaro.net/python/decodeh.py
+def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
+    """
+    Try interpreting s using several possible encodings.
+    The return value is a two-element tuple.  The first element is either an
+    ASCII string or a Unicode object.  The second element is True if the 
+    decoder was not successfully.
+    """
+    if isinstance(s, unicode):
+        return s, False
+    try:
+        x = unicode(s, "ascii")
+        # if it's ascii, we're done
+        return s, False
+    except UnicodeError:
+        encodings = ["utf-8","iso-8859-1","cp1252","iso-8859-15"]
+        # if the default encoding is not ascii it's a good thing to try
+        if denc != "ascii": encodings.insert(0, denc)
+        # always try any caller-provided encoding first
+        if enc: encodings.insert(0, enc)
+        for enc in encodings:
+
+            # Most of the characters between 0x80 and 0x9F are displayable
+            # in cp1252 but are control characters in iso-8859-1.  Skip
+            # iso-8859-1 if they are found, even though the unicode() call
+            # might well succeed.
+
+            if (enc in ("iso-8859-15", "iso-8859-1") and
+                re.search(r"[\x80-\x9f]", s) is not None):
+                continue
+
+            # Characters in the given range are more likely to be 
+            # symbols used in iso-8859-15, so even though unicode()
+            # may accept such strings with those encodings, skip them.
+
+            if (enc in ("iso-8859-1", "cp1252") and
+                re.search(r"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s) is not None):
+                continue
+
+            try:
+                x = unicode(s, enc)
+            except UnicodeError:
+                pass
+            else:
+                if x.encode(enc) == s:
+                    return x, False
+
+        return x, True
+
+
+def _handle_import_error(request, changeset, error_text):
+    response = render_error(request,
+      '%s Back to the <a href="%s">editing page</a>.' % \
+        (error_text, urlresolvers.reverse('edit', 
+                                          kwargs={'id': changeset.id})), 
+      is_safe=True)
+    # there might be a temporary file attached
+    try:
+        request.tmpfile.close()
+        os.remove(request.tmpfile_name)
+    except AttributeError:
+        pass
+    return response, True
+    
+
+def _process_file(request, changeset, is_issue):
+    '''
+    checks the file useable encodings and correct lengths
+    '''
+    # we need a real file to be able to use pythons Universal Newline Support
+    tmpfile_handle, tmpfile_name = tempfile.mkstemp(".import")
+    for chunk in request.FILES['flatfile'].chunks():
+        os.write(tmpfile_handle, chunk)
+    os.close(tmpfile_handle)
+    tmpfile = open(tmpfile_name, 'U')
+    request.tmpfile = tmpfile 
+    request.tmpfile_name = tmpfile_name
+
+    # check if file starts with byte order mark
+    if tmpfile.read(2) == BOM_UTF16:
+        enc = 'utf-16'
+        # use EncodedFile from codecs to get transparent encoding translation
+        upload = EncodedFile(tmpfile, enc)
+    # otherwise just do as usual
+    else:
+        upload = tmpfile
+        # charset was None in my local tests, not sure if actually useful here
+        enc = request.FILES['flatfile'].charset
+    tmpfile.seek(0)
+
+    lines = []
+    empty_line = False
+    # process the file into a list of lines and check for length
+    for line in upload:
+        # see if the line can be decoded
+        decoded_line, failure = decode_heuristically(line, enc=enc)
+        if failure:
+            error_text = 'line %s has unknown file encoding.' % line
+            return _handle_import_error(request, changeset, error_text)
+
+        split_line = decoded_line.strip('\n').split('\t')
+
+        # if is_issue is set, the first line should be issue line
+        if is_issue and not lines: 
+            # check number of fields
+            if len(split_line) != ISSUE_FIELDS:
+                error_text = 'issue line %s has %d fields, it must have %d.' \
+                             % (split_line, len(split_line), ISSUE_FIELDS)
+                return _handle_import_error(request, changeset, error_text)
+
+        # later lines are story lines
+        else: 
+            # we had an empty line just before
+            if empty_line: 
+                error_text = 'The file includes an empty line.'
+                return _handle_import_error(request, changeset, error_text)
+            # we have an empty line now, OK if it is the last line
+            if len(split_line) == 1: 
+                empty_line = True
+                continue
+
+            # check number of fields
+            if len(split_line) != SEQUENCE_FIELDS:
+                error_text = 'sequence line %s has %d fields, it must have %d.' \
+                    % (split_line, len(split_line), SEQUENCE_FIELDS)
+                return _handle_import_error(request, changeset, error_text)
+
+            # check here for story_type, otherwise sequences up to an error
+            # will be be added
+            response, failure = _find_story_type(request, changeset, 
+                                                 split_line)
+            if failure:
+                return response, True
+
+        lines.append(split_line)
+
+    tmpfile.close()
+    os.remove(tmpfile_name)
+    del request.tmpfile
+    del request.tmpfile_name
+    return lines, False
+
+
 # order of the fields in line with the OI, but not
 # all fields (i.e. no_...) are present explicitly
 # relevant documentation and order is here:
@@ -81,6 +229,18 @@ def _parse_volume(volume):
     return volume, no_volume
 
 
+def _find_story_type(request, changeset, split_line):
+    ''' make sure that we have a valid StoryType '''
+    try:
+        story_type = StoryType.objects.get(name=split_line[TYPE].\
+                                                strip().lower)
+        return story_type, False
+    except StoryType.DoesNotExist:
+        error_text = 'Story type "%s" in line %s does not exist.' \
+            % (esc(split_line[TYPE]), esc(split_line))
+        return _handle_import_error(request, changeset, error_text)        
+
+
 def _import_sequences(request, issue_id, changeset, lines, running_number):
     """
     Processing of story lines happens here. 
@@ -90,14 +250,10 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
     """
 
     for fields in lines:
-        try:
-            story_type = StoryType.objects.get(name=fields[TYPE].strip().lower)
-        except StoryType.DoesNotExist:
-            return render_error(request,
-              'Story type "%s" in line %s does not exist.' 
-              ' Back to the <a href="%s">editing page</a>.' \
-              % (esc(fields[TYPE]), esc(fields), urlresolvers.reverse('edit', 
-                 kwargs={'id': changeset.id})), is_safe=True)
+        story_type, failure = _find_story_type(request, changeset, fields)
+        if failure:
+            return story_type
+
         title = fields[TITLE].strip()
         if title.startswith('[') and title.endswith(']'):
             title = title[1:-1]
@@ -157,38 +313,8 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
       kwargs={ 'id': changeset.id }))
 
 
-def _process_issue_file(request, changeset):
-    lines = []
-    # process the file into a list of lines and check for length
-    for line in request.FILES['flatfile']:
-        if not lines: # first line is issue line
-            if len(line.split('\t')) != ISSUE_FIELDS:
-                response = render_error(request,
-                  'issue line %s has %d fields, it must have %d. '
-                  'Back to the <a href="%s">editing page</a>.' % \
-                    (line.strip('\n').split('\t'),
-                     len(line.strip('\n').split('\t')), ISSUE_FIELDS,
-                     urlresolvers.reverse('edit', 
-                     kwargs={'id': changeset.id})), 
-                  is_safe=True)
-                return response, True
-        else: # others are story lines
-            if len(line.split('\t')) != SEQUENCE_FIELDS:
-                response = render_error(request,
-                  'sequence line %s has %d fields, it must have %d. '
-                  'Back to the <a href="%s">editing page</a>.' % \
-                    (line.strip('\n').split('\t'),
-                     len(line.strip('\n').split('\t')), SEQUENCE_FIELDS,
-                     urlresolvers.reverse('edit', 
-                     kwargs={'id': changeset.id})), 
-                  is_safe=True)
-                return response, True
-        lines.append(line.strip('\n').split('\t'))
-    return lines, False
-
-
-def _find_publisher_object(request, name, publisher_objects, 
-                           object_type, publisher, changeset):
+def _find_publisher_object(request, changeset, name, publisher_objects, 
+                           object_type, publisher):
     if not name:
         return None, False
 
@@ -197,13 +323,9 @@ def _find_publisher_object(request, name, publisher_objects,
     if publisher_objects.count() == 1:
         return publisher_objects[0], False
     else:
-        response = render_error(request,
-          '%s "%s" does not exists for publisher '
-          '%s. Back to the <a href="%s">editing page</a>.' % \
-            (object_type, esc(name), esc(publisher), 
-            urlresolvers.reverse('edit', kwargs={'id': changeset.id})), 
-          is_safe=True)
-        return response, True
+        error_text = '%s "%s" does not exist for publisher %s.' % \
+          (object_type, esc(name), esc(publisher))
+        return _handle_import_error(request, changeset, error_text)        
 
 
 @permission_required('gcd.can_reserve')
@@ -222,7 +344,7 @@ def import_issue_from_file(request, issue_id, changeset_id):
                   ' changeset. Back to the <a href="%s">editing page</a>.'\
                    % (esc(issue_revision), urlresolvers.reverse('edit', 
                       kwargs={'id': changeset.id})), is_safe=True)
-            lines, failure = _process_issue_file(request, changeset)
+            lines, failure = _process_file(request, changeset, is_issue=True)
             if failure:
                 return lines
 
@@ -233,10 +355,9 @@ def import_issue_from_file(request, issue_id, changeset_id):
               _parse_volume(issue_fields[VOLUME].strip())
 
             indicia_publisher, failure = _find_publisher_object(request,
-              issue_fields[INDICIA_PUBLISHER].strip(), 
-              IndiciaPublisher.objects.all(), 
-              "Indicia publisher", issue_revision.issue.series.publisher,
-              changeset)
+              changeset, issue_fields[INDICIA_PUBLISHER].strip(), 
+              IndiciaPublisher.objects.all(), "Indicia publisher", 
+              issue_revision.issue.series.publisher)
             if failure:
                 return indicia_publisher
             else:
@@ -244,9 +365,9 @@ def import_issue_from_file(request, issue_id, changeset_id):
 
             brand_name, issue_revision.no_brand = \
               _check_for_none(issue_fields[BRAND])
-            brand, failure = _find_publisher_object(request,
+            brand, failure = _find_publisher_object(request, changeset, 
               brand_name, Brand.objects.all(), "Brand", 
-              issue_revision.issue.series.publisher, changeset)
+              issue_revision.issue.series.publisher)
             if failure:
                 return brand
             else:
@@ -291,18 +412,9 @@ def import_sequences_from_file(request, issue_id, changeset_id):
         # Process add form if this is a POST.
         if request.method == 'POST' and 'flatfile' in request.FILES:
             issue_revision = changeset.issuerevisions.get(issue=issue_id)
-            lines = []
-            # check for right number of fields and build list
-            for line in request.FILES['flatfile']:
-                if len(line.split('\t')) != SEQUENCE_FIELDS:
-                    return render_error(request,
-                      'The line %s has %d fields, it must have %d.' 
-                      ' Back to the <a href="%s">editing page</a>.'% \
-                        (esc(line.strip('\n').split('\t')), 
-                         len(line.strip('\n').split('\t')), SEQUENCE_FIELDS, 
-                         urlresolvers.reverse('edit', 
-                         kwargs={'id': changeset.id})), is_safe=True)
-                lines.append(line.strip('\n').split('\t'))
+            lines, failure = _process_file(request, changeset, is_issue=False)
+            if failure:
+                return lines
             running_number = issue_revision.next_sequence_number()
             return _import_sequences(request, issue_id, changeset, 
                                      lines, running_number)

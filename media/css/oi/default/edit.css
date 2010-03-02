@@ -68,6 +68,14 @@ table.story_list td {
     padding-left: 0.5em;
 }
 
+table.story_list td.import_info {
+    padding: 0.5em;
+}
+
+form.changeset{
+    display: inline;
+}
+
 form.story_remove{
     display: inline;
     padding-left: 2em;
