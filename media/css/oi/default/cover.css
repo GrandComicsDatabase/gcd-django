@@ -29,6 +29,11 @@ label {
     float: left;
 }
 
+div.success {
+    clear: left; 
+    padding: 1em;
+}
+
 .errorlist li {
     list-style: none;
     color: red;

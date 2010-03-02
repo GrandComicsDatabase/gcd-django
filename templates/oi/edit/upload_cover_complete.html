@@ -26,13 +26,16 @@ Cover {{ already }} uploaded for
 </div>
 </div>
 
+<div class="success">
+This cover upload has been succesfully submitted and is awaiting approval by an editor.
+</div>
 
 <div>
   <div id="cover_uploaded">
-    <a href="{{ issue.get_absolute_url }}">{{ tag|safe }}</a><br/>
-    <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Zoom</a><br>
-    <a href="{{ issue.series.get_absolute_url}}scans/?style={{ style }}">Cover Scan Status</a><br/>
-    <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover Gallery</a>
+    <a href="{% url compare id=revision.changeset.id %}">{{ tag|safe }}</a><br/>
+    <a href="{% url compare id=revision.changeset.id %}">Zoom / Compare</a><br>
+    <a href="{{ issue.series.get_absolute_url}}scans/?style={{ style|default:'default' }}">Cover Scan Status</a><br/>
+    <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style|default:'default' }}">Cover Gallery</a>
   </div>
 <div>
 {% if covers_needed %}
@@ -47,7 +50,8 @@ Cover {{ already }} uploaded for
   {% endfor %}
    </ul>
   {% endif %}
-<a href="{{ issue.series.get_absolute_url }}">Back to the series.</a>
+<a href="{{ issue.series.get_absolute_url }}">Back to the series</a>
+<br><a href="{{ issue.get_absolute_url }}">Back to the issue</a>
 </div>
 </div>
 {% endblock %}

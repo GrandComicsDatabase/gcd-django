@@ -218,6 +218,7 @@ def uploaded_cover(request, revision_id):
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
     return render_to_response(uploaded_template, {
               'covers_needed' :  covers_needed,
+              'revision': revision,
               'issue' : issue,
               'tag'   : tag},
               context_instance=RequestContext(request))

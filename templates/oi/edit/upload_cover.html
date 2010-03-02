@@ -40,6 +40,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
         <form action="{% url upload_cover issue_id=cover.issue.id %}" method="post" enctype="multipart/form-data">
     {% endifequal %}
     <table class="editing">
+    <input type="submit" value="Upload">
     {{ form.as_table }}
     </table>
     <input type="submit" value="Upload">
