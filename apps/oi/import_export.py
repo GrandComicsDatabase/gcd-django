@@ -104,17 +104,22 @@ def _handle_import_error(request, changeset, error_text):
                                           kwargs={'id': changeset.id})), 
       is_safe=True)
     # there might be a temporary file attached
-    try:
+    if hasattr(request, "tmpfile"):
         request.tmpfile.close()
         os.remove(request.tmpfile_name)
-    except AttributeError:
-        pass
     return response, True
     
 
 def _process_file(request, changeset, is_issue):
     '''
     checks the file useable encodings and correct lengths
+    returns two values
+    if all correct:
+      - a list of the processed lines (which are lists of the values)
+      - False for no failure
+    if some error:
+      - error message
+      - True for having failed
     '''
     # we need a real file to be able to use pythons Universal Newline Support
     tmpfile_handle, tmpfile_name = tempfile.mkstemp(".import")
@@ -230,7 +235,16 @@ def _parse_volume(volume):
 
 
 def _find_story_type(request, changeset, split_line):
-    ''' make sure that we have a valid StoryType '''
+    ''' 
+    make sure that we have a valid StoryType 
+    returns two values
+    if all correct:
+      - the story type
+      - False for no failure
+    if some error:
+      - error message
+      - True for having failed
+    '''
     try:
         story_type = StoryType.objects.get(name=split_line[TYPE].\
                                                 strip().lower)
