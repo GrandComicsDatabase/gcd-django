@@ -90,7 +90,7 @@ def get_image_tags_per_page(page, series=None):
 
     cover_tags = []
     cover_series=series
-    for cover in page.object_list:
+    for cover in page.object_list.select_related('issue__series__publisher'):
         if series is None:
             cover_series = cover.issue.series
         issue = cover.issue
