@@ -101,7 +101,8 @@ def get_preview_image_tags_per_page(page, series=None):
     for change in page.object_list:
         # TODO if we ever do bulk uploads of covers this might need to change,
         # although we might generate one changeset for each cover there as well
-        cover = change.coverrevisions.all()[0]
+        cover = change.coverrevisions.select_related('changeset__indexer',
+                                     'issue__series__publisher').all()[0]
         issue = cover.issue
         alt_string = issue.series.name + ' #' + issue.number
         cover_tags.append([cover, issue, get_preview_image_tag(cover,
