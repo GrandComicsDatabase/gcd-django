@@ -66,6 +66,8 @@ def generic_by_name(request, name, q_obj, sort,
                                      "sequence_number")
         elif (sort == ORDER_CHRONO):
             things = things.order_by("issue__key_date",
+                                     "issue__series__name",
+                                     "issue__series__year_began",
                                      "sequence_number")
         heading = 'Story Search Results'
 
