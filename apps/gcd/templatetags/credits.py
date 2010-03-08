@@ -36,6 +36,9 @@ def show_credit(story, credit):
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
             if getattr(story, c).lower().find(target.lower()) != -1:
               credit_string += ' ' + __format_credit(story, c, style)
+        if story.issue.editing.lower().find(target.lower()) != -1:
+            credit_string += __format_credit(story.issue, 'editing', style)\
+                             .replace('Editing', 'Issue editing')
         return credit_string
 
     elif credit.startswith('editing_search:'):
