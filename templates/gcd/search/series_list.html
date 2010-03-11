@@ -17,20 +17,22 @@
     <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country.code|lower }}.png" alt="{{ series.country.code|upper }}">
     <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
-    <td> {{ series.year_began }}
+    <td> {{ series.year_began }} </td>
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }}</td>
+    <td>
     {% if not series.scan_needed %}
-    <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
+    <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
     {% else %}
       {% if series.has_gallery %}
-        <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
+        <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
         {{ series.scan_count}}</a>
         (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need 
         {{ series.scan_needed }}</a>)
       {% else %}
-        <td> <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
+        <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
       {% endif %}
     {% endif %}
+    </td>
     <td> {{ series.publication_dates }} </td>
   </tr>
 {% endfor %}
