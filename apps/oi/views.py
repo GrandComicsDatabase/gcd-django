@@ -473,7 +473,8 @@ thanks,
         cover_was_approved = True
             
     # Move brand new indexers to probationary status on first approval.
-    if changeset.indexer.indexer.max_reservations == settings.RESERVE_MAX_INITIAL:
+    if not cover_was_approved and \
+      changeset.indexer.indexer.max_reservations == settings.RESERVE_MAX_INITIAL:
         i = changeset.indexer.indexer
         i.max_reservations = settings.RESERVE_MAX_PROBATION
         i.max_ongoing = settings.RESERVE_MAX_ONGOING_PROBATION
