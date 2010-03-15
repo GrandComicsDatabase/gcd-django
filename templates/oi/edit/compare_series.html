@@ -80,13 +80,11 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <td> {{ revision.series.notes|linebreaksbr }} </td>
     <td> {{ revision.notes|linebreaksbr }} </td>
   </tr>
-{% if revision.source.format or revision.changed.format %}
   <tr class="{{ revision.changed.format }}">
     <td class="field_name"> Format </td>
     <td> {{ revision.series.format }} </td>
     <td> {{ revision.format }} </td>
   </tr>
-{% endif %}
 {% if revision.changed.imprint %}
   <tr class="{{ revision.changed.imprint }}">
     <td class="field_name"> Imprint </td>
