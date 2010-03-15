@@ -94,7 +94,7 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
                 if x.encode(enc) == s:
                     return x, False
 
-        return x, True
+        return s, True
 
 
 def _handle_import_error(request, changeset, error_text):
