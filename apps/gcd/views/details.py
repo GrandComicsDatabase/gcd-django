@@ -571,9 +571,14 @@ def issue_form(request):
 
     id = params['id']
     del params['id']
+    if 'extra' in params:
+        extra = params['extra']
+        del params['extra']
+    else:
+        extra = ''
     try:
         return HttpResponseRedirect(
-          urlresolvers.reverse(issue, kwargs={ 'issue_id': int(id) }) +
+          urlresolvers.reverse(issue, kwargs={ 'issue_id': int(id) }) + extra +
           '?' + params.urlencode())
     except ValueError:
         raise Http404
