@@ -1498,8 +1498,10 @@ def show_queue(request, queue_name, state):
 
     issue_annotated = Changeset.objects.annotate(
       issue_revision_count=Count('issuerevisions'))
-    bulk_issue_adds = issue_annotated.filter(issue_revision_count__gt=1, **kwargs)
-    issues = issue_annotated.filter(issue_revision_count=1, **kwargs)
+    bulk_issue_adds = issue_annotated.exclude(issue_revision_count__lt=1)\
+                      .filter(issuerevisions__issue=None, **kwargs)
+    issues = issue_annotated.filter(issue_revision_count=1, **kwargs)\
+             .exclude(issuerevisions__issue=None)
 
     covers = Changeset.objects.annotate(
       cover_revision_count=Count('coverrevisions')).filter(
