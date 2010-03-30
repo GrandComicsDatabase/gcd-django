@@ -1,7 +1,8 @@
 <div id="front_page_login">
     {% if user.is_authenticated %}
         <p>
-        You are logged in as <a href="{% url default_profile %}">{{ user.indexer }}</a>
+        You are logged in as {{ user.indexer }}<br>
+        <a href="{% url editing %}">Editing</a> | <a href="{% url default_profile %}">Profile</a>
         </p>
         <form action="{% url logout %}" method="POST">
             <input type="submit" name="logout" value="Logout" />
