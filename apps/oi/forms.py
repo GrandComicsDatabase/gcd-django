@@ -403,7 +403,8 @@ class IssueRevisionForm(forms.ModelForm):
                 'and only if none of these rules fit, use anything that produces '
                 'the correct sorting.')
 
-    indicia_frequency = forms.CharField(required=False,
+    indicia_frequency = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+      required=False,
       help_text='If relevant, the frequency of publication specified in the '
                 'indicia, which may not match the actual publication schedule. '
                 'This is most often found on U.S. ongoing series.')
