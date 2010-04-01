@@ -236,9 +236,14 @@ Mentor this indexer: %s
                urlresolvers.reverse('mentor',
                                     kwargs={ 'indexer_id': indexer.id }))
 
+        if settings.BETA:
+            emailSubject = 'New BETA Indexer: %s' % indexer
+        else:
+            emailSubject = 'New Indexer: %s' % indexer
+
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
                   recipient_list=[settings.EMAIL_EDITORS],
-                  subject='New Indexer: %s' % indexer,
+                  subject=emailSubject,
                   message=email_body,
                   fail_silently=(not settings.BETA))
 
