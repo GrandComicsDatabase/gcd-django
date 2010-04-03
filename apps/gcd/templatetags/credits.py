@@ -27,8 +27,6 @@ def show_credit(story, credit):
         return ""
 
     style = None
-    if re.search(',', credit):
-        [credit, style] = re.split(r',\s*', credit)
     
     if credit.startswith('any:'):
         target = credit[4:]
