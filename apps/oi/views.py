@@ -1482,22 +1482,25 @@ def show_queue(request, queue_name, state):
 
     publishers = Changeset.objects.annotate(
       publisher_revision_count=Count('publisherrevisions')).filter(
-      publisher_revision_count=1, **kwargs)
+      publisher_revision_count=1, **kwargs).select_related('approver', 
+                                                           'indexer')
 
     indicia_publishers = Changeset.objects.annotate(
       indicia_publisher_revision_count=Count('indiciapublisherrevisions')).filter(
-      indicia_publisher_revision_count=1, **kwargs)
+      indicia_publisher_revision_count=1, **kwargs).select_related('approver', 
+                                                                   'indexer')
 
     brands = Changeset.objects.annotate(
       brand_revision_count=Count('brandrevisions')).filter(
-      brand_revision_count=1, **kwargs)
+      brand_revision_count=1, **kwargs).select_related('approver', 'indexer')
 
     series = Changeset.objects.annotate(
       series_revision_count=Count('seriesrevisions')).filter(
-      series_revision_count=1, **kwargs)
+      series_revision_count=1, **kwargs).select_related('approver', 'indexer')
 
     issue_annotated = Changeset.objects.annotate(
-      issue_revision_count=Count('issuerevisions'))
+      issue_revision_count=Count('issuerevisions')).select_related('approver',
+                                                                   'indexer')
     bulk_issue_adds = issue_annotated.exclude(issue_revision_count__lt=1)\
                       .filter(issuerevisions__issue=None, **kwargs)
     issues = issue_annotated.filter(issue_revision_count=1, **kwargs)\
@@ -1505,7 +1508,7 @@ def show_queue(request, queue_name, state):
 
     covers = Changeset.objects.annotate(
       cover_revision_count=Count('coverrevisions')).filter(
-      cover_revision_count=1, **kwargs)
+      cover_revision_count=1, **kwargs).select_related('approver', 'indexer')
 
 
     response = render_to_response(
