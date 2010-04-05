@@ -26,33 +26,31 @@ def show_credit(story, credit):
     if not story:
         return ""
 
-    style = None
-    
     if credit.startswith('any:'):
         target = credit[4:]
         credit_string = ''
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
             if getattr(story, c).lower().find(target.lower()) != -1:
-              credit_string += ' ' + __format_credit(story, c, style)
+              credit_string += ' ' + __format_credit(story, c)
         if story.issue.editing.lower().find(target.lower()) != -1:
-            credit_string += __format_credit(story.issue, 'editing', style)\
+            credit_string += __format_credit(story.issue, 'editing')\
                              .replace('Editing', 'Issue editing')
         return credit_string
 
     elif credit.startswith('editing_search:'):
         target = credit[15:]
         if story.editing.lower().find(target.lower()) != -1:
-            formatted_credit = __format_credit(story, 'editing', style)\
+            formatted_credit = __format_credit(story, 'editing')\
                                .replace('Editing', 'Story editing')
         else:
             formatted_credit = ""
         if story.issue.editing.lower().find(target.lower()) != -1:
-            formatted_credit += __format_credit(story.issue, 'editing', style)\
+            formatted_credit += __format_credit(story.issue, 'editing')\
                                 .replace('Editing', 'Issue editing')
         return formatted_credit
 
     elif hasattr(story, credit):
-        return __format_credit(story, credit, style)
+        return __format_credit(story, credit)
 
     else:
         return ""
@@ -65,7 +63,7 @@ def __credit_visible(value):
     return value is not None and value != ''
 
 
-def __format_credit(story, credit, style):
+def __format_credit(story, credit):
     credit_value = getattr(story, credit)
     if not __credit_visible(credit_value):
         return ''
@@ -86,9 +84,9 @@ def __format_credit(story, credit, style):
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
-    if (style):
-        dt += ' %s' % style
-        dd += ' %s' % style
+    if credit == 'genre':
+        dt += ' short' 
+        dd += ' short'
     dt += '">'
     dd += '">'
 
