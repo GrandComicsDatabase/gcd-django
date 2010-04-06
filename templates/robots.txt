@@ -122,3 +122,15 @@ Disallow: /
 Crawl-delay: 120
 Visit-time: 0600-0845
 
+## crawler should forget old URLs
+User-agent: *
+Disallow: /coverview.lasso
+Disallow: /covers.lasso
+Disallow: /details.lasso
+Disallow: /series.lasso
+Disallow: /accounts/
+Disallow: /upload_cover/
+Disallow: /edit_covers/
+Disallow: /special/
+Disallow: /data/
+
