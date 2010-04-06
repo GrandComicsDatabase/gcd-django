@@ -93,7 +93,7 @@ SITE_ID = 1
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
-TIME_ZONE = 'GMT'
+TIME_ZONE = 'UTC'
 
 DEFAULT_FROM_EMAIL = 'GCD Contact <gcd-contact@googlegroups.com>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
