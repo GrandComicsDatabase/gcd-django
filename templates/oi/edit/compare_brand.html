@@ -1,5 +1,7 @@
 {% extends "oi/base_view.html" %}
 
+{% load display %}
+
 {% block title %}
 Reviewing :: {{ revision }}
 {% endblock %}
@@ -14,7 +16,9 @@ Reviewing :: {{ revision }}
 {% endblock %}
 
 {% block view_body %}
-<h1>{{ revision }} (Brand)</h1>
+<h1>
+{{ revision.parent|absolute_url }} : {{ revision|absolute_url }}
+</h1>
 <p>
 Changed fields are <span class="comparison_highlight">highlighted.</span>
 </p>
