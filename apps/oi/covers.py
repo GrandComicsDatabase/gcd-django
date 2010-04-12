@@ -27,9 +27,7 @@ from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.oi.models import *
 from apps.oi.forms import UploadScanForm
 
-ZOOM_SMALL = 1
-ZOOM_MEDIUM = 2
-ZOOM_LARGE = 4
+from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 
 # table width for displaying the medium sized current and active covers
 UPLOAD_WIDTH = 3

@@ -4,6 +4,10 @@ from django.core import urlresolvers
 
 from issue import Issue
 
+ZOOM_SMALL = 1
+ZOOM_MEDIUM = 2
+ZOOM_LARGE = 4
+
 class Cover(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -36,7 +40,9 @@ class Cover(models.Model):
                 'replace_cover',
                 kwargs={'cover_id': self.id} )
         elif self.has_image:
-            return self.issue.get_absolute_url()
+            return urlresolvers.reverse(
+		'issue_cover_view', 
+                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
         else:
             return urlresolvers.reverse(
                 'upload_cover',

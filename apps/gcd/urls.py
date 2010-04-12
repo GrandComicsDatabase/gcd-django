@@ -76,8 +76,8 @@ urlpatterns = patterns('',
     (r'^issue/$', 'apps.gcd.views.details.issue_form'),
 
     # Single Cover
-    (r'^issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',
-     'apps.gcd.views.details.cover'),
+    url(r'^issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',
+     'apps.gcd.views.details.cover', name='issue_cover_view'),
 
     # Attribute searches
     (r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',

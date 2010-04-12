@@ -6,10 +6,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue
-
-ZOOM_SMALL = 1
-ZOOM_MEDIUM = 2
-ZOOM_LARGE = 4
+from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 
 def get_image_tag(cover, alt_text, zoom_level):
     if cover is None:

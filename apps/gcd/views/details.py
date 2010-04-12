@@ -24,10 +24,8 @@ from apps.gcd.views import render_error, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, \
                                   get_image_tags_per_issue, \
-                                  get_image_tags_per_page, \
-                                  ZOOM_SMALL, \
-                                  ZOOM_MEDIUM, \
-                                  ZOOM_LARGE
+                                  get_image_tags_per_page
+from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
 from apps.oi.models import IssueRevision
 

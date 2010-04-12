@@ -16,8 +16,8 @@ from apps.gcd.models import *
 from apps.gcd.views import render_error, paginate_response
 from apps.gcd.views.details import show_indicia_publisher, show_brand, \
                                    show_series, show_issue
-from apps.gcd.views.covers import get_image_tag, ZOOM_LARGE, ZOOM_MEDIUM, \
-                                  ZOOM_SMALL
+from apps.gcd.views.covers import get_image_tag
+from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
 from apps.oi.forms import *
