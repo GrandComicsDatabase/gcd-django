@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 
+from apps.gcd.models.language import Language
+
 class CountStats(models.Model):
     """
     Store stats from gcd database.
@@ -12,8 +14,9 @@ class CountStats(models.Model):
     class Admin:
         pass
 
-    name = models.CharField(primary_key=True, max_length=40, null=True)
+    name = models.CharField(max_length=40, null=True)
     count = models.IntegerField()
+    language = models.ForeignKey(Language, null=True)
 
     def __unicode__(self):
         return self.name + ": " + str(self.count)

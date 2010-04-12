@@ -12,6 +12,25 @@ from django.contrib.contenttypes import generic
 from apps.oi import states
 from apps.gcd.models import *
 
+LANGUAGE_STATS = ['de',]
+
+def update_count(field, delta, language=None):
+    ''' 
+    updates statistics, for all and per language
+    CountStats with language=None is for all languages
+    '''
+    stat = CountStats.objects.get(name=field, language=None)
+    stat.count = F('count') + delta
+    stat.save()
+
+    if language.code in LANGUAGE_STATS:
+        stat = CountStats.objects.filter(name=field, language=language)
+        if stat.count():
+            stat = stat[0]
+            stat.count = F('count') + delta
+            stat.save()
+
+
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
@@ -688,17 +707,13 @@ class PublisherRevision(PublisherRevisionBase):
                 self.parent.imprint_count += 1
                 self.parent.save()
             else:
-                publisher_count = CountStats.objects.get(name='publishers')
-                publisher_count.count += 1
-                publisher_count.save()
+                update_count('publishers', 1)
         elif self.deleted:
             if self.parent:
                 self.parent.imprint_count -= 1
                 self.parent.save()
             else:
-                publisher_count = CountStats.objects.get(name='publishers')
-                publisher_count.count -= 1
-                publisher_count.save()
+                update_count('publishers', -1)
             pub.delete()
             return
 
@@ -788,7 +803,7 @@ class IndiciaPublisherRevisionManager(PublisherRevisionManagerBase):
 
         revision.save()
         return revision
-
+        
 class IndiciaPublisherRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_indicia_publisher_revision'
@@ -851,16 +866,12 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             ipub = IndiciaPublisher()
             self.parent.indicia_publisher_count += 1
             self.parent.save()
-            publisher_count = CountStats.objects.get(name='indicia publishers')
-            publisher_count.count += 1
-            publisher_count.save()
+            update_count('indicia publishers', 1)
 
         elif self.deleted:
             self.parent.indicia_publisher_count -= 1
             self.parent.save()
-            publisher_count = CountStats.objects.get(name='indicia publishers')
-            publisher_count.count -= 1
-            publisher_count.save()
+            update_count('indicia publishers', -1)
             ipub.delete()
             return
 
@@ -966,16 +977,12 @@ class BrandRevision(PublisherRevisionBase):
             brand = Brand()
             self.parent.brand_count += 1
             self.parent.save()
-            publisher_count = CountStats.objects.get(name='brands')
-            publisher_count.count += 1
-            publisher_count.save()
+            update_count('brands', 1)
 
         elif self.deleted:
             self.parent.brand_count -= 1
             self.parent.save()
-            publisher_count = CountStats.objects.get(name='brands')
-            publisher_count.count -= 1
-            publisher_count.save()
+            update_count('brands', -1)
             brand.delete()
             return
 
@@ -1080,9 +1087,7 @@ class CoverRevision(Revision):
         if self.cover is None:
             self.cover = cover
             self.save()
-            cover_count = CountStats.objects.get(name='covers')
-            cover_count.count += 1
-            cover_count.save()
+            update_count('covers', 1, language=cover.issue.series.language)
             if not cover.issue.series.has_gallery:
                 series = cover.issue.series
                 series.has_gallery = True
@@ -1243,9 +1248,7 @@ class SeriesRevision(Revision):
             if self.imprint:
                 self.imprint.series_count += 1
                 self.imprint.save()       
-            series_count = CountStats.objects.get(name='series')
-            series_count.count += 1
-            series_count.save()
+            update_count('series', 1, language=self.language)
         elif self.deleted:
             self.publisher.series_count -= 1
             self.publisher.issue_count -= series.issue_count
@@ -1254,9 +1257,7 @@ class SeriesRevision(Revision):
                 self.imprint.series_count -= 1
                 self.imprint.save()       
             series.delete()
-            series_count = CountStats.objects.get(name='series')
-            series_count.count -= 1
-            series_count.save()
+            update_count('series', -1, language=series.language)
             return
 
         series.name = self.name
@@ -1507,9 +1508,7 @@ class IssueRevision(Revision):
             if self.series.imprint:
                 self.series.imprint.issue_count += 1
                 self.series.imprint.save()       
-            issue_count = CountStats.objects.get(name='issues')
-            issue_count.count += 1
-            issue_count.save()
+            update_count('issues', 1, language=self.series.language)
 
         elif self.deleted:
             self.series.issue_count -= 1
@@ -1524,9 +1523,7 @@ class IssueRevision(Revision):
             if self.series.imprint:
                 self.series.imprint.issue_count -= 1
                 self.series.imprint.save()       
-            issue_count = CountStats.objects.get(name='issues')
-            issue_count.count -= 1
-            issue_count.save()
+            update_count('issues', -1, language=issue.series.language)
             issue.delete()
             self._check_first_last()
             return
@@ -1558,7 +1555,6 @@ class IssueRevision(Revision):
 
         issue.save()
         if self.issue is None:
-            # TODO: Remove cover code (and maybe series?) when we can.
             issue.cover_set.create(modified=datetime.now())
 
             self.issue = issue
@@ -1740,23 +1736,17 @@ class StoryRevision(Revision):
                 self.issue.story_type_count +=1
                 self.issue.save()
                 if self.issue.story_type_count == 1:
-                    issue_count = CountStats.objects.get(name='issue indexes')
-                    issue_count.count += 1
-                    issue_count.save()
-            story_count = CountStats.objects.get(name='stories')
-            story_count.count += 1
-            story_count.save()
+                    update_count('issue indexes', 1, 
+                                 language=self.issue.series.language)
+            update_count('stories', 1, language=self.issue.series.language)
         elif self.deleted:
             if story.type.name == 'story':
                 self.issue.story_type_count -=1
                 self.issue.save()
                 if self.issue.story_type_count == 0:
-                    issue_count = CountStats.objects.get(name='issue indexes')
-                    issue_count.count -= 1
-                    issue_count.save()
-            story_count = CountStats.objects.get(name='stories')
-            story_count.count -= 1
-            story_count.save()
+                    update_count('issue indexes', -1, 
+                                 language=story.issue.series.language)
+            update_count('stories', -1, language=story.issue.series.language)
             story.delete()
             return
 
@@ -1764,16 +1754,14 @@ class StoryRevision(Revision):
             self.issue.story_type_count += 1
             self.issue.save()
             if self.issue.story_type_count == 1:
-                issue_count = CountStats.objects.get(name='issue indexes')
-                issue_count.count += 1
-                issue_count.save()
+                update_count('issue indexes', 1, 
+                             language=story.issue.series.language)
         elif self.type.name != 'story' and story.type.name == 'story':
             self.issue.story_type_count -= 1
             self.issue.save()
             if self.issue.story_type_count == 0:
-                issue_count = CountStats.objects.get(name='issue indexes')
-                issue_count.count -= 1
-                issue_count.save()
+                update_count('issue indexes', -1, 
+                             language=story.issue.series.language)
 
         story.title = self.title
         story.title_inferred = self.title_inferred

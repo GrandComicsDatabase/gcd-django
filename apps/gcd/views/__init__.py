@@ -24,7 +24,7 @@ def index(request):
     if 'style' in request.GET:
         style = request.GET['style']
 
-    stats = CountStats.objects.all()
+    stats = CountStats.objects.filter(language__isnull=True)
 
     vars = { 'style' : style, 'stats' : stats }
     return render_to_response('gcd/index.html', vars,
