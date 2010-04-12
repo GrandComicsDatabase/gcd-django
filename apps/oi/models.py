@@ -23,7 +23,7 @@ def update_count(field, delta, language=None):
     stat.count = F('count') + delta
     stat.save()
 
-    if language.code in LANGUAGE_STATS:
+    if language and language.code in LANGUAGE_STATS:
         stat = CountStats.objects.filter(name=field, language=language)
         if stat.count():
             stat = stat[0]
