@@ -345,8 +345,8 @@ class ChangesetComment(models.Model):
 
     changeset = models.ForeignKey(Changeset, related_name='comments')
 
-    content_type = models.ForeignKey(content_models.ContentType)
-    revision_id = models.IntegerField(db_index=True)
+    content_type = models.ForeignKey(content_models.ContentType, null=True)
+    revision_id = models.IntegerField(db_index=True, null=True)
     revision = generic.GenericForeignKey('content_type', 'revision_id')
 
     old_state = models.IntegerField()
