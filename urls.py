@@ -8,6 +8,8 @@ from apps.gcd.views import accounts as account_views
 from apps.gcd.views import error_view
 from apps.gcd.forms.accounts import PasswordResetForm
 
+admin.autodiscover()
+
 urlpatterns = patterns('',
     (r'^admin/', include(admin.site.urls)),
 

@@ -565,6 +565,9 @@ class OngoingReservation(models.Model):
     """
     created = models.DateTimeField(auto_now_add=True, db_index=True)
 
+    def __unicode__(self):
+        return u'%s reserved by %s' % (self.series, self.indexer.indexer)
+
 class PublisherRevisionManagerBase(RevisionManager):
     def _base_field_kwargs(self, instance):
         return {
