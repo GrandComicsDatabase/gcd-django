@@ -26,7 +26,7 @@ def last_updated_issues(parser, token):
     language_pos = token.contents.find('language')
     if language_pos > 0:
         language_pos += len('language=')
-        code = token.contents[language_pos:language_pos+2].lower()
+        code = token.contents[language_pos:].lower()
         issues = issues.filter(issue__series__language__code=code)
 
     last_updated_issues = issues[:number]
