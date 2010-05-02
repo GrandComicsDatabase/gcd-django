@@ -1479,6 +1479,8 @@ def show_queue(request, queue_name, state):
         kwargs['state'] = states.REVIEWING
     if 'covers' == queue_name:
         return show_cover_queue(request)
+    if 'approved' == queue_name:
+        return show_approved(request)
 
     publishers = Changeset.objects.annotate(
       publisher_revision_count=Count('publisherrevisions')).filter(
@@ -1560,6 +1562,20 @@ def show_queue(request, queue_name, state):
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
+
+@login_required
+def show_approved(request):
+    changes = Changeset.objects.order_by('-modified')\
+                .filter(state=(states.APPROVED), indexer=request.user)
+
+    return paginate_response(
+      request,
+      changes,
+      'oi/queues/approved.html',
+      {},
+      page_size=50)
+
+
 @login_required
 def show_cover_queue(request):
     covers = Changeset.objects.annotate(
@@ -1612,15 +1628,22 @@ def compare(request, id):
 
 @login_required
 def cover_compare(request, changeset, revision):
+    ''' 
+    Compare page for covers.
+    - show uploaded cover
+    - for replacement show former cover
+    - for other active uploads show other existing and active covers
+    '''
     cover_tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_LARGE)
 
     current_covers = []
     pending_covers = []
-    # active replacement 
-    if revision.cover and revision.changeset.state in states.ACTIVE: 
-        current_covers.append([revision.cover, get_image_tag(revision.cover, 
-                               "current cover to be replaced", ZOOM_LARGE)])
-    # active upload
+    if revision.is_replacement:
+        old_cover = CoverRevision.objects.filter(cover=revision.cover, 
+                      created__lt=revision.created).order_by('-created')[0]
+        current_covers.append([old_cover, get_preview_image_tag(
+                                            old_cover, "replaced cover", 
+                                            ZOOM_LARGE)])
     elif revision.changeset.state in states.ACTIVE:
         if revision.issue.cover_set.latest().has_image:
             for cover in revision.issue.cover_set.all():
@@ -1634,20 +1657,6 @@ def cover_compare(request, changeset, revision):
             for cover in covers:
                 pending_covers.append([cover, get_preview_image_tag(cover, 
                                        "pending cover", ZOOM_MEDIUM)])
-    # approved/discarded
-    elif revision.changeset.state in states.CLOSED:
-        if revision.cover:
-            if CoverRevision.objects.filter(cover=revision.cover, 
-                                            created__lt=revision.created):
-                # this revision replaced a cover
-                old_cover = CoverRevision.objects.filter(cover=revision.cover, 
-                                created__lt=revision.created) \
-                                .order_by('-created')[0]
-                current_covers.append([old_cover, get_preview_image_tag(\
-                                       old_cover, "uploaded cover", 
-                                       ZOOM_LARGE)])
-    else: # did I miss something
-        raise NotImplementedError
 
     response = render_to_response('oi/edit/compare_cover.html',
                                   { 'changeset': changeset,

@@ -24,11 +24,17 @@ Reviewing :: {{ revision }}
 <table id="covers">
 <tr>
 <td class="cover_grid{% if current_covers.0.0.marked %} marked{% endif %}">
- <h2>cover to be replaced</h2>
- <div class="cover_large">
- <a href="{{ current_covers.0.0.issue.get_absolute_url }}">{{ current_covers.0.1 }}</a>
- </div>
+  <h2>cover to be replaced</h2>
+  <div class="cover_large">
+    <a href="{{ current_covers.0.0.issue.get_absolute_url }}">{{ current_covers.0.1 }}</a>
+    <div class="cover_caption">
+      <a href="{% url compare id=current_covers.0.0.changeset.id %}">
+      uploaded on {{ current_covers.0.0.created }}</a><br>
+      {{ current_covers.0.0|show_cover_contributor }}
+    </div>
+  </div>
 </td>
+
 <td class="cover_grid{% if revision.marked %} marked{% endif %}">
 <h2> uploaded replacement cover </h2>
 {% else %}

@@ -60,7 +60,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
           changeset__state=states.APPROVED).order_by('-created')[0]
         if revision==current_cover: 
             # Current cover is the one from this revision, show it.
-            return get_image_tag(revision.cover, "uploaded cover", zoom_level)  
+            return get_image_tag(revision.cover, esc(alt_text), zoom_level)  
         else: 
             # The cover was replaced by now, show original uploaded file,
             # scaled in the browser.
