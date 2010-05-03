@@ -34,6 +34,10 @@ class Cover(models.Model):
         return settings.MEDIA_ROOT + settings.COVERS_DIR + \
           str(int(self.id/1000))
 
+    def get_absolute_url(self):
+        return urlresolvers.reverse('issue_cover_view', 
+                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
+
     def get_status_url(self):
         if self.marked and self.has_image:
             return urlresolvers.reverse(

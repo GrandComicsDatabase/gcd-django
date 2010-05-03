@@ -1,0 +1,66 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Changes Pending Review
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/queues.css"/>
+{% endblock %}
+
+{% block view_body %}
+<div class="item_id" id="item_id_footer_replace_top">
+  <div class="left">
+  Showing approved changes {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }}.
+  </div>
+  {% if page %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endif %}
+</div>
+
+<div id="oi_focus"></div>
+<div class="queues">
+<h1> Approved Changes </h1>
+
+<table>
+  <tr>
+    <th> Changeset </th>
+    <th> Current Data </th>
+    <th> Last Activity </th>
+  </tr>
+
+{% for changeset in items %}
+<tr>
+{% if changeset.inline %}
+    <td><a href="{% url compare id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
+    <td><a href="{{ changeset.inline_revision.source.get_absolute_url }}">{{ changeset }}</a></td>
+    <td>{{ changeset.modified }}</td>
+{% else %}
+    {% ifequal changeset.issuerevisions.count 1 %}
+    <td><a href="{% url compare id=changeset.id %}">issue</a></td>
+    <td><a href="{{ changeset.issuerevisions.all.0.source.get_absolute_url }}">{{ changeset }}</a></td>
+    <td>{{ changeset.modified }}</td>
+    {% else %}
+    <td><a href="{% url compare id=changeset.id %}">issue skeletons</a></td>
+    <td>{{ changeset }}</td>
+    <td>{{ changeset.modified }}</td>
+    {% endifequal %}
+{% endif %}
+</tr>
+{% endfor %}
+</table>
+
+</div>
+
+<div id="item_id_footer" class="item_id">
+  {% if page %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endif %}
+</div>
+{% endblock %}
+
