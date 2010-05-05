@@ -21,10 +21,10 @@ class Indexer(models.Model):
             ('can_approve', 'Can approve a change to a record'),
             ('can_cancel', 'Can cancel a pending change they did not open'),
             ('can_mentor', 'Can mentor new indexers'),
+            ('can_vote', 'Can vote in GCD elections'),
+            ('can_publish', 'Can publish non-database content on the web site'),
+            ('on_board', 'Is on the Board of Directors'),
         )
-
-    class Admin:
-        pass
 
     user = models.OneToOneField(User)
 
@@ -36,14 +36,14 @@ class Indexer(models.Model):
     max_reservations = models.IntegerField(default=1)
     max_ongoing = models.IntegerField(default=0)
 
-    mentor = models.ForeignKey(User, related_name='mentees', null=True)
+    mentor = models.ForeignKey(User, related_name='mentees', null=True, blank=True)
     is_new = models.BooleanField(db_index=True)
     is_banned = models.BooleanField(db_index=True)
     deceased = models.BooleanField(db_index=True)
 
     registration_key = models.CharField(max_length=40, null=True,
                                         editable=False)
-    registration_expires = models.DateField(null=True)
+    registration_expires = models.DateField(null=True, blank=True)
 
     def can_reserve_another(self):
         if self.is_new:
