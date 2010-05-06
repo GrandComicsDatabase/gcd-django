@@ -301,15 +301,13 @@ def profile(request, user_id=None, edit=False):
     if request.method == 'POST':
         return update_profile(request, user_id)
 
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect(urlresolvers.reverse('login'))
+
     if user_id is None:
-        if request.user.is_authenticated():
-            return HttpResponseRedirect(
-              urlresolvers.reverse('view_profile',
-                                   kwargs={'user_id': request.user.id}))
-        else:
-            return HttpResponseRedirect(
-              urlresolvers.reverse('login'))
-        profile_user = request.user
+        return HttpResponseRedirect(
+          urlresolvers.reverse('view_profile',
+                               kwargs={'user_id': request.user.id}))
     else:
         profile_user = get_object_or_404(User, id=user_id)
 
