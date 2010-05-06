@@ -17,7 +17,6 @@
 {% endblock %}
 
 {% block view_body %}
-<div id="oi_focus"></div>
 <h1>
 {% if changeset.issuerevisions.count %}
   {{ changeset.issuerevisions.all.0.issue.series|absolute_url }} 

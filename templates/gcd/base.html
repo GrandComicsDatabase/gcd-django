@@ -12,11 +12,7 @@ For now, just a simple single block for all CSS, despite redundancy.
 {% block css %}{% endblock %}
 </head>
 
-{% comment %}
-If it is an OI page, set the focus to the first element (index 1 b/c there is a
-hidden element) in the OI form (index 2 b/c of top search form and logout form).
-{% endcomment %}
-<body onload="if(document.getElementById('oi_focus')){ document.forms[2].elements[1].focus() }">
+<body>
 <div id="sizing_base" {% if preview %} class="preview" {% endif %}>
 {% if BETA %}
   {% include "gcd/bits/beta_banner.html" %}

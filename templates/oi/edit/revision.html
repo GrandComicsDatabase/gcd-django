@@ -18,7 +18,6 @@
 {% block view_body %}
 <h1> {{ revision }} </h1>
 
-<div id="oi_focus"></div>
 <div class="edit">
 
 <form action="{% url process_revision model_name=revision.source_name,id=revision.id %}" method="POST">
