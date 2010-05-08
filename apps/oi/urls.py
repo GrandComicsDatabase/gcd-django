@@ -2,6 +2,7 @@ from django.core import urlresolvers
 from django.conf.urls.defaults import *
 from django.conf import settings
 from django.views.generic.simple import direct_to_template
+from django.contrib.auth.decorators import login_required 
 
 from apps.oi import views as oi_views
 from apps.oi import covers as oi_covers
@@ -10,7 +11,7 @@ from apps.oi import states
 
 urlpatterns = patterns('',
     # General-purpose new record add page.
-    url(r'^add/$', direct_to_template,
+    url(r'^add/$', login_required(direct_to_template),
         { 'template': 'oi/edit/add.html' },
         name='add'),
 
