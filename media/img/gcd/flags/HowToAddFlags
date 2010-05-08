@@ -1,0 +1,6 @@
+go to directory svg
+get the flag from wikipedia in the svg-formant and rename it <language-code>.svg
+run convertscript
+cp <language-code>.png to this directory and add it to svn
+
+
