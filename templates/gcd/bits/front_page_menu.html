@@ -1,16 +1,19 @@
+{% load i18n %}
+
 <div id="front_page_menu">
     <div id="front_page_menu_header">
         <img src="{{ MEDIA_URL }}/img/logo.png" alt-text="GCD">
     </div>
-    <a href="http://docs.comics.org/wiki/General_FAQ">About the GCD</a>
+    <a href="http://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a>
     <br/>
-    <a href="http://docs.comics.org/wiki/The_GCD_Charter">GCD Charter</a>
-    <a href="http://docs.comics.org/">Documentation Wiki</a>
-    <a href="http://docs.comics.org/wiki/Indexing">Become an Indexer</a>
-    <a href="{% url donate %}">About Donations</a>
-    <a href="http://errors.comics.org/enter_bug.cgi">Report an Error</a>
-    <a href="http://docs.comics.org/wiki/Email_Lists_FAQ">Mailing Lists</a>
-    <a href="mailto:gcd-contact@googlegroups.com">Contact Us</a>
+    <a href="http://docs.comics.org/wiki/The_GCD_Charter">{% trans "GCD Charter" %}</a>
+    <a href="http://docs.comics.org/">{% trans "Documentation Wiki" %}</a>
+    <a href="http://docs.comics.org/wiki/Indexing">{% trans "Become an Indexer" %}</a>
+    <a href="{% url donate %}">{% trans "About Donations" %}</a>
+    <a href="http://errors.comics.org/enter_bug.cgi">{% trans "Report an Error" %}</a>
+    <a href="http://docs.comics.org/wiki/Email_Lists_FAQ">{% trans "Mailing Lists" %}</a>
+    <a href="mailto:{% trans 'gcd-contact@googlegroups.com' %}">{% trans "Contact Us" %}</a>
+    
     <br/>
     <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
         <input type="hidden" name="cmd" value="_s-xclick">

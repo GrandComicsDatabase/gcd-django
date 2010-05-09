@@ -1,27 +1,28 @@
+{% load i18n %}
 <div id="front_page_login">
     {% if user.is_authenticated %}
         <p>
-        You are logged in as {{ user.indexer }}<br>
-        <a href="{% url editing %}">Editing</a> | <a href="{% url default_profile %}">Profile</a>
+        {% trans 'You are logged in as ' %}{{ user.indexer }}<br>
+        <a href="{% url editing %}">{% trans 'Editing' %}</a> | <a href="{% url default_profile %}">{% trans 'Profile' %}</a>
         </p>
         <form action="{% url logout %}" method="POST">
-            <input type="submit" name="logout" value="Logout" />
+            <input type="submit" name="logout" value="{% trans 'Logout' %}" />
             <input type="hidden" name="next" value="{{ request.get_full_path|urlencode }}" />
         </form>
     {% else %}
         <form method="post" action="{% url login %}">
-            username
+            {% trans 'username' %}
             <input type="text" name="username" id="username"/>
-            password
+            {% trans 'password' %}
             <input type="password" name="password" id="password"/>
-            <input type="submit" value="Login" />
+            <input type="submit" value="{% trans 'Login' %}" />
             <input type="hidden" name="next" value="{{ request.get_full_path|urlencode }}" />
         </form>
         <div id="forgot_password">
-            <a href="{% url forgot_password %}">Forgot password?</a>
+            <a href="{% url forgot_password %}">{% trans 'Forgot password?' %}</a>
         </div>
         <div id="register">
-            <a href="{% url register %}">Register</a>
+            <a href="{% url register %}">{% trans 'Register' %}</a>
         </div>
     {% endif %}
 </div>
