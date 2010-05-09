@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-01-04 00:33+0100\n"
+"POT-Creation-Date: 2010-05-08 00:12+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,107 +16,508 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: apps/gcd/templatetags/credits.py:59
+#: apps/gcd/templatetags/credits.py:72
 msgid "Job Number:"
 msgstr ""
 
-#: apps/gcd/templatetags/credits.py:68
-msgid "search and link"
+#: apps/gcd/templatetags/credits.py:77
+msgid "Reprinted:"
 msgstr ""
 
-#: apps/gcd/templatetags/migration/reprints.py:490
-#: apps/gcd/templatetags/migration/reprints.py:583
+#: apps/gcd/templatetags/credits.py:192
+#, fuzzy
+msgid "page"
+msgid_plural "pages"
+msgstr[0] "Seiten"
+msgstr[1] "Seiten"
+
+#: apps/gcd/templatetags/migration/reprints.py:547
+#: apps/gcd/templatetags/migration/reprints.py:665
 msgid "Reprints"
 msgstr ""
 
-#: apps/inducks/templatetags/flatfile.py:29
-#: apps/inducks/templatetags/flatfile.py:113
+# msgstr "Übersetzung"
+#: apps/inducks/templatetags/flatfile.py:27
+#: apps/inducks/templatetags/flatfile.py:118
 msgid "translation"
-msgstr "Übersetzung"
+msgstr ""
 
-#: apps/inducks/templatetags/flatfile.py:100
-#, fuzzy
-msgid "script"
-msgstr "Szenario"
-
+# msgstr "Szenario"
 #: apps/inducks/templatetags/flatfile.py:105
+msgid "script"
+msgstr ""
+
+#: apps/inducks/templatetags/flatfile.py:110
 msgid "plot"
 msgstr ""
 
-#: templates/gcd/covers_to_replace.html:19
-msgid "Covers marked for replacement"
+#: templates/gcd/index.html:61 templates/gcd/bits/front_page_login.html:18
+msgid "Login"
+msgstr "Anmelden"
+
+#: templates/gcd/index.html:69
+msgid "Disclaimer"
+msgstr "Hinweis"
+
+#: templates/gcd/index.html:73
+msgid ""
+"The Grand Comics Database Project (GCD) is a volunteer project with the goal "
+"of documenting and indexing all comics for the free use of scholars, "
+"historians, researchers, and fans."
+msgstr ""
+"Das Grand Comics Database Projekt (GCD) ist ein Projekt von Freiwilligen mit "
+"dem Ziel alle Comics zu dokumentieren und zu erfassen und diese "
+"Informationen zur freien Verfügung, insbesondere durch Wissenschaftler, "
+"Historiker und Fans, bereit zu stellen."
+
+#: templates/gcd/index.html:76
+msgid ""
+"The GCD acknowledges that the all-encompassing research nature of the "
+"project may result in the posting of cover scans for comics with images that "
+"some may find objectionable."
+msgstr ""
+"Die GCD weist darauf hin, dass im Zuge einer solch umfassenden "
+"Forschungsarbeit möglicherweise Titelbilder dargestellt werden, die manch "
+"einer verwerflich findet. "
+
+#: templates/gcd/index.html:79
+msgid "Viewer discretion is advised."
+msgstr "Bitte entscheide nach eigenem Ermessen."
+
+#: templates/gcd/index.html:82
+msgid "The Grand Comics Database Team"
+msgstr "Das Grand Comics Database Team"
+
+#: templates/gcd/index.html:103
+msgid "Useful Links"
+msgstr "Nützliche Links"
+
+#: templates/gcd/index.html:107
+msgid "Today's covers"
+msgstr "Titelbilder von heute"
+
+#: templates/gcd/index.html:108
+msgid "Covers to replace"
+msgstr "Titelbilder zu ersetzen"
+
+#: templates/gcd/index.html:117
+msgid "Last Updated Language Issues"
+msgstr "Zuletzt geänderte deutsche Comics"
+
+#: templates/gcd/index.html:125
+msgid "Statistics for Language Comics"
+msgstr "Statistiken zu deutschen Comics"
+
+#: templates/gcd/index.html:136
+msgid "Last Updated Issues"
+msgstr "Zuletzt geänderte Comics"
+
+#: templates/gcd/index.html:144
+msgid "Statistics"
+msgstr "Statistiken"
+
+#: templates/gcd/accounts/password_reset_complete.html:4
+#: templates/gcd/accounts/password_reset_complete.html:13
+msgid "Password reset complete"
 msgstr ""
 
-#: templates/gcd/daily_covers.html:19
-msgid "Covers for "
+#: templates/gcd/accounts/password_reset_complete.html:15
+msgid "Your password has been set.  You may go ahead and log in now."
 msgstr ""
 
-#: templates/gcd/daily_covers.html:22
-msgid "day before"
+#: templates/gcd/accounts/password_reset_complete.html:17
+msgid "Log in"
 msgstr ""
 
-#: templates/gcd/daily_covers.html:24
-msgid "day after"
+#: templates/gcd/accounts/password_reset_confirm.html:4
+#: templates/gcd/accounts/password_reset_form.html:4
+#: templates/gcd/accounts/password_reset_form.html:13
+msgid "Password reset"
 msgstr ""
 
-#: templates/gcd/daily_covers.html:31
-msgid " covers posted"
+#: templates/gcd/accounts/password_reset_confirm.html:15
+msgid "Enter new password"
 msgstr ""
 
-#: templates/gcd/issue.html:52 templates/inducks/issue.html:19
-msgid "Price"
-msgstr "Preis"
-
-#: templates/gcd/issue.html:54
-msgid "Pages"
-msgstr "Seiten"
-
-#: templates/gcd/issue.html:112
-msgid "Issues in this series have been indexed by:"
-msgstr "Diese Serie wurde erfasst von:"
-
-#: templates/gcd/one_issue_series.html:5
-msgid "Publication Notes"
+#: templates/gcd/accounts/password_reset_confirm.html:17
+msgid ""
+"Please enter your new password twice so we can verify you typed it in "
+"correctly."
 msgstr ""
 
-#: templates/gcd/one_issue_series.html:10
-msgid "Tracking"
+#: templates/gcd/accounts/password_reset_confirm.html:21
+msgid "New password:"
 msgstr ""
 
-#: templates/gcd/one_issue_series.html:15
-#, fuzzy
-msgid "Title Notes"
-msgstr "Titel"
+#: templates/gcd/accounts/password_reset_confirm.html:23
+msgid "Confirm password:"
+msgstr ""
 
-#: templates/gcd/pagination_bar.html:7 templates/gcd/pagination_bar.html:9
-#: templates/gcd/pagination_bar.html:12 templates/gcd/pagination_bar.html:37
-msgid "Previous"
-msgstr "zurück"
+#: templates/gcd/accounts/password_reset_confirm.html:24
+msgid "Change my password"
+msgstr ""
 
-#: templates/gcd/pagination_bar.html:29 templates/gcd/pagination_bar.html:31
-#: templates/gcd/pagination_bar.html:34 templates/gcd/pagination_bar.html:37
-msgid "Next"
-msgstr "vor"
+#: templates/gcd/accounts/password_reset_confirm.html:29
+msgid "Password reset unsuccessful"
+msgstr ""
 
-#: templates/gcd/series.html:74
-msgid "Indexed by:"
-msgstr "Erfasst von:"
+#: templates/gcd/accounts/password_reset_confirm.html:31
+msgid ""
+"The password reset link was invalid, possibly because it has already been "
+"used.  Please request a new password reset."
+msgstr ""
 
-#: templates/gcd/series_issue_header.html:39
-msgid "Previous Issue"
-msgstr "Vorherige Ausgabe"
+#: templates/gcd/accounts/password_reset_done.html:4
+#: templates/gcd/accounts/password_reset_done.html:13
+msgid "Password reset successful"
+msgstr ""
 
-#: templates/gcd/series_issue_header.html:45
-msgid "Next Issue"
-msgstr "Nächste Ausgabe"
+#: templates/gcd/accounts/password_reset_done.html:15
+msgid ""
+"We've e-mailed you instructions for setting your password to the e-mail "
+"address you submitted. You should be receiving it shortly."
+msgstr ""
 
-#: templates/gcd/single_story.html:23 templates/gcd/single_story.html.py:48
+#: templates/gcd/accounts/password_reset_email.html:2
+msgid "You're receiving this e-mail because you requested a password reset"
+msgstr ""
+
+#: templates/gcd/accounts/password_reset_email.html:3
+#, python-format
+msgid "for your user account at %(site_name)s"
+msgstr ""
+
+#: templates/gcd/accounts/password_reset_email.html:5
+msgid "Please go to the following page and choose a new password:"
+msgstr ""
+
+#: templates/gcd/accounts/password_reset_email.html:9
+msgid "Thanks for using our site!"
+msgstr ""
+
+#: templates/gcd/accounts/password_reset_email.html:11
+#, python-format
+msgid "The %(site_name)s team"
+msgstr ""
+
+#: templates/gcd/accounts/password_reset_form.html:15
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll e-mail "
+"instructions for setting a new one."
+msgstr ""
+
+#: templates/gcd/accounts/password_reset_form.html:19
+msgid "E-mail address:"
+msgstr ""
+
+#: templates/gcd/accounts/password_reset_form.html:19
+msgid "Reset my password"
+msgstr ""
+
+#: templates/gcd/bits/front_page_login.html:5
+msgid "You are logged in as "
+msgstr "Du bist angemeldet als "
+
+#: templates/gcd/bits/front_page_login.html:6
+msgid "Editing"
+msgstr "Editieren"
+
+#: templates/gcd/bits/front_page_login.html:6
+msgid "Profile"
+msgstr "Profil"
+
+#: templates/gcd/bits/front_page_login.html:9
+msgid "Logout"
+msgstr "Abmelden"
+
+#: templates/gcd/bits/front_page_login.html:14
+msgid "username"
+msgstr "Name"
+
+#: templates/gcd/bits/front_page_login.html:16
+msgid "password"
+msgstr ""
+
+#: templates/gcd/bits/front_page_login.html:22
+msgid "Forgot password?"
+msgstr "Passwort vergessen?"
+
+#: templates/gcd/bits/front_page_login.html:25
+msgid "Register"
+msgstr "Registrieren"
+
+#: templates/gcd/bits/front_page_menu.html:7
+msgid "About the GCD"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:9
+msgid "GCD Charter"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:10
+msgid "Documentation Wiki"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:11
+msgid "Become an Indexer"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:12
+msgid "About Donations"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:13
+msgid "Report an Error"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:14
+msgid "Mailing Lists"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:15
+msgid "gcd-contact@googlegroups.com"
+msgstr "gcd-contact-de@comics.org"
+
+#: templates/gcd/bits/front_page_menu.html:15
+msgid "Contact Us"
+msgstr "Kontakt aufnehmen"
+
+#: templates/gcd/bits/front_page_search_box.html:5
+#: templates/gcd/bits/front_page_search_box.html:11
+msgid "Search"
+msgstr "Suchen"
+
+#: templates/gcd/bits/front_page_search_box.html:9
+msgid "Sort by"
+msgstr "Sortieren nach"
+
+#: templates/gcd/bits/front_page_search_box.html:12
+msgid "Advanced&nbsp;Search"
+msgstr "Erweiterte&nbsp;Suche"
+
+#: templates/gcd/bits/legalese.html:3
 #, python-format
 msgid ""
 "\n"
-"              page%(suffix)s\n"
-"            "
+"If you believe any of this data to be incorrect, please\n"
+"<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"   target=\"_blank\">let us know</a> (opens new window).\n"
 msgstr ""
+"\n"
+"Falls du der Meinung bist einige der Daten sind falsch, \n"
+"<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"   target=\"_blank\">lass uns das bitte wissen</a> (öffnet ein neues "
+"Fenster).\n"
+
+#: templates/gcd/bits/legalese.html:11
+msgid "Cover thumbnails are used for identification purposes only."
+msgstr "Titelbilder werden zur Identifikation der Comics genutzt."
+
+#: templates/gcd/bits/legalese.html:12
+msgid ""
+"All rights to cover images reserved by the respective copyright holders."
+msgstr "Alle Rechte der Titelbilder bei den jeweiligen Rechteinhabern."
+
+#: templates/gcd/bits/legalese.html:17
+#, python-format
+msgid ""
+"\n"
+"All portions of <a href=\"http://www.comics.org/\" rel=\"cc:attributionURL"
+"\">the %(site_name)s</a> that are subject to copyright are licensed under a "
+"<a rel=\"license\" href=\"http://creativecommons.org/licenses/by/3.0/"
+"\">Creative Commons Attribution 3.0 Unported License</a>.  This includes but "
+"is not necessarily limited to our database schema and data distribution "
+"format.\n"
+msgstr ""
+"\n"
+"Alle Teile <a href=\"http://www.comics.org/\" rel=\"cc:attributionURL\">der %"
+"(site_name)s</a> die unter Copyright fallen sind lizensiert unter der <a rel="
+"\"license\" href=\"http://creativecommons.org/licenses/by/3.0/deed.de"
+"\">Creative Commons Namensnennung 3.0 Unported Lizenz</a>.  Dies betrifft "
+"insbesondere, aber nicht nur, unser Datenbankschema und das "
+"Datendistributionsformat.\n"
+
+#: templates/gcd/bits/legalese.html:22
+msgid ""
+"The GCD Web Site code is licensed under the <a href=\"http://www.gnu.org/"
+"licenses/gpl.html\">GNU General Public License</a>"
+msgstr ""
+"Der Code der GCD Webseite steht unter der <a href=\"http://www.gnu.org/"
+"licenses/gpl.html\">GNU General Public Lizenz</a>."
+
+#: templates/gcd/bits/pagination_bar.html:7
+#: templates/gcd/bits/pagination_bar.html:9
+#: templates/gcd/bits/pagination_bar.html:12
+#: templates/gcd/bits/pagination_bar.html:41
+msgid "Previous"
+msgstr "zurück"
+
+#: templates/gcd/bits/pagination_bar.html:33
+#: templates/gcd/bits/pagination_bar.html:35
+#: templates/gcd/bits/pagination_bar.html:38
+#: templates/gcd/bits/pagination_bar.html:41
+msgid "Next"
+msgstr "vor"
+
+#: templates/gcd/bits/pagination_bar.html:46
+#: templates/gcd/bits/series_issue_header.html:66
+#: templates/gcd/status/daily_covers.html:48
+msgid "Go"
+msgstr ""
+
+#: templates/gcd/bits/series_issue_header.html:52
+msgid "Previous Issue"
+msgstr "Vorherige Ausgabe"
+
+#: templates/gcd/bits/series_issue_header.html:70
+msgid "Next Issue"
+msgstr "Nächste Ausgabe"
+
+#: templates/gcd/details/issue.html:55
+msgid "Volume"
+msgstr ""
+
+#: templates/gcd/details/issue.html:58 templates/inducks/issue.html:20
+msgid "Price"
+msgstr "Preis"
+
+#: templates/gcd/details/issue.html:60 templates/inducks/issue.html:21
+#: templates/inducks/issue.html.py:30
+msgid "Pages"
+msgstr "Seiten"
+
+#: templates/gcd/details/issue.html:63
+msgid "Indicia frequency"
+msgstr ""
+
+#: templates/gcd/details/issue.html:69
+msgid "Indicia Publisher"
+msgstr ""
+
+#: templates/gcd/details/issue.html:72
+msgid "Brand"
+msgstr ""
+
+#: templates/gcd/details/issue.html:113
+msgid "This issue was most recently modified by:"
+msgstr ""
+
+#: templates/gcd/details/issue.html:121
+msgid "Issues in this series have been indexed by:"
+msgstr "Diese Serie wurde erfasst von:"
+
+#: templates/gcd/details/series.html:150
+msgid "Indexed by:"
+msgstr "Erfasst von:"
+
+#: templates/gcd/details/single_story.html:25
+#, python-format
+msgid ""
+"\n"
+"            page%(suffix)s\n"
+"          "
+msgstr ""
+
+#: templates/gcd/status/covers_to_replace.html:17
+msgid "Covers marked for replacement"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:17
+msgid "Covers for "
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:20
+msgid "Day before"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:34
+msgid "January"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:35
+msgid "Februrary"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:36
+msgid "March"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:37
+msgid "April"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:38
+msgid "May"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:39
+msgid "June"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:40
+msgid "July"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:41
+msgid "August"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:42
+msgid "September"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:43
+msgid "October"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:44
+msgid "November"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:45
+msgid "December"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:51
+msgid "Day after"
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:58
+msgid " covers posted"
+msgstr ""
+
+msgid "publishers"
+msgstr "Verlagsgruppen"
+
+msgid "brands"
+msgstr "Verlagslogo"
+
+msgid "indicia publishers"
+msgstr "Verlage"
+
+msgid "series"
+msgstr "Serien"
+
+msgid "issues"
+msgstr "Comics"
+
+msgid "issue indexes"
+msgstr "davon erfasst"
+
+msgid "covers"
+msgstr "Titelbilder"
+
+msgid "stories"
+msgstr "Geschichten"
+
+#~ msgid "German"
+#~ msgstr "Deutsch"
+
+#, fuzzy
+#~ msgid "Title Notes"
+#~ msgstr "Titel"
 
 #~ msgid "Country"
 #~ msgstr "Land"
@@ -141,12 +542,6 @@ msgstr ""
 
 #~ msgid "coverprice"
 #~ msgstr "Preis"
-
-#~ msgid "pages"
-#~ msgstr "Seiten"
-
-#~ msgid "Editor"
-#~ msgstr "Redaktion"
 
 #~ msgid "Stories/features:"
 #~ msgstr "Geschichten/Feature"
