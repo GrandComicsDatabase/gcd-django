@@ -1640,7 +1640,8 @@ def cover_compare(request, changeset, revision):
     pending_covers = []
     if revision.is_replacement:
         old_cover = CoverRevision.objects.filter(cover=revision.cover, 
-                      created__lt=revision.created).order_by('-created')[0]
+                      created__lt=revision.created,
+                      changeset__state=states.APPROVED).order_by('-created')[0]
         current_covers.append([old_cover, get_preview_image_tag(
                                             old_cover, "replaced cover", 
                                             ZOOM_LARGE)])
