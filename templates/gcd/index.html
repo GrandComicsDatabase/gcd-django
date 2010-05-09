@@ -1,6 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/DTD/strict.dtd"> 
 {% load statustags %}
 {% load humanize %}
+{% load i18n %}
 
 <html>
 <head>
@@ -44,7 +45,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                         </div>
                     </div>
                     <div class="front_page_central">
-                        {% include "gcd/bits/front_page_content.html" %}
+                        {% include front_page_content %}
                     </div>
                     <!-- Center Column end --> 
                 </div> 
@@ -57,7 +58,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                 </div>
                 <div class="front_page_left_box">
                     <div class="box_header">
-                        Login
+                        {% trans 'Login' %}
                     </div>
                     <div class="box_inner">
                         {% include "gcd/bits/front_page_login.html" %}
@@ -65,20 +66,20 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                 </div>
                 <div class="front_page_left_box">
                     <div class="box_header">
-                        Disclaimer
+                        {% trans "Disclaimer" %}
                     </div>
                     <div class="box_inner">
                         <div class="disclaimer_text">
-                            The Grand Comics Database Project (GCD) is a volunteer project with the goal of documenting and indexing all comics for the free use of scholars, historians, researchers, and fans.
+                            {% trans "The Grand Comics Database Project (GCD) is a volunteer project with the goal of documenting and indexing all comics for the free use of scholars, historians, researchers, and fans." %}
                         </div>
                         <div class="disclaimer_text">
-                            The GCD acknowledges that the all-encompassing research nature of the project may result in the posting of cover scans for comics with images that some may find objectionable.
+                            {% trans "The GCD acknowledges that the all-encompassing research nature of the project may result in the posting of cover scans for comics with images that some may find objectionable." %}
                         </div>
                         <div class="disclaimer_text message">
-                            Viewer discretion is advised.
+                            {% trans "Viewer discretion is advised." %}
                         </div>
                         <div id="front_page_disclaimer_signature">
-                            The Grand Comics Database Team
+                            {% trans "The Grand Comics Database Team" %}
                         </div>
                     </div>
                 </div>
@@ -99,18 +100,40 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                 {% endcomment %}
                 <div class="front_page_right_box">
                     <div class="box_header">
-                        Useful Links
+                        {% trans "Useful Links" %}
                     </div>
                     <div id="useful_links_inner" class="box_inner">
                       <ul>
-                        <li><a href="{% url apps.gcd.views.details.daily_covers %}">Today's covers</a>
-                        <li><a href="{% url apps.gcd.views.details.covers_to_replace %}">Covers to replace</a>
+                        <li><a href="{% url apps.gcd.views.details.daily_covers %}">{% trans "Today's covers" %}</a>
+                        <li><a href="{% url apps.gcd.views.details.covers_to_replace %}">{% trans "Covers to replace" %}</a>
+                        <li><a href="{% url apps.gcd.views.index %}">English start page</a></li>
+                        <li><a href="{% url apps.gcd.views.index %}?lang=de">Deutsche Startseite</a></li>
                       </ul>
+                    </div>
+                </div>
+                {% if language %}
+                <div class="front_page_right_box">
+                    <div class="box_header">
+                        {% trans "Last Updated Language Issues" %}
+                    </div>
+                    <div class="box_inner">
+                        {% last_updated_issues language=language.code %}
                     </div>
                 </div>
                 <div class="front_page_right_box">
                     <div class="box_header">
-                        Last Updated Issues
+                        {% trans "Statistics for Language Comics" %}
+                    </div>
+                    <div class="box_inner">
+                        {% for stat in stats_for_language %}
+                        {{ stat.count|intcomma }} {% trans stat.name %}<br>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="front_page_right_box">
+                    <div class="box_header">
+                        {% trans "Last Updated Issues" %}
                     </div>
                     <div class="box_inner">
                         {% last_updated_issues %}
@@ -118,11 +141,11 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                 </div>
                 <div class="front_page_right_box">
                     <div class="box_header">
-                        Statistics
+                        {% trans "Statistics" %}
                     </div>
                     <div class="box_inner">
                         {% for stat in stats %}
-                        {{ stat.count|intcomma }} {{ stat.name }}<br>
+                        {{ stat.count|intcomma }} {% trans stat.name %}<br>
                         {% endfor %}
                     </div>
                 </div>

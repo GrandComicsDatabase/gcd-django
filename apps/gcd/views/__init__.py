@@ -12,7 +12,7 @@ from django.utils.safestring import mark_safe
 
 from apps.gcd.views.pagination import DiggPaginator
 
-from apps.gcd.models import Error, CountStats
+from apps.gcd.models import Error, CountStats, Language
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -25,8 +25,25 @@ def index(request):
         style = request.GET['style']
 
     stats = CountStats.objects.filter(language__isnull=True)
+    language = None
+    # TODO: we want to check here if we actively support the language
+    if request.LANGUAGE_CODE != 'en':
+        try:
+            language = Language.objects.get(code=request.LANGUAGE_CODE)
+        except Language.DoesNotExist:
+            pass
 
-    vars = { 'style' : style, 'stats' : stats }
+
+    if language:
+        front_page_content = "gcd/bits/front_page_content_%s.html" % language.code
+        stats_for_language = CountStats.objects.filter(language=language)
+    else:
+        front_page_content = "gcd/bits/front_page_content.html"
+        stats_for_language = None
+
+    vars = { 'style' : style, 'stats' : stats, 'language' : language,
+             'stats_for_language' : stats_for_language, 
+             'front_page_content' : front_page_content }
     return render_to_response('gcd/index.html', vars,
                               context_instance=RequestContext(request))
       

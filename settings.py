@@ -34,9 +34,14 @@ MIDDLEWARE_CLASSES = (
    'django.contrib.csrf.middleware.CsrfMiddleware',
    'django.contrib.sessions.middleware.SessionMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
-   'django.middleware.locale.LocaleMiddleware',
    'django.middleware.common.CommonMiddleware',
    'django.middleware.transaction.TransactionMiddleware',
+   'apps.gcd.locale_query.LocaleQueryMiddleware'
+)
+
+LANGUAGES = (
+  ('de', 'German'),
+  ('en', 'English'),
 )
 
 # The router where all our site URLs is defined.
