@@ -55,9 +55,18 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
         <div class="issue_cover_links">
           <a href="{{ issue.get_absolute_url }}cover/4/?style=default">Zoom</a>
         </div>
-        If you are replacing a cover, make sure the new cover is better than the one that is already there.
+        <div style="text-align:left">
+        <ul>
+        <li>If you are replacing a cover, please make sure that the cover you upload is better than the one that is 
+        already there. 
+        <li>If in doubt, for example if only the colors differ and it is a matter of taste, monitor 
+        and scanner calibration, we usually keep the current cover and reject the replacement. 
+        <li>If you realize in the compare view after the upload that the newly uploaded cover is not better 
+        please retract and discard the upload.
+        </ul>
+        </div>
         </div> 
-    {% else %}
+{% else %}
     <div id="display_cover">
         {% if current_covers %}
             {{ current_covers|length }} current cover{{ current_covers|length|pluralize }} for this issue.
