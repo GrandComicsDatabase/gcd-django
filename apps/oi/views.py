@@ -355,8 +355,16 @@ def assign(request, id):
     if changeset.indexer.indexer.is_new and \
        changeset.indexer.indexer.mentor is None and\
        changeset.coverrevisions.count() != 1:
+
         changeset.indexer.indexer.mentor = request.user
         changeset.indexer.indexer.save()
+
+        for pending in changeset.indexer.changesets.filter(state=states.PENDING):
+            try:
+              pending.assign(approver=request.user, notes='')
+            except ValueError:
+                # Someone is already reviewing this.  Unlikely, and just let it go.
+                pass
 
     return HttpResponseRedirect(urlresolvers.reverse('compare', 
                                              kwargs={'id': changeset.id }))

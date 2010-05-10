@@ -23,6 +23,8 @@ from apps.gcd.views import render_error
 from apps.gcd.models import Indexer, Language, Country, Reservation, IndexCredit
 from apps.gcd.forms.accounts import ProfileForm, RegistrationForm
 
+from apps.oi import states
+
 def login(request, template_name):
     """
     Do some pre-checking before handing off to the standard login view.
@@ -390,13 +392,39 @@ def mentor(request, indexer_id):
     if request.method == 'POST' and indexer.mentor is None:
         indexer.mentor = request.user
         indexer.save()
+        pending = indexer.user.changesets.filter(state=states.PENDING)
+        for changeset in pending.all():
+            try:
+              changeset.assign(approver=request.user, notes='')
+            except ValueError:
+                # Someone is already reviewing this.  Unlikely, and just let it go.
+                pass
+
+        if pending.count():
+            return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+
         # I kinda assume the HTTP_REFERER is always present, but just in case
-        if request.META.has_key('HTTP_REFERER'):
+        if 'HTTP_REFERER' in request.META:
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
     return render_to_response('gcd/accounts/mentor.html',
                               { 'indexer' : indexer },
                               context_instance=RequestContext(request))
+
+@login_required
+def unmentor(request, indexer_id):
+    indexer = get_object_or_404(Indexer, id=indexer_id)
+    if indexer.mentor is None:
+        return render_error(request, "This indexer does not have a mentor.")
+    if request.user != indexer.mentor:
+        return render_error(request,
+            "You are not this indexer's mentor, so you may not un-mentor them.")
+    if request.method == 'POST':
+        indexer.mentor = None
+        indexer.save()
+        return HttpResponseRedirect(urlresolvers.reverse('mentoring'))
+
+    return render_error(request, 'Please access this page through the proper form.')
 
 @login_required
 def mentor_not_new(request, indexer_id):
