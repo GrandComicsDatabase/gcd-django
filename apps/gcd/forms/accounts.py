@@ -46,6 +46,18 @@ class AccountForm(forms.Form):
 
     def clean(self):
         cd = self.cleaned_data
+
+        if ('email' in cd):
+            for blocked_domain in settings.BLOCKED_DOMAINS:
+                if (blocked_domain in cd['email']):
+                    raise forms.ValidationError(
+                      ['You may not use a disposable e-mail address service. '
+                       'E-mail addresses are strictly confidential and are only ' 
+                       'used to contact you when there are questions about '
+                       'your submissions to the database. Please contact %s '
+                       'if you believe this message is in error.' %
+                       settings.EMAIL_CONTACT])
+
         if ('email' in cd and
             User.objects.filter(username=cd['email']).count()):
             user = User.objects.get(username=cd['email'])

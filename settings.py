@@ -126,6 +126,8 @@ IMAGE_SERVER_URL = 'http://images.comics.org/'
 COVERS_DIR = '/img/gcd/covers_by_id/'
 NEW_COVERS_DIR = '/img/gcd/new_covers/'
 
+BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com')
+
 # get local settings, will override settings from here
 try:
     from settings_local import *
