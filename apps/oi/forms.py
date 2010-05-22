@@ -895,6 +895,69 @@ class StoryRevisionForm(forms.ModelForm):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
+    def clean(self):
+        cd = self.cleaned_data
+
+        cd['title'] = cd['title'].strip()
+        cd['feature'] = cd['feature'].strip()
+        cd['script'] = cd['script'].strip()
+        cd['pencils'] = cd['pencils'].strip()
+        cd['inks'] = cd['inks'].strip()
+        cd['colors'] = cd['colors'].strip()
+        cd['letters'] = cd['letters'].strip()
+        cd['editing'] = cd['editing'].strip()
+        cd['genre'] = cd['genre'].strip()
+        cd['characters'] = cd['characters'].strip()
+        cd['job_number'] = cd['job_number'].strip()
+        cd['reprint_notes'] = cd['reprint_notes'].strip()
+        cd['synopsis'] = cd['synopsis'].strip()
+        cd['notes'] = cd['notes'].strip()
+        cd['comments'] = cd['comments'].strip()
+
+        if not cd['no_script'] and cd['script'] == "":
+            raise forms.ValidationError(
+              ['Script field or No Script checkbox must be filled in.'])
+        if cd['no_script'] and cd['script'] != "":
+            raise forms.ValidationError(
+              ['Script field and No Script checkbox cannot both be filled in.'])
+
+        if not cd['no_pencils'] and cd['pencils'] == "":
+            raise forms.ValidationError(
+              ['Pencils field or No Pencils checkbox must be filled in.'])
+        if cd['no_pencils'] and cd['pencils'] != "":
+            raise forms.ValidationError(
+              ['Pencils field and No Pencils checkbox cannot both be filled in.'])
+
+        if not cd['no_inks'] and cd['inks'] == "":
+            raise forms.ValidationError(
+              ['Inks field or No Inks checkbox must be filled in.'])
+        if cd['no_inks'] and cd['inks'] != "":
+            raise forms.ValidationError(
+              ['Inks field and No Inks checkbox cannot both be filled in.'])
+
+        if not cd['no_colors'] and cd['colors'] == "":
+            raise forms.ValidationError(
+              ['Colors field or No Colors checkbox must be filled in.'])
+        if cd['no_colors'] and cd['colors'] != "":
+            raise forms.ValidationError(
+              ['Colors field and No Colors checkbox cannot both be filled in.'])
+
+        if not cd['no_letters'] and cd['letters'] == "":
+            raise forms.ValidationError(
+              ['Letters field or No Letters checkbox must be filled in.'])
+        if cd['no_letters'] and cd['letters'] != "":
+            raise forms.ValidationError(
+              ['Letters field and No Letters checkbox cannot both be filled in.'])
+
+        if not cd['no_editing'] and cd['editing'] == "":
+            raise forms.ValidationError(
+              ['Editing field or No Editing checkbox must be filled in.'])
+        if cd['no_editing'] and cd['editing'] != "":
+            raise forms.ValidationError(
+              ['Editing field and No Editing checkbox cannot both be filled in.'])
+
+        return cd
+
 
 def get_cover_revision_form(revision=None):
     compare_url = '<a href="' + urlresolvers.reverse('compare',
