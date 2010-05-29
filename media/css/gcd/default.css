@@ -511,3 +511,21 @@ a.new_window {
     background: transparent no-repeat right center url(external.png); 
 }
 
+#donate_table {
+    width: 100%;
+    border: solid 1px;
+    border-spacing: 0;
+}
+
+#donate_table td {
+    text-align: center;
+    width: 33%;
+    padding: 0.4em;
+}
+
+#donate_table th {
+    font-weight: bold;
+    padding: 0.4em;
+    background-color: #444;
+    color: white;
+}
