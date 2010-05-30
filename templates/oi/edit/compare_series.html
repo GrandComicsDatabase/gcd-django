@@ -8,11 +8,11 @@ Reviewing :: {{ revision }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css">
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css">
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css">
 {% endblock %}
 
 {% block view_body %}
@@ -28,7 +28,7 @@ Changed fields are <span class="comparison_highlight">highlighted.</span>
     <th> Field </th>
     <th> Current </th>
     <th> Change </th>
-  <tr>
+  </tr>
   <tr class="{{ revision.changed.name }}">
     <td class="field_name"> Name </td>
     <td> {{ revision.series.name }} </td>

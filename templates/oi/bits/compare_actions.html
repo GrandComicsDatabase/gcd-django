@@ -5,8 +5,8 @@
   </div>
 {% ifequal changeset.state states.OPEN %}
 {% ifequal user changeset.indexer %}
-  <input type="submit" name="submit" value="Submit changes for approval"></input>
-  <input type="submit" name="discard" value="Discard all changes"></input>
+  <input type="submit" name="submit" value="Submit changes for approval">
+  <input type="submit" name="discard" value="Discard all changes">
 {% endifequal %}
 {% endifequal %}
 
@@ -19,10 +19,10 @@
     {% else %}
     value="Assign"
     {% endif %}
-  ></input>
+  >
 {% else %}
   {% if changeset.singular %}
-  <input type="submit" name="retract" value="Retract and edit further"></input>
+  <input type="submit" name="retract" value="Retract and edit further">
   {% endif %}
 {% endifnotequal %}
 {% endif %}
@@ -30,14 +30,14 @@
 
 {% ifequal changeset.state states.REVIEWING %}
 {% ifequal user changeset.approver %}
-  <input type="submit" name="approve" value="Approve"></input>
+  <input type="submit" name="approve" value="Approve">
   {% if changeset.singular %}
-  <input type="submit" name="disapprove" value="Send Back to Indexer"></input>
+  <input type="submit" name="disapprove" value="Send Back to Indexer">
   {% endif %}
-  <input type="submit" name="cancel" value="Reject Permanently"></input>
+  <input type="submit" name="cancel" value="Reject Permanently">
 {% endifequal %}
 {% endifequal %}
 
-  <input type="submit" name="add_comment" value="Add Comment"></input>
+  <input type="submit" name="add_comment" value="Add Comment">
 </form>
 

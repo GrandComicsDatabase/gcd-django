@@ -9,11 +9,11 @@ Reviewing :: {{ revision }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css">
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css">
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css">
 {% endblock %}
 
 {% block view_body %}
@@ -51,13 +51,13 @@ Links open in new windows.
 {% endifequal %}
 </p>
 
-<table class="comparison">
 <a name="{{ revision.id }}"></a>
+<table class="comparison">
   <tr>
     <th> Field </th>
     <th> Current </th>
     <th> Change </th>
-  <tr>
+  </tr>
   {% if not revision.source %}
   <tr class="True">
     <td class="field_name"> Add issue after </td>
