@@ -233,6 +233,7 @@ body {
     font-size: small;
 }
 
+div.emphasized,
 .instructions {
     border: solid 4px #77E;
     padding: 0.5em;
@@ -261,5 +262,9 @@ body {
 #front_page_beta {
     margin-left: 1em;
     margin-right: 1em;
+}
+
+dd {
+    margin-bottom: 1em;
 }
 
