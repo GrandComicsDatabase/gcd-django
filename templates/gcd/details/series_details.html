@@ -19,7 +19,7 @@
 
 {% include "gcd/bits/series_issue_header.html" %}
 
-<div class="clear">
+<div class="details">
 
 <h3> Series {% if by_date %}Timeline{% else %}Details{% endif %} </h3>
 <p>
@@ -111,10 +111,10 @@ divisible filter.
 
   {% if rows and no_date_rows %}
 </table>
-<div class="left">
+<p>
 These issues have no {% if bad_dates %}usable{% endif %} key date and
 cannot be placed in a timeline:
-</div>
+</p>
 <table class="listing">
   <tr>
     <th> Key Date </th>

@@ -3,11 +3,17 @@
  * CSS specific to the series details page.
  * ***************************************/
 
+.details,
 .clear {
     float: left;
     clear: both;
     margin-top: 1em;
     width: 100%;
+}
+
+.details p {
+    float: left;
+    clear: left;
 }
 
 #series_cover {
