@@ -31,6 +31,7 @@
       <a href="{% url compare id=cover.changeset.id %}">{{ tag }}</a>
       <br/>
       <div class="cover_caption">
+        {% if cover.cover %} [REPLACEMENT COVER] {% else %} {% if issue.cover_set.latest.has_image %} [VARIANT COVER] {% else %} [ADDED COVER] {% endif %} {% endif %}<br>
         {{ issue.series.name }} #{{ issue.display_number }}<br>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br>
         {% if issue.publication_date %}
