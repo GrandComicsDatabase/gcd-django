@@ -44,6 +44,26 @@ form td {
     padding-bottom: 1em;
 }
 
+form.download {
+    margin-bottom: 1em;
+}
+
+form.download th {
+    width: 30%;
+    justify: left;
+}
+
+form.download ul {
+    list-style: none;
+    padding-left: 1em;
+}
+
+div.wide_form {
+    width: 100%;
+    clear: both;
+    margin: 0.5em 0 1em 0;
+}
+
 .errorlist {
     list-style-type: none;
     list-style-position: outside;
@@ -63,5 +83,9 @@ form td {
 
 .important {
     color: red;
+}
+
+dl.tech_contact dd {
+    margin-bottom: 1em;
 }
 

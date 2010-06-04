@@ -1,9 +1,13 @@
 import re
 import sys
+import os
+import os.path
+import stat
 
 from django.core import urlresolvers
+from django.core.files import File
 from django.conf import settings
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.db.models import Min, Max
@@ -1728,6 +1732,44 @@ def mentoring(request):
         'new_indexers': new_indexers,
         'my_mentees': my_mentees,
         'mentees': mentees,
+      },
+      context_instance=RequestContext(request))
+
+
+##############################################################################
+# Downloads
+##############################################################################
+
+@login_required
+def download(request, file='current.zip'):
+    path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR, 'current.zip')
+
+    if request.method == 'POST':
+        form = DownloadForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+
+            desc = {'file': file, 'accepted license': True}
+            if 'purpose' in cd and cd['purpose']:
+                desc['purpose'] = cd['purpose']
+            if 'usage' in cd and cd['usage']:
+                desc['usage'] = cd['usage']
+
+            record = Download(user=request.user, description=repr(desc))
+            record.save()
+            dump = File(open(path))
+    
+            response = HttpResponse(dump.chunks(), mimetype='application/zip')
+            response['Content-Disposition'] = 'attachment; filename=current.zip'
+            return response
+    else:
+        form = DownloadForm()
+
+    return render_to_response('oi/download.html',
+      {
+        'method': request.method,
+        'timestamp': datetime.utcfromtimestamp(os.stat(path)[stat.ST_MTIME]),
+        'form': form,
       },
       context_instance=RequestContext(request))
 

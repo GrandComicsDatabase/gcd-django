@@ -128,6 +128,9 @@ NEW_COVERS_DIR = '/img/gcd/new_covers/'
 
 BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com')
 
+# data dump directories, relative to MEDIA_ROOT
+DUMP_DIR = 'dumps'
+
 # get local settings, will override settings from here
 try:
     from settings_local import *

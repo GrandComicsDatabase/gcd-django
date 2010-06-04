@@ -132,5 +132,7 @@ urlpatterns = patterns('',
     url(r'^queues/covers_pending/$', oi_views.show_queue,
        {'queue_name': 'covers', 'state': states.PENDING },
         name='pending_covers'),
+
+    url(r'^download/', oi_views.download, {}, name='download'),
 )
 

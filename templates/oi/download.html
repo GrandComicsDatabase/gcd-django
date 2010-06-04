@@ -1,0 +1,87 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}GCD Data Dumps{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h2> Data License </h2>
+<p class="important instructions">
+By downloading the data dump, you agree to be bound by the terms of the GCD's
+data license, and follow the recommendations of the Board in its implementation.
+In particular, public use of our data requires specific credits and links
+back to our web site, as described in the Board resolution that ratified the
+license.  Private data use is not restricted.
+</p>
+<p>
+For details, please read the following Board Resolutions:
+<ul>
+  <li> <a href="http://docs.comics.org/wiki/GCD_Board_Votes_-_2009#Data_License_and_proper_credit_in_derived_works">Data License (Creative Commons 3.0 Unported) and crediting guidelines</a>
+  <li> <a href="http://docs.comics.org/wiki/GCD_Board_Votes_-_2010#Data_Distribution_Policy">Data distribution policy</a>
+</ul>
+
+<h2>Technical and Licensing Contact Information</h2>
+<dl class="tech_contact">
+  <dt> <a href="mailto:gcd-contact@googlegroups.com">gcd-contact@googlegroups.com</a>
+  <dd> All questions about licensing and the crediting guidelines, including
+       requests for alternate arrangements.
+  <dt> <a href="http://groups.google.com/group/gcd-tech">gcd-tech</a>
+  <dd> A mailing list you may join to ask technical questions and keep up with
+       the details of GCD technical work.  Please do not ask licensing / legal
+       questions on this list.  It gets moderate traffic, and has public archives.
+  <dt> 
+<a href="http://groups.google.com/group/gcd-tech-announce/">gcd-tech-announce</a>
+  <dd> A low-traffic announcement-only list to which you may subscribe to be
+       notified of major changes in the publicly available data or its structure.
+       This is the official notification channel for all clients of the data-
+       changes to the dumps will not be announced on the site as they are not
+       of general interest.
+</dl>
+
+<h2>Documentation</h2>
+<p>
+Currently, the dump is only available as a MySQL dump that includes table
+creation and data insert statements, but does not include a database creation
+statement.  Additional formats are under investigation, with no estimated time
+of delivery.  Any such estimates will be posted here when they are available,
+and announced on
+</p>
+<ul>
+  <li><a href="http://docs.comics.org/wiki/Current_Schema">Current Schema Documentation</a>
+</ul>
+
+<h2>Downloads</h2>
+<p>
+Data last updated: <span class="important">{{ timestamp }}</span>
+</p>
+<form method="POST" action="{% url download %}" class="download">
+  <p>
+    <label for="purpose">{{ form.purpose.label }}</label>
+    {{ form.purpose }}
+    <label for="usage">{{ form.usage.label }}</label>
+    <div class="wide_form">
+        {{ form.usage }}
+    </div>
+{% if not forms.is_valid %}
+  {% if form.accept_license.errors %}
+    {{ form.accept_license.errors }}
+  {% else %}
+    {{ form.non_field_errors }}
+  {% endif %}
+{% endif %}
+    {{ form.accept_license }}
+    <label for="accept_license" class="instructions">
+      {{ form.accept_license.label }}
+    </label>
+  </p>
+  <input type="submit" name="mysqldump" value="Download MySQL Dump">
+</form>
+
+{% endblock %}
+

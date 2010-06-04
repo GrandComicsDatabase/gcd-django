@@ -1829,3 +1829,12 @@ class StoryRevision(Revision):
         """
         return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
 
+class Download(models.Model):
+    """
+    Track downloads of bulk data.  Description may contain the filesystem
+    paths or other information about what was downloaded.
+    """
+    user = models.ForeignKey(User)
+    description = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
