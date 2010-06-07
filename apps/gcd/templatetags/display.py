@@ -64,9 +64,21 @@ def show_issue(issue):
                       issue.get_absolute_url(),
                       esc(issue.display_number)))
 
+def show_indicia_pub(issue):
+    if issue.indicia_publisher is None:
+        if issue.indicia_pub_not_printed:
+            ip_url = u'[none printed]'
+        else:
+            ip_url = u'?'
+    else:
+        ip_url = u'<a href=\"%s\">%s</a>' % (issue.indicia_publisher.get_absolute_url(), issue.indicia_publisher)
+        if issue.indicia_pub_not_printed:
+            ip_url += u' [not printed on item]'
+    return mark_safe(ip_url)
+
 register.filter(absolute_url)
 register.filter(show_story_short)
 register.filter(show_revision_short)
 register.filter(show_volume)
 register.filter(show_issue)
-
+register.filter(show_indicia_pub)

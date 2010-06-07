@@ -44,6 +44,7 @@ class Issue(models.Model):
     # Series and publisher links
     series = models.ForeignKey(Series)
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
+    indicia_pub_not_printed = models.BooleanField(default=0)
     brand = models.ForeignKey(Brand, null=True)
     no_brand = models.BooleanField(default=0, db_index=True)
 

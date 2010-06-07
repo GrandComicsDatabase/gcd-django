@@ -55,7 +55,7 @@
 </dl>
 <dl>
   <dt> {% trans "Indicia Publisher" %}:
-  <dd id="issue_indicia_publisher"> {{ issue.indicia_publisher|absolute_url|default:"?" }}
+  <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}
 {% if not issue.no_brand %}
   <dt> {% trans "Brand" %}:
   <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}

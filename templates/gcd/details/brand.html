@@ -65,7 +65,7 @@ GCD :: Brand :: {{ brand.name }}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date }} </td>
-    <td> {{ issue.indicia_publisher|absolute_url|default:"?" }} </td>
+    <td> {{ issue|show_indicia_pub }} </td>
   </tr>
   {% endfor %}
 </table>

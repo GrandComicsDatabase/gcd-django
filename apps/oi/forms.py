@@ -289,6 +289,7 @@ def _get_issue_fields():
         'display_volume_with_number',
         'no_volume',
         'indicia_publisher',
+        'indicia_pub_not_printed',
         'brand',
         'no_brand',
         'publication_date',
@@ -312,11 +313,16 @@ def get_issue_revision_form(publisher, series=None, revision=None):
           help_text='The exact corporation listed as the publisher in the indicia, '
                     'if any.  If there is none, the copyright holder (if any) may '
                     'be used, with a comment in the notes field')
+
+        indicia_pub_not_printed = forms.BooleanField(required=False,
+          help_text="Check this box if there is no indicia publisher printed on the comic.")
+
         brand = forms.ModelChoiceField(required=False,
           queryset=Brand.objects.filter(parent=publisher),
           help_text="The publisher's logo or tagline on the cover of the comic, "
                     "if any. Some U.S. golden age publishers did not put any "
                     "identifiable brand marks on their comics.")
+
         no_brand = forms.BooleanField(required=False,
           help_text="Check this box if there is no publisher's logo or tagline "
                     "on the comic.")
@@ -465,6 +471,9 @@ def get_bulk_issue_revision_form(series, method):
                     'if any.  If there is none, the copyright holder (if any) may '
                     'be used, with a comment in the notes field')
 
+        indicia_pub_not_printed = forms.BooleanField(required=False,
+          help_text="Check this box if there is no indicia publisher printed on the comic.")
+
         brand = forms.ModelChoiceField(required=False,
           queryset=Brand.objects.filter(parent=series.publisher),
           help_text="The publisher's logo or tagline on the cover of the comic, "
@@ -524,9 +533,9 @@ class BulkIssueRevisionForm(forms.Form):
                 'are not part of the regular display.')
 
     def _shared_key_order(self):
-        return ['indicia_publisher', 'brand', 'no_brand', 'indicia_frequency',
-                'price', 'page_count', 'page_count_uncertain',
-                'editing', 'no_editing', 'comments']
+        return ['indicia_publisher', 'indicia_pub_not_printed', 'brand',
+                'no_brand', 'indicia_frequency', 'price', 'page_count',
+                'page_count_uncertain', 'editing', 'no_editing', 'comments']
 
 class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 

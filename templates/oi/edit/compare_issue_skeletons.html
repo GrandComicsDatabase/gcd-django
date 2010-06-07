@@ -83,6 +83,11 @@ Non-default fields are <span class="comparison_highlight">highlighted.</span>
     <td> {{ revision.issue.indicia_publisher|absolute_url:'target="_blank"'|default:"None" }} </td>
     <td> {{ revision.indicia_publisher|absolute_url:'target="_blank"'|default:"None" }} </td>
   </tr>
+  <tr class="{{ revision.changed.indicia_pub_not_printed }}">
+    <td class="field_name"> Indicia publisher not printed </td>
+    <td> {% if revision.issue.indicia_pub_not_printed %} Not printed {% else %} Printed {% endif %} </td>
+    <td> {% if revision.indicia_pub_not_printed %} Not printed {% else %} Printed {% endif %} </td>
+  </tr>
   <tr class="{{ revision.changed.brand}}">
     <td class="field_name"> Brand </td>
     <td> {{ revision.issue.brand|absolute_url:'target="_blank"'|default:"None" }} </td>

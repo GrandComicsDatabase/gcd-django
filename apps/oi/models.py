@@ -1333,6 +1333,7 @@ class IssueRevisionManager(RevisionManager):
           indicia_frequency=issue.indicia_frequency,
           series=issue.series,
           indicia_publisher=issue.indicia_publisher,
+          indicia_pub_not_printed=issue.indicia_pub_not_printed,
           brand=issue.brand,
           no_brand=issue.no_brand,
           page_count=issue.page_count,
@@ -1389,6 +1390,7 @@ class IssueRevision(Revision):
     series = models.ForeignKey(Series, related_name='issue_revisions')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True,
                                           related_name='issue_revisions')
+    indicia_pub_not_printed = models.BooleanField(default=0)
     brand = models.ForeignKey(Brand, null=True, related_name='issue_revisions')
     no_brand = models.BooleanField(default=0, db_index=True)
 
@@ -1441,7 +1443,8 @@ class IssueRevision(Revision):
                 'publication_date', 'key_date', 'indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
                 'editing', 'no_editing', 'notes',
-                'series', 'indicia_publisher', 'brand', 'no_brand')
+                'series', 'indicia_publisher', 'indicia_pub_not_printed',
+                'brand', 'no_brand')
 
     def _source(self):
         return self.issue
@@ -1550,6 +1553,7 @@ class IssueRevision(Revision):
 
         issue.series = self.series
         issue.indicia_publisher = self.indicia_publisher
+        issue.indicia_pub_not_printed = self.indicia_pub_not_printed
         issue.brand = self.brand
         issue.no_brand = self.no_brand
 
