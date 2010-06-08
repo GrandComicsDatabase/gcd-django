@@ -204,7 +204,7 @@ def sum_page_counts(stories):
     """
     count = Decimal(0)
     for story in stories:
-        if story.page_count:
+        if story.page_count and not story.deleted:
             count += story.page_count
     return count
 
