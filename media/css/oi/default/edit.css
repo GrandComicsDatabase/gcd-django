@@ -2,7 +2,7 @@ input.wide {
     width: 60em;
 }
 
-input.year{
+input.year {
     width: 6em;
 }
 
@@ -54,13 +54,33 @@ table.comparison tr.True {
 }
 
 table.comparison td.field_name {
-    font-weight: bold;    
+    font-weight: bold;
 }
 
 .comparison_highlight {
     border: solid black 1px;
     padding: 0.2em;
     background-color: yellow;
+}
+
+table.deleted tr {
+    background-color: tomato;
+}
+
+.deleted_highlight {
+    border: solid black 1px;
+    padding: 0.2em;
+    background-color: tomato;
+}
+
+table.added tr {
+    background-color: palegreen;
+}
+
+.added_highlight {
+    border: solid black 1px;
+    padding: 0.2em;
+    background-color: palegreen;
 }
 
 table.story_list td {
@@ -72,11 +92,11 @@ table.story_list td.import_info {
     padding: 0.5em;
 }
 
-form.changeset{
+form.changeset {
     display: inline;
 }
 
-form.story_remove{
+form.story_button {
     display: inline;
     padding-left: 2em;
 }

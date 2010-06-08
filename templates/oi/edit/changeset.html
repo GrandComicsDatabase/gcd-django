@@ -165,10 +165,20 @@
             </input>
           </form>
           {% if not story.story %}
-          <form class="story_remove" method="GET"
+          <form class="story_button" method="GET"
                 action="{% url remove_story_revision id=story.id %}">
             <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
-                   value="Remove">
+                   value="Remove New Story">
+            </input>
+          </form>
+          {% else %}
+          <form class="story_button" method="POST"
+                action="{% url toggle_delete_story_revision id=story.id %}">
+            {% if story.deleted %}
+            <input type="submit" value="Restore">
+            {% else %}
+            <input type="submit" value="Mark to Delete">
+            {% endif %}
             </input>
           </form>
           {% endif %}

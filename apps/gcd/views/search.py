@@ -50,6 +50,9 @@ def generic_by_name(request, name, q_obj, sort,
         heading = 'Series Search Results'
 
     elif (class_ is Story):
+        # TODO: move this outside when series deletes are implemented
+        q_obj &= Q(deleted=False)
+
         base_name = 'stor'
         plural_suffix = 'y,ies'
 
@@ -361,9 +364,9 @@ def process_advanced(request):
 
     elif data['target'] == 'sequence':
         if query:
-            filter = Story.objects.filter(query)
+            filter = Story.objects.exclude(deleted=True).filter(query)
         else:
-            filter = Story.objects.all()
+            filter = Story.objects.exclude(deleted=True)
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
         template = 'gcd/search/content_list.html'
@@ -664,7 +667,8 @@ def search_stories(data, op):
     target = data['target']
     prefix = compute_prefix(target, 'sequence')
 
-    q_objs = []
+    q_objs = [Q(**{'%s%s' % (prefix, 'deleted__exact') : 0})]
+    
     for field in ('feature', 'title', 'genre',
                   'script', 'pencils', 'inks',
                   'colors', 'letters', 'job_number', 'characters',

@@ -4,16 +4,34 @@
 <h3> Sequence {{ story_revision.sequence_number }} 
 <a name="{{ story_revision.id }}"></a>
 {% ifequal user revision.changeset.indexer %}
-{% ifequal changeset.state states.OPEN %}
+  {% ifequal changeset.state states.OPEN %}
 <span class="story_edit">
-<a href="{% url edit_revision model_name='story',id=story_revision.id %}"> (edit sequence)</a> 
+    {% if story_revision.deleted %}
+  <form class="story_button" method="POST"
+        action="{% url toggle_delete_story_revision id=story_revision.id %}">
+    <input type="submit" value="Restore">
+    </input>
+  </form>
+    {% else %}
+      {% if story_revision.story %}
+  <a href="{% url edit_revision model_name='story',id=story_revision.id %}"> (edit sequence)</a>
+      {% else %}
+  <form class="story_button" method="GET"
+        action="{% url remove_story_revision id=story_revision.id %}">
+    <input type="submit" id="remove_{{ story_revision.id }}" name="remove_{{ story_revision.id }}"
+           value="Remove New Story">
+    </input>
+  </form>
+      {% endif %}
+    {% endif %}
 </span>
-{% endifequal %}
+  {% endifequal %}
 {% endifequal %}
 </h3>
 
-<table class="comparison">
-  {% if not story_revision.is_changed and request.GET.collapse %}
+<table class="comparison {% if story_revision.deleted %} deleted {% endif %}
+  {% if not story_revision.story %} added {% endif %}">
+  {% if not story_revision.is_changed and not story_revision.deleted and request.GET.collapse %}
       <h4> No changes to this sequence </h4>
       <tr>
         {% with story_revision.story as story %}
@@ -27,9 +45,224 @@
   {% else %}
   <tr>
     <th> Field </th>
+    {% if not story_revision.deleted %}
+      {% if story_revision.story %}
     <th> Current </th>
     <th> Change </th>
+      {% else %}
+    <th> Added </th>
+      {% endif %}
+    {% else %}
+    <th> Deleted </th>
+    {% endif %}
   </tr>
+    {% if story_revision.deleted %}
+    {% comment %} deleted story {% endcomment %}
+  <tr>
+    <td class="field_name"> Sequence Number </td>
+    <td> {{ story_revision.story.sequence_number }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Type </td>
+    <td> {{ story_revision.story.type }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Title </td>
+    <td> {{ story_revision.story.title }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Unofficial title? </td>
+    <td> {% if story_revision.story.title_inferred %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Feature </td>
+    <td> {{ story_revision.story.feature }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Page count </td>
+    <td> {{ story_revision.story.page_count|format_page_count }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Page count uncertain </td>
+    <td> {% if story_revision.story.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Genre </td>
+    <td> {{ story_revision.story.genre }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Script </td>
+    <td> {{ story_revision.story.script }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No script </td>
+    <td> {% if story_revision.story.no_script %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Pencils </td>
+    <td> {{ story_revision.story.pencils }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No pencils </td>
+    <td> {% if story_revision.story.no_pencils %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Inks </td>
+    <td> {{ story_revision.story.inks }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No inks </td>
+    <td> {% if story_revision.story.no_inks %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Colors </td>
+    <td> {{ story_revision.story.colors }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No colors </td>
+    <td> {% if story_revision.story.no_colors %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Letters </td>
+    <td> {{ story_revision.story.letters }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No letters </td>
+    <td> {% if story_revision.story.no_letters %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Editing </td>
+    <td> {{ story_revision.story.editing }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No editing </td>
+    <td> {% if story_revision.story.no_editing %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Characters </td>
+    <td> {{ story_revision.story.characters|linebreaksbr }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Synopsis </td>
+    <td> {{ story_revision.story.synopsis|linebreaksbr }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Job number </td>
+    <td> {{ story_revision.story.job_number }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Reprint Notes </td>
+    <td> {{ story_revision.story.reprint_notes|linebreaksbr }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Notes </td>
+    <td> {{ story_revision.story.notes|linebreaksbr }} </td>
+  </tr>
+    {% else %}
+      {% if not story_revision.story %}
+      {% comment %} added story {% endcomment %}
+  <tr>
+    <td class="field_name"> Sequence Number </td>
+    <td> {{ story_revision.sequence_number }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Type </td>
+    <td> {{ story_revision.type }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Title </td>
+    <td> {{ story_revision.title }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Unofficial title? </td>
+    <td> {% if story_revision.title_inferred %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Feature </td>
+    <td> {{ story_revision.feature }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Page count </td>
+    <td> {{ story_revision.page_count|format_page_count }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Page count uncertain </td>
+    <td> {% if story_revision.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Genre </td>
+    <td> {{ story_revision.genre }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Script </td>
+    <td> {{ story_revision.script }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No script </td>
+    <td> {% if story_revision.no_script %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Pencils </td>
+    <td> {{ story_revision.pencils }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No pencils </td>
+    <td> {% if story_revision.no_pencils %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Inks </td>
+    <td> {{ story_revision.inks }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No inks </td>
+    <td> {% if story_revision.no_inks %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Colors </td>
+    <td> {{ story_revision.colors }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No colors </td>
+    <td> {% if story_revision.no_colors %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Letters </td>
+    <td> {{ story_revision.letters }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No letters </td>
+    <td> {% if story_revision.no_letters %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Editing </td>
+    <td> {{ story_revision.editing }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> No editing </td>
+    <td> {% if story_revision.no_editing %} X {% endif %} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Characters </td>
+    <td> {{ story_revision.characters|linebreaksbr }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Synopsis </td>
+    <td> {{ story_revision.synopsis|linebreaksbr }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Job number </td>
+    <td> {{ story_revision.job_number }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Reprint Notes </td>
+    <td> {{ story_revision.reprint_notes|linebreaksbr }} </td>
+  </tr>
+  <tr>
+    <td class="field_name"> Notes </td>
+    <td> {{ story_revision.notes|linebreaksbr }} </td>
+  </tr>
+      {% else %}
+      {% comment %} changed story {% endcomment %}
   <tr class="{{ story_revision.changed.sequence_number }}">
     <td class="field_name"> Sequence Number </td>
     <td> {{ story_revision.story.sequence_number }} </td>
@@ -155,6 +388,8 @@
     <td> {{ story_revision.story.notes|linebreaksbr }} </td>
     <td> {{ story_revision.notes|linebreaksbr }} </td>
   </tr>
+      {% endif %}
+    {% endif %}
   {% endif %}
 </table>
 

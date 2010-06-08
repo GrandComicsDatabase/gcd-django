@@ -610,7 +610,7 @@ def show_issue(request, issue, preview=False):
     # stories.  But we should measure this.  Note that we definitely want
     # to send the cover and interior stories to the UI separately, as the
     # UI should not be concerned with the designation of story 0 as the cover.
-    stories = list(issue.story_set.order_by('sequence_number'))
+    stories = list(issue.active_stories().order_by('sequence_number'))
 
     cover_story = None
     if (len(stories) > 0):

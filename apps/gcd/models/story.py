@@ -59,6 +59,12 @@ class Story(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
+    deleted = models.BooleanField(default=0, db_index=True)
+    
+    def delete(self):
+        self.deleted = True
+        self.save()
+
     def has_credits(self):
         """Simplifies UI checks for conditionals.  Credit fields.
         Note that the editor field does not apply to the special cover story."""

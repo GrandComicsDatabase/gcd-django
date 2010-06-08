@@ -96,7 +96,7 @@ def _do_reserve(indexer, display_obj, model_name):
       display_obj, changeset=changeset)
 
     if model_name == 'issue':
-        for story in revision.issue.story_set.all():
+        for story in revision.issue.active_stories():
            StoryRevision.objects.clone_revision(story=story, changeset=changeset)
     return changeset
 
@@ -1290,7 +1290,18 @@ def remove_story_revision(request, id):
     story.delete()
     return HttpResponseRedirect(urlresolvers.reverse('edit',
       kwargs={ 'id': story.changeset.id }))
-        
+
+@permission_required('gcd.can_reserve')
+def toggle_delete_story_revision(request, id):
+    story = get_object_or_404(StoryRevision, id=id)
+    if request.user != story.changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may delete or restore stories.')
+    
+    story.toggle_deleted()
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+      kwargs={ 'id': story.changeset.id }))
+
 ##############################################################################
 # Ongoing Reservations
 ##############################################################################

@@ -296,29 +296,6 @@ class Changeset(models.Model):
         self.state = states.OPEN
         self.save()
 
-    def mark_deleted(self, notes=''):
-        """
-        Mark this revision as deleted, meaning that instead of copying it
-        back to the display table, the display table entry will be removed
-        when the revision is committed.
-
-        Deletion moves the revision directly into PENDING as further edits
-        are pointless.
-        """
-        if self.state != states.OPEN:
-            raise ValueError, \
-                "Objects may be deleted only through OPEN reservations."
-
-        self.comments.create(commenter=self.indexer,
-                             text=notes,
-                             old_state=self.state,
-                             new_state=states.PENDING)
-        self.state = states.PENDING
-        for revision in self.revisions:
-            revision.mark_deleted()
-
-        self.save()
-
     def __unicode__(self):
         if self.inline():
             return  unicode(self.inline_revision())
@@ -468,13 +445,13 @@ class Revision(models.Model):
     # Note: lambda required so that polymorphism works.
     source_name = property(lambda self: self._source_name())
 
-    def mark_deleted(self, notes=''):
+    def toggle_deleted(self):
         """
         Mark this revision as deleted, meaning that instead of copying it
         back to the display table, the display table entry will be removed
         when the revision is committed.
         """
-        self.deleted = True
+        self.deleted = not self.deleted
         self.save()
 
     def compare_changes(self):
@@ -485,6 +462,10 @@ class Revision(models.Model):
         """
         self.changed = {}
         self.is_changed = False
+
+        if self.deleted:
+            return
+
         for field_name in self._field_list():
             new = getattr(self, field_name)
             if self.source is None:
@@ -1394,6 +1375,9 @@ class IssueRevision(Revision):
     brand = models.ForeignKey(Brand, null=True, related_name='issue_revisions')
     no_brand = models.BooleanField(default=0, db_index=True)
 
+    def active_stories(self):
+        return self.story_set.exclude(deleted=True)
+    
     def _display_number(self):
         """
         Implemented separately because it needs to use the revision's

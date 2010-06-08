@@ -27,7 +27,9 @@ Reviewing :: {{ revision }}
 {% endif %}
 </h1>
 <p>
-Changed fields are <span class="comparison_highlight">highlighted.</span>
+Highlighted fields represent <span class="added_highlight">added</span>, 
+<span class="comparison_highlight">changed</span>, and 
+<span class="deleted_highlight">deleted</span> data.
 <a href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview</a> changes.
 {% if changeset.storyrevisions.count %}
   {% if request.GET.collapse %}

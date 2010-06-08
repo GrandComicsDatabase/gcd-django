@@ -55,6 +55,9 @@ class Issue(models.Model):
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
+
+    def active_stories(self):
+        return self.story_set.exclude(deleted=True)
     
     def _display_number(self):
         if self.display_volume_with_number:
