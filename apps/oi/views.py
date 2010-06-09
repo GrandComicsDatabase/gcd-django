@@ -85,7 +85,8 @@ def _do_reserve(indexer, display_obj, model_name):
     if indexer.indexer.can_reserve_another() is False:
         return None
 
-    changeset = Changeset(indexer=indexer, state=states.OPEN)
+    changeset = Changeset(indexer=indexer, state=states.OPEN,
+                          change_type=CTYPES[model_name])
     changeset.save()
     changeset.comments.create(commenter=indexer,
                               text='Editing',
@@ -770,7 +771,8 @@ def add_publisher(request):
     if not form.is_valid():
         return _display_add_publisher_form(request, form)
 
-    changeset = Changeset(indexer=request.user, state=states.OPEN)
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['publisher'])
     changeset.save()
     revision = form.save(commit=False)
     revision.save_added_revision(changeset=changeset,
@@ -815,7 +817,8 @@ def add_indicia_publisher(request, parent_id):
         if not form.is_valid():
             return _display_add_indicia_publisher_form(request, parent, form)
 
-        changeset = Changeset(indexer=request.user, state=states.OPEN)
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['indicia_publisher'])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
@@ -865,7 +868,8 @@ def add_brand(request, parent_id):
         if not form.is_valid():
             return _display_add_brand_form(request, parent, form)
 
-        changeset = Changeset(indexer=request.user, state=states.OPEN)
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['brand'])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
@@ -925,7 +929,8 @@ def add_series(request, publisher_id):
         if not form.is_valid():
             return _display_add_series_form(request, publisher, imprint, form)
 
-        changeset = Changeset(indexer=request.user, state=states.OPEN)
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['series'])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
@@ -982,7 +987,8 @@ def add_issue(request, series_id, sort_after=None):
     if not form.is_valid():
         return _display_add_issue_form(request, series, form)
 
-    changeset = Changeset(indexer=request.user, state=states.OPEN)
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['issue_add'])
     changeset.save()
     revision = form.save(commit=False)
     revision.save_added_revision(changeset=changeset,
@@ -1044,7 +1050,8 @@ def add_issues(request, series_id, method=None):
     if not form.is_valid():
         return _display_bulk_issue_form(request, series, form, method)
 
-    changeset = Changeset(indexer=request.user, state=states.OPEN)
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['issue_add'])
     changeset.save()
     if method == 'number':
         new_issues = _build_whole_numbered_issues(series, form, changeset)
@@ -1505,36 +1512,16 @@ def show_queue(request, queue_name, state):
     if 'approved' == queue_name:
         return show_approved(request)
 
-    publishers = Changeset.objects.annotate(
-      publisher_revision_count=Count('publisherrevisions')).filter(
-      publisher_revision_count=1, **kwargs).select_related('approver', 
-                                                           'indexer')
+    changes = Changeset.objects.filter(**kwargs).select_related(
+      'indexer__indexer', 'approver__indexer')
 
-    indicia_publishers = Changeset.objects.annotate(
-      indicia_publisher_revision_count=Count('indiciapublisherrevisions')).filter(
-      indicia_publisher_revision_count=1, **kwargs).select_related('approver', 
-                                                                   'indexer')
-
-    brands = Changeset.objects.annotate(
-      brand_revision_count=Count('brandrevisions')).filter(
-      brand_revision_count=1, **kwargs).select_related('approver', 'indexer')
-
-    series = Changeset.objects.annotate(
-      series_revision_count=Count('seriesrevisions')).filter(
-      series_revision_count=1, **kwargs).select_related('approver', 'indexer')
-
-    issue_annotated = Changeset.objects.annotate(
-      issue_revision_count=Count('issuerevisions')).select_related('approver',
-                                                                   'indexer')
-    bulk_issue_adds = issue_annotated.exclude(issue_revision_count__lt=1)\
-                      .filter(issuerevisions__issue=None, **kwargs)
-    issues = issue_annotated.filter(issue_revision_count=1, **kwargs)\
-             .exclude(issuerevisions__issue=None)
-
-    covers = Changeset.objects.annotate(
-      cover_revision_count=Count('coverrevisions')).filter(
-      cover_revision_count=1, **kwargs).select_related('approver', 'indexer')
-
+    publishers = changes.filter(change_type=CTYPES['publisher'])
+    indicia_publishers = changes.filter(change_type=CTYPES['indicia_publisher'])
+    brands = changes.filter(change_type=CTYPES['brand'])
+    series = changes.filter(change_type=CTYPES['series'])
+    issue_adds = changes.filter(change_type=CTYPES['issue_add'])
+    issues = changes.filter(change_type=CTYPES['issue'])
+    covers = changes.filter(change_type=CTYPES['cover'])
 
     response = render_to_response(
       'oi/queues/%s.html' % queue_name,
@@ -1566,7 +1553,7 @@ def show_queue(request, queue_name, state):
           {
             'object_name': 'Issue Skeletons',
             'object_type': 'issue',
-            'changesets': bulk_issue_adds.order_by('modified'),
+            'changesets': issue_adds.order_by('modified'),
           },
           {
             'object_name': 'Issues',
@@ -1601,9 +1588,10 @@ def show_approved(request):
 
 @login_required
 def show_cover_queue(request):
-    covers = Changeset.objects.annotate(
-      cover_revision_count=Count('coverrevisions')).filter(
-      cover_revision_count=1, state__in=(states.PENDING, states.REVIEWING))
+    covers = Changeset.objects.filter(
+      state__in=(states.PENDING, states.REVIEWING),
+      change_type=CTYPES['cover']).select_related('indexer__indexer',
+                                                  'approver__indexer')
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 5

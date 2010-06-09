@@ -14,6 +14,23 @@ from apps.gcd.models import *
 
 LANGUAGE_STATS = ['de',]
 
+# Changeset type "constants"
+CTYPES = {
+    'unknown': 0,
+    'publisher': 1,
+    'brand': 2,
+    'indicia_publisher': 3,
+    'series': 4,
+    'issue_add': 5,
+    'issue': 6,
+    'cover': 7,
+}
+
+CTYPES_INLINE = frozenset((CTYPES['publisher'],
+                           CTYPES['brand'],
+                           CTYPES['indicia_publisher'],
+                           CTYPES['series']))
+
 def update_count(field, delta, language=None):
     ''' 
     updates statistics, for all and per language
@@ -46,29 +63,42 @@ class Changeset(models.Model):
     approver = models.ForeignKey('auth.User',  db_index=True,
                                  related_name='approved_%(class)s', null=True)
 
+    change_type = models.IntegerField(db_index=True)
+
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
 
     def __init__(self, *args, **kwargs):
         models.Model.__init__(self, *args, **kwargs)
-        self._is_inline = None
         self._inline_revision = None
 
     def _revision_sets(self):
-        return (self.publisherrevisions.all(),
-                self.indiciapublisherrevisions.all(),
-                self.brandrevisions.all(),
-                self.seriesrevisions.all(),
-                self.issuerevisions.all(),
-                self.storyrevisions.all(),
-                self.coverrevisions.all())
+        if self.change_type == CTYPES['issue']:
+            return (self.issuerevisions.all().select_related('issue', 'series'),
+                    self.storyrevisions.all())
+
+        if self.change_type == CTYPES['issue_add']:
+            return (self.issuerevisions.all().select_related('issue', 'series'),)
+
+        if self.change_type == CTYPES['cover']:
+            return (self.coverrevisions.all().select_related('issue__series'),)
+
+        if self.change_type == CTYPES['series']:
+            return (self.seriesrevisions.all(),)
+
+        if self.change_type == CTYPES['publisher']:
+            return (self.publisherrevisions.all(),)
+
+        if self.change_type == CTYPES['brand']:
+            return (self.brandrevisions.all(),)
+
+        if self.change_type == CTYPES['indicia_publisher']:
+            return (self.indiciapublisherrevisions.all(),)
 
     def _revisions(self):
         """
         Fake up an iterable (not actually a list) of all revisions,
         in canonical order.
-        TODO: This is probably too database-intensive, unless chain doesn't
-        evalate each queryset until it needs to.  Which it might.
         """
         return itertools.chain(*self._revision_sets())
     revisions = property(_revisions)
@@ -83,13 +113,7 @@ class Changeset(models.Model):
         Otherwise, render a page for the changeset that links to a separate edit
         page for each revision.
         """
-        if self._is_inline is None:
-            if (self.revision_count() == 1 and
-                self.issuerevisions.count() == 0):
-                self._is_inline = True
-            else:
-                self._is_inline = False
-        return self._is_inline
+        return self.change_type in CTYPES_INLINE
 
     def inline_revision(self):
         if self.inline():
@@ -111,11 +135,7 @@ class Changeset(models.Model):
         return self.issuerevisions.order_by('revision_sort_code', 'id')
 
     def queue_name(self):
-        if self.inline():
-            return self.revisions.next().queue_name()
-        if self.issuerevisions.count() == 1:
-            return self.issuerevisions.all()[0].queue_name()
-        return unicode(self)
+        return self.revisions.next().queue_name()
 
     def display_state(self):
         """

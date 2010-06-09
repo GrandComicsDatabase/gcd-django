@@ -315,7 +315,8 @@ def upload_cover(request, cover_id=None, issue_id=None):
             marked = 'marked' in request.POST
 
             # create OI records
-            changeset = Changeset(indexer=request.user, state=states.PENDING)
+            changeset = Changeset(indexer=request.user, state=states.PENDING,
+                                  change_type=CTYPES['cover'])
             changeset.save()
 
             if upload_type == 'replacement':

@@ -1,28 +1,30 @@
 {% load display %}
+
 {% for section in data %}
-{% if section.changesets.count %}
+  {% with section.changesets.count as section_count %}
+    {% if section_count %}
 <h2>
   {{ section.object_name }}
-  ({{ section.changesets.count }} change{{ section.changesets.count|pluralize }})
+  ({{ section_count }} change{{ section_count|pluralize }})
 </h2>
 <table>
   <tr>
     <th> Name {{ queue_name }}</th>
-  {% ifnotequal queue_name 'editing' %}
+      {% ifnotequal queue_name 'editing' %}
     <th> Indexer</th>
-  {% endifnotequal %}
-  {% ifnotequal queue_name 'reviews' %}
+      {% endifnotequal %}
+      {% ifnotequal queue_name 'reviews' %}
     <th> Approver</th>
     <th> State </th>
-  {% endifnotequal %}
+      {% endifnotequal %}
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
-{% for changeset in section.changesets %}
+      {% for changeset in section.changesets %}
   <tr>
-  {% ifequal link_target 'preview' %}
+        {% ifequal link_target 'preview' %}
     <td> <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
-  {% else %}
+        {% else %}
     {% ifequal changeset.state states.PENDING %}
       {# changeset submitted, link directly to compare page not edit #}
     <td> <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
@@ -32,17 +34,18 @@
   {% endifequal %}
   {% ifnotequal queue_name 'editing' %}
     <td> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
-  {% endifnotequal %}
-  {% ifnotequal queue_name 'reviews' %}
+        {% endifnotequal %}
+        {% ifnotequal queue_name 'reviews' %}
     <td> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
     <td> {{ changeset.display_state }} </td>
-  {% endifnotequal %}
+        {% endifnotequal %}
     <td> {{ changeset.modified }} </td>
     <td> {% with changeset.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>
-{% endfor %}
+      {% endfor %}
 </table>
-{% endif %}
+    {% endif %}
+  {% endwith %}
 {% empty %}
 <p>
 All queues are empty.
