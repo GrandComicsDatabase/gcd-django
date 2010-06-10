@@ -189,23 +189,31 @@ def show_series(request, series, preview=False):
     """
     Handle the main work of displaying a series.  Also used by OI previews.
     """
-    if preview:
-        covers = Cover.objects.filter(issue__series=series.series)\
-                 .select_related('issue')
-    else:
-        covers = Cover.objects.filter(issue__series=series)\
-                 .select_related('issue')
-    issues = series.issue_set.all()
-    
-    try:
-        cover = covers.filter(has_image=True)[0]
-        image_tag = get_image_tag(cover=cover,
-                                  zoom_level=ZOOM_MEDIUM,
-                                  alt_text='First Issue Cover')
+    covers = []
+    has_covers = False
 
-    except IndexError:
-        image_tag = ''
-        
+    if preview:
+        display_series = series.series
+    else:
+        display_series = series
+
+    # need in-order list of all variants + issues with no covers yet
+    # for scan status tables
+    first_image_tag = ''
+    for issue in display_series.issue_set.all():
+        if issue.has_covers():
+            for cover in issue.cover_set.all():
+                covers.append([issue, cover])
+                has_covers = True
+                if first_image_tag is '':
+                    first_image_tag = get_image_tag(cover=cover,
+                                        zoom_level=ZOOM_MEDIUM,
+                                        alt_text='First Issue Cover')
+        else:
+            covers.append([issue, None])
+
+    issues = series.issue_set.all()
+
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
 
@@ -217,7 +225,7 @@ def show_series(request, series, preview=False):
         'series': series,
         'issues': issues,
         'covers': covers,
-        'image_tag': image_tag,
+        'first_image_tag': first_image_tag,
         'country': series.country,
         'language': series.language,
         'table_width': table_width,
@@ -363,7 +371,14 @@ def scans(request, series_id):
     """
 
     series = get_object_or_404(Series, id = series_id)
-    covers = Cover.objects.filter(issue__series=series).select_related('issue')
+
+    covers = []
+    for issue in series.issue_set.all():
+        if issue.has_covers():
+            for cover in issue.cover_set.all():
+                covers.append([issue, cover])
+        else:
+            covers.append([issue, None])
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -381,7 +396,7 @@ def covers_to_replace(request, starts_with=None, style="default"):
     Display the covers that are marked for replacement.
     """
 
-    covers = Cover.objects.filter(marked = True).filter(has_image = True)
+    covers = Cover.objects.filter(marked = True)
     if starts_with:
         covers = covers.filter(issue__series__name__startswith = starts_with)
     covers = covers.order_by("issue__series__name",
@@ -429,15 +444,11 @@ def daily_covers(request, show_date=None):
             year = int(show_date[0:4])
             month = int(show_date[5:7])
             day = int(show_date[8:10])
+            requested_date = date(year, month, day)
 
         else:
             # Don't redirect, as this is a proper default.
             requested_date = date.today()
-
-        if requested_date is None:
-            requested_date = date(year, month, day)
-
-        if show_date is None:
             show_date = requested_date.strftime('%Y-%m-%d')
 
     except (TypeError, ValueError):
@@ -462,7 +473,6 @@ def daily_covers(request, show_date=None):
                                   datetime.combine(requested_date, time.min),
                                   datetime.combine(requested_date, time.max)))
 
-    covers = covers.filter(has_image=True)
     covers = covers.order_by("issue__series__publisher__name",
                              "issue__series__name",
                              "issue__series__year_began",
@@ -499,7 +509,7 @@ def cover(request, issue_id, size):
 
     size = int(size)
     if size not in [ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE]:
-	raise Http404
+        raise Http404
 
     issue = get_object_or_404(Issue, id = issue_id)
     [prev_issue, next_issue] = issue.get_prev_next_issue()
@@ -540,8 +550,7 @@ def covers(request, series_id, style="default"):
     else:
         can_mark = False
 
-    covers = Cover.objects.filter(issue__series=series)\
-                          .filter(has_image = '1').select_related('issue')
+    covers = Cover.objects.filter(issue__series=series).select_related('issue')
 
     style = get_style(request)
     vars = {

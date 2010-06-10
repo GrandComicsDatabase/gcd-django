@@ -69,16 +69,16 @@ class Series(models.Model):
 
     def marked_scan_count(self):
         from apps.gcd.models.cover import Cover
-        return Cover.objects.filter(issue__series=self, marked=True, 
-                                    has_image='1').count()
+        return Cover.objects.filter(issue__series=self, marked=True).count()
+
     def scan_count(self):
         from apps.gcd.models.cover import Cover
-        return Cover.objects.filter(issue__series=self, 
-                                    has_image='1').count()
+        return Cover.objects.filter(issue__series=self).count()
+
     def scan_needed(self):
-        from apps.gcd.models.cover import Cover
-        return Cover.objects.filter(issue__series=self).exclude(has_image='1', 
-                                                        marked=False).count()
+        from apps.gcd.models.issue import Issue
+        issues_missing_covers = Issue.objects.filter(series=self, cover__isnull=True).count()
+        return issues_missing_covers + self.marked_scan_count()
 
     def __unicode__(self):
         return '%s (%s series)' % (self.name, self.year_began)

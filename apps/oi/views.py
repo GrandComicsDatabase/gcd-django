@@ -1657,7 +1657,7 @@ def cover_compare(request, changeset, revision):
                                             old_cover, "replaced cover", 
                                             ZOOM_LARGE)])
     elif revision.changeset.state in states.ACTIVE:
-        if revision.issue.cover_set.latest().has_image:
+        if revision.issue.has_covers():
             for cover in revision.issue.cover_set.all():
                 current_covers.append([cover, get_image_tag(cover, 
                                        "current cover", ZOOM_MEDIUM)])

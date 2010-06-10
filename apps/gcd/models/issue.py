@@ -65,6 +65,9 @@ class Issue(models.Model):
         return self.number
     display_number = property(_display_number)
 
+    def has_covers(self):
+        return self.cover_set.count() > 0
+
     def index_status_name(self):
         """
         Text form of status.  If clauses arranged in order of most

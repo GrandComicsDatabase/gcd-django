@@ -63,6 +63,10 @@ div.success {
     text-align: center;
 }
 
+#cover_needed {
+    float: left;
+}
+
 #guidelines {
     clear: both;
 }

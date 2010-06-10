@@ -35,23 +35,30 @@ This cover upload has been succesfully submitted and is awaiting approval by an 
     <a href="{% url compare id=revision.changeset.id %}">{{ tag|safe }}</a><br/>
     <a href="{% url compare id=revision.changeset.id %}">Zoom / Compare</a><br>
     <a href="{{ issue.series.get_absolute_url}}scans/?style={{ style|default:'default' }}">Cover Scan Status</a><br/>
-    <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style|default:'default' }}">Cover Gallery</a>
+    <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style|default:'default' }}">Cover Gallery</a><br>
+    <br>
+    <a href="{{ issue.series.get_absolute_url }}">Back to the series</a><br>
+    <a href="{{ issue.get_absolute_url }}">Back to the issue</a>
   </div>
-<div>
-{% if covers_needed %}
-  Other covers needed
-   <ul>
-  {% for cover_needed in covers_needed %}
-  <li><a href="{{ cover_needed.get_status_url }}">{{ cover_needed.issue.series }} #{{ cover_needed.issue.display_number }}</a>
-  {% if cover_needed.marked %}
-    ( marked for replacement )
-  {% endif %}
-  </li>
+  <div id="cover_needed">
+{% if blank_issues %}
+    <ul>
+    Issues missing covers
+  {% for issue in blank_issues %}
+      <li><a href="{% url upload_cover issue_id=issue.id %}">{{ issue.series }} #{{ issue.display_number }}</a>
+      </li>
   {% endfor %}
-   </ul>
-  {% endif %}
-<a href="{{ issue.series.get_absolute_url }}">Back to the series</a>
-<br><a href="{{ issue.get_absolute_url }}">Back to the issue</a>
-</div>
+    </ul>
+{% endif %}
+{% if marked_covers %}
+    <ul>
+    Covers marked for replacement
+  {% for cover in marked_covers %}
+      <li><a href="{{ cover.get_status_url }}">{{ cover.issue.series }} #{{ cover.issue.display_number }}</a>
+      </li>
+  {% endfor %}
+    </ul>
+{% endif %}
+  </div>
 </div>
 {% endblock %}

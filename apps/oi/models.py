@@ -1062,14 +1062,10 @@ class CoverRevision(Revision):
     def commit_to_display(self, clear_reservation=True):
         # the file handling is in the view/covers code
         cover = self.cover
+
         if cover is None:
-            # there should only be one empty cover slot, if at all
-            cover = Cover.objects.filter(issue=self.issue, has_image=False)
-            if not cover:
-                cover = Cover(issue=self.issue)
-                cover.save()
-            else:
-                cover = cover[0]
+            cover = Cover(issue=self.issue)
+            cover.save()
 
         #comment out for now, might use it for deleting of covers
         #elif self.deleted:
@@ -1084,7 +1080,6 @@ class CoverRevision(Revision):
         #        series.save()
         #    return
 
-        cover.has_image = True
         cover.marked = self.marked
         cover.last_upload = self.changeset.comments.latest('created').created
         cover.save()
@@ -1419,16 +1414,6 @@ class IssueRevision(Revision):
         return self.ordered_story_revisions()
     story_set = property(_story_set)
 
-    def _cover(self):
-        if self.issue is None:
-            # TODO: This is a problem as there should always be a cover.
-            # TODO: Deal with after reorganized covers table is done.
-            # TODO: How do we initialize cover on add anyway?  Add not working
-            # TODO: yet so it doesn't matter until we get there.
-            return None
-        return self.issue.cover
-    cover = property(_cover)
-
     def _reservation_set(self):
         # Just totally fake this for now.
         return Reservation.objects.filter(pk__isnull=True)
@@ -1566,8 +1551,6 @@ class IssueRevision(Revision):
 
         issue.save()
         if self.issue is None:
-            issue.cover_set.create(modified=datetime.now())
-
             self.issue = issue
             self.save()
 

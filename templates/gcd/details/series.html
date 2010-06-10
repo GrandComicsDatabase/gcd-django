@@ -86,7 +86,7 @@
 <div class="clear">
 {% if series.has_gallery %}
 <div id="series_cover">
-  {{ image_tag }}
+  {{ first_image_tag }}
 <p>
 {% if preview %}
 <a href="{{ series.source.get_absolute_url }}covers/?style={{ style|default:'default' }}">See cover gallery</a>

@@ -21,7 +21,6 @@ class Cover(models.Model):
     issue = models.ForeignKey(Issue)
 
     # Fields directly related to cover images
-    has_image = models.BooleanField(default=0)
     marked = models.BooleanField(default=0)
     limit_display = models.BooleanField(default=0)
 
@@ -39,24 +38,17 @@ class Cover(models.Model):
                 kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
 
     def get_status_url(self):
-        if self.marked and self.has_image:
+        if self.marked:
             return urlresolvers.reverse(
                 'replace_cover',
                 kwargs={'cover_id': self.id} )
-        elif self.has_image:
-            return urlresolvers.reverse(
-		'issue_cover_view', 
-                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
         else:
             return urlresolvers.reverse(
-                'upload_cover',
-                kwargs={'issue_id': self.issue.id} )
+                'issue_cover_view', 
+                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
 
     def get_cover_status(self):
         import logging
         if self.marked:
             return 4
-        if self.has_image:
-            return 3
-        return 0
-
+        return 3

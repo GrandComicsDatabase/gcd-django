@@ -207,21 +207,19 @@ def uploaded_cover(request, revision_id):
     # - add discard button for undo of wrong upload
     # - ...
     revision = get_object_or_404(CoverRevision, id=revision_id)
-    if revision.cover:
-        issue = revision.cover.issue
-    else:
-        issue = revision.issue
+    issue = revision.issue
 
-    covers_needed = Cover.objects.filter(issue__series=issue.series).\
-                      exclude(marked=False, has_image=True)[:15]
+    blank_issues = Issue.objects.filter(series=issue.series, cover__isnull=True)[:15]
+    marked_covers = Cover.objects.filter(issue__series=issue.series).\
+                      exclude(marked=False)[:15]
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
     return render_to_response(uploaded_template, {
-              'covers_needed' :  covers_needed,
+              'marked_covers' : marked_covers,
+              'blank_issues' : blank_issues,
               'revision': revision,
               'issue' : issue,
               'tag'   : tag},
               context_instance=RequestContext(request))
-
 
 @login_required
 def upload_cover(request, cover_id=None, issue_id=None):
@@ -246,11 +244,6 @@ def upload_cover(request, cover_id=None, issue_id=None):
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
         issue = cover.issue
-        if not cover.has_image: 
-            # nothing to replace, empty cover slot, redirect to issue upload
-            return HttpResponseRedirect(urlresolvers.reverse('upload_cover',
-                kwargs={'issue_id': issue.id} ))
-
 
         # check if there is a pending change for the cover
         if CoverRevision.objects.filter(cover=cover, 
@@ -268,8 +261,8 @@ def upload_cover(request, cover_id=None, issue_id=None):
     # no cover_id, therefore upload a cover to an issue (first or variant)
     else: 
         issue = get_object_or_404(Issue, id=issue_id)
-        cover = issue.cover_set.latest() # latest can be the empty first one
-        if cover.has_image:
+        cover = None
+        if issue.has_covers():
             covers = get_image_tags_per_issue(issue, "current covers", 
                                               ZOOM_MEDIUM, as_list=True)
             upload_type = 'variant'
@@ -432,11 +425,9 @@ def mark_cover(request, marked, cover_id=None, revision_id=None):
 
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
-        if cover.has_image:
-            cover.marked = marked
     else:
         cover = get_object_or_404(CoverRevision, id=revision_id)
-        cover.marked = marked
+    cover.marked = marked
     cover.save()
 
     # Typically present, but not for direct URLs
@@ -448,4 +439,3 @@ def mark_cover(request, marked, cover_id=None, revision_id=None):
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                 kwargs={'issue_id': cover.issue.id} ))
-
