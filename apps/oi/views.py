@@ -239,7 +239,7 @@ def retract(request, id):
           context_instance=RequestContext(request))
     changeset.retract(notes=request.POST['comments'])
 
-    return HttpResponseRedirect(urlresolvers.reverse('editing'))
+    return HttpResponseRedirect(urlresolvers.reverse('edit', kwargs={'id': changeset.id }))
 
 @permission_required('gcd.can_reserve')
 def discard(request, id):
