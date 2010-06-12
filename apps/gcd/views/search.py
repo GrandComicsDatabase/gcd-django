@@ -519,6 +519,9 @@ def search_series(data, op):
     if data['tracking_notes']:
         q_objs.append(Q(**{ '%stracking_notes__%s' % (prefix, op) :
                              data['tracking_notes']}))
+    if data['publication_notes']:
+        q_objs.append(Q(**{ '%spublication_notes__%s' % (prefix, op) :
+                             data['publication_notes']}))
 
     return compute_qobj(data, q_and_only, q_objs)
 
