@@ -3,7 +3,7 @@ from django import template
 from django.utils.html import conditional_escape as esc
 from django.utils.safestring import mark_safe
 
-from apps.oi.models import IssueRevision, states
+from apps.oi.models import IssueRevision, states, CTYPES
 
 register = template.Library()
 
@@ -52,6 +52,7 @@ class LastUpdatedNode(template.Node):
                 return u''
 
         issues = IssueRevision.objects.filter(issue__story_type_count__gt=0, 
+          changeset__change_type=CTYPES['issue'],
           changeset__state=states.APPROVED).order_by('-changeset__modified')\
           .select_related('issue', 'issue__series', 'issue__series__publisher')
         if self.language_code:
