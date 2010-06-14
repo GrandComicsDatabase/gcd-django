@@ -22,17 +22,22 @@
   </tr>
       {% for changeset in section.changesets %}
   <tr>
+    <td>
         {% ifequal link_target 'preview' %}
-    <td> <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
+      <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
         {% else %}
-    {% ifequal changeset.state states.PENDING %}
-      {# changeset submitted, link directly to compare page not edit #}
-    <td> <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
-    {% else %}
-    <td> <a href="{% url edit id=changeset.id %}">{{ changeset.queue_name }}</a>
-    {% endifequal %}
-  {% endifequal %}
-  {% ifnotequal queue_name 'editing' %}
+          {% ifequal changeset.state states.PENDING %}
+      <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
+          {% else %}
+            {% ifequal changeset.state states.REVIEWING %}
+      <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
+            {% else %}
+      <a href="{% url edit id=changeset.id %}">{{ changeset.queue_name }}</a>
+            {% endifequal %}
+          {% endifequal %}
+        {% endifequal %}
+    </td>
+        {% ifnotequal queue_name 'editing' %}
     <td> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
         {% endifnotequal %}
         {% ifnotequal queue_name 'reviews' %}
