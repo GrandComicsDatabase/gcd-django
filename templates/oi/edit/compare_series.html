@@ -17,7 +17,7 @@ Reviewing :: {{ revision }}
 
 {% block view_body %}
 <h1>
-{{ revision|absolute_url }} ({{ revision.publisher|absolute_url }})
+{{ changeset|header_link }}
 </h1>
 <p>
 Changed fields are <span class="comparison_highlight">highlighted.</span>

@@ -18,31 +18,7 @@
 
 {% block view_body %}
 <h1>
-{% if changeset.issuerevisions.count %}
-  {{ changeset.issuerevisions.all.0.issue.series|absolute_url }} 
-  ({{ changeset.issuerevisions.all.0.issue.series.publisher|absolute_url }}) 
-  <a href="{{ changeset.issuerevisions.all.0.issue.get_absolute_url }}">
-  #{{ changeset.issuerevisions.all.0.display_number }}</a>
-{% else %}
-  {% if changeset.seriesrevisions.count %}
-    {{ changeset.seriesrevisions.all.0.series|absolute_url }}
-    ({{ changeset.seriesrevisions.all.0.series.publisher|absolute_url }})
-  {% else %}
-    {% if changeset.publisherrevisions.count %}
-      {{ changeset.publisherrevisions.all.0.publisher|absolute_url }}
-    {% else %}
-      {% if changeset.brandrevisions.count %}
-        {{ changeset.brandrevisions.all.0.brand.parent|absolute_url }} : 
-        {{ changeset.brandrevisions.all.0.brand|absolute_url }}
-      {% else %}
-        {% if changeset.indiciapublisherrevisions.count %}
-          {{ changeset.indiciapublisherrevisions.all.0.indicia_publisher.parent|absolute_url }} : 
-          {{ changeset.indiciapublisherrevisions.all.0.indicia_publisher|absolute_url }}
-        {% endif %}
-      {% endif %}
-    {% endif %}
-  {% endif %}
-{% endif %}
+{{ changeset|header_link }}
 </h1>
 
 <div class="edit">

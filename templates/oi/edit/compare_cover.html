@@ -20,9 +20,7 @@ Reviewing :: {{ revision }}
 
 {% block view_body %}
 <h1>
-{{ revision.issue.series|absolute_url:'target="_blank"' }} 
-({{ revision.issue.series.publisher|absolute_url:'target="_blank"' }}) 
-<a href="{{ revision.issue.get_absolute_url }}" target="_blank">#{{ revision.issue.display_number }}</a>
+{{ changeset|header_link }}
 </h1>
 
 {% if revision.is_replacement %}

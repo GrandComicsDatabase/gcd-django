@@ -135,6 +135,8 @@ class Changeset(models.Model):
         return self.issuerevisions.order_by('revision_sort_code', 'id')
 
     def queue_name(self):
+        if self.issuerevisions.count() > 1:
+            return unicode(self)
         return self.revisions.next().queue_name()
 
     def display_state(self):

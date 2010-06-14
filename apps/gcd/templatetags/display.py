@@ -3,7 +3,7 @@ from django.utils.html import conditional_escape as esc
 
 from django import template
 
-from apps.oi.models import StoryRevision
+from apps.oi.models import StoryRevision, CTYPES
 from apps.gcd.templatetags.credits import show_page_count
 
 register = template.Library()
@@ -76,9 +76,41 @@ def show_indicia_pub(issue):
             ip_url += u' [not printed on item]'
     return mark_safe(ip_url)
 
+def header_link(changeset):
+    if changeset.inline():
+        revision = changeset.inline_revision()
+    else:
+        revision = changeset.issuerevisions.all()[0]
+
+    if changeset.change_type == CTYPES['publisher']:
+        return absolute_url(revision)
+    elif changeset.change_type == CTYPES['brand'] or \
+         changeset.change_type == CTYPES['indicia_publisher']:
+        return mark_safe(u'%s : %s' % (absolute_url(revision.parent), absolute_url(revision)))
+    elif changeset.change_type == CTYPES['series']:
+        return mark_safe(u'%s (%s)' % (absolute_url(revision), absolute_url(revision.publisher)))
+    elif changeset.change_type == CTYPES['cover'] or \
+         changeset.change_type == CTYPES['issue']:
+        series_url = absolute_url(revision.issue.series)
+        pub_url = absolute_url(revision.issue.series.publisher)
+        issue_url = revision.issue.get_absolute_url()
+        issue_num = revision.issue.display_number
+        return mark_safe(u'%s (%s) <a href="%s">#%s</a>' % (series_url, pub_url, issue_url, issue_num))
+    elif changeset.change_type == CTYPES['issue_add']:
+        series_url = absolute_url(revision.series)
+        pub_url = absolute_url(revision.series.publisher)
+        display_num = changeset.issuerevisions.order_by('revision_sort_code')[0].display_number
+        if changeset.issuerevisions.count() > 1:
+            display_num = u'%s - %s' % (display_num,
+              changeset.issuerevisions.order_by('-revision_sort_code')[0].display_number)
+        return mark_safe(u'%s (%s) #%s' % (series_url, pub_url, display_num))
+    else:
+        return u''
+
 register.filter(absolute_url)
 register.filter(show_story_short)
 register.filter(show_revision_short)
 register.filter(show_volume)
 register.filter(show_issue)
 register.filter(show_indicia_pub)
+register.filter(header_link)

@@ -16,7 +16,9 @@ Reviewing :: {{ revision }}
 {% endblock %}
 
 {% block view_body %}
-<h1>{{ changeset }}</h1>
+<h1>
+{{ changeset|header_link }}
+</h1>
 <p>
 This change adds to {{ revision.series|absolute_url:'target="_blank"' }}
 published by {{ revision.series.publisher|absolute_url:'target="_blank"' }}

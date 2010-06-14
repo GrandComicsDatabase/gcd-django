@@ -18,13 +18,7 @@ Reviewing :: {{ revision }}
 
 {% block view_body %}
 <h1>
-{{ revision.series|absolute_url:'target="_blank"' }} 
-({{ revision.series.publisher|absolute_url:'target="_blank"' }}) 
-{% if revision.issue %}
-<a href="{{ revision.issue.get_absolute_url }}" target="_blank">#{{ revision.display_number }}</a>
-{% else %}
-#{{ revision.display_number }}
-{% endif %}
+{{ changeset|header_link }}
 </h1>
 <p>
 Highlighted fields represent <span class="added_highlight">added</span>, 
