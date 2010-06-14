@@ -522,6 +522,9 @@ def search_series(data, op):
     if data['publication_notes']:
         q_objs.append(Q(**{ '%spublication_notes__%s' % (prefix, op) :
                              data['publication_notes']}))
+    if data['not_reserved']:
+        q_objs.append(Q(**{ '%songoing_reservation__isnull' % prefix : True }) &
+                      Q(**{ '%sis_current' % prefix : True }))
 
     return compute_qobj(data, q_and_only, q_objs)
 
