@@ -234,7 +234,8 @@ def search(request):
     if not request.GET.has_key('type'):
         return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
 
-    if not request.GET.has_key('query') or not request.GET['query']:
+    if not request.GET.has_key('query') or not request.GET['query'] or \
+       request.GET['query'].isspace():
         # if no query, but a referer page
         if request.META.has_key('HTTP_REFERER'):
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
