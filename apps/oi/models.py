@@ -29,7 +29,8 @@ CTYPES = {
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['brand'],
                            CTYPES['indicia_publisher'],
-                           CTYPES['series']))
+                           CTYPES['series'],
+                           CTYPES['cover']))
 
 def update_count(field, delta, language=None):
     ''' 
@@ -1068,19 +1069,15 @@ class CoverRevision(Revision):
         if cover is None:
             cover = Cover(issue=self.issue)
             cover.save()
-
-        #comment out for now, might use it for deleting of covers
-        #elif self.deleted:
-        #    cover.has_image = False
-        #    cover.save()
-        #    cover_count = CountStats.objects.get(name='covers')
-        #    cover_count.count -= 1
-        #    cover_count.save()
-        #    if cover.issue.series.scan_count() == 0:
-        #        series = cover.issue.series
-        #        series.has_gallery = False
-        #        series.save()
-        #    return
+        elif self.deleted:
+            cover.delete()
+            cover.save()
+            update_count('covers', -1, language=cover.issue.series.language)
+            if cover.issue.series.scan_count() == 0:
+                series = cover.issue.series
+                series.has_gallery = False
+                series.save()
+            return
 
         cover.marked = self.marked
         cover.last_upload = self.changeset.comments.latest('created').created

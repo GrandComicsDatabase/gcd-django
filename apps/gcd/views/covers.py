@@ -7,6 +7,7 @@ from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
+from apps.oi import states
 
 def get_image_tag(cover, alt_text, zoom_level):
     if zoom_level == ZOOM_SMALL:
@@ -51,7 +52,7 @@ def get_image_tag(cover, alt_text, zoom_level):
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False):
     if issue.has_covers():
-        covers = issue.cover_set.all()
+        covers = issue.active_covers()
     else:
         return mark_safe(get_image_tag(cover=None, zoom_level=zoom_level,
                                        alt_text=alt_text))
@@ -64,8 +65,9 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False):
 
     for cover in covers:
         if as_list:
-            cover_tags.append([cover, issue, get_image_tag(cover, alt_string, 
-                                                           zoom_level)])
+            cover_tags.append([cover, issue,
+                               get_image_tag(cover, alt_string, zoom_level),
+                               cover.revisions.filter(changeset__state__in=states.ACTIVE).count()])
         else:
             tag += get_image_tag(cover=cover, zoom_level=zoom_level, 
                                  alt_text=alt_text)

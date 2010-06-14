@@ -41,7 +41,11 @@ Reviewing :: {{ revision }}
 <td class="cover_grid{% if revision.marked %} marked{% endif %}">
 <h2> uploaded replacement cover </h2>
 {% else %}
+  {% if revision.deleted %}
+<h2> deleted cover </h2>
+  {% else %}
 <h2> uploaded {% if current_covers %} variant {% endif %} cover </h2>
+  {% endif %}
 {% endif %}
 <div class="cover_large">
   <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a><br>

@@ -563,7 +563,9 @@ def search_issues(data, op, stories_q=None):
           Q(**{ '%sindicia_publisher__name__%s' % (prefix, op) :
                 data['indicia_publisher'] }))
     if data['cover_needed']:
-        q_objs.append(Q(**{ '%scover__marked' % prefix : True }))
+        q_objs.append(Q(**{ '%scover__isnull' % prefix : True }) |
+                      ~Q(**{ '%scover__deleted' % prefix : False }) |
+                      Q(**{ '%scover__marked' % prefix : True }))
     if data['has_stories'] is not None:
         if data['has_stories'] is True:
             q_objs.append(Q(**{ '%sstory_type_count__gt' % prefix : 0 }))
@@ -673,8 +675,10 @@ def search_stories(data, op):
     target = data['target']
     prefix = compute_prefix(target, 'sequence')
 
-    q_objs = [Q(**{'%s%s' % (prefix, 'deleted__exact') : 0})]
-    
+    q_objs = []
+    if target == 'sequence':
+        q_objs = [Q(**{'%s%s' % (prefix, 'deleted__exact') : 0})]
+
     for field in ('feature', 'title', 'genre',
                   'script', 'pencils', 'inks',
                   'colors', 'letters', 'job_number', 'characters',

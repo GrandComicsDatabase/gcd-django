@@ -58,7 +58,10 @@ class Issue(models.Model):
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
-    
+
+    def active_covers(self):
+        return self.cover_set.exclude(deleted=True)
+
     def _display_number(self):
         if self.display_volume_with_number:
             return u'v%s#%s' % (self.volume, self.number)
@@ -66,7 +69,7 @@ class Issue(models.Model):
     display_number = property(_display_number)
 
     def has_covers(self):
-        return self.cover_set.count() > 0
+        return self.active_covers().count() > 0
 
     def index_status_name(self):
         """

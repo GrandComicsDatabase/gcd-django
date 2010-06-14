@@ -202,7 +202,7 @@ def show_series(request, series, preview=False):
     first_image_tag = ''
     for issue in display_series.issue_set.all():
         if issue.has_covers():
-            for cover in issue.cover_set.all():
+            for cover in issue.active_covers():
                 covers.append([issue, cover])
                 has_covers = True
                 if first_image_tag is '':
@@ -375,7 +375,7 @@ def scans(request, series_id):
     covers = []
     for issue in series.issue_set.all():
         if issue.has_covers():
-            for cover in issue.cover_set.all():
+            for cover in issue.active_covers():
                 covers.append([issue, cover])
         else:
             covers.append([issue, None])
@@ -471,7 +471,8 @@ def daily_covers(request, show_date=None):
 
     covers = Cover.objects.filter(last_upload__range=(\
                                   datetime.combine(requested_date, time.min),
-                                  datetime.combine(requested_date, time.max)))
+                                  datetime.combine(requested_date, time.max)),
+                                  deleted=False)
 
     covers = covers.order_by("issue__series__publisher__name",
                              "issue__series__name",
@@ -550,7 +551,7 @@ def covers(request, series_id, style="default"):
     else:
         can_mark = False
 
-    covers = Cover.objects.filter(issue__series=series).select_related('issue')
+    covers = Cover.objects.filter(issue__series=series, deleted=False).select_related('issue')
 
     style = get_style(request)
     vars = {

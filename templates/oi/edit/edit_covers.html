@@ -1,6 +1,8 @@
 {% extends "oi/base_view.html" %}
 
 {% load credits %}
+{% load display %}
+
 {% block title %}
 Edit Covers :: {{ issue }}
 {% endblock %}
@@ -15,7 +17,10 @@ Edit Covers :: {{ issue }}
 {% endblock %}
 
 {% block view_body %}
-<h2>Covers for {{ issue }} 
+<h2>Covers for 
+{{ issue.series|absolute_url }} 
+({{ issue.series.publisher|absolute_url }}) 
+<a href="{{ issue.get_absolute_url }}">#{{ issue.display_number }}</a>
 </h2>
 {% if issue.has_covers %}
 <a href="{% url upload_cover issue_id=issue.id %}">Add variant cover</a>
@@ -23,7 +28,7 @@ Edit Covers :: {{ issue }}
 
 <table id="covers">
   <tr>
-  {% for cover, issue, tag in covers %}
+  {% for cover, issue, tag, pending in covers %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>
@@ -36,7 +41,14 @@ Edit Covers :: {{ issue }}
 <a href="{% url unmark_cover cover_id=cover.id %}">Remove mark for replacement</a><br>
         {% endif %}
       {% endif %}
+      {% if pending %}
+<a href="{% url compare id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
+      {% else %}
 <a href="{% url replace_cover cover_id=cover.id %}">Replace cover</a>
+<form class="story_button" method="POST" action="{% url delete_cover id=cover.id %}">
+  <input type="submit" value="Delete">
+</form>
+      {% endif %}
 </span> 
    </td>
     {% if forloop.counter|divisibleby:table_width %}

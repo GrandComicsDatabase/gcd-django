@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load display %}
 
 {% block title %} 
 GCD :: Cover for {{ issue.series.name }} #{{ issue.display_number }} 
@@ -22,7 +23,7 @@ Cover {{ already }} uploaded for
 </h1>
 <div class="item_id">
 <div class="left">
-{{ issue.series.name }} #{{ issue.display_number }}
+{{ issue|absolute_url }}
 </div>
 </div>
 

@@ -81,6 +81,8 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
                       suffix + file_extension
             return mark_safe('<img src="' + img_url + '" alt="' + \
               esc(alt_text) + '" ' + width_string + ' class="cover_img"/>')
+    elif revision.deleted:
+        return get_image_tag(revision.cover, esc(alt_text), zoom_level)  
     else:
         suffix = "w%d/%d.jpg" % (width, revision.id)
         img_url = NEW_COVERS_LOCATION + \
@@ -191,7 +193,6 @@ def edit_covers(request, issue_id):
       context_instance=RequestContext(request)
     )
 
-
 @login_required
 def uploaded_cover(request, revision_id):
     """
@@ -209,9 +210,8 @@ def uploaded_cover(request, revision_id):
     revision = get_object_or_404(CoverRevision, id=revision_id)
     issue = revision.issue
 
-    blank_issues = Issue.objects.filter(series=issue.series, cover__isnull=True)[:15]
-    marked_covers = Cover.objects.filter(issue__series=issue.series).\
-                      exclude(marked=False)[:15]
+    blank_issues = Issue.objects.filter(Q(cover__isnull=True) | Q(cover__deleted=True), series=issue.series)[:15]
+    marked_covers = Cover.objects.filter(issue__series=issue.series, cover__marked=True)[:15]
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
     return render_to_response(uploaded_template, {
               'marked_covers' : marked_covers,
@@ -220,6 +220,31 @@ def uploaded_cover(request, revision_id):
               'issue' : issue,
               'tag'   : tag},
               context_instance=RequestContext(request))
+
+@login_required
+def delete_cover(request, id):
+    cover = get_object_or_404(Cover, id=id)
+
+    # check if there is a pending change for the cover
+    try:
+        revision = CoverRevision.objects.get(cover=cover, changeset__state__in=states.ACTIVE)
+        return render_error(request,
+          ('There currently is a <a href="%s">pending replacement</a> '
+           'for this cover of %s.') % (urlresolvers.reverse('compare',
+            kwargs={'id': revision.changeset.id}), esc(cover.issue)),
+        redirect=False, is_safe=True)
+    except:
+        revision = None
+
+    changeset = Changeset(indexer=request.user, state=states.PENDING,
+                          change_type=CTYPES['cover'])
+    changeset.save()
+    revision = CoverRevision(changeset=changeset, issue=cover.issue,
+                             cover=cover, deleted=True)
+    revision.save()
+
+    return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
+                                kwargs={'issue_id': cover.issue.id}))
 
 @login_required
 def upload_cover(request, cover_id=None, issue_id=None):

@@ -76,6 +76,15 @@ def show_indicia_pub(issue):
             ip_url += u' [not printed on item]'
     return mark_safe(ip_url)
 
+def show_revision_type(cover):
+    if cover.deleted:
+        return u'[DELETED]'
+    if cover.cover:
+        return u'[REPLACEMENT]'
+    if cover.issue.has_covers():
+        return u'[VARIANT]'
+    return u'[ADDED]'
+
 def header_link(changeset):
     if changeset.inline():
         revision = changeset.inline_revision()
@@ -113,4 +122,5 @@ register.filter(show_revision_short)
 register.filter(show_volume)
 register.filter(show_issue)
 register.filter(show_indicia_pub)
+register.filter(show_revision_type)
 register.filter(header_link)

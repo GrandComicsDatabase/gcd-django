@@ -1645,7 +1645,10 @@ def cover_compare(request, changeset, revision):
     - for replacement show former cover
     - for other active uploads show other existing and active covers
     '''
-    cover_tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_LARGE)
+    if revision.deleted:
+        cover_tag = get_image_tag(revision.cover, "deleted cover", ZOOM_LARGE)
+    else:
+        cover_tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_LARGE)
 
     current_covers = []
     pending_covers = []
@@ -1658,7 +1661,7 @@ def cover_compare(request, changeset, revision):
                                             ZOOM_LARGE)])
     elif revision.changeset.state in states.ACTIVE:
         if revision.issue.has_covers():
-            for cover in revision.issue.cover_set.all():
+            for cover in revision.issue.active_covers():
                 current_covers.append([cover, get_image_tag(cover, 
                                        "current cover", ZOOM_MEDIUM)])
         if CoverRevision.objects.filter(issue=revision.issue).count() > 1:

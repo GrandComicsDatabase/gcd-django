@@ -32,9 +32,9 @@ Highlighted fields represent <span class="added_highlight">added</span>,
     <a href="{% url compare id=changeset.id %}?collapse=1">Collapse compare view</a>.
   {% endif %}
 {% endif %}
-{% if revision.issue and revision.issue.cover_set.latest.has_image %}
+{% if revision.issue and revision.issue.has_covers %}
 View the
-<a href="{{ revision.issue.get_absolute_url }}cover/4/" target="_blank">cover</a>.
+<a href="{{ revision.issue.get_absolute_url }}cover/4/">cover{{ revision.issue.active_covers.count|pluralize }}</a>.
 {% endif %}
 Links open in new windows.
 </p>

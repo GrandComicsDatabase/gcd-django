@@ -29,6 +29,8 @@ class Cover(models.Model):
     modified = models.DateTimeField(auto_now=True, null=True)
     last_upload = models.DateTimeField(null=True)
 
+    deleted = models.BooleanField(default=0, db_index=True)
+
     def base_dir(self):
         return settings.MEDIA_ROOT + settings.COVERS_DIR + \
           str(int(self.id/1000))
@@ -52,3 +54,8 @@ class Cover(models.Model):
         if self.marked:
             return 4
         return 3
+
+    def delete(self):
+        self.deleted = True
+        self.marked = False
+        self.save()
