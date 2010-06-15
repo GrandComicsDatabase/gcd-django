@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Sum
 
 from publisher import IndiciaPublisher, Brand
 from series import Series
@@ -81,6 +82,9 @@ class Issue(models.Model):
             return states.CSS_NAME[active.changeset.state]
         else:
             if self.story_type_count > 0:
+                return 'approved'
+            total_count = self.active_stories().aggregate(Sum('page_count'))['page_count__sum']
+            if total_count is not None and total_count * 2 > self.page_count:
                 return 'approved'
             return 'available'
 
