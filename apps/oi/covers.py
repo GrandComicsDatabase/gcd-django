@@ -210,8 +210,10 @@ def uploaded_cover(request, revision_id):
     revision = get_object_or_404(CoverRevision, id=revision_id)
     issue = revision.issue
 
-    blank_issues = Issue.objects.filter(Q(cover__isnull=True) | Q(cover__deleted=True), series=issue.series)[:15]
-    marked_covers = Cover.objects.filter(issue__series=issue.series, cover__marked=True)[:15]
+    blank_issues = Issue.objects.filter(series=issue.series) \
+          .exclude(cover__isnull=False, cover__deleted=False)[:15]
+    marked_covers = Cover.objects.filter(issue__series=issue.series, 
+                                         marked=True)[:15]
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
     return render_to_response(uploaded_template, {
               'marked_covers' : marked_covers,
