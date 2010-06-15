@@ -214,7 +214,7 @@ class Changeset(models.Model):
         This may be done either by the indexer, effectively releasign the
         reservation, or by an approver, effectively canceling it.
         """
-        if self.state not in (states.OPEN, states.REVIEWING):
+        if self.state not in states.ACTIVE:
             raise ValueError, "Only OPEN or REVIEWING changes may be discarded."
 
         self.comments.create(commenter=discarder,
