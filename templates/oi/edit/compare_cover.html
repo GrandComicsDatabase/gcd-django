@@ -42,7 +42,7 @@ Reviewing :: {{ revision }}
 <h2> uploaded replacement cover </h2>
 {% else %}
   {% if revision.deleted %}
-<h2> deleted cover </h2>
+<h2> cover deletion </h2>
   {% else %}
 <h2> uploaded {% if current_covers %} variant {% endif %} cover </h2>
   {% endif %}
@@ -50,7 +50,7 @@ Reviewing :: {{ revision }}
 <div class="cover_large">
   <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a><br>
       <div class="cover_caption">
-        uploaded on {{ revision.created }}<br>
+        {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revision.created }}<br>
         {{ revision|show_cover_contributor }}
         {% if revision.marked %}
         <p><span class="comparison_highlight">cover is marked for replacement</span></p>

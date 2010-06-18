@@ -44,8 +44,9 @@ Edit Covers :: {{ issue }}
       {% if pending %}
 <a href="{% url compare id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
       {% else %}
-<a href="{% url replace_cover cover_id=cover.id %}">Replace cover</a>
+<a href="{% url replace_cover cover_id=cover.id %}">Replace cover</a><br>
 <form class="story_button" method="POST" action="{% url delete_cover id=cover.id %}">
+  <input type="text" name="comments" class="del_cov_comments"">
   <input type="submit" value="Delete">
 </form>
       {% endif %}

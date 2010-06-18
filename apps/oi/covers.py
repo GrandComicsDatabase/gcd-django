@@ -245,6 +245,12 @@ def delete_cover(request, id):
                              cover=cover, deleted=True)
     revision.save()
 
+    comments = request.POST['comments']
+    changeset.comments.create(commenter=request.user,
+                              text=comments,
+                              old_state=states.UNRESERVED,
+                              new_state=changeset.state)
+
     return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                                 kwargs={'issue_id': cover.issue.id}))
 
@@ -299,7 +305,7 @@ def upload_cover(request, cover_id=None, issue_id=None):
     # generate tags for cover uploads for this issue currently in the queue
     active_covers_tags = []
     active_covers = CoverRevision.objects.filter(issue=issue, 
-                    changeset__state__in=states.ACTIVE).order_by('created')
+                    changeset__state__in=states.ACTIVE, deleted=False).order_by('created')
     for active_cover in active_covers:
         active_covers_tags.append([active_cover, 
                                    get_preview_image_tag(active_cover, 

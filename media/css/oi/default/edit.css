@@ -128,3 +128,7 @@ span.story_edit {
     font-weight: normal;
     font-size: 0.9em;
 }
+
+input.del_cov_comments {
+    width: 12em;
+}

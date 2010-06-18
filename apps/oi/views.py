@@ -479,14 +479,11 @@ thanks,
                                              ongoing_reservation.indexer,
                                              issue_revision.issue)
 
-    cover_was_approved = False
-    for cover_revision in \
-        changeset.coverrevisions.filter(deleted=False):
+    for cover_revision in changeset.coverrevisions.filter(deleted=False):
         copy_approved_cover(cover_revision)
-        cover_was_approved = True
-            
+
     # Move brand new indexers to probationary status on first approval.
-    if not cover_was_approved and \
+    if changeset.change_type is not CTYPES['cover'] and \
       changeset.indexer.indexer.max_reservations == settings.RESERVE_MAX_INITIAL:
         i = changeset.indexer.indexer
         i.max_reservations = settings.RESERVE_MAX_PROBATION
@@ -497,7 +494,7 @@ thanks,
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
         # to avoid counting assume for now that cover queue is never empty
-        if cover_was_approved: 
+        if changeset.change_type is CTYPES['cover']:
             return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
         else:
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
