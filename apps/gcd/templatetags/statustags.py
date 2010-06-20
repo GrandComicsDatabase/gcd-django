@@ -54,7 +54,7 @@ class LastUpdatedNode(template.Node):
         issues = IssueRevision.objects.filter(issue__story_type_count__gt=0, 
           changeset__change_type=CTYPES['issue'],
           changeset__state=states.APPROVED).order_by('-changeset__modified')\
-          .select_related('issue', 'issue__series', 'issue__series__publisher')
+            .select_related('issue', 'issue__series', 'issue__series__publisher')
         if self.language_code:
             issues = issues.filter(issue__series__language__code=self.language_code)
  
