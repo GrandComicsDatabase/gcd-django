@@ -131,6 +131,10 @@ BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com')
 # data dump directories, relative to MEDIA_ROOT
 DUMP_DIR = 'dumps'
 
+# Amount of time that must pass before a user can download the same
+# dump (or similar) file again, in minutes.
+DOWNLOAD_DELTA = 5
+
 # get local settings, will override settings from here
 try:
     from settings_local import *

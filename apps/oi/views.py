@@ -3,6 +3,7 @@ import sys
 import os
 import os.path
 import stat
+from datetime import datetime, timedelta
 
 from django.core import urlresolvers
 from django.core.files import File
@@ -1747,6 +1748,17 @@ def download(request, file='current.zip'):
         form = DownloadForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
+
+            delta = settings.DOWNLOAD_DELTA
+            recently = datetime.now() - timedelta(minutes=delta)
+            if Download.objects.filter(user=request.user,
+                                       description__contains=file,
+                                       timestamp__gt=recently).count():
+                return render_error(request,
+                  ("You have started a download of this file within the last %d "
+                   "minutes.  Please check your download window.  If you need to "
+                   "start a new download, please wait at least %d minutes in "
+                   "order to avoid consuming excess bandwidth.") % (delta, delta))
 
             desc = {'file': file, 'accepted license': True}
             if 'purpose' in cd and cd['purpose']:
