@@ -86,14 +86,11 @@
 <div class="clear">
 {% if series.has_gallery %}
 <div id="series_cover">
-  {{ first_image_tag }}
-<p>
 {% if preview %}
-<a href="{{ series.source.get_absolute_url }}covers/?style={{ style|default:'default' }}">See cover gallery</a>
+<a href="{{ series.source.get_absolute_url }}covers/?style={{ style|default:'default' }}">{{ first_image_tag }}</a>
 {% else %}
-<a href="{{ series.get_absolute_url }}covers/?style={{ style|default:'default' }}">See cover gallery</a>
+<a href="{{ series.get_absolute_url }}covers/?style={{ style|default:'default' }}">{{ first_image_tag }}</a>
 {% endif %}
-</p>
 </div>
 {%endif %}
 
@@ -125,7 +122,14 @@
 <h3 class="series_notes"> Series Details </h3>
 <ul>
   <li> <a href="{% url series_details series_id=series.id %}">Details by Issue</a>
-  <li> <a href="{% url series_timeline series_id=series.id %}">Series Timeline </a>
+  <li> <a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
+{% if series.has_gallery %}
+  {% if preview %}
+  <li><a href="{{ series.source.get_absolute_url }}covers">Cover Gallery</a>
+  {% else %}
+  <li><a href="{{ series.get_absolute_url }}covers}}">Cover Gallery</a>
+  {% endif %}
+{% endif %}
 </ul>
 
 <div id="series_notes">
