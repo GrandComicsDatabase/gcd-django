@@ -87,9 +87,9 @@
 {% if series.has_gallery %}
 <div id="series_cover">
 {% if preview %}
-<a href="{{ series.source.get_absolute_url }}covers/?style={{ style|default:'default' }}">{{ first_image_tag }}</a>
+<a href="{{ series.source.get_absolute_url }}covers">{{ first_image_tag }}</a>
 {% else %}
-<a href="{{ series.get_absolute_url }}covers/?style={{ style|default:'default' }}">{{ first_image_tag }}</a>
+<a href="{{ series.get_absolute_url }}covers">{{ first_image_tag }}</a>
 {% endif %}
 </div>
 {%endif %}
@@ -127,7 +127,7 @@
   {% if preview %}
   <li><a href="{{ series.source.get_absolute_url }}covers">Cover Gallery</a>
   {% else %}
-  <li><a href="{{ series.get_absolute_url }}covers}}">Cover Gallery</a>
+  <li><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>
   {% endif %}
 {% endif %}
 </ul>
