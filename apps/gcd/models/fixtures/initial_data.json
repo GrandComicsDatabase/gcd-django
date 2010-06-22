@@ -1,0 +1,3306 @@
+[
+    {
+        "pk": 249, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "zz", 
+            "name": "(unknown)"
+        }
+    }, 
+    {
+        "pk": 248, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "xx", 
+            "name": "-- FIX ME --"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "af", 
+            "name": "Afghanistan"
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "al", 
+            "name": "Albania"
+        }
+    }, 
+    {
+        "pk": 59, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "dz", 
+            "name": "Algeria"
+        }
+    }, 
+    {
+        "pk": 12, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "as", 
+            "name": "American Samoa"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ad", 
+            "name": "Andorra"
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ao", 
+            "name": "Angola"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ai", 
+            "name": "Anguilla"
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "aq", 
+            "name": "Antarctica"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ag", 
+            "name": "Antigua and Barbuda"
+        }
+    }, 
+    {
+        "pk": 11, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ar", 
+            "name": "Argentina"
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "am", 
+            "name": "Armenia"
+        }
+    }, 
+    {
+        "pk": 15, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "aw", 
+            "name": "Aruba"
+        }
+    }, 
+    {
+        "pk": 14, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "au", 
+            "name": "Australia"
+        }
+    }, 
+    {
+        "pk": 13, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "at", 
+            "name": "Austria"
+        }
+    }, 
+    {
+        "pk": 16, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "az", 
+            "name": "Azerbaijan"
+        }
+    }, 
+    {
+        "pk": 30, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bs", 
+            "name": "Bahamas"
+        }
+    }, 
+    {
+        "pk": 23, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bh", 
+            "name": "Bahrain"
+        }
+    }, 
+    {
+        "pk": 19, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bd", 
+            "name": "Bangladesh"
+        }
+    }, 
+    {
+        "pk": 18, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bb", 
+            "name": "Barbados"
+        }
+    }, 
+    {
+        "pk": 34, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "by", 
+            "name": "Belarus"
+        }
+    }, 
+    {
+        "pk": 20, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "be", 
+            "name": "Belgium"
+        }
+    }, 
+    {
+        "pk": 35, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bz", 
+            "name": "Belize"
+        }
+    }, 
+    {
+        "pk": 25, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bj", 
+            "name": "Benin"
+        }
+    }, 
+    {
+        "pk": 26, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bm", 
+            "name": "Bermuda"
+        }
+    }, 
+    {
+        "pk": 31, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bt", 
+            "name": "Bhutan"
+        }
+    }, 
+    {
+        "pk": 28, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bo", 
+            "name": "Bolivia"
+        }
+    }, 
+    {
+        "pk": 17, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ba", 
+            "name": "Bosnia and Herzegovina"
+        }
+    }, 
+    {
+        "pk": 33, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bw", 
+            "name": "Botswana"
+        }
+    }, 
+    {
+        "pk": 32, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bv", 
+            "name": "Bouvet Island"
+        }
+    }, 
+    {
+        "pk": 29, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "br", 
+            "name": "Brazil"
+        }
+    }, 
+    {
+        "pk": 102, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "io", 
+            "name": "British Indian Ocean Territory"
+        }
+    }, 
+    {
+        "pk": 27, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bn", 
+            "name": "Brunei Darussalam"
+        }
+    }, 
+    {
+        "pk": 22, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bg", 
+            "name": "Bulgaria"
+        }
+    }, 
+    {
+        "pk": 21, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bf", 
+            "name": "Burkina Faso"
+        }
+    }, 
+    {
+        "pk": 24, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "bi", 
+            "name": "Burundi"
+        }
+    }, 
+    {
+        "pk": 112, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "kh", 
+            "name": "Cambodia"
+        }
+    }, 
+    {
+        "pk": 44, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cm", 
+            "name": "Cameroon"
+        }
+    }, 
+    {
+        "pk": 36, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ca", 
+            "name": "Canada"
+        }
+    }, 
+    {
+        "pk": 50, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cv", 
+            "name": "Cape Verde"
+        }
+    }, 
+    {
+        "pk": 119, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ky", 
+            "name": "Cayman Islands"
+        }
+    }, 
+    {
+        "pk": 38, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cf", 
+            "name": "Central African Republic"
+        }
+    }, 
+    {
+        "pk": 206, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "td", 
+            "name": "Chad"
+        }
+    }, 
+    {
+        "pk": 43, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cl", 
+            "name": "Chile"
+        }
+    }, 
+    {
+        "pk": 45, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cn", 
+            "name": "China"
+        }
+    }, 
+    {
+        "pk": 51, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cx", 
+            "name": "Christmas Island"
+        }
+    }, 
+    {
+        "pk": 37, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cc", 
+            "name": "Cocos (Keeling) Islands"
+        }
+    }, 
+    {
+        "pk": 46, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "co", 
+            "name": "Colombia"
+        }
+    }, 
+    {
+        "pk": 114, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "km", 
+            "name": "Comoros"
+        }
+    }, 
+    {
+        "pk": 39, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cg", 
+            "name": "Congo"
+        }
+    }, 
+    {
+        "pk": 42, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ck", 
+            "name": "Cook Islands"
+        }
+    }, 
+    {
+        "pk": 47, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cr", 
+            "name": "Costa Rica"
+        }
+    }, 
+    {
+        "pk": 41, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ci", 
+            "name": "Cote D'Ivoire (Ivory Coast)"
+        }
+    }, 
+    {
+        "pk": 95, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "hr", 
+            "name": "Croatia (Hrvatska)"
+        }
+    }, 
+    {
+        "pk": 49, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cu", 
+            "name": "Cuba"
+        }
+    }, 
+    {
+        "pk": 52, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cy", 
+            "name": "Cyprus"
+        }
+    }, 
+    {
+        "pk": 53, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cz", 
+            "name": "Czech Republic"
+        }
+    }, 
+    {
+        "pk": 48, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "cs", 
+            "name": "Czechoslovakia (former)"
+        }
+    }, 
+    {
+        "pk": 56, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "dk", 
+            "name": "Denmark"
+        }
+    }, 
+    {
+        "pk": 55, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "dj", 
+            "name": "Djibouti"
+        }
+    }, 
+    {
+        "pk": 57, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "dm", 
+            "name": "Dominica"
+        }
+    }, 
+    {
+        "pk": 58, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "do", 
+            "name": "Dominican Republic"
+        }
+    }, 
+    {
+        "pk": 215, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tp", 
+            "name": "East Timor"
+        }
+    }, 
+    {
+        "pk": 60, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ec", 
+            "name": "Ecuador"
+        }
+    }, 
+    {
+        "pk": 62, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "eg", 
+            "name": "Egypt"
+        }
+    }, 
+    {
+        "pk": 202, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sv", 
+            "name": "El Salvador"
+        }
+    }, 
+    {
+        "pk": 85, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gq", 
+            "name": "Equatorial Guinea"
+        }
+    }, 
+    {
+        "pk": 64, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "er", 
+            "name": "Eritrea"
+        }
+    }, 
+    {
+        "pk": 61, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ee", 
+            "name": "Estonia"
+        }
+    }, 
+    {
+        "pk": 66, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "et", 
+            "name": "Ethiopia"
+        }
+    }, 
+    {
+        "pk": 69, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "fk", 
+            "name": "Falkland Islands (Malvinas)"
+        }
+    }, 
+    {
+        "pk": 71, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "fo", 
+            "name": "Faroe Islands"
+        }
+    }, 
+    {
+        "pk": 68, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "fj", 
+            "name": "Fiji"
+        }
+    }, 
+    {
+        "pk": 67, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "fi", 
+            "name": "Finland"
+        }
+    }, 
+    {
+        "pk": 72, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "fr", 
+            "name": "France"
+        }
+    }, 
+    {
+        "pk": 73, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "fx", 
+            "name": "France, Metropolitan"
+        }
+    }, 
+    {
+        "pk": 78, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gf", 
+            "name": "French Guiana"
+        }
+    }, 
+    {
+        "pk": 169, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pf", 
+            "name": "French Polynesia"
+        }
+    }, 
+    {
+        "pk": 207, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tf", 
+            "name": "French Southern Territories"
+        }
+    }, 
+    {
+        "pk": 74, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ga", 
+            "name": "Gabon"
+        }
+    }, 
+    {
+        "pk": 82, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gm", 
+            "name": "Gambia"
+        }
+    }, 
+    {
+        "pk": 77, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ge", 
+            "name": "Georgia"
+        }
+    }, 
+    {
+        "pk": 247, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "dd", 
+            "name": "German Democratic Republic [former]"
+        }
+    }, 
+    {
+        "pk": 54, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "de", 
+            "name": "Germany"
+        }
+    }, 
+    {
+        "pk": 79, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gh", 
+            "name": "Ghana"
+        }
+    }, 
+    {
+        "pk": 80, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gi", 
+            "name": "Gibraltar"
+        }
+    }, 
+    {
+        "pk": 75, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gb", 
+            "name": "Great Britain (UK)"
+        }
+    }, 
+    {
+        "pk": 86, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gr", 
+            "name": "Greece"
+        }
+    }, 
+    {
+        "pk": 81, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gl", 
+            "name": "Greenland"
+        }
+    }, 
+    {
+        "pk": 76, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gd", 
+            "name": "Grenada"
+        }
+    }, 
+    {
+        "pk": 84, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gp", 
+            "name": "Guadeloupe"
+        }
+    }, 
+    {
+        "pk": 89, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gu", 
+            "name": "Guam"
+        }
+    }, 
+    {
+        "pk": 88, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gt", 
+            "name": "Guatemala"
+        }
+    }, 
+    {
+        "pk": 83, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gn", 
+            "name": "Guinea"
+        }
+    }, 
+    {
+        "pk": 90, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gw", 
+            "name": "Guinea-Bissau"
+        }
+    }, 
+    {
+        "pk": 91, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gy", 
+            "name": "Guyana"
+        }
+    }, 
+    {
+        "pk": 96, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ht", 
+            "name": "Haiti"
+        }
+    }, 
+    {
+        "pk": 93, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "hm", 
+            "name": "Heard and McDonald Islands"
+        }
+    }, 
+    {
+        "pk": 94, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "hn", 
+            "name": "Honduras"
+        }
+    }, 
+    {
+        "pk": 92, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "hk", 
+            "name": "Hong Kong"
+        }
+    }, 
+    {
+        "pk": 97, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "hu", 
+            "name": "Hungary"
+        }
+    }, 
+    {
+        "pk": 105, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "is", 
+            "name": "Iceland"
+        }
+    }, 
+    {
+        "pk": 101, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "in", 
+            "name": "India"
+        }
+    }, 
+    {
+        "pk": 98, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "id", 
+            "name": "Indonesia"
+        }
+    }, 
+    {
+        "pk": 104, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ir", 
+            "name": "Iran"
+        }
+    }, 
+    {
+        "pk": 103, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "iq", 
+            "name": "Iraq"
+        }
+    }, 
+    {
+        "pk": 99, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ie", 
+            "name": "Ireland"
+        }
+    }, 
+    {
+        "pk": 100, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "il", 
+            "name": "Israel"
+        }
+    }, 
+    {
+        "pk": 106, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "it", 
+            "name": "Italy"
+        }
+    }, 
+    {
+        "pk": 107, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "jm", 
+            "name": "Jamaica"
+        }
+    }, 
+    {
+        "pk": 109, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "jp", 
+            "name": "Japan"
+        }
+    }, 
+    {
+        "pk": 108, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "jo", 
+            "name": "Jordan"
+        }
+    }, 
+    {
+        "pk": 120, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "kz", 
+            "name": "Kazakhstan"
+        }
+    }, 
+    {
+        "pk": 110, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ke", 
+            "name": "Kenya"
+        }
+    }, 
+    {
+        "pk": 113, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ki", 
+            "name": "Kiribati"
+        }
+    }, 
+    {
+        "pk": 116, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "kp", 
+            "name": "Korea (North)"
+        }
+    }, 
+    {
+        "pk": 117, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "kr", 
+            "name": "Korea (South)"
+        }
+    }, 
+    {
+        "pk": 118, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "kw", 
+            "name": "Kuwait"
+        }
+    }, 
+    {
+        "pk": 111, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "kg", 
+            "name": "Kyrgyzstan"
+        }
+    }, 
+    {
+        "pk": 121, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "la", 
+            "name": "Laos"
+        }
+    }, 
+    {
+        "pk": 130, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "lv", 
+            "name": "Latvia"
+        }
+    }, 
+    {
+        "pk": 122, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "lb", 
+            "name": "Lebanon"
+        }
+    }, 
+    {
+        "pk": 127, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ls", 
+            "name": "Lesotho"
+        }
+    }, 
+    {
+        "pk": 126, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "lr", 
+            "name": "Liberia"
+        }
+    }, 
+    {
+        "pk": 131, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ly", 
+            "name": "Libya"
+        }
+    }, 
+    {
+        "pk": 124, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "li", 
+            "name": "Liechtenstein"
+        }
+    }, 
+    {
+        "pk": 128, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "lt", 
+            "name": "Lithuania"
+        }
+    }, 
+    {
+        "pk": 129, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "lu", 
+            "name": "Luxembourg"
+        }
+    }, 
+    {
+        "pk": 141, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mo", 
+            "name": "Macau"
+        }
+    }, 
+    {
+        "pk": 137, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mk", 
+            "name": "Macedonia"
+        }
+    }, 
+    {
+        "pk": 135, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mg", 
+            "name": "Madagascar"
+        }
+    }, 
+    {
+        "pk": 149, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mw", 
+            "name": "Malawi"
+        }
+    }, 
+    {
+        "pk": 151, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "my", 
+            "name": "Malaysia"
+        }
+    }, 
+    {
+        "pk": 148, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mv", 
+            "name": "Maldives"
+        }
+    }, 
+    {
+        "pk": 138, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ml", 
+            "name": "Mali"
+        }
+    }, 
+    {
+        "pk": 146, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mt", 
+            "name": "Malta"
+        }
+    }, 
+    {
+        "pk": 136, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mh", 
+            "name": "Marshall Islands"
+        }
+    }, 
+    {
+        "pk": 143, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mq", 
+            "name": "Martinique"
+        }
+    }, 
+    {
+        "pk": 144, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mr", 
+            "name": "Mauritania"
+        }
+    }, 
+    {
+        "pk": 147, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mu", 
+            "name": "Mauritius"
+        }
+    }, 
+    {
+        "pk": 238, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "yt", 
+            "name": "Mayotte"
+        }
+    }, 
+    {
+        "pk": 150, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mx", 
+            "name": "Mexico"
+        }
+    }, 
+    {
+        "pk": 70, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "fm", 
+            "name": "Micronesia"
+        }
+    }, 
+    {
+        "pk": 134, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "md", 
+            "name": "Moldova"
+        }
+    }, 
+    {
+        "pk": 133, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mc", 
+            "name": "Monaco"
+        }
+    }, 
+    {
+        "pk": 140, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mn", 
+            "name": "Mongolia"
+        }
+    }, 
+    {
+        "pk": 145, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ms", 
+            "name": "Montserrat"
+        }
+    }, 
+    {
+        "pk": 132, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ma", 
+            "name": "Morocco"
+        }
+    }, 
+    {
+        "pk": 152, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mz", 
+            "name": "Mozambique"
+        }
+    }, 
+    {
+        "pk": 139, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mm", 
+            "name": "Myanmar"
+        }
+    }, 
+    {
+        "pk": 153, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "na", 
+            "name": "Namibia"
+        }
+    }, 
+    {
+        "pk": 162, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "nr", 
+            "name": "Nauru"
+        }
+    }, 
+    {
+        "pk": 161, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "np", 
+            "name": "Nepal"
+        }
+    }, 
+    {
+        "pk": 159, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "nl", 
+            "name": "Netherlands"
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "an", 
+            "name": "Netherlands Antilles"
+        }
+    }, 
+    {
+        "pk": 163, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "nt", 
+            "name": "Neutral Zone"
+        }
+    }, 
+    {
+        "pk": 154, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "nc", 
+            "name": "New Caledonia"
+        }
+    }, 
+    {
+        "pk": 165, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "nz", 
+            "name": "New Zealand (Aotearoa)"
+        }
+    }, 
+    {
+        "pk": 158, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ni", 
+            "name": "Nicaragua"
+        }
+    }, 
+    {
+        "pk": 155, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ne", 
+            "name": "Niger"
+        }
+    }, 
+    {
+        "pk": 157, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ng", 
+            "name": "Nigeria"
+        }
+    }, 
+    {
+        "pk": 164, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "nu", 
+            "name": "Niue"
+        }
+    }, 
+    {
+        "pk": 156, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "nf", 
+            "name": "Norfolk Island"
+        }
+    }, 
+    {
+        "pk": 142, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "mp", 
+            "name": "Northern Mariana Islands"
+        }
+    }, 
+    {
+        "pk": 160, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "no", 
+            "name": "Norway"
+        }
+    }, 
+    {
+        "pk": 166, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "om", 
+            "name": "Oman"
+        }
+    }, 
+    {
+        "pk": 172, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pk", 
+            "name": "Pakistan"
+        }
+    }, 
+    {
+        "pk": 178, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pw", 
+            "name": "Palau"
+        }
+    }, 
+    {
+        "pk": 167, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pa", 
+            "name": "Panama"
+        }
+    }, 
+    {
+        "pk": 170, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pg", 
+            "name": "Papua New Guinea"
+        }
+    }, 
+    {
+        "pk": 179, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "py", 
+            "name": "Paraguay"
+        }
+    }, 
+    {
+        "pk": 168, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pe", 
+            "name": "Peru"
+        }
+    }, 
+    {
+        "pk": 171, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ph", 
+            "name": "Philippines"
+        }
+    }, 
+    {
+        "pk": 175, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pn", 
+            "name": "Pitcairn"
+        }
+    }, 
+    {
+        "pk": 173, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pl", 
+            "name": "Poland"
+        }
+    }, 
+    {
+        "pk": 177, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pt", 
+            "name": "Portugal"
+        }
+    }, 
+    {
+        "pk": 176, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pr", 
+            "name": "Puerto Rico"
+        }
+    }, 
+    {
+        "pk": 180, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "qa", 
+            "name": "Qatar"
+        }
+    }, 
+    {
+        "pk": 181, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "re", 
+            "name": "Reunion"
+        }
+    }, 
+    {
+        "pk": 182, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ro", 
+            "name": "Romania"
+        }
+    }, 
+    {
+        "pk": 183, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ru", 
+            "name": "Russian Federation"
+        }
+    }, 
+    {
+        "pk": 184, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "rw", 
+            "name": "Rwanda"
+        }
+    }, 
+    {
+        "pk": 87, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "gs", 
+            "name": "S. Georgia and S. Sandwich Isls."
+        }
+    }, 
+    {
+        "pk": 115, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "kn", 
+            "name": "Saint Kitts and Nevis"
+        }
+    }, 
+    {
+        "pk": 123, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "lc", 
+            "name": "Saint Lucia"
+        }
+    }, 
+    {
+        "pk": 229, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "vc", 
+            "name": "Saint Vincent and the Grenadines"
+        }
+    }, 
+    {
+        "pk": 236, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ws", 
+            "name": "Samoa"
+        }
+    }, 
+    {
+        "pk": 196, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sm", 
+            "name": "San Marino"
+        }
+    }, 
+    {
+        "pk": 200, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "st", 
+            "name": "Sao Tome and Principe"
+        }
+    }, 
+    {
+        "pk": 185, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sa", 
+            "name": "Saudi Arabia"
+        }
+    }, 
+    {
+        "pk": 197, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sn", 
+            "name": "Senegal"
+        }
+    }, 
+    {
+        "pk": 187, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sc", 
+            "name": "Seychelles"
+        }
+    }, 
+    {
+        "pk": 195, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sl", 
+            "name": "Sierra Leone"
+        }
+    }, 
+    {
+        "pk": 190, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sg", 
+            "name": "Singapore"
+        }
+    }, 
+    {
+        "pk": 194, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sk", 
+            "name": "Slovak Republic"
+        }
+    }, 
+    {
+        "pk": 192, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "si", 
+            "name": "Slovenia"
+        }
+    }, 
+    {
+        "pk": 186, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sb", 
+            "name": "Solomon Islands"
+        }
+    }, 
+    {
+        "pk": 198, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "so", 
+            "name": "Somalia"
+        }
+    }, 
+    {
+        "pk": 240, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "za", 
+            "name": "South Africa"
+        }
+    }, 
+    {
+        "pk": 65, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "es", 
+            "name": "Spain"
+        }
+    }, 
+    {
+        "pk": 125, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "lk", 
+            "name": "Sri Lanka"
+        }
+    }, 
+    {
+        "pk": 191, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sh", 
+            "name": "St. Helena"
+        }
+    }, 
+    {
+        "pk": 174, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "pm", 
+            "name": "St. Pierre and Miquelon"
+        }
+    }, 
+    {
+        "pk": 188, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sd", 
+            "name": "Sudan"
+        }
+    }, 
+    {
+        "pk": 199, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sr", 
+            "name": "Suriname"
+        }
+    }, 
+    {
+        "pk": 193, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sj", 
+            "name": "Svalbard and Jan Mayen Islands"
+        }
+    }, 
+    {
+        "pk": 204, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sz", 
+            "name": "Swaziland"
+        }
+    }, 
+    {
+        "pk": 189, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "se", 
+            "name": "Sweden"
+        }
+    }, 
+    {
+        "pk": 40, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ch", 
+            "name": "Switzerland"
+        }
+    }, 
+    {
+        "pk": 203, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "sy", 
+            "name": "Syria"
+        }
+    }, 
+    {
+        "pk": 219, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tw", 
+            "name": "Taiwan"
+        }
+    }, 
+    {
+        "pk": 210, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tj", 
+            "name": "Tajikistan"
+        }
+    }, 
+    {
+        "pk": 220, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tz", 
+            "name": "Tanzania"
+        }
+    }, 
+    {
+        "pk": 209, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "th", 
+            "name": "Thailand"
+        }
+    }, 
+    {
+        "pk": 208, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tg", 
+            "name": "Togo"
+        }
+    }, 
+    {
+        "pk": 211, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tk", 
+            "name": "Tokelau"
+        }
+    }, 
+    {
+        "pk": 214, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "to", 
+            "name": "Tonga"
+        }
+    }, 
+    {
+        "pk": 217, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tt", 
+            "name": "Trinidad and Tobago"
+        }
+    }, 
+    {
+        "pk": 213, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tn", 
+            "name": "Tunisia"
+        }
+    }, 
+    {
+        "pk": 216, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tr", 
+            "name": "Turkey"
+        }
+    }, 
+    {
+        "pk": 212, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tm", 
+            "name": "Turkmenistan"
+        }
+    }, 
+    {
+        "pk": 205, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tc", 
+            "name": "Turks and Caicos Islands"
+        }
+    }, 
+    {
+        "pk": 218, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "tv", 
+            "name": "Tuvalu"
+        }
+    }, 
+    {
+        "pk": 222, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ug", 
+            "name": "Uganda"
+        }
+    }, 
+    {
+        "pk": 221, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ua", 
+            "name": "Ukraine"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ae", 
+            "name": "United Arab Emirates"
+        }
+    }, 
+    {
+        "pk": 223, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "uk", 
+            "name": "United Kingdom"
+        }
+    }, 
+    {
+        "pk": 225, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "us", 
+            "name": "United States"
+        }
+    }, 
+    {
+        "pk": 226, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "uy", 
+            "name": "Uruguay"
+        }
+    }, 
+    {
+        "pk": 224, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "um", 
+            "name": "US Minor Outlying Islands"
+        }
+    }, 
+    {
+        "pk": 201, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "su", 
+            "name": "USSR (former)"
+        }
+    }, 
+    {
+        "pk": 227, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "uz", 
+            "name": "Uzbekistan"
+        }
+    }, 
+    {
+        "pk": 234, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "vu", 
+            "name": "Vanuatu"
+        }
+    }, 
+    {
+        "pk": 228, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "va", 
+            "name": "Vatican City State (Holy See)"
+        }
+    }, 
+    {
+        "pk": 230, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ve", 
+            "name": "Venezuela"
+        }
+    }, 
+    {
+        "pk": 233, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "vn", 
+            "name": "Viet Nam"
+        }
+    }, 
+    {
+        "pk": 231, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "vg", 
+            "name": "Virgin Islands (British)"
+        }
+    }, 
+    {
+        "pk": 232, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "vi", 
+            "name": "Virgin Islands (U.S.)"
+        }
+    }, 
+    {
+        "pk": 235, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "wf", 
+            "name": "Wallis and Futuna Islands"
+        }
+    }, 
+    {
+        "pk": 63, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "eh", 
+            "name": "Western Sahara"
+        }
+    }, 
+    {
+        "pk": 237, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "ye", 
+            "name": "Yemen"
+        }
+    }, 
+    {
+        "pk": 239, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "yu", 
+            "name": "Yugoslavia"
+        }
+    }, 
+    {
+        "pk": 242, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "zr", 
+            "name": "Zaire"
+        }
+    }, 
+    {
+        "pk": 241, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "zm", 
+            "name": "Zambia"
+        }
+    }, 
+    {
+        "pk": 243, 
+        "model": "gcd.country", 
+        "fields": {
+            "code": "zw", 
+            "name": "Zimbabwe"
+        }
+    }, 
+    {
+        "pk": 144, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "zxx", 
+            "name": "(no linguistic content)"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ab", 
+            "name": "Abkhazian"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "aa", 
+            "name": "Afar"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "af", 
+            "name": "Afrikaans"
+        }
+    }, 
+    {
+        "pk": 107, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sq", 
+            "name": "Albanian"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "am", 
+            "name": "Amharic"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ar", 
+            "name": "Arabic"
+        }
+    }, 
+    {
+        "pk": 45, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "hy", 
+            "name": "Armenian"
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "as", 
+            "name": "Assamese"
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ay", 
+            "name": "Aymara"
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "az", 
+            "name": "Azerbaijani"
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ba", 
+            "name": "Bashkir"
+        }
+    }, 
+    {
+        "pk": 29, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "eu", 
+            "name": "Basque"
+        }
+    }, 
+    {
+        "pk": 14, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "bn", 
+            "name": "Bengali; Bangla"
+        }
+    }, 
+    {
+        "pk": 23, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "dz", 
+            "name": "Bhutani"
+        }
+    }, 
+    {
+        "pk": 12, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "bh", 
+            "name": "Bihari"
+        }
+    }, 
+    {
+        "pk": 13, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "bi", 
+            "name": "Bislama"
+        }
+    }, 
+    {
+        "pk": 137, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "bs", 
+            "name": "Bosnian"
+        }
+    }, 
+    {
+        "pk": 16, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "br", 
+            "name": "Breton"
+        }
+    }, 
+    {
+        "pk": 11, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "bg", 
+            "name": "Bulgarian"
+        }
+    }, 
+    {
+        "pk": 79, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "my", 
+            "name": "Burmese"
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "be", 
+            "name": "Byelorussian"
+        }
+    }, 
+    {
+        "pk": 59, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "km", 
+            "name": "Cambodian"
+        }
+    }, 
+    {
+        "pk": 17, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ca", 
+            "name": "Catalan"
+        }
+    }, 
+    {
+        "pk": 135, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "zh", 
+            "name": "Chinese"
+        }
+    }, 
+    {
+        "pk": 18, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "co", 
+            "name": "Corsican"
+        }
+    }, 
+    {
+        "pk": 43, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "hr", 
+            "name": "Croatian"
+        }
+    }, 
+    {
+        "pk": 19, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "cs", 
+            "name": "Czech"
+        }
+    }, 
+    {
+        "pk": 21, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "da", 
+            "name": "Danish"
+        }
+    }, 
+    {
+        "pk": 82, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "nl", 
+            "name": "Dutch"
+        }
+    }, 
+    {
+        "pk": 25, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "en", 
+            "name": "English"
+        }
+    }, 
+    {
+        "pk": 26, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "eo", 
+            "name": "Esperanto"
+        }
+    }, 
+    {
+        "pk": 28, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "et", 
+            "name": "Estonian"
+        }
+    }, 
+    {
+        "pk": 33, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "fo", 
+            "name": "Faeroese"
+        }
+    }, 
+    {
+        "pk": 32, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "fj", 
+            "name": "Fiji"
+        }
+    }, 
+    {
+        "pk": 145, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "fil", 
+            "name": "Filipino; Pilipino"
+        }
+    }, 
+    {
+        "pk": 31, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "fi", 
+            "name": "Finnish"
+        }
+    }, 
+    {
+        "pk": 34, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "fr", 
+            "name": "French"
+        }
+    }, 
+    {
+        "pk": 35, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "fy", 
+            "name": "Frisian"
+        }
+    }, 
+    {
+        "pk": 38, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "gl", 
+            "name": "Galician"
+        }
+    }, 
+    {
+        "pk": 56, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ka", 
+            "name": "Georgian"
+        }
+    }, 
+    {
+        "pk": 22, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "de", 
+            "name": "German"
+        }
+    }, 
+    {
+        "pk": 24, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "el", 
+            "name": "Greek"
+        }
+    }, 
+    {
+        "pk": 58, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "kl", 
+            "name": "Greenlandic"
+        }
+    }, 
+    {
+        "pk": 39, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "gn", 
+            "name": "Guarani"
+        }
+    }, 
+    {
+        "pk": 40, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "gu", 
+            "name": "Gujarati"
+        }
+    }, 
+    {
+        "pk": 41, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ha", 
+            "name": "Hausa"
+        }
+    }, 
+    {
+        "pk": 52, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "iw", 
+            "name": "Hebrew"
+        }
+    }, 
+    {
+        "pk": 42, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "hi", 
+            "name": "Hindi"
+        }
+    }, 
+    {
+        "pk": 44, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "hu", 
+            "name": "Hungarian"
+        }
+    }, 
+    {
+        "pk": 50, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "is", 
+            "name": "Icelandic"
+        }
+    }, 
+    {
+        "pk": 49, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "in", 
+            "name": "Indonesian"
+        }
+    }, 
+    {
+        "pk": 46, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ia", 
+            "name": "Interlingua"
+        }
+    }, 
+    {
+        "pk": 47, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ie", 
+            "name": "Interlingue"
+        }
+    }, 
+    {
+        "pk": 48, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ik", 
+            "name": "Inupiak"
+        }
+    }, 
+    {
+        "pk": 36, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ga", 
+            "name": "Irish"
+        }
+    }, 
+    {
+        "pk": 51, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "it", 
+            "name": "Italian"
+        }
+    }, 
+    {
+        "pk": 53, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ja", 
+            "name": "Japanese"
+        }
+    }, 
+    {
+        "pk": 55, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "jw", 
+            "name": "Javanese"
+        }
+    }, 
+    {
+        "pk": 60, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "kn", 
+            "name": "Kannada"
+        }
+    }, 
+    {
+        "pk": 62, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ks", 
+            "name": "Kashmiri"
+        }
+    }, 
+    {
+        "pk": 57, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "kk", 
+            "name": "Kazakh"
+        }
+    }, 
+    {
+        "pk": 96, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "rw", 
+            "name": "Kinyarwanda"
+        }
+    }, 
+    {
+        "pk": 64, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ky", 
+            "name": "Kirghiz"
+        }
+    }, 
+    {
+        "pk": 93, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "rn", 
+            "name": "Kirundi"
+        }
+    }, 
+    {
+        "pk": 61, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ko", 
+            "name": "Korean"
+        }
+    }, 
+    {
+        "pk": 63, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ku", 
+            "name": "Kurdish"
+        }
+    }, 
+    {
+        "pk": 67, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "lo", 
+            "name": "Laothian"
+        }
+    }, 
+    {
+        "pk": 65, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "la", 
+            "name": "Latin"
+        }
+    }, 
+    {
+        "pk": 69, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "lv", 
+            "name": "Latvian, Lettish"
+        }
+    }, 
+    {
+        "pk": 66, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ln", 
+            "name": "Lingala"
+        }
+    }, 
+    {
+        "pk": 68, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "lt", 
+            "name": "Lithuanian"
+        }
+    }, 
+    {
+        "pk": 72, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "mk", 
+            "name": "Macedonian"
+        }
+    }, 
+    {
+        "pk": 70, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "mg", 
+            "name": "Malagasy"
+        }
+    }, 
+    {
+        "pk": 77, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ms", 
+            "name": "Malay"
+        }
+    }, 
+    {
+        "pk": 73, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ml", 
+            "name": "Malayalam"
+        }
+    }, 
+    {
+        "pk": 78, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "mt", 
+            "name": "Maltese"
+        }
+    }, 
+    {
+        "pk": 71, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "mi", 
+            "name": "Maori"
+        }
+    }, 
+    {
+        "pk": 76, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "mr", 
+            "name": "Marathi"
+        }
+    }, 
+    {
+        "pk": 75, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "mo", 
+            "name": "Moldavian"
+        }
+    }, 
+    {
+        "pk": 74, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "mn", 
+            "name": "Mongolian"
+        }
+    }, 
+    {
+        "pk": 80, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "na", 
+            "name": "Nauru"
+        }
+    }, 
+    {
+        "pk": 81, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ne", 
+            "name": "Nepali"
+        }
+    }, 
+    {
+        "pk": 83, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "no", 
+            "name": "Norwegian"
+        }
+    }, 
+    {
+        "pk": 84, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "oc", 
+            "name": "Occitan"
+        }
+    }, 
+    {
+        "pk": 86, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "or", 
+            "name": "Oriya"
+        }
+    }, 
+    {
+        "pk": 85, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "om", 
+            "name": "Oromo (Afan)"
+        }
+    }, 
+    {
+        "pk": 89, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ps", 
+            "name": "Pashto, Pushto"
+        }
+    }, 
+    {
+        "pk": 30, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "fa", 
+            "name": "Persian"
+        }
+    }, 
+    {
+        "pk": 88, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "pl", 
+            "name": "Polish"
+        }
+    }, 
+    {
+        "pk": 90, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "pt", 
+            "name": "Portuguese"
+        }
+    }, 
+    {
+        "pk": 87, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "pa", 
+            "name": "Punjabi"
+        }
+    }, 
+    {
+        "pk": 91, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "qu", 
+            "name": "Quechua"
+        }
+    }, 
+    {
+        "pk": 92, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "rm", 
+            "name": "Rhaeto-Romance"
+        }
+    }, 
+    {
+        "pk": 94, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ro", 
+            "name": "Romanian"
+        }
+    }, 
+    {
+        "pk": 95, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ru", 
+            "name": "Russian"
+        }
+    }, 
+    {
+        "pk": 141, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "smn", 
+            "name": "Sami (Inari)"
+        }
+    }, 
+    {
+        "pk": 140, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "smj", 
+            "name": "Sami (Lule)"
+        }
+    }, 
+    {
+        "pk": 138, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "se", 
+            "name": "Sami (Northern)"
+        }
+    }, 
+    {
+        "pk": 142, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sms", 
+            "name": "Sami (Skolt)"
+        }
+    }, 
+    {
+        "pk": 139, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sma", 
+            "name": "Sami (Southern)"
+        }
+    }, 
+    {
+        "pk": 143, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "smi", 
+            "name": "Sami languages"
+        }
+    }, 
+    {
+        "pk": 104, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sm", 
+            "name": "Samoan"
+        }
+    }, 
+    {
+        "pk": 99, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sg", 
+            "name": "Sangro"
+        }
+    }, 
+    {
+        "pk": 97, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sa", 
+            "name": "Sanskrit"
+        }
+    }, 
+    {
+        "pk": 37, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "gd", 
+            "name": "Scots Gaelic"
+        }
+    }, 
+    {
+        "pk": 108, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sr", 
+            "name": "Serbian"
+        }
+    }, 
+    {
+        "pk": 100, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sh", 
+            "name": "Serbo-Croatian"
+        }
+    }, 
+    {
+        "pk": 110, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "st", 
+            "name": "Sesotho"
+        }
+    }, 
+    {
+        "pk": 121, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "tn", 
+            "name": "Setswana"
+        }
+    }, 
+    {
+        "pk": 105, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sn", 
+            "name": "Shona"
+        }
+    }, 
+    {
+        "pk": 98, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sd", 
+            "name": "Sindhi"
+        }
+    }, 
+    {
+        "pk": 101, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "si", 
+            "name": "Singhalese"
+        }
+    }, 
+    {
+        "pk": 109, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ss", 
+            "name": "Siswati"
+        }
+    }, 
+    {
+        "pk": 102, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sk", 
+            "name": "Slovak"
+        }
+    }, 
+    {
+        "pk": 103, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sl", 
+            "name": "Slovenian"
+        }
+    }, 
+    {
+        "pk": 106, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "so", 
+            "name": "Somali"
+        }
+    }, 
+    {
+        "pk": 27, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "es", 
+            "name": "Spanish"
+        }
+    }, 
+    {
+        "pk": 111, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "su", 
+            "name": "Sundanese"
+        }
+    }, 
+    {
+        "pk": 113, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sw", 
+            "name": "Swahili"
+        }
+    }, 
+    {
+        "pk": 112, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "sv", 
+            "name": "Swedish"
+        }
+    }, 
+    {
+        "pk": 120, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "tl", 
+            "name": "Tagalog"
+        }
+    }, 
+    {
+        "pk": 116, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "tg", 
+            "name": "Tajik"
+        }
+    }, 
+    {
+        "pk": 114, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ta", 
+            "name": "Tamil"
+        }
+    }, 
+    {
+        "pk": 125, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "tt", 
+            "name": "Tatar"
+        }
+    }, 
+    {
+        "pk": 115, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "te", 
+            "name": "Telugu"
+        }
+    }, 
+    {
+        "pk": 117, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "th", 
+            "name": "Thai"
+        }
+    }, 
+    {
+        "pk": 15, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "bo", 
+            "name": "Tibetan"
+        }
+    }, 
+    {
+        "pk": 118, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ti", 
+            "name": "Tigrinya"
+        }
+    }, 
+    {
+        "pk": 122, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "to", 
+            "name": "Tonga"
+        }
+    }, 
+    {
+        "pk": 124, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ts", 
+            "name": "Tsonga"
+        }
+    }, 
+    {
+        "pk": 123, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "tr", 
+            "name": "Turkish"
+        }
+    }, 
+    {
+        "pk": 119, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "tk", 
+            "name": "Turkmen"
+        }
+    }, 
+    {
+        "pk": 126, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "tw", 
+            "name": "Twi"
+        }
+    }, 
+    {
+        "pk": 127, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "uk", 
+            "name": "Ukrainian"
+        }
+    }, 
+    {
+        "pk": 128, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ur", 
+            "name": "Urdu"
+        }
+    }, 
+    {
+        "pk": 129, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "uz", 
+            "name": "Uzbek"
+        }
+    }, 
+    {
+        "pk": 130, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "vi", 
+            "name": "Vietnamese"
+        }
+    }, 
+    {
+        "pk": 131, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "vo", 
+            "name": "Volapuk"
+        }
+    }, 
+    {
+        "pk": 20, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "cy", 
+            "name": "Welsh"
+        }
+    }, 
+    {
+        "pk": 132, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "wo", 
+            "name": "Wolof"
+        }
+    }, 
+    {
+        "pk": 133, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "xh", 
+            "name": "Xhosa"
+        }
+    }, 
+    {
+        "pk": 54, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "ji", 
+            "name": "Yiddish"
+        }
+    }, 
+    {
+        "pk": 134, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "yo", 
+            "name": "Yoruba"
+        }
+    }, 
+    {
+        "pk": 136, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "zu", 
+            "name": "Zulu"
+        }
+    }, 
+    {
+        "pk": 19, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 1, 
+            "name": "story"
+        }
+    }, 
+    {
+        "pk": 21, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 2, 
+            "name": "text story"
+        }
+    }, 
+    {
+        "pk": 20, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 3, 
+            "name": "text article"
+        }
+    }, 
+    {
+        "pk": 13, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 4, 
+            "name": "photo story"
+        }
+    }, 
+    {
+        "pk": 6, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 5, 
+            "name": "cover"
+        }
+    }, 
+    {
+        "pk": 7, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 6, 
+            "name": "cover reprint (on interior page)"
+        }
+    }, 
+    {
+        "pk": 5, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 7, 
+            "name": "cartoon"
+        }
+    }, 
+    {
+        "pk": 14, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 8, 
+            "name": "illustration"
+        }
+    }, 
+    {
+        "pk": 2, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 9, 
+            "name": "advertisement"
+        }
+    }, 
+    {
+        "pk": 16, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 10, 
+            "name": "promo (ad from the publisher)"
+        }
+    }, 
+    {
+        "pk": 17, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 11, 
+            "name": "public service announcement"
+        }
+    }, 
+    {
+        "pk": 1, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 12, 
+            "name": "activity"
+        }
+    }, 
+    {
+        "pk": 4, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 13, 
+            "name": "biography (nonfictional)"
+        }
+    }, 
+    {
+        "pk": 15, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 14, 
+            "name": "character profile"
+        }
+    }, 
+    {
+        "pk": 22, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 15, 
+            "name": "statement of ownership"
+        }
+    }, 
+    {
+        "pk": 10, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 16, 
+            "name": "foreword, introduction, preface, afterword"
+        }
+    }, 
+    {
+        "pk": 8, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 17, 
+            "name": "credits"
+        }
+    }, 
+    {
+        "pk": 18, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 18, 
+            "name": "recap"
+        }
+    }, 
+    {
+        "pk": 12, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 19, 
+            "name": "letters page"
+        }
+    }, 
+    {
+        "pk": 11, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 20, 
+            "name": "insert or dust jacket"
+        }
+    }, 
+    {
+        "pk": 9, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 21, 
+            "name": "filler"
+        }
+    }, 
+    {
+        "pk": 3, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 22, 
+            "name": "(backcovers) *do not use* / *please fix*"
+        }
+    }
+]
