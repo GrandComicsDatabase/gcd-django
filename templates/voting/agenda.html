@@ -63,10 +63,11 @@
       {% if topic.invalid and option.votes.all.count %}
             Voters hidden for invalid results.
       {% else %}
+            <ul class="compact">
         {% for vote in option.votes.all %}
-            {{ vote.voter.first_name }}
-            {{ vote.voter.last_name }}{% if not forloop.last %},{% endif %}
+              <li> {{ vote.voter.first_name }} {{ vote.voter.last_name }} </li>
         {% endfor %}
+            </ul>
       {% endif %}
           </td>
     {% endif %}

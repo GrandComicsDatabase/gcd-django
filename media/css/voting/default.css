@@ -15,6 +15,7 @@
     margin-bottom: 1em;
 }
 
+ul.compact,
 dd ul {
     list-style: none;
     padding: 0;

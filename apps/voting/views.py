@@ -1,7 +1,9 @@
 from datetime import datetime
 
+from django.conf import settings
 from django.db.models import Q
 from django.core import urlresolvers
+from django.core.mail import send_mail
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
@@ -10,6 +12,17 @@ from django.contrib.auth.decorators import login_required, permission_required
 from apps.gcd.views import render_error
 from apps.voting.models import *
 
+EMAIL_RESULT = """
+All ballots have been received for the following topic from the %s agenda:
+
+  %s
+
+The results are:
+
+%s
+
+Please go to %s for more details.
+"""
 
 def dashboard(request):
     topics = Topic.objects.filter(deadline__gte=datetime.now())
@@ -87,9 +100,38 @@ def _calculate_results(unresolved):
 
             topic.result_calculated = True
             topic.save()
+
+            _send_result_email(topic)
+
         else:
             # TODO: Implement Schulze method.
             pass
+
+def _send_result_email(topic):
+    for list_config in topic.agenda.agenda_mailing_lists.all():
+        if list_config.on_vote_close:
+            if topic.invalid:
+                result = ('This vote failed to produce a valid result.  '
+                          'The vote administrators will follow up as needed.')
+            elif topic.vote_type.name == TYPE_PASS_FAIL:
+                if topic.options.get(result=True).name == 'Pass':
+                    result = 'The motion PASSED'
+                else:
+                    result = 'The motion FAILED'
+
+            else:
+                result = 'The following option(s) won:\n'
+                for winner in topic.options.filter(result=True):
+                    result += '  * %s\n' % winner.name
+
+            email_body = EMAIL_RESULT % (topic.agenda, topic.text, result,
+              settings.SITE_URL.rstrip('/') + topic.agenda.get_absolute_url())
+
+            send_mail(from_email=settings.EMAIL_VOTING_FROM,
+                      recipient_list=[list_config.mailing_list.address],
+                      subject="GCD Vote Result: %s" % topic,
+                      message=email_body,
+                      fail_silently=(not settings.BETA))
 
 def topic(request, id):
     topic = get_object_or_404(Topic, id=id)
@@ -129,7 +171,7 @@ def agenda(request, id):
     open = agenda.topics.exclude(past_due)
     closed = agenda.topics.filter(past_due)
 
-    _calculate_results(closed ) #.filter(result_calculated=False))
+    _calculate_results(closed.filter(result_calculated=False))
 
     return render_to_response('voting/agenda.html',
                               {

@@ -1,12 +1,36 @@
 import sha
 from random import random
 
+from django.conf import settings
 from django.db import models
 from django.db.models import Count
 from django.core import urlresolvers
+from django.core.mail import send_mail
 from django.contrib.auth.models import User, Permission
 
 TYPE_PASS_FAIL = 'Pass / Fail'
+
+EMAIL_OPEN_BALLOT = """
+The topic:
+
+  %s
+
+is now open for voting at:
+
+%s
+
+%s
+"""
+
+EMAIL_TOKEN_STRING = """
+You will need to enter the following token exactly as shown in order to vote:
+
+%s
+
+Please do not share this token with anyone who did not recieve the email.
+Voters who can be shown to not have been eligible to receive the token will
+have their votes invalidated.
+"""
 
 class MailingList(models.Model):
     class Meta:
@@ -108,6 +132,12 @@ class Topic(models.Model):
     subscribers = models.ManyToManyField(User, related_name='subscribed_topics',
                                                editable=False)
 
+    def get_absolute_url(self):
+        """
+        Note that the primary page for a topic is known as the ballot page.
+        """
+        return urlresolvers.reverse('ballot', kwargs={'id': self.id})
+
     def counted_options(self):
         """
         Return the options with their vote counts.
@@ -150,6 +180,28 @@ def topic_post_save(sender, **kwargs):
             raise ValueError(
               "Only items from this topic's agenda may be attached to this topic.")
 
+    if not kwargs['created']:
+        # We're done, the rest of the method handles new objects so
+        # let's not deal with an extra indentation level.
+        return
+
+    # Send mail that we have a new ballot up for vote.
+    for list_config in topic.agenda.agenda_mailing_lists.all():
+        if list_config.on_vote_open:
+            token_string = ''
+            if topic.token and list_config.display_token:
+                token_string = EMAIL_TOKEN_STRING % topic.token
+
+            email_body = EMAIL_OPEN_BALLOT % (
+              topic.text,
+              settings.SITE_URL.rstrip('/') + topic.get_absolute_url(),
+              token_string)
+
+            send_mail(from_email=settings.EMAIL_VOTING_FROM,
+                      recipient_list=[list_config.mailing_list.address],
+                      subject="GCD Ballot Open: %s" % topic,
+                      message=email_body,
+                      fail_silently=(not settings.BETA))
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)
 models.signals.post_save.connect(topic_post_save, sender=Topic)
