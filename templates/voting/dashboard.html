@@ -19,7 +19,7 @@
   </tr>
 {% for topic in topics %}
   <tr>
-    <td> <a href="{% url topic id=topic.id %}">{{ topic }}</a> </td>
+    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
     <td> {{ topic.agenda }} </td>
     <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
   </tr>

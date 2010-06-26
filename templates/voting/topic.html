@@ -2,6 +2,8 @@
 
 {% load display %}
 
+{% block title %} Ballot :: {{ topic.text|truncatewords:4 }} {% endblock %}
+
 {% block view_body %}
 <h2> {{ topic.name }} </h2>
 <dl>
@@ -21,11 +23,13 @@
   <dd>{{ topic.text }}</dd>
 </dl>
 
-{% if voted %}
+{% if voted or closed %}
 <p>
-Thank you for voting on this topic!  If the topic is still open for voting
-and you wish to change your vote, please contact an administrator.  Vote
+Thank you for voting on this topic! 
+  {% if not closed %}
+If you wish to change your vote, please contact an administrator.  Vote
 changing will be implemented in the future.
+  {% endif %}
 </p>
 {% else %}
 <form method=POST action="{% url vote %}">

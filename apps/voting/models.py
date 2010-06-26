@@ -2,6 +2,7 @@ import sha
 from random import random
 
 from django.db import models
+from django.db.models import Count
 from django.core import urlresolvers
 from django.contrib.auth.models import User, Permission
 
@@ -21,6 +22,8 @@ class Agenda(models.Model):
 
     uses_tokens = models.BooleanField(default=False)
     allows_abstentions = models.BooleanField(default=False)
+    quorum = models.IntegerField(null=True, blank=True)
+    secret_ballot = models.BooleanField(default=False)
 
     subscribers = models.ManyToManyField(User, related_name='subscribed_agendas',
                                                editable=False)
@@ -100,10 +103,24 @@ class Topic(models.Model):
 
     result_calculated = models.BooleanField(default=False, editable=False,
                                             db_index=True)
-    tied = models.BooleanField(default=False, editable=False)
+    invalid = models.BooleanField(default=False, editable=False)
 
     subscribers = models.ManyToManyField(User, related_name='subscribed_topics',
                                                editable=False)
+
+    def counted_options(self):
+        """
+        Return the options with their vote counts.
+        """
+        return \
+          self.options.annotate(num_votes=Count('votes')).order_by('-num_votes')
+
+    def num_voters(self):
+        """
+        Returns the number of distinct voters who voted on the topic.
+        Primarily used to determine if a quorum has been reached.
+        """
+        return User.objects.filter(votes__option__topic=self).distinct().count()
 
     def __unicode__(self):
         return self.name

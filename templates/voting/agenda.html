@@ -1,0 +1,85 @@
+{% extends "voting/base_view.html" %}
+
+{% block title %} GCD :: Agenda :: {{ agenda }} {% endblock %}
+
+{% block css %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/queues.css"/>
+{% endblock %}
+
+{% block view_body %}
+<div class="queues">
+<h2>{{ agenda.name }}</h2>
+<dl class="compact">
+  <dt> Quorum:</td>
+  <dd> {{ agenda.quorum }} </dd>
+  <dt> Ballot Type:</td>
+  <dd> {{ agenda.secret_ballot|yesno:"Secret,Public" }} </dd>
+</dl>
+
+<table>
+  <tr>
+    <th> Topic </th>
+    <th> Voting Deadline </th>
+  </tr>
+{% for topic in open_topics %}
+  <tr>
+    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+  </tr>
+{% empty %}
+  <tr>
+    <td colspan="2">No open topics</td>
+  </tr>
+{% endfor %}
+</table>
+<p>
+<table>
+  <tr>
+    <th> Topic </th>
+    <th> Results </th>
+    <th> Valid? </th>
+    <th> Voting Period </th>
+  </tr>
+{% for topic in closed_topics %}
+  <tr class='{{ topic.invalid|yesno:"invalid,valid" }}'>
+    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td>
+      <table>
+        <tr>
+          <th> Option </th>
+          <th> Votes </th>
+  {% if not agenda.secret_ballot %}
+          <th> Voters </th>
+  {% endif %}
+        </tr>
+  {% for option in topic.counted_options %}
+        <tr {% if option.result %}class="result"{% endif %}>
+          <td> {{ option }} </td>
+          <td> {{ option.num_votes}} </td>
+    {% if not agenda.secret_ballot %}
+          <td>
+      {% if topic.invalid and option.votes.all.count %}
+            Voters hidden for invalid results.
+      {% else %}
+        {% for vote in option.votes.all %}
+            {{ vote.voter.first_name }}
+            {{ vote.voter.last_name }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      {% endif %}
+          </td>
+    {% endif %}
+        </tr>
+  {% endfor %}
+      </table>
+    </td>
+    <td> {{ topic.invalid|yesno:"INVALID,valid" }}
+    <td> {{ topic.created|date:"Y-m-d" }} - {{ topic.deadline|date:"Y-m-d" }} </td>
+  </tr>
+{% endfor %}
+</table>
+
+</div>
+{% endblock %}
+
