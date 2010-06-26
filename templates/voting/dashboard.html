@@ -1,0 +1,44 @@
+{% extends "voting/base_view.html" %}
+
+{% block title %} GCD :: Voting {% endblock %}
+
+{% block css %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/queues.css"/>
+{% endblock %}
+
+{% block view_body %}
+<div class="queues">
+<h2>My Ballots</h2>
+<table>
+  <tr>
+    <th> Topic </th>
+    <th> Electorate </th>
+    <th> Deadline </th>
+  </tr>
+{% for topic in topics %}
+  <tr>
+    <td> <a href="{% url topic id=topic.id %}">{{ topic }}</a> </td>
+    <td> {{ topic.agenda }} </td>
+    <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+  </tr>
+{% empty %}
+  <tr>
+    <td colspan="3"> There are no topics awaiting your vote. </td>
+  </tr>
+{% endfor %}
+</table>
+
+<h2>Agendas</h2>
+<ul>
+{% for agenda in agendas %}
+  <li> <a href="{% url agenda id=agenda.id %}">{{ agenda }}</a>
+{% empty %}
+  <li> There are no active agendas at this time.
+{% endfor %}
+</ul>
+
+</div>
+{% endblock %}
+

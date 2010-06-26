@@ -1,0 +1,27 @@
+
+#token {
+    margin-bottom: 1em;
+}
+
+.option {
+    margin-bottom: 1em;
+}
+
+.option_text {
+    margin-left: 2em;
+}
+
+#vote {
+    margin-bottom: 1em;
+}
+
+dd ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+dd {
+    margin-bottom: 1em;
+}
+

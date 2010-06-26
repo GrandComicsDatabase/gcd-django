@@ -1,0 +1,55 @@
+{% extends "voting/base_view.html" %}
+
+{% load display %}
+
+{% block view_body %}
+<h2> {{ topic.name }} </h2>
+<dl>
+  <dt>Agenda:</dt>
+  <dd>{{ topic.agenda|absolute_url }}</dd>
+  <dt>Agenda Items:</dt>
+  <dd>
+    <ul>
+{% for item in topic.agenda_items.all %}
+      <li> {{ item }}
+{% empty %}
+      <li> [This topic is not attached to any agenda items.]
+{% endfor %}
+    </ul>
+  </dd>
+  <dt>Text:</dt>
+  <dd>{{ topic.text }}</dd>
+</dl>
+
+{% if voted %}
+<p>
+Thank you for voting on this topic!  If the topic is still open for voting
+and you wish to change your vote, please contact an administrator.  Vote
+changing will be implemented in the future.
+</p>
+{% else %}
+<form method=POST action="{% url vote %}">
+  {% if topic.token %}
+  <p class="instructions">
+    This vote requires a token from the mailing list where the discussion took
+    place. To get a token and vote, please join the
+    <a href="http://groups.google.com/group/gcd-policy">gcd-policy</a> list.
+  </p>
+  <label for="token">Token:</label>
+  <input type="text" class="wide" name="token" id="token"></input>
+  {% endif %}
+  {% for option in topic.options.all %}
+    {% ifequal topic.vote_type.max_votes 1 %}
+  <div class="option">
+    <input type="radio" name="option" value="{{ option.id }}">{{ option.name }}</input>
+      {% if option.text %}
+    <div class="option_text">{{ option.text }}</div>
+      {% endif %}
+  </div>
+    {% endifequal %}
+  {% endfor %}
+  <input id="vote" type="submit" value="Vote"/>
+</form>
+{% endif %}
+{% endblock %}
+
