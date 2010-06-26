@@ -32,6 +32,21 @@ Voters who can be shown to not have been eligible to receive the token will
 have their votes invalidated.
 """
 
+EMAIL_ADD_AGENDA_ITEM = """
+The following item has been added to the %s Agenda, but is not yet
+open for discussion:
+
+%s
+%s
+"""
+
+EMAIL_OPEN_AGENDA_ITEM = """
+The following item on the %s Agenda is now open for discussion:
+
+%s
+%s
+"""
+
 class MailingList(models.Model):
     class Meta:
         db_table = 'voting_mailing_list'
@@ -65,7 +80,7 @@ class AgendaItem(models.Model):
     notes = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, null=True, blank=True,
                                     related_name='agenda_items')
-    open = models.BooleanField(default=True)
+    open = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True, db_index=True, editable=False)
     updated = models.DateTimeField(null=True, auto_now=True, editable=False)
 
@@ -74,12 +89,51 @@ class AgendaItem(models.Model):
     def __unicode__(self):
         return self.name
 
+def agenda_item_pre_save(sender, **kwargs):
+    item = kwargs['instance']
+
+    newly_added = not item.id
+    if newly_added and item.open:
+        newly_opened = True
+    elif item.open:
+        old_item = AgendaItem.objects.get(id=item.id)
+        newly_opened = not old_item.open
+    else:
+        newly_opened = False
+
+    # Send mail about the agenda item.
+    if item.notes:
+        notes = item.notes
+    else:
+        notes = u''
+    data = (item.agenda, item.name, notes)
+
+    for list_config in item.agenda.agenda_mailing_lists.all():
+        email_body = None
+        if list_config.on_agenda_item_open and newly_opened:
+            send_mail(from_email=settings.EMAIL_VOTING_FROM,
+                      recipient_list=[list_config.mailing_list.address],
+                      subject="%s Agenda item Open: %s" % (item.agenda, item.name),
+                      message=EMAIL_OPEN_AGENDA_ITEM % data,
+                      fail_silently=(not settings.BETA))
+
+        elif list_config.on_agenda_item_add and newly_added:
+            send_mail(from_email=settings.EMAIL_VOTING_FROM,
+                      recipient_list=[list_config.mailing_list.address],
+                      subject="%s Agenda item Added: %s" % (item.agenda, item.name),
+                      message=EMAIL_ADD_AGENDA_ITEM % data,
+                      fail_silently=(not settings.BETA))
+
+models.signals.pre_save.connect(agenda_item_pre_save, sender=AgendaItem)
+
 class AgendaMailingList(models.Model):
     class Meta:
         db_table = 'voting_agenda_mailing_list'
     agenda = models.ForeignKey(Agenda, related_name='agenda_mailing_lists')
     mailing_list = models.ForeignKey(MailingList,
                                      related_name='agenda_mailing_lists')
+    on_agenda_item_add = models.BooleanField()
+    on_agenda_item_open = models.BooleanField()
     on_vote_open = models.BooleanField()
     on_vote_close = models.BooleanField()
     reminder = models.BooleanField()
