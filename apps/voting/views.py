@@ -12,12 +12,18 @@ from apps.voting.models import *
 
 
 def dashboard(request):
-    # Permissions are returned as appname.codename by get_all_permissions().
-    codenames = [p.split('.', 1)[1] for p in request.user.get_all_permissions()]
-    can_vote = Q(agenda__permission__codename__in=codenames)
     topics = Topic.objects.filter(deadline__gte=datetime.now())
-    my_topics = topics.filter(can_vote)
-    other_topics = topics.exclude(can_vote)
+
+    # Permissions are returned as appname.codename by get_all_permissions().
+    if request.user.is_anonymous:
+        my_topics = ()
+        other_topics = topics
+    else:
+        codenames = [p.split('.', 1)[1] for p in request.user.get_all_permissions()]
+        can_vote = Q(agenda__permission__codename__in=codenames)
+        my_topics = topics.filter(can_vote)
+        other_topics = topics.exclude(can_vote)
+
     return render_to_response('voting/dashboard.html', 
                               {
                                 'topics': topics,

@@ -47,6 +47,11 @@ changing will be implemented in the future.
       {% endif %}
   </div>
     {% endifequal %}
+  {% empty %}
+    <div class="important">
+      ERROR!  No options have been defined for this ballot!
+      Please contact the voting administrator.
+    </div>
   {% endfor %}
   <input id="vote" type="submit" value="Vote"/>
 </form>

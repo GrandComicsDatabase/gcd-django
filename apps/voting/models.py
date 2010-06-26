@@ -34,7 +34,7 @@ class AgendaItem(models.Model):
     class Meta:
         db_table = 'voting_agenda_item'
     name = models.CharField(max_length=255)
-    agenda = models.ForeignKey(Agenda)
+    agenda = models.ForeignKey(Agenda, related_name='items')
     notes = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, null=True, blank=True,
                                     related_name='agenda_items')
@@ -125,6 +125,14 @@ def topic_post_save(sender, **kwargs):
         topic.options.create(name='Against', ballot_position=1)
         if topic.agenda.allows_abstentions:
             topic.options.create(name='Abstain', ballot_position=2)
+
+    # TODO: This is an unfriendly way to handle the situation, but since the
+    #       error will only occur in the admin UI, it is sufficient for now.
+    for item in topic.agenda_items.all():
+        if item not in topic.agenda.items.all():
+            raise ValueError(
+              "Only items from this topic's agenda may be attached to this topic.")
+
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)
 models.signals.post_save.connect(topic_post_save, sender=Topic)
