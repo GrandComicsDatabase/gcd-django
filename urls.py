@@ -81,6 +81,7 @@ urlpatterns = patterns('',
 
     (r'^', include('apps.gcd.urls')),
     (r'^', include('apps.oi.urls')),
+    (r'^voting/', include('apps.voting.urls')),
 )
 
 if settings.DEBUG:
