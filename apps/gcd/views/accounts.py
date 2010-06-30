@@ -373,6 +373,7 @@ def update_profile(request, user_id=None):
     request.user.save()
 
     indexer = request.user.indexer
+    indexer.notify_on_approve = form.cleaned_data['notify_on_approve']
     indexer.country = form.cleaned_data['country']
     indexer.languages = form.cleaned_data['languages']
     indexer.interests = form.cleaned_data['interests']

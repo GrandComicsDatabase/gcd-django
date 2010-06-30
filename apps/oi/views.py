@@ -416,7 +416,7 @@ def approve(request, id):
     notes = request.POST['comments']
     changeset.approve(notes=notes)
 
-    if notes.strip():
+    if changeset.indexer.indexer.notify_on_approve or notes.strip():
         email_body = u"""
 Hello from the %s!
 

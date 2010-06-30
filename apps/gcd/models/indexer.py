@@ -45,6 +45,8 @@ class Indexer(models.Model):
                                         editable=False)
     registration_expires = models.DateField(null=True, blank=True)
 
+    notify_on_approve = models.BooleanField(db_index=True, default=False)
+
     def can_reserve_another(self):
         if self.is_new:
             if (self.user.changesets.filter(state__in=states.ACTIVE).count() >=

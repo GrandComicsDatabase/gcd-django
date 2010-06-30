@@ -33,7 +33,6 @@ to have a limited lifespan anyway.
 {% include 'gcd/bits/profile_limits.html' %}
 
 {% if form %}
-</form>
 <form action="/accounts/profile/{{ profile_user.id|default:user.id }}/" method="POST">
 <fieldset>
 <legend>Personal Information</legend>
@@ -41,6 +40,7 @@ to have a limited lifespan anyway.
   {{ form.email|show_form }}
   {{ form.first_name|show_form }}
   {{ form.last_name|show_form }}
+  {{ form.notify_on_approve|show_form }}
   {{ form.country|show_form }}
   {{ form.languages|show_form }}
   {{ form.interests|show_form }}
