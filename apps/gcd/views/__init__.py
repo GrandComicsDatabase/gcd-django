@@ -1,4 +1,4 @@
-import sha
+import hashlib
 from random import random
 
 from urllib import quote
@@ -93,8 +93,8 @@ def paginate_response(request, queryset, template, vars, page_size=100,
 def render_error(request, error_text, redirect=True, is_safe = False):
     if redirect:
         if error_text != '':
-            salt = sha.new(str(random())).hexdigest()[:5]
-            key = sha.new(salt + error_text).hexdigest()
+            salt = hashlib.sha1(str(random())).hexdigest()[:5]
+            key = hashlib.sha1(salt + error_text).hexdigest()
             Error.objects.create(error_key=key, is_safe=is_safe,
                                   error_text=error_text,)
             return HttpResponseRedirect(

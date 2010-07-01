@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-import sha
+import hashlib
 from random import random
 from datetime import date, timedelta
 
@@ -154,8 +154,8 @@ def register(request):
 
     new_user.groups.add(*Group.objects.filter(name='indexer'))
 
-    salt = sha.new(str(random())).hexdigest()[:5]
-    key = sha.new(salt + new_user.email).hexdigest()
+    salt = hashlib.sha1(str(random())).hexdigest()[:5]
+    key = hashlib.sha1(salt + new_user.email).hexdigest()
     expires = date.today() + timedelta(settings.REGISTRATION_EXPIRATION_DELTA)
     indexer = Indexer(is_new=True,
                       max_reservations=settings.RESERVE_MAX_INITIAL,

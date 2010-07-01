@@ -1,4 +1,4 @@
-import sha
+import hashlib
 from random import random
 
 from django.conf import settings
@@ -216,8 +216,8 @@ def topic_pre_save(sender, **kwargs):
     """
     topic = kwargs['instance']
     if topic.agenda.uses_tokens and topic.token is None:
-        salt = sha.new(str(random())).hexdigest()[:5]
-        topic.token = sha.new(salt + topic.name).hexdigest()
+        salt = hashlib.sha1(str(random())).hexdigest()[:5]
+        topic.token = hashlib.sha1(salt + topic.name).hexdigest()
 
 def topic_post_save(sender, **kwargs):
     topic = kwargs['instance']
