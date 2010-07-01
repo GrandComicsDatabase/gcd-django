@@ -31,6 +31,10 @@ class Cover(models.Model):
 
     deleted = models.BooleanField(default=0, db_index=True)
 
+    def _sort_code(self):
+        return self.issue.sort_code
+    sort_code = property(_sort_code)
+
     def base_dir(self):
         return settings.MEDIA_ROOT + settings.COVERS_DIR + \
           str(int(self.id/1000))

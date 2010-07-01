@@ -10,14 +10,14 @@
 <p class="spacer"/>
 <table border="1" class="status">
   <tr>
-  {% for issue, cover in covers %}
-    {% if issue.has_covers %}
-    <td class="scan_status_{{ cover.get_cover_status }}">
-      <a href="{{ cover.get_status_url }}">{{ issue.display_number }}</a>
+  {% for entry in scans %}
+    {% if entry.issue %}
+    <td class="scan_status_{{ entry.get_cover_status }}">
+      <a href="{{ entry.get_status_url }}">{{ entry.issue.display_number }}</a>
     </td>
     {% else %}
     <td class="scan_status_0">
-      <a href="{% url upload_cover issue_id=issue.id %}">{{ issue.display_number }}</a>
+      <a href="{% url upload_cover issue_id=entry.id %}">{{ entry.display_number }}</a>
     </td>
     {% endif %}
     {% if forloop.last %}

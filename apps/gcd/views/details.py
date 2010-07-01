@@ -5,6 +5,7 @@
 import re
 from urllib import urlopen
 from datetime import date, datetime, time, timedelta
+from operator import attrgetter
 
 from django.db.models import Q
 from django.conf import settings
@@ -190,28 +191,13 @@ def show_series(request, series, preview=False):
     Handle the main work of displaying a series.  Also used by OI previews.
     """
     covers = []
-    has_covers = False
 
     if preview:
         display_series = series.series
     else:
         display_series = series
 
-    # need in-order list of all variants + issues with no covers yet
-    # for scan status tables
-    first_image_tag = ''
-    for issue in display_series.issue_set.all():
-        if issue.has_covers():
-            for cover in issue.active_covers():
-                covers.append([issue, cover])
-                has_covers = True
-                if first_image_tag is '':
-                    first_image_tag = get_image_tag(cover=cover,
-                                        zoom_level=ZOOM_MEDIUM,
-                                        alt_text='First Issue Cover')
-        else:
-            covers.append([issue, None])
-
+    scans, first_image_tag = _get_scan_table(display_series)
     issues = series.issue_set.all()
 
     # TODO: Figure out optimal table width and/or make it user controllable.
@@ -224,7 +210,7 @@ def show_series(request, series, preview=False):
       {
         'series': series,
         'issues': issues,
-        'covers': covers,
+        'scans': scans,
         'first_image_tag': first_image_tag,
         'country': series.country,
         'language': series.language,
@@ -365,6 +351,19 @@ def status(request, series_id):
       'style': style },
       context_instance=RequestContext(request))
 
+def _get_scan_table(series):
+    # all a series' covers + all issues with no covers
+    covers = Cover.objects.filter(issue__series=series, deleted=False).select_related()
+    issues = series.issues_without_covers()
+
+    scans = list(issues)
+    scans.extend(list(covers))
+    scans.sort(key=attrgetter('sort_code'))
+
+    first_image_tag = get_image_tag(cover=covers[0], zoom_level=ZOOM_MEDIUM,
+                                    alt_text='First Issue Cover')
+    return scans, first_image_tag
+
 def scans(request, series_id):
     """
     Display the cover scan status matrix for a series.
@@ -372,13 +371,7 @@ def scans(request, series_id):
 
     series = get_object_or_404(Series, id = series_id)
 
-    covers = []
-    for issue in series.issue_set.all():
-        if issue.has_covers():
-            for cover in issue.active_covers():
-                covers.append([issue, cover])
-        else:
-            covers.append([issue, None])
+    scans, unused_tag = _get_scan_table(series)
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -386,7 +379,7 @@ def scans(request, series_id):
 
     return render_to_response('gcd/status/scans.html', {
       'series' : series,
-      'covers' : covers,
+      'scans' : scans,
       'table_width' : table_width,
       'style' : style },
       context_instance=RequestContext(request))
