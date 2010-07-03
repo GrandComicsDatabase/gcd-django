@@ -58,18 +58,13 @@ div#format {
 }
 
 #issue_data_list {
-    margin-top: 1em;
+    padding-top: 1em;
     margin-bottom: 0;
 }
 
 #series_date {
     font-weight: bold;
     margin-bottom: 0;
-}
-
-#story_sidebar { /* right */
-    float: right;
-    width: 14em;
 }
 
 #story_toc {
@@ -119,41 +114,37 @@ div#format {
     width: 100%;
 }
 
-#cover_credits { /* center */
-    /* width: 250px; */
-    min-width: 20em;
-    margin-left: 118px;
-    margin-right: 15.5em;
-    margin-bottom: 1em;
-    /* max-width: 600px; */
-}
-
-.cover_header {
-    margin-top: 0;
-}
-
 #cover_data {
-    float: left;
-}
-
-#cover {
-    float: left;
-    width: 118px;
-    margin-bottom: 1em;
-}
-
-#cover img {
-    /* float: left; */
-    border: solid 1px;
-}
-
-#cover dt {
     clear: left;
+    margin-right: 1.5em;
 }
 
-#cover_disclaimer {
-    font-size: 0.8em;
-    color: #BBB;
+.cover{
+	padding-top:0;
+	overflow:hidden;
+	padding-left:118px;
+        margin-bottom: -0.5em; /* offset bottom added by class='single_story' */
+}
+.coverContainer{
+	width:100%;
+	border-left:118px solid white;
+	margin-left:-118px;
+	display:inline;
+	float:left;
+}
+.coverContent{
+	width:100%;
+	float:right;
+	position:relative;
+}
+.coverImage{
+	float:left;
+	width:116px;
+	margin-left:-118px;
+	position:relative;
+}
+.coverImage img {
+    border: solid 1px;
 }
 
 #index_credits {
@@ -175,9 +166,14 @@ div#format {
 }
 
 div.issue_notes {
+    clear: left;
+    margin-right: 1.5em;
+}
+
+div.issue_notes_border{
     border: solid black 1px;
-    float: left;
     width: 100%;
+    float: left;
     margin-bottom: 1em;
 }
 

@@ -25,63 +25,10 @@
 
 {% include "gcd/bits/series_issue_header.html" %}
 
-{% if not preview %}
-<div class="control_panel">
-  {% if series.ongoing_reservation %}
-    {% if series.is_current %}
-      <div class="ongoing_status"><span>
-        The ongoing issue reservation for this series is held by
-        {{ series.ongoing_reservation.indexer.indexer }}.
-      </span></div>
-    {% endif %}
-    {% ifequal request.user series.ongoing_reservation.indexer %}
-      <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
-        <input id="delete_ongoing" name="delete_ongoing" type="submit"
-               value="Delete ongoing reservation">
-        </input>
-      </form>
-    {% endifequal %}
-  {% endif %}
-  {% with series as object %}
-  {% with 'Series' as object_name %}
-  {% with 'series' as object_class %}
-    {% include "gcd/bits/status_banner.html" %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-{% if user.is_authenticated %}
-  {% if series.is_current and not series.ongoing_reservation %}
-    <form method="POST"
-          action="{% url apps.oi.views.ongoing %}">
-      <input id="series" name="series" type="hidden" value="{{ series.id }}">
-      </input>
-      <input id="reserve" name="reserve" type="submit"
-             value="Reserve all new issues">
-      </input>
-    </form>
-  {% endif %}
-  <form method="GET"
-        action="{% url add_issues series_id=series.id %}">
-    <input id="add" name="add" type="submit" value="Add issues">
-    </input>
-  </form>
-  {% if perms.gcd.can_approve %}
-    <form method="GET"
-          action="{% url reorder_series series_id=series.id %}">
-      <input id="reorder" name="reorder" type="submit" value="Reorder issues">
-      </input>
-    </form>
-  {% endif %}
-{% else %}
-{% if series.reserved %}
-<form action="{% url login %}" method="GET">
-  <input type="submit" name="login" value="Log in to edit" />
-  <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-</form>
-{% endif %}
-{% endif %} <!-- logged in -->
-</div>
-{% endif %} <!-- not preview -->
+<div class="control_body">
+<div id="control_container">
+
+<div id="control_center">
 
 <div class="clear">
 {% if series.has_gallery %}
@@ -161,6 +108,71 @@
 {% endif %}
 </div> <!-- series_data -->
 </div> <!-- class="clear" -->
+</div> <!-- control_center -->
+
+<div id="control_rail">
+  <div class="edit_box">
+    <div class="edit_header">Editing</div>
+    {% if not preview %}
+      {% if series.ongoing_reservation %}
+        {% if series.is_current %}
+          <div class="ongoing_status"><span>
+            The ongoing issue reservation for this series is held by
+            {{ series.ongoing_reservation.indexer.indexer }}.
+          </span></div>
+        {% endif %}
+        {% ifequal request.user series.ongoing_reservation.indexer %}
+          <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
+            <input id="delete_ongoing" name="delete_ongoing" type="submit"
+                   value="Free ongoing reservation">
+            </input>
+          </form>
+        {% endifequal %}
+      {% endif %}
+      {% with series as object %}
+      {% with 'Series' as object_name %}
+      {% with 'series' as object_class %}
+        {% include "gcd/bits/status_banner.html" %}
+      {% endwith %}
+      {% endwith %}
+      {% endwith %}
+    {% if user.is_authenticated %}
+      {% if series.is_current and not series.ongoing_reservation %}
+        <form method="POST"
+              action="{% url apps.oi.views.ongoing %}">
+          <input id="series" name="series" type="hidden" value="{{ series.id }}">
+          </input>
+          <input id="reserve" name="reserve" type="submit"
+                 value="Reserve all new issues">
+          </input>
+        </form>
+      {% endif %}
+      <form method="GET"
+            action="{% url add_issues series_id=series.id %}">
+        <input id="add" name="add" type="submit" value="Add issues">
+        </input>
+      </form>
+      {% if perms.gcd.can_approve %}
+        <form method="GET"
+              action="{% url reorder_series series_id=series.id %}">
+          <input id="reorder" name="reorder" type="submit" value="Reorder issues">
+          </input>
+        </form>
+      {% endif %}
+    {% else %}
+    {% if series.reserved %}
+    <form action="{% url login %}" method="GET">
+      <input type="submit" name="login" value="Log in to edit" />
+      <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+    </form>
+    {% endif %}
+    {% endif %} <!-- logged in -->
+    {% endif %} <!-- not preview -->
+  </div>
+</div> <!-- control_rail -->
+
+</div> <!-- control_container -->
+</div> <!-- control_body -->
 
 <hr/>
 

@@ -246,6 +246,52 @@ h1.search_id {
     margin-top: 1em;
 }
 
+/* for two columns on the pages with control box on the right */
+
+.control_body{
+	padding:0 14em 0 0;
+}
+#control_container{
+	float:left;
+	width:100%;	
+	border-right:14em; /* The width of the right rail */
+	margin-right:-14em;
+	display:inline; /* So IE plays nice */
+}
+#control_center{
+	float:left;
+	width:100%;
+	margin-right:-100%;
+}
+#control_rail{
+	float:right;
+	width:14em;
+	margin-right:-14em;
+	position:relative;
+}
+#control_header, #control_footer{
+	margin-right:-14em;
+	clear:both;
+}
+
+.edit_box {
+    border: solid 1px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    font-size: 0.85em;
+}
+
+.edit_box form {
+    margin: 2px;
+}
+
+.edit_header {
+    font-weight: bold;
+    background-color: #DDD;
+    margin: 0;
+    padding: 0.4em;
+}
+
 /* Some of this goes down to cover.css, some is common.  TODO: Figure out. */
 
 table#covers {
@@ -382,6 +428,10 @@ div.list_table_header {
 }
 
 /* Move to publisher.css when it's created. */
+.pub_data{
+    margin-right: 0.5em;
+}
+
 dl.pub_data {
     float: left;
     width: 100%;
@@ -405,12 +455,7 @@ dl.pub_data dd {
 }
 
 #index_status {
-    float: left;
-    clear: both;
-    width: 100%;
-    padding: 0.4em 0 0.4em 0;
-    margin-top: 1em;
-    border: solid black 1px;
+    padding: 0.4em 0.4em 0.4em 0.4em;
 }
 
 #index_status :visited, #index_status :link {
@@ -419,10 +464,6 @@ dl.pub_data dd {
 
 #index_status_inner {
     margin: 0 0.4em 0 0.4em;
-}
-
-#index_status span {
-    margin-left: 0.4em;
 }
 
 .index_status_available,
@@ -443,33 +484,15 @@ dl.pub_data dd {
 }
 
 div.ongoing_status {
-    float: left;
-    clear: both;
-    width: 100%;
-    padding: 0.4em 0 0.4em 0;
-    margin-top: 1em;
-    border: solid black 1px;
+    padding: 0.4em 0.4em 0.4em 0.4em;
     background-color: #AEA;
 }
 
-div.ongoing_status span {
-    margin-left: 0.4em;
-}
-
 div.ongoing_status form {
-    display: inline;
-    float: none;
 }
 
 .control_panel {
     clear: both;
-}
-
-.control_panel form {
-    margin-top: 1em;
-    margin-right: 1em;
-    float: left;
-    display: inline;
 }
 
 .publisher_list_control_panel {
@@ -481,10 +504,6 @@ div.ongoing_status form {
     margin-right: 1em;
     margin-bottom: 1em;
     float: left;
-    display: inline;
-}
-
-.control_panel input {
     display: inline;
 }
 

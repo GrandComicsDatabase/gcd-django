@@ -19,153 +19,168 @@
 
 {% block view_body %}
 
-<div id="issue_data">
-{% with issue.series as series %}
-{% with issue.display_number as issue_number %}
-  {% include "gcd/bits/series_issue_header.html" %}
-{% endwith %}
-{% endwith %}
+    {% with issue.series as series %}
+    {% with issue.display_number as issue_number %}
+      {% include "gcd/bits/series_issue_header.html" %}
+    {% endwith %}
+    {% endwith %}
 
-{% if not preview %}
-<div class="control_panel">
-  {% with issue as object %}
-  {% with 'Issue' as object_name %}
-  {% with 'issue' as object_class %}
-    {% include "gcd/bits/status_banner.html" %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-</div>
-{% endif %}
+<div class="control_body">
 
-<dl id="issue_data_list">
-{% if not issue.no_volume %}
-  <dt> {% trans "Volume" %}:
-  <dd> {{ issue|show_volume }}
-{% endif %}
-  <dt> {% trans "Price" %}:
-  <dd id="issue_price"> {{ issue.price|default:"" }}
-  <dt> {% trans "Pages" %}:
-  <dd id="issue_pages"> {{ issue|show_page_count }}
-{% if issue.indicia_frequency %}
-  <dt> {% trans "Indicia frequency" %}:
-  <dd id="indicia_frequency"> {{ issue.indicia_frequency }}
-{% endif %}
-  {{ issue|show_credit:"editing" }}
-</dl>
-<dl>
-  <dt> {% trans "Indicia Publisher" %}:
-  <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}
-{% if not issue.no_brand %}
-  <dt> {% trans "Brand" %}:
-  <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}
-{% endif %}
-</dl>
-<!-- IE6 didn't like various attempts to get the sometimes very long
-     "Format" field to lay out nicely.  And even in Firefox it was
-     problematic to get it to act ideally.  So it's a specially styled
-     'div' instead of part of the 'dl'.
-  -->
-{% if issue.series.format %}
-<div id="format">
-  <div id="format_tag">Format:&nbsp;</div>
-  <div id="format_data">{{ issue.series.format }}</div>
-</div>
-{% endif %}
+<div id="control_container">
 
-</div> <!-- issue_data -->
+	<div id="control_center">
+        <dl id="issue_data_list">
+        {% if not issue.no_volume %}
+          <dt> {% trans "Volume" %}:
+          <dd> {{ issue|show_volume }}
+        {% endif %}
+          <dt> {% trans "Price" %}:
+          <dd id="issue_price"> {{ issue.price|default:"" }}
+          <dt> {% trans "Pages" %}:
+          <dd id="issue_pages"> {{ issue|show_page_count }}
+        {% if issue.indicia_frequency %}
+          <dt> {% trans "Indicia frequency" %}:
+          <dd id="indicia_frequency"> {{ issue.indicia_frequency }}
+        {% endif %}
+          {{ issue|show_credit:"editing" }}
+        </dl>
+        <dl>
+          <dt> {% trans "Indicia Publisher" %}:
+          <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}
+        {% if not issue.no_brand %}
+          <dt> {% trans "Brand" %}:
+          <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}
+        {% endif %}
+        </dl>
+        <!-- IE6 didn't like various attempts to get the sometimes very long
+             "Format" field to lay out nicely.  And even in Firefox it was
+             problematic to get it to act ideally.  So it's a specially styled
+             'div' instead of part of the 'dl'.
+          -->
+        {% if issue.series.format %}
+        <dl>
+          <dt>Format:
+          <dd id="format_data" style="float:none">{{ issue.series.format }}
+        </dl>
+{% comment %}
+        <div id="format">
+          <div id="format_tag">Format:&nbsp;</div>
+          <div id="format_data">{{ issue.series.format }}</div>
+        </div>
+{% endcomment %}
+        {% endif %}
 
-<div id="main"> <!-- extra -->
+        {% if issue.notes %}
+        <div class="issue_notes">
+        <div class="issue_notes_border">
+          <h3 class="notes_header"> Issue Notes </h3>
+            <p>{{ issue.notes|linebreaksbr }}
+        </div>
+        </div>
+        {% endif %} <!-- issue.notes -->
 
-  <div id="story_sidebar">
-    <div id="story_toc">
-      <a name="toc"></a>
-      <h2 id="toc_header">Table of Contents</h2>
-      <ol>
-        {% for story in stories %}
-        <li class="{% cycle 'odd' 'even' %}">
-          {{ forloop.counter }}.
-          <span class="toc_story_title">
-          <a href="#{{ story.id }}">{{ story|show_title }}</a></span> <br/>
-          {% if story.feature %}
-          <span class="toc_story_feature">
-          {{ story.feature}}</span>
-          {% endif %}
+        <hr class="divider">
+
+		<div class="cover">
+			<div class="coverContainer">
+				<div class="coverContent">
+                    <div id="cover_data">
+                    {% with cover_story as story %}
+                    {% with 1 as is_cover %}
+                      {% include "gcd/details/single_story.html" %}
+                    {% endwith %}
+                    {% endwith %}
+                    </div>
+				</div>
+				<div class="coverImage">
+                    {% if issue.has_covers %}
+                      <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">{{ image_tag }}</a>
+                    {% else %}
+                      <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
+                    {% endif %}
+                    <div class="issue_cover_links">
+                      {% if issue.has_covers %}
+                        View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
+                        <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
+                      <br>
+                      <a href="{% url edit_covers issue_id=issue.id %}">Add/replace cover{{ issue.active_covers.count|pluralize }}</a><br>
+                      {% endif %}
+                      {% if issue.series.has_gallery %}
+                      <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover gallery</a>
+                      {% endif %}
+                    </div>
+				</div> 
+			</div> <!-- coverContainer -->
+		</div> <!-- cover -->
+
+        <div id="story_data">
+          {% for story in stories %}
+            <hr class="divider">
+            {% include "gcd/details/single_story.html" %}
           {% endfor %}
-      </ol>
-    </div> <!-- story_toc, a.k.a "right" -->
+          <hr class="divider">
+        </div>
+	</div> <!-- control_center -->
 
-    {% if issue.series.index_credit_set.all.select_related or oi_indexers %}
-    <div id="index_credits">
-      {% if oi_indexers %}
-      <div id="indexers_header">{% trans "This issue was most recently modified by:" %}</div>
-      <ul>
-        {% for credit in oi_indexers %}
-          <li> {{ credit }}
-        {% endfor %}
-      </ul>
-      {% endif %}
-      {% if issue.series.index_credit_set.all.select_related %}
-      <div id="indexers_header">{% trans "Issues in this series have been indexed by:" %}</div>
-      <ul>
-        {% for credit in issue.series.index_credit_set.all.select_related %}
-          <li> {{ credit.indexer }}
-        {% endfor %}
-      </ul>
-      {% endif %}
-    </div> <!-- index_credits -->
-    {% endif %}
-  </div> <!-- story_sidebar -->
+	<div id="control_rail">
+        <div class="edit_box">
+            <div class="edit_header">Editing</div>
+            {% if not preview %}
+              {% with issue as object %}
+              {% with 'Issue' as object_name %}
+              {% with 'issue' as object_class %}
+                {% include "gcd/bits/status_banner.html" %}
+              {% endwith %}
+              {% endwith %}
+              {% endwith %}
+            {% endif %}
+            <div>
+            link to change history</div>
+        </div>
 
-  <div id="cover">
-    {% if issue.has_covers %}
-      <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">{{ image_tag }}</a>
-    {% else %}
-      <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
-    {% endif %}
-    <div class="issue_cover_links">
-      {% if issue.has_covers %}
-        View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
-        <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
-      <br>
-      <a href="{% url edit_covers issue_id=issue.id %}">Add/replace cover{{ issue.active_covers.count|pluralize }}</a><br>
-      {% endif %}
-      {% if issue.series.has_gallery %}
-      <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover gallery</a>
-      {% endif %}
-    </div>
-    <div id="cover_disclaimer">
-    Cover thumbnails are used for identification purposes only. All rights to 
-    cover images reserved by the respective copyright holders. 
-    </div>
-  </div> <!-- cover -->
+        <div id="story_toc">
+          <a name="toc"></a>
+          <h2 id="toc_header">Table of Contents</h2>
+          <ol>
+            {% for story in stories %}
+            <li class="{% cycle 'odd' 'even' %}">
+              {{ forloop.counter }}.
+              <span class="toc_story_title">
+              <a href="#{{ story.id }}">{{ story|show_title }}</a></span> <br/>
+              {% if story.feature %}
+              <span class="toc_story_feature">
+              {{ story.feature}}</span>
+              {% endif %}
+              {% endfor %}
+          </ol>
+        </div> <!-- story_toc, a.k.a "right" -->
 
-  <div id="cover_credits">
-    <div id="cover_float_fixer">
-    {% if issue.notes %}
-    <div class="issue_notes">
-      <h3 class="notes_header"> Issue Notes </h3>
-        <p>{{ issue.notes|linebreaksbr }}
-    </div>
-    {% endif %} <!-- issue.notes -->
-    {% with cover_story as story %}
-    {% with 1 as is_cover %}
-      {% include "gcd/details/single_story.html" %}
-    {% endwith %}
-    {% endwith %}
-    </div> <!-- cover_float_fixer -->
-  </div> <!-- cover_credits -->
+        {% if issue.series.index_credit_set.all.select_related or oi_indexers %}
+        <div id="index_credits">
+          {% if oi_indexers %}
+          <div id="indexers_header">{% trans "This issue was most recently modified by:" %}</div>
+          <ul>
+            {% for credit in oi_indexers %}
+              <li> {{ credit }}
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if issue.series.index_credit_set.all.select_related %}
+          <div id="indexers_header">{% trans "Issues in this series have been indexed by:" %}</div>
+          <ul>
+            {% for credit in issue.series.index_credit_set.all.select_related %}
+              <li> {{ credit.indexer }}
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div> <!-- index_credits -->
+        {% endif %}
 
-</div> <!-- main -->
+	</div> <!-- control_rail -->
+</div> <!-- control_container -->
 
-
-<div id="story_data">
-  {% for story in stories %}
-    <hr class="divider">
-    {% include "gcd/details/single_story.html" %}
-  {% endfor %}
-  <hr class="divider">
-</div>
+</div> <!-- control_body -->
 
 {% with 1 as paginate_only %}
 {% with issue.series as series %}

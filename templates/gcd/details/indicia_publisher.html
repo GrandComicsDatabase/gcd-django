@@ -22,19 +22,10 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
 {% endwith %}
 {% endwith %}
 
-{% if not preview %}
-<div class="control_panel">
-  {% with indicia_publisher as object %}
-  {% with 'indicia_publisher' as object_class %}
-  {% with 'Indicia Publisher' as object_name %}
-    {% include "gcd/bits/status_banner.html" %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-</div>
-{% endif %}
+<div class="control_body">
+<div id="control_container">
 
-<div>
+<div id="control_center">
   <dl class="pub_data">
   {% if indicia_publisher.is_surrogate %}
   <dt> Surrogate:
@@ -60,11 +51,29 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
     <dt> Issues:
     <dd> None
   </dl>
-</div>
 {% else %}
   </dl>
+{% endifequal %}
+</div>
 </div>
 
+<div id="control_rail">
+<div class="edit_box">
+<div class="edit_header">Editing</div>
+{% if not preview %}
+  {% with indicia_publisher as object %}
+  {% with 'indicia_publisher' as object_class %}
+  {% with 'Indicia Publisher' as object_name %}
+    {% include "gcd/bits/status_banner.html" %}
+  {% endwith %}
+  {% endwith %}
+  {% endwith %}
+{% endif %}
+</div>
+</div>
+</div>
+
+{% if page.object_list.count %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Issue </th>
@@ -81,7 +90,7 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
   </tr>
   {% endfor %}
 </table>
-{% endifequal %}
+{% endif %}
 
 {% with 1 as paginate_only %}
 {% with indicia_publisher as publisher %}
