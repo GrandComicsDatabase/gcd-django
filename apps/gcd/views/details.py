@@ -28,7 +28,7 @@ from apps.gcd.views.covers import get_image_tag, \
                                   get_image_tags_per_page
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
-from apps.oi.models import IssueRevision
+from apps.oi.models import IssueRevision, CTYPES
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\.(?P<month>\d{2})\.(?P<day>\d{2})$')
@@ -419,6 +419,8 @@ def daily_covers(request, show_date=None):
     Produce a page displaying the covers uploaded on a given day.
     """
 
+    # similar to the section in daily_changes. if we need it elsewhere,
+    # time to split it out.
     requested_date = None
     try:
         if 'day' in request.GET:
@@ -472,13 +474,6 @@ def daily_covers(request, show_date=None):
                              "issue__series__year_began",
                              "issue__sort_code")
 
-    # TODO: once we have permissions 'can_mark' should be one
-    if request.user.is_authenticated() and \
-      request.user.groups.filter(name='editor'):
-        can_mark = True
-    else:
-        can_mark = False
-
     return paginate_response(
       request,
       covers,
@@ -488,14 +483,105 @@ def daily_covers(request, show_date=None):
         'date_after' : date_after,
         'date_before' : date_before,
         'table_width' : table_width,
-        'style' : style,
-        'can_mark' : can_mark
+        'style' : style
       },
       page_size=50,
       callback_key='tags',
       callback=get_image_tags_per_page)
-    
-    
+
+def daily_changes(request, show_date=None):
+    """
+    Produce a page displaying the changes on a given day.
+    """
+
+    # similar to the section in daily_covers. if we need it elsewhere,
+    # time to split it out.
+    requested_date = None
+    try:
+        if 'day' in request.GET:
+            year = int(request.GET['year'])
+            month = int(request.GET['month'])
+            day = int(request.GET['day'])
+            # Do a redirect, otherwise pagination links point to today
+            requested_date = date(year, month, day)
+            show_date = requested_date.strftime('%Y-%m-%d')
+            return HttpResponseRedirect(
+              urlresolvers.reverse(
+                'indexes_by_date',
+                kwargs={'show_date': show_date} ))
+
+        elif show_date:
+            year = int(show_date[0:4])
+            month = int(show_date[5:7])
+            day = int(show_date[8:10])
+            requested_date = date(year, month, day)
+
+        else:
+            # Don't redirect, as this is a proper default.
+            requested_date = date.today()
+            show_date = requested_date.strftime('%Y-%m-%d')
+
+    except (TypeError, ValueError):
+        # Redirect so the user sees the date in the URL that matches
+        # the output, instead of seeing the erroneous date.
+        return HttpResponseRedirect(
+          urlresolvers.reverse(
+            'indexes_by_date',
+            kwargs={'show_date' : date.today().strftime('%Y-%m-%d') }))
+
+    date_before = requested_date + timedelta(-1)
+    if requested_date < date.today():
+        date_after = requested_date + timedelta(1)
+    else:
+        date_after = None
+
+    #TODO: make sure to handle deleted items here
+    publishers = Publisher.objects.filter(is_master=1,
+                                          revisions__changeset__change_type=CTYPES['publisher'],
+                                          revisions__changeset__state=states.APPROVED,
+                                          revisions__changeset__modified__range=(\
+                                            datetime.combine(requested_date, time.min),
+                                            datetime.combine(requested_date, time.max))).distinct()
+
+    brands = Brand.objects.filter(revisions__changeset__change_type=CTYPES['brand'],
+                                  revisions__changeset__state=states.APPROVED,
+                                  revisions__changeset__modified__range=(\
+                                    datetime.combine(requested_date, time.min),
+                                    datetime.combine(requested_date, time.max))).distinct()
+
+    indicia_publishers = IndiciaPublisher.objects.filter(\
+                           revisions__changeset__change_type=CTYPES['indicia_publisher'],
+                           revisions__changeset__state=states.APPROVED,
+                           revisions__changeset__modified__range=(\
+                             datetime.combine(requested_date, time.min),
+                             datetime.combine(requested_date, time.max))).distinct()
+
+    series = Series.objects.filter(revisions__changeset__change_type=CTYPES['series'],
+                                   revisions__changeset__state=states.APPROVED,
+                                   revisions__changeset__modified__range=(\
+                                     datetime.combine(requested_date, time.min),
+                                     datetime.combine(requested_date, time.max))).distinct()
+
+    issues = Issue.objects.filter(revisions__changeset__change_type=CTYPES['issue'],
+                                  revisions__changeset__state=states.APPROVED,
+                                  revisions__changeset__modified__range=(\
+                                    datetime.combine(requested_date, time.min),
+                                    datetime.combine(requested_date, time.max))).distinct()
+
+    return render_to_response('gcd/status/daily_changes.html',
+      {
+        'date' : show_date,
+        'date_after' : date_after,
+        'date_before' : date_before,
+        'publishers' : publishers,
+        'brands' : brands,
+        'indicia_publishers' : indicia_publishers,
+        'series' : series,
+        'issues' : issues
+      },
+      context_instance=RequestContext(request)
+    )
+
 def cover(request, issue_id, size):
     """
     Display the cover for a single issue on its own page.

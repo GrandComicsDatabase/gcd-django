@@ -16,41 +16,10 @@
 <div class="left">
   {% trans "Covers for "%}{{ date }}
 </div>
-<div class="right">
-  <a href="{% url apps.gcd.views.details.daily_covers show_date=date_before %}">&lt; {% trans "Day before" %}</a> |
-    <form method="GET"
-          action="{% url apps.gcd.views.details.daily_covers %}"
-          style="display:inline">
-      <select name="year" id="year">
-        <option value="2004">2004</option>
-        <option value="2005">2005</option>
-        <option value="2006">2006</option>
-        <option value="2007">2007</option>
-        <option value="2008">2008</option>
-        <option value="2009">2009</option>
-        <option value="2010">2010</option>
-      </select>
-      <select name="month" id="month">
-        <option value="1">{% trans 'January' %}</option>
-        <option value="2">{% trans 'Februrary' %}</option>
-        <option value="3">{% trans 'March' %}</option>
-        <option value="4">{% trans 'April' %}</option>
-        <option value="5">{% trans 'May' %}</option>
-        <option value="6">{% trans 'June' %}</option>
-        <option value="7">{% trans 'July' %}</option>
-        <option value="8">{% trans 'August' %}</option>
-        <option value="9">{% trans 'September' %}</option>
-        <option value="10">{% trans 'October' %}</option>
-        <option value="11">{% trans 'November' %}</option>
-        <option value="12">{% trans 'December' %}</option>
-      </select>
-      <input type="text" name="day" id="day" size="2">
-      <input type="submit" value="{% trans 'Go' %}">
-    </form>
-  {% if date_after %}
-   | <a href="{% url apps.gcd.views.details.daily_covers show_date=date_after %}">{% trans "Day after" %} &gt;</a>
-  {% endif %}
-</div>
+{% url apps.gcd.views.details.daily_covers as choose_url%}
+{% url apps.gcd.views.details.daily_covers show_date=date_before as choose_url_before %}
+{% url apps.gcd.views.details.daily_covers show_date=date_after as choose_url_after %}
+{% include "gcd/bits/choose_date.html" %}
 </h1>
 
 <div class="item_id">
