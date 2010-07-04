@@ -507,7 +507,7 @@ def daily_changes(request, show_date=None):
             show_date = requested_date.strftime('%Y-%m-%d')
             return HttpResponseRedirect(
               urlresolvers.reverse(
-                'indexes_by_date',
+                'changes_by_date',
                 kwargs={'show_date': show_date} ))
 
         elif show_date:
@@ -526,7 +526,7 @@ def daily_changes(request, show_date=None):
         # the output, instead of seeing the erroneous date.
         return HttpResponseRedirect(
           urlresolvers.reverse(
-            'indexes_by_date',
+            'changes_by_date',
             kwargs={'show_date' : date.today().strftime('%Y-%m-%d') }))
 
     date_before = requested_date + timedelta(-1)
