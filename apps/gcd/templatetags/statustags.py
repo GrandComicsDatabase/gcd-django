@@ -17,7 +17,7 @@ def last_updated_issues(parser, token):
     where both number and language are optional
     """
     try:
-        number = int(token.split_contents()[1])
+        number = int(token.split_contents()[1].split('=')[1])
     except:
         number = 5
 
@@ -59,15 +59,14 @@ class LastUpdatedNode(template.Node):
             issues = issues.filter(issue__series__language__code=self.language_code)
  
         last_updated_issues = issues[:self.number]
-        return_string = u''
+        return_string = u'<ul>'
         for issue_revision in last_updated_issues:
             i = issue_revision.issue
-            return_string += u'<a href="%s">%s #%s</a> (%s)<br><br>' % \
+            return_string += u'<li><a href="%s">%s #%s</a> (%s)</li>' % \
                              (i.get_absolute_url(), esc(i.series),
                               esc(i.number), esc(i.series.publisher.name))
         
-        # 8 = len('<br><br>') to cut off last line break
-        return mark_safe(return_string[:-8])
+        return mark_safe(return_string+'</ul>')
 
 
 register.tag('last_updated_issues', last_updated_issues)

@@ -65,6 +65,11 @@ hr {
     clear: both;
 }
 
+hr.divider {
+    clear: left;
+    visibility: hidden;
+}
+
 dt {
     font-weight: bold;
 }
@@ -79,6 +84,20 @@ img .cover_img {
     background-color: black;
 }
 
+div.stats_left {
+    width: 49%;
+    float: left;
+    margin-bottom: 1em;
+}
+
+div.stats_right {
+    width: 49%;
+    float: right;
+    margin-bottom: 1em;
+}
+div.stats_content {
+    padding-left: 8px;
+}
 
 /* Item ID stuff */
 
@@ -426,6 +445,13 @@ div.list_table_header {
 .listing dl.credits dd {
     margin: 0;
 }
+
+div.updated_issues ul {
+    list-style: none;
+    margin: 0 0.4em 0 0;
+    padding: 0;
+}
+
 
 /* Move to publisher.css when it's created. */
 .pub_data{

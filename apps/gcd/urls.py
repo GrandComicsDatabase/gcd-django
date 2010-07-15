@@ -152,6 +152,8 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.daily_changes', name='changes_today'),
     url(r'^daily_changes/(?P<show_date>.+)/$',
      'apps.gcd.views.details.daily_changes', name='changes_by_date'),
+    url(r'^international_stats/$',
+      'apps.gcd.views.details.int_stats', name='international_stats'),
 
     # list covers marked for replacement
     (r'^covers_to_replace/$',

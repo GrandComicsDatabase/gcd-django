@@ -221,7 +221,7 @@ body {
     padding: 0;
 }
 
-#useful_links_inner li {
+div.box_inner li {
     margin-bottom: 0.4em;
 }
 

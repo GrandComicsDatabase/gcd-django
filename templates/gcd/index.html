@@ -104,11 +104,16 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                     </div>
                     <div id="useful_links_inner" class="box_inner">
                       <ul>
-                        <li><a href="{% url apps.gcd.views.details.daily_covers %}">{% trans "Today's covers" %}</a>
-                        <li><a href="{% url apps.gcd.views.details.daily_changes %}">{% trans "Today's changes" %}</a>
+                        <li><a href="{% url covers_today %}">{% trans "Today's covers" %}</a>
+                        <li><a href="{% url changes_today %}">{% trans "Today's changes" %}</a>
                         <li><a href="{% url apps.gcd.views.details.covers_to_replace %}">{% trans "Covers to replace" %}</a>
+                        <li><a href="{% url international_stats %}">{% trans "International statistics" %}</a>
+                        {% if language %}
                         <li><a href="{% url apps.gcd.views.index %}">English start page</a></li>
+                        {% endif %}
+                        {% ifnotequal language.code 'de' %}
                         <li><a href="{% url apps.gcd.views.index %}?lang=de">Deutsche Startseite</a></li>
+                        {% endifnotequal %}
                       </ul>
                     </div>
                 </div>
@@ -118,7 +123,9 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                         {% trans "Last Updated Language Issues" %}
                     </div>
                     <div class="box_inner">
+                    <div class="updated_issues">
                         {% last_updated_issues language=language.code %}
+                    </div>
                     </div>
                 </div>
                 <div class="front_page_right_box">
@@ -137,7 +144,9 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
                         {% trans "Last Updated Issues" %}
                     </div>
                     <div class="box_inner">
+                    <div class="updated_issues">
                         {% last_updated_issues %}
+                    </div>
                     </div>
                 </div>
                 <div class="front_page_right_box">

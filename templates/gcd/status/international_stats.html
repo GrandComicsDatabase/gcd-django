@@ -1,0 +1,29 @@
+{% extends "gcd/base_view.html" %}
+{% load humanize %}
+{% load i18n %}
+{% load statustags %}
+
+{% block title %} GCD :: International Statistics {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+{% for language, stats_for_language in stats %}
+<div class="{% cycle 'stats_left' 'stats_right'%}">
+        <h3 class="item_id">
+        <div class='stats_content'>
+            Statistics for Comics in {{ language }}
+        </div>
+        </h3>
+        <div class='stats_content'>
+            {% for stat in stats_for_language %}
+            {{ stat.count|intcomma }} {% trans stat.name %}<br>
+            {% endfor %}
+        </div>
+</div>
+{% endfor %}
+
+{% endblock %}

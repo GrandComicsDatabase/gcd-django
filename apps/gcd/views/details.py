@@ -19,7 +19,7 @@ from django.template import RequestContext
 from django.utils.safestring import mark_safe
 
 from apps.gcd.models import Publisher, Series, Issue, Story, \
-                            IndiciaPublisher, Brand, \
+                            IndiciaPublisher, Brand, CountStats, \
                             Country, Language, Indexer, IndexCredit, Cover
 from apps.gcd.views import render_error, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
@@ -621,6 +621,25 @@ def daily_changes(request, show_date=None):
         'indicia_publishers' : indicia_publishers,
         'series' : series,
         'issues' : issues
+      },
+      context_instance=RequestContext(request)
+    )
+
+def int_stats(request):
+    """
+    Display the international stats by language
+    """
+    languages=CountStats.objects.filter(name='issue indexes',
+                                        language__isnull=False).\
+                order_by('-count').values_list('language__code', flat=True)
+    stats=[]
+    for lang in languages:
+        stats.append((Language.objects.get(code=lang),
+                      CountStats.objects.filter(language__code=lang)))
+    return render_to_response(
+      'gcd/status/international_stats.html',
+      {
+        'stats' : stats
       },
       context_instance=RequestContext(request)
     )
