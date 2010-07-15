@@ -392,8 +392,12 @@ def _get_scan_table(series):
     scans.extend(list(covers))
     scans.sort(key=attrgetter('sort_code'))
 
-    first_image_tag = get_image_tag(cover=covers[0], zoom_level=ZOOM_MEDIUM,
-                                    alt_text='First Issue Cover')
+    if covers:
+        first_image_tag = get_image_tag(cover=covers[0], zoom_level=ZOOM_MEDIUM,
+                                        alt_text='First Issue Cover')
+    else:
+        first_image_tag = None
+
     return scans, first_image_tag
 
 def scans(request, series_id):

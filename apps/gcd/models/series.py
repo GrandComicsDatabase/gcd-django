@@ -67,7 +67,7 @@ class Series(models.Model):
     def get_absolute_url(self):
         return "/series/%i/" % self.id
 
-    def marked_scan_count(self):
+    def marked_scans_count(self):
         from apps.gcd.models.cover import Cover
         return Cover.objects.filter(issue__series=self, marked=True).count()
 
