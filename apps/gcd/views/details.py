@@ -573,32 +573,39 @@ def daily_changes(request, show_date=None):
                                           revisions__changeset__state=states.APPROVED,
                                           revisions__changeset__modified__range=(\
                                             datetime.combine(requested_date, time.min),
-                                            datetime.combine(requested_date, time.max))).distinct()
+                                            datetime.combine(requested_date, time.max)))\
+                                  .distinct().select_related('country')
 
     brands = Brand.objects.filter(revisions__changeset__change_type=CTYPES['brand'],
                                   revisions__changeset__state=states.APPROVED,
                                   revisions__changeset__modified__range=(\
                                     datetime.combine(requested_date, time.min),
-                                    datetime.combine(requested_date, time.max))).distinct()
+                                    datetime.combine(requested_date, time.max)))\
+                          .distinct().select_related('parent__country')
 
     indicia_publishers = IndiciaPublisher.objects.filter(\
                            revisions__changeset__change_type=CTYPES['indicia_publisher'],
                            revisions__changeset__state=states.APPROVED,
                            revisions__changeset__modified__range=(\
                              datetime.combine(requested_date, time.min),
-                             datetime.combine(requested_date, time.max))).distinct()
+                             datetime.combine(requested_date, time.max)))\
+                         .distinct().select_related('parent__country')
 
     series = Series.objects.filter(revisions__changeset__change_type=CTYPES['series'],
                                    revisions__changeset__state=states.APPROVED,
                                    revisions__changeset__modified__range=(\
                                      datetime.combine(requested_date, time.min),
-                                     datetime.combine(requested_date, time.max))).distinct()
+                                     datetime.combine(requested_date, time.max)))\
+                           .distinct().select_related('publisher','country',
+                                                      'first_issue','last_issue')
 
     issues = Issue.objects.filter(revisions__changeset__change_type=CTYPES['issue'],
                                   revisions__changeset__state=states.APPROVED,
                                   revisions__changeset__modified__range=(\
                                     datetime.combine(requested_date, time.min),
-                                    datetime.combine(requested_date, time.max))).distinct()
+                                    datetime.combine(requested_date, time.max)))\
+                          .distinct().select_related('series__publisher',
+                                                     'series__country')
 
     return render_to_response('gcd/status/daily_changes.html',
       {
