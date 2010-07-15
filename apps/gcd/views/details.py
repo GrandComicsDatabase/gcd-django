@@ -28,7 +28,7 @@ from apps.gcd.views.covers import get_image_tag, \
                                   get_image_tags_per_page
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
-from apps.oi.models import IssueRevision, CTYPES
+from apps.oi.models import IssueRevision, Changeset, CTYPES
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\.(?P<month>\d{2})\.(?P<day>\d{2})$')
@@ -287,6 +287,38 @@ def series_details(request, series_id, by_date=False):
         'volume_present': volume_present,
         'brand_present': brand_present,
         'bad_dates': len(bad_key_dates),
+      },
+      context_instance=RequestContext(request))
+
+def change_history(request, model_name, id):
+    if model_name not in ['publisher', 'brand', 'indicia_publisher', 'series', 'issue']:
+        return render_to_response('gcd/error.html', {
+          'error_text' : 'There is no change history for this type of object.'},
+          context_instance=RequestContext(request))
+
+    template = 'gcd/details/change_history.html'
+    prev_issue = None
+    next_issue = None
+
+    # can't import up top because of circular dependency
+    from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
+    object = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
+
+    # filter is publisherrevisions__publisher, seriesrevisions__series, etc.
+    filter_string = "%ss__%s" % (REVISION_CLASSES[model_name].__name__.lower(), model_name)
+    kwargs = {filter_string : object, 'state' : states.APPROVED}
+    changesets = Changeset.objects.filter(**kwargs).order_by('-modified')
+
+    if model_name == 'issue':
+        [prev_issue, next_issue] = object.get_prev_next_issue()
+
+    return render_to_response(template,
+      {
+        'description': model_name.replace('_', ' ').title(),
+        'object': object,
+        'changesets': changesets,
+        'prev_issue': prev_issue,
+        'next_issue': next_issue,
       },
       context_instance=RequestContext(request))
 

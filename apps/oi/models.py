@@ -477,7 +477,21 @@ class Revision(models.Model):
         self.deleted = not self.deleted
         self.save()
 
-    def compare_changes(self):
+    def field_list(self):
+        return self._field_list()
+
+    def previous(self):
+        # prev_rev stays None for additions that are not approved yet
+        prev_rev = None
+        if self.source is not None:
+            prev_revs = self.source.revisions \
+              .exclude(changeset__state=states.DISCARDED).filter(id__lt=self.id)
+            if prev_revs.count() > 0:
+                # normal case, all revisions accounted for back to object creation
+                prev_rev = prev_revs[0]
+        return prev_rev
+
+    def compare_changes(self, prev_rev=None):
         """
         Set up the 'changed' property so that it can be accessed conveniently
         from a template.  Template calling limitations prevent just
@@ -487,17 +501,29 @@ class Revision(models.Model):
         self.is_changed = False
 
         if self.deleted:
+            # deletion counts as changed to ease conditional for
+            # collapsing sequences in bits/compare.html
+            self.is_changed = True
+            return
+
+        if self.source_name == 'story':
+            # usually we have precomputed prev_rev but not for stories
+            # since this is called from the template
+            prev_rev = self.previous()
+        if prev_rev is None:
+            # addition same as deletion above
+            self.is_changed = True
             return
 
         for field_name in self._field_list():
             new = getattr(self, field_name)
-            if self.source is None:
+            if prev_rev is None:
                 if new:
                     self.changed[field_name] = True
                     self.is_changed = True
                 else:
                     self.changed[field_name] = False
-            elif new != getattr(self.source, field_name):
+            elif new != getattr(prev_rev, field_name):
                 self.changed[field_name] = True
                 self.is_changed = True
             else:
@@ -607,7 +633,9 @@ class PublisherRevisionBase(Revision):
         target.url = self.url
 
     def _field_list(self):
-        return ('name', 'year_began', 'year_ended', 'notes', 'url')
+        # order exactly as desired in compare page
+        # use list instead of set to control order
+        return ['name', 'year_began', 'year_ended', 'url', 'notes']
 
     def __unicode__(self):
         if self.source is None:
@@ -701,7 +729,8 @@ class PublisherRevision(PublisherRevisionBase):
     def _field_list(self):
         fields = []
         fields.extend(PublisherRevisionBase._field_list(self))
-        fields.extend(('country', 'is_master', 'parent'))
+        fields.insert(fields.index('url'), 'country')
+        fields.extend(('is_master', 'parent'))
         return fields
 
     def commit_to_display(self, clear_reservation=True):
@@ -839,7 +868,9 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     def _field_list(self):
         fields = []
         fields.extend(PublisherRevisionBase._field_list(self))
-        fields.extend(('is_surrogate', 'country', 'parent'))
+        fields.insert(fields.index('url'), 'is_surrogate')
+        fields.insert(fields.index('url'), 'country')
+        fields.append(('parent'))
         return fields
 
     def _queue_name(self):
@@ -1216,18 +1247,9 @@ class SeriesRevision(Revision):
         return self.series.get_ongoing_revision()
 
     def _field_list(self):
-        return ('name',
-                'format',
-                'year_began',
-                'year_ended',
-                'is_current',
-                'publisher',
-                'imprint',
-                'country',
-                'language',
-                'publication_notes',
-                'tracking_notes',
-                'notes',)
+        return ['name', 'year_began', 'year_ended', 'is_current', 'publisher',
+                'country', 'language', 'tracking_notes', 'publication_notes',
+                'notes', 'format', 'imprint']
 
     def _do_complete_added_revision(self, publisher, imprint=None):
         """
@@ -1427,12 +1449,12 @@ class IssueRevision(Revision):
         return [None, None]
 
     def _field_list(self):
-        return ('volume', 'number', 'no_volume', 'display_volume_with_number',
-                'publication_date', 'key_date', 'indicia_frequency',
-                'price', 'page_count', 'page_count_uncertain',
-                'editing', 'no_editing', 'notes',
-                'series', 'indicia_publisher', 'indicia_pub_not_printed',
-                'brand', 'no_brand')
+        return ['after', 'number', 'volume', 'no_volume',
+                'display_volume_with_number', 'publication_date',
+                'indicia_frequency', 'key_date', 'indicia_publisher',
+                'indicia_pub_not_printed', 'brand', 'no_brand', 'price',
+                'page_count', 'page_count_uncertain', 'editing', 'no_editing',
+                'notes']
 
     def _source(self):
         return self.issue
@@ -1679,34 +1701,12 @@ class StoryRevision(Revision):
     issue = models.ForeignKey(Issue, related_name='story_revisions')
 
     def _field_list(self):
-        return (
-          'title',
-          'title_inferred',
-          'feature',
-          'page_count',
-          'page_count_uncertain',
-          'characters',
-          'script',
-          'pencils',
-          'inks',
-          'colors',
-          'letters',
-          'editing',
-          'no_script',
-          'no_pencils',
-          'no_inks',
-          'no_colors',
-          'no_letters',
-          'no_editing',
-          'notes',
-          'synopsis',
-          'reprint_notes',
-          'genre',
-          'type',
-          'sequence_number',
-          'job_number',
-          'issue',
-        )
+        return ['sequence_number', 'type', 'title', 'title_inferred',
+                'feature', 'page_count', 'page_count_uncertain', 'genre',
+                'script', 'no_script', 'pencils', 'no_pencils', 'inks',
+                'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
+                'editing', 'no_editing', 'characters', 'synopsis',
+                'job_number', 'reprint_notes', 'notes']
 
     def _source(self):
         return self.story

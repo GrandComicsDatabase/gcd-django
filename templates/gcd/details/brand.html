@@ -17,38 +17,33 @@ GCD :: Brand :: {{ brand.name }}
 {% with brand as publisher %}
 {% with "Brand" as description %}
 {% with "brands" as url_suffix %}
-{% include "gcd/bits/publisher_header.html" %}
+  {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
 {% endwith %}
 {% endwith %}
 
 <div class="control_body">
-<div id="control_container">
-
-<div id="control_center">
-  <dl class="pub_data">
-  {% if brand.url %}
-    <dt> Web Site:
-    <dd> <a href="{{ brand.url }}">{{ brand.url }}</a>
-  {% endif %}
-
-  {% if brand.notes %}
-    <dt> Notes:
-    <dd> {{ brand.notes|linebreaksbr }}
-  {% endif %}
-
+  <div id="control_container">
+    <div id="control_center">
+      <dl class="pub_data">
+{% if brand.url %}
+        <dt> Web Site:
+        <dd> <a href="{{ brand.url }}">{{ brand.url }}</a>
+{% endif %}
+{% if brand.notes %}
+        <dt> Notes:
+        <dd> {{ brand.notes|linebreaksbr }}
+{% endif %}
 {% ifequal page.object_list.count 0 %}
-    <dt> Issues:
-    <dd> None
-  </dl>
-{% else %}
-  </dl>
+        <dt> Issues:
+        <dd> None
 {% endifequal %}
-</div> <!-- control_center -->
+      </dl>
+    </div> <!-- control_center -->
 
-<div id="control_rail">
-<div class="edit_box">
-<div class="edit_header">Editing</div>
+    <div id="control_rail">
+      <div class="edit_box">
+        <div class="edit_header">Editing</div>
 {% if not preview %}
   {% with brand as object %}
   {% with 'brand' as object_class %}
@@ -58,9 +53,16 @@ GCD :: Brand :: {{ brand.name }}
   {% endwith %}
   {% endwith %}
 {% endif %}
-</div>
-</div> <!-- control_rail -->
-</div> <!-- control_container -->
+      </div>
+      <div class="change_history">
+{% if preview %}
+        <a href="{% url change_history model_name='brand' id=brand.source.id %}">Change History</a>
+{% else %}
+        <a href="{% url change_history model_name='brand' id=brand.id %}">Change History</a>
+{% endif %}
+      </div>
+    </div> <!-- control_rail -->
+  </div> <!-- control_container -->
 </div> <!-- control_body -->
 
 {% if page.object_list.count %}

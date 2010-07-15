@@ -548,3 +548,15 @@ a.new_window {
     background-color: #444;
     color: white;
 }
+
+.change_history {
+    margin-bottom: 1em;
+    padding: .4em;
+    background-color: #444;
+    text-align: center
+}
+.change_history a {
+    color: white;
+    font-size: 1.3em;
+    font-weight: bold;
+}

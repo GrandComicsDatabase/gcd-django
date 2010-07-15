@@ -1,0 +1,89 @@
+{% extends "oi/base_view.html" %}
+
+{% load display %}
+
+{% block title %}
+GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css">
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css">
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css">
+{% endblock %}
+
+{% block view_body %}
+<h1>
+{{ changeset|header_link }}
+</h1>
+<p>
+Highlighted fields represent <span class="added_highlight">added</span>, 
+<span class="comparison_highlight">changed</span>, and 
+<span class="deleted_highlight">deleted</span> data.
+{% ifnotequal changeset.state states.APPROVED %}
+<a class="new_window" href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview changes</a>
+{% endifnotequal %}
+{% ifequal changeset_type 'issue' %}
+  {% if changeset.storyrevisions.count %}
+    {% if request.GET.collapse %}
+    <a href="{% url compare id=changeset.id %}">Expand compare view</a>.
+    {% else %}
+    <a href="{% url compare id=changeset.id %}?collapse=1">Collapse compare view</a>.
+    {% endif %}
+  {% endif %}
+  {% if revision.issue and revision.issue.has_covers %}
+<a class="new_window" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>
+  {% endif %}
+  {% ifequal user revision.changeset.indexer %}
+    {% ifequal changeset.state states.OPEN %}
+<a href="{% url edit_revision model_name=model_name,id=revision.id %}">Edit issue data</a>.
+    {% endifequal %}
+  {% endifequal %}
+{% endifequal %}
+</p>
+
+{% include 'oi/bits/compare.html' %}
+
+{% ifequal changeset_type 'issue' %}
+  {% if revision.comments.count %}
+  {% with revision.comments as comments %}
+  {% with 1 as no_links %}
+    {% include 'oi/bits/comments.html' %}
+  {% endwith %}
+  {% endwith %}
+  {% endif %}
+<hr>
+  {% for story_revision in revision.ordered_story_revisions %}
+    {% comment %}
+      TODO:
+      story_revision.compare_changes needs to be called here because
+      calling ordered_story_revisions re-fetches the objects from the
+      database, which clears the changed dictionary.  Need to think
+      about this whole setup a bit more, but this works for now.
+    {% endcomment %}
+    {% with story_revision as revision %}
+    {% with story_revision.previous as prev_rev %}
+    {% with story_revision.field_list as field_list %}
+    {% with 'story' as changeset_type %}
+      {{ revision.compare_changes|default:'' }}
+      {% include 'oi/bits/compare.html' %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+<hr>
+  {% endfor %}
+<h3> Comments </h3>
+{% endifequal %}
+
+{% with changeset.comments as comments %}
+{% include 'oi/bits/comments.html' %}
+{% endwith %}
+
+{% include 'oi/bits/compare_actions.html' %}
+
+{% endblock %}
+

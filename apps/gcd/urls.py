@@ -23,6 +23,9 @@ urlpatterns = patterns('',
     (r'^search/advanced/process/$',
      'apps.gcd.views.search.process_advanced'),
 
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/history/$',
+     'apps.gcd.views.details.change_history', name='change_history'),
+
     # Publisher
     (r'^publisher/(?P<publisher_id>\d+)/$',
      'apps.gcd.views.details.publisher'),

@@ -17,49 +17,42 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
 {% with indicia_publisher as publisher %}
 {% with "Indicia Publisher" as description %}
 {% with "indicia_publishers" as url_suffix %}
-{% include "gcd/bits/publisher_header.html" %}
+  {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
 {% endwith %}
 {% endwith %}
 
 <div class="control_body">
-<div id="control_container">
-
-<div id="control_center">
-  <dl class="pub_data">
-  {% if indicia_publisher.is_surrogate %}
-  <dt> Surrogate:
-  <dd>
-  This company was a surrogate for {{ indicia_publisher.parent }}, meaning that it 
-  published material on behalf of {{ indicia_publisher.parent }} but was not
-  directly associated with it.
-  {% endif %}
-  <dt> Country:
-  <dd> {{ indicia_publisher.country.name }}
-
-  {% if indicia_publisher.url %}
-    <dt> Web Site:
-    <dd> <a href="{{ indicia_publisher.url }}">{{ indicia_publisher.url }}</a>
-  {% endif %}
-
-  {% if indicia_publisher.notes %}
-    <dt> Notes:
-    <dd> {{ indicia_publisher.notes|linebreaksbr }}
-  {% endif %}
-
+  <div id="control_container">
+    <div id="control_center">
+      <dl class="pub_data">
+{% if indicia_publisher.is_surrogate %}
+        <dt> Surrogate:
+        <dd> This company was a surrogate for {{ indicia_publisher.parent }}, meaning that it 
+             published material on behalf of {{ indicia_publisher.parent }} but was not
+             directly associated with it.
+{% endif %}
+        <dt> Country:
+        <dd> {{ indicia_publisher.country.name }}
+{% if indicia_publisher.url %}
+        <dt> Web Site:
+        <dd> <a href="{{ indicia_publisher.url }}">{{ indicia_publisher.url }}</a>
+{% endif %}
+{% if indicia_publisher.notes %}
+        <dt> Notes:
+        <dd> {{ indicia_publisher.notes|linebreaksbr }}
+{% endif %}
 {% ifequal page.object_list.count 0 %}
-    <dt> Issues:
-    <dd> None
-  </dl>
-{% else %}
-  </dl>
+        <dt> Issues:
+        <dd> None
 {% endifequal %}
-</div>
-</div>
+      </dl>
+    </div>
+  </div>
 
-<div id="control_rail">
-<div class="edit_box">
-<div class="edit_header">Editing</div>
+  <div id="control_rail">
+    <div class="edit_box">
+      <div class="edit_header">Editing</div>
 {% if not preview %}
   {% with indicia_publisher as object %}
   {% with 'indicia_publisher' as object_class %}
@@ -69,8 +62,15 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
   {% endwith %}
   {% endwith %}
 {% endif %}
-</div>
-</div>
+    </div>
+    <div class="change_history">
+{% if preview %}
+      <a href="{% url change_history model_name='indicia_publisher' id=indicia_publisher.source.id %}">Change History</a>
+{% else %}
+      <a href="{% url change_history model_name='indicia_publisher' id=indicia_publisher.id %}">Change History</a>
+{% endif %}
+    </div>
+  </div>
 </div>
 
 {% if page.object_list.count %}

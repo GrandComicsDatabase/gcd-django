@@ -16,11 +16,11 @@
   {{ issue_number|show_issue_number }}
   {% endif %}
 </div>
-{% if issue.publication_date %}
-<div class="right" id="publication_date_header">
-    ({{ issue.publication_date }})
+  {% if issue.publication_date %}
+<div class="right">
+  ({{ issue.publication_date }})
 </div>
-{% endif %}
+  {% endif %}
 </h1>
 {% endifnotequal %}
 
@@ -49,7 +49,11 @@
 {% if issue_number %}
   <div class="right" class="prev_next">
   {% if prev_issue %}
+    {% if description %}
+    <a href="{% url change_history model_name='issue' id=prev_issue.id %}">&lt; {% trans "Previous Issue" %}</a>
+    {% else %}
     <a href="{{ prev_issue.get_absolute_url }}{{ extra }}?style={{ style }}">&lt; {% trans "Previous Issue" %}</a>
+    {% endif %}
     |
   {% endif %}
     <form style="display:inline"
@@ -67,7 +71,11 @@
     </form> 
   {% if next_issue %}
     |
+    {% if description %}
+    <a href="{% url change_history model_name='issue' id=next_issue.id %}">{% trans "Next Issue" %} &gt;</a>
+    {% else %}
     <a href="{{ next_issue.get_absolute_url }}{{ extra }}?style={{ style }}">{% trans "Next Issue" %} &gt;</a>
+    {% endif %}
   {% endif %}
   </div>
 {% endif %}

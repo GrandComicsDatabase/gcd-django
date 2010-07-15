@@ -26,152 +26,152 @@
 {% include "gcd/bits/series_issue_header.html" %}
 
 <div class="control_body">
-<div id="control_container">
-
-<div id="control_center">
-
-<div class="clear">
+  <div id="control_container">
+    <div id="control_center">
+      <div class="clear">
 {% if series.has_gallery %}
-<div id="series_cover">
-{% if preview %}
-<a href="{{ series.source.get_absolute_url }}covers">{{ first_image_tag }}</a>
-{% else %}
-<a href="{{ series.get_absolute_url }}covers">{{ first_image_tag }}</a>
-{% endif %}
-</div>
-{%endif %}
-
-<div id="series_data">
-<dl>
-  {% if series.publication_dates %}
-  <dt> Publication Dates:
-  <dd id="publication_dates"> {{ series.publication_dates }}
-  {% endif %}
-  {% if series.first_issue %}
-  <dt> Number of Issues Published:
-  <dd id="issues_published"> {{ series.issue_set.count }}
-  {% endif %}
-
-  {% if country %}
-  <dt> Country:
-  <dd id="publication_country"> {{ country }}
-  {% endif %}
-  {% if language %}
-  <dt> Language:
-  <dd id="publication_language"> {{ language }}
-  {% endif %}
-  {% if series.format %}
-  <dt class="long"> Format:
-  <dd id="series_format"> {{ series.format }}
-  {% endif %}
-</dl>
-
-<h3 class="series_notes"> Series Details </h3>
-<ul>
-  <li> <a href="{% url series_details series_id=series.id %}">Details by Issue</a>
-  <li> <a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
-{% if series.has_gallery %}
+        <div id="series_cover">
   {% if preview %}
-  <li><a href="{{ series.source.get_absolute_url }}covers">Cover Gallery</a>
+          <a href="{{ series.source.get_absolute_url }}covers">{{ first_image_tag }}</a>
   {% else %}
-  <li><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>
+          <a href="{{ series.get_absolute_url }}covers">{{ first_image_tag }}</a>
+  {% endif %}
+        </div>
+{% endif %}
+
+        <div id="series_data">
+          <dl>
+{% if series.publication_dates %}
+            <dt> Publication Dates:
+            <dd id="publication_dates"> {{ series.publication_dates }}
+{% endif %}
+{% if series.first_issue %}
+            <dt> Number of Issues Published:
+            <dd id="issues_published"> {{ series.issue_set.count }}
+{% endif %}
+{% if country %}
+            <dt> Country:
+            <dd id="publication_country"> {{ country }}
+{% endif %}
+{% if language %}
+            <dt> Language:
+            <dd id="publication_language"> {{ language }}
+{% endif %}
+{% if series.format %}
+            <dt class="long"> Format:
+            <dd id="series_format"> {{ series.format }}
+{% endif %}
+          </dl>
+
+          <h3 class="series_notes"> Series Details </h3>
+          <ul>
+{% if preview %}
+            <li> <a href="{% url series_details series_id=series.source.id %}">Details by Issue</a>
+            <li> <a href="{% url series_timeline series_id=series.source.id %}">Series Timeline</a>
+  {% if series.has_gallery %}
+            <li><a href="{{ series.source.get_absolute_url }}covers">Cover Gallery</a>
+  {% endif %}
+{% else %}
+            <li> <a href="{% url series_details series_id=series.id %}">Details by Issue</a>
+            <li> <a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
+  {% if series.has_gallery %}
+            <li><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>
   {% endif %}
 {% endif %}
-</ul>
+          </ul>
 
-<div id="series_notes">
-  {% if series.publication_notes %}
-    <h3 class="series_notes"> Publication Notes </h3>
-    <p> {{ series.publication_notes|linebreaksbr }}</p>
-  {% endif %}
-  
-  {% if series.tracking_notes %}
-    <h3 class="series_notes"> Tracking </h3>
-    <p>{{ series.tracking_notes|linebreaksbr }}</p>
-  {% endif %}
-  
-  {% if series.notes %}
-    <h3 class="series_notes"> Title Notes </h3>
-    <p>{{ series.notes|linebreaksbr }}</p>
-  {% endif %}
-</div> <!-- series_notes -->
+          <div id="series_notes">
+{% if series.publication_notes %}
+            <h3 class="series_notes"> Publication Notes </h3>
+            <p> {{ series.publication_notes|linebreaksbr }}</p>
+{% endif %}
+{% if series.tracking_notes %}
+            <h3 class="series_notes"> Tracking </h3>
+            <p>{{ series.tracking_notes|linebreaksbr }}</p>
+{% endif %}
+{% if series.notes %}
+            <h3 class="series_notes"> Title Notes </h3>
+            <p>{{ series.notes|linebreaksbr }}</p>
+{% endif %}
+          </div> <!-- series_notes -->
 
 {% if series.indexers %}
-  <div id="index_credits">
-    <h3 id="indexers_header">{% trans "Indexed by:" %}</h3>
-    <ul>
-      {% for credit in series.index_credit_set.all %}
-        <li> {{ credit.indexer.name }}
-      {% endfor %}
-    </ul>
-  </div> <!-- index_credits -->
+          <div id="index_credits">
+            <h3 id="indexers_header">{% trans "Indexed by:" %}</h3>
+            <ul>
+  {% for credit in series.index_credit_set.all %}
+              <li> {{ credit.indexer.name }}
+  {% endfor %}
+            </ul>
+          </div> <!-- index_credits -->
 {% endif %}
-</div> <!-- series_data -->
-</div> <!-- class="clear" -->
-</div> <!-- control_center -->
-
-<div id="control_rail">
-  <div class="edit_box">
-    <div class="edit_header">Editing</div>
-    {% if not preview %}
-      {% if series.ongoing_reservation %}
-        {% if series.is_current %}
-          <div class="ongoing_status"><span>
-            The ongoing issue reservation for this series is held by
-            {{ series.ongoing_reservation.indexer.indexer }}.
-          </span></div>
-        {% endif %}
-        {% ifequal request.user series.ongoing_reservation.indexer %}
-          <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
-            <input id="delete_ongoing" name="delete_ongoing" type="submit"
-                   value="Free ongoing reservation">
-            </input>
-          </form>
-        {% endifequal %}
-      {% endif %}
-      {% with series as object %}
-      {% with 'Series' as object_name %}
-      {% with 'series' as object_class %}
-        {% include "gcd/bits/status_banner.html" %}
-      {% endwith %}
-      {% endwith %}
-      {% endwith %}
-    {% if user.is_authenticated %}
-      {% if series.is_current and not series.ongoing_reservation %}
-        <form method="POST"
-              action="{% url apps.oi.views.ongoing %}">
-          <input id="series" name="series" type="hidden" value="{{ series.id }}">
-          </input>
-          <input id="reserve" name="reserve" type="submit"
-                 value="Reserve all new issues">
+        </div> <!-- series_data -->
+      </div> <!-- class="clear" -->
+    </div> <!-- control_center -->
+    <div id="control_rail">
+      <div class="edit_box">
+        <div class="edit_header">Editing</div>
+{% if not preview %}
+  {% if series.ongoing_reservation %}
+    {% if series.is_current %}
+        <div class="ongoing_status"><span>
+        The ongoing issue reservation for this series is held by
+        {{ series.ongoing_reservation.indexer.indexer }}.
+        </span></div>
+    {% endif %}
+    {% ifequal request.user series.ongoing_reservation.indexer %}
+        <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
+          <input id="delete_ongoing" name="delete_ongoing" type="submit"
+                 value="Free ongoing reservation">
           </input>
         </form>
-      {% endif %}
-      <form method="GET"
-            action="{% url add_issues series_id=series.id %}">
-        <input id="add" name="add" type="submit" value="Add issues">
-        </input>
-      </form>
-      {% if perms.gcd.can_approve %}
-        <form method="GET"
-              action="{% url reorder_series series_id=series.id %}">
+    {% endifequal %}
+  {% endif %}
+  {% with series as object %}
+  {% with 'Series' as object_name %}
+  {% with 'series' as object_class %}
+    {% include "gcd/bits/status_banner.html" %}
+  {% endwith %}
+  {% endwith %}
+  {% endwith %}
+  {% if user.is_authenticated %}
+    {% if series.is_current and not series.ongoing_reservation %}
+        <form method="POST" action="{% url apps.oi.views.ongoing %}">
+          <input id="series" name="series" type="hidden" value="{{ series.id }}">
+          </input>
+          <input id="reserve" name="reserve" type="submit" value="Reserve all new issues">
+          </input>
+        </form>
+    {% endif %}
+        <form method="GET" action="{% url add_issues series_id=series.id %}">
+          <input id="add" name="add" type="submit" value="Add issues">
+          </input>
+        </form>
+    {% if perms.gcd.can_approve %}
+        <form method="GET" action="{% url reorder_series series_id=series.id %}">
           <input id="reorder" name="reorder" type="submit" value="Reorder issues">
           </input>
         </form>
-      {% endif %}
-    {% else %}
-    {% if series.reserved %}
-    <form action="{% url login %}" method="GET">
-      <input type="submit" name="login" value="Log in to edit" />
-      <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-    </form>
     {% endif %}
-    {% endif %} <!-- logged in -->
-    {% endif %} <!-- not preview -->
-  </div>
-</div> <!-- control_rail -->
-
-</div> <!-- control_container -->
+  {% else %}
+    {% if series.reserved %}
+        <form action="{% url login %}" method="GET">
+          <input type="submit" name="login" value="Log in to edit" />
+          <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+        </form>
+    {% endif %}
+  {% endif %} <!-- logged in -->
+{% endif %} <!-- not preview -->
+      </div>
+      <div class="change_history">
+    {% if preview %}
+        <a href="{% url change_history model_name='series' id=series.source.id %}">Change History</a>
+    {% else %}
+        <a href="{% url change_history model_name='series' id=series.id %}">Change History</a>
+    {% endif %}
+      </div>
+    </div> <!-- control_rail -->
+  </div> <!-- control_container -->
 </div> <!-- control_body -->
 
 <hr/>

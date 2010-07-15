@@ -82,25 +82,43 @@ def reserve(request, id, model_name):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
       kwargs={ 'id': changeset.id }))
 
-def _do_reserve(indexer, display_obj, model_name):
-    if indexer.indexer.can_reserve_another() is False:
-        return None
-
+def _create_changeset(indexer, display_obj, model_name, comment, approved=False):
     changeset = Changeset(indexer=indexer, state=states.OPEN,
                           change_type=CTYPES[model_name])
     changeset.save()
     changeset.comments.create(commenter=indexer,
-                              text='Editing',
+                              text=comment,
                               old_state=states.UNRESERVED,
                               new_state=changeset.state)
-
     revision = REVISION_CLASSES[model_name].objects.clone_revision(
       display_obj, changeset=changeset)
 
     if model_name == 'issue':
         for story in revision.issue.active_stories():
            StoryRevision.objects.clone_revision(story=story, changeset=changeset)
+
+    if approved:
+        # should only enter here when first editing a pre-existing object with
+        # no revisions
+        changeset.approver = indexer
+        changeset.state = states.APPROVED
+        changeset.save()
+
     return changeset
+
+def _do_reserve(indexer, display_obj, model_name):
+    # the first time we attempt to edit a pre-existing object create a
+    # dummy changeset and revision with the current state to preserve
+    # the history
+    if display_obj.revisions.filter(changeset__state=states.APPROVED).count() == 0:
+        anon_user = Indexer.objects.get(id=412).user
+        comment = 'Pre-existing object. Preserving current state.'
+        _create_changeset(anon_user, display_obj, model_name, comment, True)
+
+    if indexer.indexer.can_reserve_another() is False:
+        return None
+
+    return _create_changeset(indexer, display_obj, model_name, 'Editing')
 
 @permission_required('gcd.can_reserve')
 def edit_revision(request, id, model_name):
@@ -116,7 +134,6 @@ def edit(request, id):
     revision = None
     if changeset.inline():
         revision = changeset.inline_revision()
-        source_name = revision.source_name
         form_class = get_revision_form(revision)
         form = form_class(instance=revision)
 
@@ -1608,29 +1625,50 @@ def show_cover_queue(request):
 @login_required
 def compare(request, id):
     changeset = get_object_or_404(Changeset, id=id)
-    if changeset.coverrevisions.count() == 1:
-        return cover_compare(request, changeset, 
-                             changeset.coverrevisions.all()[0])
+
     if changeset.inline():
         revision = changeset.inline_revision()
-    elif changeset.issuerevisions.count() > 0:
+    elif changeset.change_type in [CTYPES['issue'], CTYPES['issue_add']]:
         revision = changeset.issuerevisions.all()[0]
     else:
+        # never reached at the moment
         raise NotImplementedError
 
-    revision.compare_changes()
-
     model_name = revision.source_name
-    if changeset.issuerevisions.count() > 1:
+    if model_name == 'cover':
+        return cover_compare(request, changeset, revision)
+
+    prev_rev = revision.previous()
+    revision.compare_changes(prev_rev)
+
+    if changeset.change_type == CTYPES['issue_add'] and changeset.issuerevisions.count() > 1:
+        # issue skeletons are the only special case for compare
         template = 'oi/edit/compare_issue_skeletons.html'
     else:
-        template = 'oi/edit/compare_%s.html' % model_name
+        template = 'oi/edit/compare.html'
+
+    field_list = revision.field_list()
+    # eliminate fields that shouldn't appear in the compare
+    if model_name == 'series':
+        if prev_rev is None or prev_rev.imprint is None:
+            field_list.remove('imprint')
+    elif model_name == 'publisher':
+        field_list.remove('is_master')
+        field_list.remove('parent')
+    elif model_name in ['brand', 'indicia_publisher']:
+        field_list.remove('parent')
+    elif model_name == 'issue':
+        if prev_rev:
+            field_list.remove('after')
 
     response = render_to_response(template,
-                                  { 'changeset': changeset,
-                                    'revision': revision,
-                                    'model_name': model_name,
-                                    'states': states },
+                                  {'changeset': changeset,
+                                   'revision': revision,
+                                   'prev_rev': prev_rev,
+                                   'changeset_type' : model_name.replace('_',' '),
+                                   'model_name': model_name,
+                                   'states': states,
+                                   'field_list': field_list},
                                   context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
