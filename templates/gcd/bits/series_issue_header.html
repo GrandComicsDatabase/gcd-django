@@ -46,7 +46,7 @@
   </div>
 {% endifnotequal %}
 
-{% if issue_number %}
+{% if issue_number and series.issue_count > 1 %}
   <div class="right" class="prev_next">
   {% if prev_issue %}
     {% if description %}
