@@ -45,9 +45,9 @@
             <dt> Publication Dates:
             <dd id="publication_dates"> {{ series.publication_dates }}
 {% endif %}
-{% if series.first_issue %}
+{% if series.issue_count %}
             <dt> Number of Issues Published:
-            <dd id="issues_published"> {{ series.issue_set.count }}
+            <dd id="issues_published"> {{ series.issue_count }}
 {% endif %}
 {% if country %}
             <dt> Country:
@@ -147,7 +147,7 @@
           <input id="add" name="add" type="submit" value="Add issues">
           </input>
         </form>
-    {% if perms.gcd.can_approve %}
+    {% if perms.gcd.can_approve and series.issue_count %}
         <form method="GET" action="{% url reorder_series series_id=series.id %}">
           <input id="reorder" name="reorder" type="submit" value="Reorder issues">
           </input>

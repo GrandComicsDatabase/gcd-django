@@ -48,7 +48,6 @@ def update_count(field, delta, language=None):
             stat.count = F('count') + delta
             stat.save()
 
-
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
@@ -1291,6 +1290,32 @@ class SeriesRevision(Revision):
         series.tracking_notes = self.tracking_notes
 
         series.country = self.country
+
+        if series.language != self.language:
+            update_count('series', -1, language=series.language)
+            update_count('series', 1, language=self.language)
+            if series.issue_count:
+                update_count('issues', -series.issue_count, 
+                             language=series.language)
+                update_count('issues', series.issue_count, 
+                             language=self.language)
+                # TODO: change when deleted issues are possible
+                issue_indexes = Issue.objects.filter(series=series,
+                                   story_type_count__gt=0).count()
+                update_count('issue indexes', -issue_indexes, 
+                             language=series.language)
+                update_count('issue indexes', issue_indexes, 
+                             language=self.language)
+                story_count = Story.objects.filter(issue__series=series, 
+                                                   deleted=False).count()
+                update_count('stories', -story_count, 
+                             language=series.language)
+                update_count('stories', story_count, 
+                                 language=self.language)
+                update_count('covers', -series.scan_count(), 
+                             language=series.language)
+                update_count('covers', series.scan_count(), 
+                             language=self.language)
         series.language = self.language
         series.publisher = self.publisher
         series.imprint = self.imprint
@@ -1543,6 +1568,22 @@ class IssueRevision(Revision):
             issue.delete()
             self._check_first_last()
             return
+
+        else:
+            if self.brand != issue.brand:
+                if self.brand:
+                    self.brand.issue_count += 1
+                    self.brand.save()
+                if issue.brand:
+                    issue.brand.issue_count -= 1
+                    issue.brand.save()
+            if self.indicia_publisher != issue.indicia_publisher:
+                if self.indicia_publisher:
+                    self.indicia_publisher.issue_count += 1
+                    self.indicia_publisher.save()
+                if issue.indicia_publisher:
+                    issue.indicia_publisher.issue_count -= 1
+                    issue.indicia_publisher.save()
 
         issue.number = self.number
         issue.volume = self.volume

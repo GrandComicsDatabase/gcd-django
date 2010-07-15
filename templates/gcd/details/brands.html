@@ -33,7 +33,7 @@
 {% for brand in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a> </td>
-    <td> {{ brand.issue_set.count }} </td>
+    <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }}
     <td> {{ brand.year_ended|default:"" }}
   </tr>

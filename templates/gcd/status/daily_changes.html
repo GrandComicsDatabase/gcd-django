@@ -84,7 +84,7 @@
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
     <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ brand.parent.country.code|lower }}.png" alt="{{ brand.parent.country.code|upper }}"></td>
     <td class="listing_publisher"> <a href="{{ brand.parent.get_absolute_url }}">{{ brand.parent.name }}</a></td>
-    <td> {{ brand.issue_set.count }} </td>
+    <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }}</td>
     <td> {{ brand.year_ended|default:"" }}</td>
     <td>
@@ -111,7 +111,7 @@
     <td> <a href="{{ ind_pub.get_absolute_url }}">{{ ind_pub.name }}</a> </td>
     <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ ind_pub.parent.country.code|lower }}.png" alt="{{ imprint.parent.country.code|upper }}"></td>
     <td class="listing_publisher"> <a href="{{ ind_pub.parent.get_absolute_url }}">{{ ind_pub.parent.name }}</a></td>
-    <td> {{ ind_pub.issue_set.count }} </td>
+    <td> {{ ind_pub.issue_count }} </td>
     <td> {{ ind_pub.year_began|default:"" }} </td>
     <td> {{ ind_pub.year_ended|default:"" }} </td>
     <td> {{ ind_pub.is_surrogate|yesno:"Yes,-" }} </td>
