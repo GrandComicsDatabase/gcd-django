@@ -467,7 +467,7 @@
         "pk": 48, 
         "model": "gcd.country", 
         "fields": {
-            "code": "cs", 
+            "code": "cshh", 
             "name": "Czechoslovakia (former)"
         }
     }, 
@@ -667,7 +667,7 @@
         "pk": 247, 
         "model": "gcd.country", 
         "fields": {
-            "code": "dd", 
+            "code": "ddde", 
             "name": "German Democratic Republic [former]"
         }
     }, 
@@ -1851,7 +1851,7 @@
         "pk": 201, 
         "model": "gcd.country", 
         "fields": {
-            "code": "su", 
+            "code": "suhh", 
             "name": "USSR (former)"
         }
     }, 
