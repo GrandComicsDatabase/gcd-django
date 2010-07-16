@@ -86,10 +86,7 @@ def _create_changeset(indexer, display_obj, model_name, comment, approved=False)
     changeset = Changeset(indexer=indexer, state=states.OPEN,
                           change_type=CTYPES[model_name])
     changeset.save()
-    changeset.comments.create(commenter=indexer,
-                              text=comment,
-                              old_state=states.UNRESERVED,
-                              new_state=changeset.state)
+
     revision = REVISION_CLASSES[model_name].objects.clone_revision(
       display_obj, changeset=changeset)
 
@@ -97,12 +94,18 @@ def _create_changeset(indexer, display_obj, model_name, comment, approved=False)
         for story in revision.issue.active_stories():
            StoryRevision.objects.clone_revision(story=story, changeset=changeset)
 
+    newstate = changeset.state
     if approved:
         # should only enter here when first editing a pre-existing object with
         # no revisions
         changeset.approver = indexer
         changeset.state = states.APPROVED
         changeset.save()
+        newstate = states.APPROVED
+    changeset.comments.create(commenter=indexer,
+                              text=comment,
+                              old_state=states.UNRESERVED,
+                              new_state=newstate)
 
     return changeset
 
@@ -1622,7 +1625,6 @@ def show_cover_queue(request):
       callback_key='tags',
       callback=get_preview_image_tags_per_page)
 
-@login_required
 def compare(request, id):
     changeset = get_object_or_404(Changeset, id=id)
 
