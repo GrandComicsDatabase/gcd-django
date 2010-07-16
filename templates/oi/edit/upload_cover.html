@@ -87,7 +87,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>
        <span class="cover_links">Zoom:
-<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}" target="_blank">Large</a> (opens in new window)</span> <br>
+<a class="new_window" href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}" target="_blank">Large</a> (opens in new window)</span> <br>
    </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>

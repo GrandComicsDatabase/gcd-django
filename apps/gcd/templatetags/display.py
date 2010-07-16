@@ -112,11 +112,23 @@ def header_link(changeset):
     elif changeset.change_type == CTYPES['issue_add']:
         series_url = absolute_url(revision.series)
         pub_url = absolute_url(revision.series.publisher)
-        display_num = changeset.issuerevisions.order_by('revision_sort_code')[0].display_number
+
+        # get first skeleton's display num
+        revision = changeset.issuerevisions.order_by('revision_sort_code')[0]
+        issue_num = revision.display_number
+        if revision.issue:
+            # if it's been approved, make it a link to real issue
+            issue_num = u'<a href="%s">%s</a>' % (revision.issue.get_absolute_url(), issue_num)
+
         if changeset.issuerevisions.count() > 1:
-            display_num = u'%s - %s' % (display_num,
-              changeset.issuerevisions.order_by('-revision_sort_code')[0].display_number)
-        return mark_safe(u'%s (%s) #%s' % (series_url, pub_url, display_num))
+            # if it was a bulk skeleton, do same for last issue number
+            last_revision = changeset.issuerevisions.order_by('-revision_sort_code')[0]
+            last_issue_num = last_revision.display_number
+            if last_revision.issue:
+                last_issue_num = u'<a href="%s">%s</a>' % (last_revision.issue.get_absolute_url(), last_issue_num)
+            issue_num = u'%s - %s' % (issue_num, last_issue_num)
+
+        return mark_safe(u'%s (%s) %s' % (series_url, pub_url, issue_num))
     else:
         return u''
 

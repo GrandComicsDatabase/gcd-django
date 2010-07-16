@@ -86,7 +86,7 @@ Reviewing :: {{ revision }}
       <a href="{{ cover.issue.get_absolute_url }}">{{ tag }}</a>
       <br>
        <span class="cover_links">Zoom:
-<a href="{{ cover.issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}" target="_blank">Large</a> (opens in new window)</span> <br>
+<a class="new_window" href="{{ cover.issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}" target="_blank">Large</a> (opens in new window)</span> <br>
    </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>

@@ -6,14 +6,10 @@
 <h1 class="item_id">
 <div class="left" id="series_and_issue">
   <span id="series_name">
-  {% if preview %}
-    {{ series.name }}
-  {% else %}
     <a href="{{ series.get_absolute_url }}">{{ series.name }}</a>
-  {% endif %}
   </span>
   {% if issue_number %}
-  {{ issue_number|show_issue_number }}
+  <a href="{{ issue.get_absolute_url }}">{{ issue_number|show_issue_number }}</a>
   {% endif %}
 </div>
   {% if issue.publication_date %}

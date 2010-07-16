@@ -37,7 +37,7 @@ the following issues (links open in new windows):
   <td> {{ issue.volume }}
   <td> {{ issue.number }}
   <td> {{ issue.display_number }}
-  <td> <a href="{% url preview_revision model_name=model_name,id=issue.id %}" target=_blank>Preview</a>
+  <td> <a class="new_window" href="{% url preview_revision model_name=model_name,id=issue.id %}" target=_blank>Preview</a>
 </tr>
 {% endfor %}
 </table>

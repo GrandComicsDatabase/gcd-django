@@ -192,7 +192,7 @@
       </tr>
       <tr>
       <td class="import_info">
-      <a href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> (opens in a new window) about the file format for imports.</td><td></td></tr>
+      <a class="new_window" href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> (opens in a new window) about the file format for imports.</td><td></td></tr>
     </table>
     {% endif %}
     {% endwith %}
@@ -204,7 +204,7 @@
     {% ifequal changeset.issuerevisions.count 1 %}
         <p>
         <a href="{% url compare id=changeset.id %}">Compare changes</a> | 
-        <a href="{% url preview_revision model_name='issue',id=changeset.issuerevisions.all.0.id %}" target=_blank>Preview</a>
+        <a class="new_window" href="{% url preview_revision model_name='issue',id=changeset.issuerevisions.all.0.id %}" target=_blank>Preview</a>
         (opens in a new window)
         </p>
     {% endifequal %}
