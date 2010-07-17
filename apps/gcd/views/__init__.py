@@ -94,7 +94,7 @@ def render_error(request, error_text, redirect=True, is_safe = False):
     if redirect:
         if error_text != '':
             salt = hashlib.sha1(str(random())).hexdigest()[:5]
-            key = hashlib.sha1(salt + error_text).hexdigest()
+            key = hashlib.sha1(salt + error_text.encode('utf-8')).hexdigest()
             Error.objects.create(error_key=key, is_safe=is_safe,
                                   error_text=error_text,)
             return HttpResponseRedirect(
