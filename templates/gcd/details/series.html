@@ -41,13 +41,14 @@
 
         <div id="series_data">
           <dl>
-{% if series.publication_dates %}
-            <dt> Publication Dates:
-            <dd id="publication_dates"> {{ series.publication_dates }}
-{% endif %}
+            <dt> Publication Date{{ series.issue_count|pluralize }}:
+            <dd id="publication_dates"> {{ series.display_publication_dates }}
 {% if series.issue_count %}
             <dt> Number of Issues Published:
-            <dd id="issues_published"> {{ series.issue_count }}
+            <dd id="issues_published"> {{ series.issue_count }} 
+{% if series.issue_count > 1 %}
+            (#{{ series.first_issue.display_number }} - #{{ series.last_issue.display_number}})
+{% endif %}
 {% endif %}
 {% if country %}
             <dt> Country:

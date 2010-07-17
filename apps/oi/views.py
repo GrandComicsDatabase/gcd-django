@@ -1500,6 +1500,7 @@ def _reorder_series(request, series, issues):
         current_code +=1
 
     if 'commit' in request.POST:
+        set_series_first_last(series)
         return HttpResponseRedirect(urlresolvers.reverse(
           'apps.gcd.views.details.series',
           kwargs={ 'series_id': series.id }))

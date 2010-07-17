@@ -48,6 +48,19 @@ def update_count(field, delta, language=None):
             stat.count = F('count') + delta
             stat.save()
 
+def set_series_first_last(series):
+    '''
+    set first_issue and last_issue for given series
+    '''
+    issues = series.issue_set.order_by('sort_code')
+    if issues.count() == 0:
+        series.first_issue = None
+        series.last_issue = None
+    else:
+        series.first_issue = issues[0]
+        series.last_issue = issues[len(issues) - 1]
+    series.save()
+
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
@@ -1550,6 +1563,7 @@ class IssueRevision(Revision):
                 self.series.imprint.issue_count += 1
                 self.series.imprint.save()       
             update_count('issues', 1, language=self.series.language)
+            self._check_first_last()
 
         elif self.deleted:
             self.series.issue_count -= 1
@@ -1616,20 +1630,8 @@ class IssueRevision(Revision):
             self.issue = issue
             self.save()
 
-        # TODO: Currently can't change sort code here so really only need
-        # TODO: to call when issue added (deleted covered above).
-        # TODO: But this may change?  Just call for now.
-        self._check_first_last()
-
     def _check_first_last(self):
-        issues = self.series.issue_set.order_by('sort_code')
-        if issues.count() == 0:
-            self.series.first_issue = None
-            self.series.last_issue = None
-        else:
-            self.series.first_issue = issues[0]
-            self.series.last_issue = issues[len(issues) - 1]
-        self.series.save()
+        set_series_first_last(self.series)
 
     def __unicode__(self):
         """

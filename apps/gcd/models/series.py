@@ -83,5 +83,28 @@ class Series(models.Model):
     def scan_needed_count(self):
         return self.issues_without_covers().count() + self.marked_scans_count()
 
+    def display_publication_dates(self):
+        if self.issue_count == 0:
+            return unicode(self.year_began)
+        elif self.issue_count == 1:
+            if self.first_issue.publication_date:
+                return self.first_issue.publication_date
+            else:
+                return unicode(self.year_began)
+        else:
+            if self.first_issue.publication_date:
+                date = u'%s - ' % self.first_issue.publication_date
+            else:
+                date = u'%s - ' % self.year_began
+            if self.is_current:
+                date += 'Present'
+            elif self.last_issue.publication_date:
+                date += self.last_issue.publication_date
+            elif self.year_ended:
+                date += unicode(self.year_ended)
+            else:
+                date += u'?'
+            return date
+
     def __unicode__(self):
         return '%s (%s series)' % (self.name, self.year_began)
