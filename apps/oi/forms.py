@@ -5,6 +5,7 @@ from django.core import urlresolvers
 from django.db.models import Count, F
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.forms.widgets import TextInput
+from django.core.validators import RegexValidator
 
 from apps.oi.models import *
 from apps.gcd.models import *
@@ -407,7 +408,8 @@ class IssueRevisionForm(forms.ModelForm):
                 'the northern hemisphere, shift accordingly in the southern).  For '
                 'annuals use a month of 00 or 13 or whatever sorts it best.  If '
                 'and only if none of these rules fit, use anything that produces '
-                'the correct sorting.')
+                'the correct sorting.',
+      validators=[RegexValidator(r'^(17|18|19|20)\d{2}\.(0[0-9]|1[0-3])\.\d{2}$')])
 
     indicia_frequency = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
       required=False,
