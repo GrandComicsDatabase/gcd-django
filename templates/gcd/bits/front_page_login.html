@@ -7,7 +7,7 @@
         </p>
         <form action="{% url logout %}" method="POST">
             <input type="submit" name="logout" value="{% trans 'Logout' %}" />
-            <input type="hidden" name="next" value="{{ request.get_full_path|urlencode }}" />
+            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
         </form>
     {% else %}
         <form method="post" action="{% url login %}">
@@ -16,7 +16,7 @@
             {% trans 'password' %}
             <input type="password" name="password" id="password"/>
             <input type="submit" value="{% trans 'Login' %}" />
-            <input type="hidden" name="next" value="{{ request.get_full_path|urlencode }}" />
+            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
         </form>
         <div id="forgot_password">
             <a href="{% url forgot_password %}">{% trans 'Forgot password?' %}</a>
