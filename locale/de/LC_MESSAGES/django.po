@@ -96,9 +96,17 @@ msgstr "Nützliche Links"
 msgid "Today's covers"
 msgstr "Titelbilder von heute"
 
-#: templates/gcd/index.html:108
+#: templates/gcd/index.html:111
+msgid "Today's changes"
+msgstr "Änderungen von heute"
+
+#: templates/gcd/index.html:112
 msgid "Covers to replace"
 msgstr "Titelbilder zu ersetzen"
+
+#: templates/gcd/index.html:113
+msgid "International statistics"
+msgstr "Internationale Statistiken"
 
 #: templates/gcd/index.html:117
 msgid "Last Updated Language Issues"
