@@ -318,8 +318,9 @@ def get_issue_revision_form(publisher, series=None, revision=None):
         indicia_pub_not_printed = forms.BooleanField(required=False,
           help_text="Check this box if there is no indicia publisher printed on the comic.")
 
+        pending_deletes = BrandRevision.objects.filter(deleted=True, changeset__state__in=states.ACTIVE)
         brand = forms.ModelChoiceField(required=False,
-          queryset=Brand.objects.filter(parent=publisher),
+          queryset=Brand.objects.filter(parent=publisher, deleted=False).exclude(revisions__in=pending_deletes),
           help_text="The publisher's logo or tagline on the cover of the comic, "
                     "if any. Some U.S. golden age publishers did not put any "
                     "identifiable brand marks on their comics.")

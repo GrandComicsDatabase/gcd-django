@@ -95,6 +95,8 @@ urlpatterns = patterns('',
     # Generic URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/reserve/$', oi_views.reserve,
         name='reserve_revision'),
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/delete/$', oi_views.delete,
+        name='delete_revision'),
     url(r'^(?P<model_name>\w+)/revision/(?P<id>\d+)/edit/$',
         oi_views.edit_revision,
         name='edit_revision'),

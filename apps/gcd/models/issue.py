@@ -57,6 +57,8 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
 
+    deleted = models.BooleanField(default=0, db_index=True)
+
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 

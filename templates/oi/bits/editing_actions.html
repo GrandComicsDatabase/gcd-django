@@ -1,11 +1,11 @@
 <form action="{% url process id=changeset.id %}"
       method="POST">
   <input type="submit" name="discard" value="Discard"></input>
-  {% ifequal changeset.state states.PENDING %}
-    {% if changeset.singular %}
+{% ifequal changeset.state states.PENDING %}
+  {% if changeset.singular and not changeset.inline_revision.deleted %}
   <input type="submit" name="retract" value="Retract and edit further"></input>
-    {% endif %}
-  {% endifequal %}
+  {% endif %}
+{% endifequal %}
   <span class="label_binding">
     <label for="comments">Comments:</label>
     <input type="text" name="comments" class="comments" />

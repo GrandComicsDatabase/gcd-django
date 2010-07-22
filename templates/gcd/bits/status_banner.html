@@ -35,6 +35,13 @@ last edit {{ revision.modified|date:"Y-m-d" }})
         action="{% url reserve_revision model_name=object_class,id=object.id %}">
     <input id="edit" name="edit" type="submit" value="Edit"></input>
   </form>
+    {% if object.deletable %}
+  <form method="POST"
+        action="{% url delete_revision model_name=object_class,id=object.id %}">
+    <input type="submit" value="Delete">
+    <input type="text" name="comments" class="del_comments"">
+  </form>
+    {% endif %}
   {% else %}
   <form action="{% url login %}" method="GET">
     <input type="submit" name="login" value="Log in to edit" />

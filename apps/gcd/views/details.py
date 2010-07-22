@@ -79,6 +79,10 @@ def brand(request, brand_id):
     Display the details page for a Brand.
     """
     brand = get_object_or_404(Brand, id = brand_id)
+
+    if brand.deleted:
+        return change_history(request, 'brand', brand_id)
+
     return show_brand(request, brand)
 
 def show_brand(request, brand, preview=False):
@@ -114,7 +118,7 @@ def brands(request, publisher_id):
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
-    brands = publisher.brands.all()
+    brands = publisher.active_brands()
 
     sort = ORDER_ALPHA
     if 'sort' in request.GET:
@@ -132,7 +136,7 @@ def brands(request, publisher_id):
 
 def indicia_publishers(request, publisher_id):
     """
-    Finds brands of a publisher.
+    Finds indicia publishers of a publisher.
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
@@ -151,7 +155,7 @@ def indicia_publishers(request, publisher_id):
       'gcd/details/indicia_publishers.html',
       {
         'publisher' : publisher,
-        'error_subject' : '%s brands' % publisher,
+        'error_subject' : '%s indicia publishers' % publisher,
       })
 
 def imprints(request, publisher_id):
@@ -582,6 +586,7 @@ def daily_changes(request, show_date=None):
 
     brands = Brand.objects.filter(revisions__changeset__change_type=CTYPES['brand'],
                                   revisions__changeset__state=states.APPROVED,
+                                  revisions__deleted=False,
                                   revisions__changeset__modified__range=(\
                                     datetime.combine(requested_date, time.min),
                                     datetime.combine(requested_date, time.max)))\

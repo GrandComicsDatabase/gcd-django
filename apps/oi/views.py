@@ -61,17 +61,42 @@ def _cant_get(request):
 ##############################################################################
 
 @permission_required('gcd.can_reserve')
-def reserve(request, id, model_name):
+def delete(request, id, model_name):
+    return reserve(request, id, model_name, True)
+
+@permission_required('gcd.can_reserve')
+def reserve(request, id, model_name, delete=False):
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
     if request.method != 'POST':
         return _cant_get(request)
 
-    if display_obj.reserved:
-        return render_error(request,
-          'Cannot create a new revision for "%s" as it is already reserved.' %
-          display_obj)
+    if delete:
+        action = 'delete'
+    else:
+        action = 'edit'
 
-    changeset = _do_reserve(request.user, display_obj, model_name)
+    if display_obj.deleted:
+        return render_error(request,
+          'Cannot %s "%s" as it is already deleted.' %
+          (action, display_obj))
+    elif display_obj.reserved:
+        return render_error(request,
+          'Cannot %s "%s" as it is already reserved.' %
+          (action, display_obj))
+
+    if delete:
+        # TODO remove when we can delete all objects
+        if model_name != 'brand':
+            return render_error(request, 'Cannot delete this type of object.')
+
+        # In case someone else deleted while page was open or if it was added to issue
+        if not display_obj.deletable():
+            return render_error(request, 'This object fails the requirements for deletion.')
+
+        changeset = _do_reserve(request.user, display_obj, model_name, True)
+    else:
+        changeset = _do_reserve(request.user, display_obj, model_name)
+
     if changeset is None:
         return render_error(request,
           'You have reached your limit of open changes.  You must '
@@ -79,11 +104,31 @@ def reserve(request, id, model_name):
           'can edit any more.  If you are a new user this number is very low '
           'but will be increased as your first changes are approved.')
 
-    return HttpResponseRedirect(urlresolvers.reverse('edit',
-      kwargs={ 'id': changeset.id }))
+    if delete:
+        comments = request.POST['comments']
+        changeset.comments.create(commenter=request.user,
+                                  text=comments,
+                                  old_state=states.UNRESERVED,
+                                  new_state=changeset.state)
 
-def _create_changeset(indexer, display_obj, model_name, comment, approved=False):
-    changeset = Changeset(indexer=indexer, state=states.OPEN,
+        # To be used soon
+        #if model_name == 'brand':
+        return HttpResponseRedirect(urlresolvers.reverse('show_brand',
+                 kwargs={'brand_id': display_obj.id}))
+        #elif model_name == 'ind_pub':
+        #    return HttpResponseRedirect(urlresolvers.reverse('show_ind_pub',
+        #             kwargs={'ind_pub_id': display_obj.id}))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('edit',
+          kwargs={ 'id': changeset.id }))
+
+def _create_changeset(indexer, display_obj, model_name, comment, approved=False, delete=False):
+    if delete:
+        new_state = states.PENDING
+    else:
+        new_state = states.OPEN
+
+    changeset = Changeset(indexer=indexer, state=new_state,
                           change_type=CTYPES[model_name])
     changeset.save()
 
@@ -94,22 +139,26 @@ def _create_changeset(indexer, display_obj, model_name, comment, approved=False)
         for story in revision.issue.active_stories():
            StoryRevision.objects.clone_revision(story=story, changeset=changeset)
 
-    newstate = changeset.state
+    if delete:
+        revision.deleted = True
+        revision.save()
+
+    cur_state = changeset.state
     if approved:
         # should only enter here when first editing a pre-existing object with
         # no revisions
         changeset.approver = indexer
         changeset.state = states.APPROVED
         changeset.save()
-        newstate = states.APPROVED
+        cur_state = states.APPROVED
     changeset.comments.create(commenter=indexer,
                               text=comment,
                               old_state=states.UNRESERVED,
-                              new_state=newstate)
+                              new_state=cur_state)
 
     return changeset
 
-def _do_reserve(indexer, display_obj, model_name):
+def _do_reserve(indexer, display_obj, model_name, delete=False):
     # the first time we attempt to edit a pre-existing object create a
     # dummy changeset and revision with the current state to preserve
     # the history
@@ -120,8 +169,12 @@ def _do_reserve(indexer, display_obj, model_name):
 
     if indexer.indexer.can_reserve_another() is False:
         return None
-
-    return _create_changeset(indexer, display_obj, model_name, 'Editing')
+        
+    if delete:
+        comment = 'Deleting'
+    else:
+        comment = 'Editing'
+    return _create_changeset(indexer, display_obj, model_name, comment, False, delete)
 
 @permission_required('gcd.can_reserve')
 def edit_revision(request, id, model_name):
@@ -671,31 +724,6 @@ thanks,
 
     return HttpResponseRedirect(urlresolvers.reverse(compare,
                                                      kwargs={ 'id': id }))
-
-
-# TODO: Figure out how to handle deletions.
-# @permission_required('gcd.can_reserve')
-# def delete(request, id, model_name):
-#     """
-#     Delete and submit a change, returning to the reservations queue.
-#     """
-#     if request.method != 'POST':
-#         return _cant_get(request)
-# 
-#     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
-#     if request.user != revision.indexer:
-#         return render_to_response('gcd/error.html',
-#           {'error_message': 'Only the reservation holder may delete a record.'},
-#           context_instance=RequestContext(request))
-#     if model_name == 'issue':
-#         # For now, refuse to delete stories with issues.  TODO: Revisit.
-#         if revision.story_revisions.count():
-#             return render_error(request,
-#               "Cannot delete issue while stories are still attached.")
-#     revision.mark_deleted()
-# 
-#     return HttpResponseRedirect(
-#       urlresolvers.reverse('editing'))
 
 @permission_required('gcd.can_reserve')
 def process(request, id):

@@ -13,31 +13,31 @@
 {% endifequal %}
 
 {% ifequal changeset.state states.PENDING %}
-{% if perms.gcd.can_approve %}
-{% ifnotequal user changeset.indexer %}
+  {% if perms.gcd.can_approve %}
+    {% ifnotequal user changeset.indexer %}
   <input type="submit" name="assign"
-    {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and not is_cover %}
+      {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and not is_cover %}
     value="Assign and mentor"
-    {% else %}
+      {% else %}
     value="Assign"
-    {% endif %}
+      {% endif %}
   >
-{% else %}
-  {% if changeset.singular %}
+    {% else %}
+      {% if changeset.singular and not changeset.inline_revision.deleted %}
   <input type="submit" name="retract" value="Retract and edit further">
+      {% endif %}
+    {% endifnotequal %}
   {% endif %}
-{% endifnotequal %}
-{% endif %}
 {% endifequal %}
 
 {% ifequal changeset.state states.REVIEWING %}
-{% ifequal user changeset.approver %}
+  {% ifequal user changeset.approver %}
   <input type="submit" name="approve" value="Approve">
-  {% if changeset.singular %}
+    {% if changeset.singular and not changeset.inline_revision.deleted %}
   <input type="submit" name="disapprove" value="Send Back to Indexer">
-  {% endif %}
+    {% endif %}
   <input type="submit" name="cancel" value="Reject Permanently">
-{% endifequal %}
+  {% endifequal %}
 {% endifequal %}
 
   <input type="submit" name="add_comment" value="Add Comment">

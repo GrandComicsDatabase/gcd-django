@@ -55,6 +55,8 @@ class Series(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
+    deleted = models.BooleanField(default=0, db_index=True)
+
     def get_ongoing_reservation(self):
         """
         TODO: Rethink usage of 1-1 relation.

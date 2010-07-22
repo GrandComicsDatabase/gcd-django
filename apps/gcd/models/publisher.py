@@ -1,6 +1,7 @@
 from django.db import models
 from country import Country
 from django.core.exceptions import ObjectDoesNotExist
+from apps.oi import states
 
 class BasePublisher(models.Model):
     class Meta:
@@ -17,6 +18,8 @@ class BasePublisher(models.Model):
     reserved = models.BooleanField(default=0, db_index=True)
     created = models.DateField(auto_now_add=True)
     modified = models.DateField(auto_now=True)
+
+    deleted = models.BooleanField(default=0, db_index=True)
 
     def __unicode__(self):
         return self.name
@@ -39,6 +42,9 @@ class Publisher(BasePublisher):
     is_master = models.BooleanField(db_index=True)
     parent = models.ForeignKey('self', null=True,
                                related_name='imprint_set')
+
+    def active_brands(self):
+        return self.brand_set.exclude(deleted=True)
 
     def __unicode__(self):
         return self.name
@@ -107,9 +113,18 @@ class Brand(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    parent = models.ForeignKey(Publisher, related_name='brands')
+    parent = models.ForeignKey(Publisher)
 
     issue_count = models.IntegerField(default=0)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
+
+    def deletable(self):
+        return self.issue_count == 0 and \
+          self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
     def get_absolute_url(self):
         return "/brand/%i/" % self.id
