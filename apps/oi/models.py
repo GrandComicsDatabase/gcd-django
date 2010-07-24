@@ -480,15 +480,6 @@ class Revision(models.Model):
     # Note: lambda required so that polymorphism works.
     source_name = property(lambda self: self._source_name())
 
-    def toggle_deleted(self):
-        """
-        Mark this revision as deleted, meaning that instead of copying it
-        back to the display table, the display table entry will be removed
-        when the revision is committed.
-        """
-        self.deleted = not self.deleted
-        self.save()
-
     def field_list(self):
         return self._field_list()
 
@@ -1743,6 +1734,15 @@ class StoryRevision(Revision):
 
     issue = models.ForeignKey(Issue, related_name='story_revisions')
 
+    def toggle_deleted(self):
+        """
+        Mark this revision as deleted, meaning that instead of copying it
+        back to the display table, the display table entry will be removed
+        when the revision is committed.
+        """
+        self.deleted = not self.deleted
+        self.save()
+
     def _field_list(self):
         return ['sequence_number', 'type', 'title', 'title_inferred',
                 'feature', 'page_count', 'page_count_uncertain', 'genre',
@@ -1764,6 +1764,41 @@ class StoryRevision(Revision):
         """
         self.issue = issue
 
+    def _reset_values(self):
+        if self.deleted:
+            # users can edit story revisions before deleting them.
+            # ensure that the final deleted revision matches the
+            # final state of the story.
+            self.title = self.story.title
+            self.title_inferred = self.story.title_inferred
+            self.feature = self.story.feature
+            self.page_count = self.story.page_count
+            self.page_count_uncertain = self.story.page_count_uncertain
+
+            self.script = self.story.script
+            self.pencils = self.story.pencils
+            self.inks = self.story.inks
+            self.colors = self.story.colors
+            self.letters = self.story.letters
+            self.editing = self.story.editing
+
+            self.no_script = self.story.no_script
+            self.no_pencils = self.story.no_pencils
+            self.no_inks = self.story.no_inks
+            self.no_colors = self.story.no_colors
+            self.no_letters = self.story.no_letters
+            self.no_editing = self.story.no_editing
+
+            self.notes = self.story.notes
+            self.synopsis = self.story.synopsis
+            self.characters = self.story.characters
+            self.reprint_notes = self.story.reprint_notes
+            self.genre = self.story.genre
+            self.type = self.story.type
+            self.job_number = self.story.job_number
+            self.sequence_number = self.story.sequence_number
+            self.save()
+
     def commit_to_display(self, clear_reservation=True):
         story = self.story
         if story is None:
@@ -1783,6 +1818,7 @@ class StoryRevision(Revision):
                     update_count('issue indexes', -1, 
                                  language=story.issue.series.language)
             update_count('stories', -1, language=story.issue.series.language)
+            self._reset_values()
             story.delete()
             return
 

@@ -232,7 +232,7 @@ def field_value(revision, field):
             # only calculate total sum for issue not sequences
             sum_story_pages = format_page_count(sum_page_counts(
                               revision.changeset.storyrevisions.all()))
-            return u'%s (total sum of story page counts: %s' % \
+            return u'%s (total sum of story page counts: %s)' % \
                    (format_page_count(value), sum_story_pages)
         return format_page_count(value)
     return value
