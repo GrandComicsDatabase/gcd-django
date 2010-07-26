@@ -148,9 +148,24 @@ class Changeset(models.Model):
         return self.issuerevisions.order_by('revision_sort_code', 'id')
 
     def queue_name(self):
-        if self.issuerevisions.count() > 1:
+        if self.change_type == CTYPES['issue_add']:
             return unicode(self)
         return self.revisions.next().queue_name()
+
+    def queue_descriptor(self):
+        if self.change_type == CTYPES['issue_add']:
+            return u'[ADDED]'
+        return self.revisions.next().queue_descriptor()
+
+    def changeset_action(self):
+        if self.change_type == CTYPES['issue_add']:
+            return 'add'
+        revision = self.revisions.next()
+        if revision.deleted:
+            return 'delete'
+        elif revision.source is None:
+            return 'add'
+        return 'modify'
 
     def display_state(self):
         """
@@ -542,15 +557,20 @@ class Revision(models.Model):
         Derived classes should override _queue_name to supply a base string
         other than the standard unicode representation.
         """
-        uni = self._queue_name()
-        if self.source is None:
-            uni += u' [ADDED]'
-        if self.deleted:
-            uni += u' [DELETED]'
-        return uni
+        return self._queue_name()
 
     def _queue_name(self):
         return unicode(self)
+
+    def queue_descriptor(self):
+        """
+        Display descriptor for queue name
+        """
+        if self.source is None:
+            return u'[ADDED]'
+        if self.deleted:
+            return u'[DELETED]'
+        return u''
 
     def save_added_revision(self, changeset, **kwargs):
         """

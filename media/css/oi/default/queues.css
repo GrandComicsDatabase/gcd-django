@@ -20,6 +20,22 @@
     padding: 0.4em;
 }
 
+.queues span.add {
+    background-color: palegreen;
+}
+
+.queues span.delete {
+    background-color: tomato;
+}
+
+.queues td.add {
+    background-color: palegreen;
+}
+
+.queues td.delete {
+    background-color: tomato;
+}
+
 .queues form {
     margin: 0;
     padding: 0;

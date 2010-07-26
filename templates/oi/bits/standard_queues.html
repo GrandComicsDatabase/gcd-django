@@ -23,19 +23,12 @@
       {% for changeset in section.changesets %}
   <tr>
     <td>
-        {% ifequal link_target 'preview' %}
+        {% if link_target == 'preview' or changeset.state == state.PENDING or changeset.state == state.REVIEWING %}
       <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
         {% else %}
-          {% ifequal changeset.state states.PENDING %}
-      <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
-          {% else %}
-            {% ifequal changeset.state states.REVIEWING %}
-      <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
-            {% else %}
       <a href="{% url edit id=changeset.id %}">{{ changeset.queue_name }}</a>
-            {% endifequal %}
-          {% endifequal %}
-        {% endifequal %}
+        {% endif %}
+      <span class="{{ changeset.changeset_action }}">{{ changeset.queue_descriptor }}</span>
     </td>
         {% ifnotequal queue_name 'editing' %}
     <td> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>

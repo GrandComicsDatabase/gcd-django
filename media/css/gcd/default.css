@@ -322,6 +322,18 @@ table#covers td.marked {
     background-color: #DDD;
 }
 
+table#covers span.add {
+    background-color: palegreen;
+}
+
+table#covers span.delete {
+    background-color: tomato;
+}
+
+table#covers span.modify {
+    background-color: yellow;
+}
+
 .no_cover {
     border: solid 1px;
 }

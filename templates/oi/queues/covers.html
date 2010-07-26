@@ -31,7 +31,7 @@
       <a href="{% url compare id=cover.changeset.id %}">{{ tag }}</a>
       <br/>
       <div class="cover_caption">
-        {{ cover|show_revision_type }}<br>
+        <span class="{{ cover.changeset.changeset_action }}">{{ cover|show_revision_type }}</span><br>
         {{ issue.series.name }} #{{ issue.display_number }}<br>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br>
         {% if issue.publication_date %}
