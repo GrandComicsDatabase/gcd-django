@@ -23,7 +23,7 @@
       {% endif %}
   >
     {% else %}
-      {% if changeset.singular and not changeset.inline_revision.deleted %}
+      {% if changeset.singular and not changeset.inline_revision.deleted and not is_cover %}
   <input type="submit" name="retract" value="Retract and edit further">
       {% endif %}
     {% endifnotequal %}
@@ -33,10 +33,11 @@
 {% ifequal changeset.state states.REVIEWING %}
   {% ifequal user changeset.approver %}
   <input type="submit" name="approve" value="Approve">
-    {% if changeset.singular and not changeset.inline_revision.deleted %}
+    {% if changeset.singular and not changeset.inline_revision.deleted and not is_cover %}
   <input type="submit" name="disapprove" value="Send Back to Indexer">
     {% endif %}
   <input type="submit" name="cancel" value="Reject Permanently">
+  <input type="submit" name="release" value="Release to general queue">
   {% endifequal %}
 {% endifequal %}
 

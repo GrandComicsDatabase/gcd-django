@@ -2,7 +2,7 @@
       method="POST">
   <input type="submit" name="discard" value="Discard"></input>
 {% ifequal changeset.state states.PENDING %}
-  {% if changeset.singular and not changeset.inline_revision.deleted %}
+  {% if changeset.singular and not changeset.inline_revision.deleted and section.object_type != "cover" %}
   <input type="submit" name="retract" value="Retract and edit further"></input>
   {% endif %}
 {% endifequal %}
