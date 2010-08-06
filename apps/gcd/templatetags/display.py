@@ -146,14 +146,7 @@ def changed_fields(changeset, object_id):
     if prev_rev is None:
         # there was no previous revision so only list the initial add of the object.
         # otherwise too many fields to list.
-        # note that if an object predates the server move, the first revision right
-        # now is not the initial add (but it doesn't harm to show it as such atm).
-        # when the old log tables are migrated, it will be more accurate.
-        if revision.source.created.date() > NEW_SITE_CREATION_DATE:
-            changed_list = [u'%s added' % title(revision.source_name.replace('_', ' '))]
-        else:
-            changed_list = [u'First change to %s on new site. Older change \
-                            history coming soon.' % revision.source_name.replace('_', ' ')]
+        changed_list = [u'%s added' % title(revision.source_name.replace('_', ' '))]
     elif revision.deleted:
         changed_list = [u'%s deleted' % title(revision.source_name.replace('_', ' '))]
     else:

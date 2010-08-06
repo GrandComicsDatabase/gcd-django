@@ -3128,6 +3128,14 @@
         }
     }, 
     {
+        "pk": 146, 
+        "model": "gcd.language", 
+        "fields": {
+            "code": "zzz", 
+            "name": "(unknown)"
+        }
+    }, 
+    {
         "pk": 19, 
         "model": "gcd.storytype", 
         "fields": {

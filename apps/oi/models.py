@@ -503,7 +503,7 @@ class Revision(models.Model):
         prev_rev = None
         if self.source is not None:
             prev_revs = self.source.revisions \
-              .exclude(changeset__state=states.DISCARDED).filter(id__lt=self.id)
+              .exclude(changeset__state=states.DISCARDED).filter(modified__lt=self.modified)
             if prev_revs.count() > 0:
                 # normal case, all revisions accounted for back to object creation
                 prev_rev = prev_revs[0]
