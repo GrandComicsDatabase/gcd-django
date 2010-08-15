@@ -133,6 +133,7 @@ def _send_result_email(topic):
                       message=email_body,
                       fail_silently=(not settings.BETA))
 
+@login_required
 def topic(request, id):
     topic = get_object_or_404(Topic, id=id)
 
@@ -149,6 +150,7 @@ def topic(request, id):
                               },
                               context_instance=RequestContext(request))
 
+@login_required
 def vote(request):
     option = get_object_or_404(Option, id=request.POST['option'])
     if 'rank' in request.POST:
