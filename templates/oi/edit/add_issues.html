@@ -1,5 +1,7 @@
 {% extends "oi/base_view.html" %}
 
+{% load display %}
+
 {% block title %}
 GCD :: Add Bulk Issue Skeletons
 {% endblock %}
@@ -14,6 +16,9 @@ GCD :: Add Bulk Issue Skeletons
 {% endblock %}
 
 {% block view_body %}
+<h1>
+{{ series|absolute_url }} ({{ series.publisher|absolute_url }})
+</h1>
 
 <div class="edit">
 <p>
@@ -38,7 +43,7 @@ you must wait until those issues are approved.<br>
 <table class="add_issues">
 <tr>
   <td>
-    <form method="GET" action="{% url add_issue series_id=series_id %}">
+    <form method="GET" action="{% url add_issue series_id=series.id %}">
       <input id="add" type="submit" value="Add single">
       </input>
     </form>
@@ -50,7 +55,7 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET"
-          action="{% url add_multiple_issues method='number',series_id=series_id %}">
+          action="{% url add_multiple_issues method='number',series_id=series.id %}">
       <input id="add" type="submit" value="Add multiple">
       </input>
     </form>
@@ -62,7 +67,7 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET"
-          action="{% url add_multiple_issues method='volume',series_id=series_id %}">
+          action="{% url add_multiple_issues method='volume',series_id=series.id %}">
       <input id="add" type="submit" value="Add multiple">
       </input>
     </form>
@@ -74,7 +79,7 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET"
-          action="{% url add_multiple_issues method='year',series_id=series_id %}">
+          action="{% url add_multiple_issues method='year',series_id=series.id %}">
       <input id="add" type="submit" value="Add multiple">
       </input>
     </form>
@@ -86,7 +91,7 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET"
-          action="{% url add_multiple_issues method='year_volume',series_id=series_id %}">
+          action="{% url add_multiple_issues method='year_volume',series_id=series.id %}">
       <input id="add" type="submit" value="Add multiple">
       </input>
     </form>

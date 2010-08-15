@@ -1070,13 +1070,14 @@ def add_issues(request, series_id, method=None):
                                 .filter(issuerevisions__issue=None) \
                                 .filter(issuerevisions__series__id=series_id) \
                                 .filter(state__in=states.ACTIVE)
+    series = get_object_or_404(Series, id=series_id)
+
     if method is None:
         return render_to_response('oi/edit/add_issues.html',
-                                  { 'series_id': series_id, 
+                                  { 'series': series, 
                                     'issue_adds' : issue_adds },
                                   context_instance=RequestContext(request))
 
-    series = get_object_or_404(Series, id=series_id)
     form_class = get_bulk_issue_revision_form(series=series, method=method)
 
     if request.method != 'POST':
