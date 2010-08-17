@@ -171,7 +171,7 @@ def generate_sizes(cover, im):
         scaled_name = "%s/w%d/%d.jpg" % (base_dir, width, cover.id)
         size = width, int(float(width)/im.size[0]*im.size[1])
         scaled = im.resize(size,Image.ANTIALIAS)
-        scaled.save(scaled_name)
+        scaled.save(scaled_name, subsampling='4:4:4')
 
 
 @login_required
