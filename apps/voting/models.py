@@ -113,14 +113,14 @@ def agenda_item_pre_save(sender, **kwargs):
         if list_config.on_agenda_item_open and newly_opened:
             send_mail(from_email=settings.EMAIL_VOTING_FROM,
                       recipient_list=[list_config.mailing_list.address],
-                      subject="%s Agenda item Open: %s" % (item.agenda, item.name),
+                      subject="Open: %s" % item.name,
                       message=EMAIL_OPEN_AGENDA_ITEM % data,
                       fail_silently=(not settings.BETA))
 
         elif list_config.on_agenda_item_add and newly_added:
             send_mail(from_email=settings.EMAIL_VOTING_FROM,
                       recipient_list=[list_config.mailing_list.address],
-                      subject="%s Agenda item Added: %s" % (item.agenda, item.name),
+                      subject="Added: %s" % item.name,
                       message=EMAIL_ADD_AGENDA_ITEM % data,
                       fail_silently=(not settings.BETA))
 
