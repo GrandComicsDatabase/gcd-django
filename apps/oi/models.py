@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from datetime import datetime
 import itertools
 import operator
@@ -1480,6 +1481,11 @@ class IssueRevision(Revision):
         return self.issue.sort_code
     sort_code = property(_sort_code)
 
+    def has_covers(self):
+        if self.issue is None:
+            return False
+        return self.issue.has_covers()
+
     def _story_set(self):
         return self.ordered_story_revisions()
     story_set = property(_story_set)
@@ -1643,6 +1649,11 @@ class IssueRevision(Revision):
 
     def _check_first_last(self):
         set_series_first_last(self.series)
+
+    def get_absolute_url(self):
+        if self.issue is None:
+            return "/issue/revision/%i/preview" % self.id
+        return self.issue.get_absolute_url()
 
     def __unicode__(self):
         """

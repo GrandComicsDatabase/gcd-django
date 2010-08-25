@@ -88,8 +88,10 @@
               View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
               <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
               <br>
+  {% if not preview %}
               <a href="{% url edit_covers issue_id=issue.id %}">Add/replace cover{{ issue.active_covers.count|pluralize }}</a>
               <br>
+  {% endif %}              
 {% endif %}
 {% if issue.series.has_gallery %}
               <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover gallery</a>
