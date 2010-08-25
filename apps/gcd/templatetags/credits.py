@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+import icu
 from decimal import Decimal
 
 from django import template
@@ -27,26 +28,47 @@ def show_credit(story, credit):
         return ""
 
     if credit.startswith('any:'):
+        collator = icu.Collator.createInstance()
+        collator.setStrength(0) # so that umlaut/accent behave as in MySql
         target = credit[4:]
         credit_string = ''
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
-            if getattr(story, c).lower().find(target.lower()) != -1:
-              credit_string += ' ' + __format_credit(story, c)
-        if story.issue.editing.lower().find(target.lower()) != -1:
-            credit_string += __format_credit(story.issue, 'editing')\
+            story_credit = getattr(story, c).lower()
+            if story_credit:
+                search = icu.StringSearch(target.lower(), 
+                                          story_credit, 
+                                          collator)
+                if search.first() != -1:
+                    credit_string += ' ' + __format_credit(story, c)
+        if story.issue.editing:
+            search = icu.StringSearch(target.lower(), 
+                                      story.issue.editing.lower(),
+                                      collator)
+            if search.first() != -1:
+                credit_string += __format_credit(story.issue, 'editing')\
                              .replace('Editing', 'Issue editing')
         return credit_string
 
     elif credit.startswith('editing_search:'):
+        collator = icu.Collator.createInstance()
+        collator.setStrength(0)
         target = credit[15:]
-        if story.editing.lower().find(target.lower()) != -1:
-            formatted_credit = __format_credit(story, 'editing')\
-                               .replace('Editing', 'Story editing')
-        else:
-            formatted_credit = ""
-        if story.issue.editing.lower().find(target.lower()) != -1:
-            formatted_credit += __format_credit(story.issue, 'editing')\
-                                .replace('Editing', 'Issue editing')
+        formatted_credit = ""
+        if story.editing:
+            search = icu.StringSearch(target.lower(),
+                                      story.editing.lower(),
+                                      collator)
+            if search.first() != -1:
+                formatted_credit = __format_credit(story, 'editing')\
+                                   .replace('Editing', 'Story editing')
+
+        if story.issue.editing:
+            search = icu.StringSearch(target.lower(), 
+                                      story.issue.editing.lower(), 
+                                      collator)
+            if search.first() != -1:
+                formatted_credit += __format_credit(story.issue, 'editing')\
+                                    .replace('Editing', 'Issue editing')
         return formatted_credit
 
     elif hasattr(story, credit):
