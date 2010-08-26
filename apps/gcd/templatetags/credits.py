@@ -163,7 +163,11 @@ def show_cover_contributor(cover_revision):
         if cover_revision.changeset.indexer.id == 381: # anon user
             # filter away '( email@domain.part )' for old contributions
             text = cover_revision.file_source
-            return text[:text[:text.rfind('text')].rfind('(')]
+            bracket = text.rfind('(')
+            if bracket >= 0:
+                return text[:bracket]
+            else:
+                return text
         else:
             return unicode(cover_revision.changeset.indexer.indexer) + \
               ' (from ' + cover_revision.file_source + ')'
