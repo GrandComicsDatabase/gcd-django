@@ -114,7 +114,7 @@ def _send_result_email(topic):
                 result = ('This vote failed to produce a valid result.  '
                           'The vote administrators will follow up as needed.')
             elif topic.vote_type.name == TYPE_PASS_FAIL:
-                if topic.options.get(result=True).name == 'Pass':
+                if topic.options.get(result=True).name == 'For':
                     result = 'The motion PASSED'
                 else:
                     result = 'The motion FAILED'
