@@ -4,7 +4,7 @@ from apps.voting.models import *
 
 class OptionInline(admin.StackedInline):
     model = Option
-    extra = 1
+    extra = 0
 
 class TopicAdmin(admin.ModelAdmin):
     inlines = (OptionInline,)
@@ -12,11 +12,11 @@ class TopicAdmin(admin.ModelAdmin):
 
 class AgendaMailingListInline(admin.StackedInline):
     model = AgendaMailingList
-    extra = 1
+    extra = 0
 
 class AgendaItemInline(admin.StackedInline):
     model = AgendaItem
-    extra = 1
+    extra = 0
     raw_id_fields = ('owner',)
 
 class AgendaAdmin(admin.ModelAdmin):
