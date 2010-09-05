@@ -85,6 +85,9 @@ class Series(models.Model):
     def scan_needed_count(self):
         return self.issues_without_covers().count() + self.marked_scans_count()
 
+    def issue_indexed_count(self):
+        return self.issue_set.filter(is_indexed=True).count()
+
     def display_publication_dates(self):
         if self.issue_count == 0:
             return unicode(self.year_began)

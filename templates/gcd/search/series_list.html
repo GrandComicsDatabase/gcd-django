@@ -18,7 +18,7 @@
     <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }} </td>
-    <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }}</td>
+    <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
     <td>
     {% if not series.scan_needed_count %}
     <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
@@ -26,8 +26,7 @@
       {% if series.has_gallery %}
         <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
         {{ series.scan_count}}</a>
-        (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need 
-        {{ series.scan_needed_count }}</a>)
+        (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need&nbsp;{{ series.scan_needed_count }}</a>)
       {% else %}
         <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
       {% endif %}

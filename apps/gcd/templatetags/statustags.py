@@ -51,7 +51,7 @@ class LastUpdatedNode(template.Node):
             except: # render in templates should fail silently
                 return u''
 
-        issues = IssueRevision.objects.filter(issue__story_type_count__gt=0, 
+        issues = IssueRevision.objects.filter(issue__is_indexed=True, 
           changeset__change_type=CTYPES['issue'],
           changeset__state=states.APPROVED).order_by('-changeset__modified')\
             .select_related('issue', 'issue__series', 'issue__series__publisher')

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 View methods related to displaying search and search results pages.
 """
@@ -566,11 +567,11 @@ def search_issues(data, op, stories_q=None):
         q_objs.append(Q(**{ '%scover__isnull' % prefix : True }) |
                       ~Q(**{ '%scover__deleted' % prefix : False }) |
                       Q(**{ '%scover__marked' % prefix : True }))
-    if data['has_stories'] is not None:
-        if data['has_stories'] is True:
-            q_objs.append(Q(**{ '%sstory_type_count__gt' % prefix : 0 }))
+    if data['is_indexed'] is not None:
+        if data['is_indexed'] is True:
+            q_objs.append(Q(**{ '%sis_indexed' % prefix : True }))
         else:
-            q_objs.append(Q(**{ '%sstory_type_count' % prefix : 0 }))
+            q_objs.append(Q(**{ '%sis_indexed' % prefix : False }))
     if data['indexer']:
         q_objs.append(
           Q(**{ '%srevisions__changeset__indexer__indexer__in' % prefix:

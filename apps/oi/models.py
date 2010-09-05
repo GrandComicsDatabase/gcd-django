@@ -1326,7 +1326,7 @@ class SeriesRevision(Revision):
                              language=self.language)
                 # TODO: change when deleted issues are possible
                 issue_indexes = Issue.objects.filter(series=series,
-                                   story_type_count__gt=0).count()
+                                   is_indexed=True).count()
                 update_count('issue indexes', -issue_indexes, 
                              language=series.language)
                 update_count('issue indexes', issue_indexes, 
@@ -1834,37 +1834,16 @@ class StoryRevision(Revision):
         story = self.story
         if story is None:
             story = Story()
-            if self.type.name == 'story':
-                self.issue.story_type_count +=1
-                self.issue.save()
-                if self.issue.story_type_count == 1:
-                    update_count('issue indexes', 1, 
-                                 language=self.issue.series.language)
             update_count('stories', 1, language=self.issue.series.language)
         elif self.deleted:
-            if story.type.name == 'story':
-                self.issue.story_type_count -=1
-                self.issue.save()
-                if self.issue.story_type_count == 0:
+            if self.issue.is_indexed == True:
+                if self.issue.set_indexed_status() == False:
                     update_count('issue indexes', -1, 
                                  language=story.issue.series.language)
             update_count('stories', -1, language=story.issue.series.language)
             self._reset_values()
             story.delete()
             return
-
-        elif self.type.name == 'story' and story.type.name != 'story':
-            self.issue.story_type_count += 1
-            self.issue.save()
-            if self.issue.story_type_count == 1:
-                update_count('issue indexes', 1, 
-                             language=story.issue.series.language)
-        elif self.type.name != 'story' and story.type.name == 'story':
-            self.issue.story_type_count -= 1
-            self.issue.save()
-            if self.issue.story_type_count == 0:
-                update_count('issue indexes', -1, 
-                             language=story.issue.series.language)
 
         story.title = self.title
         story.title_inferred = self.title_inferred
@@ -1904,6 +1883,15 @@ class StoryRevision(Revision):
         if self.story is None:
             self.story = story
             self.save()
+
+        if self.issue.is_indexed == False:
+            if self.issue.set_indexed_status():
+                update_count('issue indexes', 1, 
+                             language=self.issue.series.language)
+        else:
+            if self.issue.set_indexed_status() == False:
+                update_count('issue indexes', -1, 
+                             language=self.issue.series.language)
 
     def has_credits(self):
         return self.script or \

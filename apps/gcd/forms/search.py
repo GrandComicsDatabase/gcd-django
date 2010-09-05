@@ -94,7 +94,7 @@ class AdvancedSearch(forms.Form):
 
     cover_needed = forms.BooleanField(label="Cover is Needed", 
                                        required=False)
-    has_stories = forms.NullBooleanField(label="Has Stories", required=False,
+    is_indexed = forms.NullBooleanField(label="Is Indexed", required=False,
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))

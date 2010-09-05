@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.db import models
 from django.db.models import Sum
 
@@ -49,9 +50,7 @@ class Issue(models.Model):
     brand = models.ForeignKey(Brand, null=True)
     no_brand = models.BooleanField(default=0, db_index=True)
 
-    # Count of stories of type "story" attached to this issue.
-    # Used to determine whether something has been indexed at all or not.
-    story_type_count = models.IntegerField(default=0, db_index=True)
+    is_indexed = models.BooleanField(default=0, db_index=True)
 
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True)
@@ -74,6 +73,23 @@ class Issue(models.Model):
     def has_covers(self):
         return self.active_covers().count() > 0
 
+    # determine and set whether something has been indexed at all or not
+    def set_indexed_status(self):
+        from story import StoryType
+        if self.active_stories().filter(type=\
+          StoryType.objects.get(name='story')).count() > 0:
+            is_indexed = True
+        else:
+            total_count = self.active_stories().aggregate(Sum('page_count'))['page_count__sum']
+            if total_count is not None and total_count * 2 > self.page_count:
+                is_indexed = True
+            else:
+                is_indexed = False
+        if self.is_indexed != is_indexed:
+            self.is_indexed = is_indexed
+            self.save()
+        return self.is_indexed
+
     def index_status_name(self):
         """
         Text form of status.  If clauses arranged in order of most
@@ -82,12 +98,9 @@ class Issue(models.Model):
         if self.reserved:
             active =  self.revisions.get(changeset__state__in=states.ACTIVE)
             return states.CSS_NAME[active.changeset.state]
+        elif self.is_indexed:
+            return 'approved'
         else:
-            if self.story_type_count > 0:
-                return 'approved'
-            total_count = self.active_stories().aggregate(Sum('page_count'))['page_count__sum']
-            if total_count is not None and total_count * 2 > self.page_count:
-                return 'approved'
             return 'available'
 
     def get_prev_next_issue(self):
