@@ -30,7 +30,7 @@ This bulk change considers the following issues, the search terms used are given
 {% for issue in changeset.ordered_issue_revisions %}
 <tr>
   <td> {{ issue }}
-  <td> {% if issue.previous %}<a href="{% url compare id=issue.previous.changeset.id %}?collapse=1"> Previous Change {% else %} Missing Changeset History Gives Error {% endif %} </a>
+  <td> {% if issue.previous %}<a href="{% url compare id=issue.previous.changeset.id %}?collapse=1"> Previous Change ({{ issue.previous.modified|date:"Y-m-d" }}) {% else %} Missing Changeset History Gives Error {% endif %} </a>
   <td> <a class="new_window" href="{% url preview_revision model_name=model_name,id=issue.id %}" target=_blank>Preview</a>
 </tr>
 {% endfor %}

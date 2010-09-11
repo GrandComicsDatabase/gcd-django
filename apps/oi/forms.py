@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 
 from django import forms
@@ -512,7 +513,7 @@ class BulkIssueRevisionForm(forms.Form):
                 'Use country codes after the currency code if more than one price '
                 'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
-    page_count = forms.DecimalField(required=False,
+    page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3,
       help_text="Count of all pages in the issue, including the covers but "
                 "excluding dust jackets and inserts.  A single sheet of paper "
