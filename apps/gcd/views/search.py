@@ -30,6 +30,12 @@ from apps.oi import states
 class SearchError(Exception):
     pass
 
+class ViewTerminationError(Exception):
+    def __init__(self, response):
+        self.response = response
+    def __str__(self):
+        return repr(self.response)
+
 def generic_by_name(request, name, q_obj, sort,
                     class_=Story,
                     template='gcd/search/content_list.html',
@@ -292,19 +298,18 @@ def advanced_search(request):
         return search_series(request)
 
     
-def process_advanced(request):
+def do_advanced_search(request):
     """
     Runs advanced searches.
     """
     form = AdvancedSearch(request.GET)
     if not form.is_valid():
-        return render_to_response('gcd/search/advanced.html',
-                                  { 'form': form, 'style': 'default' },
-                                  context_instance=RequestContext(request))
+        raise ViewTerminationError(response = render_to_response(
+          'gcd/search/advanced.html',
+          { 'form': form, 'style': 'default' },
+          context_instance=RequestContext(request)))
 
     data = form.cleaned_data
-    template = None
-    context = {}
     op = str(data['method'] or 'iregex')
 
     try:
@@ -315,17 +320,17 @@ def process_advanced(request):
         query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj)
         terms = compute_order(data)
     except SearchError, se:
-        return render_to_response(
+        raise ViewTerminationError, render_to_response(
           'gcd/search/advanced.html',
           {
-            'form': form,
-            'style': 'default',
-            'error_text': '%s' % se,
+              'form': form,
+              'style': 'default',
+              'error_text': '%s' % se,
           },
           context_instance=RequestContext(request))
 
     if (not query) and terms:
-        return render_to_response(
+        raise ViewTerminationError, render_to_response(
           'gcd/search/advanced.html',
           {
             'form': form,
@@ -337,14 +342,12 @@ def process_advanced(request):
           context_instance=RequestContext(request))
         
     items = []
-    list_template = None
     if data['target'] == 'publisher':
         if query:
             filter = Publisher.objects.filter(query)
         else:
             filter = Publisher.objects.all()
         items = filter.order_by(*terms).select_related('country').distinct()
-        template = 'gcd/search/publisher_list.html'
 
     elif data['target'] == 'series':
         if query:
@@ -352,8 +355,6 @@ def process_advanced(request):
         else:
             filter = Series.objects.all()
         items = filter.order_by(*terms).select_related('publisher').distinct()
-
-        template = 'gcd/search/series_list.html'
 
     elif data['target'] == 'issue':
         if query:
@@ -371,9 +372,20 @@ def process_advanced(request):
             filter = Story.objects.exclude(deleted=True)
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
-        template = 'gcd/search/content_list.html'
 
-    item_name = data['target']
+    return items, data['target']
+
+def process_advanced(request):
+    """
+    Runs advanced searches.
+    """
+    
+    try:
+        items, target = do_advanced_search(request)
+    except ViewTerminationError, response:
+        return response.response
+
+    item_name = target
     plural_suffix = 's'
     if item_name == 'sequence':
         item_name = 'content item'
@@ -392,12 +404,15 @@ def process_advanced(request):
         'advanced_search': True,
         'item_name' : item_name,
         'plural_suffix' : plural_suffix,
-        'heading' : data['target'].title() + ' Search Results',
+        'heading' : target.title() + ' Search Results',
         'query_string' : get_copy.urlencode(),
         'style' : 'default',
     }
     if request.GET.has_key('style'):
         context['style'] = request.GET['style']
+
+    template = 'gcd/search/%s_list.html' % \
+                 ('content' if target == 'sequence' else item_name)
 
     return paginate_response(request, items, template, context)
 

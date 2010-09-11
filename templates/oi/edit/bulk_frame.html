@@ -1,0 +1,40 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Changing {{ object_name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Changing Issues</h1>
+<h3>Used search terms:</h3>
+<table>
+{% for search, b in used_search_terms %}
+<tr><th><label>{{ search }}:</label></th><td> {{ b }} </td>
+{% endfor %}
+</table>
+<p>{{ nr_items }} issues match the search criteria, {{ nr_items_unreserved }} issues of these are unreserved.
+</p>
+
+<div class="edit">
+<form action="{{ object_url }}" method="POST">
+  <table class="editing">
+  {{ form.as_table }}
+  </table>
+  <input type="submit" name="add" value="{{ action_label}} {{ object_name }}"></input>
+{% ifequal object_name "Story" %}
+  <input type="submit" name="cancel_return" value="Cancel"></input>
+{% else %}
+  <input type="submit" name="cancel" value="Cancel"></input>
+{% endifequal %}
+</form>
+</div>
+{% endblock %}

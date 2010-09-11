@@ -37,7 +37,11 @@
     <th> Deleted </th>
   {% else %}
     {% if prev_rev %}
+      {% if no_prev_link %}
+    <th> Current </th>
+      {% else %}
     <th><a href="{% url compare id=prev_rev.changeset.id %}?collapse=1"> Previous </a></th>
+      {% endif %}
     <th> Change </th>
     {% else %}
     <th> Added </th>

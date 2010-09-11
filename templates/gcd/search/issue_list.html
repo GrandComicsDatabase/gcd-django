@@ -3,6 +3,18 @@
 {% load display %}
 
 {% block list_contents %}
+
+{% if request.user.is_authenticated and items %}
+<div id="bulk_change_info">
+{% ifequal paginator.num_pages 1 %}
+Use this search result for a <a href="{% url edit_issues_in_bulk %}?{{ query_string }}">
+bulk change</a>
+{% else %}
+&nbsp;Note that for a bulk change the number of issues cannot be larger than 100.
+{% endifequal %}
+</div>
+{% endif %}
+
 <table class="listing">
   <tr>
     <th colspan="2"> Publisher </th>

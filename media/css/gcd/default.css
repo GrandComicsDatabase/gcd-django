@@ -185,7 +185,7 @@ h1.search_id {
     font-size: 1.25em;
 }
 
-#search_reminder {
+#search_reminder, #bulk_change_info {
     float: left;
     margin-top: 1em;
 }

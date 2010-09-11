@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.core import urlresolvers
 from django.conf.urls.defaults import *
 from django.conf import settings
@@ -61,6 +62,10 @@ urlpatterns = patterns('',
     url(r'^issue/(?P<issue_id>\d+)/import_stories/(?P<changeset_id>\d+)/$', 
         oi_import.import_sequences_from_file, 
         name='import_stories'),
+
+    url(r'^bulk_issue_edit/$', 
+        oi_views.edit_issues_in_bulk, 
+        name='edit_issues_in_bulk'),
 
     # Story URLs 
     # can be changed to r'^(?P<model_name>\w+)/revision/(?P<id>\d+)/remove/

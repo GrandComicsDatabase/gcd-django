@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 import sys
 import os
@@ -22,6 +23,7 @@ from apps.gcd.views import render_error, paginate_response
 from apps.gcd.views.details import show_indicia_publisher, show_brand, \
                                    show_series, show_issue
 from apps.gcd.views.covers import get_image_tag
+from apps.gcd.views.search import do_advanced_search, ViewTerminationError
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
@@ -793,6 +795,185 @@ def process_revision(request, id, model_name):
       'Unknown action requested!  Please try again.  If this error message '
       'persists, please contact an Editor.')
 
+
+##############################################################################
+# Bulk Changes
+##############################################################################
+def _clean_bulk_issue_change_form(form, remove_fields, items,
+                                  number_of_issues=True):
+    form.fields.pop('after')
+    form.fields.pop('first_number')
+    if number_of_issues:
+        form.fields.pop('number_of_issues')
+    for i in remove_fields:
+        form.fields.pop(i)
+    return form
+
+@permission_required('gcd.can_reserve')
+def edit_issues_in_bulk(request):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request,
+          'You have reached your limit of open changes.  You must '
+          'submit or discard some changes from your edit queue before you '
+          'can edit any more.  If you are a new user this number is very low '
+          'but will be increased as your first changes are approved.')
+
+    if request.method == 'GET' and request.GET['target'] != 'issue':
+        return HttpResponseRedirect(urlresolvers.reverse \
+                 ('process_advanced_search') + '?' + request.GET.urlencode())
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse \
+                 ('process_advanced_search') + '?' + request.GET.urlencode())
+
+    search_values = request.GET.copy()
+    del search_values['order1']
+    del search_values['order2']
+    del search_values['order3']
+    del search_values['target']
+
+    # TODO convert search_values in something displayable
+    used_search_terms = []
+    for i in search_values:
+        if search_values[i] and search_values[i] not in ['None', 'False']:
+            used_search_terms.append((i, search_values[i]))
+
+    try:
+        items, target = do_advanced_search(request)
+    except ViewTerminationError:
+        return render_error(request, 
+            'The search underlying the bulk change was not successful. '
+            'This should not happen. Please try again. If this error message '
+            'persists, please contact an Editor.')
+
+    nr_items = items.count()
+    items = items.filter(reserved=False)
+    nr_items_unreserved = items.count()
+    if nr_items_unreserved == 0:
+        if nr_items == 0: # shouldn't really happen
+            return HttpResponseRedirect(urlresolvers.reverse \
+                     ('process_advanced_search') + '?' + \
+                     request.GET.urlencode())
+        else:
+            return render_error(request, 
+              'All issues fulfilling the search criteria for the bulk change'
+              ' are currently reserved.')
+
+    series_list = list(set(items.values_list('series', flat=True)))
+    ignore_publisher = False
+    if len(series_list) == 1:
+        series = Series.objects.get(id=series_list[0])
+    else:
+        if len(items) > 100: # shouldn't happen, just in case
+            raise ValueError, 'not more than 100 issues if more than one series'
+        series = Series.objects.filter(id__in=series_list)
+        publisher_list = Publisher.objects.filter(series__in=series).distinct()
+        series = series[0]
+        if len(publisher_list) > 1:
+            ignore_publisher = True
+
+    form_class = get_bulk_issue_revision_form(series, 'number')
+
+    # We should be able to access the fields without a dummy revision, or ?
+    fields = IssueRevision._field_list(IssueRevision.objects.get(id=1))
+    fields.remove('after')
+    fields.remove('number')
+    fields.remove('publication_date')
+    fields.remove('key_date')
+    fields.remove('notes')
+
+    # look at values for the issue fields
+    # if only one it gives the initial value
+    # if several, the field is not editable
+    initial = {} # init value is the common value for all issues
+    remove_fields = [] # field to take out of the form
+    if ignore_publisher:
+        remove_fields.append('brand')
+        remove_fields.append('no_brand')
+        remove_fields.append('indicia_publisher')
+        remove_fields.append('indicia_pub_not_printed')
+    for i in fields:
+        if i not in remove_fields: 
+            values_list = list(set(items.values_list(i, flat=True)))
+            if len(values_list) > 1:
+                if i not in remove_fields: 
+                    remove_fields.append(i)
+                    # some fields belong together, both are either in or out
+                    if i in ['volume', 'brand', 'editing']:
+                        remove_fields.append('no_' + i)
+                    elif i in ['no_volume', 'no_brand', 'no_indicia_publisher',
+                            'no_editing']:
+                        if i[3:] not in remove_fields:
+                            remove_fields.append(i[3:])
+                    elif i == 'indicia_publisher':
+                        remove_fields.append('indicia_pub_not_printed')
+                    elif i == 'indicia_pub_not_printed':
+                        remove_fields.append('indicia_publisher')
+                    elif i == 'page_count':
+                        remove_fields.append('page_count_uncertain')
+                    elif i == 'page_count_uncertain':
+                        remove_fields.append('page_count')
+            elif i not in remove_fields:
+                initial[i] = values_list[0]
+
+    if request.method != 'POST':
+        form = _clean_bulk_issue_change_form(form_class(initial=initial), 
+                                             remove_fields, items)
+        return _display_bulk_issue_change_form(request, form,
+                nr_items, nr_items_unreserved, 
+                request.GET.urlencode(), used_search_terms)
+
+    form = form_class(request.POST)
+    form.fields.pop('number_of_issues')
+
+    if not form.is_valid():
+        form = _clean_bulk_issue_change_form(form, remove_fields, items,
+                                             number_of_issues=False)
+        return _display_bulk_issue_change_form(request, form,
+                nr_items, nr_items_unreserved, 
+                request.GET.urlencode(), used_search_terms)
+
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['issue_bulk'])
+    changeset.save()
+    comment = 'Used search terms:\n'
+    for search in used_search_terms:
+        comment += "%s : %s\n" % (search[0], search[1])
+    changeset.comments.create(commenter=request.user,
+                              text=comment,
+                              old_state=changeset.state,
+                              new_state=changeset.state)
+
+    cd = form.cleaned_data
+    for issue in items:
+        revision = IssueRevision.objects.clone_revision(issue,
+                                                        changeset=changeset)
+        for field in initial:
+            if field in ['brand', 'indicia_publisher'] and cd[field] is not None:
+                setattr(revision, field + '_id', cd[field].id)
+            else:
+                setattr(revision, field, cd[field])
+        revision.save()
+
+    return submit(request, changeset.id)
+
+def _display_bulk_issue_change_form(request, form, 
+                                    nr_items, nr_items_unreserved,
+                                    search_option, used_search_terms):
+    url_name = 'edit_issues_in_bulk'
+    url = urlresolvers.reverse(url_name) + '?' + search_option
+    return render_to_response('oi/edit/bulk_frame.html',
+      {
+        'object_name': 'Issues',
+        'object_url': url,
+        'action_label': 'Submit bulk change',
+        'form': form,
+        'nr_items': nr_items,
+        'nr_items_unreserved': nr_items_unreserved,
+        'used_search_terms': used_search_terms
+      },
+      context_instance=RequestContext(request))
+
 ##############################################################################
 # Adding Items
 ##############################################################################
@@ -1235,6 +1416,7 @@ def _display_bulk_issue_form(request, series, form, method=None):
       },
       context_instance=RequestContext(request))
 
+
 @permission_required('gcd.can_reserve')
 def add_story(request, issue_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
@@ -1569,6 +1751,7 @@ def show_queue(request, queue_name, state):
     series = changes.filter(change_type=CTYPES['series'])
     issue_adds = changes.filter(change_type=CTYPES['issue_add'])
     issues = changes.filter(change_type=CTYPES['issue'])
+    issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])
 
     response = render_to_response(
@@ -1607,6 +1790,11 @@ def show_queue(request, queue_name, state):
             'object_name': 'Issues',
             'object_type': 'issue',
             'changesets': issues.order_by('state', 'modified'),
+          },
+          {
+            'object_name': 'Issue Bulk Changes',
+            'object_type': 'issue',
+            'changesets': issue_bulks.order_by('state', 'modified'),
           },
           {
             'object_name': 'Covers',
@@ -1660,7 +1848,8 @@ def compare(request, id):
 
     if changeset.inline():
         revision = changeset.inline_revision()
-    elif changeset.change_type in [CTYPES['issue'], CTYPES['issue_add']]:
+    elif changeset.change_type in [CTYPES['issue'], CTYPES['issue_add'],
+                                   CTYPES['issue_bulk']]:
         revision = changeset.issuerevisions.all()[0]
     else:
         # never reached at the moment
@@ -1673,9 +1862,11 @@ def compare(request, id):
     prev_rev = revision.previous()
     revision.compare_changes(prev_rev)
 
-    if changeset.change_type == CTYPES['issue_add'] and changeset.issuerevisions.count() > 1:
-        # issue skeletons are the only special case for compare
+    if changeset.change_type == CTYPES['issue_add'] and \
+      changeset.issuerevisions.count() > 1:
         template = 'oi/edit/compare_issue_skeletons.html'
+    if changeset.change_type == CTYPES['issue_bulk']:
+        template = 'oi/edit/compare_bulk_issue.html'
     else:
         template = 'oi/edit/compare.html'
 
@@ -1692,7 +1883,13 @@ def compare(request, id):
     elif model_name == 'issue':
         if prev_rev:
             field_list.remove('after')
+        if changeset.change_type == CTYPES['issue_bulk']:
+            field_list.remove('number')
+            field_list.remove('publication_date')
+            field_list.remove('key_date')
+            field_list.remove('notes')
 
+            
     response = render_to_response(template,
                                   {'changeset': changeset,
                                    'revision': revision,

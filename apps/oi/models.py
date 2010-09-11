@@ -25,6 +25,7 @@ CTYPES = {
     'issue_add': 5,
     'issue': 6,
     'cover': 7,
+    'issue_bulk': 8
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -91,7 +92,7 @@ class Changeset(models.Model):
             return (self.issuerevisions.all().select_related('issue', 'series'),
                     self.storyrevisions.all())
 
-        if self.change_type == CTYPES['issue_add']:
+        if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
             return (self.issuerevisions.all().select_related('issue', 'series'),)
 
         if self.change_type == CTYPES['cover']:
@@ -149,7 +150,7 @@ class Changeset(models.Model):
         return self.issuerevisions.order_by('revision_sort_code', 'id')
 
     def queue_name(self):
-        if self.change_type == CTYPES['issue_add']:
+        if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
             return unicode(self)
         return self.revisions.next().queue_name()
 
@@ -353,11 +354,13 @@ class Changeset(models.Model):
         ir_count = self.issuerevisions.count() 
         if ir_count == 1:
             return unicode(self.issuerevisions.all()[0])
-        if ir_count > 1:
+        if ir_count > 1 and self.change_type == CTYPES['issue_add']:
             first = self.issuerevisions.order_by('revision_sort_code')[0]
             last = self.issuerevisions.order_by('-revision_sort_code')[0]
             return u'%s #%s - %s' % (first.series, first.display_number,
                                                   last.display_number)
+        if self.change_type == CTYPES['issue_bulk']:
+            return unicode("%s and %d other issues" % (self.issuerevisions.all()[0], ir_count - 1))
         return 'Changeset: %d' % self.id
 
 class ChangesetComment(models.Model):
