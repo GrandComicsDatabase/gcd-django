@@ -23,7 +23,7 @@
       {% for changeset in section.changesets %}
   <tr>
     <td>
-        {% if link_target == 'preview' or changeset.state == state.PENDING or changeset.state == state.REVIEWING %}
+        {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
       <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
         {% else %}
       <a href="{% url edit id=changeset.id %}">{{ changeset.queue_name }}</a>
