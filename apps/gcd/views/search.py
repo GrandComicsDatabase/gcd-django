@@ -19,7 +19,8 @@ from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Story
-from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
+from apps.gcd.views import ViewTerminationError, paginate_response, \
+                           ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP
 from apps.gcd.views.details import issue 
 
@@ -29,12 +30,6 @@ from apps.oi import states
 
 class SearchError(Exception):
     pass
-
-class ViewTerminationError(Exception):
-    def __init__(self, response):
-        self.response = response
-    def __str__(self):
-        return repr(self.response)
 
 def generic_by_name(request, name, q_obj, sort,
                     class_=Story,

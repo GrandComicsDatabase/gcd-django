@@ -17,6 +17,18 @@ from apps.gcd.models import Error, CountStats, Language
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
 
+class ViewTerminationError(Exception):
+    """
+    Used to end a view from within a helper function.  Takes a Django response
+    object in place of a message.  View functions should catch these exceptions
+    and simply return the included response.
+    """
+
+    def __init__(self, response):
+        self.response = response
+    def __str__(self):
+        return repr(self.response)
+
 def index(request):
     """Generates the front index page."""
 
