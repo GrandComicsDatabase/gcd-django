@@ -129,6 +129,10 @@ body {
     width: 6em;
 }
 
+.login_form {
+    display: inline;
+}
+
 .front_page_central {
     background-color: white;
     margin-bottom: 1em;

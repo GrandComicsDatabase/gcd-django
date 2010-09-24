@@ -3,9 +3,13 @@
     {% if user.is_authenticated %}
         <p>
         {% trans 'You are logged in as ' %}{{ user.indexer }}<br>
-        <a href="{% url editing %}">{% trans 'Editing' %}</a> | <a href="{% url default_profile %}">{% trans 'Profile' %}</a>
+        <a href="{% url editing %}">{% trans 'Editing' %}</a> |
+        <a href="{% url default_profile %}">{% trans 'Profile' %}</a>
         </p>
-        <form action="{% url logout %}" method="POST">
+        {% if user.is_staff %}
+        <a href="/admin">{% trans 'Admin' %}</a> |
+        {% endif %}
+        <form action="{% url logout %}" method="POST" class="login_form">
             <input type="submit" name="logout" value="{% trans 'Logout' %}" />
             <input type="hidden" name="next" value="{{ request.get_full_path }}" />
         </form>
