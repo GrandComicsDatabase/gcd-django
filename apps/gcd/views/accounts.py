@@ -20,7 +20,8 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.gcd.views import render_error
-from apps.gcd.models import Indexer, Language, Country, Reservation, IndexCredit
+from apps.gcd.models import Indexer, Language, Country, Reservation, IndexCredit, \
+                            LoginRecord
 from apps.gcd.forms.accounts import ProfileForm, RegistrationForm
 
 from apps.oi import states
@@ -34,9 +35,11 @@ def login(request, template_name):
     if request.user.is_authenticated():
         return HttpResponseRedirect(urlresolvers.reverse('default_profile'))
 
+    user = None
     try:
         if request.method == "POST":
             user = User.objects.get(username=request.POST['username'])
+
             if user.indexer.registration_key is not None:
                 if date.today() > (user.indexer.registration_expires +
                                    timedelta(1)):
@@ -60,9 +63,27 @@ def login(request, template_name):
                     post = request.POST.copy()
                     post['next'] = urlresolvers.reverse('welcome')
                     request.POST = post
+
+            login_ip_record.success = True
     except Exception:
         pass
-    return standard_login(request, template_name=template_name)
+
+    response = standard_login(request, template_name=template_name)
+
+    # Only record successful logins.
+    if user is not None and request.user.is_authenticated():
+        ip_addr = None
+        user_agent = None
+        if 'REMOTE_ADDR' in request.META:
+            ip_addr = request.META['REMOTE_ADDR']
+        if 'HTTP_USER_AGENT' in request.META:
+            # A too-long user agent is unlikely, but truncate just in case.
+            user_agent = request.META['HTTP_USER_AGENT'][0:254]
+        login_record = LoginRecord(user=user, ip=ip_addr, user_agent=user_agent)
+        login_record.save()
+
+    return response
+
 
 def logout(request):
     """
