@@ -38,7 +38,12 @@ def login(request, template_name):
     user = None
     try:
         if request.method == "POST":
-            user = User.objects.get(username=request.POST['username'])
+            try:
+                user = User.objects.get(email=request.POST['username'])
+            except DoesNotExist:
+                user = User.objects.get(username=request.POST['username'])
+            except:
+                raise
 
             if user.indexer.registration_key is not None:
                 if date.today() > (user.indexer.registration_expires +
@@ -63,8 +68,6 @@ def login(request, template_name):
                     post = request.POST.copy()
                     post['next'] = urlresolvers.reverse('welcome')
                     request.POST = post
-
-            login_ip_record.success = True
     except Exception:
         pass
 
