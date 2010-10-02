@@ -63,6 +63,7 @@ INSTALLED_APPS = (
     'apps.gcd',
     'apps.oi',
     'apps.voting',
+    'compressor'
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -136,6 +137,8 @@ DUMP_DIR = 'dumps'
 # Amount of time that must pass before a user can download the same
 # dump (or similar) file again, in minutes.
 DOWNLOAD_DELTA = 5
+
+COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter','compressor.filters.csstidy.CSSTidyFilter']
 
 # get local settings, will override settings from here
 try:

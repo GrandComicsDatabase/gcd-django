@@ -2,14 +2,17 @@
 {% load statustags %}
 {% load humanize %}
 {% load i18n %}
+{% load compress %}
 
 <html>
 <head>
   <title> {{ site_name }} </title>
+{% compress css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/{{ style }}.css"/>
+        href="{{ MEDIA_URL }}css/gcd/{{ style }}.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/{{ style }}/front_page.css"/>
+        href="{{ MEDIA_URL }}css/gcd/{{ style }}/front_page.css"/>
+{% endcompress %}
   <!--[if lt IE 7]>
     <style type="text/css">
     #colleft {
