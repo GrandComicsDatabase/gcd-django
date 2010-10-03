@@ -179,7 +179,8 @@ def _do_reserve(indexer, display_obj, model_name, delete=False):
         comment = 'Deleting'
     else:
         comment = 'Editing'
-    return _create_changeset(indexer, display_obj, model_name, comment, False, delete)
+    return _create_changeset(indexer, display_obj, model_name, comment,
+                             False, delete)
 
 @permission_required('gcd.can_reserve')
 def edit_revision(request, id, model_name):
@@ -1867,9 +1868,10 @@ def _reorder_children(request, parent, children, sort_field, child_set,
         else:
             child_list.append((child, current_code))
         current_code += 1
-    else:
-        if skip is not None:
-            setattr(skip, sort_field, current_code)
+
+    # Special case if there were no children and therefore for loop did nothing.
+    if not children and skip is not None:
+        setattr(skip, sort_field, current_code)
 
     return child_list
 
