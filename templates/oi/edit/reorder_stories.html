@@ -1,0 +1,63 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block title %}
+{{ Issue }} Story Order
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}/css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1> {{ issue }} Story Order </h1>
+
+<h3> Reordering Stories </h3>
+<p>
+You can reorder the stories in an issue by changing one or more sequence numbers.
+Since the numbers in this form do not need to be whole numbers, you can move one
+and shift others up or down with a minimal number of changes.  For instance:
+</p>
+<ul>
+  <li> You may use negative numbers
+  <li> You may use decimal numbers using a decimal point (i.e. 2.5, -10.125, etc.)
+  <li> You may *NOT* use commas (our apologies to folks who would prefer to write
+       the above as 2,5; -10,125; etc.)
+</ul>
+<p>
+The actual sequence numbers that get saved to the database will be whole numbers
+calculated by the code, so do not worry about what exact numbers are used in this
+form.  They only need to be in the correct order.
+</p>
+
+<form class="reorder_stories"
+      method="POST"
+      action="{% url reorder_stories issue_id=issue.source.id,changeset_id=changeset.id %}">
+<table class="reorder_stories">
+  <tr>
+    <th class="sequence_number_col"> Sequence Number </th>
+    <th> Story </th>
+  </tr>
+{% for story in issue.active_stories.all %}
+  <tr>
+    <td> <input type="text"
+                id="sequence_number_{{ story.id }}"
+                name="sequence_number_{{ story.id }}"
+                class="sequence_number"
+                value="{{ story.sequence_number }}">
+    </td>
+    <td> {{ story|show_story_short:1 }} </td>
+  </tr>
+{% endfor %}
+</table>
+<input type="submit" name="commit" value="Reorder">
+<input type="submit" name="cancel" value="Cancel">
+</form>
+{% endblock %}

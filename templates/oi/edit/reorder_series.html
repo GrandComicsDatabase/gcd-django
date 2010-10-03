@@ -30,7 +30,7 @@ or even previewing a second time.
 </p>
 <hr>
 <form method="POST" action="{% url reorder_series_key_date series_id=series.id %}">
-  <input type="submit" name="submit" value="Preview reorder by key_date"></input>
+  <input type="submit" name="submit" value="Preview reorder by key_date">
 <p>
 Reordering by key date when there are duplicate key dates will produce
 unpredictable results, and may not even sort the same way if you try it multiple
@@ -39,7 +39,7 @@ times.
 <hr>
 <form method="POST"
       action="{% url reorder_series_issue_number series_id=series.id %}">
-  <input type="submit" name="submit" value="Preview reorder by issue number"></input>
+  <input type="submit" name="submit" value="Preview reorder by issue number">
 </form>
 <p>
 Reordering by issue number works only for issues where all numbers are whole
@@ -81,14 +81,14 @@ will not work.
                 value="{{ issue.sort_code }}"
     {% endifequal %}
   {% endif %}
-         > </input> </td>
+         > </td>
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date }} </td>
     <td> {{ issue.key_date }} </td>
   </tr>
 {% endfor %}
 </table>
-<input type="submit" name="preview" value="Preview custom reordering"></input>
-<input type="submit" name="commit" value="Commit to database!"></input>
+<input type="submit" name="preview" value="Preview custom reordering">
+<input type="submit" name="commit" value="Commit to database!">
 </form>
 {% endblock %}

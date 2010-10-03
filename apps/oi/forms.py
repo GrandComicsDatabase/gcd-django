@@ -259,11 +259,16 @@ class SeriesRevisionForm(forms.ModelForm):
       help_text=('Series name as it appears in the indicia (or cover only '
                  'if there is no indicia), with any leading article moved '
                  'to the end after a comma.'))
-    year_began = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'year'}),
+
+    year_began = forms.IntegerField(
+      widget=forms.TextInput(attrs={'class': 'year'}),
       help_text='Year first issue published.')
-    year_ended = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'year'}),
+
+    year_ended = forms.IntegerField(
+      widget=forms.TextInput(attrs={'class': 'year'}),
       required=False,
       help_text='Leave blank if the series is still producing new issues.')
+
     is_current = forms.BooleanField(required=False,
       help_text='Check if new issues are still being produced for this series.')
 
@@ -312,16 +317,19 @@ def get_issue_revision_form(publisher, series=None, revision=None):
     class RuntimeIssueRevisionForm(IssueRevisionForm):
         indicia_publisher = forms.ModelChoiceField(required=False,
           queryset=IndiciaPublisher.objects.filter(parent=publisher),
-          help_text='The exact corporation listed as the publisher in the indicia, '
-                    'if any.  If there is none, the copyright holder (if any) may '
-                    'be used, with a comment in the notes field')
+          help_text='The exact corporation listed as the publisher in the '
+                    'indicia, if any.  If there is none, the copyright holder '
+                    '(if any) may be used, with a comment in the notes field')
 
         indicia_pub_not_printed = forms.BooleanField(required=False,
-          help_text="Check this box if there is no indicia publisher printed on the comic.")
+          help_text="Check this box if there is no indicia publisher "
+                    "printed on the comic.")
 
-        pending_deletes = BrandRevision.objects.filter(deleted=True, changeset__state__in=states.ACTIVE)
+        pending_deletes = BrandRevision.objects.filter(
+          deleted=True, changeset__state__in=states.ACTIVE)
         brand = forms.ModelChoiceField(required=False,
-          queryset=Brand.objects.filter(parent=publisher, deleted=False).exclude(revisions__in=pending_deletes),
+          queryset=Brand.objects.filter(parent=publisher, deleted=False)\
+                                .exclude(revisions__in=pending_deletes),
           help_text="The publisher's logo or tagline on the cover of the comic, "
                     "if any. Some U.S. golden age publishers did not put any "
                     "identifiable brand marks on their comics.")
@@ -370,8 +378,8 @@ class IssueRevisionForm(forms.ModelForm):
       help_text='The issue number (or other label) as it appears in the indicia. '
                 'If there is no indicia the cover number may be used. '
                 'Series that number by year (mosty European series) should write '
-                'the year after a slash: "4/2009" for issue #4 in publication year '
-                '2009.  Place brackets around an issue number if there is an '
+                'the year after a slash: "4/2009" for issue #4 in publication '
+                'year 2009.  Place brackets around an issue number if there is an '
                 'indicia but the number does not appear in it.  Use "[nn]" or the '
                 'next logical number in brackets like "[2]" if '
                 'there is no number printed anywhere on the issue.')
@@ -407,13 +415,14 @@ class IssueRevisionForm(forms.ModelForm):
                 'such as 10, 20, 30 to indicate an "early" "mid" or "late" month '
                 'cover date.  For the month (MM) on quarterlies, use 04 for '
                 'Spring, 07 for Summer, 10 for Fall and 01 or 12 for Winter (in '
-                'the northern hemisphere, shift accordingly in the southern).  For '
-                'annuals use a month of 00 or 13 or whatever sorts it best.  If '
-                'and only if none of these rules fit, use anything that produces '
-                'the correct sorting.',
+                'the northern hemisphere, shift accordingly in the southern).  '
+                'For annuals use a month of 00 or 13 or whatever sorts it best.  '
+                'If and only if none of these rules fit, use anything that '
+                'produces the correct sorting.',
       validators=[RegexValidator(r'^(17|18|19|20)\d{2}\.(0[0-9]|1[0-3])\.\d{2}$')])
 
-    indicia_frequency = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+    indicia_frequency = forms.CharField(
+      widget=forms.TextInput(attrs={'class': 'wide'}),
       required=False,
       help_text='If relevant, the frequency of publication specified in the '
                 'indicia, which may not match the actual publication schedule. '
@@ -471,12 +480,13 @@ def get_bulk_issue_revision_form(series, method):
 
         indicia_publisher = forms.ModelChoiceField(required=False,
           queryset=IndiciaPublisher.objects.filter(parent=series.publisher),
-          help_text='The exact corporation listed as the publisher in the indicia, '
-                    'if any.  If there is none, the copyright holder (if any) may '
-                    'be used, with a comment in the notes field')
+          help_text='The exact corporation listed as the publisher in the '
+                    'indicia, if any.  If there is none, the copyright holder '
+                    '(if any) may be used, with a comment in the notes field')
 
         indicia_pub_not_printed = forms.BooleanField(required=False,
-          help_text="Check this box if there is no indicia publisher printed on the comic.")
+          help_text="Check this box if there is no indicia publisher printed "
+                    "on the comic.")
 
         brand = forms.ModelChoiceField(required=False,
           queryset=Brand.objects.filter(parent=series.publisher),
@@ -840,6 +850,10 @@ class StoryRevisionForm(forms.ModelForm):
           'notes',
         )
 
+    # The sequence number can only be changed through the reorder form, but
+    # for new stories we add it through the initial value of a hidden field.
+    sequence_number = forms.IntegerField(widget=forms.HiddenInput)
+
     title = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                             required=False,
       help_text='If the title is not listed, use the first line of dialog, '
@@ -872,32 +886,35 @@ class StoryRevisionForm(forms.ModelForm):
                              required=False)
 
     no_script = forms.BooleanField(required=False,
-      help_text='Check this box if no script or plot exists for this sequence, e.g. for a '
-                'cover or single-page illustration. Leave the script field blank. '
-                'If the credit is relevant but unknown ignore this checkbox and enter a '
-                'question mark in the script field.')
+      help_text='Check this box if no script or plot exists for this sequence, '
+                'e.g. for a cover or single-page illustration, '
+                'and leave the script field blank. '
+                'If the credit is relevant but unknown ignore this checkbox and '
+                'enter a question mark in the script field.')
     no_pencils = forms.BooleanField(required=False,
-      help_text='Check this box if no penciler exists for this sequence, e.g. for an '
-                'unillustrated text article. Leave the pencils field blank. '
-                'If the credit is relevant but unknown ignore this checkbox and enter a '
-                'question mark in the pencils field.')
+      help_text='Check this box if no penciler exists for this sequence, e.g. for '
+                'an unillustrated text article, and leave the pencils '
+                'field blank. If the credit is relevant but unknown ignore this '
+                'checkbox and enter a question mark in the pencils field.')
     no_inks = forms.BooleanField(required=False,
       help_text='Check this box if no inker exists for this sequence, e.g. for a '
-                'story colored straight from pencils. Leave the inks field blank. '
-                'If the credit is relevant but unknown ignore this checkbox and enter a '
-                'question mark in the inks field.')
+                'story colored straight from pencils, and leave the inks field '
+                'blank. '
+                'If the credit is relevant but unknown ignore this checkbox and '
+                'enter a question mark in the inks field.')
     no_colors = forms.BooleanField(required=False,
-      help_text='Check this box if no colorist exists for this sequence, e.g. for a '
-                'black-and-white comic. Leave the colors field blank. '
-                'If the credit is relevant but unknown ignore this checkbox and enter a '
-                'question mark in the colors field.')
+      help_text='Check this box if no colorist exists for this sequence, e.g. for '
+                'a black-and-white comic, and leave the colors field blank. '
+                'If the credit is relevant but unknown ignore this checkbox and '
+                'enter a question mark in the colors field.')
     no_letters = forms.BooleanField(required=False,
-      help_text='Check this box if no lettering exists for this sequence. Leave the letters box '
-                'blank.  However, if the only letters are produced as normal '
+      help_text='Check this box if no lettering exists for this sequence, '
+                ' and leave the letters box blank.  '
+                'However, if the only letters are produced as normal '
                 'printed text rather than comic-style lettering, put the word '
                 '"typeset" in the letters field and do not check this box. '
-                'If the credit is relevant but unknown ignore this checkbox and enter a '
-                'question mark in the letters field.')
+                'If the credit is relevant but unknown ignore this checkbox and '
+                'enter a question mark in the letters field.')
     no_editing = forms.BooleanField(required=False,
       help_text='Check this box if there is no separate editor for this sequence. '
                 'This is common when there is an editor for the whole issue.')

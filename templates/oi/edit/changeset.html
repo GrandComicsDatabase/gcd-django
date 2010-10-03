@@ -32,13 +32,13 @@
   This change has been submitted for approval, but is not yet under review.
   {% ifequal changeset.indexer user %}
     {% if changeset.singular %}
-    <form action="{% url process id=changeset.id %}" method="POST">
-      <input type="submit" name="retract" value="Retract change and edit further" />
-      <label for="comments">Comments</label>
-      <input type="textarea" name="comments">
-    </form>
+  <form action="{% url process id=changeset.id %}" method="POST">
+    <input type="submit" name="retract" value="Retract change and edit further" />
+    <label for="comments">Comments</label>
+    <input type="textarea" name="comments">
+  </form>
     {% else %}
-    This type of changeset may not be retracted for further edit.
+  This type of changeset may not be retracted for further edit.
     {% endif %}
   {% endifequal %}
 {% endifequal %}
@@ -58,22 +58,22 @@
 </p>
 
 {% ifequal changeset.state states.OPEN %}
-{% ifequal changeset.indexer user %}
-  {% if changeset.inline %}
-    {% include "oi/edit/include_frame.html" %}
-  {% else %}
-    {% if changeset.publisherrevisions.count %}
-      <p class="error">Publishers not supported in group changesets.</p>
-    {% endif %}
-    {% if changeset.indiciapublisherrevisions.count %}
-      <p class="error">Indicia publishers not supported in group changesets.</p>
-    {% endif %}
-    {% if changeset.brandrevisions.count %}
-      <p class="error">Brands not supported in group changesets.</p>
-    {% endif %}
-    {% if changeset.seriesrevisions.count %}
-      <p class="error">Series not supported in group changesets.</p>
-    {% endif %}
+  {% ifequal changeset.indexer user %}
+    {% if changeset.inline %}
+      {% include "oi/edit/include_frame.html" %}
+    {% else %}
+      {% if changeset.publisherrevisions.count %}
+<p class="error">Publishers not supported in group changesets.</p>
+      {% endif %}
+      {% if changeset.indiciapublisherrevisions.count %}
+<p class="error">Indicia publishers not supported in group changesets.</p>
+      {% endif %}
+      {% if changeset.brandrevisions.count %}
+<p class="error">Brands not supported in group changesets.</p>
+      {% endif %}
+      {% if changeset.seriesrevisions.count %}
+<p class="error">Series not supported in group changesets.</p>
+      {% endif %}
 
     {% comment %}
       For now, assume the app ensures that there are either many issues and
@@ -83,155 +83,168 @@
       Also, the issue table should not be of class "story_list", need to fix
       either name or usage.
     {% endcomment %}
-    {% if changeset.issuerevisions.count %}
-    <table class="story_list">
-      {% for issue in changeset.issuerevisions.all %}
-      <tr>
-        <td>
-          {{ issue }}
-        </td>
-        <td>
-          <form class="changeset" method="GET"
-                action="{% url edit_revision model_name='issue',id=issue.id %}">
-            <input type="submit" id="edit_issue_{{ issue.id }}"
-                   name="edit_issue_{{ issue.id }}" value="Edit issue fields">
-            </input>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-      <tr>
-      <!-- TODO: fix nasty hacks to get the issue.
-           Currently assuming that there is only one issue revision and it
-           is not a newly added one (it has a source issue).
-        -->
-      {% with changeset.issuerevisions.all.0 as issue_revision %}
-      {% if issue_revision.issue %}
+      {% if changeset.issuerevisions.count %}
+<table class="story_list">
+        {% for issue in changeset.issuerevisions.all %}
+  <tr>
+    <td>
+      {{ issue }}
+    </td>
+    <td>
       <form class="changeset" method="GET"
-            action="{% url add_story issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
-        <td colspan="2" align="left">
-          <input type="submit" id="add_story" name="add" value="Add story">
-          </input>
-          Sequence number:
-          <input type="text" size="4"
-                 id="added_sequence_number"
-                 name="added_sequence_number"
-                 value="{{ issue_revision.next_sequence_number }}">
-          </input>
-        </td>
+            action="{% url edit_revision model_name='issue',id=issue.id %}">
+        <input type="submit" id="edit_issue_{{ issue.id }}"
+               name="edit_issue_{{ issue.id }}" value="Edit issue fields">
       </form>
-      {% endif %}
-      {% endwith %}
-      </tr>
-    </table>  
-    {% endif %}
-    {% if changeset.storyrevisions.count %}
-    <table class="story_list">
-      {% for story in changeset.issuerevisions.all.0.ordered_story_revisions %}
-      <tr>
-        <td>
-          {{ story|show_story_short }}
-        </td>
-        <td>{{ story|show_credit_status }}</td>
-        <td>
-          <form class="changeset" method="GET"
-                action="{% url edit_revision model_name='story',id=story.id %}">
-            <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
-                   value="Edit">
-            </input>
-          </form>
-          {% if not story.story %}
-          <form class="story_button" method="GET"
-                action="{% url remove_story_revision id=story.id %}">
-            <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
-                   value="Remove New Story">
-            </input>
-          </form>
-          {% else %}
-          <form class="story_button" method="POST"
-                action="{% url toggle_delete_story_revision id=story.id %}">
-            {% if story.deleted %}
-            <input type="submit" value="Restore">
-            {% else %}
-            <input type="submit" value="Mark to Delete">
-            {% endif %}
-            </input>
-          </form>
+    </td>
+  </tr>
+        {% endfor %}
+  <!-- TODO: fix nasty hacks to get the issue.
+       Currently assuming that there is only one issue revision and it
+       is not a newly added one (it has a source issue).
+    -->
+        {% with changeset.issuerevisions.all.0 as issue_revision %}
+          {% if issue_revision.issue %}
+  <tr>
+  <form class="changeset" method="GET"
+        action="{% url add_story issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+    <td colspan="2" align="left">
+      <input type="submit" id="add_story" name="add" value="Add story">
+      Sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
+      <input type="text" size="4"
+             id="added_sequence_number"
+             name="added_sequence_number"
+             value="{{ issue_revision.next_sequence_number }}">
+    </td>
+  </form>
+  </tr>
           {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %}
-
-    {% if changeset.issuerevisions.count %}
-    {% with changeset.issuerevisions.all.0 as issue_revision %}
-    {% if issue_revision.issue %}
-    <table class="story_list">
-      {% if not changeset.storyrevisions.count %}
-      <tr colspan="2" align="left">
-      <form class="changeset" method="POST" enctype="multipart/form-data"
-                action="{% url import_issue issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
-      <td>
-      Select file: <input type="file" name="flatfile"></input>
-      </td>
-      <td>
-      <input type="submit" value="Import issue"></input>
-      </td>
+          {% if issue_revision.story_set.count > 1 %}
+  <tr>
+    <td colspan="2">
+      <form class="changeset" method="GET"
+            action="{% url reorder_stories issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+        <input type="submit" id="reorder_issue_{{ issue.id }}"
+               name="reorder_issue_{{ issue.id }}"
+               value="Reorder issue stories">
       </form>
-      </tr>
+    </td>
+  </tr>
+          {% endif %}
+        {% endwith %}
+</table>  
       {% endif %}
-      <tr colspan="2" align="left">
-      <form class="changeset" method="POST" enctype="multipart/form-data"
-                action="{% url import_stories issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
-      <td>
-      Select file: <input type="file" name="flatfile"></input>
-      </td>
-      <td><input type="submit" value="Import sequences"></input></td>
+
+      {% if changeset.storyrevisions.count %}
+<table class="story_list">
+        {% for story in changeset.issuerevisions.all.0.ordered_story_revisions %}
+  <tr>
+    <td> {{ story|show_story_short }} </td>
+    <td>{{ story|show_credit_status }}</td>
+    <td>
+      <form class="changeset" method="GET"
+            action="{% url edit_revision model_name='story',id=story.id %}">
+        <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
+               value="Edit">
       </form>
-      </tr>
-      <tr>
-      <td class="import_info">
-      <a class="new_window" href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> (opens in a new window) about the file format for imports.</td><td></td></tr>
-    </table>
-    {% endif %}
-    {% endwith %}
+          {% if not story.story %}
+      <form class="story_button" method="GET"
+            action="{% url remove_story_revision id=story.id %}">
+        <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
+               value="Remove New Story">
+      </form>
+          {% else %}
+      <form class="story_button" method="POST"
+            action="{% url toggle_delete_story_revision id=story.id %}">
+            {% if story.deleted %}
+        <input type="submit" value="Restore">
+            {% else %}
+        <input type="submit" value="Mark to Delete">
+            {% endif %}
+      </form>
+          {% endif %}
+    </td>
+  </tr>
+        {% endfor %}
+</table>
+      {% endif %}
+
+      {% if changeset.issuerevisions.count %}
+        {% with changeset.issuerevisions.all.0 as issue_revision %}
+          {% if issue_revision.issue %}
+<table class="story_list">
+            {% if not changeset.storyrevisions.count %}
+  <tr colspan="2" align="left">
+  <form class="changeset" method="POST" enctype="multipart/form-data"
+                action="{% url import_issue issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+    <td>
+      Select file: <input type="file" name="flatfile">
+    </td>
+    <td>
+      <input type="submit" value="Import issue">
+    </td>
+  </form>
+  </tr>
+            {% endif %}
+  <tr colspan="2" align="left">
+  <form class="changeset" method="POST" enctype="multipart/form-data"
+            action="{% url import_stories issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+    <td>
+      Select file: <input type="file" name="flatfile">
+    </td>
+    <td>
+      <input type="submit" value="Import sequences">
+    </td>
+  </form>
+  </tr>
+  <tr>
+    <td class="import_info">
+      <a class="new_window" href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> (opens in a new window) about the file format for imports.
+    </td>
+    <td>
+    </td>
+  </tr>
+</table>
+          {% endif %}
+        {% endwith %}
+      {% endif %}
+
+      {% with changeset.comments as comments %}
+        {% include 'oi/bits/comments.html' %}
+      {% endwith %}
+      {% ifequal changeset.issuerevisions.count 1 %}
+<p>
+  <a href="{% url compare id=changeset.id %}">Compare changes</a> | 
+  <a class="new_window" href="{% url preview_revision model_name='issue',id=changeset.issuerevisions.all.0.id %}" target=_blank>Preview</a>
+  (opens in a new window)
+</p>
+      {% endifequal %}
+<form method="POST" action="{% url process id=changeset.id %}">
+  <table class="editing">
+    <tr>
+      <th> <label for="comments"> Comments:</label> </th>
+      <td>
+        <textarea name="comments" id="comments"></textarea>
+        <br>
+        Comments between the Indexer and Editor about the change.  These comments
+        are part of the public change history, but are not part of the regular
+        display.
+      </td>
+    </tr>
+  </table>
+  <input type="submit" name="submit" value="Submit changes for approval">
+  <input type="submit" name="discard" value="Discard all changes">
+</form>
     {% endif %}
 
-    {% with changeset.comments as comments %}
-    {% include 'oi/bits/comments.html' %}
-    {% endwith %}
-    {% ifequal changeset.issuerevisions.count 1 %}
-        <p>
-        <a href="{% url compare id=changeset.id %}">Compare changes</a> | 
-        <a class="new_window" href="{% url preview_revision model_name='issue',id=changeset.issuerevisions.all.0.id %}" target=_blank>Preview</a>
-        (opens in a new window)
-        </p>
-    {% endifequal %}
-    <form method="POST" action="{% url process id=changeset.id %}">
-    <table class="editing">
-      <tr>
-        <th> <label for="comments"> Comments:</label> </th>
-        <td>
-          <textarea name="comments" id="comments"></textarea>
-          <br>
-          Comments between the Indexer and Editor about the change.  These comments
-          are part of the public change history, but are not part of the regular
-          display.
-        </td>
-      </tr>
-    </table>
-    <input type="submit" name="submit" value="Submit changes for approval"></input>
-    <input type="submit" name="discard" value="Discard all changes"></input>
-    </form>
-  {% endif %}
-{% else %}
-  This change has being edited by {{ changeset.indexer.indexer }}.
-{% endifequal %}
+  {% else %}
+This change is being edited by {{ changeset.indexer.indexer }}.
+  {% endifequal %}
+
 {% else %} <!--- change is not OPEN --->
-        <p>
-        <a href="{% url compare id=changeset.id %}">Compare changes</a>
-        </p>
+<p>
+  <a href="{% url compare id=changeset.id %}">Compare changes</a>
+</p>
 {% endifequal %}
 </div>
 {% endblock %}

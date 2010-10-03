@@ -19,11 +19,11 @@ from django.contrib.auth.views import login
 from django.contrib.auth.decorators import login_required, permission_required
 
 from apps.gcd.models import *
-from apps.gcd.views import render_error, paginate_response
+from apps.gcd.views import ViewTerminationError, render_error, paginate_response
 from apps.gcd.views.details import show_indicia_publisher, show_brand, \
                                    show_series, show_issue
 from apps.gcd.views.covers import get_image_tag
-from apps.gcd.views.search import do_advanced_search, ViewTerminationError
+from apps.gcd.views.search import do_advanced_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
@@ -91,9 +91,11 @@ def reserve(request, id, model_name, delete=False):
         if model_name != 'brand':
             return render_error(request, 'Cannot delete this type of object.')
 
-        # In case someone else deleted while page was open or if it was added to issue
+        # In case someone else deleted while page was open or if it was added
+        # to issue
         if not display_obj.deletable():
-            return render_error(request, 'This object fails the requirements for deletion.')
+            return render_error(request,
+                                'This object fails the requirements for deletion.')
 
         changeset = _do_reserve(request.user, display_obj, model_name, True)
     else:
@@ -124,7 +126,8 @@ def reserve(request, id, model_name, delete=False):
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
 
-def _create_changeset(indexer, display_obj, model_name, comment, approved=False, delete=False):
+def _create_changeset(indexer, display_obj, model_name, comment,
+                      approved=False, delete=False):
     if delete:
         new_state = states.PENDING
     else:
@@ -235,7 +238,8 @@ def submit(request, id):
     changeset.submit(notes=request.POST['comments'])
     if changeset.approver is not None:
         if request.POST['comments']:
-            comment = u'The submission includes the comment:\n"%s"' % request.POST['comments'] 
+            comment = u'The submission includes the comment:\n"%s"' % \
+                      request.POST['comments'] 
         else:
             comment = ''   
         email_body = u"""
@@ -315,7 +319,8 @@ def retract(request, id):
           context_instance=RequestContext(request))
     changeset.retract(notes=request.POST['comments'])
 
-    return HttpResponseRedirect(urlresolvers.reverse('edit', kwargs={'id': changeset.id }))
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+                                                     kwargs={'id': changeset.id }))
 
 @permission_required('gcd.can_reserve')
 def discard(request, id):
@@ -1425,25 +1430,18 @@ def add_story(request, issue_id, changeset_id):
           'Only the reservation holder may add stories.')
     # Process add form if this is a POST.
     try:
+        # If we're adding stories we're guaranteed to only have one issue rev.
+        issue_revision = changeset.issuerevisions.all()[0]
         issue = Issue.objects.get(id=issue_id)
         if request.method != 'POST':
             seq = request.GET['added_sequence_number']
-            if seq != '':
-                try:
-                    seq_num = int(seq)
-                    initial = {'sequence_number': seq_num, 'no_editing' : True }
-                    if seq_num == 0:
-                        # Do not default other sequences, because if we do we
-                        # will get a lot of people leaving the default values
-                        # by accident.  Only sequence zero is predictable.
-                        initial['type'] = StoryType.objects.get(name='cover').id
-                        initial['no_script'] = True
-                    form = get_story_revision_form()(initial=initial)
-                except ValueError:
-                    return render_error(request,
-                                        "Sequence number must be a whole number.")
+            if seq == '':
+                return render_error(request,
+                  'You must supply a sequence number for the new story.',
+                  redirect=False)
             else:
-                form = get_story_revision_form()()
+                initial = _get_initial_add_story_data(request, issue_revision, seq)
+                form = get_story_revision_form()(initial=initial)
             return _display_add_story_form(request, issue, form, changeset_id)
 
         if 'cancel_return' in request.POST:
@@ -1454,7 +1452,12 @@ def add_story(request, issue_id, changeset_id):
         if not form.is_valid():
             return _display_add_story_form(request, issue, form, changeset_id)
 
+
         revision = form.save(commit=False)
+        stories = issue_revision.active_stories()
+        _reorder_children(request, issue_revision, stories, 'sequence_number',
+                          stories, commit=True, unique=False, skip=revision)
+
         revision.save_added_revision(changeset=changeset,
                                      issue=issue)
         if form.cleaned_data['comments']:
@@ -1466,9 +1469,55 @@ def add_story(request, issue_id, changeset_id):
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
 
+    except ViewTerminationError as vte:
+        return vte.response
+
     except (Issue.DoesNotExist, Issue.MultipleObjectsReturned):
         return render_error(request,
           'Could not find issue for id ' + issue_id)
+
+def _get_initial_add_story_data(request, issue_revision, seq):
+    # First, if we have an integer sequence number, make certain it's
+    # not a duplicate as we can't tell if they meant above or below.
+    # Since all sequence numbers in the database are integers,
+    # if we have a non-int then we know it's not a dupe.
+    try:
+        seq_num = int(seq)
+        if issue_revision.story_set.filter(sequence_number=seq_num)\
+                                   .count():
+            raise ViewTerminationError(render_error(request,
+              "New stories must be added with a sequence number that "
+              "is not already in use.  You may use a decimal number "
+              "to insert a sequence between two existing sequences, "
+              "or a negative number to insert before sequence zero.",
+              redirect=False))
+
+    except ValueError:
+        try:
+            float_num = float(seq)
+        except ValueError:
+            raise ViewTerminationError(render_error(request,
+              "Sequence number must be a number.", redirect=False))
+
+        # Now convert to the next int above the float.  If this
+        # is a duplicate that's OK because we know that the user
+        # intended the new sequence to go *before* the existing one.
+        # int(float) truncates towards zero, hence adding 1 to positive
+        # float values.
+        if float_num > 0:
+            float_num += 1
+        seq_num = int(float_num)
+
+    initial = {'no_editing' : True }
+    if seq_num == 0:
+        # Do not default other sequences, because if we do we
+        # will get a lot of people leaving the default values
+        # by accident.  Only sequence zero is predictable.
+        initial['type'] = StoryType.objects.get(name='cover').id
+        initial['no_script'] = True
+
+    initial['sequence_number'] = seq_num 
+    return initial
 
 def _display_add_story_form(request, issue, form, changeset_id):
     kwargs = {
@@ -1594,31 +1643,36 @@ def delete_ongoing(request, series_id):
 # Reordering
 ##############################################################################
 
-@permission_required('gcd.can_approve')
-def reorder_series(request, series_id):
-    series = get_object_or_404(Series, id=series_id)
-    if request.method != 'POST':
-        return render_to_response('oi/edit/reorder_series.html', 
-          { 'series': series,
-            'issue_list': [ (i, None) for i in series.issue_set.all() ] },
-          context_instance=RequestContext(request))
+def _process_reorder_form(request, parent, sort_field, child_name, child_class):
+    """
+    Pull out the order fields and process the child objects in a generic way.
+    """
 
     reorder_map = {}
     reorder_list = []
     sort_code_set = set()
+    input_regexp = re.compile(r'%s_(?P<%s_id>\d+)$' % (sort_field, child_name))
+    child_group = '%s_id' % child_name
+
     for input in request.POST:
-        m = re.match(r'sort_code_(?P<issue_id>\d+)$', input)
+        m = input_regexp.match(input)
         if m:
-            issue_id = int(m.group('issue_id'))
-            sort_code =  float(request.POST[input])
+            child_id = int(m.group(child_group))
+            try:
+                sort_code =  float(request.POST[input])
+            except ValueError:
+                raise ViewTerminationError(render_error(request,
+                  "%s must be a number", redirect=False))
+
             if sort_code in sort_code_set:
-                return render_error(request,
-                  "Cannot have duplicate sort codes: %f" % sort_code,
-                  redirect=False)
+                raise ViewTerminationError(render_error(request,
+                  "Cannot have duplicate %ss: %f" % (sort_field, sort_code),
+                  redirect=False))
+
             sort_code_set.add(sort_code)
 
-            reorder_map[issue_id] = sort_code
-            reorder_list.append(issue_id)
+            reorder_map[child_id] = sort_code
+            reorder_list.append(child_id)
 
     def _compare_sort_input(a, b):
         diff = reorder_map[a] - reorder_map[b]
@@ -1631,9 +1685,24 @@ def reorder_series(request, series_id):
     reorder_list.sort(_compare_sort_input)
 
     # Use in_bulk to ensure the specific issue order
-    issue_map = Issue.objects.in_bulk(reorder_list)
-    issues = [issue_map[issue_id] for issue_id in reorder_list]
-    return _reorder_series(request, series, issues)
+    child_map = child_class.objects.in_bulk(reorder_list)
+    return [child_map[child_id] for child_id in reorder_list]
+
+@permission_required('gcd.can_approve')
+def reorder_series(request, series_id):
+    series = get_object_or_404(Series, id=series_id)
+    if request.method != 'POST':
+        return render_to_response('oi/edit/reorder_series.html', 
+          { 'series': series,
+            'issue_list': [ (i, None) for i in series.issue_set.all() ] },
+          context_instance=RequestContext(request))
+
+    try:
+        issues = _process_reorder_form(request, series, 'sort_code',
+                                       'issue', Issue)
+        return _reorder_series(request, series, issues)
+    except ViewTerminationError as vte:
+        return vte.response
 
 @permission_required('gcd.can_approve')
 def reorder_series_by_key_date(request, series_id):
@@ -1679,36 +1748,14 @@ def _reorder_series(request, series, issues):
     or a plain list of issue objects.
     """
 
-    # There's a "unique together" constraint on series_id and sort_code in
-    # the issue table, which is great for avoiding nonsensical sort_code
-    # situations that we had in the old system, but annoying when updating
-    # the codes.  Get around it by shifing the numbers down to starting
-    # at one if they'll fit, or up above the current range if not.  Given that
-    # the numbers were all set to consecutive ranges when we migrated to this
-    # system, and this code always produces consecutive ranges, the chances that
-    # we won't have room at one end or the other are very slight.
-    min = series.issue_set.aggregate(Min('sort_code'))['sort_code__min']
-    max = series.issue_set.aggregate(Max('sort_code'))['sort_code__max']
-    num_issues = series.issue_set.count() 
-
-    if num_issues < min:
-        current_code = 1
-    elif num_issues <= sys.maxint - max:
-        current_code = max + 1
-    else:
-        # This should be extremely rare, so let's not bother to code our way out.
-        return render_error(request,
-          "Cannot find room for rearranged sort codes, please contact an admin",
-          redirect=False)
-
-    issue_list = []
-    for issue in issues:
-        if 'commit' in request.POST:
-            issue.sort_code = current_code
-            issue.save()
-        else:
-            issue_list.append((issue, current_code))
-        current_code +=1
+    # Note that _reorder_children actually performs the reordering, so it
+    # is necessary even if we do not use the issue_list that it returns.
+    # Do not move the call further down in this method.
+    try:
+        issue_list = _reorder_children(request, series, issues, 'sort_code',
+                                       series.issue_set, 'commit' in request.POST)
+    except ViewTerminationError as vte:
+        return vte.response
 
     if 'commit' in request.POST:
         set_series_first_last(series)
@@ -1720,6 +1767,111 @@ def _reorder_series(request, series, issues):
       { 'series': series,
         'issue_list': issue_list },
       context_instance=RequestContext(request))
+
+@permission_required('gcd.can_reserve')
+def reorder_stories(request, issue_id, changeset_id):
+    changeset = get_object_or_404(Changeset, id=changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may reorder stories.')
+
+    # At this time, only existing issues can have their stories reordered.
+    # This is analagous to issues needing to exist before stories can be added.
+    issue_revision = changeset.issuerevisions.get(issue=issue_id)
+    if request.method != 'POST':
+        return render_to_response('oi/edit/reorder_stories.html',
+          { 'issue': issue_revision, 'changeset': changeset },
+          context_instance=RequestContext(request))
+
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit', kwargs={ 'id': changeset_id }))
+
+    try:
+        stories = _process_reorder_form(request, issue_revision, 'sequence_number',
+                                       'story', StoryRevision)
+        _reorder_children(request, issue_revision, stories,
+                         'sequence_number', issue_revision.active_stories(),
+                         commit=True, unique=False)
+
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit', kwargs={ 'id': changeset_id }))
+
+    except ViewTerminationError as vte:
+        return vte.response
+
+def _reorder_children(request, parent, children, sort_field, child_set,
+                      commit, unique=True, skip=None):
+    """
+    Internal function implementing reordering in a generic way.
+    Note that "children" may be a list or a query_set, while "child_set"
+    must be the query set as accessed through the parent object.
+    This may be accessed in a non-standard way, which is why it must be
+    passed separately.
+
+    The "skip" parameter is new revision for which a gap should be left.
+    If there is already a revision with this sequence number, then the gap
+    must go before that revision.  The new revision's sort code should
+    be updated if necessary for it to fit into the gap properly.
+    """
+
+    # TODO:  Ideally we would have a mixin class, reorderable, that would
+    #        implement this, and all reorderables could be assumed to have
+    #        a sort_code field and a get_children method instead of all of
+    #        this getattr/setattr madness.  This is something we should look
+    #        into once the more urgent features are complete.  Our design
+    #        is far too procedural in this area.
+
+    if unique:
+        # There's a "unique together" constraint on series_id and sort_code in
+        # the issue table, which is great for avoiding nonsensical sort_code
+        # situations that we had in the old system, but annoying when updating
+        # the codes.  Get around it by shifing the numbers down to starting
+        # at one if they'll fit, or up above the current range if not.  Given that
+        # the numbers were all set to consecutive ranges when we migrated to this
+        # system, and this code always produces consecutive ranges, the chances
+        # that we won't have room at one end or the other are very slight.
+
+        # Use child_set because children may be a list, not a query set.
+        min = child_set.aggregate(Min(sort_field))['%s__min' % sort_field]
+        max = child_set.aggregate(Max(sort_field))['%s__max' % sort_field]
+        num_children = child_set.count() 
+
+        if num_children < min:
+            current_code = 1
+        elif num_children <= sys.maxint - max:
+            current_code = max + 1
+        else:
+            # This should be extremely rare, so let's not bother to
+            # code our way out.
+            raise ViewTerminationError(render_error(request,
+              "Can't find room for rearranged sort codes, please contact an admin",
+              redirect=False))
+    else:
+        # If there's no uniqueness constraints, always sort starting with zero.
+        current_code = 0
+
+    child_list = []
+    found_skip = False
+    for child in children:
+        if skip is not None:
+            current_sort_code = getattr(child, sort_field)
+            skip_code = getattr(skip, sort_field)
+            if not found_skip and current_code >= skip_code:
+                found_skip = True
+                setattr(skip, sort_field, current_code)
+                current_code += 1
+        if commit:
+            setattr(child, sort_field, current_code)
+            child.save()
+        else:
+            child_list.append((child, current_code))
+        current_code += 1
+    else:
+        if skip is not None:
+            setattr(skip, sort_field, current_code)
+
+    return child_list
 
 
 ##############################################################################

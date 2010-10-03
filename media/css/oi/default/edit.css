@@ -6,6 +6,14 @@ input.year {
     width: 6em;
 }
 
+th.sequence_number_col {
+    width: 4.5em;
+}
+
+input.sequence_number {
+    width: 4em;
+}
+
 .edit {
     margin-bottom: 1em;
 }
@@ -13,6 +21,7 @@ input.year {
 table.add_issues,
 table.comparison,
 table.comments,
+table.reorder_stories,
 table.story_list {
     border: double black 2px;
     border-collapse: collapse;
@@ -20,6 +29,7 @@ table.story_list {
 }
 
 table.add_issues th,
+table.reorder_stories th,
 table.comparison th,
 table.comments th {
     border: solid black 1px;
@@ -41,6 +51,7 @@ table.editing th {
 }
 
 table.add_issues td,
+table.reorder_stories td,
 table.comparison td,
 table.comments td {
     border: solid black 1px;
@@ -101,6 +112,7 @@ form.story_button {
     padding-left: 2em;
 }
 
+form.reorder_stories,
 form#review {
     margin-bottom: 1em;
 }

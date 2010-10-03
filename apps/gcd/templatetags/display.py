@@ -22,8 +22,12 @@ def absolute_url(item, additional=''):
                              (item.get_absolute_url(), esc(item)))
     return ''
 
-def show_story_short(story):
-    story_line = u'%s.' % story.sequence_number
+def show_story_short(story, no_number=False):
+    if no_number:
+        story_line = u''
+    else:
+        story_line = u'%s.' % story.sequence_number
+
     if story.title:
         if story.title_inferred:
             title = u'[%s]' % esc(story.title)
