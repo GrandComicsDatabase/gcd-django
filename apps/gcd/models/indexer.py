@@ -75,19 +75,3 @@ class Indexer(models.Model):
 
         return full_name
 
-class LoginRecord(models.Model):
-    """
-    Used to track IP addresses and other information upon logins.
-    The ip and user_agent fields may be NULL because the relevant headers
-    are not strictly required by HTTP.  We'd still like to know that
-    someone logged in even if they're not availble.
-    """
-    class Meta:
-        db_table = 'gcd_login_record'
-        app_label = 'gcd'
-
-    user = models.ForeignKey(User)
-    ip = models.IPAddressField(null=True, db_index=True)
-    user_agent = models.CharField(max_length=255, null=True)
-    created = models.DateTimeField(auto_now_add=True)
-
