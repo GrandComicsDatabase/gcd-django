@@ -100,6 +100,10 @@ urlpatterns = patterns('',
     url(r'^unmark_cover/(?P<cover_id>.+)/$', oi_covers.mark_cover, 
       {'marked': False}, name='unmark_cover'),
 
+    url(r'^ongoing/$', oi_views.ongoing),
+    url(r'^ongoing/(?P<series_id>\d+)/delete/$', oi_views.delete_ongoing,
+        name='delete_ongoing'),
+
     # Generic URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/reserve/$', oi_views.reserve,
         name='reserve_revision'),
@@ -126,10 +130,6 @@ urlpatterns = patterns('',
         name='compare_revision'),
     url(r'^(?P<model_name>\w+)/revision/(?P<id>\d+)/preview/$', oi_views.preview,
         name='preview_revision'),
-
-    url(r'^ongoing/$', oi_views.ongoing),
-    url(r'^ongoing/(?P<series_id>\d+)/delete/$', oi_views.delete_ongoing,
-        name='delete_ongoing'),
 
     # queue URLs
     url(r'^queues/editing/$', oi_views.show_queue,
