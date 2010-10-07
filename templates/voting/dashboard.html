@@ -11,6 +11,13 @@
 {% block view_body %}
 <div class="queues">
 <h2>My Ballots</h2>
+{% comment %}
+TODO: We really should make it so that if you can't vote on a topic it does not
+show up as a link, and possibly appears in a separate table.  But that's a bit
+complicated so for now don't bother- you'll get an error if you try to load
+a ballot you can't vote on.
+{% endcomment %}
+
 <table>
   <tr>
     <th> Topic </th>

@@ -33,17 +33,27 @@ have their votes invalidated.
 """
 
 EMAIL_ADD_AGENDA_ITEM = """
-The following item has been added to the %s Agenda, but is not yet
-open for discussion:
+A new item has been added to the %s Agenda, but is not yet
+open for discussion.  Please go to
 
 %s
+
+for details.
+"""
+
+EMAIL_OPEN_AGENDA_ITEM_GENERIC = """
+A new item on the %s Agenda is now open for discussion.  Please see
+
 %s
+
+for details.
 """
 
 EMAIL_OPEN_AGENDA_ITEM = """
 The following item on the %s Agenda is now open for discussion:
 
 %s
+
 %s
 """
 
@@ -61,7 +71,8 @@ class Agenda(models.Model):
 
     uses_tokens = models.BooleanField(default=False)
     allows_abstentions = models.BooleanField(default=False)
-    quorum = models.IntegerField(null=True, blank=True)
+    quorum = models.IntegerField(blank=True, default=1,
+      help_text='Quorum must always be at least 1')
     secret_ballot = models.BooleanField(default=False)
 
     subscribers = models.ManyToManyField(User, related_name='subscribed_agendas',
@@ -80,12 +91,29 @@ class AgendaItem(models.Model):
     notes = models.TextField(null=True, blank=True)
     owner = models.ForeignKey(User, null=True, blank=True,
                                     related_name='agenda_items')
-    open = models.BooleanField(default=False)
+
+    # NULL=pending, 1=open, 0=closed
+    # See also the open, pending and closed properties.
+    state = models.NullBooleanField(choices=((None, 'Pending'),
+                                             (True, 'Open'),
+                                             (False, 'Closed')))
     created = models.DateTimeField(auto_now_add=True, db_index=True, editable=False)
     updated = models.DateTimeField(null=True, auto_now=True, editable=False)
 
     subscribers = models.ManyToManyField(User, related_name='subscribed_items',
                                                editable=False)
+    @property
+    def open(self):
+        return self.state is True
+
+    @property
+    def pending(self):
+        return self.state is None
+
+    @property
+    def closed(self):
+        return self.state is False
+
     def __unicode__(self):
         return self.name
 
@@ -106,22 +134,29 @@ def agenda_item_pre_save(sender, **kwargs):
         notes = item.notes
     else:
         notes = u''
-    data = (item.agenda, item.name, notes)
 
     for list_config in item.agenda.agenda_mailing_lists.all():
-        email_body = None
         if list_config.on_agenda_item_open and newly_opened:
+            if list_config.is_primary:
+                subject="Open: %s" % item.name,
+                message = EMAIL_OPEN_AGENDA_ITEM % (item.agenda, item.name, notes)
+            else:
+                subject="New %s item open" % item.agenda
+                message = EMAIL_OPEN_AGENDA_ITEM_GENERIC % \
+                          (list_config.mailing_list.address,
+                           item.agenda.get_absolute_url())
             send_mail(from_email=settings.EMAIL_VOTING_FROM,
                       recipient_list=[list_config.mailing_list.address],
-                      subject="Open: %s" % item.name,
-                      message=EMAIL_OPEN_AGENDA_ITEM % data,
+                      subject=subject,
+                      message=message,
                       fail_silently=(not settings.BETA))
 
         elif list_config.on_agenda_item_add and newly_added:
             send_mail(from_email=settings.EMAIL_VOTING_FROM,
                       recipient_list=[list_config.mailing_list.address],
-                      subject="Added: %s" % item.name,
-                      message=EMAIL_ADD_AGENDA_ITEM % data,
+                      subject="New %s item added" % item.agenda,
+                      message=EMAIL_ADD_AGENDA_ITEM % (item.agenda,
+                                item.agenda.get_absolute_url()),
                       fail_silently=(not settings.BETA))
 
 models.signals.pre_save.connect(agenda_item_pre_save, sender=AgendaItem)
@@ -136,6 +171,7 @@ class AgendaMailingList(models.Model):
     on_agenda_item_open = models.BooleanField()
     on_vote_open = models.BooleanField()
     on_vote_close = models.BooleanField()
+    is_primary = models.BooleanField()
     reminder = models.BooleanField()
     display_token = models.BooleanField(default=False)
 
@@ -164,7 +200,7 @@ class Topic(models.Model):
     name = models.CharField(max_length=255)
     text = models.TextField(null=True, blank=True)
     agenda_items = models.ManyToManyField(AgendaItem, related_name='topics',
-      limit_choices_to={'open': True})
+      limit_choices_to={'state': True})
     agenda = models.ForeignKey(Agenda, related_name='topics')
     vote_type = models.ForeignKey(VoteType, related_name='topics',
       help_text='Pass / Fail types will automatically create their own Options '
@@ -174,6 +210,7 @@ class Topic(models.Model):
     second = models.ForeignKey(User, null=True, blank=True,
                                      related_name='seconded_topics')
 
+    open = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True, db_index=True, editable=False)
     deadline = models.DateTimeField(db_index=True)
 
@@ -185,6 +222,10 @@ class Topic(models.Model):
 
     subscribers = models.ManyToManyField(User, related_name='subscribed_topics',
                                                editable=False)
+
+    @property
+    def pending(self):
+        return not self.open
 
     def get_absolute_url(self):
         """
@@ -204,6 +245,10 @@ class Topic(models.Model):
         Returns the number of distinct voters who voted on the topic.
         Primarily used to determine if a quorum has been reached.
         """
+        if self.agenda.secret_ballot:
+            # We only use one receipt per ballot even if there are multiple
+            # votes for that ballot.
+            return Receipt.objects.filter(topic=self).count()
         return User.objects.filter(votes__option__topic=self).distinct().count()
 
     def __unicode__(self):
@@ -219,24 +264,14 @@ def topic_pre_save(sender, **kwargs):
         salt = hashlib.sha1(str(random())).hexdigest()[:5]
         topic.token = hashlib.sha1(salt + topic.name).hexdigest()
 
-def topic_post_save(sender, **kwargs):
-    topic = kwargs['instance']
-    if topic.vote_type.name == TYPE_PASS_FAIL and topic.options.count() == 0:
-        topic.options.create(name='For', ballot_position=0)
-        topic.options.create(name='Against', ballot_position=1)
-        if topic.agenda.allows_abstentions:
-            topic.options.create(name='Abstain', ballot_position=2)
+    if topic.id is not None:
+        old_topic = Topic.objects.get(pk=topic.id)
+        opened = not old_topic.open and topic.open
+    else:
+        opened = topic.open
 
-    # TODO: This is an unfriendly way to handle the situation, but since the
-    #       error will only occur in the admin UI, it is sufficient for now.
-    for item in topic.agenda_items.all():
-        if item not in topic.agenda.items.all():
-            raise ValueError(
-              "Only items from this topic's agenda may be attached to this topic.")
-
-    if not kwargs['created']:
-        # We're done, the rest of the method handles new objects so
-        # let's not deal with an extra indentation level.
+    if not opened:
+        # Don't send mail yet.
         return
 
     # Send mail that we have a new ballot up for vote.
@@ -256,6 +291,14 @@ def topic_post_save(sender, **kwargs):
                       subject="GCD Ballot Open: %s" % topic,
                       message=email_body,
                       fail_silently=(not settings.BETA))
+
+def topic_post_save(sender, **kwargs):
+    topic = kwargs['instance']
+    if topic.vote_type.name == TYPE_PASS_FAIL and topic.options.count() == 0:
+        topic.options.create(name='For', ballot_position=0)
+        topic.options.create(name='Against', ballot_position=1)
+        if topic.agenda.allows_abstentions:
+            topic.options.create(name='Abstain', ballot_position=2)
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)
 models.signals.post_save.connect(topic_post_save, sender=Topic)
@@ -278,8 +321,17 @@ class Option(models.Model):
     def __unicode__(self):
         return self.name
 
+class Receipt(models.Model):
+    """
+    Tracks which users have voted for a given topic when there is a secret ballot.
+    """
+    topic = models.ForeignKey(Topic, related_name='receipts')
+    voter = models.ForeignKey(User, related_name='receipts')
+    vote_key = models.CharField(max_length=64)
+
 class Vote(models.Model):
-    voter = models.ForeignKey(User, related_name='votes')
+    # voter is NULL when the vote is secret.
+    voter = models.ForeignKey(User, null=True, related_name='votes')
     option = models.ForeignKey(Option, related_name='votes')
     rank = models.IntegerField(null=True)
     created = models.DateTimeField(auto_now_add=True, editable=False)
@@ -290,5 +342,4 @@ class Vote(models.Model):
         if self.rank is not None:
             return string + (' %d' % self.rank)
         return string
-
 

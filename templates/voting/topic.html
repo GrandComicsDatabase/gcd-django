@@ -20,15 +20,56 @@
     </ul>
   </dd>
   <dt>Text:</dt>
-  <dd>{{ topic.text }}</dd>
+  <dd>{{ topic.text|default:'[no text]'|linebreaksbr }}</dd>
 </dl>
 
-{% if voted or closed %}
+{% if voted or closed or topic.pending %}
 <p>
+  {% if voted %}
 Thank you for voting on this topic! 
-  {% if not closed %}
+<p>
+    {% if topic.agenda.secret_ballot %}
+This is a secret ballot, and the voting system does not keep direct links between
+voters and votes in order to preserve secrecy.  You will receive an email
+confirming your vote, with data that the voting administrator can use to identify
+your vote if there is any problem with it.
+    {% else %}
+Your current vote{{ votes.count|pluralize }}:
+      {% if topic.vote_type.max_votes == 1 %}
+{{ votes.all.0 }}
+<p>
+      {% else %}
+        {% if topic.vote_type.max_votes > topic.vote_type.max_winners %}
+<table>
+  <tr>
+    <th> Option <th>
+    <th> Rank </th>
+  </tr>
+          {% for vote in votes %}
+  <tr>
+    <td> {{ vote }} </td>
+    <td> {{ vote.rank }} </td>
+  </tr>
+          {% endfor %}
+</table>
+        {% else %}
+<ul>
+          {% for vote in votes %}
+  <li> {{ vote }}
+          {% endfor %}
+</ul>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    {% if not closed %}
 If you wish to change your vote, please contact an administrator.  Vote
 changing will be implemented in the future.
+    {% endif %}
+  {% endif %}
+  {% if topic.pending %}
+This topic is awaiting verification by a vote administrator.  Email will
+be sent to the appropriate list when it is available for voting.
   {% endif %}
 </p>
 {% else %}
@@ -42,21 +83,27 @@ changing will be implemented in the future.
   <label for="token">Token:</label>
   <input type="text" class="wide" name="token" id="token"></input>
   {% endif %}
-  {% for option in topic.options.all %}
-    {% ifequal topic.vote_type.max_votes 1 %}
+  {% with topic.vote_type.max_votes as max_votes %}
+    {% for option in topic.options.all %}
+      {% if max_votes <= topic.vote_type.max_winners %}
   <div class="option">
-    <input type="radio" name="option" value="{{ option.id }}">{{ option.name }}</input>
-      {% if option.text %}
+        {% if max_votes == 1 %}
+    <input type="radio" name="option" value="{{ option.id }}">{{ option.name }}
+        {% else %}
+    <input type="checkbox" name="option" value="{{ option.id }}">{{ option.name }}
+        {% endif %}
+        {% if option.text %}
     <div class="option_text">{{ option.text }}</div>
-      {% endif %}
+        {% endif %}
   </div>
-    {% endifequal %}
+      {% endif %}
   {% empty %}
     <div class="important">
       ERROR!  No options have been defined for this ballot!
       Please contact the voting administrator.
     </div>
-  {% endfor %}
+    {% endfor %}
+  {% endwith %}
   <input id="vote" type="submit" value="Vote"/>
 </form>
 {% endif %}

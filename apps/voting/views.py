@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime
 
 from django.conf import settings
@@ -24,8 +25,25 @@ The results are:
 Please go to %s for more details.
 """
 
+EMAIL_RECEIPT = """
+This is your reciept for your vote in the secret ballot election for %s.
+You voted for:
+%s
+
+If anything has gone wrong with your vote, or if the election allows you to
+change your vote and you wish to change it, you will need to provide the
+following two pieces of information to the voting administrator in order to
+match account to your votes.  Note that changing your vote may require you to
+disclose your vote choices to the voting administrator.
+
+secret key:
+'%s'
+vote id:
+'%s'
+"""
+
 def dashboard(request):
-    topics = Topic.objects.filter(deadline__gte=datetime.now())
+    topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True)
 
     # Permissions are returned as appname.codename by get_all_permissions().
     if request.user.is_anonymous:
@@ -74,7 +92,7 @@ def _calculate_results(unresolved):
         options = topic.counted_options().filter(num_votes__gt=0)
         num_options = options.count()
 
-        if topic.vote_type.max_votes == 1:
+        if topic.vote_type.max_votes <= topic.vote_type.max_winners:
             # Flag ties that affect the validity of the results,
             # and set any tied options after the valid winning range
             # to a "winning" result as well, indicating that they are all
@@ -137,32 +155,84 @@ def _send_result_email(topic):
 def topic(request, id):
     topic = get_object_or_404(Topic, id=id)
 
-    if topic.options.filter(votes__voter=request.user).count():
-        voted = True
-    else:
-        voted = False
+    voted = False
+    votes = []
+    if not request.user.has_perm('gcd.can_vote'):
+        return render_error(request,
+                            'You do not have permission to vote on this topic.')
+        
+    votes = topic.options.filter(votes__voter=request.user)
+    receipts = topic.receipts.filter(voter=request.user)
+    voted = votes.count() > 0 or receipts.count() > 0
 
     return render_to_response('voting/topic.html',
                               {
                                 'topic': topic,
                                 'voted': voted,
+                                'votes': votes,
                                 'closed': topic.deadline < datetime.now(),
                               },
                               context_instance=RequestContext(request))
 
-@login_required
+@permission_required('gcd.can_vote')
 def vote(request):
-    option = get_object_or_404(Option, id=request.POST['option'])
-    if 'rank' in request.POST:
-        rank = request.POST['rank'].strip()
-    else:
-        rank = None
-    if option.topic.token is not None and \
-       request.POST['token'].strip() != option.topic.token:
+    if request.method != 'POST':
         return render_error(request,
-          'You must supply an authorization token in order to vote on this topic.')
-    vote = Vote(option=option, voter=request.user, rank=rank)
-    vote.save()
+                            'Please access this page through the correct form.')
+
+    first = True
+    topic = None
+    voter = None
+    option_params = request.POST.getlist('option')
+    options = Option.objects.filter(id__in=option_params)
+
+    # Get all of these now because we may need to iterate twice.
+    options = options.select_related('topic__agenda', 'topic__vote_type').all()
+    for option in options:
+        if first is True:
+            first = False
+            topic = option.topic
+
+            if topic.token is not None and \
+               request.POST['token'].strip() != topic.token:
+                return render_error(request,
+                  'You must supply an authorization token in order '
+                  'to vote on this topic.')
+
+            if len(option_params) > topic.vote_type.max_votes:
+                plural = 's' if len(option_params) > 1 else ''
+                return render_error(request,
+                  'You may not vote for more than %d option%s' %
+                  (topic.vote_type.max_votes, plural))
+
+            if not topic.agenda.secret_ballot:
+                voter = request.user
+
+        # Ranked voting not yet supported (no UI) so just set rank to None.
+        vote = Vote(option=option, voter=voter, rank=None)
+        vote.save()
+
+    if topic.agenda.secret_ballot:
+        # We email the salt and the vote string to the voter, and store
+        # the receipt key in the database.  This way they can prove that
+        # they voted a particular way by sending us back those two values,
+        # and repair or change a vote.
+        vote_ids = ', '.join(option_params)
+        salt = hashlib.sha1(str(random())).hexdigest()[:5]
+        key = hashlib.sha1(salt + vote_ids).hexdigest()
+
+        receipt = Receipt(voter=request.user,
+                          topic=option.topic,
+                          vote_key=key)
+        receipt.save()
+
+        vote_values = "\n".join([unicode(o) for o in options])
+        send_mail(from_email=settings.EMAIL_VOTING_FROM,
+                  recipient_list=[request.user.email],
+                  subject="GCD secret ballot receipt",
+                  message=EMAIL_RECEIPT % (topic, vote_values, salt, vote_ids),
+                  fail_silently=(not settings.BETA))
+
     return HttpResponseRedirect(urlresolvers.reverse('ballot',
       kwargs={ 'id': option.topic.id }))
 
@@ -173,13 +243,18 @@ def agenda(request, id):
     open = agenda.topics.exclude(past_due)
     closed = agenda.topics.filter(past_due)
 
+    pending_items = agenda.items.filter(state__isnull=True)
+    open_items = agenda.items.filter(state=True)
+
     _calculate_results(closed.filter(result_calculated=False))
 
     return render_to_response('voting/agenda.html',
                               {
                                 'agenda': agenda,
                                 'closed_topics': closed.order_by('-deadline'),
-                                'open_topics': open.order_by('-deadline')
+                                'open_topics': open.order_by('-deadline'),
+                                'open_items': open_items,
+                                'pending_items': pending_items,
                               },
                               context_instance=RequestContext(request))
 

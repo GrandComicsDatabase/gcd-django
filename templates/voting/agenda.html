@@ -18,6 +18,34 @@
   <dd> {{ agenda.secret_ballot|yesno:"Secret,Public" }} </dd>
 </dl>
 
+<h3>Agenda Items</h3>
+<table>
+  <tr>
+    <th> State </th>
+    <th> Item </th>
+    <th> Owner </th>
+    <th> Notes </th>
+  </tr>
+{% for item in open_items %}
+  <tr>
+    <td> Open </td>
+    <td> {{ item.name }} </td>
+    <td> {{ item.owner.indexer }} </td>
+    <td> {{ item.notes|linebreaksbr }} </td>
+  </tr>
+{% endfor %}
+{% for item in pending_items %}
+  <tr>
+    <td> Pending </td>
+    <td> {{ item.name }} </td>
+    <td> {{ item.owner.indexer }} </td>
+    <td> {{ item.notes|linebreaksbr }} </td>
+  </tr>
+{% endfor %}
+
+</table>
+
+<h3> Ballots </h3>
 <table>
   <tr>
     <th> Topic </th>
@@ -30,11 +58,12 @@
   </tr>
 {% empty %}
   <tr>
-    <td colspan="2">No open topics</td>
+    <td colspan="2">No topics open for voting</td>
   </tr>
 {% endfor %}
 </table>
-<p>
+
+<h3> Results </h3>
 <table>
   <tr>
     <th> Topic </th>

@@ -55,3 +55,7 @@ tr.invalid {
     background-color: tomato;
 }
 
+h2, h3, h4 {
+    clear: both;
+}
+
