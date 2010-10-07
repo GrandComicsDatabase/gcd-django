@@ -1,0 +1,150 @@
+This is a new implementation of the Grand Comics Database in Python
+using the Django framework.
+
+For basic information, see the README file in the project's root directory.
+This file explains the specifics of setting up a development environment
+on MacOS X or Linux.  Note that your Linux distribution's package management
+system may be able to handle much of the installation work for you.
+
+This document assumes you want to run the "trunk" version (not that there is a
+directory that's actually called "trunk", it's just the version that's not under
+"branches").  If you want to run the current production branch, please inquire
+as to which branch is current at http://groups.google.com/group/gcd-tech/
+
+To run:
+
+0.  You'll need Python.  We are currently using Python 2.6, so you'll want to make
+sure that's the version you have.  There is currently no supported version of the
+MySQLdb module for Python 2.7.
+
+1.  Install the most recent point release on the Django 1.2.x line.
+See http://dev.comics.org/bugs/show_bug.cgi?id=469 for the status of moving to 1.3,
+which was not yet out at the time of this writing.
+
+2.  Install MySQL (version 5.0.77 is the version currently in production, but
+5.1.x releases work fine in development and we intend to migrate to that release
+line when we get a chance) and load a data dump from http://www.comics.org/download/
+
+3.  Install various dependent packages:
+
+3.1:  Install the MySQLdb Python module from
+http://sourceforge.net/projects/mysql-python
+using easy_install, your favorite package management system, or just downloading the
+tar file.  Be certain that however you get it, you get 1.2.3 or higher for
+Python 2.6 support.
+
+RPM: MySQL-python
+Debian package: python-mysqldb
+
+There seems to be a MacOS package at 
+http://mac.softpedia.com/get/Developer-Tools/MySQL-Python.shtml
+but we have not tested it, nor do we know anything about this site.
+Nor have we tested any MacOS package management installation, since the GCD
+developer who works on MacOS tends to just use easy_install.
+
+3.2:  Install the Python Imaging Library (PIL), which for some annoying
+reason never works with easy_install.  We are using version 1.1.7 in production,
+although you can get away with 1.1.6 if you're not working with the covers code.
+See either of these sites:
+http://pypi.python.org/pypi/PIL/
+http://www.pythonware.com/products/pil/
+RPM: python-imaging
+Debian package: python-imaging
+
+There are probably Linux and other distribution packages out there, but you might
+just have to download and compile it.  Don't worry about getting it to support all
+of the different formats (unless you plan on working on image processing
+specifically, in which case ask which ones are needed at
+http://groups.google.com/group/gcd-tech/).
+
+3.3:  Install django_compressor, which does work with easy_install:
+http://pypi.python.org/pypi/django_compressor
+No known RPM or Debian packages.
+
+3.4:  Install BeautifulSoup, which does work with easy_install:
+http://pypi.python.org/pypi/BeautifulSoup
+RPM: python-beautifulsoup
+Debian package: python-beautifulsoup
+
+3.5:  Install CSSTidy, which should exist as a package for most Linux distributions
+(and possibly for MacPorts as well):
+http://csstidy.sourceforge.net/
+RPM: csstidy
+Debian package: csstidy
+
+3.6.1:  Install the ICU library, which is C/C++ and may require compilation.
+This builds fine on Mac OS X, and pre-built packages should exist for most
+linux distributions:
+http://site.icu-project.org/
+RPM: libicu
+Debian package: libicu40
+
+3.6.2:  After installing the ICU libraries, install PyICU, the Python bindings:
+http://pypi.python.org/pypi/PyICU
+This is installable via easy_install on MacOS X and CentOS.
+RPM: pyicu (but yum doesn't seem to find it?  Possibly due to config weirdness.)
+Debian package: python-pyicu
+
+4.  If you're reading this from the wiki, you'll now want to check out the code
+(which includes this file).  The sourceforge page is
+http://sourceforge.net/projects/grandcomic-book/ and is linked from
+http://dev.comics.org/
+To check out the entire tree, run:
+
+svn co https://grandcomic-book.svn.sourceforge.net/svnroot/grandcomic-book grandcomic-book
+
+5.  Put the pydjango/ directory of this project on your Python path.  This is the
+directory containing the development trunk of the active project. See 
+http://docs.comics.org/wiki/Developer%27s_Guide_to_the_Code
+for more information on the other directories and branches.
+
+6.  Open up pydjango/settings.py and take a look at it.  If you need to change
+any settings, such as the database settings, create a file called settings_local.py
+in the same directory and put the changed or added settings in that file.  They
+will automatically override the settings in the regular settings.py file.
+Our SVN ignore settings will ignore the settings_local.py file so you won't get
+annoying question mark entries when you run svn status.
+
+By default, we assume that the database is called gcdonline and it can
+be accessed by a user called gcdonline with no passwords.  If you set
+your database up differently, look for settings that start with
+DATABASE and override them appropriately.  http://www.djangoproject.com/ has lots
+of excellent documentation of all of the available settings.
+
+7.  From the pydjango/ directory, run
+
+python manage.py syncdb
+
+which will create the various tables that are not present in the data dump and
+load data in tables that need them.
+
+8.  Assuming you are running the trunk release (the one in pydjango/ instead of
+in something like branches/something/pydjango/ ) you may need to migrate your
+database dump from the production form to the current trunk form.  See
+http://dev.comics.org/bugs/show_bug.cgi?id=474 to find out if a script
+has been written for this.  If not, please inquire at
+http://groups.google.com/group/gcd-tech/ about what must be done.  Or
+if you're feeling exceptionally brave you can try the next step and attempt
+to debug things by matching up database scripts.  We do not recommend this :-)
+
+Be aware that the migration script, once it exists, may take quite some time
+to run- possibly longer than the data took to load, depending on what sort
+of table changes are being made.
+
+9.  Finally, run:
+
+python manage.py runserver
+
+and take a look at http://127.0.0.1:8000/
+
+If you don't get any page at all, check http://www.djangoproject.com/ if it
+looks like Django isn't configured correctly, or
+http://dev.comics.org/ and/or http://groups.google.com/group/gcd-tech/
+if it appears to be a code problem.
+
+8.  When you start making changes, go to the wiki at http://docs.comics.org/
+for instructions on how to get code reviewed before checkin.  You'll need
+to set up an account with our Review Board instance and get added to the
+SourceForge project with write permissions, as noted on the wiki.  Submissions that
+do not first go through code review will be reverted without notice.
+
