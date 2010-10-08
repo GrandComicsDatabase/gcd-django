@@ -11,6 +11,8 @@ from apps.gcd.forms.accounts import PasswordResetForm
 admin.autodiscover()
 
 urlpatterns = patterns('',
+    url(r'^privacy/$', direct_to_template,
+        { 'template': 'gcd/privacy.html' }, name='privacy'),
     (r'^admin/', include(admin.site.urls)),
 
     # Account management

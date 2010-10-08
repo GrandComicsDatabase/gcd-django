@@ -1,0 +1,25 @@
+{% extends "gcd/base_view.html" %}
+
+{% block title %}GCD Privacy Policy{% endblock %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}/css/gcd/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Privacy Policy</h1>
+<p>
+The Grand Comics Database <strong>does not share</strong>
+your information with any third party.
+<p>
+We ask for personal information such as your email address when you register.
+This information is only used to provide functionality to you such as sending
+you feedback on any data contributions that you make to the site.  You may edit
+this information on your <a href="{% url default_profile %}">profile page</a>.
+<p>
+Please <a href="mailto:gcd-contact@googlegroups.com">email us</a> if you have
+any concerns about what we collect.
+</p>
+{% endblock %}
+
