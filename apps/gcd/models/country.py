@@ -4,9 +4,7 @@ class Country(models.Model):
     class Meta:
         app_label = 'gcd'
         ordering = ('name',)
-
-    class Admin:
-        pass
+        verbose_name_plural = 'Countries'
 
     code = models.CharField(max_length=10)
     name = models.CharField(max_length=255)

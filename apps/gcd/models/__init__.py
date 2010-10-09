@@ -3,7 +3,7 @@
 from country import Country
 from language import Language
 from publisher import Publisher, IndiciaPublisher, Brand
-from series import Series
+from series import Classification, Series
 from issue import Issue
 from story import StoryType, Story
 from cover import Cover

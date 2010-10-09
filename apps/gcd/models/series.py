@@ -5,6 +5,23 @@ from apps.gcd.models.country import Country
 from apps.gcd.models.language import Language
 from apps.gcd.models.publisher import Publisher
 
+class Classification(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        ordering = ('sort_code',)
+    name = models.CharField(max_length=255, db_index=True)
+    is_singular = models.BooleanField(default=False,
+      help_text='True if a series in this category may only ever consist of a '
+                'single item')
+    is_book_like = models.BooleanField(default=False,
+      help_text='True if a series in this category is more like a book than like '
+                'a magazine, newspaper insert or other form of publication. ')
+    notes = models.TextField(blank=True)
+    sort_code = models.IntegerField(unique=True)
+
+    def __unicode__(self):
+        return self.name
+
 class Series(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -12,6 +29,7 @@ class Series(models.Model):
     
     # Core series fields.
     name = models.CharField(max_length=255, db_index=True)
+    classification = models.ForeignKey(Classification, null=True, blank=True)
     format = models.CharField(max_length=255)
     notes = models.TextField()
 

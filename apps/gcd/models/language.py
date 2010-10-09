@@ -5,9 +5,6 @@ class Language(models.Model):
         app_label = 'gcd'
         ordering = ('name',)
 
-    class Admin:
-        pass
-
     code = models.CharField(max_length=10)
     name = models.CharField(max_length=255)
 

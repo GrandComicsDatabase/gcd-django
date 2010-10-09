@@ -507,7 +507,8 @@ class Revision(models.Model):
         prev_rev = None
         if self.source is not None:
             prev_revs = self.source.revisions \
-              .exclude(changeset__state=states.DISCARDED).filter(modified__lt=self.modified)
+              .exclude(changeset__state=states.DISCARDED) \
+              .filter(modified__lt=self.modified)
             if prev_revs.count() > 0:
                 # normal case, all revisions accounted for back to object creation
                 prev_rev = prev_revs[0]
@@ -1192,6 +1193,7 @@ class SeriesRevisionManager(RevisionManager):
 
           # copied fields:
           name=series.name,
+          classification=series.classification,
           format=series.format,
           notes=series.notes,
           year_began=series.year_began,
@@ -1224,6 +1226,7 @@ class SeriesRevision(Revision):
     reservation_requested = models.BooleanField(default=0)
 
     name = models.CharField(max_length=255, blank=True)
+    classification = models.ForeignKey(Classification, null=True, blank=True)
     format = models.CharField(max_length=255, blank=True)
     year_began = models.IntegerField(blank=True)
     year_ended = models.IntegerField(null=True, blank=True)
@@ -1308,6 +1311,7 @@ class SeriesRevision(Revision):
             return
 
         series.name = self.name
+        series.classification = self.classification
         series.format = self.format
         series.notes = self.notes
         series.year_began = self.year_began
@@ -1319,7 +1323,12 @@ class SeriesRevision(Revision):
 
         series.country = self.country
 
-        if series.language != self.language:
+        if series.language_id is None:
+            update_count('series', 1, language=self.language)
+            if series.issue_count:
+                raise NotImplementedError("New series can't have issues!")
+
+        elif series.language != self.language:
             update_count('series', -1, language=series.language)
             update_count('series', 1, language=self.language)
             if series.issue_count:
