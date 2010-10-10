@@ -60,6 +60,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.admin',
     'django.contrib.humanize',
+    'django.contrib.sites',
     'apps.gcd',
     'apps.oi',
     'apps.voting',
@@ -131,6 +132,11 @@ NEW_COVERS_DIR = '/img/gcd/new_covers/'
 
 BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com')
 
+# site management defaults- change these in settings_local.py as needed.
+SITE_DOWN = False
+SITE_DOWN_MESSAGE = ''
+SITE_BACK_UP_AT = ''
+
 # data dump directories, relative to MEDIA_ROOT
 DUMP_DIR = 'dumps'
 
@@ -138,7 +144,12 @@ DUMP_DIR = 'dumps'
 # dump (or similar) file again, in minutes.
 DOWNLOAD_DELTA = 5
 
-COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter','compressor.filters.csstidy.CSSTidyFilter']
+COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
+                        'compressor.filters.csstidy.CSSTidyFilter']
+
+ABSOLUTE_URL_OVERRIDES = {
+    'auth.user': lambda o: "/accounts/profile/%d/" % o.id, 
+}
 
 # get local settings, will override settings from here
 try:

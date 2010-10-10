@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.views.generic.simple import direct_to_template
+from django.shortcuts import redirect
 
 from apps.gcd.views import accounts as account_views
 from apps.gcd.views import error_view
@@ -10,13 +11,25 @@ from apps.gcd.forms.accounts import PasswordResetForm
 
 admin.autodiscover()
 
-urlpatterns = patterns('',
+# Note that the structure of the various pattern lists is to facilitate
+# future implementation of a read-only mode for the site.  Such a mode
+# would use the basic_patterns variable and include the gcd app, but not
+# use the account_patterns or include the other apps.
+
+basic_patterns = patterns('',
+    # Read-only URLS: basic messages and the gcd display pages.
     url(r'^privacy/$', direct_to_template,
         { 'template': 'gcd/privacy.html' }, name='privacy'),
-    (r'^admin/', include(admin.site.urls)),
 
-    # Account management
+    url(r'gcd-error/$', error_view, name='error'),
 
+    url(r'^donate/$', direct_to_template,
+        { 'template': 'gcd/donate/donate.html' }, name='donate'),
+    url(r'^donate/thanks/$', direct_to_template,
+        { 'template': 'gcd/donate/thanks.html' }, name='donate_thanks'),
+)
+
+account_patterns = patterns('',
     # Logout will only look for a 'next_page' parameter in GET, but
     # GET requests should not have side effects so use a wrapper to
     # pull from POST.
@@ -73,20 +86,29 @@ urlpatterns = patterns('',
     url(r'^accounts/reset/done/$', 
         auth_views.password_reset_complete,
         { 'template_name': 'gcd/accounts/password_reset_complete.html'}),
-
-    url(r'gcd-error/$', error_view, name='error'),
-
-    url(r'^donate/$', direct_to_template,
-        { 'template': 'gcd/donate/donate.html' }, name='donate'),
-    url(r'^donate/thanks/$', direct_to_template,
-        { 'template': 'gcd/donate/thanks.html' }, name='donate_thanks'),
-
-    (r'^', include('apps.gcd.urls')),
-    (r'^', include('apps.oi.urls')),
-    (r'^voting/', include('apps.voting.urls')),
 )
+
+if settings.SITE_DOWN:
+    urlpatterns = patterns('',
+        (r'^site-down/$', direct_to_template, {
+            'template': 'site_down.html',
+            'extra_context': { 'settings': settings }
+         }),
+        (r'^.*$', lambda request: redirect('/site-down/')),
+    )
+
+else:
+    urlpatterns = (basic_patterns +
+                   patterns('', (r'^', include('apps.gcd.urls'))) +
+                   account_patterns +
+                   patterns('', (r'^', include('apps.oi.urls')),
+                                (r'^voting/', include('apps.voting.urls')),
+                                (r'^admin/', include(admin.site.urls)),
+                           )
+                  )
 
 if settings.DEBUG:
     urlpatterns += patterns('',
         (r'site_media/(?P<path>.*)$', 'django.views.static.serve',
          { 'document_root' : settings.MEDIA_ROOT }))
+

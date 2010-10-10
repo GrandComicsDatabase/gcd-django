@@ -1,0 +1,23 @@
+<html>
+<head>
+<title>GCD Down for Upgrade</title>
+</head>
+<body>
+<h1>The GCD is Down for Maintenance</h1>
+<p>
+{{ settings.SITE_DOWN_MESSAGE }}
+</p>
+<p>
+{% if settings.SITE_BACK_UP_AT %}
+We expect the site to be back up at {{ settings.SITE_BACK_UP_AT }}.  Please
+check back for updates.
+{% else %}
+We are working to bring the site back online as soon as possible.
+{% endif %}
+<p>
+thanks,<br>
+-The GCD Tech Team
+</p>
+
+</body>
+
