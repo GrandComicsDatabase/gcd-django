@@ -11,11 +11,11 @@ to have a limited lifespan anyway.
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/default.css"/>
+        href="{{ MEDIA_URL }}css/gcd/default.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/gcd/default/accounts.css"/>
+        href="{{ MEDIA_URL }}css/gcd/default/accounts.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}/css/oi/default.css"/>
+        href="{{ MEDIA_URL }}css/oi/default.css"/>
 {% endblock %}
 
 {% block title %} GCD :: {{ profile_user.indexer }} :: Profile {% endblock %}
@@ -41,6 +41,8 @@ to have a limited lifespan anyway.
   {{ form.first_name|show_form }}
   {{ form.last_name|show_form }}
   {{ form.notify_on_approve|show_form }}
+{% comment %} <br> due to label being on two lines, other solutions ? --> {% endcomment %}
+  {{ form.collapse_compare_view|show_form }}<br>
   {{ form.country|show_form }}
   {{ form.languages|show_form }}
   {{ form.interests|show_form }}

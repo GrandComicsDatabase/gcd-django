@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 from datetime import date, timedelta
 
@@ -44,7 +45,10 @@ class AccountForm(forms.Form):
                  u'This helps us connect you with an Editor knowledgeable in '
                  u'your area to help you learn our indexing system.'))
 
-    notify_on_approve = forms.BooleanField(label="Approval e-mails", required=False)
+    notify_on_approve = forms.BooleanField(label="Approval e-mails",
+                                           required=False)
+    collapse_compare_view = forms.BooleanField(
+      label="Collapse compare view by default", required=False)
 
     def clean(self):
         cd = self.cleaned_data

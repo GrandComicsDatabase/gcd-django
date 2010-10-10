@@ -453,8 +453,13 @@ def assign(request, id):
                 # Someone is already reviewing this.  Unlikely, and just let it go.
                 pass
 
+    if changeset.approver.indexer.collapse_compare_view:
+        option = '?collapse=1'
+    else:
+        option = ''
     return HttpResponseRedirect(urlresolvers.reverse('compare', 
-                                             kwargs={'id': changeset.id }))
+                                             kwargs={'id': changeset.id }) \
+                                + option)
 
 @permission_required('gcd.can_approve')
 def release(request, id):

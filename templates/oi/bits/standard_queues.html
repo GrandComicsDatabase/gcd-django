@@ -24,7 +24,7 @@
   <tr>
     <td>
         {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
-      <a href="{% url compare id=changeset.id %}">{{ changeset.queue_name }}</a>
+      <a href="{% url compare id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">{{ changeset.queue_name }}</a>
         {% else %}
       <a href="{% url edit id=changeset.id %}">{{ changeset.queue_name }}</a>
         {% endif %}

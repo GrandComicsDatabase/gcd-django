@@ -42,7 +42,7 @@ class IndexerAdmin(admin.ModelAdmin):
             'fields': ('country', 'languages', 'interests', 'deceased'),
         }),
         ('Preferences', {
-            'fields': ('notify_on_approve',),
+            'fields': ('notify_on_approve', 'collapse_compare_view'),
         }),
     )
     filter_horizontal = ('languages',)

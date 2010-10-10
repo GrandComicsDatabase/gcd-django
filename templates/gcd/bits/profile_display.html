@@ -6,6 +6,7 @@
 {% if user|can_view_profile_details:profile_user %}
   <li> Email: <a href="mailto:{{ profile_user.email }}">{{ profile_user.email }}</a><br/>
   <li> Receive approval e-mails: {{ profile_user.indexer.notify_on_approve|yesno }}<br/>
+  <li> Collapse compare view by default: {{ profile_user.indexer.collapse_compare_view|yesno }}<br/>
 {% endif %}
   <li> Country: <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ profile_user.indexer.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
        {{ profile_user.indexer.country }} <br>

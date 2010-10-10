@@ -28,11 +28,11 @@
     color: white;
 }
 
-.oi_bar_title :link {
+span.oi_bar_title :link {
     color: white;
 }
 
-.oi_bar_title :visited {
+span.oi_bar_title :visited {
     color: white;
 }
 

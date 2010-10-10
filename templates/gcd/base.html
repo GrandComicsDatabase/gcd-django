@@ -1,4 +1,5 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+{% load compress %}
 <html>
 <head>
   <title>{% block title %}{% endblock %}</title>
@@ -8,8 +9,9 @@
 Having trouble with block / ifnotequal interactions.  Need to investigate.
 For now, just a simple single block for all CSS, despite redundancy.
 {% endcomment %}
-
+{% compress css %}
 {% block css %}{% endblock %}
+{% endcompress %}
 </head>
 
 <body>
