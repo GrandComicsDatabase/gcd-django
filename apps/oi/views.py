@@ -1977,7 +1977,7 @@ def show_approved(request):
       request,
       changes,
       'oi/queues/approved.html',
-      {},
+      {'CTYPES': CTYPES},
       page_size=50)
 
 

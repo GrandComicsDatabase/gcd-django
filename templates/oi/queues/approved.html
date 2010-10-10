@@ -38,18 +38,20 @@ GCD :: {{ user.indexer }} :: Approved Changes
 {% if changeset.inline %}
     <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
     <td><a href="{{ changeset.inline_revision.source.get_absolute_url }}">{{ changeset }}</a></td>
-    <td>{{ changeset.modified }}</td>
 {% else %}
-    {% ifequal changeset.issuerevisions.count 1 %}
+    {% if changeset.change_type == CTYPES.issue %}
     <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue</a></td>
     <td><a href="{{ changeset.issuerevisions.all.0.source.get_absolute_url }}">{{ changeset }}</a></td>
-    <td>{{ changeset.modified }}</td>
     {% else %}
+      {% if changeset.change_type == CTYPES.issue_add %}
     <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue skeletons</a></td>
+      {% else %}
+    <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue bulk changes</a></td>
+      {% endif %}
     <td>{{ changeset }}</td>
-    <td>{{ changeset.modified }}</td>
-    {% endifequal %}
+    {% endif %}
 {% endif %}
+    <td>{{ changeset.modified }}</td>
 </tr>
 {% endfor %}
 </table>
