@@ -46,6 +46,9 @@ class Publisher(BasePublisher):
     def active_brands(self):
         return self.brand_set.exclude(deleted=True)
 
+    def active_indicia_publishers(self):
+        return self.indiciapublisher_set.exclude(deleted=True)
+
     def __unicode__(self):
         return self.name
 
@@ -96,11 +99,21 @@ class IndiciaPublisher(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    parent = models.ForeignKey(Publisher, related_name='indicia_publishers')
+    parent = models.ForeignKey(Publisher)
     is_surrogate = models.BooleanField(db_index=True)
     country = models.ForeignKey(Country)
 
     issue_count = models.IntegerField(default=0)
+
+    #TODO: pull out to publisher base class when publisher also can be deleted
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
+
+    def deletable(self):
+        return self.issue_count == 0 and \
+          self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
     def get_absolute_url(self):
         return "/indicia_publisher/%i/" % self.id
@@ -117,6 +130,7 @@ class Brand(BasePublisher):
 
     issue_count = models.IntegerField(default=0)
 
+    #TODO: pull out to publisher base class when publisher also can be deleted
     def delete(self):
         self.deleted = True
         self.reserved = False

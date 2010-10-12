@@ -88,7 +88,7 @@ def reserve(request, id, model_name, delete=False):
 
     if delete:
         # TODO remove when we can delete all objects
-        if model_name != 'brand':
+        if model_name not in ['brand', 'indicia_publisher']:
             return render_error(request, 'Cannot delete this type of object.')
 
         # In case someone else deleted while page was open or if it was added
@@ -116,12 +116,13 @@ def reserve(request, id, model_name, delete=False):
                                   new_state=changeset.state)
 
         # To be used soon
-        #if model_name == 'brand':
-        return HttpResponseRedirect(urlresolvers.reverse('show_brand',
-                 kwargs={'brand_id': display_obj.id}))
-        #elif model_name == 'ind_pub':
-        #    return HttpResponseRedirect(urlresolvers.reverse('show_ind_pub',
-        #             kwargs={'ind_pub_id': display_obj.id}))
+        if model_name == 'brand':
+            return HttpResponseRedirect(urlresolvers.reverse('show_brand',
+                     kwargs={'brand_id': display_obj.id}))
+        elif model_name == 'indicia_publisher':
+            return HttpResponseRedirect(urlresolvers.reverse(
+                     'show_indicia_publisher',
+                     kwargs={'indicia_publisher_id': display_obj.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))

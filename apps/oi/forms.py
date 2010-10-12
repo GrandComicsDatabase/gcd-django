@@ -315,8 +315,11 @@ def get_issue_revision_form(publisher, series=None, revision=None):
         series = revision.series
 
     class RuntimeIssueRevisionForm(IssueRevisionForm):
+        pending_deletes = IndiciaPublisherRevision.objects.filter(
+          deleted=True, changeset__state__in=states.ACTIVE)
         indicia_publisher = forms.ModelChoiceField(required=False,
-          queryset=IndiciaPublisher.objects.filter(parent=publisher),
+          queryset=IndiciaPublisher.objects.filter(parent=publisher,
+            deleted=False).exclude(revisions__in=pending_deletes),
           help_text='The exact corporation listed as the publisher in the '
                     'indicia, if any.  If there is none, the copyright holder '
                     '(if any) may be used, with a comment in the notes field')

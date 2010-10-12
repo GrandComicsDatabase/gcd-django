@@ -44,8 +44,8 @@ urlpatterns = patterns('',
 
     url(r'^brand/(?P<brand_id>\d+)/$',
      'apps.gcd.views.details.brand', name='show_brand'),
-    (r'^indicia_publisher/(?P<indicia_publisher_id>\d+)/$',
-     'apps.gcd.views.details.indicia_publisher'),
+    url(r'^indicia_publisher/(?P<indicia_publisher_id>\d+)/$',
+     'apps.gcd.views.details.indicia_publisher', name='show_indicia_publisher'),
     (r'^imprint/(?P<imprint_id>\d+)/$',
      'apps.gcd.views.details.imprint'),
 

@@ -60,6 +60,10 @@ def indicia_publisher(request, indicia_publisher_id):
     """
     indicia_publisher = get_object_or_404(
       IndiciaPublisher, id = indicia_publisher_id)
+
+    if indicia_publisher.deleted:
+        return change_history(request, 'indicia_publisher', indicia_publisher_id)
+
     return show_indicia_publisher(request, indicia_publisher)
 
 def show_indicia_publisher(request, indicia_publisher, preview=False):
@@ -140,7 +144,7 @@ def indicia_publishers(request, publisher_id):
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
-    indicia_publishers = publisher.indicia_publishers.all()
+    indicia_publishers = publisher.active_indicia_publishers()
 
     sort = ORDER_ALPHA
     if 'sort' in request.GET:
@@ -595,6 +599,7 @@ def daily_changes(request, show_date=None):
     indicia_publishers = IndiciaPublisher.objects.filter(\
                            revisions__changeset__change_type=CTYPES['indicia_publisher'],
                            revisions__changeset__state=states.APPROVED,
+                           revisions__deleted=False,
                            revisions__changeset__modified__range=(\
                              datetime.combine(requested_date, time.min),
                              datetime.combine(requested_date, time.max)))\
