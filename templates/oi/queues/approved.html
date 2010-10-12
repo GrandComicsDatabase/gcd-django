@@ -1,5 +1,7 @@
 {% extends "oi/base_view.html" %}
 
+{% load display %}
+
 {% block title %}
 GCD :: {{ user.indexer }} :: Approved Changes
 {% endblock %}
@@ -30,6 +32,7 @@ GCD :: {{ user.indexer }} :: Approved Changes
   <tr>
     <th> Changeset </th>
     <th> Current Data </th>
+    <th> Approver </th>
     <th> Last Activity </th>
   </tr>
 
@@ -51,6 +54,7 @@ GCD :: {{ user.indexer }} :: Approved Changes
     <td>{{ changeset }}</td>
     {% endif %}
 {% endif %}
+    <td>{{ changeset.approver.indexer|absolute_url }}</td>
     <td>{{ changeset.modified }}</td>
 </tr>
 {% endfor %}
