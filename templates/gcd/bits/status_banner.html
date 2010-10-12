@@ -1,52 +1,64 @@
 {% if object.reserved %}
   {% with object.revisions.active as revision %}
   {% with revision.changeset as changeset %}
-<div id="index_status" class="index_status_{{ changeset.state }}"><span>
+<div id="index_status" class="index_status_{{ changeset.state }}">
+  <span>
     {% ifequal changeset.state states.OPEN %}
-  This {{ object_name }} is currently being edited by
-  {{ changeset.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
-  (since {{ revision.created|date:"Y-m-d" }},  
+    This {{ object_name }} is currently being edited by
+    {{ changeset.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
+    (since {{ revision.created|date:"Y-m-d" }},  
       {% ifequal changeset.indexer request.user %}
-<a href="{% url edit id=changeset.id %}"> edit this change</a>)
+    <a href="{% url edit id=changeset.id %}"> edit this change</a>)
       {% else %}
-last edit {{ revision.modified|date:"Y-m-d" }})
+    last edit {{ revision.modified|date:"Y-m-d" }})
       {% endifequal %}
     {% endifequal %}
     {% ifequal changeset.state states.PENDING %}
-  Edits to this {{ object_name }}
-  are currently awaiting review by a GCD Editor
+    Edits to this {{ object_name }}
+    are currently awaiting review by a GCD Editor
       {% if request.user.is_authenticated %}
-  (<a href="{% url compare id=changeset.id %}">view the edits</a>)
+    (<a href="{% url compare id=changeset.id %}">view the edits</a>)
       {% endif %}
     {% endifequal %}
     {% ifequal changeset.state states.REVIEWING %}
-  Edits to this {{ object_name }}
-  are being reviewed by GCD Editor {{ changeset.approver.indexer }}
+    Edits to this {{ object_name }}
+    are being reviewed by GCD Editor {{ changeset.approver.indexer }}
       {% if request.user.is_authenticated %}
-  (<a href="{% url compare id=changeset.id %}">view the edits</a>)
+    (<a href="{% url compare id=changeset.id %}">view the edits</a>)
       {% endif %}
     {% endifequal %}
-</span></div>
+  </span>
+</div>
   {% endwith %}
   {% endwith %}
 {% else %}
   {% if user.is_authenticated %}
-  <form method="POST"
-        action="{% url reserve_revision model_name=object_class,id=object.id %}">
-    <input id="edit" name="edit" type="submit" value="Edit"></input>
-  </form>
+<form method="POST"
+      action="{% url reserve_revision model_name=object_class,id=object.id %}">
+  <input id="edit" name="edit" type="submit" value="Edit"></input>
+</form>
     {% if object.deletable %}
-  <form method="POST"
-        action="{% url delete_revision model_name=object_class,id=object.id %}">
-    <input type="submit" value="Delete">
-    <input type="text" name="comments" class="del_comments"">
-  </form>
+<form method="POST"
+      action="{% url delete_revision model_name=object_class,id=object.id %}">
+  <input type="submit" value="Delete">
+  <input type="text" name="comments" class="del_comments">
+</form>
+    {% else %}
+<div id="index_status" class="index_status_available">
+  <span>
+      {% if object_class == "brand" or object_class == "indicia_publisher" %}
+    {{ object_name }} cannot be deleted because it is in use or pending another change.
+      {% else %}
+    {{ object_name }} delete functionality is not yet implemented.
+      {% endif %}
+  </span>
+</div>
     {% endif %}
   {% else %}
-  <form action="{% url login %}" method="GET">
-    <input type="submit" name="login" value="Log in to edit" />
-    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-  </form>
+<form action="{% url login %}" method="GET">
+  <input type="submit" name="login" value="Log in to edit" />
+  <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+</form>
   {% endif %}
 {% endif %}
 
