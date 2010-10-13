@@ -14,7 +14,7 @@ old_users = User.objects.filter(date_joined__lt=date(2009, 10, 6),
 # shown in the documentation does not actually exist in the module.
 email = mail.EmailMessage('Starting...', from_email='sysadmin@comics.org',
                           to=['hha1@cornell.edu'],
-                          headers={'Reply-To': 'gcd-contact@googlegroups.com'})
+                          headers={'Reply-To': 'contact@comics.org'})
 email.send()
 
 new_message="""
@@ -75,7 +75,7 @@ Here's why you should come back:
   build it as quickly as we could.  Please bear with us and you will see that
   the site will steadily get better.  We do still need a web designer and/or
   an HTML/CSS/JavaScript expert, as well as other technical help, so if you
-  can help us out please let us know at gcd-contact@googlegroups.com !
+  can help us out please let us know at contact@comics.org !
 
 Once you log in to the site, you can edit anything from its display page, or
 add series, brands or indicia publishers from the parent publisher page,

@@ -283,7 +283,7 @@ msgid "Mailing Lists"
 msgstr ""
 
 #: templates/gcd/bits/front_page_menu.html:15
-msgid "gcd-contact@googlegroups.com"
+msgid "contact@comics.org"
 msgstr "gcd-contact-de@comics.org"
 
 #: templates/gcd/bits/front_page_menu.html:15

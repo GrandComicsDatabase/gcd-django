@@ -103,11 +103,11 @@ SITE_ID = 1
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 TIME_ZONE = 'UTC'
 
-DEFAULT_FROM_EMAIL = 'GCD Contact <gcd-contact@googlegroups.com>'
+DEFAULT_FROM_EMAIL = 'GCD Contact <contact@comics.org>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
 EMAIL_VOTING_FROM = 'GCD Voting <voting@comics.org>'
 EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
-EMAIL_CONTACT = 'gcd-contact@googlegroups.com'
+EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
 
 # Number of days for which a registraton confirmation token is valid.
