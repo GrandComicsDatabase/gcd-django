@@ -20,15 +20,19 @@
     <td> {{ series.year_began }} </td>
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
     <td>
-    {% if not series.scan_needed_count %}
-    <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
+    {% if not series.issue_count %}
+      No Issues
     {% else %}
-      {% if series.has_gallery %}
-        <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
-        {{ series.scan_count}}</a>
-        (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need&nbsp;{{ series.scan_needed_count }}</a>)
+      {% if not series.scan_needed_count %}
+      <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
       {% else %}
-        <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
+        {% if series.has_gallery %}
+      <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Have 
+      {{ series.scan_count}}</a>
+      (<a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Need&nbsp;{{ series.scan_needed_count }}</a>)
+        {% else %}
+      <a href="{% url apps.gcd.views.details.scans series_id=series.id %}">Add</a>
+        {% endif %}
       {% endif %}
     {% endif %}
     </td>
