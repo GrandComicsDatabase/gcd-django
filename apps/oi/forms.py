@@ -341,6 +341,26 @@ def get_issue_revision_form(publisher, series=None, revision=None):
           help_text="Check this box if there is no publisher's logo or tagline "
                     "on the comic.")
 
+        def clean(self):
+            cd = self.cleaned_data
+
+            if self._errors:
+                raise forms.ValidationError('Please correct the field errors.')
+
+            if cd['volume'] is not None and cd['no_volume']:
+                raise forms.ValidationError('You cannot specify a volume and check '
+                  '"no volume" at the same time')
+
+            if cd['editing'] is not None and cd['no_editing']:
+                raise forms.ValidationError('You cannot specify an editing credit and '
+                  'check "no editing" at the same time')
+
+            if cd['no_brand'] and cd['brand'] is not None:
+                raise forms.ValidationError(
+                  ['Brand field and No Brand checkbox cannot both be filled in.'])
+
+            return cd
+
     if revision is None or revision.source is None:
         add_fields = ['after']
         add_fields.extend(_get_issue_fields())
@@ -586,7 +606,7 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 
         if self._errors:
             raise forms.ValidationError('Please correct the field errors.')
-            
+
         if cd['volume'] is not None and cd['no_volume']:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
@@ -594,6 +614,10 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
         if cd['editing'] is not None and cd['no_editing']:
             raise forms.ValidationError('You cannot specify an editing credit and '
               'check "no editing" at the same time')
+
+        if cd['no_brand'] and cd['brand'] is not None:
+            raise forms.ValidationError(
+              ['Brand field and No Brand checkbox cannot both be filled in.'])
 
         if cd['first_number'] is None and cd['after'] is not None:
             try:
