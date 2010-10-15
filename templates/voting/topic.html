@@ -63,8 +63,9 @@ Your current vote{{ votes.count|pluralize }}:
     {% endif %}
 
     {% if not closed %}
-If you wish to change your vote, please contact an administrator.  Vote
-changing will be implemented in the future.
+If you wish to change your vote, please
+<a href="mailto:{{ settings.EMAIL_VOTING_ADMIN }}">contact an administrator</a>.
+Vote changing will be implemented in the future.
     {% endif %}
   {% endif %}
   {% if topic.pending %}

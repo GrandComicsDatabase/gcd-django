@@ -11,7 +11,7 @@ from django.contrib.auth.models import User, Permission
 TYPE_PASS_FAIL = 'Pass / Fail'
 
 EMAIL_OPEN_BALLOT = """
-The topic:
+The topic '%s' with text:
 
   %s
 
@@ -270,8 +270,22 @@ def topic_pre_save(sender, **kwargs):
     else:
         opened = topic.open
 
-    if not opened:
-        # Don't send mail yet.
+    # We can't send email in pre_save because we don't have an id yet if this
+    # is a newly added topic.  So set a flag to be read in topic_post_save().
+    if opened:
+        topic.post_save_send_mail = True
+    else:
+        topic.post_save_send_mail = False
+
+def topic_post_save(sender, **kwargs):
+    topic = kwargs['instance']
+    if topic.vote_type.name == TYPE_PASS_FAIL and topic.options.count() == 0:
+        topic.options.create(name='For', ballot_position=0)
+        topic.options.create(name='Against', ballot_position=1)
+        if topic.agenda.allows_abstentions:
+            topic.options.create(name='Abstain', ballot_position=2)
+
+    if not topic.post_save_send_mail:
         return
 
     # Send mail that we have a new ballot up for vote.
@@ -282,6 +296,7 @@ def topic_pre_save(sender, **kwargs):
                 token_string = EMAIL_TOKEN_STRING % topic.token
 
             email_body = EMAIL_OPEN_BALLOT % (
+              topic,
               topic.text,
               settings.SITE_URL.rstrip('/') + topic.get_absolute_url(),
               token_string)
@@ -291,14 +306,6 @@ def topic_pre_save(sender, **kwargs):
                       subject="GCD Ballot Open: %s" % topic,
                       message=email_body,
                       fail_silently=(not settings.BETA))
-
-def topic_post_save(sender, **kwargs):
-    topic = kwargs['instance']
-    if topic.vote_type.name == TYPE_PASS_FAIL and topic.options.count() == 0:
-        topic.options.create(name='For', ballot_position=0)
-        topic.options.create(name='Against', ballot_position=1)
-        if topic.agenda.allows_abstentions:
-            topic.options.create(name='Abstain', ballot_position=2)
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)
 models.signals.post_save.connect(topic_post_save, sender=Topic)

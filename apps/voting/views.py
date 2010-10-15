@@ -26,15 +26,15 @@ Please go to %s for more details.
 """
 
 EMAIL_RECEIPT = """
-This is your reciept for your vote in the secret ballot election for %s.
+This is your receipt for your vote in the secret ballot election for %s.
 You voted for:
 %s
 
 If anything has gone wrong with your vote, or if the election allows you to
 change your vote and you wish to change it, you will need to provide the
-following two pieces of information to the voting administrator in order to
-match account to your votes.  Note that changing your vote may require you to
-disclose your vote choices to the voting administrator.
+following two pieces of information to the voting administrator (%s)
+in order to match account to your votes.  Note that changing your vote
+may require you to disclose your vote choices to the voting administrator.
 
 secret key:
 '%s'
@@ -171,6 +171,7 @@ def topic(request, id):
                                 'voted': voted,
                                 'votes': votes,
                                 'closed': topic.deadline < datetime.now(),
+                                'settings': settings,
                               },
                               context_instance=RequestContext(request))
 
@@ -188,6 +189,9 @@ def vote(request):
 
     # Get all of these now because we may need to iterate twice.
     options = options.select_related('topic__agenda', 'topic__vote_type').all()
+    if not options:
+        return render_error(request,
+                            'You must choose at least one option to vote.')
     for option in options:
         if first is True:
             first = False
@@ -205,8 +209,19 @@ def vote(request):
                   'You may not vote for more than %d option%s' %
                   (topic.vote_type.max_votes, plural))
 
-            if not topic.agenda.secret_ballot:
+            if topic.agenda.secret_ballot:
+                receipts = Receipt.objects.filter(topic=topic, voter=request.user)
+                already_voted = receipts.count() > 0
+            else:
                 voter = request.user
+                already_voted = Vote.objects.filter(option__topic=topic,
+                                                    voter=request.user).count() > 0
+
+            if already_voted:
+                return render_error(request,
+                  'You have already voted on this ballot.  If you wish to change '
+                  'your vote, please contact the voting administrator at ' +
+                  settings.EMAIL_VOTING_ADMIN)
 
         # Ranked voting not yet supported (no UI) so just set rank to None.
         vote = Vote(option=option, voter=voter, rank=None)
@@ -230,7 +245,9 @@ def vote(request):
         send_mail(from_email=settings.EMAIL_VOTING_FROM,
                   recipient_list=[request.user.email],
                   subject="GCD secret ballot receipt",
-                  message=EMAIL_RECEIPT % (topic, vote_values, salt, vote_ids),
+                  message=EMAIL_RECEIPT % (topic, vote_values,
+                                           settings.EMAIL_VOTING_ADMIN,
+                                           salt, vote_ids),
                   fail_silently=(not settings.BETA))
 
     return HttpResponseRedirect(urlresolvers.reverse('ballot',

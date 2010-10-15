@@ -105,10 +105,12 @@ TIME_ZONE = 'UTC'
 
 DEFAULT_FROM_EMAIL = 'GCD Contact <contact@comics.org>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
-EMAIL_VOTING_FROM = 'GCD Voting <voting@comics.org>'
 EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
+
+EMAIL_VOTING_FROM = 'GCD Voting <voting@comics.org>'
+EMAIL_VOTING_ADMIN = EMAIL_CONTACT
 
 # Number of days for which a registraton confirmation token is valid.
 REGISTRATION_EXPIRATION_DELTA = 2
@@ -146,10 +148,6 @@ DOWNLOAD_DELTA = 5
 
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
                         'compressor.filters.csstidy.CSSTidyFilter']
-
-ABSOLUTE_URL_OVERRIDES = {
-    'auth.user': lambda o: "/accounts/profile/%d/" % o.id, 
-}
 
 # get local settings, will override settings from here
 try:
