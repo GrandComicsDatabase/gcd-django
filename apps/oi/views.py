@@ -432,13 +432,20 @@ def assign(request, id):
     try:
         changeset.assign(approver=request.user, notes=request.POST['comments'])
     except ValueError:
-        return render_error(request,
-          ('This change is already being reviewed by %s who may have assigned it '
-           'after you loaded the previous page.  This results in you seeing an '
-           '"Assign" button even though the change is under review. '
-           'Please use the back button to return to the Pending queue.') %
-          changeset.approver.indexer,
-          redirect=False)
+        if changeset.approver is None:
+            return render_error(request,
+              'This change has been retracted by the indexer after you loaded '
+              'the previous page. This results in you seeing an "Assign" '
+              'button. Please use the back button to return to the Pending queue.',
+              redirect=False)
+        else:
+            return render_error(request,
+              ('This change is already being reviewed by %s who may have assigned it '
+               'after you loaded the previous page.  This results in you seeing an '
+               '"Assign" button even though the change is under review. '
+               'Please use the back button to return to the Pending queue.') %
+              changeset.approver.indexer,
+              redirect=False)
 
     if changeset.indexer.indexer.is_new and \
        changeset.indexer.indexer.mentor is None and\
