@@ -33,18 +33,19 @@ tr.result {
 dl.compact {
     float: left;
     margin-top: 0em;
-    margin-bottom: 1em;
+    width: 100%;
 }
 
 dl.compact dt {
-    float: left;
     clear: left;
+    float: left;
+    padding-right: 0.5em;
 }
 
 dl.compact dd {
-    float: left;
-    margin-left: 1em;
-    margin-bottom: 0;
+    float: none;
+    margin: 0;
+    padding: 0;
 }
 
 table {
