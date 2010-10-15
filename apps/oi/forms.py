@@ -125,6 +125,13 @@ class PublisherRevisionForm(forms.ModelForm):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
+    def clean(self):
+        cd = self.cleaned_data
+        cd['name'] = cd['name'].strip()
+        cd['notes'] = cd['notes'].strip()
+        cd['comments'] = cd['comments'].strip()
+        return cd
+
 def get_indicia_publisher_revision_form(source=None):
     if source is not None:
         class RuntimeIndiciaPublisherRevisionForm(IndiciaPublisherRevisionForm):
@@ -138,14 +145,23 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
     class Meta:
         model = IndiciaPublisherRevision
         fields = _get_publisher_fields(middle=('is_surrogate', 'country'))
+
     name = forms.CharField(max_length=255,
       help_text='The name exactly as it appears in the indicia, including '
                 'punctuation, abbreviations, suffixes like ", Inc.", etc.  '
                 'Do not move articles to the end of the name.')
+
     is_surrogate = forms.BooleanField(required=False, label='Surrogate',
       help_text='Check if this was an independent company serving as a surrogate '
                 'for the master publisher, rather than a company belonging to the '
                 'master publisher.')
+
+    def clean(self):
+        cd = self.cleaned_data
+        cd['name'] = cd['name'].strip()
+        cd['notes'] = cd['notes'].strip()
+        cd['comments'] = cd['comments'].strip()
+        return cd
 
 def get_brand_revision_form(source=None):
     return BrandRevisionForm
@@ -154,15 +170,19 @@ class BrandRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandRevision
         fields = ['name', 'year_began', 'year_ended', 'url', 'notes']
+
     name = forms.CharField(max_length=255,
       help_text='The name of the brand as it appears on the logo.  If the logo '
                 'does not use words, then the name of the brand as it is '
                 'commonly used.  Consult an editor if in doubt.')
+
     year_began = forms.IntegerField(required=False,
       help_text='The first year the brand was used.')
+
     year_ended = forms.IntegerField(required=False,
       help_text='The last year the brand was used.  Leave blank if currently '
                 'in use.')
+
     url = forms.URLField(required=False,
       help_text='The official web site of the brand.  Leave blank if the '
                 'publisher does not have a specific web site for the brand.')
@@ -172,6 +192,13 @@ class BrandRevisionForm(forms.ModelForm):
       help_text='Comments between the Indexer and Editor about the change. '
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
+
+    def clean(self):
+        cd = self.cleaned_data
+        cd['name'] = cd['name'].strip()
+        cd['notes'] = cd['notes'].strip()
+        cd['comments'] = cd['comments'].strip()
+        return cd
 
 def get_series_revision_form(publisher=None, source=None, indexer=None):
     if source is None:
@@ -289,6 +316,16 @@ class SeriesRevisionForm(forms.ModelForm):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
+    def clean(self):
+        cd = self.cleaned_data
+        cd['name'] = cd['name'].strip()
+        cd['format'] = cd['format'].strip()
+        cd['publication_notes'] = cd['publication_notes'].strip()
+        cd['tracking_notes'] = cd['tracking_notes'].strip()
+        cd['notes'] = cd['notes'].strip()
+        cd['comments'] = cd['comments'].strip()
+        return cd
+
 def _get_issue_fields():
     return [
         'number',
@@ -347,11 +384,20 @@ def get_issue_revision_form(publisher, series=None, revision=None):
             if self._errors:
                 raise forms.ValidationError('Please correct the field errors.')
 
-            if cd['volume'] is not None and cd['no_volume']:
+            cd['number'] = cd['number'].strip()
+            cd['publication_date'] = cd['publication_date'].strip()
+            cd['key_date'] = cd['key_date'].strip()
+            cd['indicia_frequency'] = cd['indicia_frequency'].strip()
+            cd['price'] = cd['price'].strip()
+            cd['editing'] = cd['editing'].strip()
+            cd['notes'] = cd['notes'].strip()
+            cd['comments'] = cd['comments'].strip()
+
+            if cd['volume'] != "" and cd['no_volume']:
                 raise forms.ValidationError('You cannot specify a volume and check '
                   '"no volume" at the same time')
 
-            if cd['editing'] is not None and cd['no_editing']:
+            if cd['editing'] != "" and cd['no_editing']:
                 raise forms.ValidationError('You cannot specify an editing credit and '
                   'check "no editing" at the same time')
 
@@ -607,11 +653,16 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
         if self._errors:
             raise forms.ValidationError('Please correct the field errors.')
 
-        if cd['volume'] is not None and cd['no_volume']:
+        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
+        cd['price'] = cd['price'].strip()
+        cd['editing'] = cd['editing'].strip()
+        cd['comments'] = cd['comments'].strip()
+
+        if cd['volume'] != "" and cd['no_volume']:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
 
-        if cd['editing'] is not None and cd['no_editing']:
+        if cd['editing'] != "" and cd['no_editing']:
             raise forms.ValidationError('You cannot specify an editing credit and '
               'check "no editing" at the same time')
 
@@ -652,7 +703,20 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
 
         if self._errors:
             raise forms.ValidationError('Please correct the field errors.')
-            
+
+        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
+        cd['price'] = cd['price'].strip()
+        cd['editing'] = cd['editing'].strip()
+        cd['comments'] = cd['comments'].strip()
+
+        if cd['editing'] != "" and cd['no_editing']:
+            raise forms.ValidationError('You cannot specify an editing credit and '
+              'check "no editing" at the same time')
+
+        if cd['no_brand'] and cd['brand'] is not None:
+            raise forms.ValidationError(
+              ['Brand field and No Brand checkbox cannot both be filled in.'])
+
         basics = (cd['first_number'], cd['first_volume'])
         if None in basics and cd['after'] is not None:
             if filter(lambda x: x is not None, basics):
@@ -734,7 +798,24 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
 
         if self._errors:
             raise forms.ValidationError('Please correct the field errors.')
-            
+
+        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
+        cd['price'] = cd['price'].strip()
+        cd['editing'] = cd['editing'].strip()
+        cd['comments'] = cd['comments'].strip()
+
+        if cd['volume'] != "" and cd['no_volume']:
+            raise forms.ValidationError('You cannot specify a volume and check '
+              '"no volume" at the same time')
+
+        if cd['editing'] != "" and cd['no_editing']:
+            raise forms.ValidationError('You cannot specify an editing credit and '
+              'check "no editing" at the same time')
+
+        if cd['no_brand'] and cd['brand'] is not None:
+            raise forms.ValidationError(
+              ['Brand field and No Brand checkbox cannot both be filled in.'])
+
         basics = (cd['first_number'], cd['first_year'])
         if None in basics and cd['after'] is not None:
             if filter(lambda x: x is not None, basics):
@@ -797,7 +878,20 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         if self._errors:
             raise forms.ValidationError('Please correct the field errors.')
-            
+
+        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
+        cd['price'] = cd['price'].strip()
+        cd['editing'] = cd['editing'].strip()
+        cd['comments'] = cd['comments'].strip()
+
+        if cd['editing'] != "" and cd['no_editing']:
+            raise forms.ValidationError('You cannot specify an editing credit and '
+              'check "no editing" at the same time')
+
+        if cd['no_brand'] and cd['brand'] is not None:
+            raise forms.ValidationError(
+              ['Brand field and No Brand checkbox cannot both be filled in.'])
+
         basics = (cd['first_number'], cd['first_volume'], cd['first_year'])
         if None in basics and cd['after'] is not None:
             if filter(lambda x: x is not None, basics):
@@ -1027,6 +1121,12 @@ def get_cover_revision_form(revision=None):
                     'These comments are part of the public change history, but '
                     'are not part of the regular display. <p>%s</p>' \
                     % compare_url)
+
+        def clean(self):
+            cd = self.cleaned_data
+            cd['comments'] = cd['comments'].strip()
+            return cd
+
     return UploadScanCommentForm
 
 
@@ -1049,6 +1149,12 @@ class UploadScanForm(forms.Form):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
+    def clean(self):
+        cd = self.cleaned_data
+        cd['source'] = cd['source'].strip()
+        cd['comments'] = cd['comments'].strip()
+        return cd
+
 class DownloadForm(forms.Form):
     """ Form for downloading data dumps. """
 
@@ -1066,11 +1172,13 @@ class DownloadForm(forms.Form):
       label='I have read and accept the GCD data licensing terms and crediting '
             'guidelines')
 
-    def clean_accept_license(self):
-        accepted = self.cleaned_data['accept_license']
-        if accepted is not True:
+    def clean(self):
+        cd = self.cleaned_data
+        cd['usage'] = cd['usage'].strip()
+
+        if cd['accept_license'] is not True:
             raise forms.ValidationError, (
               'You must check the box indicating your acceptance of the licensing '
               'and crediting terms in order to download the data.')
-        return accepted
 
+        return cd
