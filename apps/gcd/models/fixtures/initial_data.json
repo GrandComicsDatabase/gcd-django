@@ -3310,5 +3310,13 @@
             "sort_code": 22, 
             "name": "(backcovers) *do not use* / *please fix*"
         }
+    },
+    {
+        "pk": 23, 
+        "model": "gcd.storytype", 
+        "fields": {
+            "sort_code": 23, 
+            "name": "(unknown)"
+        }
     }
 ]
