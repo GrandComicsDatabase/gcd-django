@@ -17,7 +17,7 @@ urlpatterns = patterns('',
     # or else it will never be used because the shorter form will always match.
     ###########################################################################
 
-    (r'^$', 'apps.gcd.views.index'),
+    url(r'^$', 'apps.gcd.views.index', name='home'),
     (r'^search/$', 'apps.gcd.views.search.search'),
     url(r'^search/advanced/$', 'apps.gcd.views.search.advanced_search',
       name='advanced_search'),

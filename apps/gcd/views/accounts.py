@@ -54,14 +54,20 @@ def login(request, template_name):
                    'the email within a few hours.') %
                   (esc(user.email), settings.EMAIL_CONTACT), is_safe=True)
 
-            if 'next' in request.POST:
-                next = request.POST['next']
-                if re.match(r'/accounts/confirm/', next, flags=re.I):
-                    post = request.POST.copy()
-                    post['next'] = urlresolvers.reverse('welcome')
-                    request.POST = post
     except Exception:
         pass
+
+    if 'next' in request.POST:
+        next = request.POST['next']
+        if re.match(r'/accounts/confirm/', next, flags=re.I):
+            post = request.POST.copy()
+            post['next'] = urlresolvers.reverse('welcome')
+            request.POST = post
+        if re.match(r'/gcd-error/', next, flags=re.I):
+            post = request.POST.copy()
+            post['next'] = urlresolvers.reverse('home')
+            request.POST = post
+
     return standard_login(request, template_name=template_name)
 
 def logout(request):
@@ -207,6 +213,19 @@ thanks,
 def confirm_account(request, key):
     try:
         indexer = Indexer.objects.get(registration_key=key)
+        if indexer.registration_expires is None:
+            if indexer.user.is_active:
+                # The indexer already confirmed his or her account.
+                return render_error(request,
+                  'You have already successfully confirmed your account.  '
+                  'Please use the login button in the bar at the top of the '
+                  'screen to log in to your account.')
+            return render_error(request,
+              ('Your account has already been confirmed, but it is marked '
+               'as inactive.  Please <a href="mailto:%s">contact us</a> '
+               'if you would like ot re-activate it.') % settings.EMAIL_CONTACT,
+              is_safe=True)
+
         if date.today() > indexer.registration_expires:
             return render_error(request, 'Your confirmation key has expired. '
                      'You may <a href="' + urlresolvers.reverse('register') + \
@@ -214,7 +233,11 @@ def confirm_account(request, key):
 
         indexer.user.is_active = True
         indexer.user.save()
-        indexer.registration_key = None
+
+        # Clear the expiration date so that we can tell that the account has
+        # been confirmed even if it's later marked as inactive, but leave
+        # the key in place so that we can find the account again and give
+        # a friendly message if the user tries to confirm a second time.
         indexer.registration_expires = None
         indexer.save()
 
