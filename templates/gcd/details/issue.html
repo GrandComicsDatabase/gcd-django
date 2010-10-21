@@ -50,6 +50,10 @@
         <dt> {% trans "Brand" %}:
         <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}
 {% endif %}
+{% if issue.isbn %}
+        <dt>ISBN:
+        <dd id="issue_isbn"> {{ issue.isbn }}
+{% endif %}
       </dl>
 {% if issue.series.format %}
       <dl>

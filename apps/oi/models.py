@@ -1419,7 +1419,8 @@ class IssueRevisionManager(RevisionManager):
           page_count_uncertain=issue.page_count_uncertain,
           editing=issue.editing,
           no_editing=issue.no_editing,
-          notes=issue.notes)
+          notes=issue.notes,
+          isbn=issue.isbn)
 
         revision.save()
         return revision
@@ -1473,6 +1474,8 @@ class IssueRevision(Revision):
     brand = models.ForeignKey(Brand, null=True, related_name='issue_revisions')
     no_brand = models.BooleanField(default=0, db_index=True)
 
+    isbn = models.CharField(max_length=32)
+
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
     
@@ -1521,7 +1524,7 @@ class IssueRevision(Revision):
                 'indicia_frequency', 'key_date', 'indicia_publisher',
                 'indicia_pub_not_printed', 'brand', 'no_brand', 'price',
                 'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-                'notes']
+                'isbn', 'notes']
 
     def _source(self):
         return self.issue
@@ -1650,6 +1653,8 @@ class IssueRevision(Revision):
         issue.indicia_pub_not_printed = self.indicia_pub_not_printed
         issue.brand = self.brand
         issue.no_brand = self.no_brand
+
+        issue.isbn = self.isbn
 
         if clear_reservation:
             issue.reserved = False

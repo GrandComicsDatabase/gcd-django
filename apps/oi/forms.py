@@ -344,6 +344,7 @@ def _get_issue_fields():
         'page_count_uncertain',
         'editing',
         'no_editing',
+        'isbn',
         'notes',
     ]
 
@@ -392,6 +393,7 @@ def get_issue_revision_form(publisher, series=None, revision=None):
             cd['editing'] = cd['editing'].strip()
             cd['notes'] = cd['notes'].strip()
             cd['comments'] = cd['comments'].strip()
+            cd['isbn'] = cd['isbn'].strip()
 
             if cd['volume'] != "" and cd['no_volume']:
                 raise forms.ValidationError('You cannot specify a volume and check '
@@ -522,6 +524,13 @@ class IssueRevisionForm(forms.ModelForm):
     no_editing = forms.BooleanField(required=False,
       help_text='Check if there is no editor or similar credit (such as '
                 'publisher) for the issue as a whole.')
+
+    isbn = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+      required=False, label='ISBN', max_length=32,
+      help_text='The ISBN as printed on the item. If both ISBN 10 and ISBN 13 '
+                'are listed, separate them with a semi-colon. Do not use this '
+                'field for numbering systems other than ISBN. Example: "'
+                '978-0-307-29063-2; 0-307-29063-8"')
 
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,

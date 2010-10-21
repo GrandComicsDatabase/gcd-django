@@ -250,7 +250,7 @@ def field_name(field):
         return title(field.replace('_', ' '))
     elif field in ['is_current', 'is_surrogate']:
         return u'%s?' % title(field.replace(u'is_', u''))
-    elif field == 'url':
+    elif field in ['url', 'isbn']:
         return field.upper()
     elif field == 'after':
         return u'Add Issue After'

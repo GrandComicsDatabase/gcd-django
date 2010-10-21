@@ -19,6 +19,7 @@ class Issue(models.Model):
     volume = models.IntegerField(max_length=255, db_index=True, null=True)
     no_volume = models.BooleanField(default=0)
     display_volume_with_number = models.BooleanField(default=False)
+    isbn = models.CharField(max_length=32)
 
     # Dates and sorting
     publication_date = models.CharField(max_length=255)
