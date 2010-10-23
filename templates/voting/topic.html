@@ -2,7 +2,7 @@
 
 {% load display %}
 
-{% block title %} Ballot :: {{ topic.text|truncatewords:4 }} {% endblock %}
+{% block title %} Ballot :: {{ topic.name|truncatewords:4 }} {% endblock %}
 
 {% block view_body %}
 <h2> {{ topic.name }} </h2>
@@ -85,6 +85,14 @@ be sent to the appropriate list when it is available for voting.
   <input type="text" class="wide" name="token" id="token"></input>
   {% endif %}
   {% with topic.vote_type.max_votes as max_votes %}
+    {% if max_votes > 1 and max_votes == topic.vote_type.max_winners %}
+  <p>
+    Please vote for up to {{ max_votes }} of the following options.  You may vote
+    for fewer options, but you must vote for at least one option if you vote.
+    You must submit all of your votes at the same time (i.e. check up to
+    {{ max_votes }} options before submitting the form).
+  </p>
+    {% endif %}
     {% for option in topic.options.all %}
       {% if max_votes <= topic.vote_type.max_winners %}
   <div class="option">

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.core import urlresolvers
 from django.core.mail import send_mail
+from django.core.files import File
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
@@ -46,18 +47,29 @@ def dashboard(request):
     topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True)
 
     # Permissions are returned as appname.codename by get_all_permissions().
-    if request.user.is_anonymous:
+    if request.user.is_anonymous():
         my_topics = ()
-        other_topics = topics
+    elif request.user.is_superuser:
+        # Superusers have all permissions, which can be very expensive in
+        # the else clause.  Non-superusers tend to have just a few permissions.
+        my_topics = topics
     else:
-        codenames = [p.split('.', 1)[1] for p in request.user.get_all_permissions()]
-        can_vote = Q(agenda__permission__codename__in=codenames)
+        q_list = []
+        # You can't actually get a query_set of the user's permissions, just this
+        # list of strings that stuff the app label and code name together.  So
+        # we have to build queries that match each of the actual permissions, and
+        # then OR those all together.
+        for p in request.user.get_all_permissions():
+            app_label, code_name = p.split('.', 1)
+            q_list.append(Q(agenda__permission__codename=code_name,
+                            agenda__permission__content_type__app_label=app_label))
+        
+        can_vote = reduce(lambda x, y: x | y, q_list)
         my_topics = topics.filter(can_vote)
-        other_topics = topics.exclude(can_vote)
 
     return render_to_response('voting/dashboard.html', 
                               {
-                                'topics': topics,
+                                'topics': my_topics,
                                 'agendas': Agenda.objects.all(),
                               },
                               context_instance=RequestContext(request))
@@ -197,6 +209,14 @@ def vote(request):
             first = False
             topic = option.topic
 
+            if not request.user.has_perm('%s.%s' %
+                (topic.agenda.permission.content_type.app_label,
+                 topic.agenda.permission.codename)):
+                return render_error(request,
+                  'We are sorry, but you do not have permission to vote '
+                  'on this ballot.  You must have the "%s" permission.' %
+                   topic.agenda.permission.name)
+
             if topic.token is not None and \
                request.POST['token'].strip() != topic.token:
                 return render_error(request,
@@ -249,6 +269,18 @@ def vote(request):
                                            settings.EMAIL_VOTING_ADMIN,
                                            salt, vote_ids),
                   fail_silently=(not settings.BETA))
+
+        # Log the data as a backup in case of mail sending/receiving problems.
+        # Technically, this makes it not a secret ballot, but it takes some
+        # work to interpret the log, and there's always been a human counting
+        # the ballots before, so this allows for at least as much secrecy
+        # as before.
+        # Use unbuffered appends because we don't want concurrent writes to get
+        # spliced due to buffering.
+        voting_record = open('vote_record_%d' % topic.id, 'a', 0)
+        voting_record.write('%d | %s | %s | %s\n' %
+                            (request.user.id, salt, vote_ids, key))
+        voting_record.close()
 
     return HttpResponseRedirect(urlresolvers.reverse('ballot',
       kwargs={ 'id': option.topic.id }))
