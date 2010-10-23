@@ -1278,8 +1278,13 @@ class CoverRevision(Revision):
     cover = models.ForeignKey(Cover, null=True, related_name='revisions')
     issue = models.ForeignKey(Issue, related_name='cover_revisions')
 
-    marked = models.BooleanField(default=0)
-    is_replacement = models.BooleanField(default=0)
+    marked = models.BooleanField(default=False)
+    is_replacement = models.BooleanField(default=False)
+    is_wraparound = models.BooleanField(default=False)
+    front_left = models.IntegerField(default=0)
+    front_right = models.IntegerField(default=0)
+    front_bottom = models.IntegerField(default=0)
+    front_top = models.IntegerField(default=0)
 
     file_source = models.CharField(max_length=255)
 
@@ -1325,6 +1330,11 @@ class CoverRevision(Revision):
 
         cover.marked = self.marked
         cover.last_upload = self.changeset.comments.latest('created').created
+        cover.is_wraparound = self.is_wraparound
+        cover.front_left = self.front_left
+        cover.front_right = self.front_right
+        cover.front_top = self.front_top
+        cover.front_bottom = self.front_bottom
         cover.save()
         if self.cover is None:
             self.cover = cover

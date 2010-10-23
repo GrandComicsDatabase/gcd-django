@@ -19,22 +19,21 @@ def get_image_tag(cover, alt_text, zoom_level):
     elif zoom_level == ZOOM_LARGE:
         width = 400
         size = 'large'
-    width_string = 'width="' + str(width) + '"'
 
     if cover is None:
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
                'img/nocover_' + size +'.png" alt="No image yet"' + \
-               width_string + 'class="cover_img">')
+               'class="cover_img">')
 
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
                'img/nocover_' + size +'.png" alt="No image yet"' + \
-               width_string + 'class="cover_img">')
+               'class="cover_img">')
 
     if settings.FAKE_COVER_IMAGES:
         return mark_safe('<img src="' +settings.MEDIA_URL + \
-               'img/placeholder_' + size + '.jpg"' + width_string + \
+               'img/placeholder_' + size + '.jpg"' + \
                'class="cover_img">')
 
     suffix = "%d/w%d/%d.jpg" % (int(cover.id/1000), width, cover.id)
@@ -47,7 +46,7 @@ def get_image_tag(cover, alt_text, zoom_level):
     img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR + suffix
 
     return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) + \
-           '" ' + width_string + ' class="cover_img"/>')
+           '" ' + ' class="cover_img"/>')
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False):

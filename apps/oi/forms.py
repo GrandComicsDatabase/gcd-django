@@ -1152,6 +1152,15 @@ class UploadScanForm(forms.Form):
     marked = forms.BooleanField(label="Mark cover", required=False,
       help_text='Uploads of sub-standard scans for older and/or rare comics '
                 'are fine, but please mark them for replacement.')
+    is_wraparound = forms.BooleanField(label="Wraparound cover", 
+                                       required=False,
+      help_text='Cover is a standard wraparound cover: Two pages in width, '
+                'the right half is the front cover and will be automatically '
+                'selected.')
+    is_gatefold = forms.BooleanField(label="Gatefold cover",
+                                         required=False, 
+      help_text='Cover is a non-standard wraparound cover or a gatefold cover. '
+                'After the upload you will select the front cover part.')
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
       help_text='Comments between the Indexer and Editor about the change. '
@@ -1162,6 +1171,11 @@ class UploadScanForm(forms.Form):
         cd = self.cleaned_data
         cd['source'] = cd['source'].strip()
         cd['comments'] = cd['comments'].strip()
+        if cd['is_wraparound'] and cd['is_gatefold']:
+            raise forms.ValidationError(
+              ['Wraparound cover and gatefold cover cannot be both selected. '
+               'A cover that is both wraparound and gatefold should be '
+               'submitted as a gatefold cover.'])
         return cd
 
 class DownloadForm(forms.Form):

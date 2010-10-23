@@ -21,8 +21,13 @@ class Cover(models.Model):
     issue = models.ForeignKey(Issue)
 
     # Fields directly related to cover images
-    marked = models.BooleanField(default=0)
-    limit_display = models.BooleanField(default=0)
+    marked = models.BooleanField(default=False)
+    limit_display = models.BooleanField(default=False)
+    is_wraparound = models.BooleanField(default=False)
+    front_left = models.IntegerField(default=0)
+    front_right = models.IntegerField(default=0)
+    front_bottom = models.IntegerField(default=0)
+    front_top = models.IntegerField(default=0)
 
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True, null=True)

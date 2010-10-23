@@ -53,7 +53,6 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
     elif zoom_level == ZOOM_LARGE:
         width = 400
         size = 'large'
-    width_string = 'width="' + str(width) + '"'
 
     if revision.changeset.state == states.APPROVED:
         current_cover = CoverRevision.objects.filter(cover=revision.cover, 
@@ -79,8 +78,10 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
                      revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
             img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR +\
                       suffix + file_extension
+            # for old covers do manual scaling, since it is the uploaded file
             return mark_safe('<img src="' + img_url + '" alt="' + \
-              esc(alt_text) + '" ' + width_string + ' class="cover_img"/>')
+              esc(alt_text) + '" width="' + str(width) + \
+              '" class="cover_img"/>')
     elif revision.deleted:
         return get_image_tag(revision.cover, esc(alt_text), zoom_level)  
     else:
@@ -88,7 +89,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
         img_url = NEW_COVERS_LOCATION + \
           revision.changeset.created.strftime('%B_%Y/').lower() + suffix
         return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) \
-               + '" ' + width_string + ' class="cover_img"/>')
+               + '" ' + ' class="cover_img"/>')
 
 
 def get_preview_image_tags_per_page(page, series=None):
@@ -167,10 +168,25 @@ def generate_sizes(cover, im):
     if im.mode != "RGB":
         im = im.convert("RGB")
 
+    if cover.is_wraparound:
+        # coordinates in PIL are measured from the top/left corner
+        front_part = im.crop((cover.front_left, im.size[1]-cover.front_top, 
+                              cover.front_right, im.size[1]-cover.front_bottom))
+        full_cover = im
+        im = front_part
+
     for width in [100, 200, 400]:
         scaled_name = "%s/w%d/%d.jpg" % (base_dir, width, cover.id)
-        size = width, int(float(width)/im.size[0]*im.size[1])
-        scaled = im.resize(size,Image.ANTIALIAS)
+        if cover.is_wraparound and width == 400:
+            # ratio between widths of full cover and its front part times 400
+            width = float(full_cover.size[0]) / \
+                    float(cover.front_right - cover.front_left)*400.
+            size = int(width), \
+                   int(width / full_cover.size[0] * full_cover.size[1])
+            scaled = full_cover.resize(size, Image.ANTIALIAS)
+        else:
+            size = width, int(float(width)/im.size[0]*im.size[1])
+            scaled = im.resize(size, Image.ANTIALIAS)
         scaled.save(scaled_name, subsampling='4:4:4')
 
 
@@ -229,7 +245,8 @@ def delete_cover(request, id):
 
     # check if there is a pending change for the cover
     try:
-        revision = CoverRevision.objects.get(cover=cover, changeset__state__in=states.ACTIVE)
+        revision = CoverRevision.objects.get(cover=cover,
+                   changeset__state__in=states.ACTIVE)
         return render_error(request,
           ('There currently is a <a href="%s">pending replacement</a> '
            'for this cover of %s.') % (urlresolvers.reverse('compare',
@@ -254,6 +271,115 @@ def delete_cover(request, id):
     return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                                 kwargs={'issue_id': cover.issue.id}))
 
+def handle_uploaded_cover(request, cover, issue):
+    ''' process the uploaded file and generate CoverRevision '''
+
+    try:
+        form = UploadScanForm(request.POST,request.FILES)
+    except IOError: # sometimes uploads misbehave. connection dropped ?
+        error_text = 'Something went wrong with the upload. ' + \
+                        'Please <a href="' + request.path + '">try again</a>.'
+        return render_error(request, error_text, redirect=False, 
+            is_safe=True)
+
+    if not form.is_valid():
+        return _display_cover_upload_form(request, form, cover, issue)
+
+    # if scan is actually in the form handle it
+    if 'scan' in request.FILES:
+        # process form
+        scan = request.FILES['scan']
+        file_source = request.POST['source']
+        marked = form.cleaned_data['marked']
+        if form.cleaned_data['is_gatefold']:
+            raise NotImplementedError
+            #return handle_gatefold_cover()
+
+        # create OI records
+        changeset = Changeset(indexer=request.user, state=states.PENDING,
+                                change_type=CTYPES['cover'])
+        changeset.save()
+
+        if cover: # upload_type is 'replacement':
+            revision = CoverRevision(changeset=changeset, issue=issue,
+                cover=cover, file_source=file_source, marked=marked,
+                is_replacement = True)
+        else:
+            revision = CoverRevision(changeset=changeset, issue=issue,
+                file_source=file_source, marked=marked)
+        revision.save()
+
+        # put new uploaded covers into 
+        # media/<LOCAL_NEW_SCANS>/<monthname>_<year>/ 
+        # with name 
+        # <revision_id>_<date>_<time>.<ext>
+        scan_name = str(revision.id) + os.path.splitext(scan.name)[1]
+        upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
+                        changeset.created.strftime('%B_%Y/').lower()
+        destination_name = upload_dir + scan_name
+        try: # essentially only needed at beginning of the month
+            check_cover_dir(upload_dir) 
+        except IOError:
+            changeset.delete()
+            error_text = "Problem with file storage for uploaded " + \
+                            "cover, please report an error." 
+            return render_error(request, error_text, redirect=False)
+
+        # write uploaded file
+        destination = open(destination_name, 'wb')
+        for chunk in scan.chunks():
+            destination.write(chunk)
+        destination.close()
+
+        try:
+            # generate different sizes we are using
+            im = Image.open(destination.name)
+            wide_enough = False
+            if form.cleaned_data['is_wraparound']:
+                # wraparounds need to have twice the size
+                if im.size[0] >= 800:
+                    wide_enough = True
+            elif im.size[0] >= 400:
+                wide_enough = True
+            if wide_enough:
+                if form.cleaned_data['is_wraparound']:
+                    revision.is_wraparound = True
+                    revision.front_left = im.size[0]/2
+                    revision.front_right = im.size[0]
+                    revision.front_bottom = 0
+                    revision.front_top = im.size[1]
+                    revision.save()
+                generate_sizes(revision, im)
+            else:
+                changeset.delete()
+                os.remove(destination.name)
+                info_text = "Image is too small, only " + str(im.size) + \
+                            " in size."
+                return _display_cover_upload_form(request, form, cover, issue,
+                  info_text=info_text)
+        except IOError: 
+            # just in case, django *should* have taken care of file type
+            changeset.delete()
+            os.remove(destination.name)
+            info_text = 'Error: File \"' + scan.name + \
+                        '" is not a valid picture.'
+            return _display_cover_upload_form(request, form, cover, issue,
+              info_text=info_text)
+
+        # all done, we can save the state
+        changeset.comments.create(commenter=request.user,
+                                    text=form.cleaned_data['comments'],
+                                    old_state=states.UNRESERVED,
+                                    new_state=changeset.state)
+
+        if 'remember_source' in request.POST:
+            request.session['oi_file_source'] = request.POST['source']
+        else:
+            request.session.pop('oi_file_source','')
+
+        return HttpResponseRedirect(urlresolvers.reverse('upload_cover_complete',
+            kwargs={'revision_id': revision.id} ))
+
 @login_required
 def upload_cover(request, cover_id=None, issue_id=None):
     """
@@ -267,12 +393,7 @@ def upload_cover(request, cover_id=None, issue_id=None):
     if cover_id and issue_id:
         raise ValueError
 
-    upload_template = 'oi/edit/upload_cover.html'
-    style = 'default'
-
-    # set cover, issue, covers, replace_cover, upload_type
-    covers = []
-    replace_cover = None
+    # check for cover and issue
     # if cover_id is present it is a replacement upload
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
@@ -289,145 +410,14 @@ def upload_cover(request, cover_id=None, issue_id=None):
                 kwargs={'id': revision.changeset.id}), esc(cover.issue)),
             redirect=False, is_safe=True)
 
-        upload_type = 'replacement'
-        replace_cover = get_image_tag(cover, "cover to replace", ZOOM_MEDIUM)
     # no cover_id, therefore upload a cover to an issue (first or variant)
     else: 
         issue = get_object_or_404(Issue, id=issue_id)
         cover = None
-        if issue.has_covers():
-            covers = get_image_tags_per_issue(issue, "current covers", 
-                                              ZOOM_MEDIUM, as_list=True)
-            upload_type = 'variant'
-        else:
-            upload_type = ''
-
-    # generate tags for cover uploads for this issue currently in the queue
-    active_covers_tags = []
-    active_covers = CoverRevision.objects.filter(issue=issue, 
-                    changeset__state__in=states.ACTIVE, deleted=False).order_by('created')
-    for active_cover in active_covers:
-        active_covers_tags.append([active_cover, 
-                                   get_preview_image_tag(active_cover, 
-                                   "pending cover", ZOOM_MEDIUM)])
 
     # current request is an upload
     if request.method == 'POST':
-        try:
-            form = UploadScanForm(request.POST,request.FILES)
-        except IOError: # sometimes uploads misbehave. connection dropped ?
-            error_text = 'Something went wrong with the upload. ' + \
-                         'Please <a href="' + request.path + '">try again</a>.'
-            return render_error(request, error_text, redirect=False, 
-                is_safe=True)
-
-        if not form.is_valid():
-            return render_to_response(upload_template, {
-                                      'form': form,
-                                      'cover' : cover,
-                                      'issue' : issue,
-                                      'style' : style,
-                                      'replace_cover' : replace_cover,
-                                      'current_covers' : covers,
-                                      'upload_type' : upload_type,
-                                      'table_width': UPLOAD_WIDTH
-                                      },
-                                      context_instance=RequestContext(request))
-        # if scan is actually in the form handle it
-        if 'scan' in request.FILES:
-            # process form
-            scan = request.FILES['scan']
-            file_source = request.POST['source']
-            marked = 'marked' in request.POST
-
-            # create OI records
-            changeset = Changeset(indexer=request.user, state=states.PENDING,
-                                  change_type=CTYPES['cover'])
-            changeset.save()
-
-            if upload_type == 'replacement':
-                revision = CoverRevision(changeset=changeset, issue=issue,
-                  cover=cover, file_source=file_source, marked=marked,
-                  is_replacement = True)
-            else:
-                revision = CoverRevision(changeset=changeset, issue=issue,
-                  file_source=file_source, marked=marked)
-            revision.save()
-
-            # put new uploaded covers into 
-            # media/<LOCAL_NEW_SCANS>/<monthname>_<year>/ 
-            # with name 
-            # <revision_id>_<date>_<time>.<ext>
-            scan_name = str(revision.id) + os.path.splitext(scan.name)[1]
-            upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
-                         changeset.created.strftime('%B_%Y/').lower()
-            destination_name = upload_dir + scan_name
-            try: # essentially only needed at beginning of the month
-                check_cover_dir(upload_dir) 
-            except IOError:
-                changeset.delete()
-                error_text = "Problem with file storage for uploaded " + \
-                             "cover, please report an error." 
-                return render_error(request, error_text, redirect=False)
- 
-            # write uploaded file
-            destination = open(destination_name, 'wb')
-            for chunk in scan.chunks():
-                destination.write(chunk)
-            destination.close()
-
-            try:
-                # generate different sizes we are using
-                im = Image.open(destination.name)
-                if im.size[0] >= 400:
-                    generate_sizes(revision, im)
-                else:
-                    changeset.delete()
-                    os.remove(destination.name)
-                    info_text = "Image is too small, only " + str(im.size) + \
-                                " in size."
-                    return render_to_response(upload_template, {
-                      'form': form,
-                      'info' : info_text,
-                      'cover' : cover,
-                      'current_covers' : covers,
-                      'replace_cover' : replace_cover,
-                      'upload_type' : upload_type,
-                      'table_width': UPLOAD_WIDTH,
-                      'issue' : issue
-                      },
-                      context_instance=RequestContext(request))
-            except IOError: 
-                # just in case, django *should* have taken care of file type
-                changeset.delete()
-                os.remove(destination.name)
-                return render_to_response(upload_template, {
-                  'form': form,
-                  'info' : 'Error: File \"' + scan.name + \
-                           '" is not a valid picture.',
-                  'cover' : cover,
-                  'issue' : issue,
-                  'current_covers' : covers,
-                  'replace_cover' : replace_cover,
-                  'upload_type' : upload_type,
-                  'table_width': UPLOAD_WIDTH
-                  },
-                  context_instance=RequestContext(request))
-
-            # all done, we can save the state
-            changeset.comments.create(commenter=request.user,
-                                      text=form.cleaned_data['comments'],
-                                      old_state=states.UNRESERVED,
-                                      new_state=changeset.state)
-
-            if 'remember_source' in request.POST:
-                request.session['oi_file_source'] = request.POST['source']
-            else:
-                request.session.pop('oi_file_source','')
-
-            return HttpResponseRedirect(urlresolvers.reverse('upload_cover_complete',
-                kwargs={'revision_id': revision.id} ))
-
+        return handle_uploaded_cover(request, cover, issue)
     # request is a GET for the form
     else:
         if 'oi_file_source' in request.session:
@@ -438,17 +428,46 @@ def upload_cover(request, cover_id=None, issue_id=None):
         form = UploadScanForm(initial=vars)
 
         # display the form
-        return render_to_response(upload_template, {
-                                  'form': form, 
-                                  'cover' : cover,
-                                  'issue' : issue,
-                                  'current_covers' : covers,
-                                  'replace_cover' : replace_cover,
-                                  'active_covers' : active_covers_tags,
-                                  'upload_type' : upload_type,
-                                  'table_width': UPLOAD_WIDTH},
-                                  context_instance=RequestContext(request))
+        return _display_cover_upload_form(request, form, cover, issue)
 
+def _display_cover_upload_form(request, form, cover, issue, info_text=''):
+    upload_template = 'oi/edit/upload_cover.html'
+
+    # set covers, replace_cover, upload_type
+    covers = []
+    replace_cover = None
+    if cover:
+        upload_type = 'replacement'
+        replace_cover = get_image_tag(cover, "cover to replace", ZOOM_MEDIUM)
+    else:
+        if issue.has_covers():
+            covers = get_image_tags_per_issue(issue, "current covers", 
+                                              ZOOM_MEDIUM, as_list=True)
+            upload_type = 'variant'
+        else:
+            upload_type = ''
+
+    # generate tags for cover uploads for this issue currently in the queue
+    active_covers_tags = []
+    active_covers = CoverRevision.objects.filter(issue=issue, 
+                    changeset__state__in=states.ACTIVE,
+                    deleted=False).order_by('created')
+    for active_cover in active_covers:
+        active_covers_tags.append([active_cover, 
+                                   get_preview_image_tag(active_cover, 
+                                     "pending cover", ZOOM_MEDIUM)])
+
+    return render_to_response(upload_template, {
+                                'form': form, 
+                                'info' : info_text,
+                                'cover' : cover,
+                                'issue' : issue,
+                                'current_covers' : covers,
+                                'replace_cover' : replace_cover,
+                                'active_covers' : active_covers_tags,
+                                'upload_type' : upload_type,
+                                'table_width': UPLOAD_WIDTH},
+                              context_instance=RequestContext(request))
 
 @permission_required('gcd.can_approve')
 def mark_cover(request, marked, cover_id=None, revision_id=None):
