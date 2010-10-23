@@ -65,7 +65,7 @@ class Series(models.Model):
     language = models.ForeignKey(Language)
 
     # Fields related to the publishers table.
-    publisher = models.ForeignKey(Publisher, null=True)
+    publisher = models.ForeignKey(Publisher)
     imprint = models.ForeignKey(Publisher, null=True,
                                 related_name='imprint_series_set')
 

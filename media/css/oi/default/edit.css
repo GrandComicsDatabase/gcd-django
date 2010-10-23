@@ -84,7 +84,7 @@ table.deleted tr {
     background-color: tomato;
 }
 
-table.added tr {
+table.added tr.True {
     background-color: palegreen;
 }
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.gcd.models import Indexer, Country, Language, StoryType, Classification
+from apps.gcd.models import *
 
 class CountryAdmin(admin.ModelAdmin):
     search_fields = ('name', 'code')
@@ -47,9 +47,13 @@ class IndexerAdmin(admin.ModelAdmin):
     )
     filter_horizontal = ('languages',)
 
+class ImpGrantAdmin(admin.ModelAdmin):
+    raw_id_fields = ('indexer',)
+
 admin.site.register(Country, CountryAdmin)
 admin.site.register(Language, LanguageAdmin)
 admin.site.register(StoryType, StoryTypeAdmin)
 admin.site.register(Classification, ClassificationAdmin)
 admin.site.register(Indexer, IndexerAdmin)
+admin.site.register(ImpGrant, ImpGrantAdmin)
 

@@ -9,19 +9,27 @@
 </h2>
 <table>
   <tr>
+      {% if perms.gcd.can_approve and queue_name != 'editing' %}
+    <th> </th>
+      {% endif %}
     <th> Name {{ queue_name }}</th>
-      {% ifnotequal queue_name 'editing' %}
+      {% if queue_name != 'editing' %}
     <th> Indexer</th>
-      {% endifnotequal %}
-      {% ifnotequal queue_name 'reviews' %}
+      {% endif %}
+      {% if queue_name != 'reviews' %}
     <th> Approver</th>
     <th> State </th>
-      {% endifnotequal %}
+      {% endif %}
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
       {% for changeset in section.changesets %}
   <tr>
+        {% if perms.gcd.can_approve and queue_name != 'editing' %}
+    <td>
+      {{ changeset.magnitude }}
+    </td>
+        {% endif %}
     <td>
         {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
       <a href="{% url compare id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">{{ changeset.queue_name }}</a>
@@ -30,13 +38,13 @@
         {% endif %}
       <span class="{{ changeset.changeset_action }}">{{ changeset.queue_descriptor }}</span>
     </td>
-        {% ifnotequal queue_name 'editing' %}
+        {% if queue_name != 'editing' %}
     <td> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
-        {% endifnotequal %}
-        {% ifnotequal queue_name 'reviews' %}
+        {% endif %}
+        {% if queue_name != 'reviews' %}
     <td> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
     <td> {{ changeset.display_state }} </td>
-        {% endifnotequal %}
+        {% endif %}
     <td> {{ changeset.modified }} </td>
     <td> {% with changeset.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>

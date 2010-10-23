@@ -2026,8 +2026,7 @@ def compare(request, id):
     if model_name == 'cover':
         return cover_compare(request, changeset, revision)
 
-    prev_rev = revision.previous()
-    revision.compare_changes(prev_rev)
+    revision.compare_changes()
 
     if changeset.change_type == CTYPES['issue_add'] and \
       changeset.issuerevisions.count() > 1:
@@ -2037,6 +2036,7 @@ def compare(request, id):
     else:
         template = 'oi/edit/compare.html'
 
+    prev_rev = revision.previous()
     field_list = revision.field_list()
     # eliminate fields that shouldn't appear in the compare
     if model_name == 'series':

@@ -77,11 +77,12 @@ class Issue(models.Model):
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
         from story import StoryType
-        if self.active_stories().filter(type=\
-          StoryType.objects.get(name='story')).count() > 0:
+        if self.active_stories().filter(type=StoryType.objects.get(name='story'))\
+                                .count() > 0:
             is_indexed = True
         else:
-            total_count = self.active_stories().aggregate(Sum('page_count'))['page_count__sum']
+            total_count = self.active_stories()\
+                              .aggregate(Sum('page_count'))['page_count__sum']
             if total_count is not None and total_count * 2 > self.page_count:
                 is_indexed = True
             else:

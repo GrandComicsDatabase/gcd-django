@@ -138,7 +138,8 @@ class Brand(BasePublisher):
 
     def deletable(self):
         return self.issue_count == 0 and \
-          self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+          self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
+                              .count() == 0
 
     def get_absolute_url(self):
         return "/brand/%i/" % self.id

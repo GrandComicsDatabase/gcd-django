@@ -34,8 +34,15 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['series'],
                            CTYPES['cover']))
 
+ACTION_ADD = 'add'
+ACTION_DELETE = 'delete'
+ACTION_MODIFY = 'modify'
+
+IMP_BONUS_ADD = 10
+IMP_COVER_VALUE = 5
+
 def update_count(field, delta, language=None):
-    ''' 
+    '''
     updates statistics, for all and per language
     CountStats with language=None is for all languages
     '''
@@ -79,6 +86,8 @@ class Changeset(models.Model):
                                  related_name='approved_%(class)s', null=True)
 
     change_type = models.IntegerField(db_index=True)
+
+    imps = models.IntegerField(default=0)
 
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
@@ -138,7 +147,7 @@ class Changeset(models.Model):
 
     def singular(self):
         """
-        Used for conditionals in templates, as bulk issue adds are treated 
+        Used for conditionals in templates, as bulk issue adds are treated
         differently.
         """
         return self.inline() or self.issuerevisions.count() == 1
@@ -160,14 +169,18 @@ class Changeset(models.Model):
         return self.revisions.next().queue_descriptor()
 
     def changeset_action(self):
+        """
+        Produce a human-readable description of whether we're adding, removing
+        or modifying data with this changeset.
+        """
         if self.change_type == CTYPES['issue_add']:
-            return 'add'
+            return ACTION_ADD
         revision = self.revisions.next()
         if revision.deleted:
-            return 'delete'
+            return ACTION_DELETE
         elif revision.source is None:
-            return 'add'
-        return 'modify'
+            return ACTION_ADD
+        return ACTION_MODIFY
 
     def display_state(self):
         """
@@ -193,7 +206,7 @@ class Changeset(models.Model):
         if self.approver is not None:
             new_state = states.REVIEWING
         return new_state
-        
+
     def submit(self, notes=''):
         """
         Submit changes for approval.
@@ -213,6 +226,10 @@ class Changeset(models.Model):
                              old_state=self.state,
                              new_state=new_state)
         self.state = new_state
+
+        # Since a submission is what puts the changeset in a non-editable state,
+        # calculate the imps now.
+        self.calculate_imps()
         self.save()
 
     def retract(self, notes=''):
@@ -309,7 +326,7 @@ class Changeset(models.Model):
                              old_state=self.state,
                              new_state=states.APPROVED)
 
-        issue_revision_count = self.issuerevisions.count() 
+        issue_revision_count = self.issuerevisions.count()
         if issue_revision_count > 1:
             # Bulk add of skeletons is relatively complicated.
             # The first issue will have the "after" field set.  Later
@@ -348,10 +365,39 @@ class Changeset(models.Model):
         self.state = states.OPEN
         self.save()
 
+    def calculate_imps(self):
+        """
+        Go through and add up the imps from the revisions, but don't commit
+        to the database.
+        """
+        self.imps = 0
+        for revision in self.revisions:
+            self.imps += revision.calculate_imps()
+
+    def magnitude(self):
+        """
+        A rough guide to the size of the change.  Currently implemented by
+        examining the calculated imps, but may be switched to a changed field
+        count of some sort if we change how imps work or decide that a different
+        metric will work better as a size estimate.  For instance number of
+        characters (as in letters, not the characters field) changed.
+        """
+        return self.imps
+
+    def total_imps(self):
+        """
+        The total number of imps awarded for this changeset, including both
+        field-calculated imps and bonuses such as the add bonus.
+        """
+        calculated = self.imps
+        if self.changeset_action() == ACTION_ADD:
+            return calculated + IMP_BONUS_ADD
+        return calculated
+
     def __unicode__(self):
         if self.inline():
             return  unicode(self.inline_revision())
-        ir_count = self.issuerevisions.count() 
+        ir_count = self.issuerevisions.count()
         if ir_count == 1:
             return unicode(self.issuerevisions.all()[0])
         if ir_count > 1 and self.change_type == CTYPES['issue_add']:
@@ -360,7 +406,8 @@ class Changeset(models.Model):
             return u'%s #%s - %s' % (first.series, first.display_number,
                                                   last.display_number)
         if self.change_type == CTYPES['issue_bulk']:
-            return unicode("%s and %d other issues" % (self.issuerevisions.all()[0], ir_count - 1))
+            return unicode("%s and %d other issues" %
+                           (self.issuerevisions.all()[0], ir_count - 1))
         return 'Changeset: %d' % self.id
 
 class ChangesetComment(models.Model):
@@ -480,6 +527,8 @@ class Revision(models.Model):
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
 
+    is_changed = False
+
     def _source(self):
         """
         The thing of which this is a revision.
@@ -499,22 +548,55 @@ class Revision(models.Model):
     # Note: lambda required so that polymorphism works.
     source_name = property(lambda self: self._source_name())
 
+    def _changed(self):
+        """
+        The dictionary of change information between this revision and the
+        previous revision of the same source object.
+        """
+        pass
+
     def field_list(self):
+        """
+        Public field list interface, in case we ever decide we want
+        to process child class field lists before returning them.
+        """
         return self._field_list()
 
+    def _field_list(self):
+        """
+        Default implementation for objects that have no fields (like covers).
+        """
+        return []
+
+    def _get_blank_values(self):
+        """
+        Create a dictionary with the "blank" values for all of the fields
+        of this type of revision.  This is used to determine the change
+        value of newly added objects.  Blank values are often not allowed
+        in the database (i.e. NOT NULL columns) so this cannot be done
+        with a revision instance.  Blank values should be set.
+        """
+        raise NotImplementedError
+
     def previous(self):
-        # prev_rev stays None for additions that are not approved yet
-        prev_rev = None
+        # We never spontaneously gain a previous revision during normal operation,
+        # so it's safe to cache this.
+        if hasattr(self, '_prev_rev'):
+            return self._prev_rev
+
+        # prev_rev stays None for additions
+        self._prev_rev = None
+
         if self.source is not None:
             prev_revs = self.source.revisions \
               .exclude(changeset__state=states.DISCARDED) \
               .filter(modified__lt=self.modified)
             if prev_revs.count() > 0:
                 # normal case, all revisions accounted for back to object creation
-                prev_rev = prev_revs[0]
-        return prev_rev
+                self._prev_rev = prev_revs[0]
+        return self._prev_rev
 
-    def compare_changes(self, prev_rev=None):
+    def compare_changes(self):
         """
         Set up the 'changed' property so that it can be accessed conveniently
         from a template.  Template calling limitations prevent just
@@ -529,28 +611,56 @@ class Revision(models.Model):
             self.is_changed = True
             return
 
-        if self.source_name == 'story':
-            # usually we have precomputed prev_rev but not for stories
-            # since this is called from the template
-            prev_rev = self.previous()
+        prev_rev = self.previous()
         if prev_rev is None:
-            # addition same as deletion above
             self.is_changed = True
-            return
+            prev_values = self._get_blank_values()
+            get_prev_value = lambda field: prev_values[field]
+        else:
+            get_prev_value = lambda field: getattr(prev_rev, field)
 
-        for field_name in self._field_list():
+        for field_name in self.field_list():
+            old = get_prev_value(field_name)
             new = getattr(self, field_name)
-            if prev_rev is None:
-                if new:
-                    self.changed[field_name] = True
-                    self.is_changed = True
-                else:
-                    self.changed[field_name] = False
-            elif new != getattr(prev_rev, field_name):
-                self.changed[field_name] = True
-                self.is_changed = True
-            else:
-                self.changed[field_name] = False
+            field_changed = old != new
+            self.changed[field_name] = field_changed
+            self.is_changed |= field_changed
+
+    def _start_imp_sum(self):
+        """
+        Hook for subclasses to initialize state for an IMP calculation.
+        For instance, if a subclass is keeping track of whether either of a
+        pair of fields that together represent an IMP have been seen, this
+        hook can be used to clear that state before a new calculation begins.
+        """
+        pass
+
+    def _imps_for(self, field_name):
+        """
+        Each revision subclass should override this and have it return the number
+        of IMPs that a field should add to the total.  Note that this may be
+        stateful as a change in one field may have already been accounted for due
+        to a change in a related field.  Child classes may maintain state for this
+        sort of tracking, and the _start_imp_sum hook should be overridden to
+        clear any such state.
+        """
+        raise NotImplementedError
+
+    def calculate_imps(self):
+        """
+        Calculate and return the number of Index Measurment Points that this
+        revision is worth.  Relies on self.changed being set.
+        """
+        imps = 0
+        self.compare_changes()
+        if self.deleted or not self.is_changed:
+            return imps
+
+        self._start_imp_sum()
+        for field_name in self.field_list():
+            if field_name in self.changed and self.changed[field_name]:
+                imps += self._imps_for(field_name)
+        return imps
 
     def queue_name(self):
         """
@@ -653,6 +763,10 @@ class PublisherRevisionBase(Revision):
     url = models.URLField(blank=True,
       help_text='The official web site of the publisher.')
 
+    # order exactly as desired in compare page
+    # use list instead of set to control order
+    _base_field_list = ['name', 'year_began', 'year_ended', 'url', 'notes']
+
     def _assign_base_fields(self, target):
         target.name = self.name
         target.year_began = self.year_began
@@ -661,9 +775,12 @@ class PublisherRevisionBase(Revision):
         target.url = self.url
 
     def _field_list(self):
-        # order exactly as desired in compare page
-        # use list instead of set to control order
-        return ['name', 'year_began', 'year_ended', 'url', 'notes']
+        return self._base_field_list
+
+    def _imps_for(self, field_name):
+        if field_name in self._base_field_list:
+            return 1
+        return 0
 
     def __unicode__(self):
         if self.source is None:
@@ -760,6 +877,25 @@ class PublisherRevision(PublisherRevisionBase):
         fields.insert(fields.index('url'), 'country')
         fields.extend(('is_master', 'parent'))
         return fields
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'country': None,
+            'year_began': None,
+            'year_ended': None,
+            'url': None,
+            'notes': '',
+            'is_master': True,
+            'parent': None,
+        }
+
+    def _imps_for(self, field_name):
+        # We don't actually ever change parent and is_master since imprint
+        # objects are hidden from direct access by the indexer.
+        if field_name == 'country':
+            return 1
+        return PublisherRevisionBase._imps_for(self, field_name)
 
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
@@ -867,7 +1003,7 @@ class IndiciaPublisherRevisionManager(PublisherRevisionManagerBase):
 
         revision.save()
         return revision
-        
+
 class IndiciaPublisherRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_indicia_publisher_revision'
@@ -900,6 +1036,23 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         fields.insert(fields.index('url'), 'country')
         fields.append(('parent'))
         return fields
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'country': None,
+            'year_began': None,
+            'year_ended': None,
+            'is_surrogate': None,
+            'url': None,
+            'notes': '',
+            'parent': None,
+        }
+
+    def _imps_for(self, field_name):
+        if field_name in ['is_surrogate', 'parent', 'country']:
+            return 1
+        return PublisherRevisionBase._imps_for(self, field_name)
 
     def _queue_name(self):
         return u'%s: %s (%s, %s)' % (self.parent.name,
@@ -1015,6 +1168,21 @@ class BrandRevision(PublisherRevisionBase):
         fields.append('parent')
         return fields
 
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'year_began': None,
+            'year_ended': None,
+            'url': None,
+            'notes': '',
+            'parent': None,
+        }
+
+    def _imps_for(self, field_name):
+        if field_name == 'parent':
+            return 1
+        return PublisherRevisionBase._imps_for(self, field_name)
+
     def _queue_name(self):
         return u'%s: %s (%s)' % (self.parent.name, self.name, self.year_began)
 
@@ -1120,6 +1288,23 @@ class CoverRevision(Revision):
 
     def _source_name(self):
         return 'cover'
+
+    def _get_blank_values(self):
+        """
+        Covers don't do field comparisons, so just return an empty
+        dictionary so we don't throw an exception if code calls this.
+        """
+        return {}
+
+    def calculate_imps(self, prev_rev=None):
+        return IMP_COVER_VALUE
+
+    def _imps_for(self, field_name):
+        """
+        Covers are done purely on a flat point model and don't really have fields.
+        We shouldn't get here, but just in case, return 0 to be safe.
+        """
+        return 0
 
     def commit_to_display(self, clear_reservation=True):
         # the file handling is in the view/covers code
@@ -1281,6 +1466,29 @@ class SeriesRevision(Revision):
                 'country', 'language', 'tracking_notes', 'publication_notes',
                 'notes', 'format', 'imprint']
 
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'classification': None,
+            'format': '',
+            'notes': '',
+            'year_began': None,
+            'year_ended': None,
+            'is_current': None,
+            'publication_notes': '',
+            'tracking_notes': '',
+            'country': None,
+            'language': None,
+            'publisher': None,
+            'imprint': None,
+        }
+
+    def _imps_for(self, field_name):
+        """
+        All current series fields are simple one point fields.
+        """
+        return 1
+
     def _do_complete_added_revision(self, publisher, imprint=None):
         """
         Do the necessary processing to complete the fields of a new
@@ -1297,7 +1505,7 @@ class SeriesRevision(Revision):
             self.publisher.save()
             if self.imprint:
                 self.imprint.series_count += 1
-                self.imprint.save()       
+                self.imprint.save()
             update_count('series', 1, language=self.language)
         elif self.deleted:
             self.publisher.series_count -= 1
@@ -1305,7 +1513,7 @@ class SeriesRevision(Revision):
             self.publisher.save()
             if self.imprint:
                 self.imprint.series_count -= 1
-                self.imprint.save()       
+                self.imprint.save()
             series.delete()
             update_count('series', -1, language=series.language)
             return
@@ -1332,26 +1540,26 @@ class SeriesRevision(Revision):
             update_count('series', -1, language=series.language)
             update_count('series', 1, language=self.language)
             if series.issue_count:
-                update_count('issues', -series.issue_count, 
+                update_count('issues', -series.issue_count,
                              language=series.language)
-                update_count('issues', series.issue_count, 
+                update_count('issues', series.issue_count,
                              language=self.language)
                 # TODO: change when deleted issues are possible
                 issue_indexes = Issue.objects.filter(series=series,
                                    is_indexed=True).count()
-                update_count('issue indexes', -issue_indexes, 
+                update_count('issue indexes', -issue_indexes,
                              language=series.language)
-                update_count('issue indexes', issue_indexes, 
+                update_count('issue indexes', issue_indexes,
                              language=self.language)
-                story_count = Story.objects.filter(issue__series=series, 
+                story_count = Story.objects.filter(issue__series=series,
                                                    deleted=False).count()
-                update_count('stories', -story_count, 
+                update_count('stories', -story_count,
                              language=series.language)
-                update_count('stories', story_count, 
+                update_count('stories', story_count,
                                  language=self.language)
-                update_count('covers', -series.scan_count(), 
+                update_count('covers', -series.scan_count(),
                              language=series.language)
-                update_count('covers', series.scan_count(), 
+                update_count('covers', series.scan_count(),
                              language=self.language)
         series.language = self.language
         series.publisher = self.publisher
@@ -1478,7 +1686,7 @@ class IssueRevision(Revision):
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
-    
+
     def _display_number(self):
         """
         Implemented separately because it needs to use the revision's
@@ -1525,6 +1733,63 @@ class IssueRevision(Revision):
                 'indicia_pub_not_printed', 'brand', 'no_brand', 'price',
                 'page_count', 'page_count_uncertain', 'editing', 'no_editing',
                 'isbn', 'notes']
+
+    def _get_blank_values(self):
+        return {
+            'number': '',
+            'volume': None,
+            'no_volume': None,
+            'display_volume_with_number': None,
+            'isbn': '',
+            'publication_date': '',
+            'price': '',
+            'key_date': '',
+            'indicia_frequency': '',
+            'series': None,
+            'indicia_publisher': None,
+            'indicia_pub_not_printed': None,
+            'brand': None,
+            'no_brand': None,
+            'page_count': None,
+            'page_count_uncertain': None,
+            'editing': '',
+            'no_editing': '',
+            'notes': '',
+            'sort_code': None,
+            'after': None,
+        }
+
+    def _start_imp_sum(self):
+        self._seen_volume = False
+        self._seen_indicia_publisher = False
+        self._seen_brand = False
+        self._seen_page_count = False
+        self._seen_editing = False
+
+    def _imps_for(self, field_name):
+        if field_name in ('number', 'isbn', 'publication_date', 'key_date',
+                          'indicia_frequency', 'price', 'notes'):
+            return 1
+        if not self._seen_volume and \
+           field_name in ('volume', 'no_volume', 'display_volume_with_number'):
+            self._seen_volume = True
+            return 1
+        if not self._seen_indicia_publisher and \
+           field_name in ('indicia_publisher', 'indicia_pub_not_printed'):
+            self._seen_indicia_publisher = True
+            return 1
+        if not self._seen_brand and field_name in ('brand', 'no_brand'):
+            self._seen_brand = True
+            return 1
+        if not self._seen_page_count and \
+           field_name in ('page_count', 'page_count_uncertain'):
+            self._seen_page_count = True
+            return 1
+        if not self._seen_editing and field_name in ('editing', 'no_editing'):
+            self._seen_editing = True
+            return 1
+        # Note, the "after" field does not directly contribute IMPs.
+        return 0
 
     def _source(self):
         return self.issue
@@ -1593,7 +1858,7 @@ class IssueRevision(Revision):
                 self.indicia_publisher.save()
             if self.series.imprint:
                 self.series.imprint.issue_count += 1
-                self.series.imprint.save()       
+                self.series.imprint.save()
             update_count('issues', 1, language=self.series.language)
             self._check_first_last()
 
@@ -1609,7 +1874,7 @@ class IssueRevision(Revision):
                 self.indicia_publisher.save()
             if self.series.imprint:
                 self.series.imprint.issue_count -= 1
-                self.series.imprint.save()       
+                self.series.imprint.save()
             update_count('issues', -1, language=issue.series.language)
             issue.delete()
             self._check_first_last()
@@ -1799,6 +2064,79 @@ class StoryRevision(Revision):
                 'editing', 'no_editing', 'characters', 'synopsis',
                 'job_number', 'reprint_notes', 'notes']
 
+    def _get_blank_values(self):
+        return {
+            'title': '',
+            'title_inferred': '',
+            'feature': '',
+            'page_count': None,
+            'page_count_uncertain': None,
+            'script': '',
+            'pencils': '',
+            'inks': '',
+            'colors': '',
+            'letters': '',
+            'editing': '',
+            'no_script': None,
+            'no_pencils': None,
+            'no_inks': None,
+            'no_colors': None,
+            'no_letters': None,
+            'no_editing': None,
+            'notes': '',
+            'synopsis': '',
+            'characters': '',
+            'reprint_notes': '',
+            'genre': '',
+            'type': None,
+            'job_number': '',
+            'sequence_number': None,
+            'issue': None,
+        }
+
+    def _start_imp_sum(self):
+        self._seen_script = False
+        self._seen_pencils = False
+        self._seen_inks = False
+        self._seen_colors = False
+        self._seen_letters = False
+        self._seen_editing = False
+        self._seen_page_count = False
+        self._seen_title = False
+
+    def _imps_for(self, field_name):
+        if field_name in ('sequence_number', 'type', 'feature', 'genre',
+                          'characters', 'synopsis', 'job_number', 'reprint_notes',
+                          'notes'):
+            return 1
+        if not self._seen_title and field_name in ('title', 'title_inferred'):
+            self._seen_title = True
+            return 1
+
+        if not self._seen_page_count:
+            self._seen_page_count = True
+            if field_name == 'page_count':
+                return 1
+
+            # checking the 'uncertain' box  without also at least guessing the page
+            # count itself doesn't count as IMP-worthy information.
+            if field_name == 'page_count_uncertain' and \
+               self.page_count is not None:
+                return 1
+
+        for name in ('script', 'pencils', 'inks', 'colors', 'letters', 'editing'):
+            attr = '_seen_%s' % name
+            no_name = 'no_%s' % name
+            if not getattr(self, attr) and field_name in (name, no_name):
+                setattr(self, attr, True)
+
+                # Just putting in a question mark isn't worth an IMP.
+                # Note that the input data is already whitespace-stripped.
+                if field_name == name and getattr(self, field_name) == '?':
+                    return 0
+                return 1
+        return 0
+
     def _source(self):
         return self.story
 
@@ -1855,7 +2193,7 @@ class StoryRevision(Revision):
         elif self.deleted:
             if self.issue.is_indexed == True:
                 if self.issue.set_indexed_status() == False:
-                    update_count('issue indexes', -1, 
+                    update_count('issue indexes', -1,
                                  language=story.issue.series.language)
             update_count('stories', -1, language=story.issue.series.language)
             self._reset_values()
@@ -1903,11 +2241,11 @@ class StoryRevision(Revision):
 
         if self.issue.is_indexed == False:
             if self.issue.set_indexed_status():
-                update_count('issue indexes', 1, 
+                update_count('issue indexes', 1,
                              language=self.issue.series.language)
         else:
             if self.issue.set_indexed_status() == False:
-                update_count('issue indexes', -1, 
+                update_count('issue indexes', -1,
                              language=self.issue.series.language)
 
     def has_credits(self):
@@ -1917,7 +2255,7 @@ class StoryRevision(Revision):
                self.colors or \
                self.letters or \
                self.editing
-               
+
     def has_content(self):
         return self.genre or \
                self.characters or \
@@ -1928,7 +2266,7 @@ class StoryRevision(Revision):
     def has_data(self):
         return self.has_credits() or self.has_content() or self.notes
 
-    def __unicode__(self):    
+    def __unicode__(self):
         """
         Re-implement locally instead of using self.story because it may change.
         """

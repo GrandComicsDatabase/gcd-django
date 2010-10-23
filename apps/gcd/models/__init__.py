@@ -7,7 +7,7 @@ from series import Classification, Series
 from issue import Issue
 from story import StoryType, Story
 from cover import Cover
-from indexer import Indexer
+from indexer import Indexer, ImpGrant
 from indexcredit import IndexCredit
 from reservation import Reservation
 from error import Error
