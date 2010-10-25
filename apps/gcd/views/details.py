@@ -299,7 +299,8 @@ def series_details(request, series_id, by_date=False):
       context_instance=RequestContext(request))
 
 def change_history(request, model_name, id):
-    if model_name not in ['publisher', 'brand', 'indicia_publisher', 'series', 'issue']:
+    if model_name not in ['publisher', 'brand', 'indicia_publisher',
+                          'series', 'issue']:
         return render_to_response('gcd/error.html', {
           'error_text' : 'There is no change history for this type of object.'},
           context_instance=RequestContext(request))
@@ -313,8 +314,9 @@ def change_history(request, model_name, id):
     object = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
 
     # filter is publisherrevisions__publisher, seriesrevisions__series, etc.
-    filter_string = "%ss__%s" % (REVISION_CLASSES[model_name].__name__.lower(), model_name)
-    kwargs = {filter_string : object, 'state' : states.APPROVED}
+    filter_string = '%ss__%s' % (REVISION_CLASSES[model_name].__name__.lower(),
+                                 model_name)
+    kwargs = { str(filter_string): object, 'state': states.APPROVED }
     changesets = Changeset.objects.filter(**kwargs).order_by('-modified')
 
     if model_name == 'issue':
@@ -393,7 +395,8 @@ def status(request, series_id):
 
 def _get_scan_table(series):
     # all a series' covers + all issues with no covers
-    covers = Cover.objects.filter(issue__series=series, deleted=False).select_related()
+    covers = Cover.objects.filter(issue__series=series, deleted=False) \
+                          .select_related()
     issues = series.issues_without_covers()
 
     scans = list(issues)
@@ -580,42 +583,44 @@ def daily_changes(request, show_date=None):
         date_after = None
 
     #TODO: make sure to handle deleted items here
-    publishers = Publisher.objects.filter(is_master=1,
-                                          revisions__changeset__change_type=CTYPES['publisher'],
-                                          revisions__changeset__state=states.APPROVED,
-                                          revisions__changeset__modified__range=(\
-                                            datetime.combine(requested_date, time.min),
-                                            datetime.combine(requested_date, time.max)))\
-                                  .distinct().select_related('country')
+    publishers = Publisher.objects.filter(
+      is_master=1,
+      revisions__changeset__change_type=CTYPES['publisher'],
+      revisions__changeset__state=states.APPROVED,
+      revisions__changeset__modified__range=(
+        datetime.combine(requested_date, time.min),
+        datetime.combine(requested_date, time.max)))\
+      .distinct().select_related('country')
 
     brands = Brand.objects.filter(revisions__changeset__change_type=CTYPES['brand'],
                                   revisions__changeset__state=states.APPROVED,
                                   revisions__deleted=False,
-                                  revisions__changeset__modified__range=(\
+                                  revisions__changeset__modified__range=(
                                     datetime.combine(requested_date, time.min),
                                     datetime.combine(requested_date, time.max)))\
                           .distinct().select_related('parent__country')
 
-    indicia_publishers = IndiciaPublisher.objects.filter(\
-                           revisions__changeset__change_type=CTYPES['indicia_publisher'],
-                           revisions__changeset__state=states.APPROVED,
-                           revisions__deleted=False,
-                           revisions__changeset__modified__range=(\
-                             datetime.combine(requested_date, time.min),
-                             datetime.combine(requested_date, time.max)))\
-                         .distinct().select_related('parent__country')
+    indicia_publishers = IndiciaPublisher.objects.filter(
+      revisions__changeset__change_type=CTYPES['indicia_publisher'],
+      revisions__changeset__state=states.APPROVED,
+      revisions__deleted=False,
+      revisions__changeset__modified__range=(
+        datetime.combine(requested_date, time.min),
+        datetime.combine(requested_date, time.max)))\
+      .distinct().select_related('parent__country')
 
-    series = Series.objects.filter(revisions__changeset__change_type=CTYPES['series'],
-                                   revisions__changeset__state=states.APPROVED,
-                                   revisions__changeset__modified__range=(\
-                                     datetime.combine(requested_date, time.min),
-                                     datetime.combine(requested_date, time.max)))\
-                           .distinct().select_related('publisher','country',
-                                                      'first_issue','last_issue')
+    series = Series.objects.filter(
+      revisions__changeset__change_type=CTYPES['series'],
+      revisions__changeset__state=states.APPROVED,
+      revisions__changeset__modified__range=(
+        datetime.combine(requested_date, time.min),
+        datetime.combine(requested_date, time.max)))\
+      .distinct().select_related('publisher','country',
+                                 'first_issue','last_issue')
 
     issues = Issue.objects.filter(revisions__changeset__change_type=CTYPES['issue'],
                                   revisions__changeset__state=states.APPROVED,
-                                  revisions__changeset__modified__range=(\
+                                  revisions__changeset__modified__range=(
                                     datetime.combine(requested_date, time.min),
                                     datetime.combine(requested_date, time.max)))\
                           .distinct().select_related('series__publisher',
@@ -640,8 +645,9 @@ def int_stats(request):
     Display the international stats by language
     """
     languages=CountStats.objects.filter(name='issue indexes',
-                                        language__isnull=False).\
-                order_by('-count').values_list('language__code', flat=True)
+                                        language__isnull=False) \
+                                .order_by('-count') \
+                                .values_list('language__code', flat=True)
     stats=[]
     for lang in languages:
         stats.append((Language.objects.get(code=lang),
@@ -702,7 +708,8 @@ def covers(request, series_id, style="default"):
     else:
         can_mark = False
 
-    covers = Cover.objects.filter(issue__series=series, deleted=False).select_related('issue')
+    covers = Cover.objects.filter(issue__series=series, deleted=False) \
+                          .select_related('issue')
 
     style = get_style(request)
     vars = {
@@ -825,9 +832,9 @@ def countries_in_use(request):
                                            values_list('country', flat=True)))
         countries_from_publishers = list(set(Publisher.objects.all().
                                              values_list('country', flat=True)))
-        used_ids = list(set(countries_from_indexers + \
-                                     countries_from_series + \
-                                     countries_from_publishers))
+        used_ids = list(set(countries_from_indexers +
+                            countries_from_series +
+                            countries_from_publishers))
         used_countries = [Country.objects.filter(id=id)[0] for id in used_ids]
         
         return render_to_response('gcd/admin/countries.html',
