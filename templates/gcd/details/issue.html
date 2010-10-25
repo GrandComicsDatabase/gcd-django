@@ -127,13 +127,15 @@
 {% endif %}
       </div>
 
+{% if not preview or issue.source %}
       <div class="change_history">
-{% if preview %}
+  {% if preview %}
         <a href="{% url change_history model_name='issue' id=issue.source.id %}">Change History</a>
-{% else %}
+  {% else %}
         <a href="{% url change_history model_name='issue' id=issue.id %}">Change History</a>
-{% endif %}
+  {% endif %}
       </div>
+{% endif %}
 
       <div id="story_toc">
         <a name="toc"></a>

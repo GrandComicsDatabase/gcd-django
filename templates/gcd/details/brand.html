@@ -41,27 +41,29 @@ GCD :: Brand :: {{ brand.name }}
       </dl>
     </div> <!-- control_center -->
 
+{% if not preview or brand.source %}
     <div id="control_rail">
       <div class="edit_box">
         <div class="edit_header">Editing</div>
-{% if not preview %}
-  {% with brand as object %}
-  {% with 'brand' as object_class %}
-  {% with 'Brand' as object_name %}
-    {% include "gcd/bits/status_banner.html" %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-{% endif %}
+  {% if not preview %}
+    {% with brand as object %}
+    {% with 'brand' as object_class %}
+    {% with 'Brand' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+  {% endif %}
       </div>
       <div class="change_history">
-{% if preview %}
+  {% if preview %}
         <a href="{% url change_history model_name='brand' id=brand.source.id %}">Change History</a>
-{% else %}
+  {% else %}
         <a href="{% url change_history model_name='brand' id=brand.id %}">Change History</a>
-{% endif %}
+  {% endif %}
       </div>
     </div> <!-- control_rail -->
+{% endif %}
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 

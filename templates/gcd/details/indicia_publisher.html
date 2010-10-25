@@ -50,27 +50,29 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
     </div>
   </div>
 
+{% if not preview or indicia_publisher.source %}
   <div id="control_rail">
     <div class="edit_box">
       <div class="edit_header">Editing</div>
-{% if not preview %}
-  {% with indicia_publisher as object %}
-  {% with 'indicia_publisher' as object_class %}
-  {% with 'Indicia Publisher' as object_name %}
-    {% include "gcd/bits/status_banner.html" %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-{% endif %}
+  {% if not preview %}
+    {% with indicia_publisher as object %}
+    {% with 'indicia_publisher' as object_class %}
+    {% with 'Indicia Publisher' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+  {% endif %}
     </div>
     <div class="change_history">
-{% if preview %}
+  {% if preview %}
       <a href="{% url change_history model_name='indicia_publisher' id=indicia_publisher.source.id %}">Change History</a>
-{% else %}
+  {% else %}
       <a href="{% url change_history model_name='indicia_publisher' id=indicia_publisher.id %}">Change History</a>
-{% endif %}
+  {% endif %}
     </div>
   </div>
+{% endif %}
 </div>
 
 {% if page.object_list.count %}

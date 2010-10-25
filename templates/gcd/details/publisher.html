@@ -66,20 +66,21 @@
       </div> <!-- pub_data -->
     </div> <!-- control_center -->
 
+{% if not preview or publisher.source %}
     <div id="control_rail">
-{% if publisher.is_master %}
-{% comment %} For now, don't allow any action on imprints. {% endcomment %}
+  {% if publisher.is_master %}
+  {% comment %} For now, don't allow any action on imprints. {% endcomment %}
       <div class="edit_box">
         <div class="edit_header">Editing</div>
-  {% if not preview %}
-    {% with publisher as object %}
-    {% with 'publisher' as object_class %}
-    {% with 'Publisher' as object_name %}
-      {% include "gcd/bits/status_banner.html" %}
-    {% endwith %}
-    {% endwith %}
-    {% endwith %}
-    {% if user.is_authenticated %}
+    {% if not preview %}
+      {% with publisher as object %}
+      {% with 'publisher' as object_class %}
+      {% with 'Publisher' as object_name %}
+        {% include "gcd/bits/status_banner.html" %}
+      {% endwith %}
+      {% endwith %}
+      {% endwith %}
+      {% if user.is_authenticated %}
         <form method="GET"
               action="{% url add_indicia_publisher parent_id=publisher.id %}">
           <input id="add" name="add" type="submit" value="Add indicia publisher" />
@@ -92,18 +93,19 @@
               action="{% url add_series publisher_id=publisher.id %}">
           <input id="add" name="add" type="submit" value="Add series" />
         </form>
-    {% endif %} <!-- logged in -->
-  {% endif %} <!-- not preview -->
+      {% endif %} <!-- logged in -->
+    {% endif %} <!-- not preview -->
       </div> <!-- edit_box -->
       <div class="change_history">
-  {% if preview %}
+    {% if preview %}
         <a href="{% url change_history model_name='publisher' id=publisher.source.id %}">Change History</a>
-  {% else %}
+    {% else %}
         <a href="{% url change_history model_name='publisher' id=publisher.id %}">Change History</a>
-  {% endif %}
+    {% endif %}
       </div>
-{% endif %} <!-- is master -->
+  {% endif %} <!-- is master -->
     </div> <!-- control_rail -->
+{% endif %}
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 

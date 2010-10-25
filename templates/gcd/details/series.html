@@ -46,9 +46,9 @@
 {% if series.issue_count %}
             <dt> Number of Issues Published:
             <dd id="issues_published"> {{ series.issue_count }} 
-{% if series.issue_count > 1 %}
+  {% if series.issue_count > 1 %}
             (#{{ series.first_issue.display_number }} - #{{ series.last_issue.display_number}})
-{% endif %}
+  {% endif %}
 {% endif %}
 {% if country %}
             <dt> Country:
@@ -65,21 +65,23 @@
           </dl>
 
           <h3 class="series_notes"> Series Details </h3>
+{% if not preview or series.source %}
           <ul>
-{% if preview %}
+  {% if preview %}
             <li> <a href="{% url series_details series_id=series.source.id %}">Details by Issue</a>
             <li> <a href="{% url series_timeline series_id=series.source.id %}">Series Timeline</a>
-  {% if series.has_gallery %}
+    {% if series.has_gallery %}
             <li><a href="{{ series.source.get_absolute_url }}covers">Cover Gallery</a>
-  {% endif %}
-{% else %}
+    {% endif %}
+  {% else %}
             <li> <a href="{% url series_details series_id=series.id %}">Details by Issue</a>
             <li> <a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
-  {% if series.has_gallery %}
+    {% if series.has_gallery %}
             <li><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>
+    {% endif %}
   {% endif %}
-{% endif %}
           </ul>
+{% endif %}
 
           <div id="series_notes">
 {% if series.publication_notes %}
@@ -109,69 +111,71 @@
         </div> <!-- series_data -->
       </div> <!-- class="clear" -->
     </div> <!-- control_center -->
+{% if not preview or series.source %}
     <div id="control_rail">
       <div class="edit_box">
         <div class="edit_header">Editing</div>
-{% if not preview %}
-  {% if series.ongoing_reservation %}
-    {% if series.is_current %}
+  {% if not preview %}
+    {% if series.ongoing_reservation %}
+      {% if series.is_current %}
         <div class="ongoing_status"><span>
         The ongoing issue reservation for this series is held by
         {{ series.ongoing_reservation.indexer.indexer }}.
         </span></div>
-    {% endif %}
-    {% ifequal request.user series.ongoing_reservation.indexer %}
+      {% endif %}
+      {% ifequal request.user series.ongoing_reservation.indexer %}
         <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
           <input id="delete_ongoing" name="delete_ongoing" type="submit"
                  value="Free ongoing reservation">
           </input>
         </form>
-    {% endifequal %}
-  {% endif %}
-  {% with series as object %}
-  {% with 'Series' as object_name %}
-  {% with 'series' as object_class %}
-    {% include "gcd/bits/status_banner.html" %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-  {% if user.is_authenticated %}
-    {% if series.is_current and not series.ongoing_reservation %}
+      {% endifequal %}
+    {% endif %}
+    {% with series as object %}
+    {% with 'Series' as object_name %}
+    {% with 'series' as object_class %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% if user.is_authenticated %}
+      {% if series.is_current and not series.ongoing_reservation %}
         <form method="POST" action="{% url apps.oi.views.ongoing %}">
           <input id="series" name="series" type="hidden" value="{{ series.id }}">
           </input>
           <input id="reserve" name="reserve" type="submit" value="Reserve all new issues">
           </input>
         </form>
-    {% endif %}
+      {% endif %}
         <form method="GET" action="{% url add_issues series_id=series.id %}">
           <input id="add" name="add" type="submit" value="Add issues">
           </input>
         </form>
-    {% if perms.gcd.can_approve and series.issue_count %}
+      {% if perms.gcd.can_approve and series.issue_count %}
         <form method="GET" action="{% url reorder_series series_id=series.id %}">
           <input id="reorder" name="reorder" type="submit" value="Reorder issues">
           </input>
         </form>
-    {% endif %}
-  {% else %}
-    {% if series.reserved %}
+      {% endif %}
+    {% else %}
+      {% if series.reserved %}
         <form action="{% url login %}" method="GET">
           <input type="submit" name="login" value="Log in to edit" />
           <input type="hidden" name="next" value="{{ request.get_full_path }}" />
         </form>
-    {% endif %}
-  {% endif %} <!-- logged in -->
-{% endif %} <!-- not preview -->
+      {% endif %}
+    {% endif %} <!-- logged in -->
+  {% endif %} <!-- not preview -->
       </div>
       <div class="change_history">
-    {% if preview %}
+  {% if preview %}
         <a href="{% url change_history model_name='series' id=series.source.id %}">Change History</a>
-    {% else %}
+  {% else %}
         <a href="{% url change_history model_name='series' id=series.id %}">Change History</a>
-    {% endif %}
+  {% endif %}
       </div>
     </div> <!-- control_rail -->
+{% endif %}
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 

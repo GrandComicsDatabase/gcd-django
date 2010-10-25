@@ -200,8 +200,10 @@ def show_series(request, series, preview=False):
     """
     covers = []
 
-    if preview:
+    if preview and series.series:
         display_series = series.series
+    elif preview:
+        display_series = None
     else:
         display_series = series
 
@@ -394,6 +396,10 @@ def status(request, series_id):
       context_instance=RequestContext(request))
 
 def _get_scan_table(series):
+    # freshly added series have no scans on preview page
+    if series is None:
+        return None, None
+
     # all a series' covers + all issues with no covers
     covers = Cover.objects.filter(issue__series=series, deleted=False) \
                           .select_related()
@@ -760,9 +766,10 @@ def show_issue(request, issue, preview=False):
     """
     Handle the main work of displaying an issue.  Also used by OI previews.
     """
-    cover_issue = issue
-    if preview:
+    if preview and issue.issue:
         cover_issue = issue.issue
+    else:
+        cover_issue = issue
 
     image_tag = get_image_tags_per_issue(issue=cover_issue,
                                          zoom_level=ZOOM_SMALL,
