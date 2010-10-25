@@ -1048,7 +1048,12 @@ class StoryRevisionForm(forms.ModelForm):
     no_editing = forms.BooleanField(required=False,
       help_text='Check this box if there is no separate editor for this sequence. '
                 'This is common when there is an editor for the whole issue.')
-
+    synopsis = forms.CharField(widget=forms.Textarea,
+                               required=False,
+      help_text='A brief (600 character maximum) description of the contents.  '
+                'No text under copyright may be used without clear permission '
+                'and credit.  Solicitation or other promotional text may NOT '
+                'be used.')
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
       help_text='Comments between the Indexer and Editor about the change. '
@@ -1115,6 +1120,13 @@ class StoryRevisionForm(forms.ModelForm):
         if cd['no_editing'] and cd['editing'] != "":
             raise forms.ValidationError(
               ['Editing field and No Editing checkbox cannot both be filled in.'])
+
+        if (len(cd['synopsis']) > settings.LIMIT_SYNOPSIS_LENGTH and
+            (self.instance is None or
+             self.instance.synopsis.strip() != cd['synopsis'])):
+
+            raise forms.ValidationError(
+              ['The synopsis field may not be longer than 600 characters.'])
 
         return cd
 
