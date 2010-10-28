@@ -157,11 +157,8 @@ def _send_result_email(topic):
             email_body = EMAIL_RESULT % (topic.agenda, topic.text, result,
               settings.SITE_URL.rstrip('/') + topic.agenda.get_absolute_url())
 
-            send_mail(from_email=settings.EMAIL_VOTING_FROM,
-                      recipient_list=[list_config.mailing_list.address],
-                      subject="GCD Vote Result: %s" % topic,
-                      message=email_body,
-                      fail_silently=(not settings.BETA))
+            list_config.send_mail(subject="GCD Vote Result: %s" % topic,
+                                  message=email_body)
 
 @login_required
 def topic(request, id):

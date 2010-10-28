@@ -5,8 +5,8 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Count
 from django.core import urlresolvers
-from django.core.mail import send_mail
-from django.contrib.auth.models import User, Permission
+from django.core.mail import send_mail, send_mass_mail
+from django.contrib.auth.models import User, Group, Permission
 
 TYPE_PASS_FAIL = 'Pass / Fail'
 
@@ -145,19 +145,13 @@ def agenda_item_pre_save(sender, **kwargs):
                 message = EMAIL_OPEN_AGENDA_ITEM_GENERIC % \
                           (list_config.mailing_list.address,
                            item.agenda.get_absolute_url())
-            send_mail(from_email=settings.EMAIL_VOTING_FROM,
-                      recipient_list=[list_config.mailing_list.address],
-                      subject=subject,
-                      message=message,
-                      fail_silently=(not settings.BETA))
+            list_config.send_mail(subject=subject, message=message)
 
         elif list_config.on_agenda_item_add and newly_added:
-            send_mail(from_email=settings.EMAIL_VOTING_FROM,
-                      recipient_list=[list_config.mailing_list.address],
-                      subject="New %s item added" % item.agenda,
-                      message=EMAIL_ADD_AGENDA_ITEM % (item.agenda,
-                                item.agenda.get_absolute_url()),
-                      fail_silently=(not settings.BETA))
+            list_config.send_mail(
+              subject="New %s item added" % item.agenda,
+              message=EMAIL_ADD_AGENDA_ITEM % (item.agenda,
+                                               item.agenda.get_absolute_url()))
 
 models.signals.pre_save.connect(agenda_item_pre_save, sender=AgendaItem)
 
@@ -165,8 +159,9 @@ class AgendaMailingList(models.Model):
     class Meta:
         db_table = 'voting_agenda_mailing_list'
     agenda = models.ForeignKey(Agenda, related_name='agenda_mailing_lists')
-    mailing_list = models.ForeignKey(MailingList,
+    mailing_list = models.ForeignKey(MailingList, null=True, blank=True,
                                      related_name='agenda_mailing_lists')
+    group = models.ForeignKey(Group, null=True, blank=True)
     on_agenda_item_add = models.BooleanField()
     on_agenda_item_open = models.BooleanField()
     on_vote_open = models.BooleanField()
@@ -174,6 +169,24 @@ class AgendaMailingList(models.Model):
     is_primary = models.BooleanField()
     reminder = models.BooleanField()
     display_token = models.BooleanField(default=False)
+
+    def send_mail(self, subject, message):
+        if self.mailing_list is not None:
+            send_mail(from_email=settings.EMAIL_VOTING_FROM,
+                      recipient_list=(self.mailing_list.address,),
+                      subject=subject,
+                      message=message,
+                      fail_silently=(not settings.BETA))
+
+        if self.group is not None:
+            recipients = self.group.user_set.filter(is_active=True,
+                                                    indexer__is_banned=False,
+                                                    indexer__deceased=False) \
+                                            .exclude(email='') \
+                                            .select_related('indexer')
+            mass = [ (subject, message, settings.EMAIL_VOTING_FROM, (r.email,))
+                     for r in recipients ]
+            send_mass_mail(mass, fail_silently=(not settings.BETA))
 
 class VoteType(models.Model):
     """
@@ -301,11 +314,7 @@ def topic_post_save(sender, **kwargs):
               settings.SITE_URL.rstrip('/') + topic.get_absolute_url(),
               token_string)
 
-            send_mail(from_email=settings.EMAIL_VOTING_FROM,
-                      recipient_list=[list_config.mailing_list.address],
-                      subject="GCD Ballot Open: %s" % topic,
-                      message=email_body,
-                      fail_silently=(not settings.BETA))
+            list_config.send_mail("GCD Ballot Open: %s" % topic, email_body)
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)
 models.signals.post_save.connect(topic_post_save, sender=Topic)
