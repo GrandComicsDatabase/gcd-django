@@ -138,12 +138,12 @@ def agenda_item_pre_save(sender, **kwargs):
     for list_config in item.agenda.agenda_mailing_lists.all():
         if list_config.on_agenda_item_open and newly_opened:
             if list_config.is_primary:
-                subject="Open: %s" % item.name,
+                subject = "Open: %s" % item.name
                 message = EMAIL_OPEN_AGENDA_ITEM % (item.agenda, item.name, notes)
             else:
                 subject="New %s item open" % item.agenda
                 message = EMAIL_OPEN_AGENDA_ITEM_GENERIC % \
-                          (list_config.mailing_list.address,
+                          (item.agenda, settings.SITE_URL.rstrip('/') +
                            item.agenda.get_absolute_url())
             list_config.send_mail(subject=subject, message=message)
 
@@ -151,7 +151,7 @@ def agenda_item_pre_save(sender, **kwargs):
             list_config.send_mail(
               subject="New %s item added" % item.agenda,
               message=EMAIL_ADD_AGENDA_ITEM % (item.agenda,
-                                               item.agenda.get_absolute_url()))
+                settings.SITE_URL.rstrip('/') + item.agenda.get_absolute_url()))
 
 models.signals.pre_save.connect(agenda_item_pre_save, sender=AgendaItem)
 
