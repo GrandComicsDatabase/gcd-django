@@ -1558,6 +1558,13 @@ def remove_story_revision(request, id):
     if request.user != story.changeset.indexer:
         return render_error(request,
           'Only the reservation holder may remove stories.')
+
+    # if user manually tries to permanently remove a sequence revision
+    # that came from a pre-existing sequence, toggle the deleted flag
+    # instead
+    if story.source:
+        return toggle_delete_story_revision(request, id)
+
     if request.method != 'POST':
         return render_to_response('oi/edit/remove_story_revision.html',
         {
