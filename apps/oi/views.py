@@ -899,6 +899,7 @@ def edit_issues_in_bulk(request):
     fields.remove('number')
     fields.remove('publication_date')
     fields.remove('key_date')
+    fields.remove('isbn')
     fields.remove('notes')
 
     # look at values for the issue fields
