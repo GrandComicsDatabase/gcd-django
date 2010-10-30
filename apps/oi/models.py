@@ -34,6 +34,10 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['series'],
                            CTYPES['cover']))
 
+# Change types that *might* be bulk changes.  But might just have one revision.
+CTYPES_BULK = frozenset((CTYPES['issue_bulk'],
+                         CTYPES['issue_add']))
+
 ACTION_ADD = 'add'
 ACTION_DELETE = 'delete'
 ACTION_MODIFY = 'modify'
@@ -371,8 +375,15 @@ class Changeset(models.Model):
         to the database.
         """
         self.imps = 0
-        for revision in self.revisions:
-            self.imps += revision.calculate_imps()
+        if self.change_type in CTYPES_BULK:
+            # Currently, bulk changes are only allowed when the changes
+            # are uniform across all revisions in the change.  When we
+            # allow non-uniform changes we may need to calculate all of
+            # the imp revisions and take the maximum value or something.
+            self.imps += self.revisions.next().calculate_imps()
+        else:
+            for revision in self.revisions:
+                self.imps += revision.calculate_imps()
 
     def magnitude(self):
         """
