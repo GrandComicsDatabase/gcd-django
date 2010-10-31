@@ -1,4 +1,5 @@
 # Django settings for gcd project.
+import datetime
 from os.path import abspath, dirname, join
 from os import environ # helps determine MEDIA_URL.
 
@@ -143,6 +144,10 @@ BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com')
 SITE_DOWN = False
 SITE_DOWN_MESSAGE = ''
 SITE_BACK_UP_AT = ''
+
+# Date taken from Ray's press release.
+OLD_SITE_CREATION_DATE = datetime.date(2002, 11, 13)
+NEW_SITE_CREATION_DATE = datetime.date(2009, 12, 1)
 
 # data dump directories, relative to MEDIA_ROOT
 DUMP_DIR = 'dumps'

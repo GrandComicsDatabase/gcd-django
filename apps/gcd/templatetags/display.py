@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -5,10 +6,8 @@ from django import template
 from django.template.defaultfilters import yesno, linebreaksbr, title, urlize
 
 from apps.oi.models import StoryRevision, CTYPES
-from apps.gcd.templatetags.credits import show_page_count, format_page_count, sum_page_counts
-import datetime
-
-NEW_SITE_CREATION_DATE = datetime.date(2009, 12, 1)
+from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
+                                          sum_page_counts
 
 register = template.Library()
 
@@ -79,7 +78,8 @@ def show_indicia_pub(issue):
         else:
             ip_url = u'?'
     else:
-        ip_url = u'<a href=\"%s\">%s</a>' % (issue.indicia_publisher.get_absolute_url(), issue.indicia_publisher)
+        ip_url = u'<a href=\"%s\">%s</a>' % \
+          (issue.indicia_publisher.get_absolute_url(), issue.indicia_publisher)
         if issue.indicia_pub_not_printed:
             ip_url += u' [not printed on item]'
     return mark_safe(ip_url)
@@ -103,16 +103,19 @@ def header_link(changeset):
         return absolute_url(revision)
     elif changeset.change_type == CTYPES['brand'] or \
          changeset.change_type == CTYPES['indicia_publisher']:
-        return mark_safe(u'%s : %s' % (absolute_url(revision.parent), absolute_url(revision)))
+        return mark_safe(u'%s : %s' %
+                         (absolute_url(revision.parent), absolute_url(revision)))
     elif changeset.change_type == CTYPES['series']:
-        return mark_safe(u'%s (%s)' % (absolute_url(revision), absolute_url(revision.publisher)))
+        return mark_safe(u'%s (%s)' %
+                         (absolute_url(revision), absolute_url(revision.publisher)))
     elif changeset.change_type == CTYPES['cover'] or \
          changeset.change_type == CTYPES['issue']:
         series_url = absolute_url(revision.issue.series)
         pub_url = absolute_url(revision.issue.series.publisher)
         issue_url = revision.issue.get_absolute_url()
         issue_num = revision.issue.display_number
-        return mark_safe(u'%s (%s) <a href="%s">#%s</a>' % (series_url, pub_url, issue_url, issue_num))
+        return mark_safe(u'%s (%s) <a href="%s">#%s</a>' %
+                         (series_url, pub_url, issue_url, issue_num))
     elif changeset.change_type == CTYPES['issue_add']:
         series_url = absolute_url(revision.series)
         pub_url = absolute_url(revision.series.publisher)
@@ -122,14 +125,17 @@ def header_link(changeset):
         issue_num = revision.display_number
         if revision.issue:
             # if it's been approved, make it a link to real issue
-            issue_num = u'<a href="%s">%s</a>' % (revision.issue.get_absolute_url(), issue_num)
+            issue_num = u'<a href="%s">%s</a>' % \
+                        (revision.issue.get_absolute_url(), issue_num)
 
         if changeset.issuerevisions.count() > 1:
             # if it was a bulk skeleton, do same for last issue number
-            last_revision = changeset.issuerevisions.order_by('-revision_sort_code')[0]
+            last_revision = \
+              changeset.issuerevisions.order_by('-revision_sort_code')[0]
             last_issue_num = last_revision.display_number
             if last_revision.issue:
-                last_issue_num = u'<a href="%s">%s</a>' % (last_revision.issue.get_absolute_url(), last_issue_num)
+                last_issue_num = u'<a href="%s">%s</a>' % \
+                  (last_revision.issue.get_absolute_url(), last_issue_num)
             issue_num = u'%s - %s' % (issue_num, last_issue_num)
 
         return mark_safe(u'%s (%s) %s' % (series_url, pub_url, issue_num))
@@ -152,7 +158,8 @@ def changed_fields(changeset, object_id):
         # otherwise too many fields to list.
         changed_list = [u'%s added' % title(revision.source_name.replace('_', ' '))]
     elif revision.deleted:
-        changed_list = [u'%s deleted' % title(revision.source_name.replace('_', ' '))]
+        changed_list = [u'%s deleted' %
+                        title(revision.source_name.replace('_', ' '))]
     else:
         for field in revision._field_list():
             if field == 'after':
@@ -173,13 +180,6 @@ def changed_story_list(changeset):
     else:
         return u''
 
-    # don't display sequence level breakdown if this is first change for an
-    # object that predates the new site.
-    issue_rev = changeset.issuerevisions.all()[0]
-    prev_issue_rev = issue_rev.previous()
-    if prev_issue_rev is None and issue_rev.source.created.date() < NEW_SITE_CREATION_DATE:
-        return u''
-    
     output = u''
     if story_revisions.count() > 0:
         for story_revision in story_revisions:
@@ -191,10 +191,13 @@ def changed_story_list(changeset):
                 story_changed_list = [u'Sequence deleted']
             else:
                 for field in story_revision._field_list():
-                    if getattr(story_revision, field) != getattr(prev_story_rev, field):
+                    if getattr(story_revision, field) != \
+                       getattr(prev_story_rev, field):
                         story_changed_list.append(field_name(field))
             if story_changed_list:
-                output += u'<li>Sequence %s : %s' % (story_revision.sequence_number, ", ".join(story_changed_list))
+                output += u'<li>Sequence %s : %s' % \
+                          (story_revision.sequence_number,
+                           ", ".join(story_changed_list))
         if output is not u'':
             output = u'<ul>%s</ul>' % output
     return mark_safe(output)
@@ -225,7 +228,8 @@ def field_value(revision, field):
                    'no_colors', 'no_letters']:
         return yesno(value, 'X, ')
     elif field in ['page_count']:
-        if revision.source_name == 'issue' and revision.changeset.storyrevisions.count():
+        if revision.source_name == 'issue' and \
+           revision.changeset.storyrevisions.count():
             # only calculate total sum for issue not sequences
             sum_story_pages = format_page_count(sum_page_counts(
                               revision.changeset.storyrevisions.all()))
@@ -241,7 +245,8 @@ def field_name(field):
                  'title', 'feature', 'genre', 'script', 'pencils', 'inks',
                  'colors', 'letters', 'characters', 'synopsis', 'price']:
         return title(field)
-    elif field in ['year_began', 'year_ended', 'tracking_notes', 'publication_notes',
+    elif field in ['year_began', 'year_ended', 'tracking_notes',
+                   'publication_notes',
                    'no_volume', 'display_volume_with_number', 'publication_date',
                    'indicia_frequency', 'key_date', 'indicia_publisher',
                    'no_brand', 'page_count', 'page_count_uncertain', 'no_editing',

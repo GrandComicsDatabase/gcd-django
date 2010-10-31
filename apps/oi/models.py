@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 import itertools
 import operator
 
@@ -489,9 +488,6 @@ class RevisionManager(models.Manager):
         revision = self._do_create_revision(instance,
                                             changeset=changeset,
                                             **kwargs)
-        # Mark as reserved *after* cloning the revision in order to avoid
-        # overwriting the modified timestamp in the case of a BASELINE
-        # revision.
         instance.reserved = True
         instance.save()
         return revision
@@ -513,9 +509,7 @@ class Revision(models.Model):
     as a history of each given edit, including those that are discarded.
 
     A state column trackes the progress of the revision, which should eventually
-    end in either the APPROVED or DISCARDED state.  A special case is the
-    BASELINE state which is a marker for future database migration work
-    during the New Fun release.
+    end in either the APPROVED or DISCARDED state.
     """
     class Meta:
         abstract = True
@@ -603,7 +597,6 @@ class Revision(models.Model):
               .exclude(changeset__state=states.DISCARDED) \
               .filter(modified__lt=self.modified)
             if prev_revs.count() > 0:
-                # normal case, all revisions accounted for back to object creation
                 self._prev_rev = prev_revs[0]
         return self._prev_rev
 

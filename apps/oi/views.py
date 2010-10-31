@@ -127,61 +127,36 @@ def reserve(request, id, model_name, delete=False):
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
 
-def _create_changeset(indexer, display_obj, model_name, comment,
-                      approved=False, delete=False):
+def _do_reserve(indexer, display_obj, model_name, delete=False):
+    if indexer.indexer.can_reserve_another() is False:
+        return None
+
     if delete:
+        comment = 'Deleting'
         new_state = states.PENDING
     else:
+        comment = 'Editing'
         new_state = states.OPEN
-
     changeset = Changeset(indexer=indexer, state=new_state,
                           change_type=CTYPES[model_name])
     changeset.save()
-
+    changeset.comments.create(commenter=indexer,
+                              text=comment,
+                              old_state=states.UNRESERVED,
+                              new_state=changeset.state)
     revision = REVISION_CLASSES[model_name].objects.clone_revision(
       display_obj, changeset=changeset)
-
-    if model_name == 'issue':
-        for story in revision.issue.active_stories():
-           StoryRevision.objects.clone_revision(story=story, changeset=changeset)
 
     if delete:
         revision.deleted = True
         revision.save()
 
-    cur_state = changeset.state
-    if approved:
-        # should only enter here when first editing a pre-existing object with
-        # no revisions
-        changeset.approver = indexer
-        changeset.state = states.APPROVED
-        changeset.save()
-        cur_state = states.APPROVED
-    changeset.comments.create(commenter=indexer,
-                              text=comment,
-                              old_state=states.UNRESERVED,
-                              new_state=cur_state)
+    if model_name == 'issue':
+        # TODO: deletions?
+        for story in revision.issue.active_stories():
+           StoryRevision.objects.clone_revision(story=story, changeset=changeset)
 
     return changeset
-
-def _do_reserve(indexer, display_obj, model_name, delete=False):
-    # the first time we attempt to edit a pre-existing object create a
-    # dummy changeset and revision with the current state to preserve
-    # the history
-    if display_obj.revisions.filter(changeset__state=states.APPROVED).count() == 0:
-        anon_user = Indexer.objects.get(id=412).user
-        comment = 'Pre-existing object. Preserving current state.'
-        _create_changeset(anon_user, display_obj, model_name, comment, True)
-
-    if indexer.indexer.can_reserve_another() is False:
-        return None
-        
-    if delete:
-        comment = 'Deleting'
-    else:
-        comment = 'Editing'
-    return _create_changeset(indexer, display_obj, model_name, comment,
-                             False, delete)
 
 @permission_required('gcd.can_reserve')
 def edit_revision(request, id, model_name):
