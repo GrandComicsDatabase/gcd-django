@@ -21,7 +21,12 @@ Changing {{ object_name }}
 <tr><th><label>{{ search }}:</label></th><td> {{ b }} </td>
 {% endfor %}
 </table>
-<p>{{ nr_items }} issues match the search criteria, {{ nr_items_unreserved }} issues of these are unreserved.
+<p>{{ nr_items }} issues match the search criteria.
+{% if nr_items != nr_items_unreserved %}
+<span class="instructions important">
+<br>Only {{ nr_items_unreserved }} of these issues are currently unreserved and will be part of this bulk change.
+</span>
+{% endif %}
 </p>
 <p>
 Note that only fields which are currently the same for all issues can be changed.
