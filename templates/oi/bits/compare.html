@@ -21,7 +21,7 @@
 </h3>
 {% endifequal %}
 
-<table class="comparison{% if not prev_rev %} added{% endif %}{% if revision.deleted %} deleted{% endif %}">
+<table class="comparison {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
 {% if request.GET.collapse and revision.story and not revision.is_changed %}
 {% comment %} this if statement was a huge pain to get right. if only we had 1.2... {% endcomment %}
   <h4> No changes to this sequence </h4>

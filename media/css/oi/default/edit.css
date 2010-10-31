@@ -60,7 +60,7 @@ table.comments td {
 }
 
 /* Capital True and False because these values come from Python booleans. */
-table.comparison tr.True {
+table.modified tr.True {
     background-color: yellow;
 }
 
