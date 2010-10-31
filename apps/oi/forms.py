@@ -395,13 +395,13 @@ def get_issue_revision_form(publisher, series=None, revision=None):
             cd['comments'] = cd['comments'].strip()
             cd['isbn'] = cd['isbn'].strip()
 
-            if cd['volume'] != "" and cd['no_volume']:
-                raise forms.ValidationError('You cannot specify a volume and check '
-                  '"no volume" at the same time')
+            if cd['volume'] is not None and cd['no_volume'] is True:
+                raise forms.ValidationError('You cannot specify a volume and '
+                  'check "no volume" at the same time')
 
             if cd['editing'] != "" and cd['no_editing']:
-                raise forms.ValidationError('You cannot specify an editing credit and '
-                  'check "no editing" at the same time')
+                raise forms.ValidationError('You cannot specify an editing '
+                  'credit and check "no editing" at the same time')
 
             if cd['no_brand'] and cd['brand'] is not None:
                 raise forms.ValidationError(
@@ -504,10 +504,11 @@ class IssueRevisionForm(forms.ModelForm):
                 '"2.99 CAD" for $2.99 Canadian.  Use a format like '
                 '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
                 'Use "0.00 FREE" for free issues. '
-                'Separate multiple prices with a semicolon.  Use parentheses after '
-                'the currency code for notes: "2.99 USD; 3.99 USD (newsstand)" '
-                'Use country codes after the currency code if more than one price '
-                'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
+                'Separate multiple prices with a semicolon.  Use parentheses '
+                'after the currency code for notes: "2.99 USD; 3.99 USD '
+                '(newsstand)" Use country codes after the currency code if more '
+                'than one price uses the same currency: '
+                '"3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3,
@@ -596,10 +597,11 @@ class BulkIssueRevisionForm(forms.Form):
                 '"2.99 CAD" for $2.99 Canadian.  Use a format like '
                 '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
                 'Use "0.00 FREE" for free issues. '
-                'Separate multiple prices with a semicolon.  Use parentheses after '
-                'the currency code for notes: "2.99 USD; 3.99 USD (newsstand)" '
-                'Use country codes after the currency code if more than one price '
-                'uses the same currency: "3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
+                'Separate multiple prices with a semicolon.  Use parentheses '
+                'after the currency code for notes: "2.99 USD; 3.99 USD '
+                '(newsstand)" Use country codes after the currency code if more '
+                'than one price uses the same currency: '
+                '"3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
 
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3,
@@ -667,7 +669,7 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
         cd['editing'] = cd['editing'].strip()
         cd['comments'] = cd['comments'].strip()
 
-        if cd['volume'] != "" and cd['no_volume']:
+        if cd['volume'] is not None and cd['no_volume'] is True:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
 
@@ -813,7 +815,7 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
         cd['editing'] = cd['editing'].strip()
         cd['comments'] = cd['comments'].strip()
 
-        if cd['volume'] != "" and cd['no_volume']:
+        if cd['volume'] is not None and cd['no_volume'] is True:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
 
