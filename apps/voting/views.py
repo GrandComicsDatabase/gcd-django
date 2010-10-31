@@ -1,4 +1,5 @@
 import hashlib
+import os.path
 from datetime import datetime
 
 from django.conf import settings
@@ -258,6 +259,19 @@ def vote(request):
                           vote_key=key)
         receipt.save()
 
+        # Log the data as a backup in case of mail sending/receiving problems.
+        # Technically, this makes it not a secret ballot, but it takes some
+        # work to interpret the log, and there's always been a human counting
+        # the ballots before, so this allows for at least as much secrecy
+        # as before.
+        # Use unbuffered appends because we don't want concurrent writes to get
+        # spliced due to buffering.
+        path = os.path.join(settings.VOTING_DIR, 'vote_record_%d' % topic.id)
+        voting_record = open(path, 'a', 0)
+        voting_record.write('%d | %s | %s | %s\n' %
+                            (request.user.id, salt, vote_ids, key))
+        voting_record.close()
+
         vote_values = "\n".join([unicode(o) for o in options])
         send_mail(from_email=settings.EMAIL_VOTING_FROM,
                   recipient_list=[request.user.email],
@@ -266,18 +280,6 @@ def vote(request):
                                            settings.EMAIL_VOTING_ADMIN,
                                            salt, vote_ids),
                   fail_silently=(not settings.BETA))
-
-        # Log the data as a backup in case of mail sending/receiving problems.
-        # Technically, this makes it not a secret ballot, but it takes some
-        # work to interpret the log, and there's always been a human counting
-        # the ballots before, so this allows for at least as much secrecy
-        # as before.
-        # Use unbuffered appends because we don't want concurrent writes to get
-        # spliced due to buffering.
-        voting_record = open('vote_record_%d' % topic.id, 'a', 0)
-        voting_record.write('%d | %s | %s | %s\n' %
-                            (request.user.id, salt, vote_ids, key))
-        voting_record.close()
 
     return HttpResponseRedirect(urlresolvers.reverse('ballot',
       kwargs={ 'id': option.topic.id }))

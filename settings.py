@@ -20,6 +20,9 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
 MEDIA_URL = "/site_media/"
 
+# absolute path to the directory that holds election files.
+VOTING_DIR = abspath(join(dirname(__file__), 'voting'))
+
 # Database settings. Override yours in a settings_local.py
 # if you're not gonna stick with these development defaults.
 DATABASE_ENGINE   = 'mysql'
