@@ -1174,7 +1174,8 @@ class UploadScanForm(forms.Form):
     is_gatefold = forms.BooleanField(label="Gatefold cover",
                                          required=False, 
       help_text='Cover is a non-standard wraparound cover or a gatefold cover. '
-                'After the upload you will select the front cover part.')
+                'After the upload you will select the front cover part. '
+                'The selection will not work if JavaScript is turned off.')
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
       help_text='Comments between the Indexer and Editor about the change. '
@@ -1191,6 +1192,23 @@ class UploadScanForm(forms.Form):
                'A cover that is both wraparound and gatefold should be '
                'submitted as a gatefold cover.'])
         return cd
+
+class GatefoldScanForm(forms.Form):
+    """ Form for cover uploads. """
+
+    left = forms.IntegerField(widget=forms.TextInput(attrs={'size':'4'}))
+    width = forms.IntegerField(widget=forms.TextInput(attrs={'size':'4'}))
+    real_width = forms.IntegerField(widget=forms.HiddenInput)
+    top = forms.IntegerField(widget=forms.TextInput(attrs={'size':'4'}))
+    height = forms.IntegerField(widget=forms.TextInput(attrs={'size':'4'}))
+    cover_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
+    issue_id = forms.IntegerField(widget=forms.HiddenInput)
+    scan_name = forms.CharField(widget=forms.HiddenInput)
+    source = forms.CharField(widget=forms.HiddenInput, required=False)
+    remember_source = forms.BooleanField(widget=forms.HiddenInput, 
+                                         required=False)
+    marked = forms.BooleanField(widget=forms.HiddenInput, required=False)
+    comments = forms.CharField(widget=forms.HiddenInput, required=False)
 
 class DownloadForm(forms.Form):
     """ Form for downloading data dumps. """

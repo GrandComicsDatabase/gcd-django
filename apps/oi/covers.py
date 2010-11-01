@@ -4,6 +4,7 @@ from urllib import urlopen, urlretrieve, quote
 import Image
 import os, shutil, glob
 import codecs
+import tempfile
 from datetime import datetime
 
 from django import forms
@@ -25,12 +26,14 @@ from apps.gcd.views import render_error, paginate_response
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 
 from apps.oi.models import *
-from apps.oi.forms import UploadScanForm
+from apps.oi.forms import UploadScanForm, GatefoldScanForm
 
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 
 # table width for displaying the medium sized current and active covers
 UPLOAD_WIDTH = 3
+
+SHOW_GATEFOLD_WIDTH = 800
 
 # where to put our covers,
 LOCAL_NEW_SCANS = settings.NEW_COVERS_DIR
@@ -170,8 +173,8 @@ def generate_sizes(cover, im):
 
     if cover.is_wraparound:
         # coordinates in PIL are measured from the top/left corner
-        front_part = im.crop((cover.front_left, im.size[1]-cover.front_top, 
-                              cover.front_right, im.size[1]-cover.front_bottom))
+        front_part = im.crop((cover.front_left, cover.front_top, 
+                              cover.front_right, cover.front_bottom))
         full_cover = im
         im = front_part
 
@@ -271,11 +274,145 @@ def delete_cover(request, id):
     return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                                 kwargs={'issue_id': cover.issue.id}))
 
+def process_edited_gatefold_cover(request):
+    ''' process the edited gatefold cover and generate CoverRevision '''
+
+    if request.method != 'POST':
+        return render_error(request,
+            'This page may only be accessed through the proper form',
+            redirect=False)
+
+    form = GatefoldScanForm(request.POST)
+    if not form.is_valid():
+        error_text = 'Error: Something went wrong in the file upload.'
+        return render_error(request, error_text, redirect=False)
+    cd = form.cleaned_data
+
+    tmpdir = tempfile.gettempdir()
+    scan_name = cd['scan_name']
+    tmp_name = os.path.join(tmpdir, scan_name)
+
+    if 'discard' in request.POST:
+        os.remove(tmp_name)
+        return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
+                kwargs={'issue_id': cd['issue_id']} ))
+
+    # create OI records
+    changeset = Changeset(indexer=request.user, state=states.PENDING,
+                            change_type=CTYPES['cover'])
+    changeset.save()
+
+    if cd['cover_id']:
+        cover = get_object_or_404(Cover, id=cd['cover_id'])
+        issue = cover.issue
+        # check if there is a pending change for the cover
+        if CoverRevision.objects.filter(cover=cover, 
+                                 changeset__state__in=states.ACTIVE):
+            revision = CoverRevision.objects.get(cover=cover, 
+                                     changeset__state__in=states.ACTIVE)
+            return render_error(request,
+              ('There currently is a <a href="%s">pending replacement</a> '
+               'for this cover of %s.') % (urlresolvers.reverse('compare',
+                kwargs={'id': revision.changeset.id}), esc(cover.issue)),
+            redirect=False, is_safe=True)
+            changeset.delete()
+        revision = CoverRevision(changeset=changeset, issue=issue,
+            cover=cover, file_source=file_source, marked=marked,
+            is_replacement = True)
+    # no cover_id, therefore upload a cover to an issue (first or variant)
+    else: 
+        issue = get_object_or_404(Issue, id=cd['issue_id'])
+        cover = None
+        revision = CoverRevision(changeset=changeset, issue=issue,
+            file_source=cd['source'], marked=cd['marked'])
+    revision.save()
+
+    scan_name = str(revision.id) + os.path.splitext(tmp_name)[1]
+    upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
+                   changeset.created.strftime('%B_%Y').lower()
+    destination_name = os.path.join(upload_dir, scan_name)
+    try: # essentially only needed at beginning of the month
+        check_cover_dir(upload_dir) 
+    except IOError:
+        changeset.delete()
+        error_text = "Problem with file storage for uploaded " + \
+                        "cover, please report an error." 
+        return render_error(request, error_text, redirect=False)
+
+    shutil.move(tmp_name, destination_name)
+
+    im = Image.open(destination_name)
+    revision.is_wraparound = True
+    # convert from scaled to real values
+    scaling = float(im.size[0])/min(SHOW_GATEFOLD_WIDTH, im.size[0])
+    width = cd['width']*scaling
+    height = cd['height']*scaling
+    left = cd['left']*scaling
+    top = cd['top']*scaling
+    revision.front_left = left
+    revision.front_right = left + width
+    revision.front_top = top
+    revision.front_bottom = top + height
+    revision.save()
+    generate_sizes(revision, im)
+
+    return finish_cover_revision(request, revision, cd)
+
+
+def handle_gatefold_cover(request, cover, issue, form):
+    ''' process the uploaded file in case of a gatefold cover '''
+
+    cd = form.cleaned_data
+    scan = cd['scan']
+    source = cd['source']
+    remember_source = cd['remember_source']
+    marked = cd['marked']
+    comments = cd['comments']
+    # either we use the system tmp directory and do a symlink from there
+    # to the media/img/gcd/new_covers/tmp directory, or we actually use
+    # media/img/gcd/new_covers/tmp and accept that it could fill up with
+    # abandoned files
+    tmpdir = tempfile.gettempdir()
+    if cover: # upload_type is 'replacement':
+        scan_name = "%d_%d_%d" % (request.user.id, issue.id, cover.id)
+    else:
+        scan_name = "%d_%d" % (request.user.id, issue.id)
+    scan_name += os.path.splitext(scan.name)[1]
+    destination_name = os.path.join(tmpdir, scan_name)
+    # write uploaded file to tmp-dir
+    destination = open(destination_name, 'wb')
+    for chunk in scan.chunks():
+        destination.write(chunk)
+    destination.close()
+    im = Image.open(destination.name)
+    if im.size[0] <= 400:
+        os.remove(destination.name)
+        info_text = "Image is too small, only " + str(im.size) + \
+                    " in size."
+        return _display_cover_upload_form(request, form, cover, issue,
+            info_text=info_text)
+
+    vars = {'issue_id': issue.id, 'marked': marked, 'scan_name': scan_name,
+            'source': source, 'remember_source': remember_source, 
+            'comments': comments, 'real_width': im.size[0]}
+    if cover:
+        vars[cover_id] = cover.id
+    form = GatefoldScanForm(initial=vars)
+
+    return render_to_response('oi/edit/upload_gatefold_cover.html', {
+                                'remember_source': remember_source,
+                                'scan_name': scan_name, 
+                                'form': form,
+                                'issue': issue,
+                                'width': min(SHOW_GATEFOLD_WIDTH, im.size[0])},
+                              context_instance=RequestContext(request))
+
+
 def handle_uploaded_cover(request, cover, issue):
     ''' process the uploaded file and generate CoverRevision '''
 
     try:
-        form = UploadScanForm(request.POST,request.FILES)
+        form = UploadScanForm(request.POST, request.FILES)
     except IOError: # sometimes uploads misbehave. connection dropped ?
         error_text = 'Something went wrong with the upload. ' + \
                         'Please <a href="' + request.path + '">try again</a>.'
@@ -285,100 +422,100 @@ def handle_uploaded_cover(request, cover, issue):
     if not form.is_valid():
         return _display_cover_upload_form(request, form, cover, issue)
 
-    # if scan is actually in the form handle it
-    if 'scan' in request.FILES:
-        # process form
-        scan = request.FILES['scan']
-        file_source = request.POST['source']
-        marked = form.cleaned_data['marked']
-        if form.cleaned_data['is_gatefold']:
-            raise NotImplementedError
-            #return handle_gatefold_cover()
+    # process form
+    if form.cleaned_data['is_gatefold']:
+        return handle_gatefold_cover(request, cover, issue, form)
+    scan = form.cleaned_data['scan']
+    file_source = form.cleaned_data['source']
+    marked = form.cleaned_data['marked']
 
-        # create OI records
-        changeset = Changeset(indexer=request.user, state=states.PENDING,
-                                change_type=CTYPES['cover'])
-        changeset.save()
+    # create OI records
+    changeset = Changeset(indexer=request.user, state=states.PENDING,
+                            change_type=CTYPES['cover'])
+    changeset.save()
 
-        if cover: # upload_type is 'replacement':
-            revision = CoverRevision(changeset=changeset, issue=issue,
-                cover=cover, file_source=file_source, marked=marked,
-                is_replacement = True)
-        else:
-            revision = CoverRevision(changeset=changeset, issue=issue,
-                file_source=file_source, marked=marked)
-        revision.save()
+    if cover: # upload_type is 'replacement':
+        revision = CoverRevision(changeset=changeset, issue=issue,
+            cover=cover, file_source=file_source, marked=marked,
+            is_replacement = True)
+    else:
+        revision = CoverRevision(changeset=changeset, issue=issue,
+            file_source=file_source, marked=marked)
+    revision.save()
 
-        # put new uploaded covers into 
-        # media/<LOCAL_NEW_SCANS>/<monthname>_<year>/ 
-        # with name 
-        # <revision_id>_<date>_<time>.<ext>
-        scan_name = str(revision.id) + os.path.splitext(scan.name)[1]
-        upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
-                        changeset.created.strftime('%B_%Y/').lower()
-        destination_name = upload_dir + scan_name
-        try: # essentially only needed at beginning of the month
-            check_cover_dir(upload_dir) 
-        except IOError:
-            changeset.delete()
-            error_text = "Problem with file storage for uploaded " + \
-                            "cover, please report an error." 
-            return render_error(request, error_text, redirect=False)
+    # put new uploaded covers into 
+    # media/<LOCAL_NEW_SCANS>/<monthname>_<year>/ 
+    # with name 
+    # <revision_id>_<date>_<time>.<ext>
+    scan_name = str(revision.id) + os.path.splitext(scan.name)[1]
+    upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
+                   changeset.created.strftime('%B_%Y').lower()
+    destination_name = os.path.join(upload_dir, scan_name)
+    try: # essentially only needed at beginning of the month
+        check_cover_dir(upload_dir) 
+    except IOError:
+        changeset.delete()
+        error_text = "Problem with file storage for uploaded " + \
+                        "cover, please report an error." 
+        return render_error(request, error_text, redirect=False)
 
-        # write uploaded file
-        destination = open(destination_name, 'wb')
-        for chunk in scan.chunks():
-            destination.write(chunk)
-        destination.close()
+    # write uploaded file
+    destination = open(destination_name, 'wb')
+    for chunk in scan.chunks():
+        destination.write(chunk)
+    destination.close()
 
-        try:
-            # generate different sizes we are using
-            im = Image.open(destination.name)
-            wide_enough = False
-            if form.cleaned_data['is_wraparound']:
-                # wraparounds need to have twice the size
-                if im.size[0] >= 800:
-                    wide_enough = True
-            elif im.size[0] >= 400:
+    try:
+        # generate different sizes we are using
+        im = Image.open(destination.name)
+        wide_enough = False
+        if form.cleaned_data['is_wraparound']:
+            # wraparounds need to have twice the size
+            if im.size[0] >= 800:
                 wide_enough = True
-            if wide_enough:
-                if form.cleaned_data['is_wraparound']:
-                    revision.is_wraparound = True
-                    revision.front_left = im.size[0]/2
-                    revision.front_right = im.size[0]
-                    revision.front_bottom = 0
-                    revision.front_top = im.size[1]
-                    revision.save()
-                generate_sizes(revision, im)
-            else:
-                changeset.delete()
-                os.remove(destination.name)
-                info_text = "Image is too small, only " + str(im.size) + \
-                            " in size."
-                return _display_cover_upload_form(request, form, cover, issue,
-                  info_text=info_text)
-        except IOError: 
-            # just in case, django *should* have taken care of file type
+        elif im.size[0] >= 400:
+            wide_enough = True
+        if wide_enough:
+            if form.cleaned_data['is_wraparound']:
+                revision.is_wraparound = True
+                revision.front_left = im.size[0]/2
+                revision.front_right = im.size[0]
+                revision.front_bottom = im.size[1]
+                revision.front_top = 0
+                revision.save()
+            generate_sizes(revision, im)
+        else:
             changeset.delete()
             os.remove(destination.name)
-            info_text = 'Error: File \"' + scan.name + \
-                        '" is not a valid picture.'
+            info_text = "Image is too small, only " + str(im.size) + \
+                        " in size."
             return _display_cover_upload_form(request, form, cover, issue,
-              info_text=info_text)
+                info_text=info_text)
+    except IOError: 
+        # just in case, django *should* have taken care of file type
+        changeset.delete()
+        os.remove(destination.name)
+        info_text = 'Error: File \"' + scan.name + \
+                    '" is not a valid picture.'
+        return _display_cover_upload_form(request, form, cover, issue,
+            info_text=info_text)
 
-        # all done, we can save the state
-        changeset.comments.create(commenter=request.user,
-                                    text=form.cleaned_data['comments'],
-                                    old_state=states.UNRESERVED,
-                                    new_state=changeset.state)
+    # all done, we can save the state
+    return finish_cover_revision(request, revision, form.cleaned_data)
 
-        if 'remember_source' in request.POST:
-            request.session['oi_file_source'] = request.POST['source']
-        else:
-            request.session.pop('oi_file_source','')
+def finish_cover_revision(request, revision, cd):
+    revision.changeset.comments.create(commenter=request.user,
+                                       text=cd['comments'],
+                                       old_state=states.UNRESERVED,
+                                       new_state=revision.changeset.state)
 
-        return HttpResponseRedirect(urlresolvers.reverse('upload_cover_complete',
-            kwargs={'revision_id': revision.id} ))
+    if cd['remember_source']:
+        request.session['oi_file_source'] = cd['source']
+    else:
+        request.session.pop('oi_file_source','')
+
+    return HttpResponseRedirect(urlresolvers.reverse('upload_cover_complete',
+        kwargs={'revision_id': revision.id} ))
 
 @login_required
 def upload_cover(request, cover_id=None, issue_id=None):
