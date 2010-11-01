@@ -1,5 +1,7 @@
 {% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
+<p class="error_message_text">
+Your username and password didn't match. Please try again.
+</p>
 {% endif %}
 
 <form method="post" action="{% url login %}">

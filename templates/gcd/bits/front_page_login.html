@@ -15,7 +15,7 @@
         </form>
     {% else %}
         <form method="post" action="{% url login %}">
-            {% trans 'username' %}
+            {% trans 'email' %}
             <input type="text" name="username" id="username"/>
             {% trans 'password' %}
             <input type="password" name="password" id="password"/>

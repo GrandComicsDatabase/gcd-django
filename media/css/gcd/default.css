@@ -464,6 +464,14 @@ div.updated_issues ul {
     padding: 0;
 }
 
+/* Site-wide form input styling options. */
+input.wide {
+    width: 60em;
+}
+
+input.medium {
+    width: 30em;
+}
 
 /* Move to publisher.css when it's created. */
 .pub_data{
@@ -549,12 +557,19 @@ div.ongoing_status form {
     font-weight: bold;
 }
 
+/* For form error messages, which usually need div positioning */
 .error_message {
     color: red;
     font-weight: bold;
     margin: 1em 0;
     float: left;
     clear: both;
+}
+
+/* Sometimes we don't want the positioning, just the text formatting. */
+.error_message_text {
+    color: red;
+    font-weight: bold;
 }
 
 .footer_disclaimer {

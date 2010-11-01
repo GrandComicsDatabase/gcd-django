@@ -5,13 +5,17 @@ from datetime import date, timedelta
 from django import forms
 from django.forms.util import ErrorList
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm
 from django.conf import settings
 
 from apps.gcd.models import Indexer, Country, Language, Reservation, IndexCredit
 
 MIN_PASSWORD_LENGTH = 6
 MAX_PASSWORD_LENGTH = 20
+
+class LongUsernameAuthenticationForm(AuthenticationForm):
+    username = forms.CharField(max_length=75, label='Username or email address',
+      widget=forms.TextInput(attrs={'class': 'medium'}))
 
 class AccountForm(forms.Form):
     email = forms.EmailField(max_length=75, help_text=(
@@ -131,6 +135,13 @@ class RegistrationForm(AccountForm):
         return cd
 
 class ProfileForm(AccountForm):
+    """
+    Add password reset handling to the regular account form.
+    Do not try to clean these fields as it depends on the request's user
+    and is therefore done in the view function.
+
+    TODO: Use PasswordResetForm class instead and set separately?
+    """
     old_password = forms.CharField(widget=forms.PasswordInput,
                                    min_length=MIN_PASSWORD_LENGTH,
                                    max_length=MAX_PASSWORD_LENGTH,
@@ -144,43 +155,8 @@ class ProfileForm(AccountForm):
                                            max_length=MAX_PASSWORD_LENGTH,
                                            required=False)
 
-    def clean(self):
-        AccountForm.clean(self)
-
-        cd = self.cleaned_data
-        return cd
-
-        set_password = False
-        if ('old_password' not in cd or 'new_password' not in cd or
-            'confirm_new_password' not in cd):
-            return cd
-
-        old = cd['old_password']
-        new = cd['new_password']
-        confirm = cd['confirm_new_password']
-        if (new or confirm) and not old:
-            self._errors['old_password'] = ErrorList(
-              ['You must supply your old password in order to change it.'])
-            cd = self._del_passwords(cd)
-
-        elif old and (new or confirm):
-            if not request.user.check_password(old):
-                self._errors['old_password'] = ErrorList(
-                  ['Old password incorrect, please try again.'])
-                cd = self._del_passwords(cd)
-            elif new != confirm:
-                self._errors['new_password'] = ErrorList(
-                  ['New password and confirm new password do not match.'])
-                cd = self._del_passwords(cd)
-
-        return cd
-
-    def _del_passwords(self, cd):
-        del cd['old_password']
-        del cd['new_password']
-        del cd['confirm_new_password']
-        return cd
-
+# TODO: This does not seem to be used, but perhaps we should be using it to
+#       leverage standard Django auth code?
 class PasswordResetForm(SetPasswordForm):
     def clean(self):
         cleaned_data = SetPasswordForm.clean(self)

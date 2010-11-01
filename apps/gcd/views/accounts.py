@@ -21,7 +21,8 @@ from django.utils.html import conditional_escape as esc
 
 from apps.gcd.views import render_error
 from apps.gcd.models import Indexer, Language, Country, Reservation, IndexCredit
-from apps.gcd.forms.accounts import ProfileForm, RegistrationForm
+from apps.gcd.forms.accounts import ProfileForm, RegistrationForm, \
+                                    LongUsernameAuthenticationForm
 
 from apps.oi import states
 
@@ -36,7 +37,12 @@ def login(request, template_name):
 
     try:
         if request.method == "POST":
-            user = User.objects.get(username=request.POST['username'])
+            try:
+                user = User.objects.get(email=request.POST['username'])
+            except (User.DoesNotExist, User.MultipleObjectsReturned):
+                user = User.objects.get(username=request.POST['username'])
+
+
             if user.indexer.registration_key is not None:
                 if date.today() > (user.indexer.registration_expires +
                                    timedelta(1)):
@@ -54,7 +60,7 @@ def login(request, template_name):
                    'the email within a few hours.') %
                   (esc(user.email), settings.EMAIL_CONTACT), is_safe=True)
 
-    except Exception:
+    except User.DoesNotExist:
         pass
 
     if 'next' in request.POST:
@@ -68,7 +74,8 @@ def login(request, template_name):
             post['next'] = urlresolvers.reverse('home')
             request.POST = post
 
-    return standard_login(request, template_name=template_name)
+    return standard_login(request, template_name=template_name,
+                          authentication_form=LongUsernameAuthenticationForm)
 
 def logout(request):
     """
@@ -369,6 +376,7 @@ def update_profile(request, user_id=None):
         return render_to_response('gcd/accounts/profile.html',
                                   { 'form': form },
                                   context_instance=RequestContext(request))
+
     set_password = False
     old = form.cleaned_data['old_password']
     new = form.cleaned_data['new_password']
