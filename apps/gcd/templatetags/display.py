@@ -211,10 +211,19 @@ def check_changed(changed, field):
 # display certain similar fields' data in the same way
 def field_value(revision, field):
     value = getattr(revision, field)
-    if field in ['is_current', 'is_surrogate', 'no_volume',
+    if field in ['is_surrogate', 'no_volume',
                  'display_volume_with_number', 'no_brand',
                  'page_count_uncertain', 'title_inferred']:
         return yesno(value, 'Yes,No')
+    elif field in ['is_current']:
+        res_holder_display = ''
+        if revision.previous():
+            reservation = revision.source.get_ongoing_reservation()
+            if revision.previous().is_current and not value and reservation:
+                res_holder = reservation.indexer
+                res_holder_display = ' (ongoing reservation held by %s %s)' % \
+                  (res_holder.first_name, res_holder.last_name)
+        return yesno(value, 'Yes,No') + res_holder_display
     elif field in ['publisher', 'indicia_publisher', 'brand']:
         return absolute_url(value)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
