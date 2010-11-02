@@ -68,10 +68,12 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
 {% else %}
     <div id="display_cover">
         {% if current_covers %}
-            {{ current_covers|length }} current cover{{ current_covers|length|pluralize }} for this issue.
+            <span class="instructions">
+            <a href="#current_covers">{{ current_covers|length }} current cover{{ current_covers|length|pluralize }}</a> for this issue.</span>
         {% endif %}
         {% if active_covers %}
-            <br>{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }} for this issue.
+            <span class="instructions">
+            <br><a href="#pending_covers">{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }}</a> for this issue.</span>
         {% endif %}
     </div>
 {% endif %}
@@ -79,6 +81,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
 
 <div style="clear:both">
 {% if current_covers %}
+<a name="current_covers"></a>
 <h2> current cover{{ current_covers|length|pluralize }} </h2>
 <table id="covers">
   <tr>
@@ -99,6 +102,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
 {% endif %}
 
 {% if active_covers %}
+<a name="pending_covers"></a>
 <h2> pending cover{{ active_covers|length|pluralize }} </h2>
 <table id="covers">
   <tr>
