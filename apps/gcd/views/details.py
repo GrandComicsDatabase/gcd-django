@@ -36,6 +36,8 @@ KEY_DATE_REGEXP = \
 # TODO: Pull this from the DB somehow, but not on every page load.
 MIN_GCD_YEAR = 1800
 
+COVER_TABLE_WIDTH = 5
+
 def get_style(request):
     style = 'default'
     if (request.GET.has_key('style')):
@@ -450,7 +452,7 @@ def covers_to_replace(request, starts_with=None, style="default"):
                              "issue__key_date")
 
     # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 5
+    table_width = COVER_TABLE_WIDTH
     style = get_style(request)
 
     return paginate_response(
@@ -514,7 +516,7 @@ def daily_covers(request, show_date=None):
         date_after = None
 
     # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 5
+    table_width = COVER_TABLE_WIDTH
     style = get_style(request)
 
     covers = Cover.objects.filter(last_upload__range=(\
@@ -705,7 +707,7 @@ def covers(request, series_id, style="default"):
 
     series = get_object_or_404(Series, id = series_id)
     # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 5
+    table_width = COVER_TABLE_WIDTH
 
     # TODO: once we get permissions going 'can_mark' should be one
     if request.user.is_authenticated() and \

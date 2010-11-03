@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from re import match
 from decimal import Decimal, InvalidOperation
 from django import forms
@@ -32,7 +33,8 @@ class AdvancedSearch(forms.Form):
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
                                         ['series', 'Series'],
                                         ['issue', 'Issues'],
-                                        ['sequence', 'Stories']],
+                                        ['sequence', 'Stories'],
+                                        ['cover', 'Covers']],
                                initial='sequence',
                                label='Search For')
 
@@ -171,4 +173,9 @@ class AdvancedSearch(forms.Form):
                 raise forms.ValidationError(
                   "Searching for covers which are missing or need to be"
                   " replaced is valid only for issue or series searches.")
+        if cleaned_data['target'] == 'cover' and cleaned_data['type']:
+            if len(cleaned_data['type']) > 1 or StoryType.objects\
+              .get(name='cover') not in cleaned_data['type']:
+                raise forms.ValidationError("When searching for covers"
+                      " only type cover can be selected.")
         return cleaned_data

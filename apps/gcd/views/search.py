@@ -18,11 +18,12 @@ from django.core.paginator import QuerySetPaginator
 from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 
-from apps.gcd.models import Publisher, Series, Issue, Story
+from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP
-from apps.gcd.views.details import issue 
+from apps.gcd.views.details import issue, COVER_TABLE_WIDTH 
+from apps.gcd.views.covers import get_image_tags_per_page
 
 # Should not be importing anything from oi, but we're doing this in several places.
 # TODO: states should probably live somewhere else.
@@ -312,7 +313,13 @@ def do_advanced_search(request):
         iq_obj = search_issues(data, op)
         sq_obj = search_series(data, op)
         pq_obj = search_publishers(data, op)
-        query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj)
+        # if there are sequence searches limit to type cover
+        if data['target'] == 'cover' and stq_obj != None:
+            cq_obj = Q(**{ 'issue__story__type' : StoryType.objects\
+                                                  .get(name='cover') })
+        else:
+            cq_obj = None
+        query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj, cq_obj)
         terms = compute_order(data)
     except SearchError, se:
         raise ViewTerminationError, render_to_response(
@@ -358,7 +365,14 @@ def do_advanced_search(request):
             filter = Issue.objects.all()
         items = filter.order_by(*terms).select_related(
           'series__publisher').distinct()
-        template = 'gcd/search/issue_list.html',
+
+    elif data['target'] == 'cover':
+        if query:
+            filter = Cover.objects.exclude(deleted=True).filter(query)
+        else:
+            filter = Cover.objects.all()
+        items = filter.order_by(*terms).select_related(
+          'issue__series__publisher').distinct()
 
     elif data['target'] == 'sequence':
         if query:
@@ -409,8 +423,14 @@ def process_advanced(request):
     template = 'gcd/search/%s_list.html' % \
                  ('content' if target == 'sequence' else item_name)
 
-    return paginate_response(request, items, template, context)
+    if item_name == 'cover':
+        context['table_width'] = COVER_TABLE_WIDTH
 
+        return paginate_response(request, items, template, context,
+                             page_size=50, callback_key='tags',
+                             callback=get_image_tags_per_page)
+    else:
+        return paginate_response(request, items, template, context)
 
 def combine_q(data, *qobjs):
     """
@@ -549,7 +569,7 @@ def search_issues(data, op, stories_q=None):
     prefix = compute_prefix(target, 'issue')
 
     q_and_only = []
-    if target == 'issue' or target == 'feature' or target == 'sequence':
+    if target in ['issue', 'cover', 'feature', 'sequence']:
         date_formatter = lambda d: '%04d.%02d.%02d' % (d.year, d.month, d.day)
         q_and_only.extend(search_dates(data, date_formatter,
                                        '%skey_date' % prefix,
@@ -741,22 +761,22 @@ def compute_prefix(target, current):
             return 'publisher__'
         if target == 'issue':
             return 'series__publisher__'
-        if target == 'sequence' or target == 'feature':
+        if target in ('sequence', 'feature', 'cover'):
             return 'issue__series__publisher__'
     elif current == 'series':
         if target in ('issue', 'publisher'):
             return 'series__'
-        if target == 'sequence' or target == 'feature':
+        if target in ('sequence', 'feature', 'cover'):
             return 'issue__series__'
     elif current == 'issue':
-        if target in ('sequence', 'feature', 'series'):
+        if target in ('sequence', 'feature', 'cover', 'series'):
             return 'issue__'
         if target == 'publisher':
             return 'series__issue__'
     elif current == 'sequence':
         if target == 'issue':
             return 'story__'
-        if target == 'series':
+        if target in ('series', 'cover'):
             return 'issue__story__'
         if target == 'publisher':
             return 'series__issue__story__'
@@ -829,7 +849,7 @@ def compute_order(data):
             elif order == 'language':
                 terms.append('series__language__name')
             
-        elif target == 'sequence' or target == 'feature':
+        elif target in ('sequence', 'feature', 'cover'):
             if order == 'publisher':
                 terms.append('issue__series__publisher')
             elif order == 'series':
