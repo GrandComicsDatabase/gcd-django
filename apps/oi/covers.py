@@ -47,9 +47,12 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
                'img/nocover.gif" alt="No image yet" class="cover_img"/>')
 
+    img_class = 'cover_img'
     if zoom_level == ZOOM_SMALL:
         width = 100
         size = 'small'
+        if revision.is_wraparound:
+            img_class = 'wraparound_cover_img'
     elif zoom_level == ZOOM_MEDIUM:
         width = 200
         size = 'medium'
@@ -92,7 +95,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
         img_url = NEW_COVERS_LOCATION + \
           revision.changeset.created.strftime('%B_%Y/').lower() + suffix
         return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) \
-               + '" ' + ' class="cover_img"/>')
+               + '" ' + ' class="' + img_class + '"/>')
 
 
 def get_preview_image_tags_per_page(page, series=None):
@@ -230,9 +233,11 @@ def uploaded_cover(request, revision_id):
     issue = revision.issue
 
     blank_issues = Issue.objects.filter(series=issue.series) \
-          .exclude(cover__isnull=False, cover__deleted=False)[:15]
+          .exclude(cover__isnull=False, cover__deleted=False) \
+          .exclude(id=issue.id)[:15]
     marked_covers = Cover.objects.filter(issue__series=issue.series, 
-                                         marked=True)[:15]
+                                         marked=True) \
+                                 .exclude(issue=issue)[:15]
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
     return render_to_response(uploaded_template, {
               'marked_covers' : marked_covers,
@@ -310,14 +315,14 @@ def process_edited_gatefold_cover(request):
                                  changeset__state__in=states.ACTIVE):
             revision = CoverRevision.objects.get(cover=cover, 
                                      changeset__state__in=states.ACTIVE)
+            changeset.delete()
             return render_error(request,
               ('There currently is a <a href="%s">pending replacement</a> '
                'for this cover of %s.') % (urlresolvers.reverse('compare',
                 kwargs={'id': revision.changeset.id}), esc(cover.issue)),
             redirect=False, is_safe=True)
-            changeset.delete()
         revision = CoverRevision(changeset=changeset, issue=issue,
-            cover=cover, file_source=file_source, marked=marked,
+            cover=cover, file_source=cd['source'], marked=cd['marked'],
             is_replacement = True)
     # no cover_id, therefore upload a cover to an issue (first or variant)
     else: 
@@ -396,7 +401,7 @@ def handle_gatefold_cover(request, cover, issue, form):
             'source': source, 'remember_source': remember_source, 
             'comments': comments, 'real_width': im.size[0]}
     if cover:
-        vars[cover_id] = cover.id
+        vars['cover_id'] = cover.id
     form = GatefoldScanForm(initial=vars)
 
     return render_to_response('oi/edit/upload_gatefold_cover.html', {

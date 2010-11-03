@@ -26,14 +26,20 @@ Reviewing :: {{ revision }}
 {% if revision.is_replacement %}
 <table id="covers">
 <tr>
-<td class="cover_grid{% if current_covers.0.0.marked %} marked{% endif %}">
+<td class="cover_grid{% if old_cover.marked %} marked{% endif %}">
   <h2>cover to be replaced</h2>
   <div class="cover_large">
-    <a href="{{ current_covers.0.0.issue.get_absolute_url }}">{{ current_covers.0.1 }}</a>
+    <a href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_tag }}</a>
+  {% if old_cover.is_wraparound %}
+  </div>
+  <div>The selected front part of the above full cover:</div>
+  <div class="cover_medium">
+    <a href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_front_tag }}</a>
+  {% endif %}
     <div class="cover_caption">
-      <a href="{% url compare id=current_covers.0.0.changeset.id %}">
-      uploaded on {{ current_covers.0.0.created }}</a><br>
-      {{ current_covers.0.0|show_cover_contributor }}
+      <a href="{% url compare id=old_cover.changeset.id %}">
+      uploaded on {{ old_cover.created }}</a><br>
+      {{ old_cover|show_cover_contributor }}
     </div>
   </div>
 </td>
@@ -48,26 +54,33 @@ Reviewing :: {{ revision }}
   {% endif %}
 {% endif %}
 <div class="cover_large">
-  <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a><br>
-      <div class="cover_caption">
-        {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revision.created }}<br>
-        {{ revision|show_cover_contributor }}
-        {% if revision.marked %}
-        <p><span class="comparison_highlight">cover is marked for replacement</span></p>
-            {% ifequal changeset.state states.REVIEWING %}
-            {% ifequal user changeset.approver %}
-            <a href="{% url unmark_cover_revision revision_id=revision.id %}">Remove mark for replacement</a>
-            {% endifequal %}
-            {% endifequal %}
-        {% else %}
-            {% ifequal changeset.state states.REVIEWING %}
-            {% ifequal user changeset.approver %}
-            <br><a href="{% url mark_cover_revision revision_id=revision.id %}">Mark for replacement</a>
-            {% endifequal %}
-            {% endifequal %}
-        {% endif %}
-        <br>
-      </div>
+  <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
+  {% if revision.is_wraparound %}
+</div>
+<div class="cover_medium">
+  <div>The selected front part of the above full cover:</div>
+  <a href="{{ revison.issue.get_absolute_url }}">{{ cover_front_tag }}</a>
+  {% endif %}
+
+  <div class="cover_caption">
+  {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revision.created }}<br>
+    {{ revision|show_cover_contributor }}
+    {% if revision.marked %}
+    <p><span class="comparison_highlight">cover is marked for replacement</span></p>
+      {% ifequal changeset.state states.REVIEWING %}
+        {% ifequal user changeset.approver %}
+    <a href="{% url unmark_cover_revision revision_id=revision.id %}">Remove mark for replacement</a>
+        {% endifequal %}
+     {% endifequal %}
+    {% else %}
+     {% ifequal changeset.state states.REVIEWING %}
+       {% ifequal user changeset.approver %}
+    <br><a href="{% url mark_cover_revision revision_id=revision.id %}">Mark for replacement</a>
+       {% endifequal %}
+     {% endifequal %}
+    {% endif %}
+    <br>
+  </div>
 </div>
 
 {% if revision.is_replacement %}

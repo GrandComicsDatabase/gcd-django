@@ -141,6 +141,11 @@ div#format {
 .coverImage img {
     border: solid 1px;
 }
+.coverImage .wraparound_cover_img {
+    border: solid 1px;
+    padding-right: 15px; 
+    background: transparent no-repeat right center url(../foldoutarrow_100.png); 
+}
 
 #index_credits {
     clear: both;

@@ -71,12 +71,12 @@ div.success {
     clear: both;
 }
 
-div.cover_large {
+div.cover_large, div.cover_medium {
     text-align: center;
     margin-bottom: 1em;
 }
 
-div.cover_large img {
+div.cover_large img, div.cover_medium img {
     border: solid 1px;
     margin-top: 1em;
     margin-bottom: 1em;

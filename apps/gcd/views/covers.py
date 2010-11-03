@@ -10,9 +10,12 @@ from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
 
 def get_image_tag(cover, alt_text, zoom_level):
+    img_class = 'cover_img'
     if zoom_level == ZOOM_SMALL:
         width = 100
         size = 'small'
+        if cover and cover.is_wraparound:
+            img_class = 'wraparound_cover_img'
     elif zoom_level == ZOOM_MEDIUM:
         width = 200
         size = 'medium'
@@ -46,7 +49,7 @@ def get_image_tag(cover, alt_text, zoom_level):
     img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR + suffix
 
     return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) + \
-           '" ' + ' class="cover_img"/>')
+           '" ' + ' class="' + img_class + '"/>')
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False):

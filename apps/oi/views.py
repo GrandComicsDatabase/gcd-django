@@ -2064,16 +2064,28 @@ def cover_compare(request, changeset, revision):
         cover_tag = get_image_tag(revision.cover, "deleted cover", ZOOM_LARGE)
     else:
         cover_tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_LARGE)
+    if revision.is_wraparound:
+        cover_front_tag = get_preview_image_tag(revision, "uploaded cover",
+                                                ZOOM_MEDIUM)
+    else:
+        cover_front_tag = ''
 
     current_covers = []
     pending_covers = []
+    old_cover = None
+    old_cover_tag = ''
+    old_cover_front_tag = ''
     if revision.is_replacement:
         old_cover = CoverRevision.objects.filter(cover=revision.cover, 
                       created__lt=revision.created,
                       changeset__state=states.APPROVED).order_by('-created')[0]
-        current_covers.append([old_cover, get_preview_image_tag(
-                                            old_cover, "replaced cover", 
-                                            ZOOM_LARGE)])
+        old_cover_tag = get_preview_image_tag(old_cover, "replaced cover", 
+                                              ZOOM_LARGE)
+        if old_cover.is_wraparound:
+            old_cover_front_tag = get_preview_image_tag(old_cover, 
+                                    "replaced cover", ZOOM_MEDIUM)
+        else:
+            old_cover_front_tag = ''
     elif revision.changeset.state in states.ACTIVE:
         if revision.issue.has_covers():
             for cover in revision.issue.active_covers():
@@ -2090,10 +2102,14 @@ def cover_compare(request, changeset, revision):
 
     response = render_to_response('oi/edit/compare_cover.html',
                                   { 'changeset': changeset,
+                                    'revision': revision,
                                     'cover_tag' : cover_tag,
+                                    'cover_front_tag': cover_front_tag,
                                     'current_covers' : current_covers,
                                     'pending_covers' : pending_covers,
-                                    'revision': revision,
+                                    'old_cover': old_cover,
+                                    'old_cover_tag': old_cover_tag,
+                                    'old_cover_front_tag': old_cover_front_tag,
                                     'table_width': 5,
                                     'states': states },
                                   context_instance=RequestContext(request))
