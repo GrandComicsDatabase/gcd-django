@@ -79,11 +79,11 @@ def reserve(request, id, model_name, delete=False):
 
     if display_obj.deleted:
         return render_error(request,
-          'Cannot %s "%s" as it is already deleted.' %
+          u'Cannot %s "%s" as it is already deleted.' %
           (action, display_obj))
     elif display_obj.reserved:
         return render_error(request,
-          'Cannot %s "%s" as it is already reserved.' %
+          u'Cannot %s "%s" as it is already reserved.' %
           (action, display_obj))
 
     if delete:
