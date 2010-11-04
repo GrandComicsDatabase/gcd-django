@@ -140,3 +140,25 @@ span.story_edit {
 input.del_comments {
     width: 12em;
 }
+
+div.issue_short {
+    margin-bottom: 1em;
+    float: right;
+}
+
+div.issue_short dl {
+    float: left;
+    width: 100%;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+div.issue_short dt {
+    float: left;
+    padding-right: 0.25em;
+}
+
+div.issue_short dd {
+    float: left;
+    margin: 0 0.5em 0 0;
+}

@@ -1,0 +1,37 @@
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+      <dl id="issue_data_list">
+{% if not issue.no_volume %}
+        <dt> {% trans "Volume" %}:
+        <dd> {{ issue|show_volume }}
+{% endif %}
+        <dt> {% trans "Price" %}:
+        <dd id="issue_price"> {{ issue.price|default:"" }}
+        <dt> {% trans "Pages" %}:
+        <dd id="issue_pages"> {{ issue|show_page_count }}
+{% if issue.indicia_frequency %}
+        <dt> {% trans "Indicia frequency" %}:
+        <dd id="indicia_frequency"> {{ issue.indicia_frequency }}
+{% endif %}
+        {{ issue|show_credit:"editing" }}
+      </dl>
+      <dl>
+        <dt> {% trans "Indicia Publisher" %}:
+        <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}
+{% if not issue.no_brand %}
+        <dt> {% trans "Brand" %}:
+        <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}
+{% endif %}
+{% if issue.isbn %}
+        <dt>ISBN:
+        <dd id="issue_isbn"> {{ issue.isbn }}
+{% endif %}
+      </dl>
+{% if issue.series.format %}
+      <dl>
+        <dt>Format:
+        <dd id="format_data" style="float:none">{{ issue.series.format }}
+      </dl>
+{% endif %}

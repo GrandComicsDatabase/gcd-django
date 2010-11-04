@@ -1,5 +1,6 @@
 {% load display %}
 {% load credits %}
+{% load i18n %}
 
 {% ifequal changeset_type 'story' %}
 <h3> Sequence {{ revision.sequence_number }} 
@@ -31,35 +32,50 @@
     <td><a href="{% url compare id=revision.changeset.id %}">Expand compare view</a></td>
   </tr>
 {% else %}
+  {% if request.GET.collapse and revision.issue and not revision.is_changed %}
+  <h4> No changes to the issue information</h4>
+    {% with revision as issue %}
+  <div class="issue_short">
+      {% include 'gcd/bits/issue_data.html' %}
+      {% if issue.notes %}
+    <dl>
+      <dt> Issue Notes:
+      <dd id="format_data" style="float:none">{{ issue.notes|linebreaksbr }}
+    </dl>
+      {% endif %}
+  </div>
+    {% endwith %}
+  {% else %}
   <tr>
     <th> Field </th>
-  {% if revision.deleted %}
+    {% if revision.deleted %}
     <th> Deleted </th>
-  {% else %}
-    {% if prev_rev %}
-      {% if no_prev_link %}
-    <th> Current </th>
-      {% else %}
-    <th><a href="{% url compare id=prev_rev.changeset.id %}?collapse=1"> Previous </a></th>
-      {% endif %}
-    <th> Change </th>
     {% else %}
+      {% if prev_rev %}
+        {% if no_prev_link %}
+    <th> Current </th>
+        {% else %}
+    <th><a href="{% url compare id=prev_rev.changeset.id %}?collapse=1"> Previous </a></th>
+        {% endif %}
+    <th> Change </th>
+      {% else %}
     <th> Added </th>
+      {% endif %}
     {% endif %}
-  {% endif %}
   </tr>
 
-  {% for field in field_list %}
+    {% for field in field_list %}
   <tr class="{{ revision.changed|check_changed:field }}">
     <td class="field_name"> {{ field|field_name }} </td>
-    {% if prev_rev %}
+      {% if prev_rev %}
     <td> {{ prev_rev|field_value:field }} </td>
-    {% endif %}
-    {% if not revision.deleted %}
+      {% endif %}
+      {% if not revision.deleted %}
     <td> {{ revision|field_value:field }} </td>
-    {% endif %}
+      {% endif %}
   </tr>
-  {% endfor %}
+    {% endfor %}
+  {% endif %}
 {% endif %}
 </table>
 
