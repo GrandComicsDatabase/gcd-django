@@ -115,6 +115,9 @@ class IndiciaPublisher(BasePublisher):
         return self.issue_count == 0 and \
           self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
+    def active_issues(self):
+        return self.issue_set.exclude(deleted=True)
+
     def get_absolute_url(self):
         return "/indicia_publisher/%i/" % self.id
 
@@ -140,6 +143,9 @@ class Brand(BasePublisher):
         return self.issue_count == 0 and \
           self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
                               .count() == 0
+
+    def active_issues(self):
+        return self.issue_set.exclude(deleted=True)
 
     def get_absolute_url(self):
         return "/brand/%i/" % self.id

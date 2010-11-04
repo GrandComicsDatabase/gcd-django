@@ -23,11 +23,11 @@ GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
 Highlighted fields represent <span class="added_highlight">added</span>, 
 <span class="comparison_highlight">changed</span>, and 
 <span class="deleted_highlight">deleted</span> data.
-{% ifnotequal changeset.state states.APPROVED %}
+{% if changeset.state != states.APPROVED and not revision.deleted %}
 <a class="new_window" href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview changes</a>
-{% endifnotequal %}
-{% ifequal changeset_type 'issue' %}
-  {% if changeset.storyrevisions.count %}
+{% endif %}
+{% if changeset_type == 'issue' %}
+  {% if changeset.storyrevisions.count and not revision.deleted %}
     {% if request.GET.collapse %}
     <a href="{% url compare id=changeset.id %}">Expand compare view</a>.
     {% else %}
@@ -37,17 +37,17 @@ Highlighted fields represent <span class="added_highlight">added</span>,
   {% if revision.issue and revision.issue.has_covers %}
 <a class="new_window" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>
   {% endif %}
-  {% ifequal user revision.changeset.indexer %}
-    {% ifequal changeset.state states.OPEN %}
+  {% if user == revision.changeset.indexer %}
+    {% if changeset.state == states.OPEN %}
 <a href="{% url edit_revision model_name=model_name,id=revision.id %}">Edit issue data</a>.
-    {% endifequal %}
-  {% endifequal %}
-{% endifequal %}
+    {% endif %}
+  {% endif %}
+{% endif %}
 </p>
 
 {% include 'oi/bits/compare.html' %}
 
-{% ifequal changeset_type 'issue' %}
+{% if changeset_type == 'issue' %}
   {% if revision.comments.count %}
   {% with revision.comments as comments %}
   {% with 1 as no_links %}
@@ -77,7 +77,7 @@ Highlighted fields represent <span class="added_highlight">added</span>,
 <hr>
   {% endfor %}
 <h3> Comments </h3>
-{% endifequal %}
+{% endif %}
 
 {% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}

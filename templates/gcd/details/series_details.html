@@ -142,7 +142,7 @@ cannot be placed in a timeline:
   {% endif %}
 
 {%else %}
-  {% for issue in series.issue_set.all %}
+  {% for issue in series.active_issues %}
     {% with forloop.counter as row_counter %}
       {% include "gcd/bits/series_detail_row.html" %}
     {% endwith %}

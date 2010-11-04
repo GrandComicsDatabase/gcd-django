@@ -432,7 +432,8 @@ def get_issue_revision_form(publisher, series=None, revision=None):
                             'then.')
 
             after = forms.ModelChoiceField(required=False,
-              queryset=Issue.objects.filter(series=series).order_by('sort_code'),
+              queryset=Issue.objects.exclude(deleted=True) \
+                .filter(series=series).order_by('sort_code'),
               empty_label="[add as first issue]",
               label = "Add this issue after")
 
@@ -553,7 +554,8 @@ def get_bulk_issue_revision_form(series, method):
 
     class RuntimeBulkIssueRevisionForm(base):
         after = forms.ModelChoiceField(required=False,
-          queryset=Issue.objects.filter(series=series).order_by('sort_code'),
+          queryset=Issue.objects.exclude(deleted=True).filter(series=series) \
+            .order_by('sort_code'),
           empty_label="[add as initial issues]",
           label = "Add these issues after")
 

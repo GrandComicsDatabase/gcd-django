@@ -69,7 +69,7 @@ def indicia_publisher(request, indicia_publisher_id):
     return show_indicia_publisher(request, indicia_publisher)
 
 def show_indicia_publisher(request, indicia_publisher, preview=False):
-    indicia_publisher_issues = indicia_publisher.issue_set.order_by(
+    indicia_publisher_issues = indicia_publisher.active_issues().order_by(
       'series__name', 'sort_code')
 
     vars = { 'indicia_publisher' : indicia_publisher,
@@ -92,7 +92,7 @@ def brand(request, brand_id):
     return show_brand(request, brand)
 
 def show_brand(request, brand, preview=False):
-    brand_issues = brand.issue_set.order_by('series__name', 'sort_code')
+    brand_issues = brand.active_issues().order_by('series__name', 'sort_code')
 
     vars = {
         'brand' : brand,
@@ -210,7 +210,7 @@ def show_series(request, series, preview=False):
         display_series = series
 
     scans, first_image_tag = _get_scan_table(display_series)
-    issues = series.issue_set.all()
+    issues = series.active_issues().all()
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -241,7 +241,7 @@ def series_details(request, series_id, by_date=False):
     bad_key_dates = []
     if by_date:
         no_key_date_q = Q(key_date__isnull=True) | Q(key_date='')
-        with_key_dates = series.issue_set.exclude(no_key_date_q)
+        with_key_dates = series.active_issues().exclude(no_key_date_q)
 
         prev_year = None
         prev_month = None
@@ -279,16 +279,16 @@ def series_details(request, series_id, by_date=False):
             prev_year = grid_date.year
             prev_month = grid_date.month
 
-        issues_left_over = series.issue_set.filter(
+        issues_left_over = series.active_issues().filter(
           no_key_date_q | Q(id__in=bad_key_dates))
             
     # These need to be numbers not True/False booleans so they work
     # in the template.
     num_issues = series.issue_count
     volume_present = \
-      series.issue_set.filter(no_volume=True).count() - num_issues
+      series.active_issues().filter(no_volume=True).count() - num_issues
     brand_present = \
-      series.issue_set.filter(no_brand=True).count() - num_issues
+      series.active_issues().filter(no_brand=True).count() - num_issues
 
     return render_to_response('gcd/details/series_details.html',
       {
@@ -384,7 +384,7 @@ def status(request, series_id):
     Display the index status matrix for a series.
     """
     series = get_object_or_404(Series, id=series_id)
-    issues = series.issue_set.all()
+    issues = series.active_issues().all()
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -628,6 +628,7 @@ def daily_changes(request, show_date=None):
 
     issues = Issue.objects.filter(revisions__changeset__change_type=CTYPES['issue'],
                                   revisions__changeset__state=states.APPROVED,
+                                  revisions__deleted=False,
                                   revisions__changeset__modified__range=(
                                     datetime.combine(requested_date, time.min),
                                     datetime.combine(requested_date, time.max)))\
@@ -678,6 +679,11 @@ def cover(request, issue_id, size):
         raise Http404
 
     issue = get_object_or_404(Issue, id = issue_id)
+
+    if issue.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'issue', 'id': issue_id}))
+
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
     cover_tag = get_image_tags_per_issue(issue, "Cover Image", size)
@@ -762,6 +768,11 @@ def issue(request, issue_id):
     Display the issue details page, including story details.
     """
     issue = get_object_or_404(Issue, id = issue_id)
+
+    if issue.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'issue', 'id': issue_id}))
+
     return show_issue(request, issue)
 
 def show_issue(request, issue, preview=False):

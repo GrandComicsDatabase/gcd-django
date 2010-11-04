@@ -64,7 +64,7 @@ def set_series_first_last(series):
     '''
     set first_issue and last_issue for given series
     '''
-    issues = series.issue_set.order_by('sort_code')
+    issues = series.active_issues().order_by('sort_code')
     if issues.count() == 0:
         series.first_issue = None
         series.last_issue = None
@@ -102,7 +102,7 @@ class Changeset(models.Model):
     def _revision_sets(self):
         if self.change_type == CTYPES['issue']:
             return (self.issuerevisions.all().select_related('issue', 'series'),
-                    self.storyrevisions.all())
+                    self.storyrevisions.all(), self.coverrevisions.all())
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
             return (self.issuerevisions.all().select_related('issue', 'series'),)
@@ -148,6 +148,17 @@ class Changeset(models.Model):
                 self._inline_revision = self.revisions.next()
         return self._inline_revision
 
+    def deleted(self):
+        if self.inline():
+            # everything but issues
+            return self.inline_revision().deleted
+        elif self.issuerevisions.count() == 1:
+            # single issue deletions
+            return self.issuerevisions.all()[0].deleted
+        else:
+            # bulk issue deletions not supported
+            return False
+
     def singular(self):
         """
         Used for conditionals in templates, as bulk issue adds are treated
@@ -162,7 +173,7 @@ class Changeset(models.Model):
         return self.issuerevisions.order_by('revision_sort_code', 'id')
 
     def queue_name(self):
-        if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
+        if self.change_type in CTYPES_BULK:
             return unicode(self)
         return self.revisions.next().queue_name()
 
@@ -1065,9 +1076,9 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
                                      self.country.code.upper())
 
     def _issue_set(self):
-        if self.indicia_publisher is None:
-            return Issue.objects.filter(pk__isnull=True)
-        return self.indicia_publisher.issue_set
+        # Currently unused (and shouldn't be used unless deleted items are
+        # correctly filtered out)
+        raise NotImplementedError
     issue_set = property(_issue_set)
 
     def _issue_count(self):
@@ -1191,9 +1202,9 @@ class BrandRevision(PublisherRevisionBase):
         return u'%s: %s (%s)' % (self.parent.name, self.name, self.year_began)
 
     def _issue_set(self):
-        if self.brand is None:
-            return Issue.objects.filter(pk__isnull=True)
-        return self.brand.issue_set
+        # Currently unused (and shouldn't be used unless deleted items are
+        # correctly filtered out)
+        raise NotImplementedError
     issue_set = property(_issue_set)
 
     def _issue_count(self):
@@ -1457,11 +1468,14 @@ class SeriesRevision(Revision):
     def _source_name(self):
         return 'series'
 
+    def active_issues(self):
+        return self.issue_set.exclude(deleted=True)
+
     # Fake the issue and cover sets and a few other fields for the preview page.
     def _issue_set(self):
         if self.series is None:
             return Issue.objects.filter(pk__isnull=True)
-        return self.series.issue_set
+        return self.series.active_issues()
     issue_set = property(_issue_set)
 
     def _has_gallery(self):
@@ -1560,9 +1574,8 @@ class SeriesRevision(Revision):
                              language=series.language)
                 update_count('issues', series.issue_count,
                              language=self.language)
-                # TODO: change when deleted issues are possible
                 issue_indexes = Issue.objects.filter(series=series,
-                                   is_indexed=True).count()
+                                  is_indexed=True, deleted=False).count()
                 update_count('issue indexes', -issue_indexes,
                              language=series.language)
                 update_count('issue indexes', issue_indexes,

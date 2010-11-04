@@ -88,11 +88,12 @@ def reserve(request, id, model_name, delete=False):
 
     if delete:
         # TODO remove when we can delete all objects
-        if model_name not in ['brand', 'indicia_publisher']:
+        if model_name not in ['brand', 'indicia_publisher', 'issue']:
             return render_error(request, 'Cannot delete this type of object.')
 
-        # In case someone else deleted while page was open or if it was added
-        # to issue
+        # In case someone else deleted while page was open or if it is not
+        # deletable because of other actions in the interim (adding to an
+        # issue for brand/ind_pub, modifying covers for issue, etc.)
         if not display_obj.deletable():
             return render_error(request,
                                 'This object fails the requirements for deletion.')
@@ -123,6 +124,9 @@ def reserve(request, id, model_name, delete=False):
             return HttpResponseRedirect(urlresolvers.reverse(
                      'show_indicia_publisher',
                      kwargs={'indicia_publisher_id': display_obj.id}))
+        elif model_name == 'issue':
+            return HttpResponseRedirect(urlresolvers.reverse('show_issue',
+                     kwargs={'issue_id': display_obj.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
@@ -152,9 +156,15 @@ def _do_reserve(indexer, display_obj, model_name, delete=False):
         revision.save()
 
     if model_name == 'issue':
-        # TODO: deletions?
         for story in revision.issue.active_stories():
-           StoryRevision.objects.clone_revision(story=story, changeset=changeset)
+            story_revision = StoryRevision.objects.clone_revision(story=story, changeset=changeset)
+            if delete:
+                story_revision.toggle_deleted()
+        if delete:
+            for cover in revision.issue.active_covers():
+                cover_revision = CoverRevision(changeset=changeset, issue=cover.issue,
+                                               cover=cover, deleted=True)
+                cover_revision.save()
 
     return changeset
 
@@ -1193,7 +1203,7 @@ def add_issue(request, series_id, sort_after=None):
                                    publisher=series.publisher)
 
     if request.method != 'POST':
-        reversed_issues = series.issue_set.order_by('-sort_code')
+        reversed_issues = series.active_issues().order_by('-sort_code')
         initial = {}
         if reversed_issues.count():
             initial['after'] = reversed_issues[0].id
@@ -1257,7 +1267,7 @@ def add_issues(request, series_id, method=None):
     form_class = get_bulk_issue_revision_form(series=series, method=method)
 
     if request.method != 'POST':
-        reversed_issues = series.issue_set.order_by('-sort_code')
+        reversed_issues = series.active_issues().order_by('-sort_code')
         initial = {}
         if reversed_issues.count():
             initial['after'] = reversed_issues[0].id
@@ -1691,7 +1701,7 @@ def reorder_series(request, series_id):
     if request.method != 'POST':
         return render_to_response('oi/edit/reorder_series.html', 
           { 'series': series,
-            'issue_list': [ (i, None) for i in series.issue_set.all() ] },
+            'issue_list': [ (i, None) for i in series.active_issues() ] },
           context_instance=RequestContext(request))
 
     try:
@@ -1707,7 +1717,7 @@ def reorder_series_by_key_date(request, series_id):
         return _cant_get(request)
     series = get_object_or_404(Series, id=series_id)
 
-    issues = series.issue_set.order_by('key_date')
+    issues = series.active_issues().order_by('key_date')
     return _reorder_series(request, series, issues)
 
 @permission_required('gcd.can_approve')
@@ -1720,7 +1730,7 @@ def reorder_series_by_issue_number(request, series_id):
     reorder_list = []
     number_set = set()
     try:
-        for issue in series.issue_set.all():
+        for issue in series.active_issues():
             number = int(issue.number)
             if number in number_set:
                 return render_error(request,
@@ -1750,7 +1760,7 @@ def _reorder_series(request, series, issues):
     # Do not move the call further down in this method.
     try:
         issue_list = _reorder_children(request, series, issues, 'sort_code',
-                                       series.issue_set, 'commit' in request.POST)
+                                       series.active_issues(), 'commit' in request.POST)
     except ViewTerminationError as vte:
         return vte.response
 

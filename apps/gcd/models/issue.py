@@ -114,12 +114,12 @@ class Issue(models.Model):
         next_issue = None
 
         earlier_issues = \
-          self.series.issue_set.filter(sort_code__lt=self.sort_code)
+          self.series.active_issues().filter(sort_code__lt=self.sort_code)
         earlier_issues = earlier_issues.order_by('-sort_code')
         if earlier_issues:
             prev_issue = earlier_issues[0]     
         
-        later_issues = self.series.issue_set.filter(sort_code__gt=self.sort_code)
+        later_issues = self.series.active_issues().filter(sort_code__gt=self.sort_code)
         later_issues = later_issues.order_by('sort_code')
         if later_issues:
             next_issue = later_issues[0]
@@ -139,6 +139,13 @@ class Issue(models.Model):
             if reservers.count() > 0:
                 return reservers[0].indexer
         return None
+
+    def delete(self):
+        self.deleted = True
+        self.save()
+
+    def deletable(self):
+        return self.cover_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
     def get_absolute_url(self):
         return "/issue/%i/" % self.id

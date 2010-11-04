@@ -77,7 +77,8 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.scans'),
 
     # Issue
-    (r'^issue/(?P<issue_id>\d+)/$', 'apps.gcd.views.details.issue'),
+    url(r'^issue/(?P<issue_id>\d+)/$',
+     'apps.gcd.views.details.issue', name='show_issue'),
     (r'^issue/$', 'apps.gcd.views.details.issue_form'),
 
     # Single Cover

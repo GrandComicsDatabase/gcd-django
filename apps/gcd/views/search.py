@@ -200,8 +200,9 @@ def series_by_name(request, series_name, sort=ORDER_ALPHA):
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series_name """
-    things = Issue.objects.filter(series__name__exact = series_name) \
-                .filter(number__exact = issue_nr)
+    things = Issue.objects.exclude(deleted=True) \
+               .filter(series__name__exact = series_name) \
+               .filter(number__exact = issue_nr)
     
     if things.count() == 1: # if one display the issue
         return HttpResponseRedirect(urlresolvers.reverse(issue,
@@ -360,9 +361,9 @@ def do_advanced_search(request):
 
     elif data['target'] == 'issue':
         if query:
-            filter = Issue.objects.filter(query)
+            filter = Issue.objects.exclude(deleted=True).filter(query)
         else:
-            filter = Issue.objects.all()
+            filter = Issue.objects.exclude(deleted=True)
         items = filter.order_by(*terms).select_related(
           'series__publisher').distinct()
 

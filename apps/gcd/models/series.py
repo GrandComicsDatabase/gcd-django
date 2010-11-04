@@ -75,6 +75,9 @@ class Series(models.Model):
 
     deleted = models.BooleanField(default=0, db_index=True)
 
+    def active_issues(self):
+        return self.issue_set.exclude(deleted=True)
+
     def get_ongoing_reservation(self):
         """
         TODO: Rethink usage of 1-1 relation.
@@ -97,14 +100,14 @@ class Series(models.Model):
 
     def issues_without_covers(self):
         from apps.gcd.models.issue import Issue
-        return Issue.objects.filter(series=self) \
+        return Issue.objects.filter(series=self).exclude(deleted=True) \
           .exclude(cover__isnull=False, cover__deleted=False).distinct()
 
     def scan_needed_count(self):
         return self.issues_without_covers().count() + self.marked_scans_count()
 
     def issue_indexed_count(self):
-        return self.issue_set.filter(is_indexed=True).count()
+        return self.active_issues().filter(is_indexed=True).count()
 
     def display_publication_dates(self):
         if self.issue_count == 0:

@@ -47,10 +47,12 @@
 <div id="index_status" class="index_status_available">
   <span>
       {% if object_class == "brand" or object_class == "indicia_publisher" %}
-    {{ object_name }} cannot be deleted because it is in use or pending another change.
+    {{ object_name }} cannot be deleted because it is used by an issue or has been added to a pending issue change.
+      {% else %}{% if object_class == "issue" %}
+    {{ object_name }} cannot be deleted because there are pending cover changes.
       {% else %}
     {{ object_name }} delete functionality is not yet implemented.
-      {% endif %}
+      {% endif %}{% endif %}
   </span>
 </div>
     {% endif %}

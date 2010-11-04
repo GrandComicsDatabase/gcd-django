@@ -56,7 +56,7 @@
           action="{% url apps.gcd.views.details.issue_form %}">
       <input type="hidden" name="extra" value="{{ extra }}">
       <select name="id" id="id">
-    {% for other_issue in series.issue_set.all %}
+    {% for other_issue in series.active_issues %}
         <option value="{{ other_issue.id }}"
       {% ifequal issue.id other_issue.id %}
                 selected

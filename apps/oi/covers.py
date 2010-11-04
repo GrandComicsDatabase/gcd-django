@@ -232,7 +232,8 @@ def uploaded_cover(request, revision_id):
     revision = get_object_or_404(CoverRevision, id=revision_id)
     issue = revision.issue
 
-    blank_issues = Issue.objects.filter(series=issue.series) \
+    blank_issues = Issue.objects.exclude(deleted=True) \
+          .filter(series=issue.series) \
           .exclude(cover__isnull=False, cover__deleted=False) \
           .exclude(id=issue.id)[:15]
     marked_covers = Cover.objects.filter(issue__series=issue.series, 
@@ -250,18 +251,29 @@ def uploaded_cover(request, revision_id):
 @login_required
 def delete_cover(request, id):
     cover = get_object_or_404(Cover, id=id)
+    issue = cover.issue
+
+    # check if there is a pending issue deletion
+    if IssueRevision.objects.filter(issue=issue, deleted=True,
+                                    changeset__state__in=states.ACTIVE):
+        revision = IssueRevision.objects.get(issue=issue,
+          changeset__state__in=states.ACTIVE)
+        return render_error(request,
+          ('%s is <a href="%s">pending deletion</a>. Covers '
+          'cannot be added or modified.') % (esc(issue),
+          urlresolvers.reverse('compare', kwargs={'id': revision.changeset.id})),
+          redirect=False, is_safe=True)
 
     # check if there is a pending change for the cover
-    try:
-        revision = CoverRevision.objects.get(cover=cover,
-                   changeset__state__in=states.ACTIVE)
+    if cover_id and CoverRevision.objects.filter(cover=cover, 
+                    changeset__state__in=states.ACTIVE):
+        revision = CoverRevision.objects.get(cover=cover, 
+          changeset__state__in=states.ACTIVE)
         return render_error(request,
           ('There currently is a <a href="%s">pending replacement</a> '
-           'for this cover of %s.') % (urlresolvers.reverse('compare',
-            kwargs={'id': revision.changeset.id}), esc(cover.issue)),
-        redirect=False, is_safe=True)
-    except:
-        revision = None
+          'for this cover of %s.') % (urlresolvers.reverse('compare',
+          kwargs={'id': revision.changeset.id}), esc(cover.issue)),
+          redirect=False, is_safe=True)
 
     changeset = Changeset(indexer=request.user, state=states.PENDING,
                           change_type=CTYPES['cover'])
@@ -535,27 +547,36 @@ def upload_cover(request, cover_id=None, issue_id=None):
     if cover_id and issue_id:
         raise ValueError
 
-    # check for cover and issue
     # if cover_id is present it is a replacement upload
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
         issue = cover.issue
-
-        # check if there is a pending change for the cover
-        if CoverRevision.objects.filter(cover=cover, 
-                                 changeset__state__in=states.ACTIVE):
-            revision = CoverRevision.objects.get(cover=cover, 
-                                     changeset__state__in=states.ACTIVE)
-            return render_error(request,
-              ('There currently is a <a href="%s">pending replacement</a> '
-               'for this cover of %s.') % (urlresolvers.reverse('compare',
-                kwargs={'id': revision.changeset.id}), esc(cover.issue)),
-            redirect=False, is_safe=True)
-
     # no cover_id, therefore upload a cover to an issue (first or variant)
-    else: 
+    else:
         issue = get_object_or_404(Issue, id=issue_id)
         cover = None
+
+    # check if there is a pending issue deletion
+    if IssueRevision.objects.filter(issue=issue, deleted=True,
+                                    changeset__state__in=states.ACTIVE):
+        revision = IssueRevision.objects.get(issue=issue,
+          changeset__state__in=states.ACTIVE)
+        return render_error(request,
+          ('%s is <a href="%s">pending deletion</a>. Covers '
+          'cannot be added or modified.') % (esc(issue),
+          urlresolvers.reverse('compare', kwargs={'id': revision.changeset.id})),
+          redirect=False, is_safe=True)
+
+    # check if there is a pending change for the cover
+    if cover_id and CoverRevision.objects.filter(cover=cover, 
+                    changeset__state__in=states.ACTIVE):
+        revision = CoverRevision.objects.get(cover=cover, 
+          changeset__state__in=states.ACTIVE)
+        return render_error(request,
+          ('There currently is a <a href="%s">pending replacement</a> '
+          'for this cover of %s.') % (urlresolvers.reverse('compare',
+          kwargs={'id': revision.changeset.id}), esc(cover.issue)),
+          redirect=False, is_safe=True)
 
     # current request is an upload
     if request.method == 'POST':
