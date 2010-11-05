@@ -43,7 +43,7 @@ def login(request, template_name):
                 user = User.objects.get(username=request.POST['username'])
 
 
-            if user.indexer.registration_key is not None:
+            if user.indexer.registration_expires is not None:
                 if date.today() > (user.indexer.registration_expires +
                                    timedelta(1)):
                     return render_error(request,
