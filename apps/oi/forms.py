@@ -386,6 +386,7 @@ def get_issue_revision_form(publisher, series=None, revision=None):
                 raise forms.ValidationError('Please correct the field errors.')
 
             cd['number'] = cd['number'].strip()
+            cd['volume'] = cd['volume'].strip()
             cd['publication_date'] = cd['publication_date'].strip()
             cd['key_date'] = cd['key_date'].strip()
             cd['indicia_frequency'] = cd['indicia_frequency'].strip()
@@ -395,7 +396,7 @@ def get_issue_revision_form(publisher, series=None, revision=None):
             cd['comments'] = cd['comments'].strip()
             cd['isbn'] = cd['isbn'].strip()
 
-            if cd['volume'] is not None and cd['no_volume'] is True:
+            if cd['volume'] != "" and cd['no_volume']:
                 raise forms.ValidationError('You cannot specify a volume and '
                   'check "no volume" at the same time')
 
@@ -456,9 +457,10 @@ class IssueRevisionForm(forms.ModelForm):
                 'next logical number in brackets like "[2]" if '
                 'there is no number printed anywhere on the issue.')
 
-    volume = forms.IntegerField(required=False,
-      help_text='Volume number (only numeric volumes allowed at this time). '
-                'For collections or other items that only have a volume number, '
+    volume = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+      required=False,
+      help_text='Volume number (only if listed on the item). For collections '
+                'or other items that only have a volume or book number, '
                 'put the same number in both this field and the issue number '
                 'and do *not* check "Display volume with number". ')
 
@@ -635,9 +637,10 @@ class BulkIssueRevisionForm(forms.Form):
 
 class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 
-    volume = forms.IntegerField(required=False,
-      help_text='Volume number (only numeric volumes allowed at this time). '
-                'For collections or other items that only have a volume number, '
+    volume = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+      required=False,
+      help_text='Volume number (only if listed on the item). For collections '
+                'or other items that only have a volume or book number, '
                 'put the same number in both this field and the issue number '
                 'and do *not* check "Display volume with number". ')
 
@@ -668,10 +671,11 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 
         cd['indicia_frequency'] = cd['indicia_frequency'].strip()
         cd['price'] = cd['price'].strip()
+        cd['volume'] = cd['volume'].strip()
         cd['editing'] = cd['editing'].strip()
         cd['comments'] = cd['comments'].strip()
 
-        if cd['volume'] is not None and cd['no_volume'] is True:
+        if cd['volume'] != "" and cd['no_volume']:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
 
@@ -699,7 +703,7 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
     first_volume = forms.IntegerField(required=False,
       help_text='If blank, first volume is calculated from the issue specified '
                 'in the "Add issues after" field, or "1" if inserting at the '
-                'beginning')
+                'beginning. Only numeric volumes allowed.')
 
     issues_per_volume = forms.IntegerField(min_value=1, initial=12,
       help_text='Number of issues in each volume')
@@ -780,9 +784,10 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
     issues_per_year = forms.IntegerField(min_value=1, initial=12,
       help_text='Number of issues in each year')
 
-    volume = forms.IntegerField(required=False,
-      help_text='Volume number (only numeric volumes allowed at this time). '
-                'For collections or other items that only have a volume number, '
+    volume = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+      required=False,
+      help_text='Volume number (only if listed on the item). For collections '
+                'or other items that only have a volume or book number, '
                 'put the same number in both this field and the issue number '
                 'and do *not* check "Display volume with number". ')
 
@@ -814,10 +819,11 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
 
         cd['indicia_frequency'] = cd['indicia_frequency'].strip()
         cd['price'] = cd['price'].strip()
+        cd['volume'] = cd['volume'].strip()
         cd['editing'] = cd['editing'].strip()
         cd['comments'] = cd['comments'].strip()
 
-        if cd['volume'] is not None and cd['no_volume'] is True:
+        if cd['volume'] != "" and cd['no_volume']:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
 
@@ -868,7 +874,8 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
     first_volume = forms.IntegerField(required=False,
       help_text='If blank, first volume is calculated from the issue specified '
                 'in the "Add issues after" field, or "1" if inserting at the '
-                'beginning')
+                'beginning. Only numeric volumes allowed.')
+
     issues_per_cycle = forms.IntegerField(min_value=1, initial=12,
       help_text='Number of issues in each year/volume')
 

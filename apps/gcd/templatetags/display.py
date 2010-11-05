@@ -59,7 +59,7 @@ def show_revision_short(revision):
 def show_volume(issue):
     if issue.no_volume:
         return u''
-    if issue.volume is None:
+    if issue.volume == '':
         return u'?'
     return issue.volume
 

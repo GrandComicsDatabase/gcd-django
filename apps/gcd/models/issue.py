@@ -15,8 +15,8 @@ class Issue(models.Model):
         ordering = ['series', 'sort_code']
 
     # Issue identification
-    number = models.CharField(max_length=25, db_index=True)
-    volume = models.IntegerField(max_length=255, db_index=True, null=True)
+    number = models.CharField(max_length=50, db_index=True)
+    volume = models.CharField(max_length=50, db_index=True)
     no_volume = models.BooleanField(default=0)
     display_volume_with_number = models.BooleanField(default=False)
     isbn = models.CharField(max_length=32)

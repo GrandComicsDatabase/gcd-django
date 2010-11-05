@@ -1687,7 +1687,7 @@ class IssueRevision(Revision):
     reservation_requested = models.BooleanField(default=0)
 
     number = models.CharField(max_length=50)
-    volume = models.IntegerField(max_length=255, null=True, blank=True)
+    volume = models.CharField(max_length=50)
     no_volume = models.BooleanField(default=0)
     display_volume_with_number = models.BooleanField(default=0)
 
@@ -1766,7 +1766,7 @@ class IssueRevision(Revision):
     def _get_blank_values(self):
         return {
             'number': '',
-            'volume': None,
+            'volume': '',
             'no_volume': None,
             'display_volume_with_number': None,
             'isbn': '',

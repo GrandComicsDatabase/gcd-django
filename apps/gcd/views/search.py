@@ -581,9 +581,9 @@ def search_issues(data, op, stories_q=None):
 
     q_objs = []
     if data['issues']:
-        q_objs.append(handle_issue_numbers(data, prefix))
+        q_objs.append(handle_numbers('issues', data, prefix))
     if data['volume']:
-        q_objs.append(handle_volume_numbers(data, prefix))
+        q_objs.append(handle_numbers('volume', data, prefix))
     if data['issue_date']:
         q_objs.append(
           Q(**{ '%spublication_date__%s' % (prefix, op) : data['issue_date'] }))
@@ -632,9 +632,9 @@ def search_issues(data, op, stories_q=None):
     return compute_qobj(data, q_and_only, q_objs)
 
 
-def handle_issue_numbers(data, prefix):
+def handle_numbers(field, data, prefix):
     """
-    The issue number field accepts issues, hyphenated issue ranges,
+    The issue and volume number fields accepts issues, hyphenated issue ranges,
     and comma-separated lists of either form.  Large numeric ranges
     result in large lists passed to the IN clause due to issue numbers
     not really being numeric in our data set.
@@ -643,7 +643,7 @@ def handle_issue_numbers(data, prefix):
     # a comma can itself be escaped.  Backslashes elsewhere must not
     # be escaped.  This could be handled more consistently and intuitively.
     q_or_only = []
-    issue_nums = split(r'\s*(?<!\\),\s*', data['issues'])
+    issue_nums = split(r'\s*(?<!\\),\s*', data[field])
     nums_in = []
     for num in issue_nums:
         esc = sub(r'\\,', ',', num)
@@ -662,42 +662,12 @@ def handle_issue_numbers(data, prefix):
             nums_in.append(esc)
 
     if nums_in:
-        q_or_only.append(Q(**{ '%snumber__in' % prefix : nums_in }))
-
-    return reduce(lambda x, y: x | y, q_or_only)
-
-def handle_volume_numbers(data, prefix):
-    """
-    Similar to issue number handling.
-    TODO: Refactor to share parsing code with issue handlig.
-    """
-    q_or_only = []
-    issue_nums = split(r'\s*(?<!\\),\s*', data['volume'])
-    nums_in = []
-    try:
-        for num in issue_nums:
-            esc = sub(r'\\,', ',', num)
-            range_match = match(r'(?P<begin>\d+)\s*-\s*(?P<end>\d+)$', esc)
-            if range_match:
-                # While volume is a numeric column, for now just use the 
-                # same logic as issues since working out how to mix
-                # the __range operator in is more work than we have time
-                # for right now.  TODO: come back and fix this.
-                num_range = range(int(range_match.group('begin')),
-                                  int(range_match.group('end')) + 1)
-                nums_in.extend(num_range)
-            else:
-                nums_in.append(int(esc))
-
-        if nums_in:
+        if field == 'issues':
+            q_or_only.append(Q(**{ '%snumber__in' % prefix : nums_in }))
+        else:
             q_or_only.append(Q(**{ '%svolume__in' % prefix : nums_in }))
 
-        return reduce(lambda x, y: x | y, q_or_only)
-    except ValueError:
-        raise SearchError, (
-          "Volume must be a whole number, a comma-separated list of "
-          "whole numbers, or a pair of whole numbers separated "
-          "by a hyphen.")
+    return reduce(lambda x, y: x | y, q_or_only)
 
 def search_stories(data, op):
     """
