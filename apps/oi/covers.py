@@ -265,7 +265,7 @@ def delete_cover(request, id):
           redirect=False, is_safe=True)
 
     # check if there is a pending change for the cover
-    if cover_id and CoverRevision.objects.filter(cover=cover, 
+    if id and CoverRevision.objects.filter(cover=cover,
                     changeset__state__in=states.ACTIVE):
         revision = CoverRevision.objects.get(cover=cover, 
           changeset__state__in=states.ACTIVE)
