@@ -1553,7 +1553,7 @@ class SeriesRevision(Revision):
         series.year_began = self.year_began
         series.year_ended = self.year_ended
         series.is_current = self.is_current
-        if not self.is_current and self.previous().is_current:
+        if not self.is_current and self.previous() and self.previous().is_current:
             self.source.get_ongoing_reservation().delete()
 
         series.publication_notes = self.publication_notes
