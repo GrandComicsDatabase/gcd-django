@@ -80,7 +80,9 @@ class AdvancedSearch(forms.Form):
     tracking_notes = forms.CharField(label='Tracking Notes', required=False)
     publication_notes = forms.CharField(label='Publication Notes',
                                         required=False)
-    not_reserved = forms.BooleanField(label="Not Reserved", 
+    not_reserved = forms.BooleanField(label="Not Reserved",
+                                      required=False)
+    is_current = forms.BooleanField(label="Current",
                                       required=False)
 
     issues = forms.CharField(label='Issues', required=False)

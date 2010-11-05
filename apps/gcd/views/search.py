@@ -558,6 +558,8 @@ def search_series(data, op):
     if data['not_reserved']:
         q_objs.append(Q(**{ '%songoing_reservation__isnull' % prefix : True }) &
                       Q(**{ '%sis_current' % prefix : True }))
+    if data['is_current']:
+        q_objs.append(Q(**{ '%sis_current' % prefix : True }))
 
     return compute_qobj(data, q_and_only, q_objs)
 
