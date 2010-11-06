@@ -700,7 +700,7 @@
         "model": "gcd.country", 
         "fields": {
             "code": "gb", 
-            "name": "Great Britain (UK)"
+            "name": "United Kingdom"
         }
     }, 
     {
@@ -1813,14 +1813,6 @@
         "fields": {
             "code": "ae", 
             "name": "United Arab Emirates"
-        }
-    }, 
-    {
-        "pk": 223, 
-        "model": "gcd.country", 
-        "fields": {
-            "code": "uk", 
-            "name": "United Kingdom"
         }
     }, 
     {
