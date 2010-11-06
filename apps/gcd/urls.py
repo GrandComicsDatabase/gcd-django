@@ -50,7 +50,8 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.imprint'),
 
     # Series
-    (r'^series/(?P<series_id>\d+)/$', 'apps.gcd.views.details.series'),
+    url(r'^series/(?P<series_id>\d+)/$',
+     'apps.gcd.views.details.series', name='show_series'),
     (r'^series/name/(?P<series_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.series_by_name'),
     url(r'^series/(?P<series_id>\d+)/details/$',

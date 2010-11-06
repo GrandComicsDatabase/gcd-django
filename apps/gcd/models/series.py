@@ -5,6 +5,10 @@ from apps.gcd.models.country import Country
 from apps.gcd.models.language import Language
 from apps.gcd.models.publisher import Publisher
 
+# TODO: should not be importing oi app into gcd app, dependency should be
+# the other way around.  Probably.
+from apps.oi import states
+
 class Classification(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -74,6 +78,14 @@ class Series(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=0, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.save()
+
+    def deletable(self):
+        return self.issue_count == 0 and \
+          self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)

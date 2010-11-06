@@ -49,6 +49,9 @@ class Publisher(BasePublisher):
     def active_indicia_publishers(self):
         return self.indiciapublisher_set.exclude(deleted=True)
 
+    def active_series(self):
+        return self.series_set.exclude(deleted=True)
+
     def __unicode__(self):
         return self.name
 

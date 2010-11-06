@@ -53,7 +53,7 @@ def publisher(request, publisher_id):
     pub = get_object_or_404(Publisher, id = publisher_id)
 
     vars = { 'publisher': pub, 'error_subject': pub }
-    return paginate_response(request, pub.series_set.order_by('name'),
+    return paginate_response(request, pub.active_series().order_by('name'),
                              'gcd/details/publisher.html', vars)
 
 def indicia_publisher(request, indicia_publisher_id):
@@ -110,7 +110,8 @@ def imprint(request, imprint_id):
     """
     style = get_style(request)
     imprint = get_object_or_404(Publisher, id = imprint_id)
-    imprint_series = imprint.imprint_series_set.order_by('name')
+    imprint_series = imprint.imprint_series_set.exclude(deleted=True) \
+      .order_by('name')
 
     vars = { 'publisher' : imprint, 'error_subject': '%s' % imprint }
     return paginate_response(request,
@@ -194,6 +195,10 @@ def series(request, series_id):
     """
     
     series = get_object_or_404(Series, id=series_id)
+    if series.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'series', 'id': series_id}))
+
     return show_series(request, series)
 
 def show_series(request, series, preview=False):
@@ -235,6 +240,9 @@ def show_series(request, series, preview=False):
 
 def series_details(request, series_id, by_date=False):
     series = get_object_or_404(Series, id=series_id)
+    if series.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'series', 'id': series_id}))
 
     issues_by_date = []
     issues_left_over = []
@@ -384,7 +392,11 @@ def status(request, series_id):
     Display the index status matrix for a series.
     """
     series = get_object_or_404(Series, id=series_id)
-    issues = series.active_issues().all()
+    if series.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'series', 'id': series_id}))
+
+    issues = series.active_issues()
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -425,6 +437,9 @@ def scans(request, series_id):
     """
 
     series = get_object_or_404(Series, id = series_id)
+    if series.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'series', 'id': series_id}))
 
     scans, unused_tag = _get_scan_table(series)
 
@@ -620,6 +635,7 @@ def daily_changes(request, show_date=None):
     series = Series.objects.filter(
       revisions__changeset__change_type=CTYPES['series'],
       revisions__changeset__state=states.APPROVED,
+      revisions__deleted=False,
       revisions__changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
@@ -712,6 +728,10 @@ def covers(request, series_id, style="default"):
     """
 
     series = get_object_or_404(Series, id = series_id)
+    if series.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'series', 'id': series_id}))
+
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = COVER_TABLE_WIDTH
 
@@ -845,7 +865,7 @@ def countries_in_use(request):
 
     if request.user.is_authenticated() and \
       request.user.groups.filter(name='admin'):
-        countries_from_series = list(set(Series.objects.all().
+        countries_from_series = list(set(Series.objects.exclude(deleted=True).
                                          values_list('country', flat=True)))
         countries_from_indexers = list(set(Indexer.objects.
                                            filter(user__is_active=True).

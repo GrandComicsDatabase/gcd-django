@@ -88,7 +88,7 @@ def reserve(request, id, model_name, delete=False):
 
     if delete:
         # TODO remove when we can delete all objects
-        if model_name not in ['brand', 'indicia_publisher', 'issue']:
+        if model_name not in ['brand', 'indicia_publisher', 'issue', 'series']:
             return render_error(request, 'Cannot delete this type of object.')
 
         # In case someone else deleted while page was open or if it is not
@@ -116,7 +116,6 @@ def reserve(request, id, model_name, delete=False):
                                   old_state=states.UNRESERVED,
                                   new_state=changeset.state)
 
-        # To be used soon
         if model_name == 'brand':
             return HttpResponseRedirect(urlresolvers.reverse('show_brand',
                      kwargs={'brand_id': display_obj.id}))
@@ -127,6 +126,9 @@ def reserve(request, id, model_name, delete=False):
         elif model_name == 'issue':
             return HttpResponseRedirect(urlresolvers.reverse('show_issue',
                      kwargs={'issue_id': display_obj.id}))
+        elif model_name == 'series':
+            return HttpResponseRedirect(urlresolvers.reverse('show_series',
+                     kwargs={'series_id': display_obj.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
@@ -870,7 +872,7 @@ def edit_issues_in_bulk(request):
     else:
         if len(items) > 100: # shouldn't happen, just in case
             raise ValueError, 'not more than 100 issues if more than one series'
-        series = Series.objects.filter(id__in=series_list)
+        series = Series.objects.exclude(deleted=True).filter(id__in=series_list)
         publisher_list = Publisher.objects.filter(series__in=series).distinct()
         series = series[0]
         if len(publisher_list) > 1:
@@ -2134,9 +2136,10 @@ def preview(request, id, model_name):
 
     if 'publisher' == model_name:
         if revision.parent is None:
-            queryset = revision.series_set.order_by('name')
+            queryset = revision.active_series().order_by('name')
         else:
-            queryset = revision.imprint_series_set.order_by('name')
+            queryset = revision.imprint_series_set.exclude(deleted=True) \
+              .order_by('name')
         return paginate_response(request,
           queryset,
           template,

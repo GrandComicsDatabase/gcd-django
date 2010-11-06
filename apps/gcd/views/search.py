@@ -45,7 +45,8 @@ def generic_by_name(request, name, q_obj, sort,
     if (class_ is Series):
         base_name = 'series'
         plural_suffix = ''
-        things = Series.objects.filter(q_obj).select_related('publisher')
+        things = Series.objects.exclude(deleted=True).filter(q_obj) \
+                   .select_related('publisher')
         if (sort == ORDER_ALPHA):
             things = things.order_by("name", "year_began")
         elif (sort == ORDER_CHRONO):
@@ -354,9 +355,9 @@ def do_advanced_search(request):
 
     elif data['target'] == 'series':
         if query:
-            filter = Series.objects.filter(query)
+            filter = Series.objects.exclude(deleted=True).filter(query)
         else:
-            filter = Series.objects.all()
+            filter = Series.objects.exclude(deleted=True)
         items = filter.order_by(*terms).select_related('publisher').distinct()
 
     elif data['target'] == 'issue':

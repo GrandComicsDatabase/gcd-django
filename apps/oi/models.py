@@ -1537,13 +1537,18 @@ class SeriesRevision(Revision):
             update_count('series', 1, language=self.language)
         elif self.deleted:
             self.publisher.series_count -= 1
-            self.publisher.issue_count -= series.issue_count
+            # TODO: implement when/if we allow series deletions along
+            # with all their issues
+            #self.publisher.issue_count -= series.issue_count
             self.publisher.save()
             if self.imprint:
                 self.imprint.series_count -= 1
                 self.imprint.save()
             series.delete()
             update_count('series', -1, language=series.language)
+            reservation = self.source.get_ongoing_reservation()
+            if reservation:
+                reservation.delete()
             return
 
         series.name = self.name
@@ -1553,8 +1558,10 @@ class SeriesRevision(Revision):
         series.year_began = self.year_began
         series.year_ended = self.year_ended
         series.is_current = self.is_current
-        if not self.is_current and self.previous() and self.previous().is_current:
-            self.source.get_ongoing_reservation().delete()
+        reservation = self.source.get_ongoing_reservation()
+        if not self.is_current and reservation and self.previous() and \
+          self.previous().is_current:
+            reservation.delete()
 
         series.publication_notes = self.publication_notes
         series.tracking_notes = self.tracking_notes
