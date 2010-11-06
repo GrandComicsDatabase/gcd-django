@@ -49,7 +49,7 @@ class AdvancedSearch(forms.Form):
     logic_help = "This option applies primarily to the story credit fields." \
                  "It will eventually be replaced by more powerful options."
     logic = forms.ChoiceField(choices=[[False, 'AND all fields'],
-                                       [True, 'OR credit, AND other fields']],
+                                       [True, 'OR credits, AND other fields']],
                               initial=False,
                               label='Behavior',
                               help_text=logic_help)

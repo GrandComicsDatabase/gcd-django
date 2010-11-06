@@ -23,7 +23,7 @@ from apps.gcd.views import ViewTerminationError, render_error, paginate_response
 from apps.gcd.views.details import show_indicia_publisher, show_brand, \
                                    show_series, show_issue
 from apps.gcd.views.covers import get_image_tag
-from apps.gcd.views.search import do_advanced_search
+from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
@@ -833,19 +833,11 @@ def edit_issues_in_bulk(request):
                  ('process_advanced_search') + '?' + request.GET.urlencode())
 
     search_values = request.GET.copy()
-    del search_values['order1']
-    del search_values['order2']
-    del search_values['order3']
-    del search_values['target']
-
-    # TODO convert search_values in something displayable
-    used_search_terms = []
-    for i in search_values:
-        if search_values[i] and search_values[i] not in ['None', 'False']:
-            used_search_terms.append((i, search_values[i]))
+    context = {}
+    target, method, logic, used_search_terms = used_search(search_values)
 
     try:
-        items, target = do_advanced_search(request)
+        items, target_name = do_advanced_search(request)
     except ViewTerminationError:
         return render_error(request, 
             'The search underlying the bulk change was not successful. '
@@ -928,7 +920,8 @@ def edit_issues_in_bulk(request):
                                              remove_fields, items)
         return _display_bulk_issue_change_form(request, form,
                 nr_items, nr_items_unreserved, 
-                request.GET.urlencode(), used_search_terms)
+                request.GET.urlencode(), target, method, logic,
+                used_search_terms)
 
     form = form_class(request.POST)
     form.fields.pop('number_of_issues')
@@ -938,7 +931,8 @@ def edit_issues_in_bulk(request):
                                              number_of_issues=False)
         return _display_bulk_issue_change_form(request, form,
                 nr_items, nr_items_unreserved, 
-                request.GET.urlencode(), used_search_terms)
+                request.GET.urlencode(), target, method, logic,
+                used_search_terms)
 
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['issue_bulk'])
@@ -946,6 +940,9 @@ def edit_issues_in_bulk(request):
     comment = 'Used search terms:\n'
     for search in used_search_terms:
         comment += "%s : %s\n" % (search[0], search[1])
+    comment += "method : %s\n" % method
+    comment += "behavior : %s\n" % logic
+
     changeset.comments.create(commenter=request.user,
                               text=comment,
                               old_state=changeset.state,
@@ -966,7 +963,8 @@ def edit_issues_in_bulk(request):
 
 def _display_bulk_issue_change_form(request, form, 
                                     nr_items, nr_items_unreserved,
-                                    search_option, used_search_terms):
+                                    search_option, 
+                                    target, method, logic, used_search_terms):
     url_name = 'edit_issues_in_bulk'
     url = urlresolvers.reverse(url_name) + '?' + search_option
     return render_to_response('oi/edit/bulk_frame.html',
@@ -977,7 +975,10 @@ def _display_bulk_issue_change_form(request, form,
         'form': form,
         'nr_items': nr_items,
         'nr_items_unreserved': nr_items_unreserved,
-        'used_search_terms': used_search_terms
+        'target': target,
+        'method': method,
+        'logic': logic,
+        'used_search_terms': used_search_terms,
       },
       context_instance=RequestContext(request))
 

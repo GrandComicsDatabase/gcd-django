@@ -4,8 +4,9 @@ View methods related to displaying search and search results pages.
 """
 
 from re import *
-from urllib import urlopen, quote
+from urllib import urlopen, quote, urlencode
 from decimal import Decimal
+from string import capitalize
 
 from django.db.models import Q
 from django.conf import settings
@@ -18,7 +19,8 @@ from django.core.paginator import QuerySetPaginator
 from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 
-from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType
+from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
+                            Country, Language
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP
@@ -42,6 +44,7 @@ def generic_by_name(request, name, q_obj, sort,
 
     base_name = 'unknown'
     plural_suffix = 's'
+    query_val = {'method': 'icontains'}
     if (class_ is Series):
         base_name = 'series'
         plural_suffix = ''
@@ -52,7 +55,9 @@ def generic_by_name(request, name, q_obj, sort,
         elif (sort == ORDER_CHRONO):
             things = things.order_by("year_began", "name")
         heading = 'Series Search Results'
-
+        # query_string for the link to the advanced search
+        query_val['target'] = 'series'
+        query_val['series'] = name
     elif (class_ is Story):
         # TODO: move this outside when series deletes are implemented
         q_obj &= Q(deleted=False)
@@ -77,7 +82,26 @@ def generic_by_name(request, name, q_obj, sort,
                                      "issue__series__year_began",
                                      "sequence_number")
         heading = 'Story Search Results'
-
+        # build the query_string for the link to the advanced search
+        query_val['target'] = 'sequence'
+        if credit in ['script', 'pencils', 'inks', 'colors', 'letters',
+                      'job_number']:
+            query_val[credit] = name
+        # remove the ones which are not matched in display of results
+        elif credit in ['reprint', 'title', 'feature']:
+            query_val[credit] = name
+            credit = None
+        elif credit.startswith('editing_search'):
+            query_val['story_editing'] = name
+            query_val['issue_editing'] = name
+            query_val['logic'] = True
+        elif credit.startswith('any'):
+            query_val['logic'] = True
+            for credit_type in ['script', 'pencils', 'inks', 'colors', 
+                                'letters', 'story_editing']:
+            #, 'issue_editing']:
+            # issue editing doesn't seem to 'or'ed with the other credits ?
+                query_val[credit_type] = name
     else:
         raise TypeError, "Unsupported search target!"
 
@@ -87,6 +111,7 @@ def generic_by_name(request, name, q_obj, sort,
              'search_term' : name,
              'media_url' : settings.MEDIA_URL, 
              'style' : 'default',
+             'query_string' : urlencode(query_val),
              'which_credit' : credit }
     return paginate_response(request, things, template, vars)
 
@@ -179,19 +204,19 @@ def story_by_job_number_name(request, number, sort=ORDER_ALPHA):
 
 def story_by_reprint(request, reprints, sort=ORDER_ALPHA):
     q_obj = Q(reprint_notes__icontains = reprints)
-    return generic_by_name(request, reprints, q_obj, sort)
+    return generic_by_name(request, reprints, q_obj, sort, credit="reprint")
 
 
 def story_by_title(request, title, sort=ORDER_ALPHA):
     """Looks up story by story (not issue or series) title."""
     q_obj = Q(title__icontains = title)
-    return generic_by_name(request, title, q_obj, sort)
+    return generic_by_name(request, title, q_obj, sort, credit="title")
 
 
 def story_by_feature(request, feature, sort=ORDER_ALPHA):
     """Looks up story by feature."""
     q_obj = Q(feature__icontains = feature)
-    return generic_by_name(request, feature, q_obj, sort)
+    return generic_by_name(request, feature, q_obj, sort, credit="feature")
     
 
 def series_by_name(request, series_name, sort=ORDER_ALPHA):
@@ -289,13 +314,11 @@ def advanced_search(request):
         return render_to_response('gcd/search/advanced.html',
           { 'form' : AdvancedSearch(auto_id=True), 'style' : 'default'},
           context_instance=RequestContext(request))
-
-    if (request.GET["target"] == "stories"):
-        return search_stories(request)
     else:
-        return search_series(request)
+        return render_to_response('gcd/search/advanced.html',
+          { 'form' : AdvancedSearch(initial=request.GET), 'style' : 'default'},
+          context_instance=RequestContext(request))
 
-    
 def do_advanced_search(request):
     """
     Runs advanced searches.
@@ -386,6 +409,47 @@ def do_advanced_search(request):
 
     return items, data['target']
 
+
+def used_search(search_values):
+    del search_values['order1']
+    del search_values['order2']
+    del search_values['order3']
+    if search_values['target'] == 'sequence':
+        target = 'Stories'
+    elif search_values['target'][-1] == 's':
+        target = 'Series'
+    else:
+        target = capitalize(search_values['target']) + 's'
+    del search_values['target']
+    
+    if search_values['method'] == 'iexact':
+        method = 'Matches Exactly'
+    elif search_values['method'] == 'istartswith':
+        method = 'Starts With'
+    else:
+        method = 'Contains'
+    del search_values['method']
+
+    if search_values['logic'] == 'True':
+        logic = 'OR credits, AND other fields'
+    else:
+        logic = 'AND all fields'
+    del search_values['logic']
+
+    used_search_terms = []
+    if 'country' in search_values:
+        used_search_terms.append(('country',
+          Country.objects.get(code=search_values['country']).name))
+        del search_values['country']
+    if 'language' in search_values:
+        used_search_terms.append(('language',
+          Language.objects.get(code=search_values['language']).name))
+        del search_values['language']
+    for i in search_values:
+        if search_values[i] and search_values[i] not in ['None', 'False']:
+            used_search_terms.append((i, search_values[i]))
+    return target, method, logic, used_search_terms
+
 def process_advanced(request):
     """
     Runs advanced searches.
@@ -425,9 +489,15 @@ def process_advanced(request):
     template = 'gcd/search/%s_list.html' % \
                  ('content' if target == 'sequence' else item_name)
 
+    search_values = request.GET.copy()
+    target, method, logic, used_search_terms = used_search(search_values)
+    context['target'] = target
+    context['method'] = method
+    context['logic'] = logic
+    context['used_search_terms'] = used_search_terms
+    
     if item_name == 'cover':
         context['table_width'] = COVER_TABLE_WIDTH
-
         return paginate_response(request, items, template, context,
                              page_size=50, callback_key='tags',
                              callback=get_image_tags_per_page)

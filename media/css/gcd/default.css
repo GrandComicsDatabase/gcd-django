@@ -622,3 +622,13 @@ a.new_window {
     font-size: 1.3em;
     font-weight: bold;
 }
+
+/* for search results info */
+div.search_terms {
+    float: left;
+    margin-bottom: 1em;
+}
+
+span.search_terms {
+    font-weight: bold;
+}

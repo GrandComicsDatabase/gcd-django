@@ -15,33 +15,29 @@ Changing {{ object_name }}
 
 {% block view_body %}
 <h1>Changing Issues</h1>
-<h3>Used search terms:</h3>
-<table>
-{% for search, b in used_search_terms %}
-<tr><th><label>{{ search }}:</label></th><td> {{ b }} </td>
-{% endfor %}
-</table>
-<p>{{ nr_items }} issues match the search criteria.
+{% include "gcd/bits/search_terms.html" %}
+<div class="left">
+{{ nr_items }} issues match the search criteria.
 {% if nr_items != nr_items_unreserved %}
-<span class="instructions important">
-<br>Only {{ nr_items_unreserved }} of these issues are currently unreserved and will be part of this bulk change.
-</span>
+  <span class="instructions important">
+    <br>Only {{ nr_items_unreserved }} of these issues are currently unreserved and will be part of this bulk change.
+  </span>
 {% endif %}
-</p>
-<p>
-Note that only fields which are currently the same for all issues can be changed.
-</p>
-<div class="edit">
-<form action="{{ object_url }}" method="POST">
-  <table class="editing">
-  {{ form.as_table }}
-  </table>
-  <input type="submit" name="add" value="{{ action_label}} {{ object_name }}"></input>
+  <p>Note that only fields which are currently the same for all issues can be changed.</p>
+</div>
+<div class="left">
+  <div class="edit">
+    <form action="{{ object_url }}" method="POST">
+      <table class="editing">
+{{ form.as_table }}
+      </table>
+<input type="submit" name="add" value="{{ action_label}} {{ object_name }}">
 {% ifequal object_name "Story" %}
-  <input type="submit" name="cancel_return" value="Cancel"></input>
+  <input type="submit" name="cancel_return" value="Cancel">
 {% else %}
-  <input type="submit" name="cancel" value="Cancel"></input>
+  <input type="submit" name="cancel" value="Cancel">
 {% endifequal %}
-</form>
+    </form>
+  </div>
 </div>
 {% endblock %}

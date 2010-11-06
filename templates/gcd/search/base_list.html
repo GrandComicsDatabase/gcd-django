@@ -17,6 +17,10 @@
 
 {% block list_contents %}{% endblock %}
 
+{% if used_search_terms %}
+{% include "gcd/bits/search_terms.html" %}
+{% endif %}
+
 {% include "gcd/bits/search_bar.html" %}
 
 {% include "gcd/search/list_header.html" %}
