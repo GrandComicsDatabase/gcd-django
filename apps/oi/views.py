@@ -2027,7 +2027,7 @@ def compare(request, id):
     if changeset.change_type == CTYPES['issue_add'] and \
       changeset.issuerevisions.count() > 1:
         template = 'oi/edit/compare_issue_skeletons.html'
-    if changeset.change_type == CTYPES['issue_bulk']:
+    elif changeset.change_type == CTYPES['issue_bulk']:
         template = 'oi/edit/compare_bulk_issue.html'
     else:
         template = 'oi/edit/compare.html'
