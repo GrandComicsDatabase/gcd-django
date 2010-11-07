@@ -20,6 +20,8 @@ is now open for voting at:
 %s
 
 %s
+
+The deadline is %s.
 """
 
 EMAIL_TOKEN_STRING = """
@@ -312,7 +314,8 @@ def topic_post_save(sender, **kwargs):
               topic,
               topic.text,
               settings.SITE_URL.rstrip('/') + topic.get_absolute_url(),
-              token_string)
+              token_string,
+              topic.deadline.strftime('%d %B %Y %H:%M:%S'))
 
             list_config.send_mail("GCD Ballot Open: %s" % topic, email_body)
 
