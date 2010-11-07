@@ -275,18 +275,14 @@ def delete_cover(request, id):
           kwargs={'id': revision.changeset.id}), esc(cover.issue)),
           redirect=False, is_safe=True)
 
-    changeset = Changeset(indexer=request.user, state=states.PENDING,
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['cover'])
     changeset.save()
     revision = CoverRevision(changeset=changeset, issue=cover.issue,
                              cover=cover, deleted=True)
     revision.save()
 
-    comments = request.POST['comments']
-    changeset.comments.create(commenter=request.user,
-                              text=comments,
-                              old_state=states.UNRESERVED,
-                              new_state=changeset.state)
+    changeset.submit(notes=request.POST['comments'])
 
     return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                                 kwargs={'issue_id': cover.issue.id}))
@@ -315,7 +311,7 @@ def process_edited_gatefold_cover(request):
                 kwargs={'issue_id': cd['issue_id']} ))
 
     # create OI records
-    changeset = Changeset(indexer=request.user, state=states.PENDING,
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
                             change_type=CTYPES['cover'])
     changeset.save()
 
@@ -447,7 +443,7 @@ def handle_uploaded_cover(request, cover, issue):
     marked = form.cleaned_data['marked']
 
     # create OI records
-    changeset = Changeset(indexer=request.user, state=states.PENDING,
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
                             change_type=CTYPES['cover'])
     changeset.save()
 
@@ -521,15 +517,12 @@ def handle_uploaded_cover(request, cover, issue):
     return finish_cover_revision(request, revision, form.cleaned_data)
 
 def finish_cover_revision(request, revision, cd):
-    revision.changeset.comments.create(commenter=request.user,
-                                       text=cd['comments'],
-                                       old_state=states.UNRESERVED,
-                                       new_state=revision.changeset.state)
-
     if cd['remember_source']:
         request.session['oi_file_source'] = cd['source']
     else:
         request.session.pop('oi_file_source','')
+
+    revision.changeset.submit(cd['comments'])
 
     return HttpResponseRedirect(urlresolvers.reverse('upload_cover_complete',
         kwargs={'revision_id': revision.id} ))

@@ -212,8 +212,9 @@ class Changeset(models.Model):
         the is_current flag denotes that already and we may want to use the
         last issue to date sometimes.
         """
-        if self.approver is None and self.indexer.indexer.is_new and \
-           self.indexer.indexer.mentor is not None:
+        if self.approver is None and (self.indexer.indexer.is_new and \
+           self.indexer.indexer.mentor is not None and \
+           self.change_type != CTYPES['cover']):
             self.approver = self.indexer.indexer.mentor
 
         new_state = states.PENDING
