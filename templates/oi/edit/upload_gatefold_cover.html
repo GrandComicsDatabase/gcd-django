@@ -3,22 +3,12 @@
 <html>
 <head>
   <title>Select front cover for {{ issue }}</title>
-  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
-  <script type="text/javascript">
-  if (typeof jQuery == 'undefined')
-  {
-    document.write(unescape("%3Cscript src='{{ MEDIA_URL }}jquery/js/jquery.min.js' type='text/javascript'%3E%3C/script%3E"));
-  }
-  </script>
-  {% compress js %}
-  <script type='text/javascript' src='{{ MEDIA_URL }}jquery/js/jquery.Jcrop.min.js'></script>
-  <script type='text/javascript' src='{{ MEDIA_URL }}js/oi/gatefoldcover.js'></script>
-  {% endcompress %}
-  {% compress css %}
-  <link rel='stylesheet' href='{{ MEDIA_URL }}jquery/css/jquery.Jcrop.css' type='text/css'>
-  {% endcompress %}
 </head>
 <body>
+  {% include 'oi/bits/select_cover_section.html' %}
+  {% compress css %}
+  <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+  {% endcompress %}
   <p>Please select the front part of the cover for {{ issue }}. </p>
   <img src='{{ MEDIA_URL }}img/gcd/new_covers/tmp/{{ scan_name }}' id='cropbox' width={{ width }}px>
   <form method='post' action='{% url gatefold_cover %}'>

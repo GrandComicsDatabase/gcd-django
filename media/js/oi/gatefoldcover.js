@@ -5,7 +5,7 @@ $(window).load(function(){
     var width = $('#cropbox').width();
     var height = $('#cropbox').height();
     var real_width = parseInt($('#id_real_width').val());
-
+    var ratio = width/real_width
     // Now create a jcrop object with some defaults
     // The onChange and onSelect attributes specify a function to run
     var jcrop = $.Jcrop('#cropbox', {
@@ -14,7 +14,7 @@ $(window).load(function(){
         // we show the image scaled to width, adjust min_width accordingly
         minSize: [400*width/real_width, 0],
         maxSize: [0, height],
-        setSelect: [0, 0, width/2, height]});
+        setSelect: [0, 0, width, height]});
 
     // This function will run when the form fields are updated
     function updateSelection() {
@@ -24,18 +24,22 @@ $(window).load(function(){
         y = parseInt($('#id_top').val());
         h = parseInt($('#id_height').val());
 
+        x = parseInt(x*ratio);
+        w = parseInt(w*ratio);
+        y = parseInt(y*ratio);
+        h = parseInt(h*ratio);
         // Now move the selection to new coordinates
         jcrop.setSelect([x, y, x+w, y+h]);
-    }
+    };
 
     // This runs when the selection is changed, and updates the
     // form fields
     function updateForm(c) {
-        $('#id_width').val(c.x2 - c.x);
-        $('#id_left').val(c.x);
-        $('#id_height').val(c.y2 - c.y);
-        $('#id_top').val(c.y);
-    }
+        $('#id_width').val(parseInt((c.x2 - c.x)/ratio));
+        $('#id_left').val(parseInt(c.x/ratio));
+        $('#id_height').val(parseInt((c.y2 - c.y)/ratio));
+        $('#id_top').val(parseInt(c.y/ratio));
+    };
 
     // This is to make sure that when the user presses enter
     // (keyCode == 13) in the fields, the form isn't submitted,

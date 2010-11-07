@@ -357,11 +357,10 @@ def process_edited_gatefold_cover(request):
     im = Image.open(destination_name)
     revision.is_wraparound = True
     # convert from scaled to real values
-    scaling = float(im.size[0])/min(SHOW_GATEFOLD_WIDTH, im.size[0])
-    width = cd['width']*scaling
-    height = cd['height']*scaling
-    left = cd['left']*scaling
-    top = cd['top']*scaling
+    width = cd['width']
+    height = cd['height']
+    left = cd['left']
+    top = cd['top']
     revision.front_left = left
     revision.front_right = left + width
     revision.front_top = top

@@ -1,0 +1,22 @@
+{% load compress %}
+<link rel='stylesheet' href='{{ MEDIA_URL }}jquery/css/jquery.Jcrop.css' type='text/css'>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+<script type="text/javascript">
+if (typeof jQuery == 'undefined')
+{
+document.write(unescape("%3Cscript src='{{ MEDIA_URL }}jquery/js/jquery.min.js' type='text/javascript'%3E%3C/script%3E"));
+}
+</script>
+{% compress js %}
+<script type='text/javascript' src='{{ MEDIA_URL }}jquery/js/jquery.Jcrop.min.js'></script>
+<script type='text/javascript' src='{{ MEDIA_URL }}js/oi/gatefoldcover.js'></script>
+{% endcompress %}
+ <noscript>
+<p>
+<span class="important">
+You cannot do a selection for this cover because
+JavaScript is either disabled or not supported by your browser.
+</span>
+</p>
+</noscript>
+
