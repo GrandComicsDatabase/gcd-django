@@ -30,18 +30,18 @@
   {% include "gcd/bits/pagination_bar.html" %}
   {% endif %}
 </div>
+<div id="info_links">
+  A click on the cover leads to the large cover view, a click on the issue name to the issue data.
+</div>
 
 <table id="covers">
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
+      <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
       <br/>
-      <span class="cover_links">Zoom:
-<a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
-<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a></span> <br/>
       <div class="cover_caption">
-        {{ issue.series.name }} #{{ issue.display_number }}<br/>
+        <a href="{{ issue.get_absolute_url }}">{{ issue.series.name }} #{{ issue.display_number }}</a><br>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br>
         {% if issue.publication_date %}
         <span class="cover_date">{{ issue.publication_date }}</span><br>

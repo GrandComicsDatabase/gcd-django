@@ -15,22 +15,20 @@
 {% include "gcd/bits/series_issue_header.html" %}
 
 <div id="info_links">
-  <a href="{{series.get_absolute_url}}scans/?style={{ style|default:'default' }}">Cover Scan Status</a> ({{ series.scan_count }} cover{{ series.scan_count|pluralize }} for {{ series.issue_count }} issue{{ series.issue_count|pluralize }} available)
-  <br/>
-  <a href="{{ series.get_absolute_url }}status/?style={{ style|default:'default' }}">Index Status</a>
+  <a href="{{ series.get_absolute_url }}status/?style={{ style|default:'default' }}"> Index Status</a> &nbsp; / &nbsp;
+  <a href="{{series.get_absolute_url}}scans/?style={{ style|default:'default' }}">Cover Scan Status</a> ({{ series.scan_count }} cover{{ series.scan_count|pluralize }} for {{ series.issue_count }} issue{{ series.issue_count|pluralize }} available).
+  <br>
+  A click on the cover leads to the large cover view, a click on the issue number to the issue data.
 </div>
 
 <table id="covers">
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
+      <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
       <br>
-      <span class="cover_links">Zoom:
-        <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style|default:'default' }}">Medium</a>
-        <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}">Large</a></span>
       <div class="cover_caption">
-        <span class="cover_number">Issue {{ issue.display_number }}</span>
+        <span class="cover_number"><a href="{{ issue.get_absolute_url }}">Issue {{ issue.display_number }}</a></span>
         {% if issue.publication_date %}
         <br><span class="cover_date">{{ issue.publication_date }}</span>
         {% endif %}

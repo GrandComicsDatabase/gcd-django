@@ -48,16 +48,19 @@
   {% endfor %}
   </div>
 </div>
+<div id="info_links">
+  A click on the cover leads to the large cover view, a click on the issue name to the issue data, or one can replace the cover directly.
+</div>
 
 <table id="covers">
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid">
-      <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
+      <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
       <br/>
       <div class="cover_caption">
         <a href="{{ cover.get_status_url }}">upload replacement cover</a><br>
-        {{ issue.series.name }} #{{ issue.display_number }}<br/>
+        <a href="{{ issue.get_absolute_url }}">{{ issue.series.name }} #{{ issue.display_number }}</a><br>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }})
       </div>
     </td>

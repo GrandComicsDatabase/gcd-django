@@ -6,13 +6,10 @@
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid">
-      <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
+      <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
       <br>
-      <span class="cover_links">Zoom:
-        <a href="{{ issue.get_absolute_url }}cover/2/">Medium</a>
-        <a href="{{ issue.get_absolute_url }}cover/4/">Large</a></span>
       <div class="cover_caption">
-        {{ issue.series.name }} #{{ issue.display_number }}<br/>
+        <a href="{{ issue.get_absolute_url }}">{{ issue.series.name }} #{{ issue.display_number }}</a><br>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }})
         <br><span class="cover_date">{{ issue.publication_date }}</span>
       </div>
