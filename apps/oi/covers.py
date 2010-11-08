@@ -33,7 +33,7 @@ from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 # table width for displaying the medium sized current and active covers
 UPLOAD_WIDTH = 3
 
-SHOW_GATEFOLD_WIDTH = 800
+SHOW_GATEFOLD_WIDTH = 1000
 
 # where to put our covers,
 LOCAL_NEW_SCANS = settings.NEW_COVERS_DIR
@@ -56,6 +56,8 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
     elif zoom_level == ZOOM_MEDIUM:
         width = 200
         size = 'medium'
+        if revision.is_wraparound:
+            img_class = 'wraparound_cover_img'
     elif zoom_level == ZOOM_LARGE:
         width = 400
         size = 'large'
@@ -87,7 +89,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
             # for old covers do manual scaling, since it is the uploaded file
             return mark_safe('<img src="' + img_url + '" alt="' + \
               esc(alt_text) + '" width="' + str(width) + \
-              '" class="cover_img"/>')
+              '" class="' + img_class + '"/>')
     elif revision.deleted:
         return get_image_tag(revision.cover, esc(alt_text), zoom_level)  
     else:
@@ -191,7 +193,11 @@ def generate_sizes(cover, im):
                    int(width / full_cover.size[0] * full_cover.size[1])
             scaled = full_cover.resize(size, Image.ANTIALIAS)
         else:
-            size = width, int(float(width)/im.size[0]*im.size[1])
+            if width == 400 and im.size[0] > im.size[1]:
+                # for landscape covers use height as base size
+                size = int(float(width)/im.size[1]*im.size[0]), width
+            else:
+                size = width, int(float(width)/im.size[0]*im.size[1])
             scaled = im.resize(size, Image.ANTIALIAS)
         scaled.save(scaled_name, subsampling='4:4:4')
 
@@ -203,17 +209,20 @@ def edit_covers(request, issue_id):
     """
 
     issue = get_object_or_404(Issue, id=issue_id)
-    covers = get_image_tags_per_issue(issue, "current covers", ZOOM_MEDIUM,
-                                      as_list=True)
-    return render_to_response(
-      'oi/edit/edit_covers.html',
-      {
-        'issue': issue,
-        'covers': covers,
-        'table_width': UPLOAD_WIDTH
-      },
-      context_instance=RequestContext(request)
-    )
+    if issue.has_covers():
+        covers = get_image_tags_per_issue(issue, "current covers", ZOOM_MEDIUM,
+                                          as_list=True)
+        return render_to_response(
+        'oi/edit/edit_covers.html',
+        {
+            'issue': issue,
+            'covers': covers,
+            'table_width': UPLOAD_WIDTH
+        },
+        context_instance=RequestContext(request)
+        )
+    else:
+        return upload_cover(request, issue_id=issue_id)
 
 @login_required
 def uploaded_cover(request, revision_id):
@@ -397,7 +406,7 @@ def handle_gatefold_cover(request, cover, issue, form):
         destination.write(chunk)
     destination.close()
     im = Image.open(destination.name)
-    if im.size[0] <= 400:
+    if min(im.size) <= 400:
         os.remove(destination.name)
         info_text = "Image is too small, only " + str(im.size) + \
                     " in size."
@@ -480,14 +489,14 @@ def handle_uploaded_cover(request, cover, issue):
     try:
         # generate different sizes we are using
         im = Image.open(destination.name)
-        wide_enough = False
+        large_enough = False
         if form.cleaned_data['is_wraparound']:
-            # wraparounds need to have twice the size
-            if im.size[0] >= 800:
-                wide_enough = True
-        elif im.size[0] >= 400:
-            wide_enough = True
-        if wide_enough:
+            # wraparounds need to have twice the width
+            if im.size[0] >= 800 and im.size[1] >= 400:
+                large_enough = True
+        elif min(im.size) >= 400:
+            large_enough = True
+        if large_enough:
             if form.cleaned_data['is_wraparound']:
                 revision.is_wraparound = True
                 revision.front_left = im.size[0]/2

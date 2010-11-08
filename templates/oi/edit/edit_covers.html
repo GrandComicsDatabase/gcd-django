@@ -22,7 +22,7 @@ Edit Covers :: {{ issue }}
 ({{ issue.series.publisher|absolute_url }}) 
 <a href="{{ issue.get_absolute_url }}">#{{ issue.display_number }}</a>
 </h2>
-{% if issue.has_covers and issue.deletable %}
+{% if issue.can_upload_variants %}
 <a href="{% url upload_cover issue_id=issue.id %}">Add variant cover</a>
 {% endif %}
 

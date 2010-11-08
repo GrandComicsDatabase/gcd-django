@@ -371,7 +371,7 @@ table#covers span.modify {
     color: #666;
 }
 
-.cover_grid .wraparound_cover_img {
+.cover_grid .wraparound_cover_img, #cover_uploaded .wraparound_cover_img {
     border: solid 1px;
     background-color: black;
     color: black;
@@ -388,6 +388,14 @@ table#covers span.modify {
     border: solid 1px;
     margin-top: 1em;
     margin-bottom: 1em;
+}
+
+#cover_zoom .wraparound_cover_img {
+    border: solid 1px;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    padding-right: 15px; 
+    background: transparent no-repeat right center url(foldoutarrow_100.png);
 }
 
 #cover_zoom .cover_links {

@@ -147,6 +147,13 @@ class Issue(models.Model):
     def deletable(self):
         return self.cover_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
+    def can_upload_variants(self):
+        if self.has_covers():
+            return self.revisions.filter(changeset__state__in=states.ACTIVE,
+                                         deleted=True).count() == 0
+        else:
+            return False
+
     def get_absolute_url(self):
         return "/issue/%i/" % self.id
 

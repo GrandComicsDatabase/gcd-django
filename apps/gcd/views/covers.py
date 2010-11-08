@@ -19,6 +19,8 @@ def get_image_tag(cover, alt_text, zoom_level):
     elif zoom_level == ZOOM_MEDIUM:
         width = 200
         size = 'medium'
+        if cover and cover.is_wraparound:
+            img_class = 'wraparound_cover_img'
     elif zoom_level == ZOOM_LARGE:
         width = 400
         size = 'large'
