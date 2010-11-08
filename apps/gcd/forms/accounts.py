@@ -49,10 +49,16 @@ class AccountForm(forms.Form):
                  u'This helps us connect you with an Editor knowledgeable in '
                  u'your area to help you learn our indexing system.'))
 
-    notify_on_approve = forms.BooleanField(label="Approval e-mails",
-                                           required=False)
+    notify_on_approve = forms.BooleanField(label="Approval emails",
+                                           required=False,
+      help_text=(u'If checked, the system will also email you when a change that '
+                 u'you submitted is approved without a comment.  You will '
+                 u'always receive an email if the approver comments.'))
     collapse_compare_view = forms.BooleanField(
-      label="Collapse compare view by default", required=False)
+      label="Collapse compare view by default", required=False,
+      help_text=(u'If checked, the change comparison page for an issue will show '
+                 u'a shortened version of the unchanged values, with the full '
+                 u'view accessible via a link.'))
 
     def clean(self):
         cd = self.cleaned_data
@@ -61,7 +67,7 @@ class AccountForm(forms.Form):
             for blocked_domain in settings.BLOCKED_DOMAINS:
                 if (blocked_domain in cd['email']):
                     raise forms.ValidationError(
-                      ['You may not use a disposable e-mail address service. '
+                      ['You may not use a disposable email address service. '
                        'E-mail addresses are strictly confidential and are only ' 
                        'used to contact you when there are questions about '
                        'your submissions to the database. Please contact %s '

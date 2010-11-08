@@ -497,27 +497,43 @@ def approve(request, id):
     notes = request.POST['comments']
     changeset.approve(notes=notes)
 
+    email_comments = '.'
+    postscript = ''
+    if notes:
+        email_comments = ' with the comment:\n"%s"' % notes
+    else:
+        postscript = """
+PS: You can change your email settings on your profile page:
+%s
+Currently, your profile is set to receive emails about change approvals even
+if the approver did not comment.  To turn these off, just edit your profile
+and uncheck the "Approval emails" box.
+""" % (settings.SITE_URL.rstrip('/') + urlresolvers.reverse('default_profile'))
+
     if changeset.indexer.indexer.notify_on_approve or notes.strip():
         email_body = u"""
 Hello from the %s!
 
 
-  Your change for "%s" was approved by GCD editor %s with the comment:
-"%s"
+  Your change for "%s" was approved by GCD editor %s%s
 
 You can view the full change at %s.
 
 thanks,
 -the %s team
+
+%s
 %s
 """ % (settings.SITE_NAME,
-           unicode(changeset),
-           unicode(changeset.approver.indexer),
-           notes,
-           settings.SITE_URL.rstrip('/') +
-             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
-           settings.SITE_NAME,
-           settings.SITE_URL)
+       unicode(changeset),
+       unicode(changeset.approver.indexer),
+       email_comments,
+       settings.SITE_URL.rstrip('/') +
+         urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+       settings.SITE_NAME,
+       settings.SITE_URL,
+       postscript)
+
 
         changeset.indexer.email_user('GCD change approved', email_body, 
           settings.EMAIL_INDEXING)
