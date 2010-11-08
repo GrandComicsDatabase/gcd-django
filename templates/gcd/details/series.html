@@ -50,14 +50,6 @@
             (#{{ series.first_issue.display_number }} - #{{ series.last_issue.display_number}})
   {% endif %}
 {% endif %}
-{% if country %}
-            <dt> Country:
-            <dd id="publication_country"> {{ country }}
-{% endif %}
-{% if language %}
-            <dt> Language:
-            <dd id="publication_language"> {{ language }}
-{% endif %}
 {% if series.format %}
             <dt class="long"> Format:
             <dd id="series_format"> {{ series.format }}
