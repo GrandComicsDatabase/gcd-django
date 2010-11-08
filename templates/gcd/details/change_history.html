@@ -71,7 +71,7 @@
     <td>{{ changeset.indexer.indexer|absolute_url }}</td>
     <td>{{ changeset.approver.indexer|absolute_url }}</td>
     <td>
-    {{ changeset|changed_fields:object.id}}
+    {{ changeset|changed_fields:object }}
     {{ changeset|changed_story_list }}
     </td>
   </tr>

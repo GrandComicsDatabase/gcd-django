@@ -80,7 +80,7 @@
       {% endwith %}
       {% endwith %}
       {% endwith %}
-      {% if user.is_authenticated %}
+      {% if user.is_authenticated and not publisher.pending_deletion %}
         <form method="GET"
               action="{% url add_indicia_publisher parent_id=publisher.id %}">
           <input id="add" name="add" type="submit" value="Add indicia publisher" />

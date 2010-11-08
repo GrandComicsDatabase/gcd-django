@@ -131,23 +131,25 @@
     {% endwith %}
     {% endwith %}
     {% if user.is_authenticated %}
-      {% if series.is_current and not series.ongoing_reservation %}
+      {% if not series.pending_deletion %}
+        {% if series.is_current and not series.ongoing_reservation %}
         <form method="POST" action="{% url apps.oi.views.ongoing %}">
           <input id="series" name="series" type="hidden" value="{{ series.id }}">
           </input>
           <input id="reserve" name="reserve" type="submit" value="Reserve all new issues">
           </input>
         </form>
-      {% endif %}
+        {% endif %}
         <form method="GET" action="{% url add_issues series_id=series.id %}">
           <input id="add" name="add" type="submit" value="Add issues">
           </input>
         </form>
-      {% if perms.gcd.can_approve and series.issue_count %}
+        {% if perms.gcd.can_approve and series.issue_count %}
         <form method="GET" action="{% url reorder_series series_id=series.id %}">
           <input id="reorder" name="reorder" type="submit" value="Reorder issues">
           </input>
         </form>
+        {% endif %}
       {% endif %}
     {% else %}
       {% if series.reserved %}

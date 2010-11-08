@@ -8,6 +8,9 @@ from django.template.defaultfilters import yesno, linebreaksbr, title, urlize
 from apps.oi.models import StoryRevision, CTYPES
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           sum_page_counts
+from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
+from apps.gcd.models.series import Series
+from apps.gcd.models.issue import Issue
 
 register = template.Library()
 
@@ -143,13 +146,18 @@ def header_link(changeset):
         return u''
 
 # get a human readable list of fields changed in a given approved changeset
-def changed_fields(changeset, object_id):
-    if changeset.inline():
-        revision = changeset.inline_revision()
-    elif changeset.issuerevisions.count() == 1:
-        revision = changeset.issuerevisions.all()[0]
-    else:
-        revision = changeset.issuerevisions.all().get(issue=object_id)
+def changed_fields(changeset, object):
+    object_class = type(object)
+    if object_class is Issue:
+        revision = changeset.issuerevisions.all().get(issue=object.id)
+    elif object_class is Series:
+        revision = changeset.seriesrevisions.all().get(series=object.id)
+    elif object_class is Publisher:
+        revision = changeset.publisherrevisions.all().get(publisher=object.id)
+    elif object_class is Brand:
+        revision = changeset.brandrevisions.all().get(brand=object.id)
+    elif object_class is IndiciaPublisher:
+        revision = changeset.indiciapublisherrevisions.all().get(indicia_publisher=object.id)
 
     prev_rev = revision.previous()
     changed_list = []

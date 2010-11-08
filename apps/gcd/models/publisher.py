@@ -21,6 +21,11 @@ class BasePublisher(models.Model):
 
     deleted = models.BooleanField(default=0, db_index=True)
 
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
+
     def __unicode__(self):
         return self.name
 
@@ -51,6 +56,18 @@ class Publisher(BasePublisher):
 
     def active_series(self):
         return self.series_set.exclude(deleted=True)
+
+    def deletable(self):
+        # TODO: check for issue_count instead of series_count. Check for added
+        # issue skeletons. Also delete series and not just brands, ind pubs,
+        # and imprints.
+        return self.series_count == 0 and \
+          self.series_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0 and \
+          self.brand_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0 and \
+          self.indicia_publisher_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+
+    def pending_deletion(self):
+        return self.revisions.filter(changeset__state__in=states.ACTIVE, deleted=True).count() == 1
 
     def __unicode__(self):
         return self.name
@@ -108,12 +125,6 @@ class IndiciaPublisher(BasePublisher):
 
     issue_count = models.IntegerField(default=0)
 
-    #TODO: pull out to publisher base class when publisher also can be deleted
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
-
     def deletable(self):
         return self.issue_count == 0 and \
           self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
@@ -135,12 +146,6 @@ class Brand(BasePublisher):
     parent = models.ForeignKey(Publisher)
 
     issue_count = models.IntegerField(default=0)
-
-    #TODO: pull out to publisher base class when publisher also can be deleted
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
 
     def deletable(self):
         return self.issue_count == 0 and \

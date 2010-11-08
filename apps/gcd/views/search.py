@@ -118,7 +118,7 @@ def generic_by_name(request, name, q_obj, sort,
 def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
     #Finds publishers and imprints
 
-    pubs = Publisher.objects.filter(
+    pubs = Publisher.objects.exclude(deleted=True).filter(
       name__icontains = publisher_name)
     if (sort == ORDER_ALPHA):
         pubs = pubs.order_by('name', 'year_began')
@@ -371,9 +371,9 @@ def do_advanced_search(request):
     items = []
     if data['target'] == 'publisher':
         if query:
-            filter = Publisher.objects.filter(query)
+            filter = Publisher.objects.exclude(deleted=True).filter(query)
         else:
-            filter = Publisher.objects.all()
+            filter = Publisher.objects.exclude(deleted=True)
         items = filter.order_by(*terms).select_related('country').distinct()
 
     elif data['target'] == 'series':

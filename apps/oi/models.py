@@ -114,7 +114,8 @@ class Changeset(models.Model):
             return (self.seriesrevisions.all(),)
 
         if self.change_type == CTYPES['publisher']:
-            return (self.publisherrevisions.all(),)
+            return (self.publisherrevisions.all(), self.brandrevisions.all(),
+                    self.indiciapublisherrevisions.all())
 
         if self.change_type == CTYPES['brand']:
             return (self.brandrevisions.all(),)
@@ -145,7 +146,11 @@ class Changeset(models.Model):
     def inline_revision(self):
         if self.inline():
             if self._inline_revision is None:
-                self._inline_revision = self.revisions.next()
+                if self.change_type == CTYPES['publisher']:
+                    # to filter out all the imprints in a publisher deletion changeset
+                    self._inline_revision = self.publisherrevisions.filter(is_master=True)[0]
+                else:
+                    self._inline_revision = self.revisions.next()
         return self._inline_revision
 
     def deleted(self):
@@ -175,7 +180,10 @@ class Changeset(models.Model):
     def queue_name(self):
         if self.change_type in CTYPES_BULK:
             return unicode(self)
-        return self.revisions.next().queue_name()
+        elif self.change_type == CTYPES['issue']:
+            return self.revisions.next().queue_name()
+        else:
+            return self.inline_revision().queue_name()
 
     def queue_descriptor(self):
         if self.change_type == CTYPES['issue_add']:

@@ -51,6 +51,9 @@ def publisher(request, publisher_id):
     """
     style = get_style(request)
     pub = get_object_or_404(Publisher, id = publisher_id)
+    if pub.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'publisher', 'id': publisher_id}))
 
     vars = { 'publisher': pub, 'error_subject': pub }
     return paginate_response(request, pub.active_series().order_by('name'),
@@ -62,9 +65,9 @@ def indicia_publisher(request, indicia_publisher_id):
     """
     indicia_publisher = get_object_or_404(
       IndiciaPublisher, id = indicia_publisher_id)
-
     if indicia_publisher.deleted:
-        return change_history(request, 'indicia_publisher', indicia_publisher_id)
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'indicia_publisher', 'id': indicia_publisher_id}))
 
     return show_indicia_publisher(request, indicia_publisher)
 
@@ -85,9 +88,9 @@ def brand(request, brand_id):
     Display the details page for a Brand.
     """
     brand = get_object_or_404(Brand, id = brand_id)
-
     if brand.deleted:
-        return change_history(request, 'brand', brand_id)
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'brand', 'id': brand_id}))
 
     return show_brand(request, brand)
 
@@ -110,6 +113,10 @@ def imprint(request, imprint_id):
     """
     style = get_style(request)
     imprint = get_object_or_404(Publisher, id = imprint_id)
+    if imprint.parent.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'publisher', 'id': imprint.parent_id}))
+
     imprint_series = imprint.imprint_series_set.exclude(deleted=True) \
       .order_by('name')
 
@@ -125,6 +132,10 @@ def brands(request, publisher_id):
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
+    if publisher.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'publisher', 'id': publisher_id}))
+
     brands = publisher.active_brands()
 
     sort = ORDER_ALPHA
@@ -147,6 +158,10 @@ def indicia_publishers(request, publisher_id):
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
+    if publisher.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'publisher', 'id': publisher_id}))
+
     indicia_publishers = publisher.active_indicia_publishers()
 
     sort = ORDER_ALPHA
@@ -172,6 +187,10 @@ def imprints(request, publisher_id):
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
+    if publisher.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'publisher', 'id': publisher_id}))
+
     imps = publisher.imprint_set.all()
 
     sort = ORDER_ALPHA
@@ -605,11 +624,11 @@ def daily_changes(request, show_date=None):
     else:
         date_after = None
 
-    #TODO: make sure to handle deleted items here
     publishers = Publisher.objects.filter(
       is_master=1,
       revisions__changeset__change_type=CTYPES['publisher'],
       revisions__changeset__state=states.APPROVED,
+      revisions__deleted=False,
       revisions__changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
@@ -870,7 +889,7 @@ def countries_in_use(request):
         countries_from_indexers = list(set(Indexer.objects.
                                            filter(user__is_active=True).
                                            values_list('country', flat=True)))
-        countries_from_publishers = list(set(Publisher.objects.all().
+        countries_from_publishers = list(set(Publisher.objects.exclude(deleted=True).
                                              values_list('country', flat=True)))
         used_ids = list(set(countries_from_indexers +
                             countries_from_series +

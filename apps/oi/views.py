@@ -87,10 +87,6 @@ def reserve(request, id, model_name, delete=False):
           (action, display_obj))
 
     if delete:
-        # TODO remove when we can delete all objects
-        if model_name not in ['brand', 'indicia_publisher', 'issue', 'series']:
-            return render_error(request, 'Cannot delete this type of object.')
-
         # In case someone else deleted while page was open or if it is not
         # deletable because of other actions in the interim (adding to an
         # issue for brand/ind_pub, modifying covers for issue, etc.)
@@ -129,6 +125,9 @@ def reserve(request, id, model_name, delete=False):
         elif model_name == 'series':
             return HttpResponseRedirect(urlresolvers.reverse('show_series',
                      kwargs={'series_id': display_obj.id}))
+        elif model_name == 'publisher':
+            return HttpResponseRedirect(urlresolvers.reverse('show_publisher',
+                     kwargs={'publisher_id': display_obj.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
@@ -167,6 +166,22 @@ def _do_reserve(indexer, display_obj, model_name, delete=False):
                 cover_revision = CoverRevision(changeset=changeset, issue=cover.issue,
                                                cover=cover, deleted=True)
                 cover_revision.save()
+    elif model_name == 'publisher' and delete:
+        for brand in revision.publisher.active_brands():
+            brand_revision = BrandRevision.objects.clone_revision(brand=brand,
+              changeset=changeset)
+            brand_revision.deleted = True
+            brand_revision.save()
+        for indicia_publisher in revision.publisher.active_indicia_publishers():
+            indicia_publisher_revision = IndiciaPublisherRevision.objects.clone_revision(
+              indicia_publisher=indicia_publisher, changeset=changeset)
+            indicia_publisher_revision.deleted = True
+            indicia_publisher_revision.save()
+        for imprint in revision.publisher.imprint_set.all():
+            imprint_revision = PublisherRevision.objects.clone_revision(
+              publisher=imprint, changeset=changeset)
+            imprint_revision.deleted = True
+            imprint_revision.save()
 
     return changeset
 
@@ -881,7 +896,8 @@ def edit_issues_in_bulk(request):
         if len(items) > 100: # shouldn't happen, just in case
             raise ValueError, 'not more than 100 issues if more than one series'
         series = Series.objects.exclude(deleted=True).filter(id__in=series_list)
-        publisher_list = Publisher.objects.filter(series__in=series).distinct()
+        publisher_list = Publisher.objects.exclude(deleted=True) \
+          .filter(series__in=series).distinct()
         series = series[0]
         if len(publisher_list) > 1:
             ignore_publisher = True

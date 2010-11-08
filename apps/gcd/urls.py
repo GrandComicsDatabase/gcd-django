@@ -29,8 +29,8 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.change_history', name='change_history'),
 
     # Publisher
-    (r'^publisher/(?P<publisher_id>\d+)/$',
-     'apps.gcd.views.details.publisher'),
+    url(r'^publisher/(?P<publisher_id>\d+)/$',
+     'apps.gcd.views.details.publisher', name='show_publisher'),
     (r'^publisher/name/(?P<publisher_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.publishers_by_name'),
     (r'^publisher/name/(?P<publisher_name>.+)/$',

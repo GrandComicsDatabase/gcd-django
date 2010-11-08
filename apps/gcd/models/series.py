@@ -87,6 +87,9 @@ class Series(models.Model):
         return self.issue_count == 0 and \
           self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
+    def pending_deletion(self):
+        return self.revisions.filter(changeset__state__in=states.ACTIVE, deleted=True).count() == 1
+
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
 

@@ -52,9 +52,9 @@
     {{ object_name }} cannot be deleted because there are pending cover changes.
       {% else %}{% if object_class == "series" %}
     {{ object_name }} cannot be deleted because there are issues present or there are pending issue additions.
-      {% else %}
-    {{ object_name }} delete functionality is not yet implemented.
-      {% endif %}{% endif %}{% endif %}
+      {% else %}{% if object_class == "publisher" %}
+    {{ object_name }} cannot be deleted because there are series present or there are pending brand/indicia publisher changes.
+      {% endif %}{% endif %}{% endif %}{% endif %}
   </span>
 </div>
     {% endif %}
