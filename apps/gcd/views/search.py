@@ -20,7 +20,7 @@ from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            Country, Language
+                            Country, Language, Indexer
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP
@@ -313,8 +313,16 @@ def advanced_search(request):
           { 'form' : AdvancedSearch(auto_id=True), 'style' : 'default'},
           context_instance=RequestContext(request))
     else:
+        search_values = request.GET.copy()
+        search_values_as_list = dict(request.GET.lists())
+        # convert a bit since MultipleChoiceField takes a list of IDs
+        search_values['type'] = search_values.getlist('type')
+        search_values['indexer'] = search_values.getlist('indexer')
+        search_values['country'] = search_values.getlist('country')
+        search_values['language'] = search_values.getlist('language')
         return render_to_response('gcd/search/advanced.html',
-          { 'form' : AdvancedSearch(initial=request.GET), 'style' : 'default'},
+          { 'form' : AdvancedSearch(initial=search_values), 
+            'style' : 'default'},
           context_instance=RequestContext(request))
 
 def do_advanced_search(request):
@@ -435,14 +443,38 @@ def used_search(search_values):
     del search_values['logic']
 
     used_search_terms = []
+    if 'type' in search_values:
+        types = StoryType.objects.filter(id__in=\
+          search_values.getlist('type')).values_list('name', flat=True)
+        text = types[0]
+        for storytype in types[1:]:
+            text += ', %s' % storytype
+        used_search_terms.append(('type', text))
+        del search_values['type']
     if 'country' in search_values:
-        used_search_terms.append(('country',
-          Country.objects.get(code=search_values['country']).name))
+        countries = Country.objects.filter(code__in=\
+          search_values.getlist('country')).values_list('name', flat=True)
+        text = countries[0]
+        for country in countries[1:]:
+            text += ', %s' % country
+        used_search_terms.append(('country', text))
         del search_values['country']
     if 'language' in search_values:
-        used_search_terms.append(('language',
-          Language.objects.get(code=search_values['language']).name))
+        languages = Language.objects.filter(code__in=\
+          search_values.getlist('language')).values_list('name', flat=True)
+        text = languages[0]
+        for language in languages[1:]:
+            text += ', %s' % language
+        used_search_terms.append(('language', text))
         del search_values['language']
+    if 'indexer' in search_values:
+        indexers = Indexer.objects.filter(id__in=\
+          search_values.getlist('indexer'))
+        text = unicode(indexers[0])
+        for indexer in indexers[1:]:
+            text += ', %s' % unicode(indexer)
+        used_search_terms.append(('indexer', text))
+        del search_values['indexer']
     for i in search_values:
         if search_values[i] and search_values[i] not in ['None', 'False']:
             used_search_terms.append((i, search_values[i]))

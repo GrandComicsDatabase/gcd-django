@@ -633,7 +633,7 @@ a.new_window {
 
 /* for search results info */
 div.search_terms {
-    float: left;
+    clear: left;
     margin-bottom: 1em;
 }
 
