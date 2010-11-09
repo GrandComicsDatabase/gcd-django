@@ -197,10 +197,13 @@ class Changeset(models.Model):
         """
         if self.change_type == CTYPES['issue_add']:
             return ACTION_ADD
+        elif self.change_type == CTYPES['issue_bulk']:
+            return ACTION_MODIFY
+
         revision = self.revisions.next()
         if revision.deleted:
             return ACTION_DELETE
-        elif revision.source is None:
+        elif revision.source is None or revision.previous() is None:
             return ACTION_ADD
         return ACTION_MODIFY
 
