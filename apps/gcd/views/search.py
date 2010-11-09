@@ -98,9 +98,7 @@ def generic_by_name(request, name, q_obj, sort,
         elif credit.startswith('any'):
             query_val['logic'] = True
             for credit_type in ['script', 'pencils', 'inks', 'colors', 
-                                'letters', 'story_editing']:
-            #, 'issue_editing']:
-            # issue editing doesn't seem to 'or'ed with the other credits ?
+                                'letters', 'story_editing', 'issue_editing']:
                 query_val[credit_type] = name
     else:
         raise TypeError, "Unsupported search target!"
@@ -592,6 +590,8 @@ def search_publishers(data, op):
                               data['pub_notes'] })
             q_objs.append(pub_notes_q | imprint_q)
 
+    if q_and_only or q_objs:
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))
     return compute_qobj(data, q_and_only, q_objs)
 
 
@@ -631,6 +631,9 @@ def search_series(data, op):
                       Q(**{ '%sis_current' % prefix : True }))
     if data['is_current']:
         q_objs.append(Q(**{ '%sis_current' % prefix : True }))
+
+    if q_and_only or q_objs:
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))
 
     return compute_qobj(data, q_and_only, q_objs)
 
@@ -681,9 +684,7 @@ def search_issues(data, op, stories_q=None):
           Q(**{ '%srevisions__changeset__indexer__indexer__in' % prefix:
                 data['indexer'] }) &
           Q(**{ '%srevisions__changeset__state' % prefix: states.APPROVED }))
-    if data['issue_editing']:
-        q_objs.append(Q(**{ '%sediting__icontains' % prefix:
-                            data['issue_editing'] }))
+
     if data['issue_notes']:
         q_objs.append(Q(**{ '%snotes__icontains' % prefix: data['issue_notes'] }))
 
@@ -701,6 +702,11 @@ def search_issues(data, op, stories_q=None):
     except ValueError:
         raise SearchError, ("Page count must be a decimal number or a pair of "
                             "decimal numbers separated by a hyphen.")
+
+    # issue_editing is handled in search_stories since it is a credit
+    # need to account for that here
+    if q_and_only or q_objs or data['issue_editing']:
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))
 
     return compute_qobj(data, q_and_only, q_objs)
 
@@ -751,19 +757,21 @@ def search_stories(data, op):
     prefix = compute_prefix(target, 'sequence')
 
     q_objs = []
-    if target == 'sequence':
-        q_objs = [Q(**{'%s%s' % (prefix, 'deleted__exact') : 0})]
+    q_and_only = []
 
-    for field in ('feature', 'title', 'genre',
-                  'script', 'pencils', 'inks',
-                  'colors', 'letters', 'job_number', 'characters',
-                  'synopsis', 'reprint_notes', 'notes'):
+    for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
         if data[field]:
             q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op) :
                                 data[field] }))
 
+    for field in ('feature', 'title', 'genre', 'job_number', 'characters',
+                  'synopsis', 'reprint_notes', 'notes'):
+        if data[field]:
+            q_and_only.append(Q(**{ '%s%s__%s' % (prefix, field, op) :
+                                data[field] }))
+
     if data['type']:
-        q_objs.append(Q(**{ '%stype__in' % prefix : data['type'] }))
+        q_and_only.append(Q(**{ '%stype__in' % prefix : data['type'] }))
 
     if data['story_editing']:
         q_objs.append(Q(**{ '%sediting__%s' % (prefix, op) :
@@ -775,17 +783,29 @@ def search_stories(data, op):
             if range_match:
                 page_start = Decimal(range_match.group('begin'))
                 page_end = Decimal(range_match.group('end'))
-                q_objs.append(Q(**{ '%spage_count__range' % prefix :
-                                    (page_start, page_end) }))
+                q_and_only.append(Q(**{ '%spage_count__range' % prefix :
+                                        (page_start, page_end) }))
             else:
-                q_objs.append(Q(**{ '%spage_count' % prefix :
-                                    Decimal(data['pages']) }))
+                q_and_only.append(Q(**{ '%spage_count' % prefix :
+                                        Decimal(data['pages']) }))
 
     except ValueError:
         raise SearchError, ("Page count must be a decimal number or a pair of "
                             "decimal numbers separated by a hyphen.")
 
-    return compute_qobj(data, [], q_objs)
+    if q_and_only or q_objs:
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))
+
+    # since issue_editing is credit use it here to allow correct 'OR' behavior
+    if data['issue_editing']:
+        if target == 'sequence': # no prefix in this case
+            q_objs.append(Q(**{ 'issue__editing__icontains':
+                                data['issue_editing'] }))
+        else: # cut off 'story__'
+            q_objs.append(Q(**{ '%sediting__icontains' % prefix[:-7]:
+                                data['issue_editing'] }))
+
+    return compute_qobj(data, q_and_only, q_objs)
 
 
 def compute_prefix(target, current):
