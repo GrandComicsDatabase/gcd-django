@@ -224,30 +224,54 @@ def edit_covers(request, issue_id):
     else:
         return upload_cover(request, issue_id=issue_id)
 
+
+def needed_issue_list(objects, issue, cover=False):
+    num_show_issues = 14
+    if cover:
+        earlier = objects.filter(issue__sort_code__lt=issue.sort_code) \
+                         .order_by('-issue__sort_code')
+        later = objects.filter(issue__sort_code__gt=issue.sort_code) \
+                       .order_by('issue__sort_code')
+    else:
+        earlier = objects.filter(sort_code__lt=issue.sort_code) \
+                         .order_by('-sort_code')
+        later = objects.filter(sort_code__gt=issue.sort_code) \
+                       .order_by('sort_code')
+    if earlier.count() + later.count() > num_show_issues:
+        if earlier.count() < num_show_issues/2:
+            later = later[:num_show_issues - earlier.count()]
+        elif later.count() < num_show_issues/2:
+            earlier = earlier[:num_show_issues - later.count()]
+        else:
+            later = later[:7]
+            earlier = earlier[:7]
+    earlier = list(earlier)
+    earlier.reverse()
+    return earlier + list(later)
+
 @login_required
 def uploaded_cover(request, revision_id):
     """
     On successful upload display the cover and show further possibilities
     """
     uploaded_template = 'oi/edit/upload_cover_complete.html'
- 
+
     # what other covers do we need
     # TODO change this code
-    # - show different selection
-    # - links to next issue
-    # - upload another variant
     # - add discard button for undo of wrong upload
     # - ...
     revision = get_object_or_404(CoverRevision, id=revision_id)
     issue = revision.issue
 
-    blank_issues = Issue.objects.exclude(deleted=True) \
-          .filter(series=issue.series) \
-          .exclude(cover__isnull=False, cover__deleted=False) \
-          .exclude(id=issue.id)[:15]
-    marked_covers = Cover.objects.filter(issue__series=issue.series, 
-                                         marked=True) \
-                                 .exclude(issue=issue)[:15]
+    blank_issues = needed_issue_list(issue.series.active_issues() \
+                                          .exclude(cover__isnull=False, 
+                                                   cover__deleted=False),
+                                     issue)
+    marked_covers = needed_issue_list(Cover.objects \
+                                      .filter(issue__series=issue.series, 
+                                              deleted=False,
+                                              marked=True),
+                                      issue, cover=True)
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
     return render_to_response(uploaded_template, {
               'marked_covers' : marked_covers,

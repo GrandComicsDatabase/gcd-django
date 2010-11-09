@@ -60,6 +60,11 @@ This cover upload has been successfully submitted and is awaiting approval by an
   {% endfor %}
     </ul>
 {% endif %}
+    <ul>
+    Add a variant cover
+    <li><a href="{% url upload_cover issue_id=issue.id %}">{{ issue.series }} #{{ issue.display_number }}</a>
+    </li>
+    </ul>
   </div>
 </div>
 {% endblock %}
