@@ -115,13 +115,13 @@
         {{ series.ongoing_reservation.indexer.indexer }}.
         </span></div>
       {% endif %}
-      {% ifequal request.user series.ongoing_reservation.indexer %}
+      {% if request.user == series.ongoing_reservation.indexer and not series.pending_deletion %}
         <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
           <input id="delete_ongoing" name="delete_ongoing" type="submit"
                  value="Free ongoing reservation">
           </input>
         </form>
-      {% endifequal %}
+      {% endif %}
     {% endif %}
     {% with series as object %}
     {% with 'Series' as object_name %}

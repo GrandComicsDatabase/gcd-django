@@ -19,7 +19,9 @@
 <div class="publisher_list_control_panel">
   <form method="GET"
         action="{% url add_brand parent_id=publisher.id %}">
+{% if not publisher.pending_deletion %}
     <input id="add" name="add" type="submit" value="Add another brand" />
+{% endif %}
   </form>
 </div>
 {% if publisher.brand_count %}

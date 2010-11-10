@@ -19,7 +19,9 @@
 <div class="publisher_list_control_panel">
   <form method="GET"
         action="{% url add_indicia_publisher parent_id=publisher.id %}">
+{% if not publisher.pending_deletion %}
     <input id="add" name="add" type="submit" value="Add another indicia publisher" />
+{% endif %}
   </form>
 </div>
 {% if publisher.indicia_publisher_count %}

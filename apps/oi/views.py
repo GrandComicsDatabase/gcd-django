@@ -1070,6 +1070,9 @@ def add_indicia_publisher(request, parent_id):
 
     try:
         parent = Publisher.objects.get(id=parent_id, is_master=True)
+        if parent.deleted or parent.pending_deletion():
+            return render_error(request, u'Cannot add indicia publishers '
+              u'since "%s" is deleted or pending deletion.' % parent)
 
         if request.method != 'POST':
             form = get_indicia_publisher_revision_form()()
@@ -1121,6 +1124,9 @@ def add_brand(request, parent_id):
 
     try:
         parent = Publisher.objects.get(id=parent_id, is_master=True)
+        if parent.deleted or parent.pending_deletion():
+            return render_error(request, u'Cannot add brands '
+              u'since "%s" is deleted or pending deletion.' % parent)
 
         if request.method != 'POST':
             form = get_brand_revision_form()()
@@ -1173,6 +1179,10 @@ def add_series(request, publisher_id):
     # Process add form if this is a POST.
     try:
         publisher = Publisher.objects.get(id=publisher_id)
+        if publisher.deleted or publisher.pending_deletion():
+            return render_error(request, u'Cannot add series '
+              u'since "%s" is deleted or pending deletion.' % publisher)
+
         imprint = None
         if publisher.parent is not None:
             return render_error(request, 'Series may no longer be added to '
@@ -1233,6 +1243,10 @@ def add_issue(request, series_id, sort_after=None):
           'but will be increased as your first changes are approved.')
 
     series = get_object_or_404(Series, id=series_id)
+    if series.deleted or series.pending_deletion():
+        return render_error(request, u'Cannot add an issue '
+          u'since "%s" is deleted or pending deletion.' % series)
+
     form_class = get_revision_form(model_name='issue',
                                    series=series,
                                    publisher=series.publisher)
@@ -1292,6 +1306,9 @@ def add_issues(request, series_id, method=None):
                                 .filter(issuerevisions__series__id=series_id) \
                                 .filter(state__in=states.ACTIVE)
     series = get_object_or_404(Series, id=series_id)
+    if series.deleted or series.pending_deletion():
+        return render_error(request, u'Cannot add issues '
+          u'since "%s" is deleted or pending deletion.' % series)
 
     if method is None:
         return render_to_response('oi/edit/add_issues.html',
@@ -1646,6 +1663,11 @@ def ongoing(request, user_id=None):
           'user this number is very low or even zero, but will increase as your '
           'first few changes are approved.',
           redirect=False)
+
+    series = get_object_or_404(Series, id=request.POST['series'])
+    if series.deleted or series.pending_deletion():
+        return render_error(request, u'Cannot reserve issues '
+          u'since "%s" is deleted or pending deletion.' % series)
 
     form = OngoingReservationForm()
     message = ''
