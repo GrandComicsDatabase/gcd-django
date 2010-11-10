@@ -153,3 +153,6 @@ urlpatterns = patterns('',
     url(r'^download/', oi_views.download, {}, name='download'),
 )
 
+urlpatterns += patterns('django.views.generic.simple',
+    (r'^changeset/(?P<id>\d+)/$', 'redirect_to', {'url' : 'compare' })
+)
