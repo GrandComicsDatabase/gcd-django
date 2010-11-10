@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from django.db import models
-from django.contrib.auth.models import User
+from django.db import models, settings
+from django.contrib.auth.models import User, Group
 
 from apps.gcd.models import Country, Language
 
@@ -91,6 +91,13 @@ class Indexer(models.Model):
         for grant in self.imp_grant_set.all():
             total_imps += grant.imps
         return total_imps
+
+    def add_imps(self, value):
+        self.imps += value
+        if self.imps >= settings.MEMBERSHIP_IMPS and \
+          self.imps - value < settings.MEMBERSHIP_IMPS:
+            self.user.groups.add(Group.objects.get(name='member'))
+        self.save()
 
     def get_absolute_url(self):
         return self.user.get_absolute_url()

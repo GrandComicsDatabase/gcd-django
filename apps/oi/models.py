@@ -43,6 +43,7 @@ ACTION_MODIFY = 'modify'
 
 IMP_BONUS_ADD = 10
 IMP_COVER_VALUE = 5
+IMP_APPROVER_VALUE = 3
 
 def update_count(field, delta, language=None):
     '''
@@ -300,6 +301,8 @@ class Changeset(models.Model):
             if revision.source is not None:
                 revision.source.reserved = False
                 revision.source.save()
+        if self.approver:
+            self.approver.indexer.add_imps(IMP_APPROVER_VALUE)
 
     def assign(self, approver, notes=''):
         """
@@ -372,6 +375,8 @@ class Changeset(models.Model):
 
         self.state = states.APPROVED
         self.save()
+        self.indexer.indexer.add_imps(self.total_imps())
+        self.approver.indexer.add_imps(IMP_APPROVER_VALUE)
 
     def disapprove(self, notes=''):
         """
@@ -423,7 +428,8 @@ class Changeset(models.Model):
         field-calculated imps and bonuses such as the add bonus.
         """
         calculated = self.imps
-        if self.changeset_action() == ACTION_ADD:
+        if self.changeset_action() == ACTION_ADD and \
+          self.change_type != CTYPES['cover']:
             return calculated + IMP_BONUS_ADD
         return calculated
 
