@@ -7,7 +7,7 @@
 <body>
   {% include 'oi/bits/select_cover_section.html' %}
   {% compress css %}
-  <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+  <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default.css"/>
   {% endcompress %}
   <p>Please select the front part of the cover for {{ issue }}. </p>
   <img src='{{ MEDIA_URL }}img/gcd/new_covers/tmp/{{ scan_name }}' id='cropbox' width={{ width }}px>

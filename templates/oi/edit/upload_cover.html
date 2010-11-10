@@ -10,11 +10,11 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/cover.css"/>
+      href="{{ MEDIA_URL }}css/oi/default/cover.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -53,7 +53,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
     <div id="display_cover">
     {{ replace_cover }}
         <div class="issue_cover_links">
-          <a href="{{ issue.get_absolute_url }}cover/4/?style=default">Zoom</a>
+          <a href="{{ issue.get_absolute_url }}cover/4">Zoom</a>
         </div>
         <div style="text-align:left">
         <ul>
@@ -90,7 +90,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>
        <span class="cover_links">Zoom:
-<a class="new_window" href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}" target="_blank">Large</a> (opens in new window)</span> <br>
+<a class="new_window" href="{{ issue.get_absolute_url }}cover/4" target="_blank">Large</a> (opens in new window)</span> <br>
    </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>

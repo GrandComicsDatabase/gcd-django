@@ -10,11 +10,11 @@
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}.css"/>
+        href="{{ MEDIA_URL }}css/gcd/default.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}/issue.css"/>
+        href="{{ MEDIA_URL }}css/gcd/default/issue.css"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}/single_story.css"/>
+        href="{{ MEDIA_URL }}css/gcd/default/single_story.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -51,14 +51,14 @@
           </div>
           <div class="coverImage">
 {% if issue.has_covers %}
-            <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">{{ image_tag }}</a>
+            <a href="{{ issue.get_absolute_url }}cover/4">{{ image_tag }}</a>
 {% else %}
             <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
 {% endif %}
             <div class="issue_cover_links">
 {% if issue.has_covers %}
-              View: <a href="{{ issue.get_absolute_url }}cover/2/?style={{ style }}">Medium</a>
-              <a href="{{ issue.get_absolute_url }}cover/4/?style={{ style }}">Large</a>
+              View: <a href="{{ issue.get_absolute_url }}cover/2">Medium</a>
+              <a href="{{ issue.get_absolute_url }}cover/4">Large</a>
               <br>
   {% if not preview %}
               <a href="{% url edit_covers issue_id=issue.id %}">Add/replace cover{{ issue.active_covers.count|pluralize }}</a>
@@ -66,7 +66,7 @@
   {% endif %}              
 {% endif %}
 {% if issue.series.has_gallery %}
-              <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style }}">Cover gallery</a>
+              <a href="{{ issue.series.get_absolute_url }}covers">Cover gallery</a>
 {% endif %}
             </div>
           </div> 

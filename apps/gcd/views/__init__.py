@@ -32,10 +32,6 @@ class ViewTerminationError(Exception):
 def index(request):
     """Generates the front index page."""
 
-    style = 'default'
-    if 'style' in request.GET:
-        style = request.GET['style']
-
     stats = CountStats.objects.filter(language__isnull=True)
     language = None
     # TODO: we want to check here if we actively support the language
@@ -53,7 +49,7 @@ def index(request):
         front_page_content = "gcd/bits/front_page_content.html"
         stats_for_language = None
 
-    vars = { 'style' : style, 'stats' : stats, 'language' : language,
+    vars = { 'stats' : stats, 'language' : language,
              'stats_for_language' : stats_for_language, 
              'front_page_content' : front_page_content }
     return render_to_response('gcd/index.html', vars,

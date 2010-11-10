@@ -108,7 +108,6 @@ def generic_by_name(request, name, q_obj, sort,
              'heading': heading,
              'search_term' : name,
              'media_url' : settings.MEDIA_URL, 
-             'style' : 'default',
              'query_string' : urlencode(query_val),
              'which_credit' : credit }
     return paginate_response(request, things, template, vars)
@@ -132,7 +131,6 @@ def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
           'plural_suffix': 's',
           'heading' : 'Publisher Search Results',
           'query_string' : get_copy.urlencode(),
-          'style' : 'default',
         })
 
 def character_by_name(request, character_name, sort=ORDER_ALPHA):
@@ -243,10 +241,7 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
             'item_name' : 'issue',
             'plural_suffix' : 's',
             'heading' : series_name + ' #' + issue_nr,
-            'style' : 'default',
         }
-        if 'style' in request.GET:
-            context['style'] = request.GET['style']
 
         return paginate_response(
           request, things, 'gcd/search/issue_list.html', context)
@@ -310,7 +305,7 @@ def advanced_search(request):
 
     if ('target' not in request.GET):
         return render_to_response('gcd/search/advanced.html',
-          { 'form' : AdvancedSearch(auto_id=True), 'style' : 'default'},
+          { 'form' : AdvancedSearch(auto_id=True) },
           context_instance=RequestContext(request))
     else:
         search_values = request.GET.copy()
@@ -321,8 +316,7 @@ def advanced_search(request):
         search_values['country'] = search_values.getlist('country')
         search_values['language'] = search_values.getlist('language')
         return render_to_response('gcd/search/advanced.html',
-          { 'form' : AdvancedSearch(initial=search_values), 
-            'style' : 'default'},
+          { 'form' : AdvancedSearch(initial=search_values) },
           context_instance=RequestContext(request))
 
 def do_advanced_search(request):
@@ -333,7 +327,7 @@ def do_advanced_search(request):
     if not form.is_valid():
         raise ViewTerminationError(response = render_to_response(
           'gcd/search/advanced.html',
-          { 'form': form, 'style': 'default' },
+          { 'form': form },
           context_instance=RequestContext(request)))
 
     data = form.cleaned_data
@@ -357,7 +351,6 @@ def do_advanced_search(request):
           'gcd/search/advanced.html',
           {
               'form': form,
-              'style': 'default',
               'error_text': '%s' % se,
           },
           context_instance=RequestContext(request))
@@ -367,7 +360,6 @@ def do_advanced_search(request):
           'gcd/search/advanced.html',
           {
             'form': form,
-            'style': 'default',
             'error_text': "Please enter at least one search term "
                           "or clear the 'ordering' fields.  Ordered searches "
                           "must have at least one search term."
@@ -511,10 +503,7 @@ def process_advanced(request):
         'plural_suffix' : plural_suffix,
         'heading' : target.title() + ' Search Results',
         'query_string' : get_copy.urlencode(),
-        'style' : 'default',
     }
-    if request.GET.has_key('style'):
-        context['style'] = request.GET['style']
 
     template = 'gcd/search/%s_list.html' % \
                  ('content' if target == 'sequence' else item_name)

@@ -9,11 +9,11 @@ Edit Covers :: {{ issue }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+      href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -33,7 +33,7 @@ Edit Covers :: {{ issue }}
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>
        <span class="cover_links">Zoom:
-<a href="{{ issue.get_absolute_url }}cover/4/?style={{ style|default:'default' }}">Large</a><br>
+<a href="{{ issue.get_absolute_url }}cover/4">Large</a><br>
       {% if perms.gcd.can_approve %}
         {% if not cover.marked %}
 <a href="{% url mark_cover cover_id=cover.id %}">Mark for replacement</a><br>

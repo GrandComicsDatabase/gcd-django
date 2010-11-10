@@ -7,9 +7,9 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}/scans.css"/>
+      href="{{ MEDIA_URL }}css/gcd/default/scans.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -17,9 +17,9 @@
 {% include "gcd/bits/series_issue_header.html" %}
 
 <div id="info_links">
-  <a href="{{series.get_absolute_url}}covers/?style={{ style|default:'default' }}">Cover Gallery</a> ({{ series.scan_count }} cover{{ series.scan_count|pluralize }} for {{ series.issue_count }} issue{{ series.issue_count|pluralize }} available)
+  <a href="{{series.get_absolute_url}}covers">Cover Gallery</a> ({{ series.scan_count }} cover{{ series.scan_count|pluralize }} for {{ series.issue_count }} issue{{ series.issue_count|pluralize }} available)
   <br>
-  <a href="{{ series.get_absolute_url }}status/?style={{ style|default:'default' }}">Index Status</a>
+  <a href="{{ series.get_absolute_url }}status">Index Status</a>
 </div>
 
 {% include "gcd/bits/scan_tables.html" %}

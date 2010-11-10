@@ -7,11 +7,11 @@ GCD :: Cover for {{ issue.series.name }} #{{ issue.display_number }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/cover.css"/>
+      href="{{ MEDIA_URL }}css/oi/default/cover.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -35,8 +35,8 @@ This cover upload has been successfully submitted and is awaiting approval by an
   <div id="cover_uploaded">
     <a href="{% url compare id=revision.changeset.id %}">{{ tag|safe }}</a><br/>
     <a href="{% url compare id=revision.changeset.id %}">Zoom / Compare</a><br>
-    <a href="{{ issue.series.get_absolute_url}}scans/?style={{ style|default:'default' }}">Cover Scan Status</a><br/>
-    <a href="{{ issue.series.get_absolute_url }}covers/?style={{ style|default:'default' }}">Cover Gallery</a><br>
+    <a href="{{ issue.series.get_absolute_url}}scans">Cover Scan Status</a><br/>
+    <a href="{{ issue.series.get_absolute_url }}covers">Cover Gallery</a><br>
     <br>
     <a href="{{ issue.series.get_absolute_url }}">Back to the series</a><br>
     <a href="{{ issue.get_absolute_url }}">Back to the issue</a>

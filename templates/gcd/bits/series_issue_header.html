@@ -48,7 +48,7 @@
     {% if description %}
     <a href="{% url change_history model_name='issue' id=prev_issue.id %}">&lt; {% trans "Previous Issue" %}</a>
     {% else %}
-    <a href="{{ prev_issue.get_absolute_url }}{{ extra }}?style={{ style }}">&lt; {% trans "Previous Issue" %}</a>
+    <a href="{{ prev_issue.get_absolute_url }}{{ extra }}">&lt; {% trans "Previous Issue" %}</a>
     {% endif %}
     |
   {% endif %}
@@ -70,7 +70,7 @@
     {% if description %}
     <a href="{% url change_history model_name='issue' id=next_issue.id %}">{% trans "Next Issue" %} &gt;</a>
     {% else %}
-    <a href="{{ next_issue.get_absolute_url }}{{ extra }}?style={{ style }}">{% trans "Next Issue" %} &gt;</a>
+    <a href="{{ next_issue.get_absolute_url }}{{ extra }}">{% trans "Next Issue" %} &gt;</a>
     {% endif %}
   {% endif %}
   </div>

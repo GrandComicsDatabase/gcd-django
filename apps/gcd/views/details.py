@@ -38,18 +38,10 @@ MIN_GCD_YEAR = 1800
 
 COVER_TABLE_WIDTH = 5
 
-def get_style(request):
-    style = 'default'
-    if (request.GET.has_key('style')):
-        style = request.GET['style']
-    return style
-
-
 def publisher(request, publisher_id):
     """
     Display the details page for a Publisher.
     """
-    style = get_style(request)
     pub = get_object_or_404(Publisher, id = publisher_id)
     if pub.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
@@ -111,7 +103,6 @@ def imprint(request, imprint_id):
     """
     Display the details page for an Imprint.
     """
-    style = get_style(request)
     imprint = get_object_or_404(Publisher, id = imprint_id)
     if imprint.parent.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
@@ -202,7 +193,6 @@ def imprints(request, publisher_id):
     else:
         imps = imps.order_by('name', 'year_began')
 
-    style = get_style(request)
     return paginate_response(request, imps, 'gcd/details/imprints.html', {
       'publisher' : publisher,
       'error_subject' : '%s imprints' % publisher,
@@ -239,8 +229,6 @@ def show_series(request, series, preview=False):
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
 
-    style = get_style(request)
-
     return render_to_response(
       'gcd/details/series.html',
       {
@@ -252,7 +240,6 @@ def show_series(request, series, preview=False):
         'language': series.language,
         'table_width': table_width,
         'error_subject': '%s' % series,
-        'style': style,
         'preview': preview,
       },
       context_instance=RequestContext(request))
@@ -419,13 +406,11 @@ def status(request, series_id):
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
-    style = get_style(request)
 
     return render_to_response('gcd/status/status.html', {
       'series': series,
       'issues': issues,
-      'table_width': table_width,
-      'style': style },
+      'table_width': table_width },
       context_instance=RequestContext(request))
 
 def _get_scan_table(series):
@@ -464,16 +449,14 @@ def scans(request, series_id):
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
-    style = get_style(request)
 
     return render_to_response('gcd/status/scans.html', {
       'series' : series,
       'scans' : scans,
-      'table_width' : table_width,
-      'style' : style },
+      'table_width' : table_width },
       context_instance=RequestContext(request))
 
-def covers_to_replace(request, starts_with=None, style="default"):
+def covers_to_replace(request, starts_with=None):
     """
     Display the covers that are marked for replacement.
     """
@@ -487,7 +470,6 @@ def covers_to_replace(request, starts_with=None, style="default"):
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = COVER_TABLE_WIDTH
-    style = get_style(request)
 
     return paginate_response(
       request,
@@ -495,7 +477,6 @@ def covers_to_replace(request, starts_with=None, style="default"):
       'gcd/status/covers_to_replace.html',
       {
         'table_width' : table_width,
-        'style' : style,
         'starts_with' : starts_with
       },
       page_size=50,
@@ -551,7 +532,6 @@ def daily_covers(request, show_date=None):
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = COVER_TABLE_WIDTH
-    style = get_style(request)
 
     covers = Cover.objects.filter(last_upload__range=(\
                                   datetime.combine(requested_date, time.min),
@@ -572,7 +552,6 @@ def daily_covers(request, show_date=None):
         'date_after' : date_after,
         'date_before' : date_before,
         'table_width' : table_width,
-        'style' : style
       },
       page_size=50,
       callback_key='tags',
@@ -723,8 +702,6 @@ def cover(request, issue_id, size):
 
     cover_tag = get_image_tags_per_issue(issue, "Cover Image", size)
 
-    style = get_style(request)
-
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
     return render_to_response(
@@ -736,12 +713,11 @@ def cover(request, issue_id, size):
         'cover_tag': cover_tag,
         'extra': extra,
         'error_subject': '%s cover' % issue,
-        'style': style
       },
       context_instance=RequestContext(request)
     )
 
-def covers(request, series_id, style="default"):
+def covers(request, series_id):
     """
     Display the cover gallery for a series.
     """
@@ -764,12 +740,10 @@ def covers(request, series_id, style="default"):
     covers = Cover.objects.filter(issue__series=series, deleted=False) \
                           .select_related('issue')
 
-    style = get_style(request)
     vars = {
       'series': series,
       'error_subject': '%s covers' % series,
       'table_width': table_width,
-      'style': style,
       'can_mark': can_mark
     }
 
@@ -781,8 +755,7 @@ def covers(request, series_id, style="default"):
 def issue_form(request):
     """
     Redirect form-style URL used by the drop-down menu on the series
-    details page into a standard issue details URL.  There is probably
-    a better way to propagate the 'style' parameter.
+    details page into a standard issue details URL.
     """
     params = request.GET.copy()
     if 'id' not in params:
@@ -826,7 +799,6 @@ def show_issue(request, issue, preview=False):
     image_tag = get_image_tags_per_issue(issue=cover_issue,
                                          zoom_level=ZOOM_SMALL,
                                          alt_text='Cover Thumbnail')
-    style = get_style(request)
 
     series = issue.series
     [prev_issue, next_issue] = issue.get_prev_next_issue()
@@ -870,7 +842,6 @@ def show_issue(request, issue, preview=False):
         'image_tag': image_tag,
         'error_subject': '%s' % issue,
         'preview': preview,
-        'style': style,
       },
       context_instance=RequestContext(request))
 
