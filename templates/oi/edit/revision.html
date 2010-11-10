@@ -1,6 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% load credits %}
+{% load display %}
 
 {% block title %}
 {{ changeset }}
@@ -16,7 +17,9 @@
 {% endblock %}
 
 {% block view_body %}
-<h1> {{ revision }} </h1>
+<h1>
+{{ changeset|header_link }}
+</h1>
 
 <div class="edit">
 
