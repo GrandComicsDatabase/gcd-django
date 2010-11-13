@@ -18,8 +18,8 @@
       {% endif %}
       {% if queue_name != 'reviews' %}
     <th> Approver</th>
-    <th> State </th>
       {% endif %}
+    <th> State </th>
     <th> Last Activity </th>
     <th> Actions </th>
   </tr>
@@ -43,8 +43,8 @@
         {% endif %}
         {% if queue_name != 'reviews' %}
     <td> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
-    <td> {{ changeset.display_state }} </td>
         {% endif %}
+    <td> {{ changeset.display_state }} </td>
     <td> {{ changeset.modified }} </td>
     <td> {% with changeset.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>

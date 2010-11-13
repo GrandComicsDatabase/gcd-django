@@ -1953,7 +1953,7 @@ def show_queue(request, queue_name, state):
         kwargs['state__in'] = (states.PENDING, states.REVIEWING)
     if 'reviews' == queue_name:
         kwargs['approver'] = request.user
-        kwargs['state'] = states.REVIEWING
+        kwargs['state__in'] = (states.OPEN, states.REVIEWING)
     if 'covers' == queue_name:
         return show_cover_queue(request)
     if 'approved' == queue_name:
