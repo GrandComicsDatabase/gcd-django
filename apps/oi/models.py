@@ -90,6 +90,7 @@ class Changeset(models.Model):
                                  related_name='approved_%(class)s', null=True)
 
     change_type = models.IntegerField(db_index=True)
+    migrated = models.BooleanField(default=False, db_index=True, blank=True)
 
     imps = models.IntegerField(default=0)
 
@@ -783,9 +784,9 @@ class PublisherRevisionBase(Revision):
     class Meta:
         abstract = True
 
-    name = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=255)
 
-    year_began = models.IntegerField(null=True, blank=True, db_index=True,
+    year_began = models.IntegerField(null=True, blank=True,
       help_text='The first year in which the publisher was active.')
     year_ended = models.IntegerField(null=True, blank=True,
       help_text='The last year in which the publisher was active. '
@@ -1047,7 +1048,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     indicia_publisher = models.ForeignKey('gcd.IndiciaPublisher', null=True,
                                            related_name='revisions')
 
-    is_surrogate = models.BooleanField(db_index=True)
+    is_surrogate = models.BooleanField()
 
     country = models.ForeignKey('gcd.Country', db_index=True,
                                 related_name='indicia_publishers_revisions')
@@ -1709,34 +1710,36 @@ class IssueRevision(Revision):
     # When adding an issue, this requests the reservation upon approval of
     # the new issue.  The request will be granted unless an ongoing reservation
     # is in place at the time of approval.
-    reservation_requested = models.BooleanField(default=0)
+    reservation_requested = models.BooleanField(default=False)
 
     number = models.CharField(max_length=50)
-    volume = models.CharField(max_length=50)
-    no_volume = models.BooleanField(default=0)
-    display_volume_with_number = models.BooleanField(default=0)
+    volume = models.CharField(max_length=50, blank=True, default='')
+    no_volume = models.BooleanField(default=False)
+    display_volume_with_number = models.BooleanField(default=False)
 
-    publication_date = models.CharField(max_length=255, blank=True)
-    indicia_frequency = models.CharField(max_length=255, blank=True)
-    key_date = models.CharField(max_length=10, blank=True)
+    publication_date = models.CharField(max_length=255, blank=True, default='')
+    indicia_frequency = models.CharField(max_length=255, blank=True, default='')
+    key_date = models.CharField(max_length=10, blank=True, default='')
 
-    price = models.CharField(max_length=255, blank=True)
+    price = models.CharField(max_length=255, blank=True, default='')
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
-                                     null=True, blank=True)
-    page_count_uncertain = models.BooleanField(default=0)
+                                     null=True, blank=True, default=None)
+    page_count_uncertain = models.BooleanField(default=False)
 
-    editing = models.TextField(blank=True)
-    no_editing = models.BooleanField(default=0)
-    notes = models.TextField(blank=True)
+    editing = models.TextField(blank=True, default='')
+    no_editing = models.BooleanField(default=False)
+    notes = models.TextField(blank=True, default='')
 
     series = models.ForeignKey(Series, related_name='issue_revisions')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True,
+                                          default=None,
                                           related_name='issue_revisions')
-    indicia_pub_not_printed = models.BooleanField(default=0)
-    brand = models.ForeignKey(Brand, null=True, related_name='issue_revisions')
-    no_brand = models.BooleanField(default=0, db_index=True)
+    indicia_pub_not_printed = models.BooleanField(default=False)
+    brand = models.ForeignKey(Brand, null=True, default=None,
+                              related_name='issue_revisions')
+    no_brand = models.BooleanField(default=False)
 
-    isbn = models.CharField(max_length=32)
+    isbn = models.CharField(max_length=32, blank=True, default='')
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
@@ -2069,7 +2072,7 @@ class StoryRevision(Revision):
                               related_name='revisions')
 
     title = models.CharField(max_length=255, blank=True)
-    title_inferred = models.BooleanField(default=0, db_index=True)
+    title_inferred = models.BooleanField(default=0)
     feature = models.CharField(max_length=255, blank=True)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
