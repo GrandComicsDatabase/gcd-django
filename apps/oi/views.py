@@ -236,7 +236,7 @@ def submit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     if (request.user != changeset.indexer):
         return render_to_response('gcd/error.html',
-          {'error_message': 'A change may only be submitted by its author.'},
+          {'error_text': 'A change may only be submitted by its author.'},
           context_instance=RequestContext(request))
 
     changeset.submit(notes=request.POST['comments'])
@@ -319,13 +319,71 @@ def retract(request, id):
 
     if request.user != changeset.indexer:
         return render_to_response('gcd/error.html',
-          {'error_message': 'A change may only be retracted by its author.'},
+          {'error_text': 'A change may only be retracted by its author.'},
           context_instance=RequestContext(request))
     changeset.retract(notes=request.POST['comments'])
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',
                                                      kwargs={'id': changeset.id }))
 
+@permission_required('gcd.can_reserve')
+def confirm_discard(request, id, has_comment=0):
+    """
+    Indexer has to confirm the discard of a change.
+    """
+    changeset = get_object_or_404(Changeset, id=id)
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the author of the changeset can access this page.',
+          redirect=False)
+
+    if not changeset.state in states.ACTIVE:
+        return render_error(request,
+          'Only ACTIVE changes can be discarded.')
+
+    if request.method != 'POST':
+        return render_to_response('oi/edit/confirm_discard.html', 
+                                  {'changeset': changeset },
+                                  context_instance=RequestContext(request))
+
+    if 'discard' in request.POST:
+        if has_comment == '1' and changeset.approver:
+            text = changeset.comments.latest('created').text
+            comment = u'The discard includes the comment:\n"%s"' % text
+        else:
+            comment = ''   
+        changeset.discard(discarder=request.user)
+        if changeset.approver:
+            email_body = u"""
+Hello from the %s!
+
+
+  The change for "%s" by %s which you were reviewing was discarded. %s
+
+You can view the full change at %s.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+               unicode(changeset),
+               unicode(changeset.indexer.indexer),
+               comment,
+               settings.SITE_URL.rstrip('/') +
+                 urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+               settings.SITE_NAME,
+               settings.SITE_URL)
+
+            changeset.approver.email_user('Reviewed GCD change discarded', 
+              email_body, settings.EMAIL_INDEXING)
+        return HttpResponseRedirect(urlresolvers.reverse('editing'))
+    else:
+        # it would be nice if we would be able to go back the page
+        # from where the 'discard' originated, but due to the
+        # redirect we don't have this information here.
+        return HttpResponseRedirect(urlresolvers.reverse('edit', 
+                                    kwargs={'id': changeset.id }))
+    
 @permission_required('gcd.can_reserve')
 def discard(request, id):
     """
@@ -338,7 +396,7 @@ def discard(request, id):
     if (request.user != changeset.indexer and
         request.user != changeset.approver):
         return render_to_response('gcd/error.html',
-          { 'error_message':
+          { 'error_text':
             'Only the author or the assigned editor can discard a change.' },
           context_instance=RequestContext(request))
 
@@ -348,10 +406,25 @@ def discard(request, id):
                             'change.  Please press the "back" button and use '
                             'the comments field for the explanation.' )
 
+    # get a confirmation to avoid unwanted discards
+    if request.user == changeset.indexer:
+        if request.POST['comments']:
+            notes = request.POST['comments']
+            changeset.comments.create(commenter=request.user,
+                                      text=notes,
+                                      old_state=changeset.state,
+                                      new_state=changeset.state)
+            has_comment = 1
+        else:
+            has_comment = 0
+        return HttpResponseRedirect(urlresolvers.reverse('confirm_discard',
+                                    kwargs={'id': changeset.id,
+                                            'has_comment': has_comment}))
+
     notes = request.POST['comments']
     changeset.discard(discarder=request.user, notes=notes)
 
-    if request.user != changeset.indexer:
+    if request.user == changeset.approver:
         email_body = u"""
 Hello from the %s!
 
@@ -385,36 +458,6 @@ thanks,
             return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
         else:
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
-    else:
-        if changeset.approver:
-            if request.POST['comments']:
-                comment = u'The discard includes the comment:\n"%s"' % \
-                          request.POST['comments'] 
-            else:
-                comment = ''   
-            email_body = u"""
-Hello from the %s!
-
-
-  The change for "%s" by %s which you were reviewing was discarded. %s
-
-You can view the full change at %s.
-
-thanks,
--the %s team
-%s
-""" % (settings.SITE_NAME,
-               unicode(changeset),
-               unicode(changeset.indexer.indexer),
-               comment,
-               settings.SITE_URL.rstrip('/') +
-                 urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
-               settings.SITE_NAME,
-               settings.SITE_URL)
-
-            changeset.approver.email_user('Reviewed GCD change discarded', 
-              email_body, settings.EMAIL_INDEXING)
-        return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
 @permission_required('gcd.can_approve')
 def assign(request, id):
@@ -482,7 +525,7 @@ def release(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     if request.user != changeset.approver:
         return render_to_response('gcd/error.html',
-          {'error_message': 'A change may only be released by its approver.'},
+          {'error_text': 'A change may only be released by its approver.'},
           context_instance=RequestContext(request))
         
     changeset.release(notes=request.POST['comments'])

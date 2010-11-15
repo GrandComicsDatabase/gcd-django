@@ -1,0 +1,25 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Confirm delete of {{ object_name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h2>Are you sure you want to discard the change for {{ changeset }}?</h2>
+
+<div class="edit">
+<form action="{{ object_url }}" method="POST">
+  <input type="submit" name="discard" value="Confirm"></input>
+  <input type="submit" name="cancel" value="Cancel"></input>
+</form>
+</div>
+{% endblock %}
