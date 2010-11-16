@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.conf.urls.defaults import *
 from django.conf import settings
 from django.contrib import admin
@@ -8,6 +9,7 @@ from django.shortcuts import redirect
 from apps.gcd.views import accounts as account_views
 from apps.gcd.views import error_view
 from apps.gcd.forms.accounts import PasswordResetForm
+from apps.gcd.views import read_only
 
 admin.autodiscover()
 
@@ -88,6 +90,14 @@ account_patterns = patterns('',
         { 'template_name': 'gcd/accounts/password_reset_complete.html'}),
 )
 
+read_only_patterns = patterns('',
+    url(r'^upload_cover/(?P<issue_id>\d+)/$', read_only.dummy,
+        name='upload_cover'),
+    url(r'^edit_covers/(?P<issue_id>\d+)/$', read_only.dummy,
+        name='edit_covers'),
+    url(r'^changeset/(?P<id>\d+)/compare/$', read_only.dummy, name='compare'),
+)
+
 if settings.SITE_DOWN:
     urlpatterns = patterns('',
         (r'^site-down/$', direct_to_template, {
@@ -97,6 +107,12 @@ if settings.SITE_DOWN:
         (r'^.*$', lambda request: redirect('/site-down/')),
     )
 
+elif settings.NO_OI:
+    urlpatterns = (basic_patterns +
+                   patterns('', (r'^', include('apps.gcd.urls'))) +
+                   account_patterns +
+                   read_only_patterns
+                  )
 else:
     urlpatterns = (basic_patterns +
                    patterns('', (r'^', include('apps.gcd.urls'))) +

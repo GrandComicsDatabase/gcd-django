@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Django settings for gcd project.
 import datetime
 from os.path import abspath, dirname, join
@@ -146,6 +147,8 @@ BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com')
 SITE_DOWN = False
 SITE_DOWN_MESSAGE = ''
 SITE_BACK_UP_AT = ''
+READ_ONLY = False
+NO_OI = False
 
 # Date taken from Ray's press release.
 OLD_SITE_CREATION_DATE = datetime.date(2002, 11, 13)
@@ -171,3 +174,7 @@ try:
     more_settings.modify(globals())
 except ImportError:
     pass
+
+if READ_ONLY or NO_OI:
+    MIDDLEWARE_CLASSES += \
+      ('apps.middleware.read_only.ReadOnlyMiddleware',)

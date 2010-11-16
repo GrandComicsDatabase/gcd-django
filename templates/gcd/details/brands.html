@@ -17,12 +17,18 @@
 {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
 <div class="publisher_list_control_panel">
+{% if user.is_authenticated and not publisher.pending_deletion %}
   <form method="GET"
         action="{% url add_brand parent_id=publisher.id %}">
-{% if not publisher.pending_deletion %}
     <input id="add" name="add" type="submit" value="Add another brand" />
-{% endif %}
   </form>
+{% endif %}
+{% if not user.is_authenticated %}  
+  <form action="{% url login %}" method="GET">
+    <input type="submit" name="login" value="Log in to edit" />
+    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+  </form>
+{% endif %}
 </div>
 {% if publisher.brand_count %}
 <table id="publisher_detail_listing" class="listing">
