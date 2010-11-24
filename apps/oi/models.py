@@ -518,8 +518,6 @@ class RevisionManager(models.Manager):
         revision = self._do_create_revision(instance,
                                             changeset=changeset,
                                             **kwargs)
-        instance.reserved = True
-        instance.save()
         return revision
 
     def active(self):

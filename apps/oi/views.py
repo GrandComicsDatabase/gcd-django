@@ -12,6 +12,7 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
+from django.db import transaction
 from django.db.models import Min, Max
 from django.core.exceptions import *
 
@@ -66,39 +67,51 @@ def _cant_get(request):
 def delete(request, id, model_name):
     return reserve(request, id, model_name, True)
 
+@transaction.autocommit
+def _is_reservable(model_name, id):
+    # returns number of objects which got reserved, so 1 if successful
+    # with django 1.3 we can do this in reserve() using a with statement
+    return DISPLAY_CLASSES[model_name].objects.filter(id=id,
+                    reserved=False).update(reserved=True)
+
+@transaction.autocommit
+def _unreserve(display_obj):
+    display_obj.reserved = False
+    display_obj.save()
+
 @permission_required('gcd.can_reserve')
 def reserve(request, id, model_name, delete=False):
-    display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
+    display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id,
+                                    deleted=False)
     if request.method != 'POST':
         return _cant_get(request)
 
-    if delete:
-        action = 'delete'
-    else:
-        action = 'edit'
+    is_reservable = _is_reservable(model_name, id)
 
-    if display_obj.deleted:
+    if is_reservable == 0:
         return render_error(request,
-          u'Cannot %s "%s" as it is already deleted.' %
-          (action, display_obj))
-    elif display_obj.reserved:
-        return render_error(request,
-          u'Cannot %s "%s" as it is already reserved.' %
-          (action, display_obj))
+          u'Cannot edit "%s" as it is already reserved.' %
+          display_obj)
 
-    if delete:
-        # In case someone else deleted while page was open or if it is not
-        # deletable because of other actions in the interim (adding to an
-        # issue for brand/ind_pub, modifying covers for issue, etc.)
-        if not display_obj.deletable():
-            return render_error(request,
-                                'This object fails the requirements for deletion.')
+    try: # if something goes wrong we unreserve
+        if delete:
+            # In case someone else deleted while page was open or if it is not
+            # deletable because of other actions in the interim (adding to an
+            # issue for brand/ind_pub, modifying covers for issue, etc.)
+            if not display_obj.deletable():
+                _unreserve(display_obj)
+                return render_error(request,
+                       'This object fails the requirements for deletion.')
 
-        changeset = _do_reserve(request.user, display_obj, model_name, True)
-    else:
-        changeset = _do_reserve(request.user, display_obj, model_name)
+            changeset = _do_reserve(request.user, display_obj, model_name, True)
+        else:
+            changeset = _do_reserve(request.user, display_obj, model_name)
+    except:
+        _unreserve(display_obj)
+        raise
 
     if changeset is None:
+        _unreserve(display_obj)
         return render_error(request,
           'You have reached your limit of open changes.  You must '
           'submit or discard some changes from your edit queue before you '
@@ -2262,9 +2275,11 @@ def preview(request, id, model_name):
 
 @permission_required('gcd.can_mentor')
 def mentoring(request):
+    max_show_new = 50
     new_indexers = User.objects.filter(indexer__mentor=None) \
                                .filter(indexer__is_new=True) \
-                               .filter(is_active=True)
+                               .filter(is_active=True) \
+                               .order_by('-date_joined')[:max_show_new]
     my_mentees = User.objects.filter(indexer__mentor=request.user) \
                              .filter(indexer__is_new=True)
     mentees = User.objects.exclude(indexer__mentor=None) \
@@ -2276,6 +2291,7 @@ def mentoring(request):
         'new_indexers': new_indexers,
         'my_mentees': my_mentees,
         'mentees': mentees,
+        'max_show_new': max_show_new
       },
       context_instance=RequestContext(request))
 
