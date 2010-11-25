@@ -71,6 +71,26 @@ def show_credit(story, credit):
                                     .replace('Editing', 'Issue editing')
         return formatted_credit
 
+    elif credit.startswith('characters:'):
+        collator = icu.Collator.createInstance()
+        collator.setStrength(0)
+        target = credit[len('characters:'):]
+        formatted_credit = ""
+        if story.characters:
+            search = icu.StringSearch(target.lower(),
+                                      story.characters.lower(),
+                                      collator)
+            if search.first() != -1:
+                formatted_credit = __format_credit(story, 'characters')
+
+        if story.feature:
+            search = icu.StringSearch(target.lower(), 
+                                      story.feature.lower(), 
+                                      collator)
+            if search.first() != -1:
+                formatted_credit += __format_credit(story, 'feature')
+        return formatted_credit
+
     elif hasattr(story, credit):
         return __format_credit(story, credit)
 

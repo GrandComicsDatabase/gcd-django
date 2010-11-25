@@ -100,6 +100,12 @@ def generic_by_name(request, name, q_obj, sort,
             for credit_type in ['script', 'pencils', 'inks', 'colors', 
                                 'letters', 'story_editing', 'issue_editing']:
                 query_val[credit_type] = name
+        elif credit.startswith('characters'):
+            query_val['characters'] = name
+            # OR-logic only applies to credits, so we cannnot use it 
+            # to mimic the double search for characters and features here
+            # query_val['feature'] = name 
+            # query_val['logic'] = True
     else:
         raise TypeError, "Unsupported search target!"
 
@@ -140,7 +146,8 @@ def character_by_name(request, character_name, sort=ORDER_ALPHA):
 
     q_obj = Q(characters__icontains=character_name) | \
             Q(feature__icontains=character_name)
-    return generic_by_name(request, character_name, q_obj, sort)
+    return generic_by_name(request, character_name, q_obj, sort, 
+                           credit="characters:" + character_name)
 
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):
