@@ -22,7 +22,7 @@ fieldset li {
     margin-bottom: 0.5em;
 }
 
-label {
+table label {
     width: 9em;
     margin-right: 1em;
     text-align: right;
@@ -82,4 +82,16 @@ div.cover_large img, div.cover_medium img {
     margin-bottom: 1em;
 }
 
+#preview_box {
+    border: solid 1px black;
+    width: 200px;
+    overflow: hidden;
+    margin: 0.5em;
+    float: left;
+}
 
+#coords li {
+    display: inline;
+    list-style-type: none;
+    padding-left: 1em;
+}

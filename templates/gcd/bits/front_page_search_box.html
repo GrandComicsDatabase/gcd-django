@@ -4,7 +4,7 @@
     <div class="first_line">
         {% trans 'Search' %} {% include "gcd/bits/search_for.html" %}
         <input type="text" name="query" id="query" size="15" autofocus>
-        <script>
+        <script type="text/javascript">
         if (!("autofocus" in document.createElement("input"))) {
             document.getElementById("query").focus();
         }
