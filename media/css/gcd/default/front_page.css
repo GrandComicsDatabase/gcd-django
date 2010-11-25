@@ -86,6 +86,7 @@ body {
     border: solid 1px;
     width: 13em;
     margin-bottom: 1em;
+    float: left;
 }
 
 .box_header {
@@ -98,6 +99,23 @@ body {
 .box_inner {
     padding: 0.4em;
     background-color: white;
+}
+
+.front_page_left_box_social {
+    float: left;
+    width: 13em;
+    margin-bottom: 1em;
+}
+
+.front_page_left_box_social img {
+    border-width: 0;
+    margin-top: 0.5em;
+}
+
+.social_item {
+    width: 3em;
+    float: left;
+    padding-left: 1em;
 }
 
 #front_page_menu {

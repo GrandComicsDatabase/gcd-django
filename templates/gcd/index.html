@@ -32,144 +32,180 @@
 http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
 <div id="main_body"> 
-  {% if BETA %}
-    <div id="front_page_beta">
-      {% include "gcd/bits/beta_banner.html" %}
-    </div>
-  {% endif %}
-    <div id="colmid"> 
-        <div id="colleft">
-            <div id="col1wrap"> 
-                <div id="center_column"> 
-                    <!-- Center Column start --> 
-                    <div class="front_page_central">
-                        <div class="front_page_central_box">
-                            {% include "gcd/bits/front_page_search_box.html" %}
-                        </div>
-                    </div>
-                    <div class="front_page_central">
-                        {% include front_page_content %}
-                    </div>
-                    <!-- Center Column end --> 
-                </div> 
-            </div> 
-
-            <div id="left_column"> 
-                <!-- Left Column start --> 
-                <div class="front_page_left_box">
-                    {% include "gcd/bits/front_page_menu.html" %}
-                </div>
-                <div class="front_page_left_box">
-                    <div class="box_header">
-                        {% trans 'Login' %}
-                    </div>
-                    <div class="box_inner">
-                        {% include "gcd/bits/front_page_login.html" %}
-                    </div>
-                </div>
-                <div class="front_page_left_box">
-                    <div class="box_header">
-                        {% trans "Disclaimer" %}
-                    </div>
-                    <div class="box_inner">
-                        <div class="disclaimer_text">
-                            {% trans "The Grand Comics Database Project (GCD) is a volunteer project with the goal of documenting and indexing all comics for the free use of scholars, historians, researchers, and fans." %}
-                        </div>
-                        <div class="disclaimer_text">
-                            {% trans "The GCD acknowledges that the all-encompassing research nature of the project may result in the posting of cover scans for comics with images that some may find objectionable." %}
-                        </div>
-                        <div class="disclaimer_text message">
-                            {% trans "Viewer discretion is advised." %}
-                        </div>
-                        <div id="front_page_disclaimer_signature">
-                            {% trans "The Grand Comics Database Team" %}
-                        </div>
-                    </div>
-                </div>
-                <!-- Left Column end --> 
+{% if BETA %}
+  <div id="front_page_beta">
+    {% include "gcd/bits/beta_banner.html" %}
+  </div>
+{% endif %}
+  <div id="colmid"> 
+    <div id="colleft">
+      <div id="col1wrap"> 
+        <div id="center_column"> 
+          <!-- Center Column start --> 
+          <div class="front_page_central">
+            <div class="front_page_central_box">
+              {% include "gcd/bits/front_page_search_box.html" %}
             </div>
+          </div>
+          <div class="front_page_central">
+            {% include front_page_content %}
+          </div>
+          <div class="front_page_central_box">
+            <div class="box_header">
+              {% trans "Disclaimer" %}
+            </div>
+            <div class="box_inner">
+              <div class="disclaimer_text">
+                {% trans "The Grand Comics Database Project (GCD) is a volunteer project with the goal of documenting and indexing all comics for the free use of scholars, historians, researchers, and fans." %}
+              </div>
+              <div class="disclaimer_text">
+                {% trans "The GCD acknowledges that the all-encompassing research nature of the project may result in the posting of cover scans for comics with images that some may find objectionable." %}
+              </div>
+              <div class="disclaimer_text message">
+                {% trans "Viewer discretion is advised." %}
+              </div>
+              <div id="front_page_disclaimer_signature">
+                {% trans "The Grand Comics Database Team" %}
+              </div>
+            </div>
+          </div>
+          <!-- Center Column end --> 
+        </div> 
+      </div> 
 
-            <div id="right_column"> 
-                <!-- Right Column start --> 
-                {% comment %}
-                <div class="front_page_right_box_notice">
-                    <div class="box_notice_header ">
-                        Notice
-                    </div>
-                    <div class="box_inner">
-                        The site will be down for approximately 1 hour on Monday November 23 at 16:00 GMT while we perform some maintenance and upgrades.
-                    </div>
-                </div>
-                {% endcomment %}
-                <div class="front_page_right_box">
-                    <div class="box_header">
-                        {% trans "Useful Links" %}
-                    </div>
-                    <div id="useful_links_inner" class="box_inner">
-                      <ul>
-                        <li><a href="{% url covers_today %}">{% trans "Today's covers" %}</a>
-                        <li><a href="{% url changes_today %}">{% trans "Today's changes" %}</a>
-                        <li><a href="{% url apps.gcd.views.details.covers_to_replace %}">{% trans "Covers to replace" %}</a>
-                        <li><a href="{% url international_stats %}">{% trans "International statistics" %}</a>
-                        {% if language %}
-                        <li><a href="{% url apps.gcd.views.index %}">English start page</a></li>
-                        {% endif %}
-                        {% ifnotequal language.code 'de' %}
-                        <li><a href="{% url apps.gcd.views.index %}?lang=de">Deutsche Startseite</a></li>
-                        {% endifnotequal %}
-                      </ul>
-                    </div>
-                </div>
-                {% if language %}
-                <div class="front_page_right_box">
-                    <div class="box_header">
-                        {% trans "Last Updated Language Issues" %}
-                    </div>
-                    <div class="box_inner">
-                    <div class="updated_issues">
-                        {% last_updated_issues language=language.code %}
-                    </div>
-                    </div>
-                </div>
-                <div class="front_page_right_box">
-                    <div class="box_header">
-                        {% trans "Statistics for Language Comics" %}
-                    </div>
-                    <div class="box_inner">
-                        {% for stat in stats_for_language %}
-                        {{ stat.count|intcomma }} {% trans stat.name %}<br>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-                <div class="front_page_right_box">
-                    <div class="box_header">
-                        {% trans "Last Updated Issues" %}
-                    </div>
-                    <div class="box_inner">
-                    <div class="updated_issues">
-                        {% last_updated_issues %}
-                    </div>
-                    </div>
-                </div>
-                <div class="front_page_right_box">
-                    <div class="box_header">
-                        {% trans "Statistics" %}
-                    </div>
-                    <div class="box_inner">
-                        {% for stat in stats %}
-                        {{ stat.count|intcomma }} {% trans stat.name %}<br>
-                        {% endfor %}
-                    </div>
-                </div>
-                <!-- Right Column end --> 
-            </div> 
-        </div> <!-- id="colleft"-->
-    </div> <!-- id="colmid"-->
+      <div id="left_column"> 
+        <!-- Left Column start --> 
+        <div class="front_page_left_box">
+          {% include "gcd/bits/front_page_menu.html" %}
+        </div>
+        <div class="front_page_left_box">
+          <div class="box_header">
+            {% trans 'Login' %}
+          </div>
+          <div class="box_inner">
+            {% include "gcd/bits/front_page_login.html" %}
+          </div>
+        </div>
+        <div class="front_page_left_box_social">
+          <div class="social_item">
+            <a href="http://www.facebook.com/GrandComicsDatabase">
+              <img alt="facebook" src="{{ MEDIA_URL }}/img/gcd/social/facebook_32.png">
+            </a>
+          </div>
+          <div class="social_item">
+            <a href="http://www.twitter.com/GCDcomics">
+              <img alt="twitter" src="{{ MEDIA_URL }}/img/gcd/social/twitter_32.png">
+            </a>
+          </div>
+          <div class="social_item">
+            <a href="mailto:{% trans 'contact@comics.org' %}">
+              <img alt="email" src="{{ MEDIA_URL }}/img/gcd/social/email_32.png">
+            </a>
+          </div>
+        </div>
+        <!-- Left Column end --> 
+      </div>
+
+      <div id="right_column"> 
+        <!-- Right Column start --> 
+        {% comment %}
+        <div class="front_page_right_box_notice">
+          <div class="box_notice_header ">
+            Notice
+          </div>
+          <div class="box_inner">
+            The site will be down for approximately 1 hour on Monday November 23 at 16:00 GMT while we perform some maintenance and upgrades.
+          </div>
+        </div>
+        {% endcomment %}
+        <div class="front_page_right_box">
+          <div class="box_header">
+            {% trans "Useful Links" %}
+          </div>
+          <div id="useful_links_inner" class="box_inner">
+            <ul>
+              <li><a href="{% url covers_today %}">{% trans "Today's covers" %}</a>
+              <li><a href="{% url changes_today %}">{% trans "Today's changes" %}</a>
+              <li><a href="{% url apps.gcd.views.details.covers_to_replace %}">{% trans "Covers to replace" %}</a>
+              <li><a href="{% url international_stats %}">{% trans "International statistics" %}</a>
+              {% if language %}
+              <li><a href="{% url apps.gcd.views.index %}">English start page</a></li>
+              {% endif %}
+              {% ifnotequal language.code 'de' %}
+              <li><a href="{% url apps.gcd.views.index %}?lang=de">Deutsche Startseite</a></li>
+              {% endifnotequal %}
+            </ul>
+          </div>
+        </div>
+        {% if language %}
+        <div class="front_page_right_box">
+          <div class="box_header">
+            {% trans "Last Updated Language Issues" %}
+          </div>
+          <div class="box_inner">
+            <div class="updated_issues">
+              {% last_updated_issues language=language.code %}
+            </div>
+          </div>
+        </div>
+        <div class="front_page_right_box">
+          <div class="box_header">
+            {% trans "Statistics for Language Comics" %}
+          </div>
+          <div class="box_inner">
+            {% for stat in stats_for_language %}
+              {{ stat.count|intcomma }} {% trans stat.name %}<br>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="front_page_right_box">
+          <div class="box_header">
+            {% trans "Last Updated Issues" %}
+          </div>
+          <div class="box_inner">
+            <div class="updated_issues">
+              {% last_updated_issues %}
+            </div>
+          </div>
+        </div>
+        <div class="front_page_right_box">
+          <div class="box_header">
+            {% trans "Statistics" %}
+          </div>
+          <div class="box_inner">
+            {% for stat in stats %}
+              {{ stat.count|intcomma }} {% trans stat.name %}<br>
+            {% endfor %}
+          </div>
+        </div>
+        <!-- Right Column end --> 
+      </div> 
+    </div> <!-- id="colleft"-->
+  </div> <!-- id="colmid"-->
 </div> <!-- id="main_body"-->
 
 <div id="footer">
-    {% include "gcd/bits/legalese.html" %}
+  <div class="footer_disclaimer">
+    <div class="footer_item">
+      <a href="http://creativecommons.org/licenses/by-sa/3.0/">
+        <img alt="Creative Commons License" src="{{ MEDIA_URL }}/img/cc_sa_license80x15.png"></a>
+      Icons by: <a href="http://komodomedia.com">Komodo Media</a>
+    </div>
+    <div class="footer_item">
+      <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">
+        <img alt="Creative Commons License" src="{{ MEDIA_URL }}/img/cc_license80x15.png"></a>
+      {% blocktrans %}
+      All portions of <a href="http://www.comics.org/" rel="cc:attributionURL">the {{ site_name }}</a> that are subject to copyright are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a>.  This includes but is not necessarily limited to our database schema and data distribution format.
+      {% endblocktrans %}
+    </div>
+    <div class="footer_item">
+      {% trans 'The GCD Web Site code is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>' %}
+    </div>
+    <div class="footer_item">
+      {% include "gcd/bits/google.html" %}
+    </div>
+  </div>
 </div>
 
 </div><!-- id="sizing_base" -->

@@ -590,9 +590,18 @@ div.ongoing_status form {
 }
 
 .footer_disclaimer {
+    float: left;
     font-size: 0.8em;
     color: #666;
-    margin-bottom: 0.5em; /* space to google ad */
+    margin: 0.5em;
+}
+
+.footer_disclaimer img{
+    border-width: 0;
+}
+
+.footer_item {
+    margin-bottom: 1em;
 }
 
 a.new_window {
