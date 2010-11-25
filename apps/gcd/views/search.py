@@ -41,7 +41,7 @@ def generic_by_name(request, name, q_obj, sort,
     """
     Helper function for the most common search cases.
     """
-
+    name = name.encode('utf-8')
     base_name = 'unknown'
     plural_suffix = 's'
     query_val = {'method': 'icontains'}
