@@ -12,6 +12,14 @@ from apps.oi.models import *
 from apps.gcd.models import *
 from apps.gcd.templatetags.credits import format_page_count
 
+CREATOR_CREDIT_HELP = 'The %s and similar credits for this sequence. If ' \
+  'multiple persons or credits, please list them all separated with ' \
+  'semicolons. If you do not know who did this, but the credit applies to ' \
+  'this sequence type, enter a question mark.'
+NO_CREATOR_CREDIT_HELP = 'Check this box if %s does not apply to this ' \
+                'sequence, %s, and leave the %s field blank. ' \
+                'If the credit is relevant but unknown ignore this checkbox '\
+                'and enter a question mark in the %s field.'
 
 class PageCountInput(TextInput):
     def _format_value(self, value):
@@ -1014,42 +1022,38 @@ class StoryRevisionForm(forms.ModelForm):
       help_text="Check if you do not know or aren't sure about the page count.")
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-                             required=False)
+                             required=False, 
+                             help_text=CREATOR_CREDIT_HELP % 'scripter')
     pencils = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-                              required=False)
+                              required=False,
+                             help_text=CREATOR_CREDIT_HELP % 'penciler')
     inks = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-                           required=False)
+                           required=False,
+                           help_text=CREATOR_CREDIT_HELP % 'inker')
     colors = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-                             required=False)
+                             required=False,
+                             help_text=CREATOR_CREDIT_HELP % 'colorist')
     letters = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-                              required=False)
+                              required=False,
+                             help_text=CREATOR_CREDIT_HELP % 'letterer')
     editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-                             required=False)
+                             required=False,
+                             help_text=CREATOR_CREDIT_HELP % 'editor')
 
     no_script = forms.BooleanField(required=False,
-      help_text='Check this box if no script or plot exists for this sequence, '
-                'e.g. for a cover or single-page illustration, '
-                'and leave the script field blank. '
-                'If the credit is relevant but unknown ignore this checkbox and '
-                'enter a question mark in the script field.')
+      help_text=NO_CREATOR_CREDIT_HELP % ('script or plot', 
+        'e.g. for a cover or single-page illustration', 'script', 'script'))
     no_pencils = forms.BooleanField(required=False,
-      help_text='Check this box if no penciler exists for this sequence, e.g. for '
-                'an unillustrated text article, and leave the pencils '
-                'field blank. If the credit is relevant but unknown ignore this '
-                'checkbox and enter a question mark in the pencils field.')
+      help_text=NO_CREATOR_CREDIT_HELP % ('penciler', 'e.g. for '
+                'an unillustrated text article', 'pencils', 'pencils'))
     no_inks = forms.BooleanField(required=False,
-      help_text='Check this box if no inker exists for this sequence, e.g. for a '
-                'story colored straight from pencils, and leave the inks field '
-                'blank. '
-                'If the credit is relevant but unknown ignore this checkbox and '
-                'enter a question mark in the inks field.')
+      help_text=NO_CREATOR_CREDIT_HELP % ('inker', 'e.g. for a '
+                'story colored straight from pencils', 'inks', 'inks'))
     no_colors = forms.BooleanField(required=False,
-      help_text='Check this box if no colorist exists for this sequence, e.g. for '
-                'a black-and-white comic, and leave the colors field blank. '
-                'If the credit is relevant but unknown ignore this checkbox and '
-                'enter a question mark in the colors field.')
+      help_text=NO_CREATOR_CREDIT_HELP % ('colorist', 'e.g. for '
+                'a black-and-white comic', 'colors', 'colors'))
     no_letters = forms.BooleanField(required=False,
-      help_text='Check this box if no lettering exists for this sequence, '
+      help_text='Check this box if lettering does not apply to this sequence, '
                 ' and leave the letters box blank.  '
                 'However, if the only letters are produced as normal '
                 'printed text rather than comic-style lettering, put the word '
