@@ -4,6 +4,10 @@ from django.core import urlresolvers
 
 from issue import Issue
 
+# TODO: should not be importing oi app into gcd app, dependency should be
+# the other way around.  Probably.
+from apps.oi import states
+
 ZOOM_SMALL = 1
 ZOOM_MEDIUM = 2
 ZOOM_LARGE = 4
@@ -34,6 +38,7 @@ class Cover(models.Model):
     modified = models.DateTimeField(auto_now=True, null=True)
     last_upload = models.DateTimeField(null=True)
 
+    reserved = models.BooleanField(default=0, db_index=True)
     deleted = models.BooleanField(default=0, db_index=True)
 
     def _sort_code(self):
@@ -67,4 +72,11 @@ class Cover(models.Model):
     def delete(self):
         self.deleted = True
         self.marked = False
+        self.reserved = False
         self.save()
+
+    def deletable(self):
+        return self.revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+
+    def __unicode__(self):
+        return u'%s #%s cover' % (self.issue.series, self.issue.display_number)

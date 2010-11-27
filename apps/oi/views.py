@@ -39,6 +39,7 @@ REVISION_CLASSES = {
     'series': SeriesRevision,
     'issue': IssueRevision,
     'story': StoryRevision,
+    'cover': CoverRevision,
 }
 
 DISPLAY_CLASSES = {
@@ -48,6 +49,7 @@ DISPLAY_CLASSES = {
     'series': Series,
     'issue': Issue,
     'story': Story,
+    'cover': Cover,
 }
 
 ##############################################################################
@@ -56,7 +58,7 @@ DISPLAY_CLASSES = {
 
 def _cant_get(request):
     return render_error(request,
-      'This page may only be accessed through the proper form',
+      'This page may only be accessed through the proper form.',
        redirect=False)
 
 ##############################################################################
@@ -65,6 +67,34 @@ def _cant_get(request):
 
 @permission_required('gcd.can_reserve')
 def delete(request, id, model_name):
+    display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
+    if request.method == 'GET':
+        return render_to_response('gcd/details/deletion_comment.html',
+        {
+            'model_name' : model_name,
+            'id' : id,
+            'object' : display_obj,
+            'no_comment' : False
+        },
+        context_instance=RequestContext(request))
+
+    if 'cancel' in request.POST:
+        if model_name == 'cover':
+            return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
+                     kwargs={'issue_id' : display_obj.issue.id}))
+        return HttpResponseRedirect(urlresolvers.reverse('show_%s' % model_name,
+                 kwargs={'%s_id' % model_name : id}))
+
+    if not request.POST.__contains__('comments') or request.POST['comments'].strip() == '':
+        return render_to_response('gcd/details/deletion_comment.html',
+        {
+            'model_name' : model_name,
+            'id' : id,
+            'object' : display_obj,
+            'no_comment' : True
+        },
+        context_instance=RequestContext(request))
+
     return reserve(request, id, model_name, True)
 
 @transaction.autocommit
@@ -81,10 +111,16 @@ def _unreserve(display_obj):
 
 @permission_required('gcd.can_reserve')
 def reserve(request, id, model_name, delete=False):
-    display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id,
-                                    deleted=False)
+    display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
     if request.method != 'POST':
         return _cant_get(request)
+
+    if display_obj.deleted:
+        if model_name == 'cover':
+            return HttpResponseRedirect(urlresolvers.reverse('show_issue',
+              kwargs={'issue_id': display_obj.issue.id}))
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': model_name, 'id': id}))
 
     is_reservable = _is_reservable(model_name, id)
 
@@ -125,28 +161,17 @@ def reserve(request, id, model_name, delete=False):
                                   old_state=states.UNRESERVED,
                                   new_state=changeset.state)
 
-        if model_name == 'brand':
-            return HttpResponseRedirect(urlresolvers.reverse('show_brand',
-                     kwargs={'brand_id': display_obj.id}))
-        elif model_name == 'indicia_publisher':
-            return HttpResponseRedirect(urlresolvers.reverse(
-                     'show_indicia_publisher',
-                     kwargs={'indicia_publisher_id': display_obj.id}))
-        elif model_name == 'issue':
-            return HttpResponseRedirect(urlresolvers.reverse('show_issue',
-                     kwargs={'issue_id': display_obj.id}))
-        elif model_name == 'series':
-            return HttpResponseRedirect(urlresolvers.reverse('show_series',
-                     kwargs={'series_id': display_obj.id}))
-        elif model_name == 'publisher':
-            return HttpResponseRedirect(urlresolvers.reverse('show_publisher',
-                     kwargs={'publisher_id': display_obj.id}))
+        if model_name == 'cover':
+            return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
+                     kwargs={'issue_id' : display_obj.issue.id}))
+        return HttpResponseRedirect(urlresolvers.reverse('show_%s' % model_name,
+                 kwargs={'%s_id' % model_name : id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
 
 def _do_reserve(indexer, display_obj, model_name, delete=False):
-    if indexer.indexer.can_reserve_another() is False:
+    if model_name != 'cover' and indexer.indexer.can_reserve_another() is False:
         return None
 
     if delete:
@@ -830,10 +855,6 @@ def process(request, id):
     """
     if request.method != 'POST':
         return _cant_get(request)
-
-    # TODO: Figure out delete.
-    # if 'delete' in request.POST:
-        # return delete(request, id, model_name)
 
     if 'submit' in request.POST:
         changeset = get_object_or_404(Changeset, id=id)

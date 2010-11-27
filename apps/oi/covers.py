@@ -281,45 +281,6 @@ def uploaded_cover(request, revision_id):
               'tag'   : tag},
               context_instance=RequestContext(request))
 
-@login_required
-def delete_cover(request, id):
-    cover = get_object_or_404(Cover, id=id)
-    issue = cover.issue
-
-    # check if there is a pending issue deletion
-    if IssueRevision.objects.filter(issue=issue, deleted=True,
-                                    changeset__state__in=states.ACTIVE):
-        revision = IssueRevision.objects.get(issue=issue,
-          changeset__state__in=states.ACTIVE)
-        return render_error(request,
-          ('%s is <a href="%s">pending deletion</a>. Covers '
-          'cannot be added or modified.') % (esc(issue),
-          urlresolvers.reverse('compare', kwargs={'id': revision.changeset.id})),
-          redirect=False, is_safe=True)
-
-    # check if there is a pending change for the cover
-    if id and CoverRevision.objects.filter(cover=cover,
-                    changeset__state__in=states.ACTIVE):
-        revision = CoverRevision.objects.get(cover=cover, 
-          changeset__state__in=states.ACTIVE)
-        return render_error(request,
-          ('There currently is a <a href="%s">pending replacement</a> '
-          'for this cover of %s.') % (urlresolvers.reverse('compare',
-          kwargs={'id': revision.changeset.id}), esc(cover.issue)),
-          redirect=False, is_safe=True)
-
-    changeset = Changeset(indexer=request.user, state=states.OPEN,
-                          change_type=CTYPES['cover'])
-    changeset.save()
-    revision = CoverRevision(changeset=changeset, issue=cover.issue,
-                             cover=cover, deleted=True)
-    revision.save()
-
-    changeset.submit(notes=request.POST['comments'])
-
-    return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
-                                kwargs={'issue_id': cover.issue.id}))
-
 def process_edited_gatefold_cover(request):
     ''' process the edited gatefold cover and generate CoverRevision '''
 

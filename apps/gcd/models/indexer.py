@@ -48,7 +48,7 @@ class Indexer(models.Model):
     registration_expires = models.DateField(null=True, blank=True)
 
     imps = models.IntegerField(default=0)
-    notify_on_approve = models.BooleanField(db_index=True, default=False)
+    notify_on_approve = models.BooleanField(db_index=True, default=True)
     collapse_compare_view = models.BooleanField(db_index=True, default=False)
 
     def can_reserve_another(self):

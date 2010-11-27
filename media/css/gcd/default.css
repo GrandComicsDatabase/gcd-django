@@ -649,3 +649,17 @@ div.search_terms {
 span.search_terms {
     font-weight: bold;
 }
+
+form#comments {
+    margin-bottom: 1em;
+}
+
+form#comments textarea {
+    height: 10em;
+    width: 60em;
+    margin-bottom: 1em;
+}
+
+.cover_button {
+    display: inline;
+}

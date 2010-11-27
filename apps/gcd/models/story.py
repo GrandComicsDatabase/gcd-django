@@ -63,6 +63,7 @@ class Story(models.Model):
     
     def delete(self):
         self.deleted = True
+        self.reserved = False
         self.save()
 
     def has_credits(self):

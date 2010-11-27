@@ -1,7 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% block title %}
-Confirm delete of {{ object_name }}
+Confirm discard of {{ changeset }}
 {% endblock %}
 
 {% block css %}
@@ -17,9 +17,9 @@ Confirm delete of {{ object_name }}
 <h2>Are you sure you want to discard the change for {{ changeset }}?</h2>
 
 <div class="edit">
-<form action="{{ object_url }}" method="POST">
-  <input type="submit" name="discard" value="Confirm"></input>
-  <input type="submit" name="cancel" value="Cancel"></input>
-</form>
+  <form action="{{ object_url }}" method="POST">
+    <input type="submit" name="discard" value="Confirm"></input>
+    <input type="submit" name="cancel" value="Cancel"></input>
+  </form>
 </div>
 {% endblock %}

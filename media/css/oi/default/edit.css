@@ -137,10 +137,6 @@ span.story_edit {
     font-size: 0.9em;
 }
 
-input.del_comments {
-    width: 12em;
-}
-
 div.issue_short {
     margin-bottom: 1em;
     float: right;

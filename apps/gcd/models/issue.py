@@ -142,6 +142,7 @@ class Issue(models.Model):
 
     def delete(self):
         self.deleted = True
+        self.reserved = False
         self.save()
 
     def deletable(self):

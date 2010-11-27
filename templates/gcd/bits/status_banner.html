@@ -38,10 +38,8 @@
   <input id="edit" name="edit" type="submit" value="Edit"></input>
 </form>
     {% if object.deletable %}
-<form method="POST"
-      action="{% url delete_revision model_name=object_class,id=object.id %}">
+<form method="GET" action="{% url delete_revision model_name=object_class,id=object.id %}">
   <input type="submit" value="Delete">
-  <input type="text" name="comments" class="del_comments">
 </form>
     {% else %}
 <div id="index_status" class="index_status_available">

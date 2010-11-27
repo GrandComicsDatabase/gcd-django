@@ -23,40 +23,51 @@ Edit Covers :: {{ issue }}
 <a href="{{ issue.get_absolute_url }}">#{{ issue.display_number }}</a>
 </h2>
 {% if issue.can_upload_variants %}
-<a href="{% url upload_cover issue_id=issue.id %}">Add variant cover</a>
+<form action="{% url upload_cover issue_id=issue.id %}" method="GET">
+  <input type="submit" value="Add variant cover">
+</form>
 {% endif %}
 
 <table id="covers">
   <tr>
-  {% for cover, issue, tag, pending in covers %}
+{% for cover, issue, tag, pending in covers %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>
        <span class="cover_links">Zoom:
 <a href="{{ issue.get_absolute_url }}cover/4">Large</a><br>
-      {% if perms.gcd.can_approve %}
-        {% if not cover.marked %}
-<a href="{% url mark_cover cover_id=cover.id %}">Mark for replacement</a><br>
-        {% else %}
-<a href="{% url unmark_cover cover_id=cover.id %}">Remove mark for replacement</a><br>
-        {% endif %}
-      {% endif %}
-      {% if pending %}
-<a href="{% url compare id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
-      {% else %}
-<a href="{% url replace_cover cover_id=cover.id %}">Replace cover</a><br>
-<form class="story_button" method="POST" action="{% url delete_cover id=cover.id %}">
-  <input type="text" name="comments" class="del_comments"">
-  <input type="submit" value="Delete">
+  {% if perms.gcd.can_approve and not pending %}
+    {% if not cover.marked %}
+<form action="{% url mark_cover cover_id=cover.id %}" method="POST">
+  <input type="submit" value="Mark for replacement">
 </form>
-      {% endif %}
+    {% else %}
+<form action="{% url unmark_cover cover_id=cover.id %}" method="POST">
+  <input type="submit" value="Remove mark for replacement">
+</form>
+    {% endif %}
+  {% endif %}
+  {% if pending %}
+<a href="{% url compare id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
+  {% else %}
+    {% if cover.deletable %}
+<div>
+  <form class="cover_button" action="{% url replace_cover cover_id=cover.id %}" method="GET">
+    <input type="submit" value="Replace">
+  </form>
+  <form class="cover_button" method="GET" action="{% url delete_revision model_name="cover",id=cover.id %}">
+    <input type="submit" value="Delete">
+  </form>
+</div>
+    {% endif %}
+  {% endif %}
 </span> 
    </td>
-    {% if forloop.counter|divisibleby:table_width %}
+  {% if forloop.counter|divisibleby:table_width %}
   </tr>
   <tr>
-    {% endif %}
-  {% endfor %}
+  {% endif %}
+{% endfor %}
   </tr>
 </table>
 
