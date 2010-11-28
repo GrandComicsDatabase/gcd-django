@@ -84,6 +84,7 @@ def _calculate_results(unresolved):
     TODO: Handle the case of abstaning being a "winning" option.
     """
 
+    extra = ''
     for topic in unresolved:
         # if topic.agenda.quorum:
             # raise Exception, '%d / %d' % (topic.agenda.quorum, topic.num_voters())
@@ -105,7 +106,27 @@ def _calculate_results(unresolved):
         options = topic.counted_options().filter(num_votes__gt=0)
         num_options = options.count()
 
-        if topic.vote_type.max_votes <= topic.vote_type.max_winners:
+        if topic.vote_type.name == TYPE_CHARTER:
+            # Charter amendments require a 2/3 majority.
+            for_option = options.get(name='For')
+            against_option = options.get(name='Against')
+            total_votes = for_option.num_votes + against_option.num_votes
+            if for_option.num_votes >= (total_votes * (2.0 / 3.0)):
+                for_option.result = True
+                for_option.save()
+            else:
+                against_option.result = True
+                against_option.save()
+
+            # It's not possible for this sort of measure to tie- it either reaches
+            # the two-thirds threshold or it does not.
+            topic.invalid = False
+            topic.result_calculated = True
+            topic.save()
+            extra = ('\n\nPlease note that Charter Amendments require a 2/3 '
+                     'majority to pass.')
+
+        elif topic.vote_type.max_votes <= topic.vote_type.max_winners:
             # Flag ties that affect the validity of the results,
             # and set any tied options after the valid winning range
             # to a "winning" result as well, indicating that they are all
@@ -132,19 +153,20 @@ def _calculate_results(unresolved):
             topic.result_calculated = True
             topic.save()
 
-            _send_result_email(topic)
-
         else:
             # TODO: Implement Schulze method.
-            pass
+            return
 
-def _send_result_email(topic):
+        _send_result_email(topic, extra)
+
+def _send_result_email(topic, extra=''):
     for list_config in topic.agenda.agenda_mailing_lists.all():
         if list_config.on_vote_close:
             if topic.invalid:
-                result = ('This vote failed to produce a valid result.  '
+                result = ('This vote failed to produce a valid result, '
+                          'possibly because of a tie.  '
                           'The vote administrators will follow up as needed.')
-            elif topic.vote_type.name == TYPE_PASS_FAIL:
+            elif topic.vote_type.name in (TYPE_PASS_FAIL, TYPE_CHARTER):
                 if topic.options.get(result=True).name == 'For':
                     result = 'The motion PASSED'
                 else:
@@ -155,6 +177,7 @@ def _send_result_email(topic):
                 for winner in topic.options.filter(result=True):
                     result += '  * %s\n' % winner.name
 
+            result += extra
             email_body = EMAIL_RESULT % (topic.agenda, topic.text, result,
               settings.SITE_URL.rstrip('/') + topic.agenda.get_absolute_url())
 

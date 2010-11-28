@@ -9,6 +9,7 @@ from django.core.mail import send_mail, send_mass_mail
 from django.contrib.auth.models import User, Group, Permission
 
 TYPE_PASS_FAIL = 'Pass / Fail'
+TYPE_CHARTER = 'Charter Amendment'
 
 EMAIL_OPEN_BALLOT = """
 The topic '%s' with text:
@@ -294,7 +295,7 @@ def topic_pre_save(sender, **kwargs):
 
 def topic_post_save(sender, **kwargs):
     topic = kwargs['instance']
-    if topic.vote_type.name == TYPE_PASS_FAIL and topic.options.count() == 0:
+    if topic.vote_type.name in (TYPE_PASS_FAIL, TYPE_CHARTER) and topic.options.count() == 0:
         topic.options.create(name='For', ballot_position=0)
         topic.options.create(name='Against', ballot_position=1)
         if topic.agenda.allows_abstentions:
