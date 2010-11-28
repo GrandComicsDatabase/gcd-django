@@ -3,7 +3,7 @@ import itertools
 import operator
 
 from django.db import models, settings
-from django.db.models import F, Count
+from django.db.models import Q, F, Count
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
@@ -91,6 +91,7 @@ class Changeset(models.Model):
 
     change_type = models.IntegerField(db_index=True)
     migrated = models.BooleanField(default=False, db_index=True, blank=True)
+    date_inferred = models.BooleanField(default=False, blank=True)
 
     imps = models.IntegerField(default=0)
 
@@ -623,7 +624,9 @@ class Revision(models.Model):
         if self.source is not None:
             prev_revs = self.source.revisions \
               .exclude(changeset__state=states.DISCARDED) \
-              .filter(modified__lt=self.modified)
+              .filter(Q(modified__lt=self.modified) |
+                      (Q(modified=self.modified) & ~Q(id=self.id))) \
+              .order_by('-modified', '-id')
             if prev_revs.count() > 0:
                 self._prev_rev = prev_revs[0]
         return self._prev_rev
@@ -873,6 +876,7 @@ class PublisherRevision(PublisherRevisionBase):
     parent = models.ForeignKey('gcd.Publisher',
                                null=True, blank=True, db_index=True,
                                related_name='imprint_revisions')
+    date_inferred = models.BooleanField(default=False, blank=True)
 
     def _source(self):
         return self.publisher
@@ -1478,6 +1482,7 @@ class SeriesRevision(Revision):
                                   related_name='series_revisions')
     imprint = models.ForeignKey(Publisher, null=True, blank=True,
                                 related_name='imprint_series_revisions')
+    date_inferred = models.BooleanField(default=False, blank=True)
 
     def _source(self):
         return self.series
@@ -1738,6 +1743,7 @@ class IssueRevision(Revision):
     no_brand = models.BooleanField(default=False)
 
     isbn = models.CharField(max_length=32, blank=True, default='')
+    date_inferred = models.BooleanField(default=False, blank=True)
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
@@ -2101,6 +2107,7 @@ class StoryRevision(Revision):
     notes = models.TextField(blank=True)
 
     issue = models.ForeignKey(Issue, related_name='story_revisions')
+    date_inferred = models.BooleanField(default=False, blank=True)
 
     def toggle_deleted(self):
         """

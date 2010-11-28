@@ -176,6 +176,13 @@ UPDATE log_series s LEFT OUTER JOIN gcd_publisher i ON s.ImprintID = i.id
         return ('Country', 'Language', 'DisplayPublisher', 'Imprint',
                 'DisplaySeries', 'User__user')
 
+    @classmethod
+    def add_special_times(klass):
+        # update a few dates manually where some series have null dates
+        # that don't work with the date-of-migration date.
+        klass.objects.filter(ID__in=(864, 7019, 7470, 16829, 17019))\
+                     .update(Modified=datetime.date(2002, 1, 1),
+                             dt_inferred=True)
 
     def convert(self, changeset):
         revision = SeriesRevision(changeset=changeset,
@@ -190,7 +197,8 @@ UPDATE log_series s LEFT OUTER JOIN gcd_publisher i ON s.ImprintID = i.id
                                   year_ended=self.Yr_Ended,
                                   publication_notes=self.Pub_Note,
                                   tracking_notes=self.Tracking,
-                                  notes=self.Notes)
+                                  notes=self.Notes,
+                                  date_inferred=changeset.date_inferred)
         revision.save()
         return revision
 

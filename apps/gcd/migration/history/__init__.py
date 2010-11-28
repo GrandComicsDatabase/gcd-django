@@ -40,6 +40,11 @@ class LogRecord(models.Model):
     is_duplicate = models.BooleanField(default=False, db_index=True)
     old_user_id = models.IntegerField(db_column='UserID')
 
+    # Ultimately, it's easier to work with a DateTime field.
+    # modified_new and modtime_new are used as an intermediate step.
+    dt = models.DateTimeField(null=True, db_index=True)
+    dt_inferred = models.BooleanField(default=False, db_index=True)
+
     @classmethod
     def original_table(klass):
         raise NotImplementedError
@@ -71,6 +76,8 @@ class LogRecord(models.Model):
     ADD COLUMN modtime_new time default NULL,
     ADD COLUMN is_add tinyint(1) NOT NULL default 0,
     ADD COLUMN is_duplicate tinyint(1) NOT NULL default 0,
+    ADD COLUMN dt datetime,
+    ADD COLUMN dt_inferred tinyint(1),
     CONVERT TO CHARACTER SET utf8,
     ADD INDEX (sort_old),
     ADD INDEX (sort_new),
@@ -78,6 +85,8 @@ class LogRecord(models.Model):
     ADD INDEX (modtime_new),
     ADD INDEX (is_add),
     ADD INDEX (is_duplicate),
+    ADD INDEX (dt),
+    ADD INDEX (dt_inferred),
     MODIFY COLUMN ID bigint(11) unsigned NOT NULL auto_increment
 """
 
@@ -91,19 +100,23 @@ class LogRecord(models.Model):
 
     @classmethod
     def add_times(klass, no_times, early=False):
+        # dt_inferred is set to True whenever the *date* portion is inferred.
         # January 1, 2002 is earlier than anything currently in the DB.
         if early:
             klass.objects.filter(Modified__isnull=True)\
-                         .update(Modified=datetime.date(2002, 1, 1))
+                         .update(Modified=datetime.date(2002, 1, 1),
+                                 dt_inferred=True)
         else:
             klass.objects.filter(Modified__isnull=True, is_add=True)\
-                         .update(Modified=datetime.date(2002, 1, 1))
+                         .update(Modified=datetime.date(2002, 1, 1),
+                                 dt_inferred=True)
             klass.objects.filter(Modified__isnull=True, is_add=False)\
-                         .update(Modified=datetime.date(2009, 11, 1))
+                         .update(Modified=datetime.date(2009, 11, 1),
+                                 dt_inferred=True)
         klass.add_special_times()
 
         # fill in all the null modifiedtimes, making sure that if there are
-        # multiple records for a publisher the time for the first is
+        # multiple records for an object the time for the first is
         # 00:00:01, the next is 00:00:02, etc. (additions are pre-set to 00:00:00).
         source_id = klass.source_id()
         no_times = no_times.order_by(source_id, 'ID')
@@ -125,14 +138,26 @@ class LogRecord(models.Model):
             change.save()
             seconds += 1
 
+        # ADDTIME won't work unless all dates and times are not NULL.
+        cursor = connection.cursor()
+        cursor.execute("""UPDATE %s SET dt=ADDTIME(modified_new, modtime_new);""" % 
+                       klass._meta.db_table)
+        cursor.close()
+
     @classmethod
     def get_related(klass):
         return None
 
     @classmethod
-    def migrate(klass):
+    def migrate(klass, anon):
+        table_name = klass._meta.db_table
+
+        # Migrate in order so that IMPs can be calculated- for any change,
+        # the previous change, if any, must be migrated in order for IMPs
+        # to be correct.
         counter = 1
-        log_history = klass.objects.all()
+        log_history = klass.objects.filter(is_duplicate=False)\
+                                   .order_by(klass.source_id(), 'dt')
         related = klass.get_related()
 
         if related is not None:
@@ -142,30 +167,31 @@ class LogRecord(models.Model):
             if counter % 1000 == 1:
                 logging.info("Converting %s row %d" % (table_name, counter))
             counter += 1
-            change.create_revision(anon)
-
-        # Commit the changes to the InnoDB tables for each object type.
-        transaction.commit_unless_managed()
+            changeset = change.create_changeset(anon)
+            change.create_revision(changeset, anon)
 
     def create_changeset(self, anon):
         # create changeset
         indexer_user=self.User.user
         ctype = self.ctype
-        if self.is_add:
-            ctype = self.ctype_add
+
+        # self.dt_inferred may be None so we can't just assign it as is.
+        date_inferred = False
+        if self.dt_inferred is True:
+            date_inferred = True
+
         changeset = Changeset(indexer=indexer_user, approver=anon.user,
                               state=states.APPROVED, change_type=ctype,
-                              migrated=True)
+                              migrated=True, date_inferred=date_inferred)
         changeset.save()
 
         # Circumvent automatic field behavior.
         # all dates and times guaranteed to be valid
         mc = MigratoryChangeset.objects.get(id=changeset.id)
-        mc.created = datetime.datetime.combine(self.Modified,
-                                               self.ModTime)
+        mc.created = self.dt
         mc.modified = mc.created
         mc.save()
-        changeset = Changeset.objects.get(id=mc.id)
+        changeset = Changeset.objects.get(id=changeset.id)
 
         comment_text = COMMENT_TEXT
         if self.is_add:

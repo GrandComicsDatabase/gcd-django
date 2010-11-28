@@ -343,7 +343,7 @@ def profile(request, user_id=None, edit=False):
     else:
         profile_user = get_object_or_404(User, id=user_id)
 
-    context = { 'profile_user': profile_user }
+    context = { 'profile_user': profile_user, 'settings': settings }
     if edit is True:
         if profile_user == request.user:
             form = ProfileForm(auto_id=True, initial={

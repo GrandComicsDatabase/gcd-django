@@ -91,8 +91,10 @@ UPDATE log_publisher p LEFT OUTER JOIN gcd_country c ON p.CountryID = c.id
     def add_special_times(klass):
         # update a few times manually where some publishers had a mix of records
         # with dates and times and some without.
+        klass.objects.filter(ID__in=(1865, 1877, 1359))\
+                     .update(ModTime=datetime.time(23, 0, 0))
         klass.objects.filter(
-          ID__in=(1865, 1870, 1872, 1875, 1876, 1877, 161, 1359, 1590, 1315))\
+          ID__in=(1870, 1872, 1875, 1876, 161, 1590, 1315))\
                      .update(ModTime=datetime.time(0, 0, 0))
         klass.objects.filter(ID__in=(1360, 1164))\
                      .update(ModTime=datetime.time(0, 0, 1))
@@ -114,7 +116,8 @@ UPDATE log_publisher p LEFT OUTER JOIN gcd_country c ON p.CountryID = c.id
                                      year_began=self.YearBegan,
                                      year_ended=self.YearEnded,
                                      notes=self.Notes,
-                                     url=self.Web)
+                                     url=self.Web,
+                                     date_inferred=changeset.date_inferred)
         revision.save()
         return revision
 

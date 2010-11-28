@@ -10,8 +10,8 @@ from apps.oi.models import *
 from apps.gcd.migration.history.publisher import MigratoryPublisherRevision, \
                                                  LogPublisher
 from apps.gcd.migration.history.series import MigratorySeriesRevision, LogSeries
-# from apps.gcd.migration.history.issue import MigratoryIssueRevision, LogIssue
-# from apps.gcd.migration.history.story import MigratoryStoryRevision, LogStory
+from apps.gcd.migration.history.issue import MigratoryIssueRevision, LogIssue
+from apps.gcd.migration.history.story import MigratoryStoryRevision, LogStory
 
 def main():
     logging.basicConfig(level=logging.NOTSET,
@@ -45,7 +45,7 @@ def main():
 
     for old_table, log_class in (('LogPublishers', LogPublisher),
                                  ('LogSeries', LogSeries),
-                                 # ('LogIssues', LogIssue),
+                                 ('LogIssues', LogIssue),
                                  # ('LogStories', LogStory),
                                 ):
         table_name = log_class._meta.db_table

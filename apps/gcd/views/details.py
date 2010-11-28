@@ -335,7 +335,7 @@ def change_history(request, model_name, id):
     filter_string = '%ss__%s' % (REVISION_CLASSES[model_name].__name__.lower(),
                                  model_name)
     kwargs = { str(filter_string): object, 'state': states.APPROVED }
-    changesets = Changeset.objects.filter(**kwargs).order_by('-modified')
+    changesets = Changeset.objects.filter(**kwargs).order_by('-modified', '-id')
 
     if model_name == 'issue':
         [prev_issue, next_issue] = object.get_prev_next_issue()
