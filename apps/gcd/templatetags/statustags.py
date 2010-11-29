@@ -3,7 +3,7 @@ from django import template
 from django.utils.html import conditional_escape as esc
 from django.utils.safestring import mark_safe
 
-from apps.oi.models import IssueRevision, states, CTYPES
+from apps.gcd.models import RecentIndexedIssue
 
 register = template.Library()
 
@@ -13,13 +13,10 @@ def last_updated_issues(parser, token):
     """
     Display the last updated indexes as a tag
     token is the content of the tag:
-    last_updated_issues <number> language=<language_code>
-    where both number and language are optional
+    last_updated_issues language=<language_code>
+    where both language is optional
+    The number of issues shown is configured in the settings as RECENTS_COUNT
     """
-    try:
-        number = int(token.split_contents()[1].split('=')[1])
-    except:
-        number = 5
 
     language_in_context = None
     language_code = None
@@ -32,17 +29,16 @@ def last_updated_issues(parser, token):
         else: # or the language_code via a template variable
             language_in_context = code
 
-    return LastUpdatedNode(number, language_code, language_in_context)
+    return LastUpdatedNode(language_code, language_in_context)
 
 
 class LastUpdatedNode(template.Node):
-    def __init__(self, number, language_code, language_in_context):
+    def __init__(self, language_code, language_in_context):
         if language_in_context:
             self.language_in_context = template.Variable(language_in_context)
         else:
             self.language_in_context = None
         self.language_code = language_code
-        self.number = number
 
     def render(self, context):
         if self.language_in_context:
@@ -51,17 +47,16 @@ class LastUpdatedNode(template.Node):
             except: # render in templates should fail silently
                 return u''
 
-        issues = IssueRevision.objects.filter(issue__is_indexed=True, 
-          changeset__change_type=CTYPES['issue'],
-          changeset__state=states.APPROVED).order_by('-changeset__modified')\
-            .select_related('issue', 'issue__series', 'issue__series__publisher')
+        recents = RecentIndexedIssue.objects.select_related(
+          'language', 'issue__series__publisher').order_by('-created')
         if self.language_code:
-            issues = issues.filter(issue__series__language__code=self.language_code)
+            recents = recents.filter(language__code=self.language_code)
+        else:
+            recents = recents.filter(language__isnull=True)
  
-        last_updated_issues = issues[:self.number]
         return_string = u'<ul>'
-        for issue_revision in last_updated_issues:
-            i = issue_revision.issue
+        for recent in recents:
+            i = recent.issue
             return_string += u'<li><a href="%s">%s #%s</a> (%s)</li>' % \
                              (i.get_absolute_url(), esc(i.series),
                               esc(i.number), esc(i.series.publisher.name))
@@ -70,3 +65,4 @@ class LastUpdatedNode(template.Node):
 
 
 register.tag('last_updated_issues', last_updated_issues)
+

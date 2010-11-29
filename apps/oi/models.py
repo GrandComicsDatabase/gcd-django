@@ -380,6 +380,9 @@ class Changeset(models.Model):
         self.indexer.indexer.add_imps(self.total_imps())
         self.approver.indexer.add_imps(IMP_APPROVER_VALUE)
 
+        for revision in self.revisions:
+            revision._post_commit_to_display()
+
     def disapprove(self, notes=''):
         """
         Send the change back to the indexer for more work.
@@ -744,6 +747,15 @@ class Revision(models.Model):
         necessary to create a new revision representing an added record.
         By default no additional processing is done, so subclasses are
         free to override this method without calling it on the parent class.
+        """
+        pass
+
+    def _post_commit_to_display(self):
+        """
+        Hook for individual revisions to perform additional processing
+        after it and all other revisions in the same changeset have been
+        committed to the display.  For instance, this allows an issue to
+        perform actions based on all attched stories having been committed.
         """
         pass
 
@@ -1864,6 +1876,11 @@ class IssueRevision(Revision):
         issue revision for adding a record before it can be saved.
         """
         self.series = series
+
+    def _post_commit_to_display(self):
+        if self.changeset.changeset_action() == ACTION_MODIFY and \
+           self.issue.is_indexed:
+            RecentIndexedIssue.objects.update_recents(self.issue)
 
     def _story_revisions(self):
         if self.source is None:

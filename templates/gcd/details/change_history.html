@@ -58,7 +58,6 @@
 <div class="details">
 <table class="listing">
   <tr>
-    <th> Changeset </th>
     <th> Date Approved </th>
     <th> Indexer </th>
     <th> Approver </th>
@@ -66,8 +65,7 @@
   </tr>
 {% for changeset in changesets %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td><a href="{% url compare id=changeset.id %}?collapse=1"> {{ changeset.id }} </a></td>
-    <td>{{ changeset.modified }}</td>
+    <td><a href="{% url compare id=changeset.id %}?collapse=1"> {{ changeset.modified }} </a></td>
     <td>{{ changeset.indexer.indexer|absolute_url }}</td>
     <td>{{ changeset.approver.indexer|absolute_url }}</td>
     <td>

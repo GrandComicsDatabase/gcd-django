@@ -12,3 +12,4 @@ from indexcredit import IndexCredit
 from reservation import Reservation
 from error import Error
 from countstats import CountStats
+from recent import RecentIndexedIssue

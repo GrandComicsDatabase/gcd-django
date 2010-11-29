@@ -119,7 +119,8 @@ class Issue(models.Model):
         if earlier_issues:
             prev_issue = earlier_issues[0]     
         
-        later_issues = self.series.active_issues().filter(sort_code__gt=self.sort_code)
+        later_issues = self.series.active_issues()\
+                           .filter(sort_code__gt=self.sort_code)
         later_issues = later_issues.order_by('sort_code')
         if later_issues:
             next_issue = later_issues[0]
@@ -146,7 +147,8 @@ class Issue(models.Model):
         self.save()
 
     def deletable(self):
-        return self.cover_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+        return self.cover_revisions.filter(changeset__state__in=states.ACTIVE)\
+                                   .count() == 0
 
     def can_upload_variants(self):
         if self.has_covers():
