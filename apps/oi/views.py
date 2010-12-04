@@ -85,7 +85,8 @@ def delete(request, id, model_name):
         return HttpResponseRedirect(urlresolvers.reverse('show_%s' % model_name,
                  kwargs={'%s_id' % model_name : id}))
 
-    if not request.POST.__contains__('comments') or request.POST['comments'].strip() == '':
+    if not request.POST.__contains__('comments') or \
+       request.POST['comments'].strip() == '':
         return render_to_response('gcd/details/deletion_comment.html',
         {
             'model_name' : model_name,
@@ -135,6 +136,9 @@ def reserve(request, id, model_name, delete=False):
             # deletable because of other actions in the interim (adding to an
             # issue for brand/ind_pub, modifying covers for issue, etc.)
             if not display_obj.deletable():
+                # Technically nothing to roll back, but keep this here in case
+                # someone adds more code later.
+                transaction.rollback()
                 _unreserve(display_obj)
                 return render_error(request,
                        'This object fails the requirements for deletion.')
@@ -142,33 +146,36 @@ def reserve(request, id, model_name, delete=False):
             changeset = _do_reserve(request.user, display_obj, model_name, True)
         else:
             changeset = _do_reserve(request.user, display_obj, model_name)
+
+        if changeset is None:
+            _unreserve(display_obj)
+            return render_error(request,
+              'You have reached your limit of open changes.  You must '
+              'submit or discard some changes from your edit queue before you '
+              'can edit any more.  If you are a new user this number is very low '
+              'but will be increased as your first changes are approved.')
+
+        if delete:
+            comments = request.POST['comments']
+            changeset.comments.create(commenter=request.user,
+                                      text=comments,
+                                      old_state=states.UNRESERVED,
+                                      new_state=changeset.state)
+
+            if model_name == 'cover':
+                return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
+                         kwargs={'issue_id' : display_obj.issue.id}))
+            return HttpResponseRedirect(urlresolvers.reverse(
+                     'show_%s' % model_name,
+                     kwargs={str('%s_id' % model_name): id}))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('edit',
+              kwargs={ 'id': changeset.id }))
+
     except:
+        transaction.rollback()
         _unreserve(display_obj)
         raise
-
-    if changeset is None:
-        _unreserve(display_obj)
-        return render_error(request,
-          'You have reached your limit of open changes.  You must '
-          'submit or discard some changes from your edit queue before you '
-          'can edit any more.  If you are a new user this number is very low '
-          'but will be increased as your first changes are approved.')
-
-    if delete:
-        comments = request.POST['comments']
-        changeset.comments.create(commenter=request.user,
-                                  text=comments,
-                                  old_state=states.UNRESERVED,
-                                  new_state=changeset.state)
-
-        if model_name == 'cover':
-            return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
-                     kwargs={'issue_id' : display_obj.issue.id}))
-        return HttpResponseRedirect(urlresolvers.reverse('show_%s' % model_name,
-                 kwargs={'%s_id' % model_name : id}))
-    else:
-        return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': changeset.id }))
 
 def _do_reserve(indexer, display_obj, model_name, delete=False):
     if model_name != 'cover' and indexer.indexer.can_reserve_another() is False:
@@ -196,12 +203,14 @@ def _do_reserve(indexer, display_obj, model_name, delete=False):
 
     if model_name == 'issue':
         for story in revision.issue.active_stories():
-            story_revision = StoryRevision.objects.clone_revision(story=story, changeset=changeset)
+            story_revision = StoryRevision.objects.clone_revision(
+              story=story, changeset=changeset)
             if delete:
                 story_revision.toggle_deleted()
         if delete:
             for cover in revision.issue.active_covers():
-                cover_revision = CoverRevision(changeset=changeset, issue=cover.issue,
+                cover_revision = CoverRevision(changeset=changeset,
+                                               issue=cover.issue,
                                                cover=cover, deleted=True)
                 cover_revision.save()
     elif model_name == 'publisher' and delete:
@@ -211,8 +220,9 @@ def _do_reserve(indexer, display_obj, model_name, delete=False):
             brand_revision.deleted = True
             brand_revision.save()
         for indicia_publisher in revision.publisher.active_indicia_publishers():
-            indicia_publisher_revision = IndiciaPublisherRevision.objects.clone_revision(
-              indicia_publisher=indicia_publisher, changeset=changeset)
+            indicia_publisher_revision = \
+              IndiciaPublisherRevision.objects.clone_revision(
+                indicia_publisher=indicia_publisher, changeset=changeset)
             indicia_publisher_revision.deleted = True
             indicia_publisher_revision.save()
         for imprint in revision.publisher.imprint_set.all():
