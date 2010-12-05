@@ -192,7 +192,7 @@ h1.search_id {
 
 /* Search or plain header bars that appear at the top of nearly every page. */
 
-.search_bar {
+.search_bar, #plain_bar {
     clear: both;
     background-color: #77E;
     color: black;
@@ -216,7 +216,7 @@ h1.search_id {
     font-size: 0.8em;
 }
 
-.search_bar img {
+.search_bar img, #plain_bar img { 
     display: inline;
     height: 2em;
     position: relative;
@@ -230,24 +230,6 @@ h1.search_id {
 
 .search_bar :visited {
     color: black;
-}
-
-#plain_bar {
-    clear: both;
-    background-color: #77E;
-    color: black;
-    margin-bottom: 1em;
-    padding: 0.6em;
-    vertical-align: middle;
-    border: solid 1px;
-    width: 100%;
-}
-
-#plain_bar img {
-    height: 2em;
-    position: relative;
-    top: 0.5em;
-    margin-top: -0.5em;
 }
 
 #plain_bar span {

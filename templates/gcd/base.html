@@ -24,7 +24,9 @@ For now, just a simple single block for all CSS, despite redundancy.
 {% endif %}
 {% block body %}{% endblock %}
 
-{% include "gcd/fine_print.html" %}
+{% block fine_print %}
+  {% include "gcd/fine_print.html" %}
+{% endblock %}
 </div>
 </body>
 </html>

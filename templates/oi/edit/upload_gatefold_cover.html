@@ -1,17 +1,22 @@
-{% load compress %}
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/DTD/strict.dtd"> 
-<html>
-<head>
-  <title>Select front cover for {{ issue }}</title>
-  {% compress css %}
+{% extends "gcd/base.html" %}
+
+{% block title %}
+Select front cover for {{ issue }}
+{% endblock %}
+
+{% block css %}
   <link rel='stylesheet' href='{{ MEDIA_URL }}css/gcd/default.css' type='text/css'>
   <link rel='stylesheet' href='{{ MEDIA_URL }}css/oi/default/cover.css' type='text/css'>
   <link rel='stylesheet' href='{{ MEDIA_URL }}jquery/css/jquery.Jcrop.css' type='text/css'>
-  {% endcompress %}
-</head>
-<body>
+{% endblock %}
+
+{% block body %}
+  {% with "Upload Gatefold Cover" as bar_heading %}
+    {% include "gcd/bits/no_links_bar.html" %}
+  {% endwith %}
   {% include 'oi/bits/select_cover_section.html' %}
-  <p>Please select the front part of the cover for {{ issue }}. </p>
+  <p>Please select the front part of the cover for {{ issue }}. Note that if you leave this page without
+     clicking "Submit", your upload will be lost.</p>
   <img src='{{ MEDIA_URL }}img/gcd/new_covers/tmp/{{ scan_name }}' id='cropbox' width='{{ width }}'>
   <div id='preview_box'>
   </div>
@@ -22,5 +27,6 @@
     <li><input type='submit' name='discard' value='Discard'></li>
   </ul>
   </form>
-</body>
-</html>
+{% endblock %}
+
+{% block fine_print %}{% endblock %}
