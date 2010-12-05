@@ -1938,7 +1938,6 @@ class IssueRevision(Revision):
                 self.series.imprint.issue_count += 1
                 self.series.imprint.save()
             update_count('issues', 1, language=self.series.language)
-            self._check_first_last()
 
         elif self.deleted:
             self.series.issue_count -= 1
@@ -2006,6 +2005,7 @@ class IssueRevision(Revision):
         if self.issue is None:
             self.issue = issue
             self.save()
+            self._check_first_last()
 
     def _check_first_last(self):
         set_series_first_last(self.series)
