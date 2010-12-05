@@ -1,0 +1,23 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" zoomAndPan="magnify"
+   id="Union_Jack"
+   viewBox="-15 -7.5 30 15"
+   width="1200" height="600">
+
+  <defs>
+    <clipPath id="border">
+      <rect x="-15" y="-7.5" width="30" height="15"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#border)">
+    <circle r="20" fill="#00247D"/>
+    <path d="M -20,-10 L 20,10 M -20,10 L 20,-10" stroke-width="3" stroke="white" id="diags_white"/>
+    <path d="M -20,-10 L 20,10 M -20,10 L 20,-10" stroke-width="2" stroke="#CF142B" id="diags_red"/>
+    <path stroke="none" fill="white" d="M 0,0 l 20,10 h -3 l -20,-10 M 0,0 l 20,-10 h 3 l -20,10 M 0,0 l -20,10 h -3 l 20,-10 M 0,0 l -20,-10 h 3 l 20,10" id="eraser_white"/>
+<!--I think the above two lines give the simplest way to make the diagonals-->
+    <path d="M -20,0 H 20 M 0,-10 V 10" stroke-width="5" stroke="white" id="cross_white"/>
+    <path d="M -20,0 H 20 M 0,-10 V 10" stroke-width="3" stroke="#CF142B" id="cross_red"/>
+  </g>
+</svg>

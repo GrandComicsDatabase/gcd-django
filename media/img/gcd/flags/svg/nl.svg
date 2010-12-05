@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+	"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 9 6" version="1.1">
+	<desc>Flag of the Netherlands</desc>
+   <rect id="red_stripe"	fill="#AE1C28"	width="9" height="6"/>
+   <rect id="white_stripe"	fill="#FFF"	width="9" height="4" y="2"/>
+   <rect id="blue_stripe"	fill="#21468B"	width="9" height="2" y="4"/>
+</svg>

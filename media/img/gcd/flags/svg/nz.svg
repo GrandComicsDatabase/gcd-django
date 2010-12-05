@@ -1,0 +1,61 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg>
+<svg version="1.1" baseProfile="full" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" zoomAndPan="magnify"
+   id="Flag_of_New_Zealand"
+   viewBox="-15 -7.5 30 15"
+   width="1200" height="600">
+
+  <defs>
+    <clipPath id="border">
+      <rect x="-15" y="-7.5" width="30" height="15"/>
+    </clipPath>
+  </defs>
+<rect fill="#00247D" x="-15" y="-7.5" width="30" height="15"/>
+<comment>The above line is the ensign field color: #CF142B red and #00247D blue</comment>
+<g id="canton" transform="matrix(0.5,0,0,0.5,-7.5,-3.75)">
+  <g clip-path="url(#border)">
+    <circle r="20" fill="#00247D"/>
+    <path d="M -20,-10 L 20,10 M -20,10 L 20,-10" stroke-width="3" stroke="white" id="diags_white"/>
+    <path d="M -20,-10 L 20,10 M -20,10 L 20,-10" stroke-width="2" stroke="#CF142B" id="diags_red"/>
+    <path stroke="none" fill="white" d="M 0,0 l 20,10 h -3 l -20,-10 M 0,0 l 20,-10 h 3 l -20,10 M 0,0 l -20,10 h -3 l 20,-10 M 0,0 l -20,-10 h 3 l 20,10" id="eraser_white"/>
+<comment>I think the above two lines give the simplest way to make the diagonals</comment>
+    <path d="M -20,0 H 20 M 0,-10 V 10" stroke-width="5" stroke="white" id="cross_white"/>
+    <path d="M -20,0 H 20 M 0,-10 V 10" stroke-width="3" stroke="#CF142B" id="cross_red"/>
+  </g>
+</g>
+
+  <g
+     transform="matrix(8e-2,0,0,8e-2,-25,-46.68898)"
+     id="Gamma_Crucis">
+    <path
+       d="M 360.95054,410.69106 L 371.78501,410.69106 L 375.13179,400.38718 L 378.47856,410.69106 L 389.31304,410.69106 L 380.54903,417.0583 L 383.8958,427.36218 L 375.13179,420.99493 L 366.36778,427.36218 L 369.71455,417.0583 L 360.95054,410.69106 z "
+       transform="translate(31.11821,112.0625)" fill="white" id="path11001" />
+    <path
+       d="M 365.75679,412.26323 L 372.91929,412.26323 L 375.13179,405.44968 L 377.34429,412.26323 L 384.50679,412.26323 L 378.71304,416.47363 L 380.92554,423.28718 L 375.13179,419.07677 L 369.33804,423.28718 L 371.55054,416.47363 L 365.75679,412.26323 z "
+       transform="translate(31.11821,112.0625)" fill="#CF142B" id="path11000" />
+  </g>
+  <use
+     transform="translate(-3.466,3.487001)"
+     id="Beta_Crucis"
+     x="0"
+     y="0"
+     width="1200"
+     height="600"
+     xlink:href="#Gamma_Crucis" />
+  <use
+     transform="matrix(0.889819,0,0,0.889713,3.797855,2.085136)"
+     id="Delta_Crucis"
+     x="0"
+     y="0"
+     width="1200"
+     height="600"
+     xlink:href="#Gamma_Crucis" />
+  <use
+     transform="matrix(1.110181,0,0,1.112141,-0.825857,9.506418)"
+     id="Alpha_Crucis"
+     x="0"
+     y="0"
+     width="1200"
+     height="600"
+     xlink:href="#Gamma_Crucis" />
+</svg>

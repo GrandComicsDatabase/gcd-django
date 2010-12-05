@@ -1,0 +1,9 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg height="300" width="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+	<title>Flag of Switzerland</title>
+      <!-- From http://commons.wikimedia.org/wiki/Image:Flag_of_Switzerland.svg .  This file is in the public domain. -->
+	<rect fill="#d81e05" height="300" width="300"/>
+	<rect fill="#ffffff" height="60" width="200" x="50" y="120"/>
+	<rect fill="#ffffff" height="200" width="60" x="120" y="50"/>
+</svg>
