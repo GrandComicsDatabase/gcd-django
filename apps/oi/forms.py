@@ -956,11 +956,11 @@ def get_story_revision_form(revision=None):
         # initial value.  So only set None if there is an existing story revision.
         extra['empty_label'] = None
 
-    backcovers = '(backcovers) *do not use* / *please fix*'
+    special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)')
     queryset = StoryType.objects.all()
     if revision is None or (revision is not None and
-                            revision.type.name != backcovers):
-        queryset = queryset.exclude(name=backcovers)
+                            revision.type.name not in special_types):
+        queryset = queryset.exclude(name__in=special_types)
 
     class RuntimeStoryRevisionForm(StoryRevisionForm):
         type = forms.ModelChoiceField(queryset=queryset,
