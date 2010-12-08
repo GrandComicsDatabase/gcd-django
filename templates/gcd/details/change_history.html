@@ -56,6 +56,12 @@
 {% endifequal %}
 
 <div class="details">
+{% if object.deleted %}
+<div>
+This {{ description }} has been deleted.  The most recent change in its history
+should include a comment explaining the deletion.
+</div>
+{% endif %}
 <table class="listing">
   <tr>
     <th> Date Approved </th>
