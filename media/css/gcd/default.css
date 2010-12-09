@@ -84,17 +84,14 @@ img .cover_img {
     background-color: black;
 }
 
-div.stats_left {
+div.stats_left,
+div.stats_right {
     width: 49%;
     float: left;
     margin-bottom: 1em;
+    margin-right: 1%;
 }
 
-div.stats_right {
-    width: 49%;
-    float: right;
-    margin-bottom: 1em;
-}
 div.stats_content {
     padding-left: 8px;
 }

@@ -667,14 +667,11 @@ def int_stats(request):
     """
     Display the international stats by language
     """
-    languages=CountStats.objects.filter(name='issue indexes',
-                                        language__isnull=False) \
-                                .order_by('-count') \
-                                .values_list('language__code', flat=True)
+    languages = Language.objects.filter(countstats__name='issue indexes') \
+                                .order_by('-countstats__count', 'name')
     stats=[]
     for lang in languages:
-        stats.append((Language.objects.get(code=lang),
-                      CountStats.objects.filter(language__code=lang)))
+        stats.append((lang, CountStats.objects.filter(language=lang)))
     return render_to_response(
       'gcd/status/international_stats.html',
       {

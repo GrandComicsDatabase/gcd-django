@@ -14,7 +14,7 @@ Confirm deletion of {{ object }}
 
 <form id="comments" action="{% url delete_revision model_name=model_name,id=id %}" method="POST">
   <div {% if no_comment %}class="error_message_text"{% endif %}>
-    <label for="comments">A comment is required:</label>
+    <label for="comments">Please explain the reason for deletion (required):</label>
     <br>
     <textarea name="comments"></textarea>
   </div>

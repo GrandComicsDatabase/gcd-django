@@ -11,6 +11,9 @@
 {% endblock %}
 
 {% block view_body %}
+<p>
+Statistics by language, ordered by number of issues indexed:
+</p>
 {% for language, stats_for_language in stats %}
 <div class="{% cycle 'stats_left' 'stats_right'%}">
         <h3 class="item_id">

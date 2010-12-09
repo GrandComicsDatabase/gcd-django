@@ -69,7 +69,17 @@ def _cant_get(request):
 def delete(request, id, model_name):
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
     if request.method == 'GET':
-        return render_to_response('gcd/details/deletion_comment.html',
+
+        # These can only be reached if people try to paste in URLs directly,
+        # but as we know, some people do that sort of thing.
+        if display_obj.reserved:
+            return render_error(request,
+              u'Cannot delete "%s" as it is curently reserved.' % display_obj)
+        if display_obj.deleted:
+            return render_error(request,
+              u'Cannot delete "%s" as it is already deleted.' % display_obj)
+
+        return render_to_response('oi/edit/deletion_comment.html',
         {
             'model_name' : model_name,
             'id' : id,
@@ -144,6 +154,7 @@ def reserve(request, id, model_name, delete=False):
                        'This object fails the requirements for deletion.')
 
             changeset = _do_reserve(request.user, display_obj, model_name, True)
+            changeset.submit(notes=request.POST['comments'], delete=True)
         else:
             changeset = _do_reserve(request.user, display_obj, model_name)
 
@@ -156,12 +167,6 @@ def reserve(request, id, model_name, delete=False):
               'but will be increased as your first changes are approved.')
 
         if delete:
-            comments = request.POST['comments']
-            changeset.comments.create(commenter=request.user,
-                                      text=comments,
-                                      old_state=states.UNRESERVED,
-                                      new_state=changeset.state)
-
             if model_name == 'cover':
                 return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                          kwargs={'issue_id' : display_obj.issue.id}))
@@ -182,18 +187,23 @@ def _do_reserve(indexer, display_obj, model_name, delete=False):
         return None
 
     if delete:
-        comment = 'Deleting'
-        new_state = states.PENDING
+        # Deletions are submitted immediately which will set the correct state.
+        new_state = states.UNRESERVED
     else:
         comment = 'Editing'
         new_state = states.OPEN
     changeset = Changeset(indexer=indexer, state=new_state,
                           change_type=CTYPES[model_name])
     changeset.save()
-    changeset.comments.create(commenter=indexer,
-                              text=comment,
-                              old_state=states.UNRESERVED,
-                              new_state=changeset.state)
+
+    if not delete:
+        # Deletions are immediately submitted, which will add the appropriate
+        # initial comment- no need to add two.
+        changeset.comments.create(commenter=indexer,
+                                  text=comment,
+                                  old_state=states.UNRESERVED,
+                                  new_state=changeset.state)
+
     revision = REVISION_CLASSES[model_name].objects.clone_revision(
       display_obj, changeset=changeset)
 

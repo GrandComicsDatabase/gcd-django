@@ -37,8 +37,10 @@
   <input type="submit" name="disapprove" value="Send Back to Indexer">
     {% endif %}
   <input type="submit" name="cancel" value="Reject Permanently">
-  <input type="submit" name="release" value="Release to general queue">
   {% endif %}
+{% endif %}
+{% if changeset.approver and user == changeset.approver %}
+  <input type="submit" name="release" value="Unassign">
 {% endif %}
 
   <input type="submit" name="add_comment" value="Add Comment">

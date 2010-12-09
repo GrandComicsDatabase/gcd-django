@@ -44,6 +44,7 @@ ACTION_MODIFY = 'modify'
 IMP_BONUS_ADD = 10
 IMP_COVER_VALUE = 5
 IMP_APPROVER_VALUE = 3
+IMP_DELETE = 1
 
 def update_count(field, delta, language=None):
     '''
@@ -54,12 +55,14 @@ def update_count(field, delta, language=None):
     stat.count = F('count') + delta
     stat.save()
 
-    if language and language.code in LANGUAGE_STATS:
+    if language:
         stat = CountStats.objects.filter(name=field, language=language)
         if stat.count():
             stat = stat[0]
             stat.count = F('count') + delta
             stat.save()
+        else:
+            CountStats.objects.init_stats(language)
 
 def set_series_first_last(series):
     '''
@@ -150,8 +153,10 @@ class Changeset(models.Model):
         if self.inline():
             if self._inline_revision is None:
                 if self.change_type == CTYPES['publisher']:
-                    # to filter out all the imprints in a publisher deletion changeset
-                    self._inline_revision = self.publisherrevisions.filter(is_master=True)[0]
+                    # to filter out all the imprints in a publisher deletion
+                    # changeset
+                    self._inline_revision = \
+                      self.publisherrevisions.filter(is_master=True)[0]
                 else:
                     self._inline_revision = self.revisions.next()
         return self._inline_revision
@@ -236,7 +241,7 @@ class Changeset(models.Model):
             new_state = states.REVIEWING
         return new_state
 
-    def submit(self, notes=''):
+    def submit(self, notes='', delete=False):
         """
         Submit changes for approval.
         If this is the first such submission or if the prior approver released
@@ -245,7 +250,8 @@ class Changeset(models.Model):
         then the changes go directly back into the approver's queue.
         """
 
-        if self.state != states.OPEN:
+        if (self.state != states.OPEN) and \
+           not (delete and self.state == states.UNRESERVED):
             raise ValueError, "Only OPEN changes can be submitted for approval."
 
         new_state = self._check_approver()
@@ -329,15 +335,21 @@ class Changeset(models.Model):
         self.save()
 
     def release(self, notes=''):
-        if self.state != states.REVIEWING:
-            raise ValueError, "Only REVIEWING changes my change approver."
+        if self.state not in states.ACTIVE or \
+           self.approver is None:
+            raise ValueError, "Only changes with an approver may be unassigned."
+
+        if self.state == states.REVIEWING:
+            new_state = states.PENDING
+        else:
+            new_state = self.state
 
         self.comments.create(commenter=self.approver,
                              text=notes,
                              old_state=self.state,
-                             new_state=states.PENDING)
+                             new_state=new_state)
         self.approver = None
-        self.state = states.PENDING
+        self.state = new_state
         self.save()
 
     def approve(self, notes=''):
@@ -415,7 +427,24 @@ class Changeset(models.Model):
             self.imps += self.revisions.next().calculate_imps()
         else:
             for revision in self.revisions:
-                self.imps += revision.calculate_imps()
+                # Deletions are a bit strange.  Essentially, you get one
+                # point per button you press, however many objects that
+                # button deletes.  Similar to bulk adds counting the same
+                # as a single add.  Story objects are deleted one at a time,
+                # and multiple of them can be deleted in a single changeset
+                # without deleting the entire issue.  Issue and other objects,
+                # however, are only deleted when the entire action of the
+                # changeset is a deletion.  So they get one IMP_DELETE no
+                # matter what else was in the changeset.
+
+                if revision.deleted:
+                    if isinstance(revision, StoryRevision):
+                        self.imps += IMP_DELETE
+                    else:
+                        self.imps = IMP_DELETE
+                        return
+                else:
+                    self.imps += revision.calculate_imps()
 
     def magnitude(self):
         """
@@ -1592,7 +1621,7 @@ class SeriesRevision(Revision):
         series.year_began = self.year_began
         series.year_ended = self.year_ended
         series.is_current = self.is_current
-        reservation = self.source.get_ongoing_reservation()
+        reservation = series.get_ongoing_reservation()
         if not self.is_current and reservation and self.previous() and \
           self.previous().is_current:
             reservation.delete()

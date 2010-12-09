@@ -5,6 +5,9 @@ import shlex
 import os.path
 
 from django.conf import settings
+from django.db.models import Count
+
+from apps.gcd.models import Language, CountStats
 
 def main():
     if settings.DEBUG:
@@ -61,6 +64,12 @@ def main():
             logging.info("Running '%s'..." % script)
             subprocess.check_call(mysql, stdin=open_script)
             open_script.close()
+
+    languages = Language.objects.annotate(count_series=Count('series')) \
+                                .exclude(count_series=0)
+    for lang in languages:
+        CountStats.objects.init_stats(lang)
+    CountStats.objects.init(None)
         
     logging.info("Saving a post-schema, pre-changes migration dump...")
     pre_changeset = open(os.path.join(sdir, 'pre-changesets-backup.sql'), 'w')
