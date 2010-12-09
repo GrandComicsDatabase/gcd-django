@@ -90,6 +90,10 @@ td .errorlist {
     padding-left: 1em;
 }
 
+.emphasis {
+    font-weight: bolder;
+}
+
 .data_value {
     font-weight: bold;
 }

@@ -18,9 +18,13 @@ class LongUsernameAuthenticationForm(AuthenticationForm):
       widget=forms.TextInput(attrs={'class': 'medium'}))
 
 class AccountForm(forms.Form):
+    # For some reason, importing urlresolvers in this module causes an error
+    # where django thinks our urls conf is empty.  TODO: Figure that out.
     email = forms.EmailField(max_length=75, help_text=(
       u'Your email address is your login name.  It will not be '
-      u'publicly displayed on the site.'))
+      u'publicly displayed on the site.  Please see our '
+      u'<a target="_blank" href="%s">Privacy Policy</a> '
+      u'for more information.' % '/privacy/'))
     
     _name_help =(u'You must provide at least one name (first, last or both). ' 
                  u'You do not have to give your real name, but please do '
@@ -50,6 +54,7 @@ class AccountForm(forms.Form):
                  u'your area to help you learn our indexing system.'))
 
     notify_on_approve = forms.BooleanField(label="Approval emails",
+                                           initial=True,
                                            required=False,
       help_text=(u'If checked, the system will also email you when a change that '
                  u'you submitted is approved without a comment.  You will '

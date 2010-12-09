@@ -1,6 +1,5 @@
 {% extends "gcd/base_view.html" %}
 
-{# show_form is in "credits", which should be fixed at some point. #}
 {% load forms %}
 
 {% block css %}
@@ -8,6 +7,10 @@
         href="{{ MEDIA_URL }}css/gcd/default.css"/>
   <link rel="stylesheet" type="text/css"
         href="{{ MEDIA_URL }}css/gcd/default/accounts.css"/>
+{% endblock %}
+
+{% block title %}
+  GCD :: Registration
 {% endblock %}
 
 {% block view_body %}
@@ -57,6 +60,8 @@ within a few hours (often only a few minutes) of submitting this form.
   {{ form.country|show_form_as_row }}
   {{ form.languages|show_form_as_row }}
   {{ form.interests|show_form_as_row }}
+  {{ form.notify_on_approve|show_form_as_row }}
+  {{ form.collapse_compare_view|show_form_as_row }}
   <tr><td>&nbsp;</td><td><input type="submit" value="Register"></td></tr>
 </table>
 </form>
