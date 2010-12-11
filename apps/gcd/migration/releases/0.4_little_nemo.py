@@ -69,8 +69,8 @@ def main():
                                 .exclude(count_series=0)
     for lang in languages:
         CountStats.objects.init_stats(lang)
-    CountStats.objects.init(None)
-        
+    CountStats.objects.init_stats(None)
+
     logging.info("Saving a post-schema, pre-changes migration dump...")
     pre_changeset = open(os.path.join(sdir, 'pre-changesets-backup.sql'), 'w')
     subprocess.check_call(mysqldump, stdout=pre_changeset)
