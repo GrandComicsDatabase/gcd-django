@@ -97,7 +97,7 @@ def delete(request, id, model_name):
 
     if not request.POST.__contains__('comments') or \
        request.POST['comments'].strip() == '':
-        return render_to_response('gcd/details/deletion_comment.html',
+        return render_to_response('oi/edit/deletion_comment.html',
         {
             'model_name' : model_name,
             'id' : id,
