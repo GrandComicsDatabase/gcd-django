@@ -39,7 +39,7 @@
   <input type="submit" name="cancel" value="Reject Permanently">
   {% endif %}
 {% endif %}
-{% if changeset.approver and user == changeset.approver %}
+{% if changeset.approver and user == changeset.approver and changeset.state not in states.CLOSED  %}
   <input type="submit" name="release" value="Unassign">
 {% endif %}
 
