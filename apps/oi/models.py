@@ -932,6 +932,9 @@ class PublisherRevision(PublisherRevisionBase):
         return self.publisher.imprint_set
     imprint_set = property(_imprint_set)
 
+    def active_series(self):
+        return self.series_set.exclude(deleted=True)
+
     def _series_set(self):
         if self.publisher is None:
             return Series.objects.filter(pk__isnull=True)
@@ -1137,10 +1140,14 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
                                      self.year_began,
                                      self.country.code.upper())
 
+    def active_issues(self):
+        return self.issue_set.exclude(deleted=True)
+
+    # Fake the issue sets for the preview page.
     def _issue_set(self):
-        # Currently unused (and shouldn't be used unless deleted items are
-        # correctly filtered out)
-        raise NotImplementedError
+        if self.indicia_publisher is None:
+            return Issue.objects.filter(pk__isnull=True)
+        return self.indicia_publisher.issue_set
     issue_set = property(_issue_set)
 
     def _issue_count(self):
@@ -1263,10 +1270,14 @@ class BrandRevision(PublisherRevisionBase):
     def _queue_name(self):
         return u'%s: %s (%s)' % (self.parent.name, self.name, self.year_began)
 
+    def active_issues(self):
+        return self.issue_set.exclude(deleted=True)
+
+    # Fake the issue sets for the preview page.
     def _issue_set(self):
-        # Currently unused (and shouldn't be used unless deleted items are
-        # correctly filtered out)
-        raise NotImplementedError
+        if self.brand is None:
+            return Issue.objects.filter(pk__isnull=True)
+        return self.brand.issue_set
     issue_set = property(_issue_set)
 
     def _issue_count(self):
