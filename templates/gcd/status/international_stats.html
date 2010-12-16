@@ -18,7 +18,7 @@ Statistics by language, ordered by number of issues indexed:
 <div class="{% cycle 'stats_left' 'stats_right'%}">
         <h3 class="item_id">
         <div class='stats_content'>
-            Statistics for Comics in {{ language }}
+            Statistics for Comics in <a href="{% url process_advanced_search %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&language={{ language.code }}">{{ language }}</a>
         </div>
         </h3>
         <div class='stats_content'>
