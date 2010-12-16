@@ -681,6 +681,9 @@ thanks,
         if new_change is None:
             _send_declined_reservation_email(changeset.indexer,
                                              issue_revision.issue)
+        else:
+            issue_revision.issue.reserved = True
+            issue_revision.issue.save()
 
     for issue_revision in \
         changeset.issuerevisions.filter(deleted=False,
@@ -692,6 +695,9 @@ thanks,
             _send_declined_reservation_email(issue_revision.series.\
                                              ongoing_reservation.indexer,
                                              issue_revision.issue)
+        else:
+            issue_revision.issue.reserved = True
+            issue_revision.issue.save()
 
     for cover_revision in changeset.coverrevisions.filter(deleted=False):
         copy_approved_cover(cover_revision)
@@ -1079,14 +1085,16 @@ def edit_issues_in_bulk(request):
 
     cd = form.cleaned_data
     for issue in items:
-        revision = IssueRevision.objects.clone_revision(issue,
-                                                        changeset=changeset)
-        for field in initial:
-            if field in ['brand', 'indicia_publisher'] and cd[field] is not None:
-                setattr(revision, field + '_id', cd[field].id)
-            else:
-                setattr(revision, field, cd[field])
-        revision.save()
+        is_reservable = _is_reservable('issue', issue.id)
+        if is_reservable:
+            revision = IssueRevision.objects.clone_revision(issue,
+                                                            changeset=changeset)
+            for field in initial:
+                if field in ['brand', 'indicia_publisher'] and cd[field] is not None:
+                    setattr(revision, field + '_id', cd[field].id)
+                else:
+                    setattr(revision, field, cd[field])
+            revision.save()
 
     return submit(request, changeset.id)
 
