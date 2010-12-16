@@ -14,7 +14,7 @@
 {% for comment in comments.all %}
 <tr>
   <td> {{ comment.commenter.indexer }} </td>
-  <td class="comment_text"> {{ comment.text|linebreaksbr }} </td>
+  <td class="comment_text"> {{ comment.text|urlize|linebreaksbr }} </td>
   {% if not no_links %}
   <td class="comment_revision"> 
     {% if comment.revision %} 
