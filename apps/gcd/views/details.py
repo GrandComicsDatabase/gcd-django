@@ -806,7 +806,8 @@ def show_issue(request, issue, preview=False):
     # stories.  But we should measure this.  Note that we definitely want
     # to send the cover and interior stories to the UI separately, as the
     # UI should not be concerned with the designation of story 0 as the cover.
-    stories = list(issue.active_stories().order_by('sequence_number'))
+    stories = list(issue.active_stories().order_by('sequence_number')\
+                                        .select_related('type'))
 
     cover_story = None
     if (len(stories) > 0):
@@ -822,7 +823,8 @@ def show_issue(request, issue, preview=False):
         res = IssueRevision.objects.filter(issue=issue.issue)
     else:
         res = IssueRevision.objects.filter(issue=issue)
-    res = res.filter(changeset__state=states.APPROVED)
+    res = res.filter(changeset__state=states.APPROVED)\
+             .exclude(changeset__indexer__username=settings.ANON_USER_NAME)
     for i in res:
         oi_indexers.append(i.changeset.indexer.indexer)
     oi_indexers = list(set(oi_indexers))

@@ -152,6 +152,8 @@ SITE_BACK_UP_AT = ''
 READ_ONLY = False
 NO_OI = False
 
+ANON_USER_NAME = 'anon'
+
 # Date taken from Ray's press release.
 OLD_SITE_CREATION_DATE = datetime.date(2002, 11, 13)
 NEW_SITE_CREATION_DATE = datetime.date(2009, 12, 1)
