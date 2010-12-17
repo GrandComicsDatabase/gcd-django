@@ -2109,14 +2109,14 @@ def show_queue(request, queue_name, state):
             'changesets': issue_adds.order_by('modified', 'id'),
           },
           {
-            'object_name': 'Issues',
-            'object_type': 'issue',
-            'changesets': issues.order_by('state', 'modified', 'id'),
-          },
-          {
             'object_name': 'Issue Bulk Changes',
             'object_type': 'issue',
             'changesets': issue_bulks.order_by('state', 'modified', 'id'),
+          },
+          {
+            'object_name': 'Issues',
+            'object_type': 'issue',
+            'changesets': issues.order_by('state', 'modified', 'id'),
           },
           {
             'object_name': 'Covers',
