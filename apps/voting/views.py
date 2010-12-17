@@ -244,7 +244,8 @@ def vote(request):
                   'You must supply an authorization token in order '
                   'to vote on this topic.')
 
-            if len(option_params) > topic.vote_type.max_votes:
+            if topic.vote_type.max_votes is not None and \
+               len(option_params) > topic.vote_type.max_votes:
                 plural = 's' if len(option_params) > 1 else ''
                 return render_error(request,
                   'You may not vote for more than %d option%s' %
