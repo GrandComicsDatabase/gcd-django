@@ -103,7 +103,7 @@ def imprint(request, imprint_id):
     """
     Display the details page for an Imprint.
     """
-    imprint = get_object_or_404(Publisher, id = imprint_id)
+    imprint = get_object_or_404(Publisher, id = imprint_id, parent__isnull=False)
     if imprint.parent.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'publisher', 'id': imprint.parent_id}))
