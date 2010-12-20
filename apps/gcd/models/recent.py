@@ -10,13 +10,19 @@ class RecentIndexedIssueManager(models.Manager):
     def update_recents(self, issue):
         self.create(issue=issue, language=None)
         international = self.filter(language__isnull=True)
-        if international.count() >= settings.RECENTS_COUNT:
-            international.order_by('created')[0].delete()
+        count = international.count()
+        if count > settings.RECENTS_COUNT:
+            for recent in international.order_by('created')\
+                            [:count - settings.RECENTS_COUNT]:
+                recent.delete()
 
         self.create(issue=issue, language=issue.series.language)
         local = self.filter(language=issue.series.language)
-        if local.count() >= settings.RECENTS_COUNT:
-            local.order_by('created')[0].delete()
+        count = local.count()
+        if count > settings.RECENTS_COUNT:
+            for recent in local.order_by('created')\
+                            [:count - settings.RECENTS_COUNT]:
+                recent.delete()         
 
 class RecentIndexedIssue(models.Model):
     """
