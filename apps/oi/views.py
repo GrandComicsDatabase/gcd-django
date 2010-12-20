@@ -154,7 +154,6 @@ def reserve(request, id, model_name, delete=False):
                        'This object fails the requirements for deletion.')
 
             changeset = _do_reserve(request.user, display_obj, model_name, True)
-            changeset.submit(notes=request.POST['comments'], delete=True)
         else:
             changeset = _do_reserve(request.user, display_obj, model_name)
 
@@ -167,6 +166,7 @@ def reserve(request, id, model_name, delete=False):
               'but will be increased as your first changes are approved.')
 
         if delete:
+            changeset.submit(notes=request.POST['comments'], delete=True)
             if model_name == 'cover':
                 return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                          kwargs={'issue_id' : display_obj.issue.id}))
