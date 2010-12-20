@@ -1074,9 +1074,20 @@ def edit_issues_in_bulk(request):
     changeset.save()
     comment = 'Used search terms:\n'
     for search in used_search_terms:
-        comment += "%s : %s\n" % (search[0], search[1])
-    comment += "method : %s\n" % method
-    comment += "behavior : %s\n" % logic
+        comment += u'%s : %s\n' % (search[0], search[1])
+    comment += u'method : %s\n' % method
+    comment += u'behavior : %s\n' % logic
+    # cannot use urlencode since urlize needs plain text
+    # and urlencode would encode non-ASCII characters
+    query_string = ''
+    for entry in request.GET.iteritems():
+        if query_string == '':
+            query_string += u'?%s=%s' % entry
+        else:
+            query_string += u'&%s=%s' % entry
+    comment += u'Search results: %s%s%s' % (settings.SITE_URL.rstrip('/'),
+                 urlresolvers.reverse('process_advanced_search'),
+                 query_string)
 
     changeset.comments.create(commenter=request.user,
                               text=comment,
