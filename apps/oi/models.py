@@ -479,7 +479,7 @@ class Changeset(models.Model):
             return u'%s #%s - %s' % (first.series, first.display_number,
                                                   last.display_number)
         if self.change_type == CTYPES['issue_bulk']:
-            return unicode("%s and %d other issues" %
+            return unicode(u'%s and %d other issues' %
                            (self.issuerevisions.all()[0], ir_count - 1))
         return 'Changeset: %d' % self.id
 
@@ -1536,6 +1536,30 @@ class SeriesRevision(Revision):
                                 related_name='imprint_series_revisions')
     date_inferred = models.BooleanField(default=False, blank=True)
 
+    def _first_issue(self):
+        if self.series is None:
+            return None
+        return self.series.first_issue
+    first_issue = property(_first_issue)
+
+    def _last_issue(self):
+        if self.series is None:
+            return None
+        return self.series.last_issue
+    last_issue = property(_last_issue)
+
+    def _issue_count(self):
+        if self.series is None:
+            return 0
+        return self.series.issue_count
+    issue_count = property(_issue_count)
+
+    def display_publication_dates(self):
+        if self.series is None:
+            return unicode(self.year_began)
+        else:
+            return self.series.display_publication_dates()
+
     def _source(self):
         return self.series
 
@@ -1603,20 +1627,17 @@ class SeriesRevision(Revision):
         series = self.series
         if series is None:
             series = Series(issue_count=0)
-            self.publisher.series_count += 1
+            self.publisher.series_count = F('series_count') + 1
             self.publisher.save()
-            if self.imprint:
-                self.imprint.series_count += 1
-                self.imprint.save()
             update_count('series', 1, language=self.language)
         elif self.deleted:
-            self.publisher.series_count -= 1
+            self.publisher.series_count = F('series_count') - 1
             # TODO: implement when/if we allow series deletions along
             # with all their issues
             #self.publisher.issue_count -= series.issue_count
             self.publisher.save()
             if self.imprint:
-                self.imprint.series_count -= 1
+                self.imprint.series_count = F('series_count') - 1
                 self.imprint.save()
             series.delete()
             update_count('series', -1, language=series.language)
@@ -1624,6 +1645,18 @@ class SeriesRevision(Revision):
             if reservation:
                 reservation.delete()
             return
+        else:
+            if self.imprint != self.series.imprint:
+                if self.imprint:
+                    self.imprint.issue_count = F('issue_count') + \
+                                                 series.issue_count
+                    self.imprint.series_count = F('series_count') + 1
+                    self.imprint.save()
+                if self.series.imprint:
+                    self.series.imprint.issue_count = F('issue_count') - \
+                                                        series.issue_count
+                    self.series.imprint.series_count = F('series_count') - 1
+                    self.series.imprint.save()
 
         series.name = self.name
         series.classification = self.classification
@@ -1965,49 +1998,40 @@ class IssueRevision(Revision):
 
             issue = Issue(sort_code=after_code + 1)
 
-            series = self.series
-            series.issue_count = F('issue_count') + 1
+            self.series.issue_count = F('issue_count') + 1
             # do NOT save the series here, it gets saved later in
             # self._check_first_last(), if we save here as well
             # the issue_count goes up by 2
-            publisher = self.series.publisher
-            publisher.issue_count = F('issue_count') + 1
-            publisher.save()
+            self.series.publisher.issue_count = F('issue_count') + 1
+            self.series.publisher.save()
             if self.brand:
-                brand = self.brand
-                brand.issue_count = F('issue_count') + 1
-                brand.save()
+                self.brand.issue_count = F('issue_count') + 1
+                self.brand.save()
             if self.indicia_publisher:
-                indicia_publisher = self.indicia_publisher
-                indicia_publisher.issue_count = F('issue_count') + 1
-                indicia_publisher.save()
+                self.indicia_publisher.issue_count = F('issue_count') + 1
+                self.indicia_publisher.save()
             if self.series.imprint:
-                imprint = self.series.imprint
-                imprint.issue_count = F('issue_count') + 1
-                imprint.save()
+                self.series.imprint.issue_count = F('issue_count') + 1
+                self.series.imprint.save()
             update_count('issues', 1, language=self.series.language)
 
         elif self.deleted:
-            series = self.series
-            series.issue_count = F('issue_count') - 1
+            self.series.issue_count = F('issue_count') - 1
             # do NOT save the series here, it gets saved later in
             # self._check_first_last(), if we save here as well
             # the issue_count goes down by 2
-            publisher = self.series.publisher
-            publisher.issue_count = F('issue_count') - 1
-            publisher.save()
+            #publisher = self.series.publisher
+            self.series.publisher.issue_count = F('issue_count') - 1
+            self.series.publisher.save()
             if self.brand:
-                brand = self.brand
-                brand.issue_count = F('issue_count') - 1
-                brand.save()
+                self.brand.issue_count = F('issue_count') - 1
+                self.brand.save()
             if self.indicia_publisher:
-                indicia_publisher = self.indicia_publisher
-                indicia_publisher.issue_count = F('issue_count') - 1
-                indicia_publisher.save()
+                self.indicia_publisher.issue_count = F('issue_count') - 1
+                self.indicia_publisher.save()
             if self.series.imprint:
-                imprint = self.series.imprint
-                imprint.issue_count = F('issue_count') - 1
-                imprint.save()
+                self.series.imprint.issue_count = F('issue_count') - 1
+                self.series.imprint.save()
             update_count('issues', -1, language=issue.series.language)
             issue.delete()
             self._check_first_last()
@@ -2016,22 +2040,18 @@ class IssueRevision(Revision):
         else:
             if self.brand != issue.brand:
                 if self.brand:
-                    brand = self.brand
-                    brand.issue_count = F('issue_count') + 1
-                    brand.save()
+                    self.brand.issue_count = F('issue_count') + 1
+                    self.brand.save()
                 if issue.brand:
-                    brand = issue.brand
-                    brand.issue_count = F('issue_count') - 1
-                    brand.save()
+                    issue.brand.issue_count = F('issue_count') - 1
+                    issue.brand.save()
             if self.indicia_publisher != issue.indicia_publisher:
                 if self.indicia_publisher:
-                    indicia_publisher = self.indicia_publisher
-                    indicia_publisher.issue_count = F('issue_count') + 1
-                    indicia_publisher.save()
+                    self.indicia_publisher.issue_count = F('issue_count') + 1
+                    self.indicia_publisher.save()
                 if issue.indicia_publisher:
-                    indicia_publisher = issue.indicia_publisher
-                    indicia_publisher.issue_count = F('issue_count') - 1
-                    indicia_publisher.save()
+                    issue.indicia_publisher.issue_count = F('issue_count') - 1
+                    issue.indicia_publisher.save()
 
         issue.number = self.number
         issue.volume = self.volume
