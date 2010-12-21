@@ -183,7 +183,8 @@ def reserve(request, id, model_name, delete=False):
         raise
 
 def _do_reserve(indexer, display_obj, model_name, delete=False):
-    if model_name != 'cover' and indexer.indexer.can_reserve_another() is False:
+    if model_name != 'cover' and (delete is False or indexer.indexer.is_new)\
+       and indexer.indexer.can_reserve_another() is False:
         return None
 
     if delete:
