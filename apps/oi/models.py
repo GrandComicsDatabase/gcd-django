@@ -1022,6 +1022,18 @@ class PublisherRevision(PublisherRevisionBase):
         return self.source.brand_count
     brand_count = property(_brand_count)
 
+    def _series_count(self):
+        if self.source is None:
+            return 0
+        return self.source.series_count
+    series_count = property(_series_count)
+
+    def _issue_count(self):
+        if self.source is None:
+            return 0
+        return self.source.issue_count
+    issue_count = property(_issue_count)
+
     def has_imprints(self):
         return self.imprint_set.count() > 0
 

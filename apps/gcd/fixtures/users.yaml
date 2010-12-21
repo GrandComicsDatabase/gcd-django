@@ -1,0 +1,227 @@
+- model: auth.user
+  pk: 1
+  fields:
+    username: admin
+    first_name: Ad
+    last_name: Min
+    email: sysadmin@comics.org
+    password: 'sha1$37d9d$794435e466c5112fc72cde488d5a262faca6086d' # admin
+    is_active: True
+    is_staff: True
+    is_superuser: True
+    date_joined: 2002-01-01 00:00:00
+    last_login: 2002-01-01 00:00:00
+
+- model: gcd.indexer
+  pk: 1
+  fields:
+    user: 1
+    country: [!!str no]
+    is_new: False
+    is_banned: False
+    deceased: False
+    max_reservations: 0
+    max_ongoing: 0
+    imps: 0
+    notify_on_approve: True
+    collapse_compare_view: False
+
+- model: auth.user
+  pk: 2
+  fields:
+    username: editor
+    first_name: Ed
+    last_name: Tor
+    email: gcd-main@googlegroups.com
+    password: 'sha1$66b61$8dafc5b8b3470a1e6f849f2c380a4b0959447508' # editme
+    is_active: True
+    is_staff: False
+    is_superuser: False
+    date_joined: 2002-01-01 00:00:00
+    last_login: 2002-01-01 00:00:00
+
+- model: gcd.indexer
+  pk: 2
+  fields:
+    user: 2
+    country: [de]
+    is_new: False
+    is_banned: False
+    deceased: False
+    max_reservations: 500
+    max_ongoing: 100
+    imps: 4000
+    notify_on_approve: False
+    collapse_compare_view: True
+
+- model: auth.user
+  pk: 3
+  fields:
+    username: dexter_1234
+    first_name: Dexter
+    last_name: Indexer
+    email: test@comics.org
+    password: 'sha1$1acd5$9cbf7fb2a284cb56e1484752aec2ff151976341e' # test
+    is_active: True
+    is_staff: False
+    is_superuser: False
+    date_joined: 2009-12-15 11:50:45
+    last_login: 2010-12-15 23:00:10
+
+- model: gcd.indexer
+  pk: 3
+  fields:
+    user: 3
+    country: [us]
+    is_new: False
+    is_banned: False
+    deceased: False
+    max_reservations: 12
+    max_ongoing: 4
+    imps: 100
+    notify_on_approve: True
+    collapse_compare_view: False
+
+- model: auth.user
+  pk: 4
+  fields:
+    username: anon
+    first_name: Anonymous
+    last_name: User
+    email: sysadmin@comics.org
+    password: '!' # cannot log in
+    is_active: True
+    is_staff: False
+    is_superuser: False
+    date_joined: 2002-01-01 00:00:00
+    last_login: 2002-01-01 00:00:00
+
+- model: gcd.indexer
+  pk: 4
+  fields:
+    user: 4
+    country: [us]
+    is_new: False
+    is_banned: False
+    deceased: False
+    max_reservations: 500
+    max_ongoing: 100
+    imps: 0
+    notify_on_approve: False
+    collapse_compare_view: False
+
+- model: auth.group
+  pk: 1
+  fields:
+    name: editor
+
+- model: auth.group
+  pk: 2
+  fields:
+    name: indexer
+
+- model: auth.group
+  pk: 3
+  fields:
+    name: admin
+
+- model: auth.group
+  pk: 4
+  fields:
+    name: member
+
+- model: auth.group
+  pk: 5
+  fields:
+    name: board
+
+- model: auth.user_groups
+  pk: 1
+  fields:
+    user: 1
+    group: 3
+
+- model: auth.user_groups
+  pk: 2
+  fields:
+    user: 2
+    group: 2 # indexer
+
+- model: auth.user_groups
+  pk: 3
+  fields:
+    user: 2
+    group: 1 # editor
+
+- model: auth.user_groups
+  pk: 4
+  fields:
+    user: 2
+    group: 4 # member
+
+- model: auth.user_groups
+  pk: 5
+  fields:
+    user: 3
+    group: 2 # indexer
+
+- model: auth.user_groups
+  pk: 6
+  fields:
+    user: 4 # anon
+    group: 2 # indexer
+
+- model: auth.group_permissions
+  pk: 1
+  fields:
+    group: 2
+    permission: [can_reserve, gcd, indexer]
+
+- model: auth.group_permissions
+  pk: 2
+  fields:
+    group: 2
+    permission: [can_upload_cover, gcd, indexer]
+
+- model: auth.group_permissions
+  pk: 3
+  fields:
+    group: 2
+    permission: [can_upload_cover, gcd, cover]
+
+- model: auth.group_permissions
+  pk: 4
+  fields:
+    group: 1
+    permission: [can_approve, gcd, indexer]
+
+- model: auth.group_permissions
+  pk: 5
+  fields:
+    group: 1
+    permission: [can_mentor, gcd, indexer]
+
+- model: auth.group_permissions
+  pk: 6
+  fields:
+    group: 4
+    permission: [can_vote, gcd, indexer]
+
+- model: auth.group_permissions
+  pk: 7
+  fields:
+    group: 5
+    permission: [on_board, gcd, indexer]
+
+- model: auth.group_permissions
+  pk: 8
+  fields:
+    group: 3
+    permission: [change_user, auth, user]
+
+- model: auth.group_permissions
+  pk: 9
+  fields:
+    group: 3
+    permission: [change_indexer, gcd, indexer]
+

@@ -1,0 +1,36 @@
+---
+- model: voting.votetype
+  pk: 1
+  fields:
+    name: Pass / Fail
+    max_votes: 1
+    max_winners: 1
+
+- model: voting.votetype
+  pk: 2
+  fields:
+    name: Choose One
+    max_votes: 1
+    max_winners: 1
+
+- model: voting.votetype
+  pk: 3
+  fields:
+    name: Ranked Choice
+    max_votes: ~
+    max_winners: 1
+
+- model: voting.votetype
+  pk: 4
+  fields:
+    name: 'Board Election: Choose Four'
+    max_votes: 4
+    max_winners: 4
+
+- model: voting.votetype
+  pk: 5
+  fields:
+    name: 'Board Election: Choose Five'
+    max_votes: 5
+    max_winners: 5
+

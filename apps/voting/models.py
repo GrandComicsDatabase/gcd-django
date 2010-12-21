@@ -191,12 +191,18 @@ class AgendaMailingList(models.Model):
                      for r in recipients ]
             send_mass_mail(mass, fail_silently=(not settings.BETA))
 
+class VoteTypeManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
 class VoteType(models.Model):
     """
     Determines how to count the votes.
     """
     class Meta:
         db_table = 'voting_vote_type'
+
+    objects = VoteTypeManager()
 
     name = models.CharField(max_length=255)
     max_votes = models.IntegerField(default=1, null=True, blank=True,
@@ -205,6 +211,9 @@ class VoteType(models.Model):
     max_winners = models.IntegerField(default=1,
       help_text='Having more than one winner allows votes to be cast for up to '
                 'that many options.')
+
+    def natural_key(self):
+        return (self.name,)
 
     def __unicode__(self):
         return self.name

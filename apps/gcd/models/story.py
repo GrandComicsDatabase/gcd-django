@@ -3,13 +3,23 @@ from django.db import models
 from series import Series
 from issue import Issue
 
+class StoryTypeManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
 class StoryType(models.Model):
     class Meta:
         app_label = 'gcd'
         db_table = 'gcd_story_type'
         ordering = ['sort_code']
+
+    objects = StoryTypeManager()
+
     name = models.CharField(max_length=50, db_index=True, unique=True)
     sort_code = models.IntegerField(unique=True)
+
+    def natural_key(self):
+        return (self.name,)
 
     def __unicode__(self):
         return self.name

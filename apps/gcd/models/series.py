@@ -9,11 +9,18 @@ from apps.gcd.models.publisher import Publisher
 # the other way around.  Probably.
 from apps.oi import states
 
+class ClassificationManager(models.Manager):
+    def get_by_natural_key(self, name):
+        return self.get(name=name)
+
 class Classification(models.Model):
     class Meta:
         app_label = 'gcd'
         ordering = ('sort_code',)
-    name = models.CharField(max_length=255, db_index=True)
+
+    objects = ClassificationManager()
+
+    name = models.CharField(max_length=255, unique=True)
     is_singular = models.BooleanField(default=False,
       help_text='True if a series in this category may only ever consist of a '
                 'single item')
@@ -22,6 +29,9 @@ class Classification(models.Model):
                 'a magazine, newspaper insert or other form of publication. ')
     notes = models.TextField(blank=True)
     sort_code = models.IntegerField(unique=True)
+
+    def natural_key(self):
+        return (self.name,)
 
     def __unicode__(self):
         return self.name

@@ -1,0 +1,1242 @@
+- fields: {code: zz, name: (unknown)}
+  model: gcd.country
+  pk: 249
+- fields: {code: xx, name: -- FIX ME --}
+  model: gcd.country
+  pk: 248
+- fields: {code: af, name: Afghanistan}
+  model: gcd.country
+  pk: 3
+- fields: {code: al, name: Albania}
+  model: gcd.country
+  pk: 6
+- fields: {code: dz, name: Algeria}
+  model: gcd.country
+  pk: 59
+- fields: {code: as, name: American Samoa}
+  model: gcd.country
+  pk: 12
+- fields: {code: ad, name: Andorra}
+  model: gcd.country
+  pk: 1
+- fields: {code: ao, name: Angola}
+  model: gcd.country
+  pk: 9
+- fields: {code: ai, name: Anguilla}
+  model: gcd.country
+  pk: 5
+- fields: {code: aq, name: Antarctica}
+  model: gcd.country
+  pk: 10
+- fields: {code: ag, name: Antigua and Barbuda}
+  model: gcd.country
+  pk: 4
+- fields: {code: ar, name: Argentina}
+  model: gcd.country
+  pk: 11
+- fields: {code: am, name: Armenia}
+  model: gcd.country
+  pk: 7
+- fields: {code: aw, name: Aruba}
+  model: gcd.country
+  pk: 15
+- fields: {code: au, name: Australia}
+  model: gcd.country
+  pk: 14
+- fields: {code: at, name: Austria}
+  model: gcd.country
+  pk: 13
+- fields: {code: az, name: Azerbaijan}
+  model: gcd.country
+  pk: 16
+- fields: {code: bs, name: Bahamas}
+  model: gcd.country
+  pk: 30
+- fields: {code: bh, name: Bahrain}
+  model: gcd.country
+  pk: 23
+- fields: {code: bd, name: Bangladesh}
+  model: gcd.country
+  pk: 19
+- fields: {code: bb, name: Barbados}
+  model: gcd.country
+  pk: 18
+- fields: {code: by, name: Belarus}
+  model: gcd.country
+  pk: 34
+- fields: {code: be, name: Belgium}
+  model: gcd.country
+  pk: 20
+- fields: {code: bz, name: Belize}
+  model: gcd.country
+  pk: 35
+- fields: {code: bj, name: Benin}
+  model: gcd.country
+  pk: 25
+- fields: {code: bm, name: Bermuda}
+  model: gcd.country
+  pk: 26
+- fields: {code: bt, name: Bhutan}
+  model: gcd.country
+  pk: 31
+- fields: {code: bo, name: Bolivia}
+  model: gcd.country
+  pk: 28
+- fields: {code: ba, name: Bosnia and Herzegovina}
+  model: gcd.country
+  pk: 17
+- fields: {code: bw, name: Botswana}
+  model: gcd.country
+  pk: 33
+- fields: {code: bv, name: Bouvet Island}
+  model: gcd.country
+  pk: 32
+- fields: {code: br, name: Brazil}
+  model: gcd.country
+  pk: 29
+- fields: {code: io, name: British Indian Ocean Territory}
+  model: gcd.country
+  pk: 102
+- fields: {code: bn, name: Brunei Darussalam}
+  model: gcd.country
+  pk: 27
+- fields: {code: bg, name: Bulgaria}
+  model: gcd.country
+  pk: 22
+- fields: {code: bf, name: Burkina Faso}
+  model: gcd.country
+  pk: 21
+- fields: {code: bi, name: Burundi}
+  model: gcd.country
+  pk: 24
+- fields: {code: kh, name: Cambodia}
+  model: gcd.country
+  pk: 112
+- fields: {code: cm, name: Cameroon}
+  model: gcd.country
+  pk: 44
+- fields: {code: ca, name: Canada}
+  model: gcd.country
+  pk: 36
+- fields: {code: cv, name: Cape Verde}
+  model: gcd.country
+  pk: 50
+- fields: {code: ky, name: Cayman Islands}
+  model: gcd.country
+  pk: 119
+- fields: {code: cf, name: Central African Republic}
+  model: gcd.country
+  pk: 38
+- fields: {code: td, name: Chad}
+  model: gcd.country
+  pk: 206
+- fields: {code: cl, name: Chile}
+  model: gcd.country
+  pk: 43
+- fields: {code: cn, name: China}
+  model: gcd.country
+  pk: 45
+- fields: {code: cx, name: Christmas Island}
+  model: gcd.country
+  pk: 51
+- fields: {code: cc, name: Cocos (Keeling) Islands}
+  model: gcd.country
+  pk: 37
+- fields: {code: co, name: Colombia}
+  model: gcd.country
+  pk: 46
+- fields: {code: km, name: Comoros}
+  model: gcd.country
+  pk: 114
+- fields: {code: cg, name: Congo}
+  model: gcd.country
+  pk: 39
+- fields: {code: ck, name: Cook Islands}
+  model: gcd.country
+  pk: 42
+- fields: {code: cr, name: Costa Rica}
+  model: gcd.country
+  pk: 47
+- fields: {code: ci, name: Cote D'Ivoire (Ivory Coast)}
+  model: gcd.country
+  pk: 41
+- fields: {code: hr, name: Croatia (Hrvatska)}
+  model: gcd.country
+  pk: 95
+- fields: {code: cu, name: Cuba}
+  model: gcd.country
+  pk: 49
+- fields: {code: cy, name: Cyprus}
+  model: gcd.country
+  pk: 52
+- fields: {code: cz, name: Czech Republic}
+  model: gcd.country
+  pk: 53
+- fields: {code: cshh, name: Czechoslovakia (former)}
+  model: gcd.country
+  pk: 48
+- fields: {code: dk, name: Denmark}
+  model: gcd.country
+  pk: 56
+- fields: {code: dj, name: Djibouti}
+  model: gcd.country
+  pk: 55
+- fields: {code: dm, name: Dominica}
+  model: gcd.country
+  pk: 57
+- fields: {code: do, name: Dominican Republic}
+  model: gcd.country
+  pk: 58
+- fields: {code: tp, name: East Timor}
+  model: gcd.country
+  pk: 215
+- fields: {code: ec, name: Ecuador}
+  model: gcd.country
+  pk: 60
+- fields: {code: eg, name: Egypt}
+  model: gcd.country
+  pk: 62
+- fields: {code: sv, name: El Salvador}
+  model: gcd.country
+  pk: 202
+- fields: {code: gq, name: Equatorial Guinea}
+  model: gcd.country
+  pk: 85
+- fields: {code: er, name: Eritrea}
+  model: gcd.country
+  pk: 64
+- fields: {code: ee, name: Estonia}
+  model: gcd.country
+  pk: 61
+- fields: {code: et, name: Ethiopia}
+  model: gcd.country
+  pk: 66
+- fields: {code: fk, name: Falkland Islands (Malvinas)}
+  model: gcd.country
+  pk: 69
+- fields: {code: fo, name: Faroe Islands}
+  model: gcd.country
+  pk: 71
+- fields: {code: fj, name: Fiji}
+  model: gcd.country
+  pk: 68
+- fields: {code: fi, name: Finland}
+  model: gcd.country
+  pk: 67
+- fields: {code: fr, name: France}
+  model: gcd.country
+  pk: 72
+- fields: {code: fx, name: 'France, Metropolitan'}
+  model: gcd.country
+  pk: 73
+- fields: {code: gf, name: French Guiana}
+  model: gcd.country
+  pk: 78
+- fields: {code: pf, name: French Polynesia}
+  model: gcd.country
+  pk: 169
+- fields: {code: tf, name: French Southern Territories}
+  model: gcd.country
+  pk: 207
+- fields: {code: ga, name: Gabon}
+  model: gcd.country
+  pk: 74
+- fields: {code: gm, name: Gambia}
+  model: gcd.country
+  pk: 82
+- fields: {code: ge, name: Georgia}
+  model: gcd.country
+  pk: 77
+- fields: {code: ddde, name: 'German Democratic Republic [former]'}
+  model: gcd.country
+  pk: 247
+- fields: {code: de, name: Germany}
+  model: gcd.country
+  pk: 54
+- fields: {code: gh, name: Ghana}
+  model: gcd.country
+  pk: 79
+- fields: {code: gi, name: Gibraltar}
+  model: gcd.country
+  pk: 80
+- fields: {code: gr, name: Greece}
+  model: gcd.country
+  pk: 86
+- fields: {code: gl, name: Greenland}
+  model: gcd.country
+  pk: 81
+- fields: {code: gd, name: Grenada}
+  model: gcd.country
+  pk: 76
+- fields: {code: gp, name: Guadeloupe}
+  model: gcd.country
+  pk: 84
+- fields: {code: gu, name: Guam}
+  model: gcd.country
+  pk: 89
+- fields: {code: gt, name: Guatemala}
+  model: gcd.country
+  pk: 88
+- fields: {code: gn, name: Guinea}
+  model: gcd.country
+  pk: 83
+- fields: {code: gw, name: Guinea-Bissau}
+  model: gcd.country
+  pk: 90
+- fields: {code: gy, name: Guyana}
+  model: gcd.country
+  pk: 91
+- fields: {code: ht, name: Haiti}
+  model: gcd.country
+  pk: 96
+- fields: {code: hm, name: Heard and McDonald Islands}
+  model: gcd.country
+  pk: 93
+- fields: {code: hn, name: Honduras}
+  model: gcd.country
+  pk: 94
+- fields: {code: hk, name: Hong Kong}
+  model: gcd.country
+  pk: 92
+- fields: {code: hu, name: Hungary}
+  model: gcd.country
+  pk: 97
+- fields: {code: is, name: Iceland}
+  model: gcd.country
+  pk: 105
+- fields: {code: in, name: India}
+  model: gcd.country
+  pk: 101
+- fields: {code: id, name: Indonesia}
+  model: gcd.country
+  pk: 98
+- fields: {code: ir, name: Iran}
+  model: gcd.country
+  pk: 104
+- fields: {code: iq, name: Iraq}
+  model: gcd.country
+  pk: 103
+- fields: {code: ie, name: Ireland}
+  model: gcd.country
+  pk: 99
+- fields: {code: il, name: Israel}
+  model: gcd.country
+  pk: 100
+- fields: {code: it, name: Italy}
+  model: gcd.country
+  pk: 106
+- fields: {code: jm, name: Jamaica}
+  model: gcd.country
+  pk: 107
+- fields: {code: jp, name: Japan}
+  model: gcd.country
+  pk: 109
+- fields: {code: jo, name: Jordan}
+  model: gcd.country
+  pk: 108
+- fields: {code: kz, name: Kazakhstan}
+  model: gcd.country
+  pk: 120
+- fields: {code: ke, name: Kenya}
+  model: gcd.country
+  pk: 110
+- fields: {code: ki, name: Kiribati}
+  model: gcd.country
+  pk: 113
+- fields: {code: kp, name: Korea (North)}
+  model: gcd.country
+  pk: 116
+- fields: {code: kr, name: Korea (South)}
+  model: gcd.country
+  pk: 117
+- fields: {code: kw, name: Kuwait}
+  model: gcd.country
+  pk: 118
+- fields: {code: kg, name: Kyrgyzstan}
+  model: gcd.country
+  pk: 111
+- fields: {code: la, name: Laos}
+  model: gcd.country
+  pk: 121
+- fields: {code: lv, name: Latvia}
+  model: gcd.country
+  pk: 130
+- fields: {code: lb, name: Lebanon}
+  model: gcd.country
+  pk: 122
+- fields: {code: ls, name: Lesotho}
+  model: gcd.country
+  pk: 127
+- fields: {code: lr, name: Liberia}
+  model: gcd.country
+  pk: 126
+- fields: {code: ly, name: Libya}
+  model: gcd.country
+  pk: 131
+- fields: {code: li, name: Liechtenstein}
+  model: gcd.country
+  pk: 124
+- fields: {code: lt, name: Lithuania}
+  model: gcd.country
+  pk: 128
+- fields: {code: lu, name: Luxembourg}
+  model: gcd.country
+  pk: 129
+- fields: {code: mo, name: Macau}
+  model: gcd.country
+  pk: 141
+- fields: {code: mk, name: Macedonia}
+  model: gcd.country
+  pk: 137
+- fields: {code: mg, name: Madagascar}
+  model: gcd.country
+  pk: 135
+- fields: {code: mw, name: Malawi}
+  model: gcd.country
+  pk: 149
+- fields: {code: my, name: Malaysia}
+  model: gcd.country
+  pk: 151
+- fields: {code: mv, name: Maldives}
+  model: gcd.country
+  pk: 148
+- fields: {code: ml, name: Mali}
+  model: gcd.country
+  pk: 138
+- fields: {code: mt, name: Malta}
+  model: gcd.country
+  pk: 146
+- fields: {code: mh, name: Marshall Islands}
+  model: gcd.country
+  pk: 136
+- fields: {code: mq, name: Martinique}
+  model: gcd.country
+  pk: 143
+- fields: {code: mr, name: Mauritania}
+  model: gcd.country
+  pk: 144
+- fields: {code: mu, name: Mauritius}
+  model: gcd.country
+  pk: 147
+- fields: {code: yt, name: Mayotte}
+  model: gcd.country
+  pk: 238
+- fields: {code: mx, name: Mexico}
+  model: gcd.country
+  pk: 150
+- fields: {code: fm, name: Micronesia}
+  model: gcd.country
+  pk: 70
+- fields: {code: md, name: Moldova}
+  model: gcd.country
+  pk: 134
+- fields: {code: mc, name: Monaco}
+  model: gcd.country
+  pk: 133
+- fields: {code: mn, name: Mongolia}
+  model: gcd.country
+  pk: 140
+- fields: {code: ms, name: Montserrat}
+  model: gcd.country
+  pk: 145
+- fields: {code: ma, name: Morocco}
+  model: gcd.country
+  pk: 132
+- fields: {code: mz, name: Mozambique}
+  model: gcd.country
+  pk: 152
+- fields: {code: mm, name: Myanmar}
+  model: gcd.country
+  pk: 139
+- fields: {code: na, name: Namibia}
+  model: gcd.country
+  pk: 153
+- fields: {code: nr, name: Nauru}
+  model: gcd.country
+  pk: 162
+- fields: {code: np, name: Nepal}
+  model: gcd.country
+  pk: 161
+- fields: {code: nl, name: Netherlands}
+  model: gcd.country
+  pk: 159
+- fields: {code: an, name: Netherlands Antilles}
+  model: gcd.country
+  pk: 8
+- fields: {code: nt, name: Neutral Zone}
+  model: gcd.country
+  pk: 163
+- fields: {code: nc, name: New Caledonia}
+  model: gcd.country
+  pk: 154
+- fields: {code: nz, name: New Zealand (Aotearoa)}
+  model: gcd.country
+  pk: 165
+- fields: {code: ni, name: Nicaragua}
+  model: gcd.country
+  pk: 158
+- fields: {code: ne, name: Niger}
+  model: gcd.country
+  pk: 155
+- fields: {code: ng, name: Nigeria}
+  model: gcd.country
+  pk: 157
+- fields: {code: nu, name: Niue}
+  model: gcd.country
+  pk: 164
+- fields: {code: nf, name: Norfolk Island}
+  model: gcd.country
+  pk: 156
+- fields: {code: mp, name: Northern Mariana Islands}
+  model: gcd.country
+  pk: 142
+- fields: {code: 'no', name: Norway}
+  model: gcd.country
+  pk: 160
+- fields: {code: om, name: Oman}
+  model: gcd.country
+  pk: 166
+- fields: {code: pk, name: Pakistan}
+  model: gcd.country
+  pk: 172
+- fields: {code: pw, name: Palau}
+  model: gcd.country
+  pk: 178
+- fields: {code: pa, name: Panama}
+  model: gcd.country
+  pk: 167
+- fields: {code: pg, name: Papua New Guinea}
+  model: gcd.country
+  pk: 170
+- fields: {code: py, name: Paraguay}
+  model: gcd.country
+  pk: 179
+- fields: {code: pe, name: Peru}
+  model: gcd.country
+  pk: 168
+- fields: {code: ph, name: Philippines}
+  model: gcd.country
+  pk: 171
+- fields: {code: pn, name: Pitcairn}
+  model: gcd.country
+  pk: 175
+- fields: {code: pl, name: Poland}
+  model: gcd.country
+  pk: 173
+- fields: {code: pt, name: Portugal}
+  model: gcd.country
+  pk: 177
+- fields: {code: pr, name: Puerto Rico}
+  model: gcd.country
+  pk: 176
+- fields: {code: qa, name: Qatar}
+  model: gcd.country
+  pk: 180
+- fields: {code: re, name: Reunion}
+  model: gcd.country
+  pk: 181
+- fields: {code: ro, name: Romania}
+  model: gcd.country
+  pk: 182
+- fields: {code: ru, name: Russian Federation}
+  model: gcd.country
+  pk: 183
+- fields: {code: rw, name: Rwanda}
+  model: gcd.country
+  pk: 184
+- fields: {code: gs, name: S. Georgia and S. Sandwich Isls.}
+  model: gcd.country
+  pk: 87
+- fields: {code: kn, name: Saint Kitts and Nevis}
+  model: gcd.country
+  pk: 115
+- fields: {code: lc, name: Saint Lucia}
+  model: gcd.country
+  pk: 123
+- fields: {code: vc, name: Saint Vincent and the Grenadines}
+  model: gcd.country
+  pk: 229
+- fields: {code: ws, name: Samoa}
+  model: gcd.country
+  pk: 236
+- fields: {code: sm, name: San Marino}
+  model: gcd.country
+  pk: 196
+- fields: {code: st, name: Sao Tome and Principe}
+  model: gcd.country
+  pk: 200
+- fields: {code: sa, name: Saudi Arabia}
+  model: gcd.country
+  pk: 185
+- fields: {code: sn, name: Senegal}
+  model: gcd.country
+  pk: 197
+- fields: {code: sc, name: Seychelles}
+  model: gcd.country
+  pk: 187
+- fields: {code: sl, name: Sierra Leone}
+  model: gcd.country
+  pk: 195
+- fields: {code: sg, name: Singapore}
+  model: gcd.country
+  pk: 190
+- fields: {code: sk, name: Slovak Republic}
+  model: gcd.country
+  pk: 194
+- fields: {code: si, name: Slovenia}
+  model: gcd.country
+  pk: 192
+- fields: {code: sb, name: Solomon Islands}
+  model: gcd.country
+  pk: 186
+- fields: {code: so, name: Somalia}
+  model: gcd.country
+  pk: 198
+- fields: {code: za, name: South Africa}
+  model: gcd.country
+  pk: 240
+- fields: {code: es, name: Spain}
+  model: gcd.country
+  pk: 65
+- fields: {code: lk, name: Sri Lanka}
+  model: gcd.country
+  pk: 125
+- fields: {code: sh, name: St. Helena}
+  model: gcd.country
+  pk: 191
+- fields: {code: pm, name: St. Pierre and Miquelon}
+  model: gcd.country
+  pk: 174
+- fields: {code: sd, name: Sudan}
+  model: gcd.country
+  pk: 188
+- fields: {code: sr, name: Suriname}
+  model: gcd.country
+  pk: 199
+- fields: {code: sj, name: Svalbard and Jan Mayen Islands}
+  model: gcd.country
+  pk: 193
+- fields: {code: sz, name: Swaziland}
+  model: gcd.country
+  pk: 204
+- fields: {code: se, name: Sweden}
+  model: gcd.country
+  pk: 189
+- fields: {code: ch, name: Switzerland}
+  model: gcd.country
+  pk: 40
+- fields: {code: sy, name: Syria}
+  model: gcd.country
+  pk: 203
+- fields: {code: tw, name: Taiwan}
+  model: gcd.country
+  pk: 219
+- fields: {code: tj, name: Tajikistan}
+  model: gcd.country
+  pk: 210
+- fields: {code: tz, name: Tanzania}
+  model: gcd.country
+  pk: 220
+- fields: {code: th, name: Thailand}
+  model: gcd.country
+  pk: 209
+- fields: {code: tg, name: Togo}
+  model: gcd.country
+  pk: 208
+- fields: {code: tk, name: Tokelau}
+  model: gcd.country
+  pk: 211
+- fields: {code: to, name: Tonga}
+  model: gcd.country
+  pk: 214
+- fields: {code: tt, name: Trinidad and Tobago}
+  model: gcd.country
+  pk: 217
+- fields: {code: tn, name: Tunisia}
+  model: gcd.country
+  pk: 213
+- fields: {code: tr, name: Turkey}
+  model: gcd.country
+  pk: 216
+- fields: {code: tm, name: Turkmenistan}
+  model: gcd.country
+  pk: 212
+- fields: {code: tc, name: Turks and Caicos Islands}
+  model: gcd.country
+  pk: 205
+- fields: {code: tv, name: Tuvalu}
+  model: gcd.country
+  pk: 218
+- fields: {code: ug, name: Uganda}
+  model: gcd.country
+  pk: 222
+- fields: {code: ua, name: Ukraine}
+  model: gcd.country
+  pk: 221
+- fields: {code: ae, name: United Arab Emirates}
+  model: gcd.country
+  pk: 2
+- fields: {code: gb, name: United Kingdom}
+  model: gcd.country
+  pk: 75
+- fields: {code: us, name: United States}
+  model: gcd.country
+  pk: 225
+- fields: {code: uy, name: Uruguay}
+  model: gcd.country
+  pk: 226
+- fields: {code: um, name: US Minor Outlying Islands}
+  model: gcd.country
+  pk: 224
+- fields: {code: suhh, name: USSR (former)}
+  model: gcd.country
+  pk: 201
+- fields: {code: uz, name: Uzbekistan}
+  model: gcd.country
+  pk: 227
+- fields: {code: vu, name: Vanuatu}
+  model: gcd.country
+  pk: 234
+- fields: {code: va, name: Vatican City State (Holy See)}
+  model: gcd.country
+  pk: 228
+- fields: {code: ve, name: Venezuela}
+  model: gcd.country
+  pk: 230
+- fields: {code: vn, name: Viet Nam}
+  model: gcd.country
+  pk: 233
+- fields: {code: vg, name: Virgin Islands (British)}
+  model: gcd.country
+  pk: 231
+- fields: {code: vi, name: Virgin Islands (U.S.)}
+  model: gcd.country
+  pk: 232
+- fields: {code: wf, name: Wallis and Futuna Islands}
+  model: gcd.country
+  pk: 235
+- fields: {code: eh, name: Western Sahara}
+  model: gcd.country
+  pk: 63
+- fields: {code: ye, name: Yemen}
+  model: gcd.country
+  pk: 237
+- fields: {code: yu, name: Yugoslavia}
+  model: gcd.country
+  pk: 239
+- fields: {code: zr, name: Zaire}
+  model: gcd.country
+  pk: 242
+- fields: {code: zm, name: Zambia}
+  model: gcd.country
+  pk: 241
+- fields: {code: zw, name: Zimbabwe}
+  model: gcd.country
+  pk: 243
+- fields: {code: zxx, name: (no linguistic content)}
+  model: gcd.language
+  pk: 144
+- fields: {code: und, name: (undetermined)}
+  model: gcd.language
+  pk: 146
+- fields: {code: ab, name: Abkhazian}
+  model: gcd.language
+  pk: 2
+- fields: {code: aa, name: Afar}
+  model: gcd.language
+  pk: 1
+- fields: {code: af, name: Afrikaans}
+  model: gcd.language
+  pk: 3
+- fields: {code: sq, name: Albanian}
+  model: gcd.language
+  pk: 107
+- fields: {code: am, name: Amharic}
+  model: gcd.language
+  pk: 4
+- fields: {code: ar, name: Arabic}
+  model: gcd.language
+  pk: 5
+- fields: {code: hy, name: Armenian}
+  model: gcd.language
+  pk: 45
+- fields: {code: as, name: Assamese}
+  model: gcd.language
+  pk: 6
+- fields: {code: ay, name: Aymara}
+  model: gcd.language
+  pk: 7
+- fields: {code: az, name: Azerbaijani}
+  model: gcd.language
+  pk: 8
+- fields: {code: ba, name: Bashkir}
+  model: gcd.language
+  pk: 9
+- fields: {code: eu, name: Basque}
+  model: gcd.language
+  pk: 29
+- fields: {code: bn, name: Bengali; Bangla}
+  model: gcd.language
+  pk: 14
+- fields: {code: dz, name: Bhutani}
+  model: gcd.language
+  pk: 23
+- fields: {code: bh, name: Bihari}
+  model: gcd.language
+  pk: 12
+- fields: {code: bi, name: Bislama}
+  model: gcd.language
+  pk: 13
+- fields: {code: bs, name: Bosnian}
+  model: gcd.language
+  pk: 137
+- fields: {code: br, name: Breton}
+  model: gcd.language
+  pk: 16
+- fields: {code: bg, name: Bulgarian}
+  model: gcd.language
+  pk: 11
+- fields: {code: my, name: Burmese}
+  model: gcd.language
+  pk: 79
+- fields: {code: be, name: Byelorussian}
+  model: gcd.language
+  pk: 10
+- fields: {code: km, name: Cambodian}
+  model: gcd.language
+  pk: 59
+- fields: {code: ca, name: Catalan}
+  model: gcd.language
+  pk: 17
+- fields: {code: zh, name: Chinese}
+  model: gcd.language
+  pk: 135
+- fields: {code: co, name: Corsican}
+  model: gcd.language
+  pk: 18
+- fields: {code: hr, name: Croatian}
+  model: gcd.language
+  pk: 43
+- fields: {code: cs, name: Czech}
+  model: gcd.language
+  pk: 19
+- fields: {code: da, name: Danish}
+  model: gcd.language
+  pk: 21
+- fields: {code: nl, name: Dutch}
+  model: gcd.language
+  pk: 82
+- fields: {code: en, name: English}
+  model: gcd.language
+  pk: 25
+- fields: {code: eo, name: Esperanto}
+  model: gcd.language
+  pk: 26
+- fields: {code: et, name: Estonian}
+  model: gcd.language
+  pk: 28
+- fields: {code: fo, name: Faeroese}
+  model: gcd.language
+  pk: 33
+- fields: {code: fj, name: Fiji}
+  model: gcd.language
+  pk: 32
+- fields: {code: fil, name: Filipino; Pilipino}
+  model: gcd.language
+  pk: 145
+- fields: {code: fi, name: Finnish}
+  model: gcd.language
+  pk: 31
+- fields: {code: fr, name: French}
+  model: gcd.language
+  pk: 34
+- fields: {code: fy, name: Frisian}
+  model: gcd.language
+  pk: 35
+- fields: {code: gl, name: Galician}
+  model: gcd.language
+  pk: 38
+- fields: {code: ka, name: Georgian}
+  model: gcd.language
+  pk: 56
+- fields: {code: de, name: German}
+  model: gcd.language
+  pk: 22
+- fields: {code: el, name: Greek}
+  model: gcd.language
+  pk: 24
+- fields: {code: kl, name: Greenlandic}
+  model: gcd.language
+  pk: 58
+- fields: {code: gn, name: Guarani}
+  model: gcd.language
+  pk: 39
+- fields: {code: gu, name: Gujarati}
+  model: gcd.language
+  pk: 40
+- fields: {code: ha, name: Hausa}
+  model: gcd.language
+  pk: 41
+- fields: {code: iw, name: Hebrew}
+  model: gcd.language
+  pk: 52
+- fields: {code: hi, name: Hindi}
+  model: gcd.language
+  pk: 42
+- fields: {code: hu, name: Hungarian}
+  model: gcd.language
+  pk: 44
+- fields: {code: is, name: Icelandic}
+  model: gcd.language
+  pk: 50
+- fields: {code: in, name: Indonesian}
+  model: gcd.language
+  pk: 49
+- fields: {code: ia, name: Interlingua}
+  model: gcd.language
+  pk: 46
+- fields: {code: ie, name: Interlingue}
+  model: gcd.language
+  pk: 47
+- fields: {code: ik, name: Inupiak}
+  model: gcd.language
+  pk: 48
+- fields: {code: ga, name: Irish}
+  model: gcd.language
+  pk: 36
+- fields: {code: it, name: Italian}
+  model: gcd.language
+  pk: 51
+- fields: {code: ja, name: Japanese}
+  model: gcd.language
+  pk: 53
+- fields: {code: jw, name: Javanese}
+  model: gcd.language
+  pk: 55
+- fields: {code: kn, name: Kannada}
+  model: gcd.language
+  pk: 60
+- fields: {code: ks, name: Kashmiri}
+  model: gcd.language
+  pk: 62
+- fields: {code: kk, name: Kazakh}
+  model: gcd.language
+  pk: 57
+- fields: {code: rw, name: Kinyarwanda}
+  model: gcd.language
+  pk: 96
+- fields: {code: ky, name: Kirghiz}
+  model: gcd.language
+  pk: 64
+- fields: {code: rn, name: Kirundi}
+  model: gcd.language
+  pk: 93
+- fields: {code: ko, name: Korean}
+  model: gcd.language
+  pk: 61
+- fields: {code: ku, name: Kurdish}
+  model: gcd.language
+  pk: 63
+- fields: {code: lo, name: Laothian}
+  model: gcd.language
+  pk: 67
+- fields: {code: la, name: Latin}
+  model: gcd.language
+  pk: 65
+- fields: {code: lv, name: 'Latvian, Lettish'}
+  model: gcd.language
+  pk: 69
+- fields: {code: ln, name: Lingala}
+  model: gcd.language
+  pk: 66
+- fields: {code: lt, name: Lithuanian}
+  model: gcd.language
+  pk: 68
+- fields: {code: mk, name: Macedonian}
+  model: gcd.language
+  pk: 72
+- fields: {code: mg, name: Malagasy}
+  model: gcd.language
+  pk: 70
+- fields: {code: ms, name: Malay}
+  model: gcd.language
+  pk: 77
+- fields: {code: ml, name: Malayalam}
+  model: gcd.language
+  pk: 73
+- fields: {code: mt, name: Maltese}
+  model: gcd.language
+  pk: 78
+- fields: {code: mi, name: Maori}
+  model: gcd.language
+  pk: 71
+- fields: {code: mr, name: Marathi}
+  model: gcd.language
+  pk: 76
+- fields: {code: mo, name: Moldavian}
+  model: gcd.language
+  pk: 75
+- fields: {code: mn, name: Mongolian}
+  model: gcd.language
+  pk: 74
+- fields: {code: na, name: Nauru}
+  model: gcd.language
+  pk: 80
+- fields: {code: ne, name: Nepali}
+  model: gcd.language
+  pk: 81
+- fields: {code: 'no', name: Norwegian}
+  model: gcd.language
+  pk: 83
+- fields: {code: oc, name: Occitan}
+  model: gcd.language
+  pk: 84
+- fields: {code: or, name: Oriya}
+  model: gcd.language
+  pk: 86
+- fields: {code: om, name: Oromo (Afan)}
+  model: gcd.language
+  pk: 85
+- fields: {code: ps, name: 'Pashto, Pushto'}
+  model: gcd.language
+  pk: 89
+- fields: {code: fa, name: Persian}
+  model: gcd.language
+  pk: 30
+- fields: {code: pl, name: Polish}
+  model: gcd.language
+  pk: 88
+- fields: {code: pt, name: Portuguese}
+  model: gcd.language
+  pk: 90
+- fields: {code: pa, name: Punjabi}
+  model: gcd.language
+  pk: 87
+- fields: {code: qu, name: Quechua}
+  model: gcd.language
+  pk: 91
+- fields: {code: rm, name: Rhaeto-Romance}
+  model: gcd.language
+  pk: 92
+- fields: {code: ro, name: Romanian}
+  model: gcd.language
+  pk: 94
+- fields: {code: ru, name: Russian}
+  model: gcd.language
+  pk: 95
+- fields: {code: smn, name: Sami (Inari)}
+  model: gcd.language
+  pk: 141
+- fields: {code: smj, name: Sami (Lule)}
+  model: gcd.language
+  pk: 140
+- fields: {code: se, name: Sami (Northern)}
+  model: gcd.language
+  pk: 138
+- fields: {code: sms, name: Sami (Skolt)}
+  model: gcd.language
+  pk: 142
+- fields: {code: sma, name: Sami (Southern)}
+  model: gcd.language
+  pk: 139
+- fields: {code: smi, name: Sami languages}
+  model: gcd.language
+  pk: 143
+- fields: {code: sm, name: Samoan}
+  model: gcd.language
+  pk: 104
+- fields: {code: sg, name: Sangro}
+  model: gcd.language
+  pk: 99
+- fields: {code: sa, name: Sanskrit}
+  model: gcd.language
+  pk: 97
+- fields: {code: gd, name: Scots Gaelic}
+  model: gcd.language
+  pk: 37
+- fields: {code: sr, name: Serbian}
+  model: gcd.language
+  pk: 108
+- fields: {code: sh, name: Serbo-Croatian}
+  model: gcd.language
+  pk: 100
+- fields: {code: st, name: Sesotho}
+  model: gcd.language
+  pk: 110
+- fields: {code: tn, name: Setswana}
+  model: gcd.language
+  pk: 121
+- fields: {code: sn, name: Shona}
+  model: gcd.language
+  pk: 105
+- fields: {code: sd, name: Sindhi}
+  model: gcd.language
+  pk: 98
+- fields: {code: si, name: Singhalese}
+  model: gcd.language
+  pk: 101
+- fields: {code: ss, name: Siswati}
+  model: gcd.language
+  pk: 109
+- fields: {code: sk, name: Slovak}
+  model: gcd.language
+  pk: 102
+- fields: {code: sl, name: Slovenian}
+  model: gcd.language
+  pk: 103
+- fields: {code: so, name: Somali}
+  model: gcd.language
+  pk: 106
+- fields: {code: es, name: Spanish}
+  model: gcd.language
+  pk: 27
+- fields: {code: su, name: Sundanese}
+  model: gcd.language
+  pk: 111
+- fields: {code: sw, name: Swahili}
+  model: gcd.language
+  pk: 113
+- fields: {code: sv, name: Swedish}
+  model: gcd.language
+  pk: 112
+- fields: {code: tl, name: Tagalog}
+  model: gcd.language
+  pk: 120
+- fields: {code: tg, name: Tajik}
+  model: gcd.language
+  pk: 116
+- fields: {code: ta, name: Tamil}
+  model: gcd.language
+  pk: 114
+- fields: {code: tt, name: Tatar}
+  model: gcd.language
+  pk: 125
+- fields: {code: te, name: Telugu}
+  model: gcd.language
+  pk: 115
+- fields: {code: th, name: Thai}
+  model: gcd.language
+  pk: 117
+- fields: {code: bo, name: Tibetan}
+  model: gcd.language
+  pk: 15
+- fields: {code: ti, name: Tigrinya}
+  model: gcd.language
+  pk: 118
+- fields: {code: to, name: Tonga}
+  model: gcd.language
+  pk: 122
+- fields: {code: ts, name: Tsonga}
+  model: gcd.language
+  pk: 124
+- fields: {code: tr, name: Turkish}
+  model: gcd.language
+  pk: 123
+- fields: {code: tk, name: Turkmen}
+  model: gcd.language
+  pk: 119
+- fields: {code: tw, name: Twi}
+  model: gcd.language
+  pk: 126
+- fields: {code: uk, name: Ukrainian}
+  model: gcd.language
+  pk: 127
+- fields: {code: ur, name: Urdu}
+  model: gcd.language
+  pk: 128
+- fields: {code: uz, name: Uzbek}
+  model: gcd.language
+  pk: 129
+- fields: {code: vi, name: Vietnamese}
+  model: gcd.language
+  pk: 130
+- fields: {code: vo, name: Volapuk}
+  model: gcd.language
+  pk: 131
+- fields: {code: cy, name: Welsh}
+  model: gcd.language
+  pk: 20
+- fields: {code: wo, name: Wolof}
+  model: gcd.language
+  pk: 132
+- fields: {code: xh, name: Xhosa}
+  model: gcd.language
+  pk: 133
+- fields: {code: ji, name: Yiddish}
+  model: gcd.language
+  pk: 54
+- fields: {code: yo, name: Yoruba}
+  model: gcd.language
+  pk: 134
+- fields: {code: zu, name: Zulu}
+  model: gcd.language
+  pk: 136
+- fields: {name: story, sort_code: 1}
+  model: gcd.storytype
+  pk: 19
+- fields: {name: text story, sort_code: 2}
+  model: gcd.storytype
+  pk: 21
+- fields: {name: text article, sort_code: 3}
+  model: gcd.storytype
+  pk: 20
+- fields: {name: photo story, sort_code: 4}
+  model: gcd.storytype
+  pk: 13
+- fields: {name: cover, sort_code: 5}
+  model: gcd.storytype
+  pk: 6
+- fields: {name: cover reprint (on interior page), sort_code: 6}
+  model: gcd.storytype
+  pk: 7
+- fields: {name: cartoon, sort_code: 7}
+  model: gcd.storytype
+  pk: 5
+- fields: {name: illustration, sort_code: 8}
+  model: gcd.storytype
+  pk: 14
+- fields: {name: advertisement, sort_code: 9}
+  model: gcd.storytype
+  pk: 2
+- fields: {name: promo (ad from the publisher), sort_code: 10}
+  model: gcd.storytype
+  pk: 16
+- fields: {name: public service announcement, sort_code: 11}
+  model: gcd.storytype
+  pk: 17
+- fields: {name: activity, sort_code: 12}
+  model: gcd.storytype
+  pk: 1
+- fields: {name: biography (nonfictional), sort_code: 13}
+  model: gcd.storytype
+  pk: 4
+- fields: {name: character profile, sort_code: 14}
+  model: gcd.storytype
+  pk: 15
+- fields: {name: statement of ownership, sort_code: 15}
+  model: gcd.storytype
+  pk: 22
+- fields: {name: 'foreword, introduction, preface, afterword', sort_code: 16}
+  model: gcd.storytype
+  pk: 10
+- fields: {name: credits, sort_code: 17}
+  model: gcd.storytype
+  pk: 8
+- fields: {name: recap, sort_code: 18}
+  model: gcd.storytype
+  pk: 18
+- fields: {name: letters page, sort_code: 19}
+  model: gcd.storytype
+  pk: 12
+- fields: {name: insert or dust jacket, sort_code: 20}
+  model: gcd.storytype
+  pk: 11
+- fields: {name: filler, sort_code: 21}
+  model: gcd.storytype
+  pk: 9
+- fields: {name: (backcovers) *do not use* / *please fix*, sort_code: 22}
+  model: gcd.storytype
+  pk: 3
+- fields: {name: (unknown), sort_code: 100}
+  model: gcd.storytype
+  pk: 23

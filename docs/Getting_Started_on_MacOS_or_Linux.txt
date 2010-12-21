@@ -116,7 +116,35 @@ of excellent documentation of all of the available settings.
 python manage.py syncdb
 
 which will create the various tables that are not present in the data dump and
-load data in tables that need them.
+load data in tables that need them. DO NOT create a local admin user when
+syncdb prompts you to do so.  Creating such a user will produce a user without
+a profile (gcd_indexer row) which will cause problems.  Instead, once you
+have successfully run syncdb, you should load several additional data fixtures:
+
+python manage.py loaddata support
+python manage.py loaddata users
+
+You MUST load the support fixture first, because the data in the users table
+depends on it (specifically, gcd_indexers has a foreign key to gcd_country).
+
+This will give you an admin user (who has all priviliges but has index reservation
+limits set to zero), at least one editor and one indexer, and an anonymous user.
+The usernames, email addresses and passwords can be seen in the fixture file,
+which is located at apps/gcd/fixtures/users.yaml
+
+There is also a "site" fixture just sets up your site URL (used by Django's
+admin UI in the "see on site" links) for localhost:8000.  You may prefer to
+just set this manually in the admin UI if you are using a different test URL.
+If you want to use it, it loads like the others:
+
+python manage.py loaddata site
+
+Finally, the standard vote types for the voting appliacation can be laoded:
+
+python manage.py loaddata vote-types
+
+The production agendas and mailing lists, while basically stanadard, are not
+treated specially in the code so they are not supplied as fixtures.
 
 8.  Assuming you are running the trunk release (the one in pydjango/ instead of
 in something like branches/something/pydjango/ ) you may need to migrate your
