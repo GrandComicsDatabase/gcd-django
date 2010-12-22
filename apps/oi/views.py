@@ -1088,7 +1088,7 @@ def edit_issues_in_bulk(request):
             query_string += u'&%s=%s' % entry
     comment += u'Search results: %s%s%s' % (settings.SITE_URL.rstrip('/'),
                  urlresolvers.reverse('process_advanced_search'),
-                 query_string)
+                 query_string.replace(' ', '+'))
 
     changeset.comments.create(commenter=request.user,
                               text=comment,
