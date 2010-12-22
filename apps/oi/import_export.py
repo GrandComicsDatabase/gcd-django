@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import re
 import tempfile
@@ -15,8 +16,10 @@ from apps.gcd.views.details import KEY_DATE_REGEXP
 from apps.oi.models import *
 from apps.oi.forms import *
 
-ISSUE_FIELDS = 11
-SEQUENCE_FIELDS = 16
+MIN_ISSUE_FIELDS = 10
+MAX_ISSUE_FIELDS = 12
+MIN_SEQUENCE_FIELDS = 10
+MAX_SEQUENCE_FIELDS = 16
 
 NUMBER = 0
 VOLUME = 1
@@ -28,7 +31,8 @@ INDICIA_FREQUENCY = 6
 PRICE = 7
 ISSUE_PAGE_COUNT = 8
 ISSUE_EDITING = 9
-ISSUE_NOTES = 10
+ISBN = 10
+ISSUE_NOTES = 11
 
 TITLE = 0
 TYPE = 1
@@ -157,11 +161,16 @@ def _process_file(request, changeset, is_issue):
         # if is_issue is set, the first line should be issue line
         if is_issue and not lines: 
             # check number of fields
-            if len(split_line) != ISSUE_FIELDS:
-                error_text = 'issue line %s has %d fields, it must have %d.' \
-                             % (split_line, len(split_line), ISSUE_FIELDS)
+            line_length = len(split_line)
+            if line_length not in range(MIN_ISSUE_FIELDS,MAX_ISSUE_FIELDS+1):
+                error_text = 'issue line %s has %d fields, it must have at '\
+                             'least %d and not more than %d.' \
+                  % (split_line, line_length, MIN_ISSUE_FIELDS,
+                     MAX_ISSUE_FIELDS)
                 return _handle_import_error(request, changeset, error_text)
-
+            if line_length < MAX_ISSUE_FIELDS:
+                for i in range(MAX_ISSUE_FIELDS - line_length):
+                    split_line.append('')
         # later lines are story lines
         else: 
             # we had an empty line just before
@@ -174,10 +183,17 @@ def _process_file(request, changeset, is_issue):
                 continue
 
             # check number of fields
-            if len(split_line) != SEQUENCE_FIELDS:
-                error_text = 'sequence line %s has %d fields, it must have %d.' \
-                    % (split_line, len(split_line), SEQUENCE_FIELDS)
+            line_length = len(split_line)
+            if line_length not in range(MIN_SEQUENCE_FIELDS,
+                                        MAX_SEQUENCE_FIELDS+1):
+                error_text = 'sequence line %s has %d fields, it must have '\
+                             'at least %d and not more than %d.' \
+                  % (split_line, line_length, MIN_SEQUENCE_FIELDS,
+                     MAX_SEQUENCE_FIELDS)
                 return _handle_import_error(request, changeset, error_text)
+            if line_length < MAX_SEQUENCE_FIELDS:
+                for i in range(MAX_SEQUENCE_FIELDS - line_length):
+                    split_line.append('')
 
             # check here for story_type, otherwise sequences up to an error
             # will be be added
@@ -221,16 +237,10 @@ def _check_page_count(page_count):
 
 
 def _parse_volume(volume):
-    if not volume:
-        volume = None
+    if volume == '':
         no_volume = True
     else:
-        try:
-            volume = int(volume)
-            no_volume = False
-        except ValueError:
-            volume = None
-            no_volume = False
+        no_volume = False
     return volume, no_volume
 
 
@@ -400,8 +410,9 @@ def import_issue_from_file(request, issue_id, changeset_id):
               _check_page_count(issue_fields[ISSUE_PAGE_COUNT])
             issue_revision.editing, issue_revision.no_editing = \
               _check_for_none(issue_fields[ISSUE_EDITING])
+            issue_revision.isbn = issue_fields[ISBN].strip()
             issue_revision.notes = issue_fields[ISSUE_NOTES].strip()
-            issue_revision.save()                        
+            issue_revision.save()
             running_number = 0
             return _import_sequences(request, issue_id, changeset, 
                                      lines, running_number)
