@@ -5,9 +5,11 @@ import shlex
 import os.path
 
 from django.conf import settings
+from django.db import models
 from django.db.models import Count
 
-from apps.gcd.models import Language, CountStats
+from apps.gcd.models import Language, CountStats, StoryType
+
 
 def main():
     if settings.DEBUG:
@@ -27,8 +29,6 @@ def main():
         unknown_story_type = StoryType.objects.get(name='(unknown)')
     except StoryType.DoesNotExist:
         unknown_story_type = StoryType(name='(unknown)', sort_code=100)
-        unknown_story_type.save()
-        unknown_story_type.sort_code = models.F('id')
         unknown_story_type.save()
 
     basic_args = ' -u%s' % settings.DATABASE_USER

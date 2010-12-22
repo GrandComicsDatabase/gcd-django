@@ -25,13 +25,13 @@ class CountStatsManager(models.Manager):
               count=Series.objects.filter(deleted=False).count())
             self.create(name='issues', language=language,
               count=Issue.objects.filter(deleted=False).count())
-            self.create(name='stories', language=language,
-              count=Story.objects.filter(deleted=False).count())
-            self.create(name='covers', language=language,
-              count=Cover.objects.filter(deleted=False).count())
-
             self.create(name='issue indexes', language=language,
               count=Issue.objects.filter(deleted=False, is_indexed=True).count())
+            self.create(name='covers', language=language,
+              count=Cover.objects.filter(deleted=False).count())
+            self.create(name='stories', language=language,
+              count=Story.objects.filter(deleted=False).count())
+
             return
 
         self.create(name='series', language=language,
