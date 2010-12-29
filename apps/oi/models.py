@@ -689,7 +689,10 @@ class Revision(models.Model):
         for field_name in self.field_list():
             old = get_prev_value(field_name)
             new = getattr(self, field_name)
-            field_changed = old != new
+            if type(new) == unicode:
+                field_changed = old.strip() != new.strip()
+            else:
+                field_changed = old != new
             self.changed[field_name] = field_changed
             self.is_changed |= field_changed
 
