@@ -85,6 +85,10 @@ This is installable via easy_install on MacOS X and CentOS.
 RPM: pyicu (but yum doesn't seem to find it?  Possibly due to config weirdness.)
 Debian package: python-pyicu
 
+3.7: Install python-yaml, pre-built packages should exist for most linux distributions:
+http://pyyaml.org/
+If you only want to work in the READ_ONLY mode (see below) you do not need this.
+
 4.  If you're reading this from the wiki, you'll now want to check out the code
 (which includes this file).  The sourceforge page is
 http://sourceforge.net/projects/grandcomic-book/ and is linked from
@@ -105,8 +109,9 @@ will automatically override the settings in the regular settings.py file.
 Our SVN ignore settings will ignore the settings_local.py file so you won't get
 annoying question mark entries when you run svn status.
 
-By default, we assume that the database is called gcdonline and it can
-be accessed by a user called gcdonline with no passwords.  If you set
+For the remainder of this document we expect that you have imported a current 
+public dump. By default, we assume that the database is called gcdonline and it 
+can be accessed by a user called gcdonline with no passwords.  If you set
 your database up differently, look for settings that start with
 DATABASE and override them appropriately.  http://www.djangoproject.com/ has lots
 of excellent documentation of all of the available settings.
@@ -118,8 +123,17 @@ python manage.py syncdb
 which will create the various tables that are not present in the data dump and
 load data in tables that need them. DO NOT create a local admin user when
 syncdb prompts you to do so.  Creating such a user will produce a user without
-a profile (gcd_indexer row) which will cause problems.  Instead, once you
-have successfully run syncdb, you should load several additional data fixtures:
+a profile (gcd_indexer row) which will cause problems.  
+
+At this time you may be able to test your installation and data import using a 
+read-only mode. This is possible if no migration scripts as mentioned in section
+8 are needed. If this is the case, you can set READ_ONLY = True or NO_OI = True 
+in settings_local.py and skip the remainder of this and the next section and 
+go to point 9. Essentially you can just try the steps at point 9 now with the 
+mentioned setting, if it fails proceed from here before asking for help :-)
+
+Now, instead of creating a local admin in the syncdb step, you should load 
+several additional data fixtures:
 
 python manage.py loaddata support
 python manage.py loaddata users
@@ -170,7 +184,7 @@ looks like Django isn't configured correctly, or
 http://dev.comics.org/ and/or http://groups.google.com/group/gcd-tech/
 if it appears to be a code problem.
 
-8.  When you start making changes, go to the wiki at http://docs.comics.org/
+10.  When you start making changes, go to the wiki at http://docs.comics.org/
 for instructions on how to get code reviewed before checkin.  You'll need
 to set up an account with our Review Board instance and get added to the
 SourceForge project with write permissions, as noted on the wiki.  Submissions that
