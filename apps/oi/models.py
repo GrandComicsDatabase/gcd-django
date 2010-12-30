@@ -967,7 +967,7 @@ class PublisherRevision(PublisherRevisionBase):
             'country': None,
             'year_began': None,
             'year_ended': None,
-            'url': None,
+            'url': '',
             'notes': '',
             'is_master': True,
             'parent': None,
@@ -1139,7 +1139,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             'year_began': None,
             'year_ended': None,
             'is_surrogate': None,
-            'url': None,
+            'url': '',
             'notes': '',
             'parent': None,
         }
@@ -1272,7 +1272,7 @@ class BrandRevision(PublisherRevisionBase):
             'name': '',
             'year_began': None,
             'year_ended': None,
-            'url': None,
+            'url': '',
             'notes': '',
             'parent': None,
         }
