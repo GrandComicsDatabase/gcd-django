@@ -827,10 +827,10 @@ def search_stories(data, op):
     # since issue_editing is credit use it here to allow correct 'OR' behavior
     if data['issue_editing']:
         if target == 'sequence': # no prefix in this case
-            q_objs.append(Q(**{ 'issue__editing__icontains':
+            q_objs.append(Q(**{ 'issue__editing__%s' % op:
                                 data['issue_editing'] }))
         else: # cut off 'story__'
-            q_objs.append(Q(**{ '%sediting__icontains' % prefix[:-7]:
+            q_objs.append(Q(**{ '%sediting__%s' % (prefix[:-7], op):
                                 data['issue_editing'] }))
 
     return compute_qobj(data, q_and_only, q_objs)
