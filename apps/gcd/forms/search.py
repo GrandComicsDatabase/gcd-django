@@ -169,15 +169,16 @@ class AdvancedSearch(forms.Form):
 
     def clean(self):
         cleaned_data = self.cleaned_data
-        if cleaned_data['cover_needed']:
-            # use of in since after distinction stuff is cleared add series
-            if cleaned_data['target'] not in ['issue','series']: 
-                raise forms.ValidationError(
-                  "Searching for covers which are missing or need to be"
-                  " replaced is valid only for issue or series searches.")
-        if cleaned_data['target'] == 'cover' and cleaned_data['type']:
-            if len(cleaned_data['type']) > 1 or StoryType.objects\
-              .get(name='cover') not in cleaned_data['type']:
-                raise forms.ValidationError("When searching for covers"
-                      " only type cover can be selected.")
+        if self.is_valid():
+            if cleaned_data['cover_needed']:
+                # use of in since after distinction stuff is cleared add series
+                if cleaned_data['target'] not in ['issue','series']: 
+                    raise forms.ValidationError(
+                      "Searching for covers which are missing or need to be"
+                      " replaced is valid only for issue or series searches.")
+            if cleaned_data['target'] == 'cover' and cleaned_data['type']:
+                if len(cleaned_data['type']) > 1 or StoryType.objects\
+                  .get(name='cover') not in cleaned_data['type']:
+                    raise forms.ValidationError("When searching for covers"
+                          " only type cover can be selected.")
         return cleaned_data
