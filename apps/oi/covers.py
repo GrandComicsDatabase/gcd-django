@@ -191,6 +191,8 @@ def generate_sizes(cover, im):
                     float(cover.front_right - cover.front_left)*400.
             size = int(width), \
                    int(width / full_cover.size[0] * full_cover.size[1])
+            if size[1] < 400:
+                size = int(full_cover.size[0]*400./full_cover.size[1]), 400
             scaled = full_cover.resize(size, Image.ANTIALIAS)
         else:
             if width == 400 and im.size[0] > im.size[1]:
