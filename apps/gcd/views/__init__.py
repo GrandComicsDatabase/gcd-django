@@ -64,7 +64,7 @@ def paginate_response(request, queryset, template, vars, page_size=100,
     We could reconsider writing our own code.
     """
 
-    p = DiggPaginator(queryset, page_size, body=5, padding=2)
+    p = DiggPaginator(queryset, page_size, body=7, padding=2, tail=1)
 
     page_num = 1
     redirect = None
