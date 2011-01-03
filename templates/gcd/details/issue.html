@@ -87,7 +87,7 @@
 {% if request.user.is_authenticated %}
           <div class="right">
             <a class="link_info_left" href="{% url export_issue issue.id %}"><span>download issue data</span>
-            <img src="/site_media/img/gcd/icons/gnome-document-save_16.png" alt="download issue data" style="border:0;">
+            <img src="{{ MEDIA_URL }}img/gcd/icons/gnome-document-save_16.png" alt="download issue data" style="border:0;">
             </a>
           </div>
 {% endif %}
