@@ -6,7 +6,7 @@ import os
 from codecs import EncodedFile, BOM_UTF16
 from decimal import Decimal, InvalidOperation
 
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render_to_response, get_object_or_404
@@ -34,6 +34,10 @@ ISSUE_EDITING = 9
 ISBN = 10
 ISSUE_NOTES = 11
 
+ISSUE_FIELDS = ['number', 'volume', 'indicia_publisher', 'brand',
+                'publication_date', 'key_date', 'indicia_frequency', 'price', 
+                'page_count', 'editing', 'isbn', 'notes']
+
 TITLE = 0
 TYPE = 1
 FEATURE = 2
@@ -41,16 +45,20 @@ STORY_PAGE_COUNT = 3
 SCRIPT = 4
 PENCILS = 5
 INKS = 6
-COLORIST = 7
-LETTERER = 8
+COLORS = 7
+LETTERS = 8
 STORY_EDITING = 9
 GENRE = 10
-CHARACTER_APPEARANCE = 11
+CHARACTERS = 11
 JOB_NUMBER = 12
-REPRINT_INFO = 13
+REPRINT_NOTES = 13
 SYNOPSIS = 14
 STORY_NOTES = 15
 
+SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
+                   'pencils', 'inks', 'colors', 'letters', 'editing',
+                   'genre', 'characters', 'job_number', 'reprint_notes',
+                   'synopsis', 'notes']
 # based on http://www.smontanaro.net/python/decodeh.py
 def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
     """
@@ -293,13 +301,13 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
                 no_script = True
         pencils, no_pencils = _check_for_none(fields[PENCILS])
         inks, no_inks = _check_for_none(fields[INKS])
-        colors, no_colors = _check_for_none(fields[COLORIST])
-        letters, no_letters = _check_for_none(fields[LETTERER])
+        colors, no_colors = _check_for_none(fields[COLORS])
+        letters, no_letters = _check_for_none(fields[LETTERS])
         editing, no_editing = _check_for_none(fields[STORY_EDITING])
         genre = fields[GENRE].strip()
-        characters = fields[CHARACTER_APPEARANCE].strip()
+        characters = fields[CHARACTERS].strip()
         job_number = fields[JOB_NUMBER].strip()
-        reprint_notes = fields[REPRINT_INFO].strip()
+        reprint_notes = fields[REPRINT_NOTES].strip()
         synopsis = fields[SYNOPSIS].strip()
         notes = fields[STORY_NOTES].strip()
 
@@ -378,8 +386,10 @@ def import_issue_from_file(request, issue_id, changeset_id):
             issue_revision.volume, issue_revision.no_volume = \
               _parse_volume(issue_fields[VOLUME].strip())
 
+            indicia_publisher_name, issue_revision.indicia_pub_not_printed = \
+              _check_for_none(issue_fields[INDICIA_PUBLISHER])
             indicia_publisher, failure = _find_publisher_object(request,
-              changeset, issue_fields[INDICIA_PUBLISHER].strip(), 
+              changeset, indicia_publisher_name, 
               IndiciaPublisher.objects.all(), "Indicia publisher", 
               issue_revision.issue.series.publisher)
             if failure:
@@ -453,3 +463,24 @@ def import_sequences_from_file(request, issue_id, changeset_id):
           'Could not find issue for id %s and changeset %s' \
             % (issue_id, changeset_id))
 
+@permission_required('gcd.can_reserve')
+def export_issue_to_file(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id)
+    export = ''
+    for field_name in ISSUE_FIELDS:
+        if field_name == 'brand' and not issue.brand and not issue.no_brand:
+            export += "\t" 
+        elif field_name == 'indicia_publisher' and not \
+          issue.indicia_publisher and not issue.indicia_pub_not_printed:
+            export += "\t" 
+        else:
+            export += "%s\t" % unicode(getattr(issue, field_name))
+    export = export[:-1] + '\n'
+    for sequence in issue.active_stories():
+        for field_name in SEQUENCE_FIELDS:
+            export += "%s\t" % unicode(getattr(sequence, field_name))
+        export = export[:-1] + '\n'
+    filename = unicode(issue).replace(' ', '_')
+    response = HttpResponse(export, mimetype='text/tab-separated-values')
+    response['Content-Disposition'] = 'attachment; filename=%s.gcd' % filename
+    return response

@@ -583,10 +583,42 @@ div.ongoing_status form {
     margin-bottom: 1em;
 }
 
+/* behaviour for links */
 a.new_window {
     padding-right: 13px; 
     background: transparent no-repeat right center url(external.png); 
 }
+
+a.link_info_left
+{
+    position:relative;
+    z-index:1;
+    text-decoration:none;
+}
+
+a.link_info_left:hover
+{
+    z-index:2;
+}
+
+a.link_info_left span
+{
+    display: none;
+}
+
+a.link_info_left:hover span
+{
+    display:block;
+    position:absolute;
+    left:-11em;
+    width:10em;
+    border:1px solid black; 
+    background-color: #DDD;
+    color:#000;
+    text-align: center;
+    padding: 5px;
+    font-size: 0.8em;
+} 
 
 #donate_table {
     width: 100%;
@@ -642,3 +674,4 @@ form#comments textarea {
 .cover_button {
     display: inline;
 }
+
