@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.core import urlresolvers
 from django.db.models import Sum
 
 from publisher import IndiciaPublisher, Brand
@@ -158,7 +159,12 @@ class Issue(models.Model):
             return False
 
     def get_absolute_url(self):
-        return "/issue/%i/" % self.id
+        return urlresolvers.reverse(
+            'show_issue',
+            kwargs={'issue_id': self.id } )
+
+    def full_name(self):
+        return u'%s #%s' % (self.series.full_name(), self.display_number)
 
     def __unicode__(self):
         return u'%s #%s' % (self.series, self.display_number)

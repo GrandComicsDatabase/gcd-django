@@ -1,4 +1,5 @@
 from django.db import models
+from django.core import urlresolvers
 from country import Country
 from django.core.exceptions import ObjectDoesNotExist
 from apps.oi import states
@@ -80,9 +81,13 @@ class Publisher(BasePublisher):
 
     def get_absolute_url(self):
         if self.is_imprint():
-            return "/imprint/%i/" % self.id
+            return urlresolvers.reverse(
+                'show_imprint',
+                kwargs={'imprint_id': self.id } )
         else:
-            return "/publisher/%i/" % self.id
+            return urlresolvers.reverse(
+                'show_publisher',
+                kwargs={'publisher_id': self.id } )
 
     def get_official_url(self):
         """

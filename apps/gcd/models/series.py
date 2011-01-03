@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.core import urlresolvers
 
 from apps.gcd.models.country import Country
 from apps.gcd.models.language import Language
@@ -114,7 +115,9 @@ class Series(models.Model):
             return None
 
     def get_absolute_url(self):
-        return "/series/%i/" % self.id
+        return urlresolvers.reverse(
+            'show_series',
+            kwargs={'series_id': self.id } )
 
     def marked_scans_count(self):
         from apps.gcd.models.cover import Cover
@@ -157,6 +160,9 @@ class Series(models.Model):
             else:
                 date += u'?'
             return date
+
+    def full_name(self):
+        return '%s (%s, %s series)' % (self.name, self.publisher, self.year_began)
 
     def __unicode__(self):
         return '%s (%s series)' % (self.name, self.year_began)
