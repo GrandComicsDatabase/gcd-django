@@ -475,12 +475,12 @@ def export_issue_to_file(request, issue_id):
             export += "\t" 
         else:
             export += "%s\t" % unicode(getattr(issue, field_name))
-    export = export[:-1] + '\n'
+    export = export[:-1] + '\r\n'
     for sequence in issue.active_stories():
         for field_name in SEQUENCE_FIELDS:
             export += "%s\t" % unicode(getattr(sequence, field_name))
-        export = export[:-1] + '\n'
-    filename = unicode(issue).replace(' ', '_')
+        export = export[:-1] + '\r\n'
+    filename = unicode(issue).replace(' ', '_').encode('utf-8')
     response = HttpResponse(export, mimetype='text/tab-separated-values')
     response['Content-Disposition'] = 'attachment; filename=%s.gcd' % filename
     return response
