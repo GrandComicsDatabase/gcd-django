@@ -482,5 +482,5 @@ def export_issue_to_file(request, issue_id):
         export = export[:-1] + '\r\n'
     filename = unicode(issue).replace(' ', '_').encode('utf-8')
     response = HttpResponse(export, mimetype='text/tab-separated-values')
-    response['Content-Disposition'] = 'attachment; filename=%s.gcd' % filename
+    response['Content-Disposition'] = 'attachment; filename=%s.tsv' % filename
     return response
