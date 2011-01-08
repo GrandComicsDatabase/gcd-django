@@ -162,6 +162,7 @@ def _process_file(request, changeset, is_issue):
         decoded_line, failure = decode_heuristically(line, enc=enc)
         if failure:
             error_text = 'line %s has unknown file encoding.' % line
+            error_text = unicode(error_text, errors='replace')
             return _handle_import_error(request, changeset, error_text)
 
         split_line = decoded_line.strip('\n').split('\t')
