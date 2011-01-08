@@ -15,7 +15,6 @@ from django.shortcuts import render_to_response, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
 from django.core import urlresolvers
-from django.core.paginator import QuerySetPaginator
 from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 
@@ -237,12 +236,6 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
         return HttpResponseRedirect(urlresolvers.reverse(issue,
                                     kwargs={ 'issue_id': things[0].id }))
     else: # if more or none use issue_list.html from search
-        p = QuerySetPaginator(things, 100)
-        page_num = 1
-        if (request.GET.has_key('page')):
-            page_num = int(request.GET['page'])
-        page = p.page(page_num)
-        
         context = {
             'items' : things,
             'item_name' : 'issue',
