@@ -474,12 +474,19 @@ def export_issue_to_file(request, issue_id):
         elif field_name == 'indicia_publisher' and not \
           issue.indicia_publisher and not issue.indicia_pub_not_printed:
             export += "\t" 
+        elif field_name == 'editing' and getattr(issue, 'no_editing'):
+            export += "None\t"
         else:
             export += "%s\t" % unicode(getattr(issue, field_name))
     export = export[:-1] + '\r\n'
     for sequence in issue.active_stories():
         for field_name in SEQUENCE_FIELDS:
-            export += "%s\t" % unicode(getattr(sequence, field_name))
+            if field_name in ['script', 'pencils', 'inks', 'colors', 
+                              'letters', 'editing'] and \
+                             getattr(sequence, 'no_%s' % field_name):
+                export += "None\t"
+            else:
+                export += "%s\t" % unicode(getattr(sequence, field_name))
         export = export[:-1] + '\r\n'
     filename = unicode(issue).replace(' ', '_').encode('utf-8')
     response = HttpResponse(export, mimetype='text/tab-separated-values')
