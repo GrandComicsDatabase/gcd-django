@@ -138,7 +138,9 @@ class IndiciaPublisher(BasePublisher):
         return self.issue_set.exclude(deleted=True)
 
     def get_absolute_url(self):
-        return "/indicia_publisher/%i/" % self.id
+        return urlresolvers.reverse(
+            'show_indicia_publisher',
+            kwargs={'indicia_publisher_id': self.id } )
 
     def __unicode__(self):
         return self.name
@@ -161,7 +163,9 @@ class Brand(BasePublisher):
         return self.issue_set.exclude(deleted=True)
 
     def get_absolute_url(self):
-        return "/brand/%i/" % self.id
+        return urlresolvers.reverse(
+            'show_brand',
+            kwargs={'brand_id': self.id } )
 
     def __unicode__(self):
         return self.name
