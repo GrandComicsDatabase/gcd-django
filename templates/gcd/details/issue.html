@@ -53,7 +53,11 @@
 {% if issue.has_covers %}
             <a href="{{ issue.get_absolute_url }}cover/4">{{ image_tag }}</a>
 {% else %}
+  {% if preview %}
+            <a href="{% url upload_cover issue_id=issue.issue.id %}">{{ image_tag }}</a>
+  {% else %}
             <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
+  {% endif %}
 {% endif %}
             <div class="issue_cover_links">
 {% if issue.has_covers %}
