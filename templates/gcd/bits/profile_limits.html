@@ -1,7 +1,7 @@
 {% load accounts %}
 
-<ul>
 {% if user|can_view_profile_details:profile_user %}
+<ul>
   <li> Maximum individual changes (a.k.a. reservations) you can make at once:
     <span class="data_value">{{ profile_user.indexer.max_reservations }}</span>
   <li> Maximum ongoing series reservations you can hold at once:
@@ -22,11 +22,12 @@
     {% endif %}
   <li> Index Measurement Points (IMPs):
     <span class="data_value">{{ profile_user.indexer.imps }}</a>
-{% endif %}
 </ul>
+{% ifequal user profile_user %}
 <p>
 Index Measurement Points, or IMPs, are granted for contributions to the database,
 most often indexing comics or otherwise adding or correcting data.  Once you
 have accrued {{ settings.MEMBERSHIP_IMPS }} IMPs, you may vote in GCD elections.
 </p>
-
+{% endifequal %}
+{% endif %}
