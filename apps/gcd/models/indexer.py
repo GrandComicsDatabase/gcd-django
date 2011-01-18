@@ -6,6 +6,7 @@ from apps.gcd.models import Country, Language
 
 #TODO: Should not be importing from OI.  Reconsider app split.
 from apps.oi import states
+from apps.oi.models import CTYPES
 
 IMPS_FOR_APPROVAL = 3
 
@@ -53,7 +54,8 @@ class Indexer(models.Model):
 
     def can_reserve_another(self):
         if self.is_new:
-            if (self.user.changesets.filter(state__in=states.ACTIVE).count() >=
+            if (self.user.changesets.filter(state__in=states.ACTIVE)\
+                .exclude(change_type=CTYPES['cover']).count() >=
                 self.max_reservations):
                 return False 
         elif (self.user.changesets.filter(state=states.OPEN).count() >=
