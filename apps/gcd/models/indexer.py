@@ -6,7 +6,6 @@ from apps.gcd.models import Country, Language
 
 #TODO: Should not be importing from OI.  Reconsider app split.
 from apps.oi import states
-from apps.oi.models import CTYPES
 
 IMPS_FOR_APPROVAL = 3
 
@@ -53,6 +52,8 @@ class Indexer(models.Model):
     collapse_compare_view = models.BooleanField(db_index=True, default=False)
 
     def can_reserve_another(self):
+        from apps.oi.models import CTYPES
+
         if self.is_new:
             if (self.user.changesets.filter(state__in=states.ACTIVE)\
                 .exclude(change_type=CTYPES['cover']).count() >=
