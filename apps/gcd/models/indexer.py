@@ -100,7 +100,7 @@ class Indexer(models.Model):
         self.imps = models.F('imps') + value
         self.save()
         if (old_imps < settings.MEMBERSHIP_IMPS and
-          Indexer.objects_get(pk=self.pk).imps >= settings.MEMBERSHIP_IMPS):
+          Indexer.objects.get(pk=self.pk).imps >= settings.MEMBERSHIP_IMPS):
             self.user.groups.add(Group.objects.get(name='member'))
 
     def get_absolute_url(self):
