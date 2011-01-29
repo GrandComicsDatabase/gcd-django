@@ -81,6 +81,15 @@ urlpatterns = patterns('',
     url(r'^issue/(?P<issue_id>\d+)/$',
      'apps.gcd.views.details.issue', name='show_issue'),
     (r'^issue/$', 'apps.gcd.views.details.issue_form'),
+    # ISBNs don't have 'name' in the path, but otherwise work the same
+    (r'^isbn/name/(?P<isbn>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.issue_by_isbn_name'),
+    (r'^isbn/name/(?P<isbn>.+)/$',
+     'apps.gcd.views.search.issue_by_isbn_name'),
+    (r'^isbn/(?P<isbn>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.issue_by_isbn'),
+    (r'^isbn/(?P<isbn>.+)/$',
+     'apps.gcd.views.search.issue_by_isbn'),
 
     # Single Cover
     url(r'^issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',

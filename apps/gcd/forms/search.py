@@ -95,6 +95,7 @@ class AdvancedSearch(forms.Form):
     issue_notes = forms.CharField(label='Issue Notes', required=False)
     issue_editing = forms.CharField(required=False)
     issue_date = forms.CharField(label='Cover Date', required=False)
+    isbn = forms.CharField(label='ISBN', required=False)
 
     cover_needed = forms.BooleanField(label="Cover is Needed", 
                                        required=False)

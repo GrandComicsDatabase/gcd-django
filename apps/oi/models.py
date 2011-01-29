@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import itertools
 import operator
+from stdnum import isbn
 
 from django.db import models, settings
 from django.db.models import Q, F, Count
@@ -76,6 +77,24 @@ def set_series_first_last(series):
         series.first_issue = issues[0]
         series.last_issue = issues[len(issues) - 1]
     series.save()
+
+def validated_isbn(entered_isbn):
+    '''
+    returns ISBN10 or ISBN13 if valid ISBN, empty string otherwiese
+    '''
+    isbns = entered_isbn.split(';')
+    valid_isbns = True
+    for num in isbns:
+        valid_isbns &= isbn.is_valid(num)
+    if valid_isbns and len(isbns) == 1:
+        return isbn.compact(isbns[0])
+    elif valid_isbns and len(isbns) == 2:
+        # if two ISBNs it must be corresponding ISBN10 and ISBN13
+        if isbn.to_isbn13(isbns[0]) == isbn.to_isbn13(isbns[1]):
+            # always store ISBN13 if both exist
+            return isbn.compact(isbn.to_isbn13(isbns[0]))
+    else:
+        return ''
 
 class Changeset(models.Model):
 
@@ -1845,6 +1864,10 @@ class IssueRevision(Revision):
     isbn = models.CharField(max_length=32, blank=True, default='')
     date_inferred = models.BooleanField(default=False, blank=True)
 
+    def _valid_isbn(self):
+        return validated_isbn(self.isbn)
+    valid_isbn = property(_valid_isbn)
+
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
@@ -2092,6 +2115,7 @@ class IssueRevision(Revision):
         issue.no_brand = self.no_brand
 
         issue.isbn = self.isbn
+        issue.valid_isbn = validated_isbn(issue.isbn)
 
         if clear_reservation:
             issue.reserved = False

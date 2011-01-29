@@ -26,7 +26,15 @@
 {% endif %}
 {% if issue.isbn %}
         <dt>ISBN:
-        <dd id="issue_isbn"> {{ issue.isbn }}
+        <dd id="issue_isbn"> 
+  {% if issue.valid_isbn %}
+          <a title="Search at WorldCat" href="http://worldcat.org/isbn/{{ issue.valid_isbn }}">
+            {{ issue.isbn }}
+            <img src="{{ MEDIA_URL }}img/gcd/icons/worldcat_16.gif" width="12px;" alt="Search at WorldCat" style="border:0;">
+          </a>
+  {% else %}
+        {{ issue.isbn }}
+  {% endif %}
 {% endif %}
       </dl>
 {% if issue.series.format %}

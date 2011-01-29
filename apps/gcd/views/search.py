@@ -7,6 +7,7 @@ from re import *
 from urllib import urlopen, quote, urlencode
 from decimal import Decimal
 from string import capitalize
+from stdnum import isbn as stdisbn
 
 from django.db.models import Q
 from django.conf import settings
@@ -57,6 +58,19 @@ def generic_by_name(request, name, q_obj, sort,
         # query_string for the link to the advanced search
         query_val['target'] = 'series'
         query_val['series'] = name
+    elif class_ is Issue:
+        base_name = 'issue'
+        plural_suffix = 's'
+        things = Issue.objects.exclude(deleted=True).filter(q_obj) \
+                   .select_related('series__publisher')
+        if (sort == ORDER_ALPHA):
+            things = things.order_by("series__name", "key_date")
+        elif (sort == ORDER_CHRONO):
+            things = things.order_by("key_date", "series__name")
+        heading = 'Issue Search Results'
+        # query_string for the link to the advanced search
+        query_val['target'] = 'issue'
+        query_val['isbn'] = name
     elif (class_ is Story):
         # TODO: move this outside when series deletes are implemented
         q_obj &= Q(deleted=False)
@@ -246,6 +260,36 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
         return paginate_response(
           request, things, 'gcd/search/issue_list.html', context)
 
+def compute_isbn_qobj(isbn, prefix):
+    if stdisbn.is_valid(isbn):
+        isbn_compact = stdisbn.compact(isbn)
+        q_obj = Q(**{ '%svalid_isbn' % prefix : isbn_compact})
+        # need to search for both ISBNs to be safe
+        if stdisbn.isbn_type(isbn_compact) == 'ISBN13' and \
+          isbn_compact.startswith('978'):
+            isbn10 = isbn_compact[3:-1]
+            isbn10 += stdisbn._calc_isbn10_check_digit(isbn10)
+            q_obj |= Q(**{ '%svalid_isbn' % prefix : isbn10})
+        elif stdisbn.isbn_type(isbn_compact) == 'ISBN10':
+            q_obj |= Q(**{ '%svalid_isbn' % prefix :
+                           stdisbn.to_isbn13(isbn_compact)})
+    else:
+        q_obj = Q(**{ '%sisbn__icontains' % prefix : isbn})
+    return q_obj
+
+def issue_by_isbn(request, isbn, sort=ORDER_ALPHA):
+    q_obj = compute_isbn_qobj(isbn, '')
+    return generic_by_name(request, isbn, q_obj, sort, class_=Issue,
+                           template='gcd/search/issue_list.html',
+                           credit="isbn")
+
+def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
+    """Handle the form-style URL from the basic search form by mapping
+    it into the by-name lookup URLs the system already knows how to handle."""
+
+    return HttpResponseRedirect(
+      urlresolvers.reverse(issue_by_isbn,
+                           kwargs={ 'isbn': isbn, 'sort': sort }))
 
 def search(request):
     """
@@ -705,7 +749,8 @@ def search_issues(data, op, stories_q=None):
           Q(**{ '%srevisions__changeset__indexer__indexer__in' % prefix:
                 data['indexer'] }) &
           Q(**{ '%srevisions__changeset__state' % prefix: states.APPROVED }))
-
+    if data['isbn']:
+        q_objs.append(compute_isbn_qobj(data['isbn'], prefix))
     if data['issue_notes']:
         q_objs.append(Q(**{ '%snotes__icontains' % prefix: data['issue_notes'] }))
 

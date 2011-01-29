@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -5,7 +6,7 @@ from django.utils.html import conditional_escape as esc
 from django import template
 from django.template.defaultfilters import yesno, linebreaksbr, title, urlize
 
-from apps.oi.models import StoryRevision, CTYPES
+from apps.oi.models import StoryRevision, CTYPES, validated_isbn
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           sum_page_counts
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
@@ -250,9 +251,17 @@ def field_value(revision, field):
             # only calculate total sum for issue not sequences
             sum_story_pages = format_page_count(sum_page_counts(
                               revision.changeset.storyrevisions.all()))
-            return u'%s (total sum of story page counts: %s)' % \
+            return u'%s (note: total sum of story page counts is %s)' % \
                    (format_page_count(value), sum_story_pages)
         return format_page_count(value)
+    elif field == 'isbn':
+        if value:
+            if validated_isbn(value):
+                return u'%s (note: valid ISBN)' % value
+            elif len(value.split(';')) > 1:
+                return u'%s (note: invalid or inequal ISBNs)' % value
+            elif value:
+                return u'%s (note: invalid ISBN)' % value
     return value
 
 # translate field name into more human friendly name
