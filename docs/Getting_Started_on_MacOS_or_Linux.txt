@@ -89,6 +89,9 @@ Debian package: python-pyicu
 http://pyyaml.org/
 If you only want to work in the READ_ONLY mode (see below) you do not need this.
 
+3.8: Install python-stdnum, which does work with easy_install:
+http://pypi.python.org/pypi/python-stdnum
+
 4.  If you're reading this from the wiki, you'll now want to check out the code
 (which includes this file).  The sourceforge page is
 http://sourceforge.net/projects/grandcomic-book/ and is linked from
