@@ -89,12 +89,12 @@ def validated_isbn(entered_isbn):
     if valid_isbns and len(isbns) == 1:
         return isbn.compact(isbns[0])
     elif valid_isbns and len(isbns) == 2:
+        compacted_isbns = [isbn.compact(isbn.to_isbn13(i)) for i in isbns]
         # if two ISBNs it must be corresponding ISBN10 and ISBN13
-        if isbn.to_isbn13(isbns[0]) == isbn.to_isbn13(isbns[1]):
+        if compacted_isbns[0] == compacted_isbns[1]:
             # always store ISBN13 if both exist
-            return isbn.compact(isbn.to_isbn13(isbns[0]))
-    else:
-        return ''
+            return compacted_isbns[0]
+    return ''
 
 class Changeset(models.Model):
 
