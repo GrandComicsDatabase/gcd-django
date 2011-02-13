@@ -2204,6 +2204,7 @@ def compare(request, id):
         template = 'oi/edit/compare.html'
 
     prev_rev = revision.previous()
+    post_rev = revision.posterior()
     field_list = revision.field_list()
     # eliminate fields that shouldn't appear in the compare
     if model_name == 'series':
@@ -2228,6 +2229,7 @@ def compare(request, id):
                                   {'changeset': changeset,
                                    'revision': revision,
                                    'prev_rev': prev_rev,
+                                   'post_rev': post_rev,
                                    'changeset_type' : model_name.replace('_',' '),
                                    'model_name': model_name,
                                    'states': states,

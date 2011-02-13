@@ -676,11 +676,28 @@ class Revision(models.Model):
             prev_revs = self.source.revisions \
               .exclude(changeset__state=states.DISCARDED) \
               .filter(Q(modified__lt=self.modified) |
-                      (Q(modified=self.modified) & ~Q(id=self.id))) \
+                      (Q(modified=self.modified) & Q(id__lt=self.id))) \
               .order_by('-modified', '-id')
             if prev_revs.count() > 0:
                 self._prev_rev = prev_revs[0]
         return self._prev_rev
+
+
+    def posterior(self):
+        # this is used on the compare page, there is no gain if we cache this
+        # if we use this for something else we need to check if we would
+        # gain something by caching and if we can cache
+
+        if self.changeset.state not in states.ACTIVE:
+            post_revs = self.source.revisions \
+              .exclude(changeset__state=states.DISCARDED) \
+              .filter(Q(modified__gt=self.modified) |
+                      (Q(modified=self.modified) & Q(id__gt=self.id))) \
+              .order_by('modified', 'id')
+            if post_revs.count() > 0:
+                return post_revs[0]
+        return None
+
 
     def compare_changes(self):
         """
