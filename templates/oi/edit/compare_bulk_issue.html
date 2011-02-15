@@ -25,12 +25,18 @@ This bulk change considers the following issues, the search terms used are given
 <tr>
   <th> Issue </th>
   <th> Previous Change </th>
+{% if changeset.state == states.APPROVED %}
+  <th> Next Change </th>
+{% endif %}
   <th> Preview </th>
 </tr>
 {% for issue in changeset.ordered_issue_revisions %}
 <tr>
-  <td> {{ issue }}
-  <td> {% if issue.previous %}<a href="{% url compare id=issue.previous.changeset.id %}?collapse=1"> Previous Change ({{ issue.previous.modified|date:"Y-m-d" }}) {% else %} Missing Changeset History Gives Error {% endif %} </a>
+  <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a>
+  <td> {% if issue.previous %}<a href="{% url compare id=issue.previous.changeset.id %}?collapse=1"> Previous Change ({{ issue.previous.modified|date:"Y-m-d" }}) {% endif %} </a>
+{% if changeset.state = states.APPROVED %}
+  <td> {% if issue.posterior %}<a href="{% url compare id=issue.posterior.changeset.id %}?collapse=1"> Next Change ({{ issue.posterior.modified|date:"Y-m-d" }}) {% endif %} </a>
+{% endif %}
   <td> <a class="new_window" href="{% url preview_revision model_name=model_name,id=issue.id %}" target=_blank>Preview</a>
 </tr>
 {% endfor %}

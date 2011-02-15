@@ -31,6 +31,10 @@ the following issues (links open in new windows):
   <th> Issue Number</th>
   <th> Display Number </th>
   <th> Preview </th>
+{% if changeset.state == states.APPROVED %}
+  <th> Next Change </th>
+{% endif %}
+
 </tr>
 {% for issue in changeset.ordered_issue_revisions %}
 <tr>
@@ -38,6 +42,9 @@ the following issues (links open in new windows):
   <td> {{ issue.number }}
   <td> {{ issue.display_number }}
   <td> <a class="new_window" href="{% url preview_revision model_name=model_name,id=issue.id %}" target=_blank>Preview</a>
+{% if changeset.state = states.APPROVED %}
+  <td> {% if issue.posterior %}<a href="{% url compare id=issue.posterior.changeset.id %}?collapse=1"> Next Change ({{ issue.posterior.modified|date:"Y-m-d" }}) {% endif %} </a>
+{% endif %}
 </tr>
 {% endfor %}
 </table>

@@ -684,19 +684,24 @@ class Revision(models.Model):
 
 
     def posterior(self):
-        # this is used on the compare page, there is no gain if we cache this
-        # if we use this for something else we need to check if we would
-        # gain something by caching and if we can cache
+        # This would be in the db cache anyway, but this way we
+        # save db-calls in some cases.
+        # Inside a transaction we cannot gain a new revision, so it's safe
+        if hasattr(self, '_post_rev'):
+            return self._post_rev
 
-        if self.changeset.state not in states.ACTIVE:
+        # post_rev stays None if no newer revision is found
+        self._post_rev = None
+
+        if self.changeset.state == states.APPROVED:
             post_revs = self.source.revisions \
-              .exclude(changeset__state=states.DISCARDED) \
+              .filter(changeset__state=states.APPROVED) \
               .filter(Q(modified__gt=self.modified) |
                       (Q(modified=self.modified) & Q(id__gt=self.id))) \
               .order_by('modified', 'id')
             if post_revs.count() > 0:
-                return post_revs[0]
-        return None
+                self._post_rev = post_revs[0]
+        return self._post_rev
 
 
     def compare_changes(self):
