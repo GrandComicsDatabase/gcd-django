@@ -85,7 +85,8 @@ class Issue(models.Model):
         else:
             total_count = self.active_stories()\
                               .aggregate(Sum('page_count'))['page_count__sum']
-            if total_count is not None and total_count * 2 > self.page_count:
+            if (total_count is not None and self.page_count is not None and
+                    total_count * 2 > self.page_count):
                 is_indexed = True
             else:
                 is_indexed = False
