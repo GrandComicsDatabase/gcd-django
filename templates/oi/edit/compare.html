@@ -66,10 +66,12 @@ Highlighted fields represent <span class="added_highlight">added</span>,
     {% endcomment %}
     {% with story_revision as revision %}
     {% with story_revision.previous as prev_rev %}
+    {% with story_revision.posterior as post_rev %}
     {% with story_revision.field_list as field_list %}
     {% with 'story' as changeset_type %}
       {{ revision.compare_changes|default:'' }}
       {% include 'oi/bits/compare.html' %}
+    {% endwith %}
     {% endwith %}
     {% endwith %}
     {% endwith %}
