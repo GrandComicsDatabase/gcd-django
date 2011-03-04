@@ -49,6 +49,9 @@ class Publisher(BasePublisher):
     parent = models.ForeignKey('self', null=True,
                                related_name='imprint_set')
 
+    def active_imprints(self):
+        return self.imprint_set.exclude(deleted=True)
+
     def active_brands(self):
         return self.brand_set.exclude(deleted=True)
 

@@ -108,6 +108,10 @@ def imprint(request, imprint_id):
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'publisher', 'id': imprint.parent_id}))
 
+    if imprint.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'imprint', 'id': imprint_id}))
+
     imprint_series = imprint.imprint_series_set.exclude(deleted=True) \
       .order_by('name')
 
@@ -182,7 +186,7 @@ def imprints(request, publisher_id):
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'publisher', 'id': publisher_id}))
 
-    imps = publisher.imprint_set.all()
+    imps = publisher.active_imprints()
 
     sort = ORDER_ALPHA
     if 'sort' in request.GET:
@@ -319,21 +323,27 @@ def series_details(request, series_id, by_date=False):
 def change_history(request, model_name, id):
     if model_name not in ['publisher', 'brand', 'indicia_publisher',
                           'series', 'issue']:
-        return render_to_response('gcd/error.html', {
-          'error_text' : 'There is no change history for this type of object.'},
-          context_instance=RequestContext(request))
+        if not (model_name == 'imprint' and 
+          get_object_or_404(Publisher, id=id, is_master=False).deleted):
+            return render_to_response('gcd/error.html', {
+              'error_text' : 'There is no change history for this type of object.'},
+              context_instance=RequestContext(request))
 
     template = 'gcd/details/change_history.html'
     prev_issue = None
     next_issue = None
 
-    # can't import up top because of circular dependency
-    from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
-    object = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
+    if model_name == 'imprint':
+        object = get_object_or_404(Publisher, id=id, is_master=False)
+        filter_string = 'publisherrevisions__publisher'
+    else:
+        # can't import up top because of circular dependency
+        from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
+        object = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
 
-    # filter is publisherrevisions__publisher, seriesrevisions__series, etc.
-    filter_string = '%ss__%s' % (REVISION_CLASSES[model_name].__name__.lower(),
-                                 model_name)
+        # filter is publisherrevisions__publisher, seriesrevisions__series, etc.
+        filter_string = '%ss__%s' % (REVISION_CLASSES[model_name].__name__.lower(),
+                                     model_name)
     kwargs = { str(filter_string): object, 'state': states.APPROVED }
     changesets = Changeset.objects.filter(**kwargs).order_by('-modified', '-id')
 

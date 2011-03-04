@@ -47,6 +47,32 @@ IMP_COVER_VALUE = 5
 IMP_APPROVER_VALUE = 3
 IMP_DELETE = 1
 
+
+def check_delete_imprint(imprint):
+    '''
+    Check an imprints for deletion and delete if possible.
+    Note that imprints cannot be reserved by users.
+    Need to re-fetch the imprint from the db since we did an F()-update before
+    '''
+    imprint = Publisher.objects.get(id=imprint.id)
+    if imprint.deletable():
+        from apps.oi.views import _do_reserve
+        anon = User.objects.get(username=settings.ANON_USER_NAME)
+        changeset=_do_reserve(anon, imprint, 'publisher', delete=True)
+        if changeset == None: # something is wrong 
+            raise ValueError
+        changeset.state=states.REVIEWING
+        changeset.approver = anon
+        changeset.save()
+        comment = changeset.comments.create(commenter=anon,
+          text='Automatically generated changeset for the deletion of an imprint.',
+          old_state=states.UNRESERVED, new_state=states.PENDING)
+        changeset.approve(notes='Automatically approved deletion.')
+        return True
+    else:
+        return False
+
+
 def update_count(field, delta, language=None):
     '''
     updates statistics, for all and per language
@@ -174,8 +200,12 @@ class Changeset(models.Model):
                 if self.change_type == CTYPES['publisher']:
                     # to filter out all the imprints in a publisher deletion
                     # changeset
-                    self._inline_revision = \
-                      self.publisherrevisions.filter(is_master=True)[0]
+                    if self.publisherrevisions.count() > 1:
+                        self._inline_revision = \
+                          self.publisherrevisions.filter(is_master=True)[0]
+                    else:
+                        self._inline_revision = \
+                           self.publisherrevisions.get()
                 else:
                     self._inline_revision = self.revisions.next()
         return self._inline_revision
@@ -1054,6 +1084,12 @@ class PublisherRevision(PublisherRevisionBase):
             self.publisher = pub
             self.save()
 
+    def _imprint_count(self):
+        if self.source is None:
+            return 0
+        return self.source.imprint_count
+    imprint_count = property(_imprint_count)
+
     def _indicia_publisher_count(self):
         if self.source is None:
             return 0
@@ -1695,6 +1731,7 @@ class SeriesRevision(Revision):
             if self.imprint:
                 self.imprint.series_count = F('series_count') - 1
                 self.imprint.save()
+                check_delete_imprint(self.imprint)
             series.delete()
             update_count('series', -1, language=series.language)
             reservation = self.source.get_ongoing_reservation()
@@ -1713,6 +1750,7 @@ class SeriesRevision(Revision):
                                                         series.issue_count
                     self.series.imprint.series_count = F('series_count') - 1
                     self.series.imprint.save()
+                    check_delete_imprint(self.series.imprint)
 
         series.name = self.name
         series.classification = self.classification

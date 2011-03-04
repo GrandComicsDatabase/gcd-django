@@ -23,6 +23,12 @@
   {% endwith %}
 {% endifequal %}
 
+{% ifequal description "Imprint" %}
+  {% with object as publisher %}
+    {% include "gcd/bits/publisher_header.html" %}
+  {% endwith %}
+{% endifequal %}
+
 {% ifequal description "Brand" %}
   {% with object as publisher %}
   {% with "brands" as url_suffix %}

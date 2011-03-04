@@ -251,6 +251,7 @@ def get_series_revision_form(publisher=None, source=None, indexer=None):
             if source.imprint is not None:
                 imprint = forms.ModelChoiceField(required=False,
                   queryset=Publisher.objects.filter(is_master=False,
+                                                    deleted=False,
                                                     parent=publisher))
         return RuntimeSeriesRevisionForm
 
@@ -539,10 +540,10 @@ class IssueRevisionForm(forms.ModelForm):
 
     isbn = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
       required=False, label='ISBN', max_length=32,
-      help_text='The ISBN as printed on the item. If both ISBN 10 and ISBN 13 '
-                'are listed, separate them with a semi-colon. Do not use this '
-                'field for numbering systems other than ISBN. Example: "'
-                '978-0-307-29063-2; 0-307-29063-8"')
+      help_text='The ISBN as printed on the item. Do not use this field for '
+                'numbering systems other than ISBN. If both ISBN 10 and '
+                'ISBN 13 are listed, separate them with a semi-colon. '
+                ' Example: "978-0-307-29063-2; 0-307-29063-8".')
 
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
