@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200px" height="600px" viewBox="0 0 60 30" xmlns:xlink="http://www.w3.org/1999/xlink">
+<rect fill="#d00" width="60" height="30"/>
+<rect fill="#fff" width="60" height="20"/>
+<rect fill="#003893" width="60" height="10"/>
+<defs>
+ <g id="star">
+ <g id="1">
+ <polygon id="2" points="0,0 0,1 .5,1" transform="translate(0, -1) rotate(18)"/>
+ <use xlink:href="#2" transform="scale(-1, 1)"/>
+ </g>
+  <use xlink:href="#1" transform="rotate(72)"/>
+  <use xlink:href="#1" transform="rotate(-72)"/>
+  <use xlink:href="#1" transform="rotate(144)"/>
+  <use xlink:href="#1" transform="rotate(-144)"/>
+ </g>
+</defs>
+ <use xlink:href="#star" fill="#f5bf22" transform="translate(30, 15) scale(10)"/>
+ <use xlink:href="#star" fill="#d00" transform="translate(30, 15) scale(9)"/>
+</svg>
