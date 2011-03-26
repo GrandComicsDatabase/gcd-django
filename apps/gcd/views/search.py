@@ -23,7 +23,8 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             Country, Language, Indexer
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
-from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP
+from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
+                                  COUNT_RANGE_REGEXP
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH 
 from apps.gcd.views.covers import get_image_tags_per_page
 
@@ -696,6 +697,28 @@ def search_series(data, op):
                       Q(**{ '%sis_current' % prefix : True }))
     if data['is_current']:
         q_objs.append(Q(**{ '%sis_current' % prefix : True }))
+
+    try:
+        if data['issue_count'] is not None and data['issue_count'] != '':
+            range_match = match(COUNT_RANGE_REGEXP, data['issue_count'])
+            if range_match:
+                if not range_match.group('min'):
+                    q_objs.append(Q(**{ '%sissue_count__lte' % prefix :
+                                        int(range_match.group('max')) }))
+                elif not range_match.group('max'):
+                    q_objs.append(Q(**{ '%sissue_count__gte' % prefix :
+                                        int(range_match.group('min')) }))
+                else:
+                    q_objs.append(Q(**{ '%sissue_count__range' % prefix :
+                                        (int(range_match.group('min')),
+                                         int(range_match.group('max'))) }))
+            else:
+                q_objs.append(Q(**{ '%sissue_count__exact' % prefix :
+                                    int(data['issue_count']) }))
+    except ValueError:
+        raise SearchError, ("Issue count must be an integer or an integer "
+                            "range reparated by a hyphen (e.g. 100-200, "
+                            "100-, -200).")
 
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))

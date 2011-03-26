@@ -28,6 +28,7 @@ DATE_FORMATS = ['%Y.%m.%d', '%Y-%m-%d',
                 '%Y']
 
 PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
+COUNT_RANGE_REGEXP = r'(?P<min>\d+)?\s*-\s*(?P<max>\d+)?$'
 
 class AdvancedSearch(forms.Form):
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
@@ -83,7 +84,9 @@ class AdvancedSearch(forms.Form):
     not_reserved = forms.BooleanField(label="Not Reserved",
                                       required=False)
     is_current = forms.BooleanField(label="Current",
-                                      required=False)
+                                    required=False)
+    issue_count = forms.CharField(label='Issue Count',
+                                  required=False)
 
     issues = forms.CharField(label='Issues', required=False)
     # Volume is a char field to allow ranges and lists.
@@ -167,6 +170,21 @@ class AdvancedSearch(forms.Form):
                           "Page count must be a decimal number or a pair of "
                           "decimal numbers separated by a hyphen.")
         return pages_data
+
+    def clean_issue_count(self):
+        issue_count_data = self.cleaned_data['issue_count'].strip()
+        if issue_count_data:
+            issue_count_match = (issue_count_data != '-' and
+                                 match(COUNT_RANGE_REGEXP, issue_count_data))
+            if not issue_count_match:
+                try:
+                    int(issue_count_data)
+                except ValueError:
+                    raise forms.ValidationError(
+                          "Issue count must be an integer or an integer "
+                          "range reparated by a hyphen (e.g. 100-200, "
+                          "100-, -200).")
+        return issue_count_data
 
     def clean(self):
         cleaned_data = self.cleaned_data
