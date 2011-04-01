@@ -48,7 +48,11 @@ For details, please read the following Board Resolutions:
 <p>
 Currently, the dump is only available as a MySQL dump that includes table
 creation and data insert statements, but does not include a database creation
-statement.  Additional formats are under investigation, with no estimated time
+statement.  We also offer a dump using the mysqldump utilities PostgreSQL
+compatibility mode.  This is not guaranteed to work perfectly with PostgreSQL but
+should at least be easier to import.
+<p>
+Additional formats are under investigation, with no estimated time
 of delivery.  Any such estimates will be posted here when they are available,
 and announced on
 <a href="http://groups.google.com/group/gcd-tech-announce/">gcd-tech-announce</a>.
@@ -61,8 +65,13 @@ If you are interested in automating a different dump format, please join
 
 <h2>Downloads</h2>
 <p>
-Data last updated: <span class="important">{{ timestamp }}</span>
+Data last updated:
 </p>
+<ul>
+{% for name, timestamp in timestamps %}
+  <li> {{ name }}: <span class="important">{{ timestamp }}</span>
+{% endfor %}
+</ul>
 <form method="POST" action="{% url download %}" class="download">
   <p>
     <label for="purpose">{{ form.purpose.label }}</label>
@@ -84,7 +93,7 @@ Data last updated: <span class="important">{{ timestamp }}</span>
     </label>
   </p>
   <input type="submit" name="mysqldump" value="Download MySQL Dump">
+  <input type="submit" name="postgres" value="Download PostgreSQL-compatible Dump">
 </form>
-
 {% endblock %}
 

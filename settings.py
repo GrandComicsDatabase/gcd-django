@@ -160,6 +160,8 @@ NEW_SITE_CREATION_DATE = datetime.date(2009, 12, 1)
 
 # data dump directories, relative to MEDIA_ROOT
 DUMP_DIR = 'dumps'
+MYSQL_DUMP = 'current.zip'
+POSTGRES_DUMP = 'pg-current.zip'
 
 # Amount of time that must pass before a user can download the same
 # dump (or similar) file again, in minutes.

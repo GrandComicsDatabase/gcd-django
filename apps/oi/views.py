@@ -4,6 +4,7 @@ import sys
 import os
 import os.path
 import stat
+import errno
 from datetime import datetime, timedelta
 
 from django.core import urlresolvers
@@ -2364,13 +2365,18 @@ def mentoring(request):
 ##############################################################################
 
 @login_required
-def download(request, file='current.zip'):
-    path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR, 'current.zip')
+def download(request):
 
     if request.method == 'POST':
         form = DownloadForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
+
+            # Note that the submit input is never present in the cleaned data.
+            file = settings.MYSQL_DUMP
+            if ('postgres' in request.POST):
+                file = settings.POSTGRES_DUMP
+            path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR, file)
 
             delta = settings.DOWNLOAD_DELTA
             recently = datetime.now() - timedelta(minutes=delta)
@@ -2399,10 +2405,29 @@ def download(request, file='current.zip'):
     else:
         form = DownloadForm()
 
+    m_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
+                          settings.MYSQL_DUMP)
+    p_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
+                          settings.POSTGRES_DUMP)
+
+    # Use a list of tuples because we want the MySQL dump (our primary format)
+    # to be first.
+    timestamps = []
+    for dump_info in (('MySQL', m_path), ('PostgreSQL-compatible', p_path)):
+        try:
+            timestamps.append(
+              (dump_info[0],
+               datetime.utcfromtimestamp(os.stat(dump_info[1])[stat.ST_MTIME])))
+        except OSError, ose:
+            if ose.errno == errno.ENOENT:
+                timestamps.append((dump_info[0], 'never'))
+            else:
+                raise
+
     return render_to_response('oi/download.html',
       {
         'method': request.method,
-        'timestamp': datetime.utcfromtimestamp(os.stat(path)[stat.ST_MTIME]),
+        'timestamps': timestamps,
         'form': form,
       },
       context_instance=RequestContext(request))
