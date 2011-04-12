@@ -50,6 +50,14 @@
           <dd> <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_count }}</a>
   {% endif %}
 {% endif %}
+          <dt> Number of Series:
+          <dd> {{ publisher.series_count }}
+          <dt> Number of Issues:
+          <dd> {{ publisher.issue_count }}
+{% if not publisher.year_ended %}
+          <dt> Current series:
+          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name }}&is_current=on">run an advanced search</a>
+{% endif %}
 {% if publisher.url %}
           <dt> Web Site:
           <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
@@ -59,7 +67,7 @@
           <dd> {{ publisher.notes|linebreaksbr }}
 {% endif %}
 {% ifequal page.object_list.count 0 %}
-          <dt> Titles:
+          <dt> Series:
           <dd> None
 {% endifequal %}
         </dl>
@@ -113,7 +121,7 @@
 
 <table id="publisher_detail_listing" class="listing">
   <tr>
-    <th> Title </th>
+    <th> Series </th>
     <th> Year </th>
     <th> #&nbsp;Issues </th>
     <th> Covers </th>

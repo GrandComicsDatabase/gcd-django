@@ -34,6 +34,8 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
 {% endif %}
         <dt> Country:
         <dd> {{ indicia_publisher.country.name }}
+        <dt> Number of Issues:
+        <dd> {{ indicia_publisher.issue_count }}
 {% if indicia_publisher.url %}
         <dt> Web Site:
         <dd> <a href="{{ indicia_publisher.url }}">{{ indicia_publisher.url }}</a>
