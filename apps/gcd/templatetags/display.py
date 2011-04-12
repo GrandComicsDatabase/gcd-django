@@ -158,7 +158,8 @@ def changed_fields(changeset, object):
     elif object_class is Brand:
         revision = changeset.brandrevisions.all().get(brand=object.id)
     elif object_class is IndiciaPublisher:
-        revision = changeset.indiciapublisherrevisions.all().get(indicia_publisher=object.id)
+        revision = changeset.indiciapublisherrevisions.all()\
+                            .get(indicia_publisher=object.id)
 
     prev_rev = revision.previous()
     changed_list = []

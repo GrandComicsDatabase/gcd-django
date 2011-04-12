@@ -10,7 +10,6 @@ from operator import attrgetter
 from django.db.models import Q
 from django.conf import settings
 from django.core import urlresolvers
-from django.core.paginator import QuerySetPaginator
 from django.shortcuts import render_to_response, \
                              get_object_or_404, \
                              get_list_or_404

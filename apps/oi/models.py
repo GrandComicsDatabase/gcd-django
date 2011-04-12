@@ -511,8 +511,8 @@ class Changeset(models.Model):
         field-calculated imps and bonuses such as the add bonus.
         """
         calculated = self.imps
-        if self.changeset_action() == ACTION_ADD and \
-          self.change_type != CTYPES['cover']:
+        if self.change_type != CTYPES['cover'] and \
+           self.changeset_action() == ACTION_ADD:
             return calculated + IMP_BONUS_ADD
         return calculated
 

@@ -4,7 +4,6 @@ from random import random
 from urllib import quote
 from django.conf import settings
 from django.core import urlresolvers
-from django.core.paginator import QuerySetPaginator
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response
