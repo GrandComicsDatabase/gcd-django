@@ -1,0 +1,47 @@
+<!-- Note- must be enclosed in a div with class="queues" for CSS -->
+<!-- TODO: refactor CSS -->
+<table>
+  <tr>
+    <th> Option </th>
+    <th> Votes </th>
+{% if not agenda.secret_ballot %}
+    <th> Voters </th>
+{% endif %}
+  </tr>
+{% for option in topic.counted_options %}
+  <tr {% if option.result %}class="result"{% endif %}>
+    <td> {{ option }} </td>
+    <td> {{ option.num_votes}} </td>
+  {% if not agenda.secret_ballot %}
+    <td>
+    {% if topic.invalid and option.votes.all.count %}
+      Voters hidden for invalid results.
+    {% else %}
+      <ul class="compact">
+      {% for vote in option.votes.all %}
+        <li> {{ vote.voter.first_name }} {{ vote.voter.last_name }} </li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+    </td>
+  {% endif %}
+  </tr>
+{% endfor %}
+{% if agenda.has_expected_voters and not topic.invalid %}
+  {% with topic.absent_voters as av %}
+  <tr>
+    <td> Absent Voters </td>
+    <td> {{ av.count }} </td>
+    {% if not agenda.secret_ballto %}
+    <td>
+      <ul class="compact">
+      {% for voter in av %}
+        <li> {{ voter.first_name }} {{ voter.last_name }} </li>
+      {% endfor %}
+      </ul>
+    </td>
+    {% endif %}
+  </tr>
+  {% endwith %}
+{% endif %}
+</table>

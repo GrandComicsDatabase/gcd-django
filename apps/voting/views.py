@@ -44,33 +44,50 @@ vote id:
 '%s'
 """
 
-def dashboard(request):
-    topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True)
-
+def _classify_topics(topics, user):
     # Permissions are returned as appname.codename by get_all_permissions().
-    if request.user.is_anonymous():
+    if user.is_anonymous():
         my_topics = ()
-    elif request.user.is_superuser:
+        forbidden_topics = topics
+    elif user.is_superuser:
         # Superusers have all permissions, which can be very expensive in
         # the else clause.  Non-superusers tend to have just a few permissions.
         my_topics = topics
+        forbidden_topics = ()
     else:
         q_list = []
         # You can't actually get a query_set of the user's permissions, just this
         # list of strings that stuff the app label and code name together.  So
         # we have to build queries that match each of the actual permissions, and
         # then OR those all together.
-        for p in request.user.get_all_permissions():
+        for p in user.get_all_permissions():
             app_label, code_name = p.split('.', 1)
             q_list.append(Q(agenda__permission__codename=code_name,
                             agenda__permission__content_type__app_label=app_label))
-        
+
         can_vote = reduce(lambda x, y: x | y, q_list)
         my_topics = topics.filter(can_vote)
+        forbidden_topics = topics.exclude(can_vote)
 
-    return render_to_response('voting/dashboard.html', 
+    voted_topics = []
+    pending_topics = []
+    for topic in my_topics:
+        if topic.has_vote_from(user):
+            voted_topics.append(topic)
+        else:
+            pending_topics.append(topic)
+    return (pending_topics, voted_topics, forbidden_topics)
+
+def dashboard(request):
+    topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True)
+
+    # We ignore the forbidden topics on the dashboard and only show relevant topics.
+    pending_topics, voted_topics, forbidden_topics = \
+      _classify_topics(topics, request.user)
+    return render_to_response('voting/dashboard.html',
                               {
-                                'topics': my_topics,
+                                'voted_topics': voted_topics,
+                                'pending_topics': pending_topics,
                                 'agendas': Agenda.objects.all(),
                               },
                               context_instance=RequestContext(request))
@@ -193,10 +210,7 @@ def topic(request, id):
     if not request.user.has_perm('gcd.can_vote'):
         return render_error(request,
                             'You do not have permission to vote on this topic.')
-        
-    votes = topic.options.filter(votes__voter=request.user)
-    receipts = topic.receipts.filter(voter=request.user)
-    voted = votes.count() > 0 or receipts.count() > 0
+    voted = topic.has_vote_from(request.user)
 
     return render_to_response('voting/topic.html',
                               {
@@ -320,11 +334,18 @@ def agenda(request, id):
 
     _calculate_results(closed.filter(result_calculated=False))
 
+    pending_topics, voted_topics, forbidden_topics = \
+      _classify_topics(open.order_by('-deadline'), request.user)
+
+    # result_counts = map(lambda t: (t.name, t.results().count()), closed)
+    # raise Exception, result_counts
     return render_to_response('voting/agenda.html',
                               {
                                 'agenda': agenda,
                                 'closed_topics': closed.order_by('-deadline'),
-                                'open_topics': open.order_by('-deadline'),
+                                'pending_topics': pending_topics,
+                                'voted_topics': voted_topics,
+                                'forbidden_topics': forbidden_topics,
                                 'open_items': open_items,
                                 'pending_items': pending_items,
                               },

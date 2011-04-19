@@ -80,6 +80,21 @@ class Agenda(models.Model):
 
     subscribers = models.ManyToManyField(User, related_name='subscribed_agendas',
                                                editable=False)
+    @property
+    def has_expected_voters(self):
+        # This should be a flag on the agenda, but for now it is intended only
+        # for Board votes.  So to avoid having to run a database script for
+        # deploying this, just special case it.  We can add a field if needed later.
+        return self.name == 'Board of Directors'
+
+    def expected_voters(self):
+        if self.has_expected_voters:
+            # You can't actually filter for users by permission without doing
+            # crazy stuff to factor in group membership.  Since we're special-casing
+            # anyway, and we know that the permission is attached to a group,
+            # just do the much more simple lookup for the group.
+            return User.objects.filter(groups__name='board')
+
     def get_absolute_url(self):
         return urlresolvers.reverse('agenda', kwargs={'id': self.id})
 
@@ -265,6 +280,15 @@ class Topic(models.Model):
         return \
           self.options.annotate(num_votes=Count('votes')).order_by('-num_votes')
 
+    def results(self):
+        """
+        Filters for options that have been marked as results (meaning the
+        option(s) that "won" the vote) specifically as counted_options
+        so that they are sorted and carry the annotations we'll use to
+        display them in the UI.
+        """
+        return self.counted_options().filter(result=True)
+
     def num_voters(self):
         """
         Returns the number of distinct voters who voted on the topic.
@@ -275,6 +299,23 @@ class Topic(models.Model):
             # votes for that ballot.
             return Receipt.objects.filter(topic=self).count()
         return User.objects.filter(votes__option__topic=self).distinct().count()
+
+    def absent_voters(self):
+        """
+        If there is a pre-set list of expected voters for this agenda, displays the
+        voters who did not vote.  Returns an empty list if the voter pool
+        is flexible.  Primarily intended for Board votes.
+        """
+        expected_voters = self.agenda.expected_voters()
+        if expected_voters is None:
+            return []
+        voters = User.objects.filter(votes__option__topic=self).distinct()
+        return expected_voters.exclude(id__in=voters.values_list('id', flat=True))
+
+    def has_vote_from(self, user):
+        votes = self.options.filter(votes__voter=user)
+        receipts = self.receipts.filter(voter=user)
+        return votes.count() > 0 or receipts.count() > 0
 
     def __unicode__(self):
         return self.name
@@ -304,11 +345,18 @@ def topic_pre_save(sender, **kwargs):
 
 def topic_post_save(sender, **kwargs):
     topic = kwargs['instance']
-    if topic.vote_type.name in (TYPE_PASS_FAIL, TYPE_CHARTER) and topic.options.count() == 0:
+    if topic.vote_type.name in (TYPE_PASS_FAIL, TYPE_CHARTER) and \
+       topic.options.count() == 0:
         topic.options.create(name='For', ballot_position=0)
         topic.options.create(name='Against', ballot_position=1)
-        if topic.agenda.allows_abstentions:
-            topic.options.create(name='Abstain', ballot_position=2)
+    if topic.agenda.allows_abstentions and \
+       topic.options.filter(name__iexact='Abstain').count() == 0:
+        # Set the ballot position to something really high.  Ballot positions
+        # are relative not absolute, so as long as it's larger than any likely
+        # number of ballot positions, this will put the 'Abstain' at the end
+        # of the ballot.  And if it somehow doesn't, that's not really a big
+        # deal anyway and easily fixed by the admin.
+        topic.options.create(name='Abstain', ballot_position=1000000)
 
     if not topic.post_save_send_mail:
         return

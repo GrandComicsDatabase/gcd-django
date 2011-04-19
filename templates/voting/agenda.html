@@ -50,15 +50,31 @@
   <tr>
     <th> Topic </th>
     <th> Voting Deadline </th>
+    <th> Status </th>
   </tr>
-{% for topic in open_topics %}
+{% for topic in pending_topics %}
   <tr>
     <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
     <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+    <td> awaiting your vote </td>
   </tr>
 {% empty %}
   <tr>
-    <td colspan="2">No topics open for voting</td>
+    <td colspan="3">No topics are awaiting your vote</td>
+  </tr>
+{% endfor %}
+{% for topic in voted_topics %}
+  <tr>
+    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+    <td> vote received </td>
+  </tr>
+{% endfor %}
+{% for topic in forbidden_topics %}
+  <tr>
+    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+    <td> you are not a voter for this agenda</td>
   </tr>
 {% endfor %}
 </table>
@@ -67,42 +83,31 @@
 <table>
   <tr>
     <th> Topic </th>
+    <th> # Voters </th>
     <th> Results </th>
     <th> Valid? </th>
     <th> Voting Period </th>
   </tr>
 {% for topic in closed_topics %}
   <tr class='{{ topic.invalid|yesno:"invalid,valid" }}'>
-    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td class='longest_column'>
+      <a href="{% url ballot id=topic.id %}">{{ topic }}</a>
+    </td>
+    <td> {{ topic.num_voters }} </td>
     <td>
-      <table>
-        <tr>
-          <th> Option </th>
-          <th> Votes </th>
-  {% if not agenda.secret_ballot %}
-          <th> Voters </th>
-  {% endif %}
-        </tr>
-  {% for option in topic.counted_options %}
-        <tr {% if option.result %}class="result"{% endif %}>
-          <td> {{ option }} </td>
-          <td> {{ option.num_votes}} </td>
-    {% if not agenda.secret_ballot %}
-          <td>
-      {% if topic.invalid and option.votes.all.count %}
-            Voters hidden for invalid results.
-      {% else %}
-            <ul class="compact">
-        {% for vote in option.votes.all %}
-              <li> {{ vote.voter.first_name }} {{ vote.voter.last_name }} </li>
-        {% endfor %}
-            </ul>
-      {% endif %}
-          </td>
+  {% if topic.invalid %}
+      [no result]
+  {% else %}
+    {% if topic.results.count == 1 %}
+      {{ topic.results.0.name }} ({{ topic.results.0.num_votes }} votes)
+    {% else %}
+      <ul>
+      {% for result in topic.results.all %}
+        <li> {{ result.name }} ({{ result.num_votes }} votes)</li>
+      {% endfor %}
+      </ul>
     {% endif %}
-        </tr>
-  {% endfor %}
-      </table>
+  {% endif %}
     </td>
     <td> {{ topic.invalid|yesno:"INVALID,valid" }}
     <td> {{ topic.created|date:"Y-m-d" }} - {{ topic.deadline|date:"Y-m-d" }} </td>

@@ -23,16 +23,26 @@ a ballot you can't vote on.
     <th> Topic </th>
     <th> Electorate </th>
     <th> Deadline </th>
+    <th> Status </th>
   </tr>
-{% for topic in topics %}
+{% for topic in pending_topics %}
   <tr>
     <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
     <td> {{ topic.agenda }} </td>
     <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+    <td> awaiting your vote </td>
   </tr>
 {% empty %}
   <tr>
-    <td colspan="3"> There are no topics awaiting your vote. </td>
+    <td colspan="4"> There are no topics awaiting your vote. </td>
+  </tr>
+{% endfor %}
+{% for topic in voted_topics %}
+  <tr>
+    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> {{ topic.agenda }} </td>
+    <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+    <td> vote received </td>
   </tr>
 {% endfor %}
 </table>

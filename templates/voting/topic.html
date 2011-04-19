@@ -4,6 +4,12 @@
 
 {% block title %} Ballot :: {{ topic.name|truncatewords:4 }} {% endblock %}
 
+{% block css %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default/queues.css"/>
+{% endblock %}
+
 {% block view_body %}
 <h2> {{ topic.name }} </h2>
 <dl>
@@ -25,8 +31,8 @@
 
 {% if voted or closed or topic.pending %}
 <p>
-  {% if voted %}
-Thank you for voting on this topic! 
+  {% if voted and not closed %}
+Thank you for voting on this topic!
 <p>
     {% if topic.agenda.secret_ballot %}
 This is a secret ballot, and the voting system does not keep direct links between
@@ -68,9 +74,25 @@ If you wish to change your vote, please
 Vote changing will be implemented in the future.
     {% endif %}
   {% endif %}
+
   {% if topic.pending %}
 This topic is awaiting verification by a vote administrator.  Email will
 be sent to the appropriate list when it is available for voting.
+  {% endif %}
+
+  {% if closed %}
+    {% if topic.invalid %}
+This ballot did not produce a valid result due to a tie, lack of quorum, or
+other condition.
+    {% else %}
+Total number of voters: {{ topic.num_voters }}
+      {% with topic.agenda as agenda %}
+<!-- queues class for CSS.  TODO: refactor CSS -->
+<div class="queues">
+        {% include "voting/tally.html" %}
+</div>
+      {% endwith %}
+    {% endif %}
   {% endif %}
 </p>
 {% else %}
@@ -116,5 +138,6 @@ be sent to the appropriate list when it is available for voting.
   <input id="vote" type="submit" value="Vote"/>
 </form>
 {% endif %}
+
 {% endblock %}
 
