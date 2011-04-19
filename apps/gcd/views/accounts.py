@@ -269,13 +269,13 @@ Mentor this indexer: %s
                                     kwargs={ 'indexer_id': indexer.id }))
 
         if settings.BETA:
-            emailSubject = 'New BETA Indexer: %s' % indexer
+            email_subject = 'New BETA Indexer: %s' % indexer
         else:
-            emailSubject = 'New Indexer: %s' % indexer
+            email_subject = 'New Indexer: %s' % indexer
 
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
                   recipient_list=[settings.EMAIL_EDITORS],
-                  subject=emailSubject,
+                  subject=email_subject,
                   message=email_body,
                   fail_silently=(not settings.BETA))
 
