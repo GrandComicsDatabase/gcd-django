@@ -517,7 +517,10 @@ thanks,
         if request.user.approved_changeset.filter(state=states.REVIEWING).count():
             return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
         else:
-            return HttpResponseRedirect(urlresolvers.reverse('pending'))
+            if changeset.change_type is CTYPES['cover']:
+                return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+            else:
+                return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 @permission_required('gcd.can_approve')
 def assign(request, id):
@@ -2332,6 +2335,8 @@ def preview(request, id, model_name):
         return show_series(request, revision, True)
     if 'issue' == model_name:
         return show_issue(request, revision, True)
+    return render_error(request,
+      u'No preview for "%s" revisions.' % model_name)
 
 ##############################################################################
 # Mentoring 
