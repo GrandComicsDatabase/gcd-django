@@ -146,6 +146,15 @@ def header_link(changeset):
     else:
         return u''
 
+def compare_field_between_revs(field, rev, prev_rev):
+    old = getattr(prev_rev, field)
+    new = getattr(rev, field)
+    if type(new) == unicode:
+        field_changed = old.strip() != new.strip()
+    else:
+        field_changed = old != new
+    return field_changed
+
 # get a human readable list of fields changed in a given approved changeset
 def changed_fields(changeset, object):
     object_class = type(object)
@@ -178,7 +187,7 @@ def changed_fields(changeset, object):
                 # history page. the only time it's relevant the line will
                 # read "issue added"
                 continue
-            if getattr(revision, field) != getattr(prev_rev, field):
+	    if compare_field_between_revs(field, revision, prev_rev):
                 changed_list.append(field_name(field))
     return ", ".join(changed_list)
 
@@ -201,8 +210,8 @@ def changed_story_list(changeset):
                 story_changed_list = [u'Sequence deleted']
             else:
                 for field in story_revision._field_list():
-                    if getattr(story_revision, field) != \
-                       getattr(prev_story_rev, field):
+                    if compare_field_between_revs(field, story_revision, 
+                                                  prev_story_rev):
                         story_changed_list.append(field_name(field))
             if story_changed_list:
                 output += u'<li>Sequence %s : %s' % \
