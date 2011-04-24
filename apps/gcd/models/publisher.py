@@ -65,13 +65,15 @@ class Publisher(BasePublisher):
         # TODO: check for issue_count instead of series_count. Check for added
         # issue skeletons. Also delete series and not just brands, ind pubs,
         # and imprints.
+        active = { 'changeset__state__in': states.ACTIVE }
         return self.series_count == 0 and \
-          self.series_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0 and \
-          self.brand_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0 and \
-          self.indicia_publisher_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+          self.series_revisions.filter(**active).count() == 0 and \
+          self.brand_revisions.filter(**active).count() == 0 and \
+          self.indicia_publisher_revisions.filter(**active).count() == 0
 
     def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE, deleted=True).count() == 1
+        return self.revisions.filter(changeset__state__in=states.ACTIVE,
+                                     deleted=True).count() == 1
 
     def __unicode__(self):
         return self.name
@@ -134,8 +136,8 @@ class IndiciaPublisher(BasePublisher):
     issue_count = models.IntegerField(default=0)
 
     def deletable(self):
-        return self.issue_count == 0 and \
-          self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+        active = self.issue_revisions.filter(changeset__state__in=states.ACTIVE)
+        return self.issue_count == 0 and active.count() == 0
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)

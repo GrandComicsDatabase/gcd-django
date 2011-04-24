@@ -50,26 +50,26 @@
           <dd> <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_count }}</a>
   {% endif %}
 {% endif %}
-          <dt> Number of Series:
-          <dd> {{ publisher.series_count }}
-          <dt> Number of Issues:
-          <dd> {{ publisher.issue_count }}
+          <p>
+          <dt> Total Number of Series:
+          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name }}">{{ publisher.series_count }}</a>
+          <dt> Total Number of Issues:
+          <dd> <a href="/search/advanced/process/?target=issue&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name }}">{{ publisher.issue_count }}</a>
 {% if not publisher.year_ended %}
-          <dt> Current series:
-          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name }}&is_current=on">run an advanced search</a>
+          <dt> Number of Current Series:
+          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name }}&is_current=on">{{ current.count }}</a>
 {% endif %}
-{% if publisher.url %}
+{% if publisher.url or publisher.notes %}
+          <p>
+  {% if publisher.url %}
           <dt> Web Site:
           <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
-{% endif %}
-{% if publisher.notes and page_number = 1 %}
+  {% endif %}
+  {% if publisher.notes and page_number = 1 %}
           <dt> Notes:
           <dd> {{ publisher.notes|linebreaksbr }}
+  {% endif %}
 {% endif %}
-{% ifequal page.object_list.count 0 %}
-          <dt> Series:
-          <dd> None
-{% endifequal %}
         </dl>
       </div> <!-- pub_data -->
     </div> <!-- control_center -->

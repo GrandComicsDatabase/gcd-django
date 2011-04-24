@@ -46,7 +46,9 @@ def publisher(request, publisher_id):
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'publisher', 'id': publisher_id}))
 
-    vars = { 'publisher': pub, 'error_subject': pub }
+    vars = { 'publisher': pub,
+             'current': pub.series_set.filter(deleted=False, is_current=True),
+             'error_subject': pub }
     return paginate_response(request, pub.active_series().order_by('name'),
                              'gcd/details/publisher.html', vars)
 

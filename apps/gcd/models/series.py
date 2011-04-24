@@ -96,11 +96,12 @@ class Series(models.Model):
         self.save()
 
     def deletable(self):
-        return self.issue_count == 0 and \
-          self.issue_revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+        active = self.issue_revisions.filter(changeset__state__in=states.ACTIVE)
+        return self.issue_count == 0 and active.count() == 0
 
     def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE, deleted=True).count() == 1
+        return self.revisions.filter(changeset__state__in=states.ACTIVE,
+                                     deleted=True).count() == 1
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -129,8 +130,8 @@ class Series(models.Model):
 
     def issues_without_covers(self):
         from apps.gcd.models.issue import Issue
-        return Issue.objects.filter(series=self).exclude(deleted=True) \
-          .exclude(cover__isnull=False, cover__deleted=False).distinct()
+        issues = Issue.objects.filter(series=self).exclude(deleted=True) 
+        return issues.exclude(cover__isnull=False, cover__deleted=False).distinct()
 
     def scan_needed_count(self):
         return self.issues_without_covers().count() + self.marked_scans_count()
