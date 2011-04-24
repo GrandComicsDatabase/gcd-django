@@ -53,88 +53,72 @@ the following issues (links open in new windows):
 The following fields are set for all issues in the issue range.  Keep in mind
 that publication date, key date and notes will always be blank.
 </p><p>
-Non-default fields are <span class="comparison_highlight">highlighted.</span> 
+Highlighted fields represent <span class="added_highlight">added</span> data.
 </p>
 
 <table class="comparison added">
   <tr>
     <th> Field </th>
-    <th> Current </th>
-    <th> Change </th>
+    <th> Added </th>
   </tr>
   <tr class="{{ revision.changed.no_volume }}">
     <td class="field_name"> No volume </td>
-    <td> {% if revision.issue.no_volume %} Yes {% else %} No {% endif %} </td>
     <td> {% if revision.no_volume %} Yes {% else %} No {% endif %} </td>
   </tr>
   <tr class="{{ revision.changed.display_volume_with_number }}">
     <td class="field_name"> Display volume with number </td>
-    <td> {% if revision.issue.display_volume_with_number %} Yes {% else %} No {% endif %} </td>
     <td> {% if revision.display_volume_with_number %} Yes {% else %} No {% endif %} </td>
   </tr>
   <tr class="{{ revision.changed.publication_date }}">
     <td class="field_name"> Publication date </td>
-    <td> {{ revision.issue.publication_date }} </td>
     <td> {{ revision.publication_date }} </td>
   </tr>
   <tr class="{{ revision.changed.indicia_frequency }}">
     <td class="field_name"> Indicia frequency </td>
-    <td> {{ revision.issue.indicia_frequency }} </td>
     <td> {{ revision.indicia_frequency }} </td>
   </tr>
   <tr class="{{ revision.changed.key_date }}">
     <td class="field_name"> Key date </td>
-    <td> {{ revision.issue.key_date }} </td>
     <td> {{ revision.key_date }} </td>
   </tr>
   <tr class="{{ revision.changed.indicia_publisher}}">
     <td class="field_name"> Indicia publisher </td>
-    <td> {{ revision.issue.indicia_publisher|absolute_url:'target="_blank"'|default:"None" }} </td>
     <td> {{ revision.indicia_publisher|absolute_url:'target="_blank"'|default:"None" }} </td>
   </tr>
   <tr class="{{ revision.changed.indicia_pub_not_printed }}">
     <td class="field_name"> Indicia publisher not printed </td>
-    <td> {% if revision.issue.indicia_pub_not_printed %} Not printed {% else %} Printed {% endif %} </td>
     <td> {% if revision.indicia_pub_not_printed %} Not printed {% else %} Printed {% endif %} </td>
   </tr>
   <tr class="{{ revision.changed.brand}}">
     <td class="field_name"> Brand </td>
-    <td> {{ revision.issue.brand|absolute_url:'target="_blank"'|default:"None" }} </td>
     <td> {{ revision.brand|absolute_url:'target="_blank"'|default:"None" }} </td>
   </tr>
   <tr class="{{ revision.changed.no_brand }}">
     <td class="field_name"> No brand </td>
-    <td> {% if revision.issue.no_brand %} Yes {% else %} No {% endif %} </td>
     <td> {% if revision.no_brand %} Yes {% else %} No {% endif %} </td>
   </tr>
   <tr class="{{ revision.changed.price }}">
     <td class="field_name"> Price </td>
-    <td> {{ revision.issue.price }} </td>
     <td> {{ revision.price }} </td>
   </tr>
   <tr class="{{ revision.changed.page_count }}">
     <td class="field_name"> Page count </td>
-    <td> {{ revision.issue.page_count }} </td>
     <td> {{ revision.page_count }} </td>
   </tr>
   <tr class="{{ revision.changed.page_count_uncertain }}">
     <td class="field_name"> Page count uncertain </td>
-    <td> {% if revision.issue.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
     <td> {% if revision.page_count_uncertain %} Yes {% else %} No {% endif %} </td>
   </tr>
   <tr class="{{ revision.changed.editing }}">
     <td class="field_name"> Editing </td>
-    <td> {{ revision.issue.editing }} </td>
     <td> {{ revision.editing }} </td>
   </tr>
   <tr class="{{ revision.changed.no_editing }}">
     <td class="field_name"> No editing </td>
-    <td> {% if revision.issue.no_editing %} X {% endif %} </td>
     <td> {% if revision.no_editing %} X {% endif %} </td>
   </tr>
   <tr class="{{ revision.changed.notes }}">
     <td class="field_name"> Notes </td>
-    <td> {{ revision.issue.notes|linebreaksbr }} </td>
     <td> {{ revision.notes|linebreaksbr }} </td>
   </tr>
 </table>
