@@ -42,7 +42,7 @@ your vote if there is any problem with it.
     {% else %}
 Your current vote{{ votes.count|pluralize }}:
       {% if topic.vote_type.max_votes == 1 %}
-{{ votes.all.0 }}
+{{ votes.all.0.name }}
 <p>
       {% else %}
         {% if topic.vote_type.max_votes > topic.vote_type.max_winners %}
@@ -53,7 +53,7 @@ Your current vote{{ votes.count|pluralize }}:
   </tr>
           {% for vote in votes %}
   <tr>
-    <td> {{ vote }} </td>
+    <td> {{ vote.name }} </td>
     <td> {{ vote.rank }} </td>
   </tr>
           {% endfor %}
@@ -61,7 +61,7 @@ Your current vote{{ votes.count|pluralize }}:
         {% else %}
 <ul>
           {% for vote in votes %}
-  <li> {{ vote }}
+  <li> {{ vote.name }}
           {% endfor %}
 </ul>
         {% endif %}

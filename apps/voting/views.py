@@ -205,17 +205,18 @@ def _send_result_email(topic, extra=''):
 def topic(request, id):
     topic = get_object_or_404(Topic, id=id)
 
-    voted = False
-    votes = []
     if not request.user.has_perm('gcd.can_vote'):
         return render_error(request,
                             'You do not have permission to vote on this topic.')
-    voted = topic.has_vote_from(request.user)
+    # Note that if this was a secret ballot, this will be an empty
+    # queryset.  That is OK, the UI won't look at it in that case.
+    # But this is why "voted" is not just a check for at least one vote here.
+    votes = topic.options.filter(votes__voter=request.user)
 
     return render_to_response('voting/topic.html',
                               {
                                 'topic': topic,
-                                'voted': voted,
+                                'voted': topic.has_vote_from(request.user),
                                 'votes': votes,
                                 'closed': topic.deadline < datetime.now(),
                                 'settings': settings,
@@ -325,9 +326,14 @@ def vote(request):
 def agenda(request, id):
     agenda = get_object_or_404(Agenda, id=id)
 
+    # The "open" field on the topic object is somewhat misleading.
+    # It means that the topic has been approved for an active ballot.
+    # Ballots that are complete still have open=True, and ballots that were never
+    # approved (much less completed) still have open=False.  This translates
+    # the conditions into what you would expect for open or closed ballots.
     past_due = Q(deadline__lte=datetime.now())
-    open = agenda.topics.exclude(past_due)
-    closed = agenda.topics.filter(past_due)
+    open = agenda.topics.exclude(past_due | Q(open=False))
+    closed = agenda.topics.filter(past_due & Q(open=True))
 
     pending_items = agenda.items.filter(state__isnull=True)
     open_items = agenda.items.filter(state=True)
