@@ -8,6 +8,8 @@ ORDERINGS = [['', '--'],
              ['date', 'Date'],
              ['series', 'Series Name'],
              ['publisher', 'Publisher'],
+             ['brand', 'Publisher Brand'],
+             ['indicia_publisher', 'Indicia Publisher'],
              ['country', 'Country'],
              ['language', 'Language'],
              ['script', 'Writer'],
@@ -32,6 +34,8 @@ COUNT_RANGE_REGEXP = r'(?P<min>\d+)?\s*-\s*(?P<max>\d+)?$'
 
 class AdvancedSearch(forms.Form):
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
+                                        ['brand', 'Publisher Brand'],
+                                        ['indicia_publisher', 'Indicia Publisher'],
                                         ['series', 'Series'],
                                         ['issue', 'Issues'],
                                         ['sequence', 'Stories'],
@@ -40,9 +44,14 @@ class AdvancedSearch(forms.Form):
                                label='Search For')
 
     method_help = "All methods case-insensitive."
-    method = forms.ChoiceField(choices=[['iexact', 'Matches Exactly'],
-                                        ['istartswith', 'Starts With'],
-                                        ['icontains', 'Contains'] ],
+    method = forms.ChoiceField(choices=[
+                                 ['iexact', 'Matches Exactly'],
+                                 ['istartswith', 'Starts With'],
+                                 ['icontains', 'Contains'],
+                                 ['exact', 'Matches Exactly (case sensitive)'],
+                                 ['startswith', 'Starts With (case sensitive)'],
+                                 ['contains', 'Contains (case sensitive)'],
+                               ],
                                initial='icontains',
                                label='Search Method',
                                help_text = method_help)
@@ -75,6 +84,16 @@ class AdvancedSearch(forms.Form):
     pub_name = forms.CharField(label='Publisher', required=False)
     pub_notes = forms.CharField(label='Notes', required=False)
 
+    brand = forms.CharField(required=False)
+    brand_notes = forms.CharField(label='Notes', required=False)
+
+    indicia_publisher = forms.CharField(label='Indicia Publisher', required=False)
+    ind_pub_notes = forms.CharField(label='Notes', required=False)
+    is_surrogate = forms.NullBooleanField(label='Is Surrogate?', required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
+
     series = forms.CharField(label='Name', required=False)
     format = forms.CharField(label='Format', required=False)
     series_notes = forms.CharField(label='Series Notes', required=False)
@@ -89,10 +108,7 @@ class AdvancedSearch(forms.Form):
                                   required=False)
 
     issues = forms.CharField(label='Issues', required=False)
-    # Volume is a char field to allow ranges and lists.
     volume = forms.CharField(label='Volume', required=False)
-    brand = forms.CharField(required=False)
-    indicia_publisher = forms.CharField(label='Indicia Publisher', required=False)
     price = forms.CharField(required=False)
     issue_pages = forms.CharField(required=False)
     issue_notes = forms.CharField(label='Issue Notes', required=False)

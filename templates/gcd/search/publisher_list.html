@@ -43,41 +43,6 @@
   {% endfor %}
 </table>
 
-{% comment %}
-Should integrate these onto this page, but pagination with three querysets
-is non-obvious.  Perhaps just add to simple search dropdown instead?
-
-<table class="listing">
-  <tr>
-    <th> Brand </th>
-    <th> Parent </th>
-    <th> #&nbsp;Issues </th>
-  </tr>
-  {% for brand in brands %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand }}</a> 
-    <td> <a href="{{ brand.parent.get_absolute_url }}">{{ brand.parent.name }}</a> 
-    <td> {{ brand.issue_count }} </td>
-  </tr>
-  {% endfor %}
-</table>
-<table class="listing">
-  <tr>
-    <th colspan="2"> Indicia Publisher </th>
-    <th> Parent </th>
-    <th> #&nbsp;Issues </th>
-  </tr>
-  {% for indpub in indpubs %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ indpub.country.code|lower }}.png" alt="{{ imprint.country.code|upper }}">
-    <td class="listing_publisher"> <a href="{{ indpub.get_absolute_url }}">{{ indpub }}</a> 
-    <td> <a href="{{ indpub.parent.get_absolute_url }}">{{ indpub.parent.name }}</a> 
-    <td> {{ indpub.issue_count }} </td>
-  </tr>
-  {% endfor %}
-</table>
-{% endcomment %}
-
 <table class="listing">
   <tr>
     <th colspan="2"> Imprint </th>

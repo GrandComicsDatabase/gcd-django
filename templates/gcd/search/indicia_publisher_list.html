@@ -1,0 +1,26 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% block list_contents %}
+<table class="listing">
+  <tr>
+    <th colspan="2"> Indicia Publisher </th>
+    <th> Parent Publisher </th>
+    <th> Year&nbsp;Began </th>
+    <th> Year&nbsp;Ended </th>
+    <th> #&nbsp;Issues </th>
+  </tr>
+  {% for publisher in items %}
+    {% if not publisher.is_imprint %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
+      <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
+      <td class="listing_publisher"> <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a></td>
+      <td> {{ publisher.year_began|default:'' }} </td>
+      <td> {{ publisher.year_ended|default:'' }} </td>
+      <td> {{ publisher.issue_count }} </td>
+    </tr>
+    {% endif %}
+  {% endfor %}
+</table>
+{% endblock %}
+

@@ -18,8 +18,8 @@
 {% endwith %}
 
 <div id="blithering">
-Advanced Search is still somewhat experimental and has some known bugs
-and limitations:
+Advanced Search is still (yes, even more than a year after its first appearance)
+somewhat experimental and has some known bugs and limitations:
 <ul>
   <li> The default ordering of the search results sorts according to series 
        name and issue date.
@@ -41,17 +41,15 @@ and limitations:
        appear at the beginning of the list.  It is also possible to search
        an issue's cover date as a text field without any conversion to an
        actual date.
-  <li> At the moment you cannot directly search for Brands or Indicia Publishers
-       (which are recent, as in December 2009) additions to the site.  You can,
-       however, search for Brands and/or Indicia Publishers as issue fields.
-       The rest of the search functionality for these will be implemented
-       in the near future.
   <li> Many older indexes do not list the feature characters under characters
        as well. Therefore the standard search for characters (using the search
        box on top of the pages) returns matches in either the feature or the 
        characters field. This search behaviour is not supported by the 
-       advanced search for technical reasons.
+       advanced search for technical reasons.  You can somewhat simulate it
+       by using the "OR some fields" option.
 </ul>
+<p>
+On the other hand, you can finally search for brands and indicia publishers!
 </div>
 
 {% if error_text %}
@@ -68,6 +66,7 @@ and limitations:
   <input type="submit" value="Search">
 </fieldset>
 </div>
+
 <div class="search_left">
 <fieldset class="control">
 <legend>Search Control</legend>
@@ -77,8 +76,7 @@ and limitations:
   {{ form.logic|show_form }}
 </ol>
 </fieldset>
-</div>
-<div class="search_right">
+
 <fieldset class="ordering">
 <legend>Ordering</legend>
 <ol>
@@ -87,9 +85,15 @@ and limitations:
   {{ form.order3|show_form }}
 </ol>
 </fieldset>
-</div>
 
-<div class="search_left">
+<fieldset class="universal">
+<legend>Date Fields</legend>
+<ol>
+  {{ form.start_date|show_form }}
+  {{ form.end_date|show_form }}
+</ol>
+</fieldset>
+
 <fieldset class="sequence">
   <legend> Story Fields </legend>
   <ol>
@@ -131,14 +135,6 @@ and limitations:
 </div>
 
 <div class="search_right">
-<fieldset class="universal">
-<legend>Date Fields</legend>
-<ol>
-  {{ form.start_date|show_form }}
-  {{ form.end_date|show_form }}
-</ol>
-</fieldset>
-
 <fieldset class="publisher" id="publisher_fieldset">
   <legend>
     Publisher Fields
@@ -147,6 +143,27 @@ and limitations:
     {{ form.pub_name|show_form }}
     {{ form.country|show_form }}
     {{ form.pub_notes|show_form }}
+  </ol>
+</fieldset>
+
+<fieldset class="brand" id="brand_fieldset">
+  <legend>
+    Publisher Brand Fields
+  </legend>
+  <ol>
+    {{ form.brand|show_form }}
+    {{ form.brand_notes|show_form }}
+  </ol>
+</fieldset>
+
+<fieldset class="indicia_publisher" id="indicia_publisher_fieldset">
+  <legend>
+    Indicia Publisher Fields
+  </legend>
+  <ol>
+    {{ form.indicia_publisher|show_form }}
+    {{ form.is_surrogate|show_form }}
+    {{ form.ind_pub_notes|show_form }}
   </ol>
 </fieldset>
 
@@ -175,8 +192,6 @@ and limitations:
     {{ form.issues|show_form }}
     {{ form.volume|show_form }}
     {{ form.issue_date|show_form }}
-    {{ form.brand|show_form }}
-    {{ form.indicia_publisher|show_form }}
     {{ form.price|show_form }}
     {{ form.issue_pages|show_form }}
     {{ form.format|show_form }}

@@ -20,7 +20,7 @@ from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            Country, Language, Indexer
+                            Country, Language, Indexer, Brand, IndiciaPublisher
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
@@ -38,7 +38,8 @@ class SearchError(Exception):
 def generic_by_name(request, name, q_obj, sort,
                     class_=Story,
                     template='gcd/search/content_list.html',
-                    credit=None):
+                    credit=None,
+                    related=[]):
     """
     Helper function for the most common search cases.
     """
@@ -46,22 +47,29 @@ def generic_by_name(request, name, q_obj, sort,
     base_name = 'unknown'
     plural_suffix = 's'
     query_val = {'method': 'icontains'}
-    if (class_ is Series):
-        base_name = 'series'
-        plural_suffix = ''
-        things = Series.objects.exclude(deleted=True).filter(q_obj) \
-                   .select_related('publisher')
+
+    if (class_ in (Series, Brand, IndiciaPublisher)):
+        if class_ is IndiciaPublisher:
+            base_name = 'indicia_publisher'
+            display_name = 'Indicia Publisher'
+        else:
+            display_name = class_.__name__
+            base_name = display_name.lower()
+        plural_suffix = '' if class_ is Series else 's'
+        things = class_.objects.exclude(deleted=True).filter(q_obj)
+        if related:
+            things = things.select_related(*related)
         if (sort == ORDER_ALPHA):
             things = things.order_by("name", "year_began")
         elif (sort == ORDER_CHRONO):
             things = things.order_by("year_began", "name")
-        heading = 'Series Search Results'
+        heading = '%s Search Results' % display_name
         # query_string for the link to the advanced search
-        query_val['target'] = 'series'
-        query_val['series'] = name
+        query_val['target'] = base_name
+        query_val[base_name] = name
+
     elif class_ is Issue:
         base_name = 'issue'
-        plural_suffix = 's'
         things = Issue.objects.exclude(deleted=True).filter(q_obj) \
                    .select_related('series__publisher')
         if (sort == ORDER_ALPHA):
@@ -72,6 +80,7 @@ def generic_by_name(request, name, q_obj, sort,
         # query_string for the link to the advanced search
         query_val['target'] = 'issue'
         query_val['isbn'] = name
+
     elif (class_ is Story):
         # TODO: move this outside when series deletes are implemented
         q_obj &= Q(deleted=False)
@@ -126,10 +135,10 @@ def generic_by_name(request, name, q_obj, sort,
     vars = { 'item_name': base_name,
              'plural_suffix': plural_suffix,
              'heading': heading,
-             'search_term' : name,
-             'media_url' : settings.MEDIA_URL, 
-             'query_string' : urlencode(query_val),
-             'which_credit' : credit }
+             'search_term': name,
+             'media_url': settings.MEDIA_URL, 
+             'query_string': urlencode(query_val),
+             'which_credit': credit }
     return paginate_response(request, things, template, vars)
 
 def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
@@ -149,9 +158,20 @@ def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
         { 'items': pubs,
           'item_name': 'publisher',
           'plural_suffix': 's',
-          'heading' : 'Publisher Search Results',
-          'query_string' : get_copy.urlencode(),
+          'heading': 'Publisher Search Results',
+          'query_string': get_copy.urlencode(),
         })
+
+def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
+    q_obj = Q(name__icontains=brand_name)
+    return generic_by_name(request, brand_name, q_obj, sort,
+                           Brand, 'gcd/search/brand_list.html')
+
+def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
+    q_obj = Q(name__icontains=ind_pub_name)
+    return generic_by_name(request, ind_pub_name, q_obj, sort,
+                           IndiciaPublisher,
+                           'gcd/search/indicia_publisher_list.html')
 
 def character_by_name(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
@@ -252,10 +272,10 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
                                     kwargs={ 'issue_id': things[0].id }))
     else: # if more or none use issue_list.html from search
         context = {
-            'items' : things,
-            'item_name' : 'issue',
-            'plural_suffix' : 's',
-            'heading' : series_name + ' #' + issue_nr,
+            'items': things,
+            'item_name': 'issue',
+            'plural_suffix': 's',
+            'heading': series_name + ' #' + issue_nr,
         }
 
         return paginate_response(
@@ -264,18 +284,18 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
 def compute_isbn_qobj(isbn, prefix):
     if stdisbn.is_valid(isbn):
         isbn_compact = stdisbn.compact(isbn)
-        q_obj = Q(**{ '%svalid_isbn' % prefix : isbn_compact})
+        q_obj = Q(**{ '%svalid_isbn' % prefix: isbn_compact})
         # need to search for both ISBNs to be safe
         if stdisbn.isbn_type(isbn_compact) == 'ISBN13' and \
           isbn_compact.startswith('978'):
             isbn10 = isbn_compact[3:-1]
             isbn10 += stdisbn._calc_isbn10_check_digit(isbn10)
-            q_obj |= Q(**{ '%svalid_isbn' % prefix : isbn10})
+            q_obj |= Q(**{ '%svalid_isbn' % prefix: isbn10})
         elif stdisbn.isbn_type(isbn_compact) == 'ISBN10':
-            q_obj |= Q(**{ '%svalid_isbn' % prefix :
+            q_obj |= Q(**{ '%svalid_isbn' % prefix:
                            stdisbn.to_isbn13(isbn_compact)})
     else:
-        q_obj = Q(**{ '%sisbn__icontains' % prefix : isbn})
+        q_obj = Q(**{ '%sisbn__icontains' % prefix: isbn})
     return q_obj
 
 def issue_by_isbn(request, isbn, sort=ORDER_ALPHA):
@@ -318,6 +338,10 @@ def search(request):
     if view_type == 'publisher':
         view_type += 's'
         param_type = 'publisher_name'
+    elif view_type == 'brand':
+        param_type = 'brand_name'
+    elif view_type == 'indicia_publisher':
+        param_type = 'ind_pub_name'
 
     view = 'apps.gcd.views.search.%s_by_name' % view_type
 
@@ -338,10 +362,11 @@ def search(request):
         sort = request.GET['sort']
     else:
         sort = ORDER_ALPHA
+
+    param_type_value = quote(request.GET['query'].strip().encode('utf-8'))
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
-                           kwargs = { param_type: quote(request.GET['query'].strip() \
-                                                        .encode('utf-8')),
+                           kwargs = { param_type: param_type_value,
                                       'sort': sort }))
 
 
@@ -350,7 +375,7 @@ def advanced_search(request):
 
     if ('target' not in request.GET):
         return render_to_response('gcd/search/advanced.html',
-          { 'form' : AdvancedSearch(auto_id=True) },
+          { 'form': AdvancedSearch(auto_id=True) },
           context_instance=RequestContext(request))
     else:
         search_values = request.GET.copy()
@@ -361,7 +386,7 @@ def advanced_search(request):
         search_values['country'] = search_values.getlist('country')
         search_values['language'] = search_values.getlist('language')
         return render_to_response('gcd/search/advanced.html',
-          { 'form' : AdvancedSearch(initial=search_values) },
+          { 'form': AdvancedSearch(initial=search_values) },
           context_instance=RequestContext(request))
 
 def do_advanced_search(request):
@@ -382,14 +407,18 @@ def do_advanced_search(request):
         stq_obj = search_stories(data, op)
         iq_obj = search_issues(data, op)
         sq_obj = search_series(data, op)
+        ipq_obj = search_indicia_publishers(data, op)
+        bq_obj = search_brands(data, op)
         pq_obj = search_publishers(data, op)
+
         # if there are sequence searches limit to type cover
         if data['target'] == 'cover' and stq_obj != None:
-            cq_obj = Q(**{ 'issue__story__type' : StoryType.objects\
-                                                  .get(name='cover') })
+            cq_obj = Q(**{ 'issue__story__type': StoryType.objects\
+                                                          .get(name='cover') })
         else:
             cq_obj = None
-        query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj, cq_obj)
+        query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj,
+                                bq_obj, ipq_obj, cq_obj)
         terms = compute_order(data)
     except SearchError, se:
         raise ViewTerminationError, render_to_response(
@@ -413,40 +442,47 @@ def do_advanced_search(request):
         
     items = []
     if data['target'] == 'publisher':
+        filter = Publisher.objects.exclude(deleted=True)
         if query:
-            filter = Publisher.objects.exclude(deleted=True).filter(query)
-        else:
-            filter = Publisher.objects.exclude(deleted=True)
+            filter = filter.filter(query)
         items = filter.order_by(*terms).select_related('country').distinct()
 
-    elif data['target'] == 'series':
+    elif data['target'] == 'brand':
+        filter = Brand.objects.exclude(deleted=True)
         if query:
-            filter = Series.objects.exclude(deleted=True).filter(query)
-        else:
-            filter = Series.objects.exclude(deleted=True)
+            filter = filter.filter(query)
+        items = filter.order_by(*terms).select_related('parent').distinct()
+
+    elif data['target'] == 'indicia_publisher':
+        filter = IndiciaPublisher.objects.exclude(deleted=True)
+        if query:
+            filter = filter.filter(query)
+        items = filter.order_by(*terms).select_related('parent').distinct()
+
+    elif data['target'] == 'series':
+        filter = Series.objects.exclude(deleted=True)
+        if query:
+            filter = filter.filter(query)
         items = filter.order_by(*terms).select_related('publisher').distinct()
 
     elif data['target'] == 'issue':
+        filter = Issue.objects.exclude(deleted=True)
         if query:
-            filter = Issue.objects.exclude(deleted=True).filter(query)
-        else:
-            filter = Issue.objects.exclude(deleted=True)
+            filter = filter.filter(query)
         items = filter.order_by(*terms).select_related(
           'series__publisher').distinct()
 
     elif data['target'] == 'cover':
+        filter = Cover.objects.exclude(deleted=True)
         if query:
-            filter = Cover.objects.exclude(deleted=True).filter(query)
-        else:
-            filter = Cover.objects.all()
+            filter = filter.filter(query)
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher').distinct()
 
     elif data['target'] == 'sequence':
+        filter = Story.objects.exclude(deleted=True)
         if query:
-            filter = Story.objects.exclude(deleted=True).filter(query)
-        else:
-            filter = Story.objects.exclude(deleted=True)
+            filter = filter.filter(query)
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
 
@@ -459,16 +495,27 @@ def used_search(search_values):
     del search_values['order3']
     if search_values['target'] == 'sequence':
         target = 'Stories'
-    elif search_values['target'][-1] == 's':
-        target = 'Series'
+    elif search_values['target'] == 'indicia_publisher':
+        target = 'Indicia Publishers'
+    elif search_values['target'] == 'brand':
+        target = "Publisher's Brands"
     else:
-        target = capitalize(search_values['target']) + 's'
+        target = capitalize(search_values['target'])
+        if target[-1] != 's':
+            target += 's'
+
     del search_values['target']
     
     if search_values['method'] == 'iexact':
         method = 'Matches Exactly'
+    elif search_values['method'] == 'exact':
+        method = 'Matches Excactly (case sensitive)'
     elif search_values['method'] == 'istartswith':
         method = 'Starts With'
+    elif search_values['method'] == 'startswith':
+        method = 'Starts With (case sensitive)'
+    elif search_values['method'] == 'contains':
+        method = 'Contains (case sensitive)'
     else:
         method = 'Contains'
     del search_values['method']
@@ -544,10 +591,10 @@ def process_advanced(request):
 
     context = {
         'advanced_search': True,
-        'item_name' : item_name,
-        'plural_suffix' : plural_suffix,
-        'heading' : target.title() + ' Search Results',
-        'query_string' : get_copy.urlencode(),
+        'item_name': item_name,
+        'plural_suffix': plural_suffix,
+        'heading': target.title() + ' Search Results',
+        'query_string': get_copy.urlencode(),
     }
 
     template = 'gcd/search/%s_list.html' % \
@@ -595,9 +642,9 @@ def search_dates(data, formatter=lambda d: d.year,
     q_and_only = []
     if data['start_date']:
         begin_after_start = \
-          { '%s__gte' % start_name : formatter(data['start_date']) }
+          { '%s__gte' % start_name: formatter(data['start_date']) }
         end_after_start = \
-          { '%s__gte' % end_name : formatter(data['start_date']) }
+          { '%s__gte' % end_name: formatter(data['start_date']) }
 
         if data['end_date']:
             q_and_only.append(Q(**begin_after_start) | Q(**end_after_start))
@@ -606,9 +653,9 @@ def search_dates(data, formatter=lambda d: d.year,
 
     if data['end_date']:
         begin_before_end = \
-          { '%s__lte' % start_name : formatter(data['end_date']) }
+          { '%s__lte' % start_name: formatter(data['end_date']) }
         end_before_end = \
-          { '%s__lte' % end_name : formatter(data['end_date']) }
+          { '%s__lte' % end_name: formatter(data['end_date']) }
 
         if data['start_date']:
             q_and_only.append(Q(**begin_before_end) | Q(**end_before_end))
@@ -636,30 +683,74 @@ def search_publishers(data, op):
 
     q_objs = []
     if data['pub_name']:
-        pub_name_q = Q(**{ '%sname__%s' % (prefix, op) : data['pub_name'] })
+        pub_name_q = Q(**{ '%sname__%s' % (prefix, op): data['pub_name'] })
         if target == 'publisher':
             q_objs.append(pub_name_q)
         else:
             imprint_prefix = compute_prefix(target, 'series')
-            imprint_q = Q(**{ '%simprint__name__%s' % (imprint_prefix, op) :
+            imprint_q = Q(**{ '%simprint__name__%s' % (imprint_prefix, op):
                               data['pub_name'] })
             q_objs.append(pub_name_q | imprint_q)
     # one more like this and we should refactor the code :-)
     if data['pub_notes']:
-        pub_notes_q = Q(**{ '%snotes__%s' % (prefix, op) :
+        pub_notes_q = Q(**{ '%snotes__%s' % (prefix, op):
                             data['pub_notes'] })
         if target == 'publisher':
             q_objs.append(pub_notes_q)
         else:
             imprint_prefix = compute_prefix(target, 'series')
-            imprint_q = Q(**{ '%simprint__notes__%s' % (imprint_prefix, op) :
+            imprint_q = Q(**{ '%simprint__notes__%s' % (imprint_prefix, op):
                               data['pub_notes'] })
             q_objs.append(pub_notes_q | imprint_q)
 
     if q_and_only or q_objs:
-        q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
 
+def search_brands(data, op):
+    """
+    Handle brand fields.
+    """
+    target = data['target']
+    prefix = compute_prefix(target, 'brand')
+
+    q_and_only = []
+    q_objs = []
+    if data['brand']:
+        q_objs.append(
+          Q(**{ '%sname__%s' % (prefix, op): data['brand'] }))
+    if data['brand_notes']:
+        q_objs.append(
+          Q(**{ '%notes__%s' % (prefix, op): data['brand_notes'] }))
+
+    if q_and_only or q_objs:
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
+    return compute_qobj(data, q_and_only, q_objs)
+
+def search_indicia_publishers(data, op):
+    """
+    Handle indicia_publisher fields.
+    """
+    target = data['target']
+    prefix = compute_prefix(target, 'indicia_publisher')
+
+    q_and_only = []
+    q_objs = []
+    if data['indicia_publisher']:
+        q_objs.append(
+          Q(**{ '%sname__%s' % (prefix, op): data['indicia_publisher'] }))
+    if data['ind_pub_notes']:
+        q_objs.append(
+          Q(**{ '%notes__%s' % (prefix, op): data['ind_pub_notes'] }))
+    if data['is_surrogate'] is not None:
+        if data['is_surrogate'] is True:
+            q_objs.append(Q(**{ '%sis_surrogate' % prefix: True }))
+        else:
+            q_objs.append(Q(**{ '%sis_surrogate' % prefix: False }))
+
+    if q_and_only or q_objs:
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
+    return compute_qobj(data, q_and_only, q_objs)
 
 def search_series(data, op):
     """
@@ -675,45 +766,45 @@ def search_series(data, op):
                                        end_name='%syear_ended' % prefix))
 
     if data['language']:
-        language_qargs = { '%slanguage__code__in' % prefix : data['language'] }
+        language_qargs = { '%slanguage__code__in' % prefix: data['language'] }
         q_and_only.append(Q(**language_qargs))
 
     q_objs = []
     if data['series']:
-        q_objs.append(Q(**{ '%sname__%s' % (prefix, op) : data['series'] }))
+        q_objs.append(Q(**{ '%sname__%s' % (prefix, op): data['series'] }))
     if data['format']:
-        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op) :  data['format'] }))
+        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op):  data['format'] }))
     if data['series_notes']:
-        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op) :
+        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op):
                             data['series_notes'] }))
     if data['tracking_notes']:
-        q_objs.append(Q(**{ '%stracking_notes__%s' % (prefix, op) :
+        q_objs.append(Q(**{ '%stracking_notes__%s' % (prefix, op):
                              data['tracking_notes']}))
     if data['publication_notes']:
-        q_objs.append(Q(**{ '%spublication_notes__%s' % (prefix, op) :
+        q_objs.append(Q(**{ '%spublication_notes__%s' % (prefix, op):
                              data['publication_notes']}))
     if data['not_reserved']:
-        q_objs.append(Q(**{ '%songoing_reservation__isnull' % prefix : True }) &
-                      Q(**{ '%sis_current' % prefix : True }))
+        q_objs.append(Q(**{ '%songoing_reservation__isnull' % prefix: True }) &
+                      Q(**{ '%sis_current' % prefix: True }))
     if data['is_current']:
-        q_objs.append(Q(**{ '%sis_current' % prefix : True }))
+        q_objs.append(Q(**{ '%sis_current' % prefix: True }))
 
     try:
         if data['issue_count'] is not None and data['issue_count'] != '':
             range_match = match(COUNT_RANGE_REGEXP, data['issue_count'])
             if range_match:
                 if not range_match.group('min'):
-                    q_objs.append(Q(**{ '%sissue_count__lte' % prefix :
+                    q_objs.append(Q(**{ '%sissue_count__lte' % prefix:
                                         int(range_match.group('max')) }))
                 elif not range_match.group('max'):
-                    q_objs.append(Q(**{ '%sissue_count__gte' % prefix :
+                    q_objs.append(Q(**{ '%sissue_count__gte' % prefix:
                                         int(range_match.group('min')) }))
                 else:
-                    q_objs.append(Q(**{ '%sissue_count__range' % prefix :
+                    q_objs.append(Q(**{ '%sissue_count__range' % prefix:
                                         (int(range_match.group('min')),
                                          int(range_match.group('max'))) }))
             else:
-                q_objs.append(Q(**{ '%sissue_count__exact' % prefix :
+                q_objs.append(Q(**{ '%sissue_count__exact' % prefix:
                                     int(data['issue_count']) }))
     except ValueError:
         raise SearchError, ("Issue count must be an integer or an integer "
@@ -721,7 +812,7 @@ def search_series(data, op):
                             "100-, -200).")
 
     if q_and_only or q_objs:
-        q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
 
     return compute_qobj(data, q_and_only, q_objs)
 
@@ -750,23 +841,20 @@ def search_issues(data, op, stories_q=None):
         q_objs.append(handle_numbers('volume', data, prefix))
     if data['issue_date']:
         q_objs.append(
-          Q(**{ '%spublication_date__%s' % (prefix, op) : data['issue_date'] }))
-    if data['brand']:
-        q_objs.append(
-          Q(**{ '%sbrand__name__%s' % (prefix, op) : data['brand'] }))
+          Q(**{ '%spublication_date__%s' % (prefix, op): data['issue_date'] }))
     if data['indicia_publisher']:
         q_objs.append(
-          Q(**{ '%sindicia_publisher__name__%s' % (prefix, op) :
+          Q(**{ '%sindicia_publisher__name__%s' % (prefix, op):
                 data['indicia_publisher'] }))
     if data['cover_needed']:
-        q_objs.append(Q(**{ '%scover__isnull' % prefix : True }) |
-                      ~Q(**{ '%scover__deleted' % prefix : False }) |
-                      Q(**{ '%scover__marked' % prefix : True }))
+        q_objs.append(Q(**{ '%scover__isnull' % prefix: True }) |
+                      ~Q(**{ '%scover__deleted' % prefix: False }) |
+                      Q(**{ '%scover__marked' % prefix: True }))
     if data['is_indexed'] is not None:
         if data['is_indexed'] is True:
-            q_objs.append(Q(**{ '%sis_indexed' % prefix : True }))
+            q_objs.append(Q(**{ '%sis_indexed' % prefix: True }))
         else:
-            q_objs.append(Q(**{ '%sis_indexed' % prefix : False }))
+            q_objs.append(Q(**{ '%sis_indexed' % prefix: False }))
     if data['indexer']:
         q_objs.append(
           Q(**{ '%srevisions__changeset__indexer__indexer__in' % prefix:
@@ -783,10 +871,10 @@ def search_issues(data, op, stories_q=None):
             if range_match:
                 page_start = Decimal(range_match.group('begin'))
                 page_end = Decimal(range_match.group('end'))
-                q_objs.append(Q(**{ '%spage_count__range' % prefix :
+                q_objs.append(Q(**{ '%spage_count__range' % prefix:
                                     (page_start, page_end) }))
             else:
-                q_objs.append(Q(**{ '%spage_count' % prefix :
+                q_objs.append(Q(**{ '%spage_count' % prefix:
                                     Decimal(data['issue_pages']) }))
     except ValueError:
         raise SearchError, ("Page count must be a decimal number or a pair of "
@@ -795,7 +883,7 @@ def search_issues(data, op, stories_q=None):
     # issue_editing is handled in search_stories since it is a credit
     # need to account for that here
     if q_and_only or q_objs or data['issue_editing']:
-        q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
 
     return compute_qobj(data, q_and_only, q_objs)
 
@@ -831,9 +919,9 @@ def handle_numbers(field, data, prefix):
 
     if nums_in:
         if field == 'issues':
-            q_or_only.append(Q(**{ '%snumber__in' % prefix : nums_in }))
+            q_or_only.append(Q(**{ '%snumber__in' % prefix: nums_in }))
         else:
-            q_or_only.append(Q(**{ '%svolume__in' % prefix : nums_in }))
+            q_or_only.append(Q(**{ '%svolume__in' % prefix: nums_in }))
 
     return reduce(lambda x, y: x | y, q_or_only)
 
@@ -850,20 +938,20 @@ def search_stories(data, op):
 
     for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
         if data[field]:
-            q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op) :
+            q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op):
                                 data[field] }))
 
     for field in ('feature', 'title', 'genre', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
         if data[field]:
-            q_and_only.append(Q(**{ '%s%s__%s' % (prefix, field, op) :
+            q_and_only.append(Q(**{ '%s%s__%s' % (prefix, field, op):
                                 data[field] }))
 
     if data['type']:
-        q_and_only.append(Q(**{ '%stype__in' % prefix : data['type'] }))
+        q_and_only.append(Q(**{ '%stype__in' % prefix: data['type'] }))
 
     if data['story_editing']:
-        q_objs.append(Q(**{ '%sediting__%s' % (prefix, op) :
+        q_objs.append(Q(**{ '%sediting__%s' % (prefix, op):
                             data['story_editing'] }))
 
     try:
@@ -872,10 +960,10 @@ def search_stories(data, op):
             if range_match:
                 page_start = Decimal(range_match.group('begin'))
                 page_end = Decimal(range_match.group('end'))
-                q_and_only.append(Q(**{ '%spage_count__range' % prefix :
+                q_and_only.append(Q(**{ '%spage_count__range' % prefix:
                                         (page_start, page_end) }))
             else:
-                q_and_only.append(Q(**{ '%spage_count' % prefix :
+                q_and_only.append(Q(**{ '%spage_count' % prefix:
                                         Decimal(data['pages']) }))
 
     except ValueError:
@@ -883,7 +971,7 @@ def search_stories(data, op):
                             "decimal numbers separated by a hyphen.")
 
     if q_and_only or q_objs:
-        q_and_only.append(Q(**{'%sdeleted__exact' % prefix : 0}))
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
 
     # since issue_editing is credit use it here to allow correct 'OR' behavior
     if data['issue_editing']:
@@ -899,7 +987,7 @@ def search_stories(data, op):
 
 def compute_prefix(target, current):
     """
-    Advanced search allows searching on any of four tables in a
+    Advanced search allows searching on any of six tables in a
     hierarchy using fields from any of those tables.  Depending on
     the relative positioning of the table you're searching in to
     the table that has the field you're searching with, you may need
@@ -912,24 +1000,42 @@ def compute_prefix(target, current):
     if current == 'publisher':
         if target == 'series':
             return 'publisher__'
+        if target in ('brand', 'indicia_publisher'):
+            return 'parent__'
         if target == 'issue':
             return 'series__publisher__'
         if target in ('sequence', 'feature', 'cover'):
             return 'issue__series__publisher__'
+    elif current == 'brand':
+        if target == 'publisher':
+            return 'brand_set__'
+        if target == 'issue':
+            return 'brand__'
+        if target in ('sequence', 'feature', 'cover'):
+            return 'issue__brand'
+    elif current == 'indicia_publisher':
+        if target == 'publisher':
+            return 'indiciapublisher_set__'
+        if target == 'issue':
+            return 'indicia_publisher__'
+        if target in ('sequence', 'feature', 'cover'):
+            return 'issue__indicia_publisher__'
     elif current == 'series':
         if target in ('issue', 'publisher'):
             return 'series__'
-        if target in ('sequence', 'feature', 'cover'):
+        if target in ('sequence', 'feature', 'cover',
+                      'brand', 'indicia_publisher'):
             return 'issue__series__'
     elif current == 'issue':
-        if target in ('sequence', 'feature', 'cover', 'series'):
+        if target in ('sequence', 'feature', 'cover', 'series',
+                      'brand', 'indicia_publisher'):
             return 'issue__'
         if target == 'publisher':
             return 'series__issue__'
     elif current == 'sequence':
         if target == 'issue':
             return 'story__'
-        if target in ('series', 'cover'):
+        if target in ('series', 'cover', 'brand', 'indicia_publisher'):
             return 'issue__story__'
         if target == 'publisher':
             return 'series__issue__story__'
@@ -980,6 +1086,24 @@ def compute_order(data):
             elif order == 'country':
                 terms.append('country__name')
 
+        elif target == 'brand':
+            if order == 'date':
+                terms.append('year_began')
+            elif order == 'publisher':
+                terms.append('parent')
+            elif order == 'country':
+                terms.append('parent__country__name')
+
+        elif target == 'indicia_publisher':
+            if order == 'date':
+                terms.append('year_began')
+            elif order == 'publisher':
+                terms.append('parent')
+            elif order == 'country':
+                # TODO: Should we allow indicia publisher country?
+                # We do not currently search it, so no ordering either for now.
+                terms.append('parent__country__name')
+
         elif target == 'series':
             if order == 'date':
                 terms.append('year_began')
@@ -995,6 +1119,10 @@ def compute_order(data):
                 terms.append('key_date')
             elif order == 'series':
                 terms.append('series')
+            elif order == 'indicia_publisher':
+                terms.append('indicia_publisher')
+            elif order == 'brand':
+                terms.append('brand')
             elif order == 'publisher':
                 terms.append('series__publisher')
             elif order == 'country':
@@ -1005,6 +1133,10 @@ def compute_order(data):
         elif target in ('sequence', 'feature', 'cover'):
             if order == 'publisher':
                 terms.append('issue__series__publisher')
+            elif order == 'brand':
+                terms.append('issue__brand')
+            elif order == 'indicia_publisher':
+                terms.append('issue__indicia_publisher')
             elif order == 'series':
                 terms.append('issue__series')
             elif order == 'date':
