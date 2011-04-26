@@ -1007,18 +1007,22 @@ def compute_prefix(target, current):
         if target in ('sequence', 'feature', 'cover'):
             return 'issue__series__publisher__'
     elif current == 'brand':
-        if target == 'publisher':
-            return 'brand_set__'
-        if target == 'issue':
+        if target == 'indicia_publisher':
+            raise SearchError, ('Cannot search for Indicia Publishers by '
+              'Publisher Brand attributes, as they are not directly related')
+        if target in ('publisher', 'issue'):
             return 'brand__'
-        if target in ('sequence', 'feature', 'cover'):
-            return 'issue__brand'
+        if target in ('series', 'sequence', 'feature', 'cover'):
+            return 'issue__brand__'
     elif current == 'indicia_publisher':
+        if target == 'brand':
+            raise SearchError, ('Cannot search for Publisher Brands by '
+              'Indicia Publisher attributes, as they are not directly related')
         if target == 'publisher':
-            return 'indiciapublisher_set__'
+            return 'indiciapublisher__'
         if target == 'issue':
             return 'indicia_publisher__'
-        if target in ('sequence', 'feature', 'cover'):
+        if target in ('series', 'sequence', 'feature', 'cover'):
             return 'issue__indicia_publisher__'
     elif current == 'series':
         if target in ('issue', 'publisher'):
