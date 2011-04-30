@@ -1149,7 +1149,7 @@ def compute_order(data):
                 terms.append('issue__series__country__name')
             elif order == 'language':
                 terms.append('issue__series__language__name')
-            else:
+            elif target != 'cover':
                 terms.append(order)
 
     return terms
