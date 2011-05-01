@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.core import urlresolvers
-from django.db.models import Sum
+from django.db.models import Sum, Count
 
 from publisher import IndiciaPublisher, Brand
 from series import Series
@@ -22,7 +22,10 @@ class Issue(models.Model):
     display_volume_with_number = models.BooleanField(default=False)
     isbn = models.CharField(max_length=32)
     valid_isbn = models.CharField(max_length=13)
-
+    variant_of = models.ForeignKey('self', null=True,
+                                   related_name='variant_set')
+    variant_name = models.CharField(max_length=255)
+    
     # Dates and sorting
     publication_date = models.CharField(max_length=255)
     key_date = models.CharField(max_length=10)
@@ -64,17 +67,60 @@ class Issue(models.Model):
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
-    def active_covers(self):
+    def shown_stories(self):
+        """ returns cover sequence and story sequences """
+        if self.variant_of:
+            stories_from = self.variant_of
+        else:
+            stories_from = self
+        stories = list(stories_from.active_stories()
+                                   .order_by('sequence_number')
+                                   .select_related('type'))
+
+        if (len(stories) > 0):
+            cover_story = stories.pop(0)
+            if self.variant_of:
+                # can have only one sequence, the variant cover
+                if self.active_stories().count():
+                    cover_story = self.active_stories()[0]
+        else: 
+            cover_story = None
+        return cover_story, stories
+
+    def active_covers(self, variants=False):
         return self.cover_set.exclude(deleted=True)
+
+    def variant_covers(self):
+        """ returns the images from the variant issues """
+        from cover import Cover
+        if self.variant_of:
+            variant_issues = list(self.variant_of.variant_set\
+                                      .exclude(id=self.id)\
+                                      .exclude(deleted=True)\
+                                      .values_list('id', flat=True))
+        else:
+            variant_issues = list(self.variant_set.exclude(deleted=True)\
+                                      .values_list('id', flat=True))
+        return Cover.objects.filter(issue__id__in=variant_issues)\
+                            .exclude(deleted=True)
+
+    def all_covers(self):
+        return self.active_covers() | self.variant_covers()
+        
+    def shown_covers(self):
+        return self.active_covers(), self.variant_covers()
+
+    def has_covers(self, variants=False):
+        if variants:
+            return self.all_covers().count() > 0
+        else:
+            return self.active_covers().count() > 0
 
     def _display_number(self):
         if self.display_volume_with_number:
             return u'v%s#%s' % (self.volume, self.number)
         return self.number
     display_number = property(_display_number)
-
-    def has_covers(self):
-        return self.active_covers().count() > 0
 
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):

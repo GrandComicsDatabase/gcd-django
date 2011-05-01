@@ -25,7 +25,8 @@ CTYPES = {
     'issue_add': 5,
     'issue': 6,
     'cover': 7,
-    'issue_bulk': 8
+    'issue_bulk': 8,
+    'variant_add': 9
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -419,7 +420,7 @@ class Changeset(models.Model):
                              new_state=states.APPROVED)
 
         issue_revision_count = self.issuerevisions.count()
-        if issue_revision_count > 1:
+        if self.change_type == CTYPES['issue_add'] and issue_revision_count > 1:
             # Bulk add of skeletons is relatively complicated.
             # The first issue will have the "after" field set.  Later
             # issues will need the "after" field set to the issue that was
@@ -522,6 +523,9 @@ class Changeset(models.Model):
         ir_count = self.issuerevisions.count()
         if ir_count == 1:
             return unicode(self.issuerevisions.all()[0])
+        if self.change_type == CTYPES['variant_add']:
+            return unicode(self.issuerevisions.get(variant_of__isnull=False)) \
+              + ' [Variant]'
         if ir_count > 1 and self.change_type == CTYPES['issue_add']:
             first = self.issuerevisions.order_by('revision_sort_code')[0]
             last = self.issuerevisions.order_by('-revision_sort_code')[0]
@@ -1508,14 +1512,38 @@ class CoverRevision(Revision):
                 series.save()
             return
 
-        cover.marked = self.marked
-        cover.last_upload = self.changeset.comments.latest('created').created
-        cover.is_wraparound = self.is_wraparound
-        cover.front_left = self.front_left
-        cover.front_right = self.front_right
-        cover.front_top = self.front_top
-        cover.front_bottom = self.front_bottom
-        cover.save()
+        if self.cover and self.is_replacement==False:
+            # this is a move of a cover
+            if self.change_type == CTYPES['variant_add']:
+                old_issue = cover.issue
+                issue_rev = self.changeset.issuerevisions\
+                                          .exclude(issue=old_issue).get()
+                cover.issue = issue_rev.issue
+                cover.save()
+                if issue_rev.series != old_issue.series:
+                    if issue_rev.series.language != old_issue.series.language:
+                        update_count('covers', -1, language=old_issue.series.language)
+                        update_count('covers', 1, language=issue_rev.series.language)
+                    if not issue_rev.series.has_gallery:
+                        issue_rev.series.has_gallery = True
+                        issue_rev.series.save()
+                    if old_issue.series.scan_count() == 0:
+                        old_issue.series.has_gallery = False
+                        old_issue.series.save()                        
+            else:
+                # implement in case we do different kind if cover moves
+                raise NotImplementedError
+        else:
+            from apps.oi.covers import copy_approved_cover
+            copy_approved_cover(self)
+            cover.marked = self.marked
+            cover.last_upload = self.changeset.comments.latest('created').created
+            cover.is_wraparound = self.is_wraparound
+            cover.front_left = self.front_left
+            cover.front_right = self.front_right
+            cover.front_top = self.front_top
+            cover.front_bottom = self.front_bottom
+            cover.save()
         if self.cover is None:
             self.cover = cover
             self.save()
@@ -1864,8 +1892,10 @@ class IssueRevisionManager(RevisionManager):
           page_count_uncertain=issue.page_count_uncertain,
           editing=issue.editing,
           no_editing=issue.no_editing,
-          notes=issue.notes,
-          isbn=issue.isbn)
+          isbn=issue.isbn,
+          variant_of=issue.variant_of,
+          variant_name=issue.variant_name,
+          notes=issue.notes)
 
         revision.save()
         return revision
@@ -1898,6 +1928,9 @@ class IssueRevision(Revision):
     volume = models.CharField(max_length=50, blank=True, default='')
     no_volume = models.BooleanField(default=False)
     display_volume_with_number = models.BooleanField(default=False)
+    variant_of = models.ForeignKey(Issue, null=True,
+                                   related_name='variant_revisions')
+    variant_name = models.CharField(max_length=255, blank=True, default='')
 
     publication_date = models.CharField(max_length=255, blank=True, default='')
     indicia_frequency = models.CharField(max_length=255, blank=True, default='')
@@ -1922,14 +1955,12 @@ class IssueRevision(Revision):
     no_brand = models.BooleanField(default=False)
 
     isbn = models.CharField(max_length=32, blank=True, default='')
+
     date_inferred = models.BooleanField(default=False, blank=True)
 
     def _valid_isbn(self):
         return validated_isbn(self.isbn)
     valid_isbn = property(_valid_isbn)
-
-    def active_stories(self):
-        return self.story_set.exclude(deleted=True)
 
     def _display_number(self):
         """
@@ -1948,10 +1979,50 @@ class IssueRevision(Revision):
         return self.issue.sort_code
     sort_code = property(_sort_code)
 
-    def has_covers(self):
+    def active_covers(self):
+        raise NotImplementedError
+        
+    def all_covers(self):
+        raise NotImplementedError
+        
+    def shown_covers(self):
+        raise NotImplementedError
+        
+    def variant_covers(self):
+        image_set = Cover.objects.none()
+        if self.issue:
+            # maybe a cover move from the base issue (only move allowed)
+            ids = list(self.changeset.coverrevisions.all()\
+                                     .values_list('cover__id', flat=True))
+            image_set |= Cover.objects.filter(id__in=ids)
+                
+            image_set |= self.issue.variant_covers()
+        elif self.variant_of:
+            image_set |= self.variant_of.variant_covers()
+            if self.changeset.change_type == CTYPES['variant_add'] \
+              and self.changeset.coverrevisions.count():
+                # maybe a cover move from the base issue (only move allowed)
+                exclude_ids = list(self.changeset.coverrevisions\
+                  .exclude(issue=self.issue).values_list('cover__id', flat=True))
+                image_set |= self.variant_of.active_covers()\
+                                            .exclude(id__in=exclude_ids)
+            else:
+                image_set |= self.variant_of.active_covers()
+        return image_set
+    
+    def has_covers(self, variants=False):
         if self.issue is None:
             return False
-        return self.issue.has_covers()
+        return self.issue.has_covers(variants=variants)
+
+    def _variant_set(self):
+        if self.issue is None:
+            return Issue.objects.none()
+        return self.issue.variant_set.all()
+    variant_set = property(_variant_set)
+    
+    def active_stories(self):
+        return self.story_set.exclude(deleted=True)
 
     def _story_set(self):
         return self.ordered_story_revisions()
@@ -1984,7 +2055,6 @@ class IssueRevision(Revision):
             'volume': '',
             'no_volume': None,
             'display_volume_with_number': None,
-            'isbn': '',
             'publication_date': '',
             'price': '',
             'key_date': '',
@@ -1997,7 +2067,8 @@ class IssueRevision(Revision):
             'page_count': None,
             'page_count_uncertain': None,
             'editing': '',
-            'no_editing': '',
+            'no_editing': None,
+            'isbn': '',
             'notes': '',
             'sort_code': None,
             'after': None,
@@ -2041,12 +2112,22 @@ class IssueRevision(Revision):
     def _source_name(self):
         return 'issue'
 
-    def _do_complete_added_revision(self, series):
+    def _do_complete_added_revision(self, series, variant_of):
         """
         Do the necessary processing to complete the fields of a new
         issue revision for adding a record before it can be saved.
         """
         self.series = series
+        if variant_of:
+            self.variant_of = variant_of
+            # in case of same series sort after base issue
+            if series == variant_of.series:
+                self.after = variant_of
+                max_sort = variant_of.variant_set.aggregate(Max('sort_code'))
+                if max_sort:
+                    self.after = variant_of.variant_set.get(                    
+                                   sort_code=max_info['sort_code__max'])
+
 
     def _post_commit_to_display(self):
         if self.changeset.changeset_action() == ACTION_MODIFY and \
@@ -2112,7 +2193,7 @@ class IssueRevision(Revision):
                 self.series.imprint.issue_count = F('issue_count') + 1
                 self.series.imprint.save()
             update_count('issues', 1, language=self.series.language)
-
+                
         elif self.deleted:
             self.series.issue_count = F('issue_count') - 1
             # do NOT save the series here, it gets saved later in
@@ -2155,7 +2236,9 @@ class IssueRevision(Revision):
         issue.volume = self.volume
         issue.no_volume = self.no_volume
         issue.display_volume_with_number = self.display_volume_with_number
-
+        issue.variant_of = self.variant_of
+        issue.variant_name = self.variant_name
+        
         issue.publication_date = self.publication_date
         issue.indicia_frequency = self.indicia_frequency
         issue.key_date = self.key_date
@@ -2176,7 +2259,7 @@ class IssueRevision(Revision):
 
         issue.isbn = self.isbn
         issue.valid_isbn = validated_isbn(issue.isbn)
-
+        
         if clear_reservation:
             issue.reserved = False
 
@@ -2185,6 +2268,9 @@ class IssueRevision(Revision):
             self.issue = issue
             self.save()
             self._check_first_last()
+            for story in self.changeset.storyrevisions.filter(issue=None):
+                story.issue = issue
+                story.save()
 
     def _check_first_last(self):
         set_series_first_last(self.series)
@@ -2302,7 +2388,7 @@ class StoryRevision(Revision):
     reprint_notes = models.TextField(blank=True)
     notes = models.TextField(blank=True)
 
-    issue = models.ForeignKey(Issue, related_name='story_revisions')
+    issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
     date_inferred = models.BooleanField(default=False, blank=True)
 
     def toggle_deleted(self):
@@ -2314,6 +2400,33 @@ class StoryRevision(Revision):
         self.deleted = not self.deleted
         self.save()
 
+    def moveable(self):
+        """
+        A story revision is moveable 
+        a) if it is not currently attached to an issue and is a revision of a 
+           previously existing story. Therefore it is a story which was moved
+           to the version issue, this way it can be moved back.
+        b) an issue version of mine in this changeset has no story attached and
+           it is a cover sequence. Therefore one cover sequence can be moved 
+           from the base to the version issue.
+        
+        These conditions work for our current only case of a story move: i.e.
+        issue versions.
+        """
+        if self.change_type == CTYPES['variant_add']:
+            if self.issue == None:
+                if self.story == None:
+                    return False
+                return True
+            
+            if (self.changeset.storyrevisions.exclude(issue=self.issue).count() and
+              self.changeset.issuerevisions.filter(variant_of=self.issue).count()) \
+              or self.type != StoryType.objects.get(name='Cover'):
+                return False
+            return True
+        else:
+            raise NotImplementedError
+            
     def _field_list(self):
         return ['sequence_number', 'type', 'title', 'title_inferred',
                 'feature', 'page_count', 'page_count_uncertain', 'genre',

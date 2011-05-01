@@ -53,6 +53,10 @@ class Cover(models.Model):
         return urlresolvers.reverse('issue_cover_view', 
                 kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
 
+    def get_base_url(self):
+        return settings.IMAGE_SERVER_URL + settings.COVERS_DIR + \
+          str(int(self.id/1000))
+
     def get_status_url(self):
         if self.marked:
             return urlresolvers.reverse(
