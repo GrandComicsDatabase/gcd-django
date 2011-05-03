@@ -111,18 +111,6 @@ class Publisher(BasePublisher):
             return '*GCD ORPHAN IMPRINT: %s' % (self.name)
         return self.name
 
-    # TODO: Should be able to remove this.  Verify we're not using it anywhere.
-    def computed_issue_count(self):
-        # issue_count is not accurate, but computing is slow.
-        return self.issue_count or 0
-
-        # This is more accurate, but too slow right now.
-        # Would be better to properly maintain issue_count.
-        # num_issues = 0
-        # for series in self.series_set.all():
-        #     num_issues += series.issue_set.count()
-        # return num_issues
-
 class IndiciaPublisher(BasePublisher):
     class Meta:
         db_table = 'gcd_indicia_publisher'
