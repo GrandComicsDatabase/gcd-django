@@ -41,13 +41,6 @@ class Issue(models.Model):
     no_editing = models.BooleanField(default=0)
     notes = models.TextField()
 
-    # Fields related to indexing activities.
-    # Only "reserved" is in active use, the others are legacy fields
-    # used only by migration scripts.
-    reserved = models.BooleanField(default=0, db_index=True)
-    index_status = models.IntegerField(default=0, null=True)
-    reserve_status = models.IntegerField(default=0, db_index=True)
-    reserve_check = models.NullBooleanField(default=0, db_index=True)
 
     # Series and publisher links
     series = models.ForeignKey(Series)
@@ -59,6 +52,8 @@ class Issue(models.Model):
     is_indexed = models.BooleanField(default=0, db_index=True)
 
     # Fields related to change management.
+    reserved = models.BooleanField(default=0, db_index=True)
+
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
 
@@ -175,20 +170,6 @@ class Issue(models.Model):
             next_issue = later_issues[0]
 
         return [prev_issue, next_issue]
-
-    def reserver(self):
-        """
-        Return the likely current reservation holder.  While it is common
-        for an issue to have multiple reservation records for the same issue
-        in the same status, at no point in the current (at this time) data set
-        does an issue have more than one unapproved reservation record with
-        differen indexers in each.  So taking the first 
-        """
-        if self.index_status in (1, 2):
-            reservers = self.reservation_set.filter(status=self.index_status)
-            if reservers.count() > 0:
-                return reservers[0].indexer
-        return None
 
     def delete(self):
         self.deleted = True
