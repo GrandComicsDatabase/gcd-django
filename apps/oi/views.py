@@ -237,7 +237,7 @@ def _do_reserve(indexer, display_obj, model_name, delete=False):
                 indicia_publisher=indicia_publisher, changeset=changeset)
             indicia_publisher_revision.deleted = True
             indicia_publisher_revision.save()
-        for imprint in revision.publisher.imprint_set.all():
+        for imprint in revision.publisher.active_imprints().all():
             imprint_revision = PublisherRevision.objects.clone_revision(
               publisher=imprint, changeset=changeset)
             imprint_revision.deleted = True

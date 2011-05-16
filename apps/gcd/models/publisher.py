@@ -79,7 +79,7 @@ class Publisher(BasePublisher):
         return self.name
 
     def has_imprints(self):
-        return self.imprint_set.count() > 0
+        return self.active_imprints().count() > 0
 
     def is_imprint(self):
         return self.parent_id is not None and self.parent_id != 0
