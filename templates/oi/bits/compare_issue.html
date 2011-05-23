@@ -1,0 +1,32 @@
+{% load display %}
+{% if revision.issue and revision.issue.has_covers %}
+<a class="new_window" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>
+{% endif %}
+{% if user == revision.changeset.indexer %}
+  {% if changeset.state == states.OPEN %}
+<a href="{% url edit_revision model_name=model_name,id=revision.id %}">Edit issue data</a>.
+  {% endif %}
+{% endif %}
+<p>
+{% if revision.variant_of %}
+This is a variant of {{ revision.variant_of|absolute_url }}.
+{% endif %}
+{% with revision.previous as prev_rev %}
+{% with revision.posterior as post_rev %}
+  {% include 'oi/bits/compare.html' %}
+{% endwith %}
+{% endwith %}
+
+{% if revision.comments.count %}
+{% with revision.comments as comments %}
+{% with 1 as no_links %}
+  {% include 'oi/bits/comments.html' %}
+{% endwith %}
+{% endwith %}
+{% endif %}
+
+<hr>
+  {% for story_revision in revision.ordered_story_revisions %}
+    {% include 'oi/bits/compare_story.html' %}
+<hr>
+  {% endfor %}

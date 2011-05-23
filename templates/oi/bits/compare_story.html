@@ -1,0 +1,19 @@
+{% comment %}
+    TODO:
+    story_revision.compare_changes needs to be called here because
+    calling ordered_story_revisions re-fetches the objects from the
+    database, which clears the changed dictionary.  Need to think
+    about this whole setup a bit more, but this works for now.
+{% endcomment %}
+{% with story_revision as revision %}
+{% with story_revision.previous as prev_rev %}
+{% with story_revision.posterior as post_rev %}
+{% with story_revision.field_list as field_list %}
+{% with 'story' as changeset_type %}
+  {{ revision.compare_changes|default:'' }}
+  {% include 'oi/bits/compare.html' %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
