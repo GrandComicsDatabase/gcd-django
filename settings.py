@@ -157,6 +157,7 @@ ANON_USER_NAME = 'anon'
 # Date taken from Ray's press release.
 OLD_SITE_CREATION_DATE = datetime.date(2002, 11, 13)
 NEW_SITE_CREATION_DATE = datetime.date(2009, 12, 1)
+NEW_SITE_COVER_CREATION_DATE = datetime.datetime(2009,10,2,14,0,0)
 
 # data dump directories, relative to MEDIA_ROOT
 DUMP_DIR = 'dumps'

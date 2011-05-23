@@ -3,6 +3,8 @@ import re
 import sys
 import os
 import os.path
+import glob
+import Image
 import stat
 import errno
 from datetime import datetime, timedelta
@@ -2265,6 +2267,7 @@ def cover_compare(request, changeset, revision):
     old_cover = None
     old_cover_tag = ''
     old_cover_front_tag = ''
+    old_cover_width = None
     if revision.is_replacement:
         old_cover = CoverRevision.objects.filter(cover=revision.cover, 
                       created__lt=revision.created,
@@ -2276,9 +2279,25 @@ def cover_compare(request, changeset, revision):
                                     "replaced cover", ZOOM_MEDIUM)
         else:
             old_cover_front_tag = ''
-    elif revision.changeset.state in states.ACTIVE:
+            
+        if old_cover.created <= settings.NEW_SITE_COVER_CREATION_DATE:
+            # uploaded file too old, not stored, we have width 400
+            old_cover_width = 400
+        else:
+            old_source_name = glob.glob("%s/uploads/%d_%s*" % (
+              old_cover.cover.base_dir(), 
+              old_cover.cover.id, 
+              old_cover.changeset.created.strftime('%Y%m%d_%H%M%S')))[0]
+            im = Image.open(old_source_name)
+            old_cover_width = im.size[0]
+
+    cover_width = None
+    if revision.changeset.state in states.ACTIVE:
         if revision.issue.has_covers():
-            for cover in revision.issue.active_covers():
+            current_cover_set = revision.issue.active_covers()
+            if revision.is_replacement or revision.deleted:
+                current_cover_set = current_cover_set.exclude(id=revision.cover.id)
+            for cover in current_cover_set:
                 current_covers.append([cover, get_image_tag(cover, 
                                        "current cover", ZOOM_MEDIUM)])
         if CoverRevision.objects.filter(issue=revision.issue).count() > 1:
@@ -2289,17 +2308,35 @@ def cover_compare(request, changeset, revision):
             for cover in covers:
                 pending_covers.append([cover, get_preview_image_tag(cover, 
                                        "pending cover", ZOOM_MEDIUM)])
-
+        if revision.deleted == False:
+            source_name = glob.glob(revision.base_dir() + \
+                                    str(revision.id) + '*')[0]
+            im = Image.open(source_name)
+            cover_width = im.size[0]
+    else:
+        if revision.created <= settings.NEW_SITE_COVER_CREATION_DATE:
+            # uploaded file too old, not stored, we have width 400
+            cover_width = 400
+        else:
+            source_name = glob.glob("%s/uploads/%d_%s*" % (
+              revision.cover.base_dir(), 
+              revision.cover.id, 
+              revision.changeset.created.strftime('%Y%m%d_%H%M%S')))[0]
+            im = Image.open(source_name)
+            cover_width = im.size[0]
+    
     response = render_to_response('oi/edit/compare_cover.html',
                                   { 'changeset': changeset,
                                     'revision': revision,
                                     'cover_tag' : cover_tag,
                                     'cover_front_tag': cover_front_tag,
+                                    'cover_width': cover_width,
                                     'current_covers' : current_covers,
                                     'pending_covers' : pending_covers,
                                     'old_cover': old_cover,
                                     'old_cover_tag': old_cover_tag,
                                     'old_cover_front_tag': old_cover_front_tag,
+                                    'old_cover_width': old_cover_width,
                                     'table_width': 5,
                                     'states': states },
                                   context_instance=RequestContext(request))

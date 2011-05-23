@@ -5,7 +5,6 @@ import Image
 import os, shutil, glob
 import codecs
 import tempfile
-from datetime import datetime
 
 from django import forms
 from django.core import urlresolvers
@@ -75,7 +74,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
             # the large scan for older uploads, copied on replacement.
             suffix = "/uploads/%d_%s" % (revision.cover.id, 
                      revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
-            if revision.created > datetime(2009,10,2,14,0,0):
+            if revision.created > settings.NEW_SITE_COVER_CREATION_DATE:
                 filename = glob.glob(revision.cover.base_dir() + suffix + '*')[0]
                 file_extension = os.path.splitext(filename)[1]
             else:
@@ -148,7 +147,7 @@ def copy_approved_cover(cover_revision):
     if cover_revision.is_replacement: 
         old_cover = CoverRevision.objects.filter(cover=cover, 
           changeset__state=states.APPROVED).order_by('-created')[1]
-        if old_cover.created <= datetime(2009,10,2,14,0,0):
+        if old_cover.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, copy large file
             suffix = "/uploads/%d_%s.jpg" % (cover.id, 
                      old_cover.changeset.created.strftime('%Y%m%d_%H%M%S'))
