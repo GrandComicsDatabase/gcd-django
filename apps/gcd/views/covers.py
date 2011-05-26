@@ -54,13 +54,17 @@ def get_image_tag(cover, alt_text, zoom_level):
            '" ' + ' class="' + img_class + '"/>')
 
 
-def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False):
-    if issue.has_covers():
+def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False, 
+                             variants=False, exclude_ids=None):
+    if issue.has_covers() or (variants and issue.variant_covers().count()):
         covers = issue.active_covers()
+        if variants:
+            covers = covers | issue.variant_covers()
     else:
         return mark_safe(get_image_tag(cover=None, zoom_level=zoom_level,
                                        alt_text=alt_text))
-
+    if exclude_ids:
+        covers = covers.exclude(id__in=exclude_ids)
     if as_list:
         cover_tags = []
         alt_string = issue.series.name + ' #' + issue.number
@@ -69,9 +73,10 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False):
 
     for cover in covers:
         if as_list:
+            active = cover.revisions.filter(changeset__state__in=states.ACTIVE)
             cover_tags.append([cover, issue,
                                get_image_tag(cover, alt_string, zoom_level),
-                               cover.revisions.filter(changeset__state__in=states.ACTIVE).count()])
+                               active.count()])
         else:
             tag += get_image_tag(cover=cover, zoom_level=zoom_level, 
                                  alt_text=alt_text)

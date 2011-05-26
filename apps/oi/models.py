@@ -4,11 +4,12 @@ import operator
 from stdnum import isbn
 
 from django.db import models, settings
-from django.db.models import Q, F, Count
+from django.db.models import Q, F, Count, Max
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes import generic
+from django.utils.safestring import mark_safe
 
 from apps.oi import states
 from apps.gcd.models import *
@@ -1982,9 +1983,6 @@ class IssueRevision(Revision):
     def active_covers(self):
         raise NotImplementedError
         
-    def all_covers(self):
-        raise NotImplementedError
-        
     def shown_covers(self):
         raise NotImplementedError
         
@@ -2010,11 +2008,26 @@ class IssueRevision(Revision):
                 image_set |= self.variant_of.active_covers()
         return image_set
     
-    def has_covers(self, variants=False):
+    def has_covers(self):
         if self.issue is None:
             return False
-        return self.issue.has_covers(variants=variants)
+        return self.issue.has_covers()
 
+    def other_variants(self):
+        if self.variant_of:
+            variants = self.variant_of.variant_set.all()
+            if self.issue:
+                variants = variants.exclude(id=self.issue.id)
+        else:
+            variants = self.variant_set.all()
+        variants = list(variants.exclude(deleted=True))
+        
+        if self.changeset.change_type == CTYPES['variant_add'] \
+          and not self.variant_of:
+            variants.extend(self.changeset.issuerevisions.exclude(issue=self.issue))
+
+        return variants
+        
     def _variant_set(self):
         if self.issue is None:
             return Issue.objects.none()
@@ -2024,6 +2037,32 @@ class IssueRevision(Revision):
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
+    def shown_stories(self):
+        if self.variant_of:
+            if self.changeset.issuerevisions.filter(issue=self.variant_of)\
+                                            .count():
+                # if base_issue is part of the changeset use the storyrevisions
+                base_issue = self.changeset.issuerevisions\
+                                        .filter(issue=self.variant_of).get()
+            else:
+                base_issue = self.variant_of
+            stories = list(base_issue.active_stories()\
+                                     .order_by('sequence_number')\
+                                     .select_related('type'))
+        else:
+            stories = list(self.active_stories().order_by('sequence_number')\
+                                                .select_related('type'))
+        if (len(stories) > 0):
+            cover_story = stories.pop(0)
+            if self.variant_of:
+                # can have only one sequence, the variant cover
+                own_stories = list(self.active_stories())
+                if own_stories:
+                    cover_story = own_stories[0]
+        else: 
+            cover_story = None
+        return cover_story, stories
+                
     def _story_set(self):
         return self.ordered_story_revisions()
     story_set = property(_story_set)
@@ -2124,9 +2163,9 @@ class IssueRevision(Revision):
             if series == variant_of.series:
                 self.after = variant_of
                 max_sort = variant_of.variant_set.aggregate(Max('sort_code'))
-                if max_sort:
+                if max_sort['sort_code__max']:
                     self.after = variant_of.variant_set.get(                    
-                                   sort_code=max_info['sort_code__max'])
+                                   sort_code=max_sort['sort_code__max'])
 
 
     def _post_commit_to_display(self):
@@ -2280,6 +2319,9 @@ class IssueRevision(Revision):
             return "/issue/revision/%i/preview" % self.id
         return self.issue.get_absolute_url()
 
+    def full_name(self):
+        return u'%s #%s' % (self.series.full_name(), self.display_number)
+
     def __unicode__(self):
         """
         Re-implement locally instead of using self.issue because it may change.
@@ -2413,11 +2455,14 @@ class StoryRevision(Revision):
         These conditions work for our current only case of a story move: i.e.
         issue versions.
         """
-        if self.change_type == CTYPES['variant_add']:
+        if self.changeset.change_type == CTYPES['variant_add']:
             if self.issue == None:
                 if self.story == None:
                     return False
                 return True
+            
+            if self.deleted:
+                return False
             
             if (self.changeset.storyrevisions.exclude(issue=self.issue).count() and
               self.changeset.issuerevisions.filter(variant_of=self.issue).count()) \

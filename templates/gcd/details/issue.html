@@ -29,10 +29,27 @@
   <div id="control_container">
     <div id="control_center">
 {% include "gcd/bits/issue_data.html" %}
-{% if issue.notes %}
+{% if issue.notes or issue.variant_of or issue.variant_set.count %}
       <div class="issue_notes">
         <div class="issue_notes_border">
           <h3 class="notes_header"> Issue Notes </h3>
+            <p>
+  {% if issue.variant_of %}
+This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ issue.variant_of.full_name }}</a>.
+  {% endif %}
+  {% if issue.other_variants %}
+    {% if issue.variant_of.variant_set.count %}
+There exist further variants.
+    {% else %}
+This issue has variants.
+    {% endif %}
+              <ul>
+    {% for variant in issue.other_variants %}
+                <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
+      {% if variant.variant_name %} [{{ variant.variant_name }}] {% endif %}
+    {% endfor %}
+          </ul>
+  {% endif %}
             <p>{{ issue.notes|linebreaksbr }}
         </div>
       </div>
@@ -62,6 +79,11 @@
   {% else %}
             <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
   {% endif %}
+{% endif %}
+{% if variant_image_tags %}
+  {% for variant, image_tag in variant_image_tags %}
+      <a href="{{ variant.get_absolute_url }}">{{ image_tag }}</a>
+  {% endfor %}
 {% endif %}
             <div class="issue_cover_links">
 {% if issue.has_covers %}
@@ -108,6 +130,12 @@
   {% endwith %}
   {% endwith %}
   {% endwith %}
+  {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved and not issue.variant_of %}
+  <form method="GET"
+        action="{% url add_variant_issue issue_id=issue.id %}">
+    <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
+  </form>
+  {% endif %} <!-- logged in -->
 {% endif %}
       </div>
 

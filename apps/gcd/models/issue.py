@@ -82,7 +82,7 @@ class Issue(models.Model):
             cover_story = None
         return cover_story, stories
 
-    def active_covers(self, variants=False):
+    def active_covers(self):
         return self.cover_set.exclude(deleted=True)
 
     def variant_covers(self):
@@ -96,20 +96,24 @@ class Issue(models.Model):
         else:
             variant_issues = list(self.variant_set.exclude(deleted=True)\
                                       .values_list('id', flat=True))
-        return Cover.objects.filter(issue__id__in=variant_issues)\
-                            .exclude(deleted=True)
+        variant_covers = Cover.objects.filter(issue__id__in=variant_issues)\
+                                      .exclude(deleted=True)
+        if self.variant_of:
+            variant_covers |= self.variant_of.active_covers()
+        return variant_covers
 
-    def all_covers(self):
-        return self.active_covers() | self.variant_covers()
-        
     def shown_covers(self):
         return self.active_covers(), self.variant_covers()
 
-    def has_covers(self, variants=False):
-        if variants:
-            return self.all_covers().count() > 0
+    def has_covers(self):
+        return self.active_covers().count() > 0
+
+    def other_variants(self):
+        if self.variant_of:
+            variants = self.variant_of.variant_set.exclude(id=self.id)
         else:
-            return self.active_covers().count() > 0
+            variants = self.variant_set.all()
+        return list(variants.exclude(deleted=True))
 
     def _display_number(self):
         if self.display_volume_with_number:

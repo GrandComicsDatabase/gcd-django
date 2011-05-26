@@ -117,13 +117,13 @@ div#format {
 .cover{
 	padding-top:0;
 	overflow:hidden;
-	padding-left:118px;
+	padding-left:225px;
         margin-bottom: -0.5em; /* offset bottom added by class='single_story' */
 }
 .coverContainer{
 	width:100%;
-	border-left:118px solid white;
-	margin-left:-118px;
+	border-left:225px solid white;
+	margin-left:-225px;
 	display:inline;
 	float:left;
 }
@@ -134,8 +134,8 @@ div#format {
 }
 .coverImage{
 	float:left;
-	width:116px;
-	margin-left:-118px;
+	width:223px;
+	margin-left:-225px;
 	position:relative;
 }
 .coverImage img {

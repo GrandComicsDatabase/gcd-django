@@ -229,7 +229,7 @@ def show_series(request, series, preview=False):
         display_series = series
 
     scans, first_image_tag = _get_scan_table(display_series)
-    issues = series.active_issues().all()
+    issues = series.active_issues().exclude(variant_of__series=series)
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -413,8 +413,7 @@ def status(request, series_id):
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'series', 'id': series_id}))
 
-    issues = series.active_issues()
-
+    issues = series.active_issues().exclude(variant_of__series=series)
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
 
@@ -708,7 +707,7 @@ def cover(request, issue_id, size):
 
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
-    cover_tag = get_image_tags_per_issue(issue, "Cover Image", size)
+    cover_tag = get_image_tags_per_issue(issue, "Cover Image", size, variants=True)
 
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
@@ -799,15 +798,52 @@ def show_issue(request, issue, preview=False):
     """
     Handle the main work of displaying an issue.  Also used by OI previews.
     """
-    if preview and issue.issue:
-        cover_issue = issue.issue
+    alt_text = 'Cover Thumbnail'
+    zoom_level = ZOOM_MEDIUM
+    if preview:
+        # excludes are currently only relevant for variant_add, maybe later 
+        # other cover moves will be possible
+        if issue.changeset.change_type == CTYPES['variant_add'] and \
+          issue.changeset.coverrevisions.count():
+            # need to exclude the moved one
+            image_tag = mark_safe('')
+            if issue.issue and issue.issue.active_covers().count():
+                exclude_ids = issue.changeset.coverrevisions\
+                .filter(issue=issue.issue).values_list('cover__id', flat=True)
+                if len(exclude_ids) < issue.issue.active_covers().count():
+                    image_tag = get_image_tags_per_issue(issue=issue.issue,
+                                  zoom_level=zoom_level,
+                                  alt_text=alt_text,
+                                  exclude_ids=exclude_ids)
+            # add moved cover(s)
+            for cover in issue.changeset.coverrevisions\
+                                        .exclude(issue=issue.issue):
+                image_tag += get_image_tag(cover.cover, 
+                                           alt_text=alt_text,
+                                           zoom_level=zoom_level)
+            if image_tag == '':
+                image_tag = mark_safe(get_image_tag(cover=None, 
+                                                    zoom_level=zoom_level,
+                                                    alt_text=alt_text))
+        elif issue.issue:
+            image_tag = get_image_tags_per_issue(issue=issue.issue,
+                                                 zoom_level=zoom_level,
+                                                 alt_text=alt_text)
+        else:
+            image_tag = mark_safe(get_image_tag(cover=None, 
+                                                zoom_level=zoom_level,                                           alt_text=alt_text))
     else:
-        cover_issue = issue
-
-    image_tag = get_image_tags_per_issue(issue=cover_issue,
-                                         zoom_level=ZOOM_SMALL,
-                                         alt_text='Cover Thumbnail')
-
+        image_tag = get_image_tags_per_issue(issue=issue,
+                                             zoom_level=zoom_level,
+                                             alt_text=alt_text)
+                                         
+    variant_image_tags = []
+    for variant_cover in issue.variant_covers():
+        variant_image_tags.append([variant_cover.issue, 
+                                   get_image_tag(variant_cover, 
+                                                 zoom_level=ZOOM_SMALL,
+                                                 alt_text='Cover Thumbnail')])
+        
     series = issue.series
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
@@ -817,12 +853,7 @@ def show_issue(request, issue, preview=False):
     # stories.  But we should measure this.  Note that we definitely want
     # to send the cover and interior stories to the UI separately, as the
     # UI should not be concerned with the designation of story 0 as the cover.
-    stories = list(issue.active_stories().order_by('sequence_number')\
-                                        .select_related('type'))
-
-    cover_story = None
-    if (len(stories) > 0):
-        cover_story = stories.pop(0)
+    cover_story, stories = issue.shown_stories()
 
     # get reservations which got approved and make unique for indexers
     res = issue.reservation_set.filter(status=3)
@@ -831,7 +862,10 @@ def show_issue(request, issue, preview=False):
         oi_indexers.append(i.indexer)
 
     if preview:    
-        res = IssueRevision.objects.filter(issue=issue.issue)
+        if issue.issue:
+            res = IssueRevision.objects.filter(issue=issue.issue)
+        else:
+            res = IssueRevision.objects.none()
     else:
         res = IssueRevision.objects.filter(issue=issue)
     res = res.filter(changeset__state=states.APPROVED)\
@@ -850,6 +884,7 @@ def show_issue(request, issue, preview=False):
         'stories': stories,
         'oi_indexers' : oi_indexers,
         'image_tag': image_tag,
+        'variant_image_tags': variant_image_tags,
         'error_subject': '%s' % issue,
         'preview': preview,
       },
