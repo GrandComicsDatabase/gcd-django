@@ -1609,7 +1609,9 @@ def add_story(request, issue_id, changeset_id):
         issue_revision = changeset.issuerevisions.all()[0]
         issue = Issue.objects.get(id=issue_id)
         if request.method != 'POST':
-            seq = request.GET['added_sequence_number']
+            seq = ''
+            if 'added_sequence_number' in request.GET:
+                seq = request.GET['added_sequence_number']
             if seq == '':
                 return render_error(request,
                   'You must supply a sequence number for the new story.',
