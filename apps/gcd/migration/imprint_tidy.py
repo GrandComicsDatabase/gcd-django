@@ -16,6 +16,12 @@ def fix_stray_imprints():
     Note that we do not maintain change history for imprints, so they are
     just updated directly.
     """
+    # First, see if we've already run this function- it isn't the kind of thing
+    # you can do twice, so just leave if it looks like we have.
+    if Publisher.objects.get(id=4353).parent is not None:
+        print "Already fixed stray imprints, skipping..."
+        return
+
     # Handle two stray Hyperion imprints that lost their parent.
     hyperion = Publisher.objects.get(name='Hyperion', is_master=True)
     Publisher.objects.filter(id=4353).update(parent=hyperion,
@@ -88,10 +94,12 @@ def main():
     cursor = connection.cursor()
     cursor.execute("""
         UPDATE gcd_publisher i SET i.series_count=
-            (SELECT COUNT(*) FROM gcd_series s WHERE s.imprint_id = i.id)
+            (SELECT COUNT(*) FROM gcd_series s WHERE s.deleted = 0 AND
+                                                     s.imprint_id = i.id)
             WHERE i.is_master = 0 AND i.parent_id IS NOT NULL;
         UPDATE gcd_publisher i SET i.issue_count=
-            (SELECT SUM(s.issue_count) FROM gcd_series s WHERE s.imprint_id = i.id)
+            (SELECT SUM(s.issue_count) FROM gcd_series s WHERE s.deleted=0 AND
+                                                               s.imprint_id = i.id)
             WHERE i.is_master = 0 AND i.parent_id IS NOT NULL
                   AND i.series_count > 0;
         UPDATE gcd_publisher i SET i.issue_count=0
@@ -103,6 +111,7 @@ def main():
     # Reload the imprints, and get only the ones we think are empty.
     empty_imprints = Publisher.objects.filter(parent__isnull=False,
                                               is_master=False,
+                                              deleted=False,
                                               series_count=0) \
                                       .select_related('parent')
     for imprint in empty_imprints:
