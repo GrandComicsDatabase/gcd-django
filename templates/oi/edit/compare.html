@@ -44,7 +44,9 @@ The above sequence was moved from the following issue.
 <div>
     {% for cover in changeset.coverrevisions.all %}
 <h3>Cover is moved from {{ cover.issue }}.</h3>
+{% comment %} <!-- uncomment when variant issue OI is checked in -->
       {{ cover.cover|cover_image_tag:'1, moved_cover' }}
+{% endcomment %}
     {% endfor %}
 </div>
 <hr>

@@ -131,10 +131,12 @@ This issue has variants.
   {% endwith %}
   {% endwith %}
   {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved and not issue.variant_of %}
+{% comment %} <!-- uncomment when variant OI is checked in. -->
   <form method="GET"
         action="{% url add_variant_issue issue_id=issue.id %}">
     <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
   </form>
+{% endcomment %}
   {% endif %} <!-- logged in -->
 {% endif %}
       </div>
