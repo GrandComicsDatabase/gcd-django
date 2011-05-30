@@ -1,0 +1,58 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block title %}
+Move Covers :: {{ issue }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h2>Move covers between  
+{{ changeset.issuerevisions.all.0 }} 
+and
+{{ changeset.issuerevisions.all.1 }} 
+</h2>
+
+<table id="covers">
+  <tr>
+{% for cover, issue, tag, pending in covers %}
+    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+      <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
+      <br>
+       <span class="cover_links">Zoom:
+<a href="{{ issue.get_absolute_url }}cover/4">Large</a><br>
+  {% if pending %}
+<a href="{% url compare id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
+  {% else %}
+    {% if cover.deletable %}
+<div>
+      {% if not cover.issue.variant_of %}
+  <form action="{% url move_cover id=changeset.id, cover_id=cover.id %}" method="POST">
+    <input type="submit" value="Move cover">
+  </form>
+      {% endif %}
+</div>
+    {% endif %}
+  {% endif %}
+</span> 
+   </td>
+  {% if forloop.counter|divisibleby:table_width %}
+  </tr>
+  <tr>
+  {% endif %}
+{% endfor %}
+  </tr>
+</table>
+
+{% endblock %}
+

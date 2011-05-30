@@ -52,6 +52,11 @@ Edit Covers :: {{ issue }}
   {% else %}
     {% if cover.deletable %}
 <div>
+      {% if not cover.issue.variant_of and not issue.reserved %}
+  <form action="{% url add_variant_issue issue_id=cover.issue.id, cover_id=cover.id %}" method="GET">
+    <input type="submit" value="Create variant issue">
+  </form>
+      {% endif %}
   <form class="cover_button" action="{% url replace_cover cover_id=cover.id %}" method="GET">
     <input type="submit" value="Replace">
   </form>

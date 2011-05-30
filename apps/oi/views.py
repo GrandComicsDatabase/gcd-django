@@ -26,14 +26,14 @@ from apps.gcd.models import *
 from apps.gcd.views import ViewTerminationError, render_error, paginate_response
 from apps.gcd.views.details import show_indicia_publisher, show_brand, \
                                    show_series, show_issue
-from apps.gcd.views.covers import get_image_tag
+from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
 from apps.oi.forms import *
 from apps.oi.covers import get_preview_image_tag, \
-                           get_preview_image_tags_per_page, copy_approved_cover
+                           get_preview_image_tags_per_page, UPLOAD_WIDTH
 
 REVISION_CLASSES = {
     'publisher': PublisherRevision,
@@ -124,7 +124,7 @@ def _unreserve(display_obj):
     display_obj.save()
 
 @permission_required('gcd.can_reserve')
-def reserve(request, id, model_name, delete=False):
+def reserve(request, id, model_name, delete=False, callback=None, callback_args=None):
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
     if request.method != 'POST':
         return _cant_get(request)
@@ -177,6 +177,12 @@ def reserve(request, id, model_name, delete=False):
                      'show_%s' % model_name,
                      kwargs={str('%s_id' % model_name): id}))
         else:
+            if callback:
+                if not callback(changeset, display_obj, **callback_args):
+                    transaction.rollback()
+                    _unreserve(display_obj)
+                    return render_error(request, 
+                      'Not all objects could be reserved.')
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': changeset.id }))
 
@@ -185,7 +191,7 @@ def reserve(request, id, model_name, delete=False):
         _unreserve(display_obj)
         raise
 
-def _do_reserve(indexer, display_obj, model_name, delete=False):
+def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
     if model_name != 'cover' and (delete is False or indexer.indexer.is_new)\
        and indexer.indexer.can_reserve_another() is False:
         return None
@@ -196,17 +202,19 @@ def _do_reserve(indexer, display_obj, model_name, delete=False):
     else:
         comment = 'Editing'
         new_state = states.OPEN
-    changeset = Changeset(indexer=indexer, state=new_state,
-                          change_type=CTYPES[model_name])
-    changeset.save()
 
-    if not delete:
-        # Deletions are immediately submitted, which will add the appropriate
-        # initial comment- no need to add two.
-        changeset.comments.create(commenter=indexer,
-                                  text=comment,
-                                  old_state=states.UNRESERVED,
-                                  new_state=changeset.state)
+    if not changeset:
+        changeset = Changeset(indexer=indexer, state=new_state,
+                            change_type=CTYPES[model_name])
+        changeset.save()
+
+        if not delete:
+            # Deletions are immediately submitted, which will add the appropriate
+            # initial comment- no need to add two.
+            changeset.comments.create(commenter=indexer,
+                                    text=comment,
+                                    old_state=states.UNRESERVED,
+                                    new_state=changeset.state)
 
     revision = REVISION_CLASSES[model_name].objects.clone_revision(
       display_obj, changeset=changeset)
@@ -282,6 +290,7 @@ def _display_edit_form(request, changeset, form, revision=None):
         'revision': revision,
         'form': form,
         'states': states,
+        'CTYPES': CTYPES
       },
       context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
@@ -705,9 +714,6 @@ thanks,
         else:
             issue_revision.issue.reserved = True
             issue_revision.issue.save()
-
-    for cover_revision in changeset.coverrevisions.filter(deleted=False):
-        copy_approved_cover(cover_revision)
 
     # Move brand new indexers to probationary status on first approval.
     if changeset.change_type is not CTYPES['cover'] and \
@@ -1357,7 +1363,8 @@ def _display_add_series_form(request, publisher, imprint, form):
       context_instance=RequestContext(request))
 
 @permission_required('gcd.can_reserve')
-def add_issue(request, series_id, sort_after=None):
+def add_issue(request, series_id, sort_after=None, variant_of=None, 
+              variant_cover=None):
     if not request.user.indexer.can_reserve_another():
         return render_error(request,
           'You have reached your limit of open changes.  You must '
@@ -1372,15 +1379,28 @@ def add_issue(request, series_id, sort_after=None):
 
     form_class = get_revision_form(model_name='issue',
                                    series=series,
-                                   publisher=series.publisher)
+                                   publisher=series.publisher,
+                                   variant_of=variant_of)
 
     if request.method != 'POST':
-        reversed_issues = series.active_issues().order_by('-sort_code')
-        initial = {}
-        if reversed_issues.count():
-            initial['after'] = reversed_issues[0].id
-        form = form_class(initial=initial)
-        return _display_add_issue_form(request, series, form)
+        if variant_of:
+            initial = dict(variant_of.__dict__)
+            for key in initial.keys():
+                if key.startswith('_'):
+                    initial.pop(key)
+            if variant_of.brand:
+                initial['brand'] = variant_of.brand.id
+            if variant_of.indicia_publisher:
+                initial['indicia_publisher'] = variant_of.indicia_publisher.id
+            form = form_class(initial=initial)
+        else:
+            initial = {}
+            reversed_issues = series.active_issues().order_by('-sort_code')
+            if reversed_issues.count():
+                initial['after'] = reversed_issues[0].id
+            form = form_class(initial=initial)
+        return _display_add_issue_form(request, series, form, variant_of, 
+                                       variant_cover)
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -1389,24 +1409,80 @@ def add_issue(request, series_id, sort_after=None):
 
     form = form_class(request.POST)
     if not form.is_valid():
-        return _display_add_issue_form(request, series, form)
+        return _display_add_issue_form(request, series, form, variant_of, 
+                                       variant_cover)
 
+    if variant_of and (variant_of.cover_set.count() > 1 or \
+                       variant_of.story_set.filter(type__name='cover').\
+                         count() > 1):
+        kwargs = {'variant_of': variant_of, 
+                  'issuerevision': form.save(commit=False)}
+        if variant_cover:            
+            return reserve(request, variant_cover.id, 'cover', 
+                           callback=add_variant_issuerevision, 
+                           callback_args = kwargs)
+        return reserve(request, variant_of.id, 'issue', 
+                       callback=add_variant_issuerevision, 
+                       callback_args=kwargs)
+    
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['issue_add'])
     changeset.save()
     revision = form.save(commit=False)
     revision.save_added_revision(changeset=changeset,
-                                 series=series)
+                                 series=series,
+                                 variant_of=variant_of)
     return submit(request, changeset.id)
+    
+def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
+    if changeset.change_type == CTYPES['cover']:
+        issue = revision.issue
+        if _is_reservable('issue', issue.id) == 0:
+            return False
+        
+        # create issue revision for the issue of the cover
+        if not _do_reserve(changeset.indexer, issue, 'issue', changeset=changeset):
+            return False
+        changeset.change_type=CTYPES['variant_add']
+        changeset.save()
+    
+    # save issue revision for the new variant record
+    issuerevision.save_added_revision(changeset=changeset,
+                                      series=variant_of.series,
+                                      variant_of=variant_of)
+    return True
+    
+@permission_required('gcd.can_reserve')
+def add_variant_issue(request, issue_id, cover_id=None):
+    if cover_id:
+        cover = get_object_or_404(Cover, id=cover_id)
+        if cover.issue.id != int(issue_id):
+            return render_error(request,
+                'Selected cover does not correspond to selected issue.')
+    else:
+        cover = None
+    issue = get_object_or_404(Issue, id=issue_id)
+    return add_issue(request, issue.series.id, variant_of=issue, 
+                     variant_cover=cover)
 
-def _display_add_issue_form(request, series, form):
-    kwargs = {
-        'series_id': series.id,
-    }
-    url = urlresolvers.reverse('add_issue', kwargs=kwargs)
+def _display_add_issue_form(request, series, form, variant_of, variant_cover):
+    if variant_of:
+        kwargs = {
+            'issue_id': variant_of.id,
+        }
+        if variant_cover:
+            kwargs['cover_id'] = variant_cover.id
+        url = urlresolvers.reverse('add_variant_issue', kwargs=kwargs)
+        object_name = 'Variant Issue for %s' % variant_of
+    else:
+        kwargs = {
+            'series_id': series.id,
+        }
+        url = urlresolvers.reverse('add_issue', kwargs=kwargs)
+        object_name = 'Issue'
     return render_to_response('oi/edit/add_frame.html',
       {
-        'object_name': 'Issue',
+        'object_name': object_name,
         'object_url': url,
         'action_label': 'Submit new',
         'form': form,
@@ -1596,18 +1672,16 @@ def _display_bulk_issue_form(request, series, form, method=None):
       },
       context_instance=RequestContext(request))
 
-
 @permission_required('gcd.can_reserve')
-def add_story(request, issue_id, changeset_id):
+def add_story(request, issue_revision_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
         return render_error(request,
           'Only the reservation holder may add stories.')
     # Process add form if this is a POST.
     try:
-        # If we're adding stories we're guaranteed to only have one issue rev.
-        issue_revision = changeset.issuerevisions.all()[0]
-        issue = Issue.objects.get(id=issue_id)
+        issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
+        issue = issue_revision.issue
         if request.method != 'POST':
             seq = ''
             if 'added_sequence_number' in request.GET:
@@ -1617,9 +1691,11 @@ def add_story(request, issue_id, changeset_id):
                   'You must supply a sequence number for the new story.',
                   redirect=False)
             else:
-                initial = _get_initial_add_story_data(request, issue_revision, seq)
+                initial = _get_initial_add_story_data(request, issue_revision, 
+                                                      seq)
                 form = get_story_revision_form()(initial=initial)
-            return _display_add_story_form(request, issue, form, changeset_id)
+            return _display_add_story_form(request, issue_revision, form, 
+                                           changeset_id)
 
         if 'cancel_return' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse('edit',
@@ -1627,7 +1703,8 @@ def add_story(request, issue_id, changeset_id):
 
         form = get_story_revision_form()(request.POST)
         if not form.is_valid():
-            return _display_add_story_form(request, issue, form, changeset_id)
+            return _display_add_story_form(request, issue_revision, form, 
+                                           changeset_id)
 
 
         revision = form.save(commit=False)
@@ -1698,7 +1775,7 @@ def _get_initial_add_story_data(request, issue_revision, seq):
 
 def _display_add_story_form(request, issue, form, changeset_id):
     kwargs = {
-        'issue_id': issue.id,
+        'issue_revision_id': issue.id,
         'changeset_id': changeset_id,
     }
     url = urlresolvers.reverse('add_story', kwargs=kwargs)
@@ -1710,6 +1787,100 @@ def _display_add_story_form(request, issue, form, changeset_id):
         'form': form,
       },
       context_instance=RequestContext(request))
+
+##############################################################################
+# Moving Items
+##############################################################################
+
+@permission_required('gcd.can_reserve')
+def move_story_revision(request, id):
+    """ move story revision between two issue revisions """
+    story = get_object_or_404(StoryRevision, id=id)
+    if request.user != story.changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may move stories.')
+
+    if story.changeset.issuerevisions.count() != 2:
+        return render_error(request,
+          'Stories can only be moved between two issues.')
+        
+    if request.method != 'POST':
+        return _cant_get(request)
+
+    new_issue = story.changeset.issuerevisions.exclude(issue=story.issue).get()
+    story.issue = new_issue.issue
+    story.sequence_number = new_issue.next_sequence_number()
+    story.save()
+    old_issue = story.changeset.issuerevisions.exclude(id=new_issue.id).get()
+    
+    _reorder_children(request, old_issue, old_issue.active_stories(),
+                      'sequence_number', old_issue.active_stories(),
+                      commit=True, unique=False)
+
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+      kwargs={ 'id': story.changeset.id }))
+
+@permission_required('gcd.can_reserve')
+def move_cover(request, id, cover_id=None):
+    """ move cover between two issue revisions """
+    changeset = get_object_or_404(Changeset, id=id)
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may move covers in a changeset.')
+
+    if changeset.issuerevisions.count() != 2:
+        return render_error(request,
+          'Covers can only be moved between two issues.')
+        
+    if request.method != 'POST':
+        for revision in changeset.issuerevisions.all():
+            covers = []
+            if revision.issue and revision.issue.has_covers():
+                covers.extend(get_image_tags_per_issue(revision.issue, 
+                  "current covers", ZOOM_MEDIUM, as_list=True))
+        return render_to_response(
+        'oi/edit/move_covers.html',
+        {
+            'changeset': changeset,
+            'covers': covers,
+            'table_width': UPLOAD_WIDTH
+        },
+        context_instance=RequestContext(request)
+        )
+
+    cover = get_object_or_404(Cover, id=cover_id)
+    issue = changeset.issuerevisions.filter(issue=cover.issue)
+    if not issue:
+        return render_error(request, 
+          'Cover does not belong to an issue of this changeset.')
+
+    if _is_reservable('cover', cover_id) == 0:
+        return render_error(request,
+            u'Cannot move the cover as it is already reserved.')
+    
+    # create cover revision
+    revision = CoverRevision.objects.clone_revision(cover, changeset=changeset)
+    
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+      kwargs={ 'id': changeset.id }))
+
+@permission_required('gcd.can_reserve')
+def undo_move_cover(request, id, cover_id):
+    changeset = get_object_or_404(Changeset, id=id)
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may undo cover moves in a changeset.')
+
+    if request.method != 'POST':
+        return _cant_get(request)
+
+    cover_revision = get_object_or_404(CoverRevision, id=cover_id, changeset=changeset)
+    cover_revision.cover.reserved=False
+    cover_revision.cover.save()
+    cover_revision.delete()
+    
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+      kwargs={ 'id': changeset.id }))
 
 ##############################################################################
 # Removing Items from a Changeset
@@ -2191,7 +2362,7 @@ def compare(request, id):
     if changeset.inline():
         revision = changeset.inline_revision()
     elif changeset.change_type in [CTYPES['issue'], CTYPES['issue_add'],
-                                   CTYPES['issue_bulk']]:
+                                   CTYPES['issue_bulk'], CTYPES['variant_add']]:
         revision = changeset.issuerevisions.all()[0]
     else:
         # never reached at the moment
@@ -2241,7 +2412,8 @@ def compare(request, id):
                                    'changeset_type' : model_name.replace('_',' '),
                                    'model_name': model_name,
                                    'states': states,
-                                   'field_list': field_list},
+                                   'field_list': field_list,
+                                   'CTYPES': CTYPES},
                                   context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response

@@ -2470,7 +2470,7 @@ class StoryRevision(Revision):
                 return False
             return True
         else:
-            raise NotImplementedError
+            raise False
             
     def _field_list(self):
         return ['sequence_number', 'type', 'title', 'title_inferred',

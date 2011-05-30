@@ -357,7 +357,7 @@ def _get_issue_fields():
         'notes',
     ]
 
-def get_issue_revision_form(publisher, series=None, revision=None):
+def get_issue_revision_form(publisher, series=None, revision=None, variant_of=None):
     if series is None and revision is not None:
         series = revision.series
 
@@ -419,6 +419,14 @@ def get_issue_revision_form(publisher, series=None, revision=None):
 
             return cd
 
+    if variant_of:
+        class RuntimeAddVariantIssueRevisionForm(RuntimeIssueRevisionForm):
+            class Meta:
+                model = IssueRevision
+                fields = _get_issue_fields()
+
+        return RuntimeAddVariantIssueRevisionForm
+        
     if revision is None or revision.source is None:
         add_fields = ['after']
         add_fields.extend(_get_issue_fields())
@@ -544,7 +552,7 @@ class IssueRevisionForm(forms.ModelForm):
                 'numbering systems other than ISBN. If both ISBN 10 and '
                 'ISBN 13 are listed, separate them with a semi-colon. '
                 ' Example: "978-0-307-29063-2; 0-307-29063-8".')
-
+    
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
       help_text='Comments between the Indexer and Editor about the change. '

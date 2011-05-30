@@ -212,7 +212,7 @@ def edit_covers(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id)
     if issue.has_covers():
         covers = get_image_tags_per_issue(issue, "current covers", ZOOM_MEDIUM,
-                                          as_list=True)
+                                          as_list=True, variants=True)
         return render_to_response(
         'oi/edit/edit_covers.html',
         {

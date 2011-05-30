@@ -79,46 +79,48 @@
       For now, assume the app ensures that there are either many issues and
       no stories, or one issue and optionally stories that may be assumed to
       be associated with that issue.
+      At least currently changesets with many issues but no stories will 
+      never end up here: Bulk adds cannot be edited, only directly submitted. 
+      Bulk changes have their own page anyway, and cannot be edited like this.
 
       Also, the issue table should not be of class "story_list", need to fix
       either name or usage.
     {% endcomment %}
       {% if changeset.issuerevisions.count %}
 <table class="story_list">
-        {% for issue in changeset.issuerevisions.all %}
+        {% for issue_revision in changeset.issuerevisions.all %}
   <tr>
     <td>
-      {{ issue }}
+          {{ issue_revision }}
+          {% if issue_revision.variant_of %} (variant of {{ issue_revision.variant_of }}) {% endif %}
     </td>
     <td>
       <form class="changeset" method="GET"
-            action="{% url edit_revision model_name='issue',id=issue.id %}">
-        <input type="submit" id="edit_issue_{{ issue.id }}"
-               name="edit_issue_{{ issue.id }}" value="Edit issue fields">
+            action="{% url edit_revision model_name='issue',id=issue_revision.id %}">
+        <input type="submit" id="edit_issue_{{ issue_revision.id }}"
+               name="edit_issue_{{ issue_revision.id }}" value="Edit issue fields">
       </form>
     </td>
   </tr>
-        {% endfor %}
-  <!-- TODO: fix nasty hacks to get the issue.
-       Currently assuming that there is only one issue revision and it
-       is not a newly added one (it has a source issue).
-    -->
-        {% with changeset.issuerevisions.all.0 as issue_revision %}
-          {% if issue_revision.issue %}
+            {% if issue_revision.issue and not issue_revision.variant_of or issue_revision.variant_of and issue_revision.ordered_story_revisions.count = 0 %}
   <tr>
   <form class="changeset" method="GET"
-        action="{% url add_story issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+        action="{% url add_story issue_revision_id=issue_revision.id,changeset_id=changeset.id %}">
     <td colspan="2" align="left">
       <input type="submit" id="add_story" name="add" value="Add story">
+              {% if issue_revision.variant_of %}
+      <input type="hidden"
+              {% else %}
       Sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
       <input type="text" size="4"
+              {% endif %}
              id="added_sequence_number"
              name="added_sequence_number"
              value="{{ issue_revision.next_sequence_number }}">
     </td>
   </form>
   </tr>
-          {% endif %}
+            {% endif %}
           {% if issue_revision.story_set.count > 1 %}
   <tr>
     <td colspan="2">
@@ -131,13 +133,32 @@
     </td>
   </tr>
           {% endif %}
-        {% endwith %}
+        {% endfor %}
 </table>  
+      {% endif %} <!-- changeset.issuerevisions.count -->
+      {% if changeset.change_type == CTYPES.variant_add %}
+        {% if changeset.coverrevisions.count %}
+<div>
+          {% for cover in changeset.coverrevisions.all %}
+{{ cover.cover|cover_image_tag:'1, moved_cover' }}
+Cover is moved from {{ cover.issue }}.   <form action="{% url undo_move_cover id=changeset.id, cover_id=cover.id %}" method="POST">
+    <input type="submit" value="Undo move cover">
+  </form>
+          {% endfor %}
+</div>
+        {% endif %}
+        {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}
+<p>
+<a href="{% url move_cover id=changeset.id %}">Move covers between both issues.<a/>
+</p>
+        {% endif %}
       {% endif %}
 
       {% if changeset.storyrevisions.count %}
+        {% for issuerevision in changeset.issuerevisions.all %}
+{{ issuerevision }}
 <table class="story_list">
-        {% for story in changeset.issuerevisions.all.0.ordered_story_revisions %}
+          {% for story in issuerevision.ordered_story_revisions %}
   <tr>
     <td> {{ story|show_story_short }} </td>
     <td>{{ story|show_credit_status }}</td>
@@ -147,31 +168,49 @@
         <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
                value="Edit">
       </form>
-          {% if not story.story %}
+            {% if not story.story %}
       <form class="story_button" method="GET"
             action="{% url remove_story_revision id=story.id %}">
         <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
                value="Remove New Story">
       </form>
-          {% else %}
+            {% else %}
+              {% if story.issue %} 
+              {% comment %} 
+                Only allow deletes when assigned to the original issue in 
+                the changeset. Relevant if a story is moved between two
+                issues. story.issue becomes None in an active changeset 
+                in such a case, therefore used as a conditional. 
+                Reconsider once we are working on moves in general, and not 
+                just issue variants.
+              {% endcomment %}
       <form class="story_button" method="POST"
             action="{% url toggle_delete_story_revision id=story.id %}">
-            {% if story.deleted %}
+                {% if story.deleted %}
         <input type="submit" value="Restore">
-            {% else %}
+                {% else %}
         <input type="submit" value="Mark to Delete">
-            {% endif %}
+                {% endif %}
       </form>
-          {% endif %}
+              {% endif %}
+            {% endif %}
+            {% if story.moveable %}
+      <form class="story_button" method="POST"
+            action="{% url move_story_revision id=story.id %}">
+        <input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
+               value="Move To Other Issue">
+      </form>
+            {% endif %}
     </td>
   </tr>
-        {% endfor %}
+          {% endfor %}
 </table>
+        {% endfor %}
       {% endif %}
 
       {% if changeset.issuerevisions.count %}
         {% with changeset.issuerevisions.all.0 as issue_revision %}
-          {% if issue_revision.issue %}
+          {% if issue_revision.issue and not issue_revision.variant_of %}
 <table class="story_list">
             {% if not changeset.storyrevisions.count %}
   <tr colspan="2" align="left">
@@ -212,13 +251,16 @@
       {% with changeset.comments as comments %}
         {% include 'oi/bits/comments.html' %}
       {% endwith %}
-      {% ifequal changeset.issuerevisions.count 1 %}
+      {% if changeset.issuerevisions.count %}
 <p>
-  <a href="{% url compare id=changeset.id %}">Compare changes</a> | 
-  <a class="new_window" href="{% url preview_revision model_name='issue',id=changeset.issuerevisions.all.0.id %}" target=_blank>Preview</a>
+  <a href="{% url compare id=changeset.id %}">Compare changes</a>
+        {% for issue_revision in changeset.issuerevisions.all %}
+  | <a class="new_window" href="{% url preview_revision model_name='issue',id=issue_revision.id %}" target=_blank>Preview
+          {% if issue_revision.variant_of %} (Variant) {% endif %}</a>
   (opens in a new window)
+        {% endfor %}
 </p>
-      {% endifequal %}
+      {% endif %}
 <form method="POST" action="{% url process id=changeset.id %}">
   <table class="editing">
     <tr>
