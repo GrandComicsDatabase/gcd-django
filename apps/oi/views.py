@@ -2492,10 +2492,14 @@ def cover_compare(request, changeset, revision):
             # uploaded file too old, not stored, we have width 400
             cover_width = 400
         else:
-            source_name = glob.glob("%s/uploads/%d_%s*" % (
-              revision.cover.base_dir(), 
-              revision.cover.id, 
-              revision.changeset.created.strftime('%Y%m%d_%H%M%S')))[0]
+            if revision.changeset.state == states.DISCARDED:
+                source_name = glob.glob(revision.base_dir() + \
+                                        str(revision.id) + '*')[0]
+            else:
+                source_name = glob.glob("%s/uploads/%d_%s*" % (
+                  revision.cover.base_dir(), 
+                  revision.cover.id, 
+                  revision.changeset.created.strftime('%Y%m%d_%H%M%S')))[0]
             im = Image.open(source_name)
             cover_width = im.size[0]
     
