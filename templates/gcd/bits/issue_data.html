@@ -36,6 +36,10 @@
         {{ issue.isbn }}
   {% endif %}
 {% endif %}
+{% if not issue.no_barcode %}
+            <dt>Barcode:
+            <dd id="barcode">{{ issue.barcode|default:"?" }}
+{% endif %}
       </dl>
 {% if issue.series.format %}
       <dl>

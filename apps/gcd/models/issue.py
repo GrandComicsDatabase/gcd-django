@@ -25,6 +25,8 @@ class Issue(models.Model):
     variant_of = models.ForeignKey('self', null=True,
                                    related_name='variant_set')
     variant_name = models.CharField(max_length=255)
+    barcode = models.CharField(max_length=38)
+    no_barcode = models.BooleanField(default=False)
     
     # Dates and sorting
     publication_date = models.CharField(max_length=255)

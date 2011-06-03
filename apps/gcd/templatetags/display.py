@@ -230,9 +230,9 @@ def check_changed(changed, field):
 # display certain similar fields' data in the same way
 def field_value(revision, field):
     value = getattr(revision, field)
-    if field in ['is_surrogate', 'no_volume',
-                 'display_volume_with_number', 'no_brand',
-                 'page_count_uncertain', 'title_inferred']:
+    if field in ['is_surrogate', 'no_volume', 'display_volume_with_number', 
+                 'no_brand', 'page_count_uncertain', 'title_inferred', 
+                 'no_barcode']:
         return yesno(value, 'Yes,No')
     elif field in ['is_current']:
         res_holder_display = ''
@@ -279,10 +279,10 @@ def field_name(field):
     if field in ['name', 'publisher', 'country', 'language', 'notes', 'format',
                  'imprint', 'number', 'volume', 'brand', 'editing', 'type',
                  'title', 'feature', 'genre', 'script', 'pencils', 'inks',
-                 'colors', 'letters', 'characters', 'synopsis', 'price']:
+                 'colors', 'letters', 'characters', 'synopsis', 'price', 'barcode']:
         return title(field)
     elif field in ['year_began', 'year_ended', 'tracking_notes',
-                   'publication_notes',
+                   'publication_notes', 'no_barcode',
                    'no_volume', 'display_volume_with_number', 'publication_date',
                    'indicia_frequency', 'key_date', 'indicia_publisher',
                    'no_brand', 'page_count', 'page_count_uncertain', 'no_editing',

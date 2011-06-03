@@ -354,6 +354,8 @@ def _get_issue_fields():
         'editing',
         'no_editing',
         'isbn',
+        'barcode',
+        'no_barcode',
         'notes',
     ]
 
@@ -552,6 +554,12 @@ class IssueRevisionForm(forms.ModelForm):
                 'numbering systems other than ISBN. If both ISBN 10 and '
                 'ISBN 13 are listed, separate them with a semi-colon. '
                 ' Example: "978-0-307-29063-2; 0-307-29063-8".')
+    barcode = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+      required=False, max_length=38,
+      help_text='The barcode as printed on the item with no spaces. In case '
+                'two barcodes are present, separate them with a semi-colon.')
+    no_barcode = forms.BooleanField(required=False,
+      help_text='Check if there is no barcode.')
     
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,

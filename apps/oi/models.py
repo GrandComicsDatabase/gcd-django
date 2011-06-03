@@ -1893,6 +1893,8 @@ class IssueRevisionManager(RevisionManager):
           page_count_uncertain=issue.page_count_uncertain,
           editing=issue.editing,
           no_editing=issue.no_editing,
+          barcode=issue.barcode,
+          no_barcode=issue.no_barcode,
           isbn=issue.isbn,
           variant_of=issue.variant_of,
           variant_name=issue.variant_name,
@@ -1956,6 +1958,8 @@ class IssueRevision(Revision):
     no_brand = models.BooleanField(default=False)
 
     isbn = models.CharField(max_length=32, blank=True, default='')
+    barcode = models.CharField(max_length=38, blank=True, default='')
+    no_barcode = models.BooleanField(default=False)
 
     date_inferred = models.BooleanField(default=False, blank=True)
 
@@ -2086,7 +2090,7 @@ class IssueRevision(Revision):
                 'indicia_frequency', 'key_date', 'indicia_publisher',
                 'indicia_pub_not_printed', 'brand', 'no_brand', 'price',
                 'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-                'isbn', 'notes']
+                'isbn', 'barcode', 'no_barcode', 'notes']
 
     def _get_blank_values(self):
         return {
@@ -2108,6 +2112,8 @@ class IssueRevision(Revision):
             'editing': '',
             'no_editing': None,
             'isbn': '',
+            'barcode': '',
+            'no_barcode': None,
             'notes': '',
             'sort_code': None,
             'after': None,
@@ -2298,6 +2304,8 @@ class IssueRevision(Revision):
 
         issue.isbn = self.isbn
         issue.valid_isbn = validated_isbn(issue.isbn)
+        issue.barcode = self.barcode
+        issue.no_barcode = self.no_barcode
         
         if clear_reservation:
             issue.reserved = False
