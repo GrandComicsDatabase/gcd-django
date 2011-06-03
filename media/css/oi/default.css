@@ -36,6 +36,15 @@ span.oi_bar_title :visited {
     color: white;
 }
 
+span.oi_bar_nav {
+    float: right;
+    padding-right: 0.2em;
+}
+
+.oi_bar_nav img {
+    border: 0px;
+}
+
 form th {
     vertical-align: top;
     padding-bottom: 1em;

@@ -2,10 +2,18 @@
 
 {% block body %}
   {% include "gcd/bits/search_bar.html" %}
+  {% with 'top' as position %}
+  {% with 'bottom' as link_direction %}
   {% include "oi/bits/oi_bar.html" %}
+  {% endwith %}
+  {% endwith %}
 
   {% block view_body %}{% endblock %}
 
+  {% with 'bottom' as position %}
+  {% with 'top' as link_direction %}
   {% include "oi/bits/oi_bar.html" %}
+  {% endwith %}
+  {% endwith %}
   {% include "gcd/bits/search_bar.html" %}
 {% endblock %}
