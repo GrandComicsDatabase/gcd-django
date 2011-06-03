@@ -153,7 +153,7 @@ class Changeset(models.Model):
         self._inline_revision = None
 
     def _revision_sets(self):
-        if self.change_type == CTYPES['issue']:
+        if self.change_type in [CTYPES['issue'], CTYPES['variant_add']]:
             return (self.issuerevisions.all().select_related('issue', 'series'),
                     self.storyrevisions.all(), self.coverrevisions.all())
 
@@ -241,12 +241,16 @@ class Changeset(models.Model):
             return unicode(self)
         elif self.change_type == CTYPES['issue']:
             return self.revisions.next().queue_name()
+        elif self.change_type == CTYPES['variant_add']:
+            return self.issuerevisions.get(variant_of__isnull=False).queue_name()
         else:
             return self.inline_revision().queue_name()
 
     def queue_descriptor(self):
         if self.change_type == CTYPES['issue_add']:
             return u'[ADDED]'
+        elif self.change_type == CTYPES['variant_add']:
+            return u'[VARIANT]'
         return self.revisions.next().queue_descriptor()
 
     def changeset_action(self):
@@ -254,7 +258,7 @@ class Changeset(models.Model):
         Produce a human-readable description of whether we're adding, removing
         or modifying data with this changeset.
         """
-        if self.change_type == CTYPES['issue_add']:
+        if self.change_type in [CTYPES['issue_add'], CTYPES['variant_add']]:
             return ACTION_ADD
         elif self.change_type == CTYPES['issue_bulk']:
             return ACTION_MODIFY
@@ -2157,7 +2161,7 @@ class IssueRevision(Revision):
     def _source_name(self):
         return 'issue'
 
-    def _do_complete_added_revision(self, series, variant_of):
+    def _do_complete_added_revision(self, series, variant_of=None):
         """
         Do the necessary processing to complete the fields of a new
         issue revision for adding a record before it can be saved.

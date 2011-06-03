@@ -12,6 +12,7 @@ from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
+from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
 
@@ -25,6 +26,10 @@ def absolute_url(item, additional=''):
                              (item.get_absolute_url(), esc(item)))
     return ''
 
+def cover_image_tag(cover, size_alt_text):
+    size, alt_text = size_alt_text.split(',')
+    return get_image_tag(cover, alt_text, int(size))
+    
 def show_story_short(story, no_number=False):
     if no_number:
         story_line = u''
@@ -113,7 +118,11 @@ def header_link(changeset):
         return mark_safe(u'%s (%s)' %
                          (absolute_url(revision), absolute_url(revision.publisher)))
     elif changeset.change_type == CTYPES['cover'] or \
-         changeset.change_type == CTYPES['issue']:
+         changeset.change_type == CTYPES['issue'] or \
+         changeset.change_type == CTYPES['variant_add']:
+        if changeset.change_type == CTYPES['variant_add']:
+            # second issue revision is base issue and does exist in any case
+            revision = changeset.issuerevisions.all()[1]
         series_url = absolute_url(revision.issue.series)
         pub_url = absolute_url(revision.issue.series.publisher)
         issue_url = revision.issue.get_absolute_url()
@@ -302,6 +311,7 @@ def field_name(field):
     return u''
 
 register.filter(absolute_url)
+register.filter(cover_image_tag)
 register.filter(show_story_short)
 register.filter(show_revision_short)
 register.filter(show_volume)

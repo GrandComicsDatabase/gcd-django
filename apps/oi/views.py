@@ -2263,7 +2263,8 @@ def show_queue(request, queue_name, state):
     brands = changes.filter(change_type=CTYPES['brand'])
     series = changes.filter(change_type=CTYPES['series'])
     issue_adds = changes.filter(change_type=CTYPES['issue_add'])
-    issues = changes.filter(change_type=CTYPES['issue'])
+    issues = changes.filter(change_type__in=[CTYPES['issue'],
+                                             CTYPES['variant_add']])
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])
 
