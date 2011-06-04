@@ -1080,7 +1080,7 @@ class StoryRevisionForm(forms.ModelForm):
     no_editing = forms.BooleanField(required=False,
       help_text='Check this box if there is no separate editor for this sequence. '
                 'This is common when there is an editor for the whole issue.')
-    synopsis = forms.CharField(widget=forms.Textarea,
+    synopsis = forms.CharField(widget=forms.Textarea(attrs={'style':'height: 8em'}),
                                required=False,
       help_text='A brief (600 character maximum) description of the contents.  '
                 'No text under copyright may be used without clear permission '
