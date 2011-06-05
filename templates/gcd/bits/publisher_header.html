@@ -29,7 +29,16 @@
 <div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
      class="item_id">
 {% ifnotequal paginate_only 1 %}
-  <div class="left">{{ publisher.year_began }} - {{ publisher.year_ended|default:'' }}</div>
+  <div class="left">
+    <!-- Each of these things should have one space between them, currently
+         done via newline, but if they are put on one line please preserve
+         the space. -->
+    {{ publisher.year_began|default:'' }}
+    {% if publisher.year_began_uncertain %}?{% endif %}
+    -
+    {{ publisher.year_ended|default:'' }}
+    {% if publisher.year_ended_uncertain %}?{% endif %}
+  </div>
 {% endifnotequal %}
   {% include "gcd/bits/pagination_bar.html" %}
 </div>

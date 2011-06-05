@@ -901,6 +901,8 @@ class PublisherRevisionManagerBase(RevisionManager):
           'name': instance.name,
           'year_began': instance.year_began,
           'year_ended': instance.year_ended,
+          'year_began_uncertain': instance.year_began_uncertain,
+          'year_ended_uncertain': instance.year_ended_uncertain,
           'notes': instance.notes,
           'url': instance.url,
         }
@@ -916,6 +918,12 @@ class PublisherRevisionBase(Revision):
     year_ended = models.IntegerField(null=True, blank=True,
       help_text='The last year in which the publisher was active. '
                 'Leave blank if the publisher is still active.')
+    year_began_uncertain = models.BooleanField(blank=True,
+      help_text='Check if you are not certain of the beginning year.')
+    year_ended_uncertain = models.BooleanField(blank=True,
+      help_text='Check if you are not certain of the ending year, or if you '
+                'are not certain whether the publisher is still active.')
+
     notes = models.TextField(blank=True,
       help_text='Anything that doesn\'t fit in other fields.  These notes '
                 'are part of the regular display.')
@@ -924,20 +932,40 @@ class PublisherRevisionBase(Revision):
 
     # order exactly as desired in compare page
     # use list instead of set to control order
-    _base_field_list = ['name', 'year_began', 'year_ended', 'url', 'notes']
+    _base_field_list = ['name',
+                        'year_began',
+                        'year_began_uncertain',
+                        'year_ended',
+                        'year_ended_uncertain',
+                        'url',
+                        'notes']
 
     def _assign_base_fields(self, target):
         target.name = self.name
         target.year_began = self.year_began
         target.year_ended = self.year_ended
+        target.year_began_uncertain = self.year_began_uncertain
+        target.year_ended_uncertain = self.year_ended_uncertain
         target.notes = self.notes
         target.url = self.url
 
     def _field_list(self):
         return self._base_field_list
 
+    def _start_imp_sum(self):
+        self._seen_year_began = False
+        self._seen_year_ended = False
+
     def _imps_for(self, field_name):
-        if field_name in self._base_field_list:
+        if field_name in ('year_began', 'year_began_uncertain'):
+           if not self._seen_year_began:
+                self._seen_year_began = True
+                return 1
+        elif field_name in ('year_ended', 'year_ended_uncertain'):
+           if not self._seen_year_ended:
+                self._seen_year_ended = True
+                return 1
+        elif field_name in self._base_field_list:
             return 1
         return 0
 
@@ -1047,6 +1075,8 @@ class PublisherRevision(PublisherRevisionBase):
             'country': None,
             'year_began': None,
             'year_ended': None,
+            'year_began_uncertain': None,
+            'year_ended_uncertain': None,
             'url': '',
             'notes': '',
             'is_master': True,
@@ -1224,6 +1254,8 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             'country': None,
             'year_began': None,
             'year_ended': None,
+            'year_began_uncertain': None,
+            'year_ended_uncertain': None,
             'is_surrogate': None,
             'url': '',
             'notes': '',
@@ -1358,6 +1390,8 @@ class BrandRevision(PublisherRevisionBase):
             'name': '',
             'year_began': None,
             'year_ended': None,
+            'year_began_uncertain': None,
+            'year_ended_uncertain': None,
             'url': '',
             'notes': '',
             'parent': None,
@@ -1527,8 +1561,10 @@ class CoverRevision(Revision):
                 cover.save()
                 if issue_rev.series != old_issue.series:
                     if issue_rev.series.language != old_issue.series.language:
-                        update_count('covers', -1, language=old_issue.series.language)
-                        update_count('covers', 1, language=issue_rev.series.language)
+                        update_count('covers', -1,
+                                     language=old_issue.series.language)
+                        update_count('covers', 1,
+                                     language=issue_rev.series.language)
                     if not issue_rev.series.has_gallery:
                         issue_rev.series.has_gallery = True
                         issue_rev.series.save()
@@ -1888,6 +1924,7 @@ class IssueRevisionManager(RevisionManager):
           price=issue.price,
           key_date=issue.key_date,
           indicia_frequency=issue.indicia_frequency,
+          no_indicia_frequency=issue.no_indicia_frequency,
           series=issue.series,
           indicia_publisher=issue.indicia_publisher,
           indicia_pub_not_printed=issue.indicia_pub_not_printed,
@@ -1900,6 +1937,7 @@ class IssueRevisionManager(RevisionManager):
           barcode=issue.barcode,
           no_barcode=issue.no_barcode,
           isbn=issue.isbn,
+          no_isbn=issue.no_isbn,
           variant_of=issue.variant_of,
           variant_name=issue.variant_name,
           notes=issue.notes)
@@ -1941,6 +1979,7 @@ class IssueRevision(Revision):
 
     publication_date = models.CharField(max_length=255, blank=True, default='')
     indicia_frequency = models.CharField(max_length=255, blank=True, default='')
+    no_indicia_frequency = models.BooleanField(default=False)
     key_date = models.CharField(max_length=10, blank=True, default='')
 
     price = models.CharField(max_length=255, blank=True, default='')
@@ -1962,6 +2001,8 @@ class IssueRevision(Revision):
     no_brand = models.BooleanField(default=False)
 
     isbn = models.CharField(max_length=32, blank=True, default='')
+    no_isbn = models.BooleanField(default=False)
+
     barcode = models.CharField(max_length=38, blank=True, default='')
     no_barcode = models.BooleanField(default=False)
 
@@ -2091,10 +2132,11 @@ class IssueRevision(Revision):
     def _field_list(self):
         return ['after', 'number', 'volume', 'no_volume',
                 'display_volume_with_number', 'publication_date',
-                'indicia_frequency', 'key_date', 'indicia_publisher',
-                'indicia_pub_not_printed', 'brand', 'no_brand', 'price',
+                'indicia_frequency', 'no_indicia_frequency', 'key_date',
+                'indicia_publisher', 'indicia_pub_not_printed',
+                'brand', 'no_brand', 'price',
                 'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-                'isbn', 'barcode', 'no_barcode', 'notes']
+                'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes']
 
     def _get_blank_values(self):
         return {
@@ -2106,6 +2148,7 @@ class IssueRevision(Revision):
             'price': '',
             'key_date': '',
             'indicia_frequency': '',
+            'no_indicia_frequency': None,
             'series': None,
             'indicia_publisher': None,
             'indicia_pub_not_printed': None,
@@ -2116,6 +2159,7 @@ class IssueRevision(Revision):
             'editing': '',
             'no_editing': None,
             'isbn': '',
+            'no_isbn': None,
             'barcode': '',
             'no_barcode': None,
             'notes': '',
@@ -2126,13 +2170,15 @@ class IssueRevision(Revision):
     def _start_imp_sum(self):
         self._seen_volume = False
         self._seen_indicia_publisher = False
+        self._seen_indicia_frequency = False
         self._seen_brand = False
         self._seen_page_count = False
         self._seen_editing = False
+        self._seen_isbn = False
 
     def _imps_for(self, field_name):
-        if field_name in ('number', 'isbn', 'publication_date', 'key_date',
-                          'indicia_frequency', 'price', 'notes'):
+        if field_name in ('number', 'publication_date', 'key_date',
+                          'price', 'notes'):
             return 1
         if not self._seen_volume and \
            field_name in ('volume', 'no_volume', 'display_volume_with_number'):
@@ -2141,6 +2187,10 @@ class IssueRevision(Revision):
         if not self._seen_indicia_publisher and \
            field_name in ('indicia_publisher', 'indicia_pub_not_printed'):
             self._seen_indicia_publisher = True
+            return 1
+        if not self._seen_indicia_frequency and \
+           field_name in ('indicia_frequency', 'no_indicia_frequency'):
+            self._seen_indicia_frequency = True
             return 1
         if not self._seen_brand and field_name in ('brand', 'no_brand'):
             self._seen_brand = True
@@ -2151,6 +2201,9 @@ class IssueRevision(Revision):
             return 1
         if not self._seen_editing and field_name in ('editing', 'no_editing'):
             self._seen_editing = True
+            return 1
+        if not self._seen_isbn and field_name in ('isbn', 'no_isbn'):
+            self._seen_isbn = True
             return 1
         # Note, the "after" field does not directly contribute IMPs.
         return 0
@@ -2290,6 +2343,7 @@ class IssueRevision(Revision):
         
         issue.publication_date = self.publication_date
         issue.indicia_frequency = self.indicia_frequency
+        issue.no_indicia_frequency = self.no_indicia_frequency
         issue.key_date = self.key_date
 
         issue.price = self.price
@@ -2307,6 +2361,7 @@ class IssueRevision(Revision):
         issue.no_brand = self.no_brand
 
         issue.isbn = self.isbn
+        issue.no_isbn = self.no_isbn
         issue.valid_isbn = validated_isbn(issue.isbn)
         issue.barcode = self.barcode
         issue.no_barcode = self.no_barcode
@@ -2412,14 +2467,14 @@ class StoryRevision(Revision):
                               related_name='revisions')
 
     title = models.CharField(max_length=255, blank=True)
-    title_inferred = models.BooleanField(default=0)
+    title_inferred = models.BooleanField(default=False)
     feature = models.CharField(max_length=255, blank=True)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
 
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
                                      null=True, blank=True)
-    page_count_uncertain = models.BooleanField(default=0)
+    page_count_uncertain = models.BooleanField(default=False)
 
     script = models.TextField(blank=True)
     pencils = models.TextField(blank=True)
@@ -2428,12 +2483,12 @@ class StoryRevision(Revision):
     letters = models.TextField(blank=True)
     editing = models.TextField(blank=True)
 
-    no_script = models.BooleanField(default=0)
-    no_pencils = models.BooleanField(default=0)
-    no_inks = models.BooleanField(default=0)
-    no_colors = models.BooleanField(default=0)
-    no_letters = models.BooleanField(default=0)
-    no_editing = models.BooleanField(default=0)
+    no_script = models.BooleanField(default=False)
+    no_pencils = models.BooleanField(default=False)
+    no_inks = models.BooleanField(default=False)
+    no_colors = models.BooleanField(default=False)
+    no_letters = models.BooleanField(default=False)
+    no_editing = models.BooleanField(default=False)
 
     job_number = models.CharField(max_length=25, blank=True)
     genre = models.CharField(max_length=255, blank=True)

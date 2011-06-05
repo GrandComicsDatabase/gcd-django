@@ -11,9 +11,9 @@
         <dd id="issue_price"> {{ issue.price|default:"" }}
         <dt> {% trans "Pages" %}:
         <dd id="issue_pages"> {{ issue|show_page_count }}
-{% if issue.indicia_frequency %}
+{% if not issue.no_indicia_frequency %}
         <dt> {% trans "Indicia frequency" %}:
-        <dd id="indicia_frequency"> {{ issue.indicia_frequency }}
+        <dd id="indicia_frequency"> {{ issue.indicia_frequency|default:"?" }}
 {% endif %}
         {{ issue|show_credit:"editing" }}
       </dl>
@@ -24,7 +24,7 @@
         <dt> {% trans "Brand" %}:
         <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}
 {% endif %}
-{% if issue.isbn %}
+{% if not issue.no_isbn %}
         <dt>ISBN:
         <dd id="issue_isbn"> 
   {% if issue.valid_isbn %}
@@ -33,7 +33,7 @@
             <img src="{{ MEDIA_URL }}img/gcd/icons/worldcat_16.gif" width="12px;" alt="Search at WorldCat" style="border:0;">
           </a>
   {% else %}
-        {{ issue.isbn }}
+        {{ issue.isbn|default:"?" }}
   {% endif %}
 {% endif %}
 {% if not issue.no_barcode %}

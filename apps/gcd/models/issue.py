@@ -18,10 +18,11 @@ class Issue(models.Model):
     # Issue identification
     number = models.CharField(max_length=50, db_index=True)
     volume = models.CharField(max_length=50, db_index=True)
-    no_volume = models.BooleanField(default=0)
-    display_volume_with_number = models.BooleanField(default=False)
-    isbn = models.CharField(max_length=32)
-    valid_isbn = models.CharField(max_length=13)
+    no_volume = models.BooleanField(default=False, db_index=True)
+    display_volume_with_number = models.BooleanField(default=False, db_index=True)
+    isbn = models.CharField(max_length=32, db_index=True)
+    no_isbn = models.BooleanField(default=False, db_index=True)
+    valid_isbn = models.CharField(max_length=13, db_index=True)
     variant_of = models.ForeignKey('self', null=True,
                                    related_name='variant_set')
     variant_name = models.CharField(max_length=255)
@@ -33,33 +34,34 @@ class Issue(models.Model):
     key_date = models.CharField(max_length=10)
     sort_code = models.IntegerField(db_index=True)
     indicia_frequency = models.CharField(max_length=255)
+    no_indicia_frequency = models.BooleanField(default=False, db_index=True)
 
     # Price, page count and format fields
     price = models.CharField(max_length=255)
     page_count = models.DecimalField(max_digits=10, decimal_places=3, null=True)
-    page_count_uncertain = models.BooleanField(default=0)
+    page_count_uncertain = models.BooleanField(default=False)
 
     editing = models.TextField()
-    no_editing = models.BooleanField(default=0)
+    no_editing = models.BooleanField(default=False, db_index=True)
     notes = models.TextField()
 
 
     # Series and publisher links
     series = models.ForeignKey(Series)
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
-    indicia_pub_not_printed = models.BooleanField(default=0)
+    indicia_pub_not_printed = models.BooleanField(default=False)
     brand = models.ForeignKey(Brand, null=True)
-    no_brand = models.BooleanField(default=0, db_index=True)
+    no_brand = models.BooleanField(default=False, db_index=True)
 
-    is_indexed = models.BooleanField(default=0, db_index=True)
+    is_indexed = models.BooleanField(default=False, db_index=True)
 
     # Fields related to change management.
-    reserved = models.BooleanField(default=0, db_index=True)
+    reserved = models.BooleanField(default=False, db_index=True)
 
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
 
-    deleted = models.BooleanField(default=0, db_index=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)

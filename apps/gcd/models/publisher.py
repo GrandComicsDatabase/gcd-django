@@ -12,6 +12,8 @@ class BasePublisher(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
+    year_began_uncertain = models.BooleanField(blank=True)
+    year_ended_uncertain = models.BooleanField(blank=True)
     notes = models.TextField()
     url = models.URLField()
 
@@ -55,8 +57,26 @@ class Publisher(BasePublisher):
     def active_brands(self):
         return self.brand_set.exclude(deleted=True)
 
+    def active_brands_no_pending(self):
+        """
+        Active brands, not including those with pending deletes.
+        Used in some cases where we don't want someone to add to a brand that is
+        in the process of being deleted.
+        """
+        return self.active_brands().exclude(revisions__deleted=True,
+          revisions__changeset__state__in=states.ACTIVE)
+
     def active_indicia_publishers(self):
         return self.indiciapublisher_set.exclude(deleted=True)
+
+    def active_indicia_publishers_no_pending(self):
+        """
+        Active indicia publishers, not including those with pending deletes.
+        Used in some cases where we don't want someone to add to an ind pub that is
+        in the process of being deleted.
+        """
+        return self.active_indicia_publishers().exclude(revisions__deleted=True,
+          revisions__changeset__state__in=states.ACTIVE)
 
     def active_series(self):
         return self.series_set.exclude(deleted=True)

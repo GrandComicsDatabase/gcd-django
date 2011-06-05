@@ -22,6 +22,12 @@
   {% endif %}
   <td> {{ issue|show_page_count }} </td>
   <td> {{ issue.price|default:"" }} </td>
-  <td> {{ issue.indicia_frequency|default:"" }} </td>
+  {% if frequency_present %}
+    {% if issue.no_indicia_frequency %}
+  <td>&nbsp;</td>
+    {% else %}
+  <td> {{ issue.indicia_frequency|default:"?" }} </td>
+    {% endif %}
+  {% endif %}
 </tr>
 

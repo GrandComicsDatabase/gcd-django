@@ -285,20 +285,7 @@ def field_value(revision, field):
 
 # translate field name into more human friendly name
 def field_name(field):
-    if field in ['name', 'publisher', 'country', 'language', 'notes', 'format',
-                 'imprint', 'number', 'volume', 'brand', 'editing', 'type',
-                 'title', 'feature', 'genre', 'script', 'pencils', 'inks',
-                 'colors', 'letters', 'characters', 'synopsis', 'price', 'barcode']:
-        return title(field)
-    elif field in ['year_began', 'year_ended', 'tracking_notes',
-                   'publication_notes', 'no_barcode',
-                   'no_volume', 'display_volume_with_number', 'publication_date',
-                   'indicia_frequency', 'key_date', 'indicia_publisher',
-                   'no_brand', 'page_count', 'page_count_uncertain', 'no_editing',
-                   'sequence_number', 'no_script', 'no_pencils', 'no_inks',
-                   'no_colors', 'no_letters', 'job_number', 'reprint_notes']:
-        return title(field.replace('_', ' '))
-    elif field in ['is_current', 'is_surrogate']:
+    if field in ['is_current', 'is_surrogate']:
         return u'%s?' % title(field.replace(u'is_', u''))
     elif field in ['url', 'isbn']:
         return field.upper()
@@ -308,7 +295,8 @@ def field_name(field):
         return u'Indicia Publisher Not Printed'
     elif field == 'title_inferred':
         return u'Unofficial Title?'
-    return u''
+    else:
+        return title(field.replace('_', ' '))
 
 register.filter(absolute_url)
 register.filter(cover_image_tag)

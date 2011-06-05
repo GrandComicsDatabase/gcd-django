@@ -20,6 +20,20 @@ NO_CREATOR_CREDIT_HELP = 'Check this box if %s does not apply to this ' \
                 'sequence, %s, and leave the %s field blank. ' \
                 'If the credit is relevant but unknown ignore this checkbox '\
                 'and enter a question mark in the %s field.'
+GENERIC_ERROR_MESSAGE = 'Please correct the field errors.  Scroll down to see '\
+                        'the specific error message(s) next to each field.'
+
+def _init_no_isbn(series, revision):
+    """
+    Set nice defaults for the no_isbn flag if we can figure out when this is.
+    """
+    if revision is not None and revision.issue is not None:
+        return revision.issue.no_isbn
+
+    if series.year_ended < 1970:
+        return True
+
+    return False
 
 class PageCountInput(TextInput):
     def _format_value(self, value):
@@ -114,7 +128,8 @@ def get_publisher_revision_form(source=None):
     return PublisherRevisionForm
 
 def _get_publisher_fields(middle=None):
-    first = ['name', 'year_began', 'year_ended']
+    first = ['name', 'year_began', 'year_began_uncertain',
+                     'year_ended', 'year_ended_uncertain']
     last = ['url', 'notes']
     if middle is not None:
         first.extend(middle)
@@ -177,7 +192,8 @@ def get_brand_revision_form(source=None):
 class BrandRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandRevision
-        fields = ['name', 'year_began', 'year_ended', 'url', 'notes']
+        fields = ['name', 'year_began', 'year_began_uncertain',
+                  'year_ended', 'year_ended_uncertain', 'url', 'notes']
 
     name = forms.CharField(max_length=255,
       help_text='The name of the brand as it appears on the logo.  If the logo '
@@ -186,10 +202,16 @@ class BrandRevisionForm(forms.ModelForm):
 
     year_began = forms.IntegerField(required=False,
       help_text='The first year the brand was used.')
+    year_began_uncertain = forms.BooleanField(required=False,
+      help_text='Check if you are not certain of the first year the brand '
+                'was used.')
 
     year_ended = forms.IntegerField(required=False,
       help_text='The last year the brand was used.  Leave blank if currently '
                 'in use.')
+    year_ended_uncertain = forms.BooleanField(required=False,
+      help_text='Check if you are not certain of the last year the brand '
+                'was used, or if you are not certain whether it is still in use.')
 
     url = forms.URLField(required=False,
       help_text='The official web site of the brand.  Leave blank if the '
@@ -348,27 +370,27 @@ def _get_issue_fields():
         'publication_date',
         'key_date',
         'indicia_frequency',
+        'no_indicia_frequency',
         'price',
         'page_count',
         'page_count_uncertain',
         'editing',
         'no_editing',
         'isbn',
+        'no_isbn',
         'barcode',
         'no_barcode',
         'notes',
     ]
 
-def get_issue_revision_form(publisher, series=None, revision=None, variant_of=None):
+def get_issue_revision_form(publisher, series=None, revision=None,
+                            variant_of=None):
     if series is None and revision is not None:
         series = revision.series
 
     class RuntimeIssueRevisionForm(IssueRevisionForm):
-        pending_deletes = IndiciaPublisherRevision.objects.filter(
-          deleted=True, changeset__state__in=states.ACTIVE)
         indicia_publisher = forms.ModelChoiceField(required=False,
-          queryset=IndiciaPublisher.objects.filter(parent=publisher,
-            deleted=False).exclude(revisions__in=pending_deletes),
+          queryset=publisher.active_indicia_publishers_no_pending(),
           help_text='The exact corporation listed as the publisher in the '
                     'indicia, if any.  If there is none, the copyright holder '
                     '(if any) may be used, with a comment in the notes field')
@@ -377,11 +399,12 @@ def get_issue_revision_form(publisher, series=None, revision=None, variant_of=No
           help_text="Check this box if there is no indicia publisher "
                     "printed on the comic.")
 
-        pending_deletes = BrandRevision.objects.filter(
-          deleted=True, changeset__state__in=states.ACTIVE)
+        no_indicia_frequency = forms.BooleanField(required=False,
+          help_text='Check this box if there is no publication frequency printed '
+                    'on the comic.')
+
         brand = forms.ModelChoiceField(required=False,
-          queryset=Brand.objects.filter(parent=publisher, deleted=False)\
-                                .exclude(revisions__in=pending_deletes),
+          queryset=publisher.active_brands_no_pending(),
           help_text="The publisher's logo or tagline on the cover of the comic, "
                     "if any. Some U.S. golden age publishers did not put any "
                     "identifiable brand marks on their comics.")
@@ -390,11 +413,15 @@ def get_issue_revision_form(publisher, series=None, revision=None, variant_of=No
           help_text="Check this box if there is no publisher's logo or tagline "
                     "on the comic.")
 
+        no_isbn = forms.BooleanField(required=False,
+          initial=_init_no_isbn(series, revision),
+          help_text="Check this box if there is no ISBN printed on the comic.")
+
         def clean(self):
             cd = self.cleaned_data
 
             if self._errors:
-                raise forms.ValidationError('Please correct the field errors.')
+                raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
             cd['number'] = cd['number'].strip()
             cd['volume'] = cd['volume'].strip()
@@ -418,6 +445,15 @@ def get_issue_revision_form(publisher, series=None, revision=None, variant_of=No
             if cd['no_brand'] and cd['brand'] is not None:
                 raise forms.ValidationError(
                   ['Brand field and No Brand checkbox cannot both be filled in.'])
+
+            if cd['no_indicia_frequency'] and cd['indicia_frequency']:
+                raise forms.ValidationError(
+                  'You cannot list an indicia frequency and check '
+                  '"no indicia frequency" at the same time.')
+
+            if cd['no_isbn'] and cd['isbn']:
+                raise forms.ValidationError(
+                  'You cannot list an isbn and check "no isbn" at the same time.')
 
             return cd
 
@@ -587,7 +623,7 @@ def get_bulk_issue_revision_form(series, method):
           label = "Add these issues after")
 
         indicia_publisher = forms.ModelChoiceField(required=False,
-          queryset=IndiciaPublisher.objects.filter(parent=series.publisher),
+          queryset=series.publisher.active_indicia_publishers_no_pending(),
           help_text='The exact corporation listed as the publisher in the '
                     'indicia, if any.  If there is none, the copyright holder '
                     '(if any) may be used, with a comment in the notes field')
@@ -597,7 +633,7 @@ def get_bulk_issue_revision_form(series, method):
                     "on the comic.")
 
         brand = forms.ModelChoiceField(required=False,
-          queryset=Brand.objects.filter(parent=series.publisher),
+          queryset=series.publisher.active_brands_no_pending(),
           help_text="The publisher's logo or tagline on the cover of the comic, "
                     "if any. Some U.S. golden age publishers did not put any "
                     "identifiable brand marks on their comics.")
@@ -605,6 +641,11 @@ def get_bulk_issue_revision_form(series, method):
         no_brand = forms.BooleanField(required=False,
           help_text="Check this box if there is no publisher's logo or tagline "
                     "on the comic.")
+
+        no_isbn = forms.BooleanField(required=False,
+          initial=_init_no_isbn(series, None),
+          help_text="Check this box if there is no ISBN printed on any of the "
+                    "issues being added.")
 
     return RuntimeBulkIssueRevisionForm
 
@@ -620,6 +661,10 @@ class BulkIssueRevisionForm(forms.Form):
       help_text='If relevant, the frequency of publication specified in the '
                 'indicia, which may not match the actual publication schedule. '
                 'This is most often found on U.S. ongoing series.')
+
+    no_indicia_frequency = forms.BooleanField(required=False,
+      help_text='Check this box if there is no frequency printed on any '
+                'of the issues being added.')
 
     price = forms.CharField(required=False,
       help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
@@ -657,8 +702,35 @@ class BulkIssueRevisionForm(forms.Form):
 
     def _shared_key_order(self):
         return ['indicia_publisher', 'indicia_pub_not_printed', 'brand',
-                'no_brand', 'indicia_frequency', 'price', 'page_count',
-                'page_count_uncertain', 'editing', 'no_editing', 'comments']
+                'no_brand', 'indicia_frequency', 'no_indicia_frequency',
+                'price', 'page_count', 'page_count_uncertain',
+                'editing', 'no_editing', 'no_isbn', 'comments']
+
+    def clean(self):
+        cd = self.cleaned_data
+
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
+
+        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
+        cd['price'] = cd['price'].strip()
+        cd['editing'] = cd['editing'].strip()
+        cd['comments'] = cd['comments'].strip()
+
+        if cd['editing'] != "" and cd['no_editing']:
+            raise forms.ValidationError('You cannot specify an editing credit and '
+              'check "no editing" at the same time')
+
+        if cd['no_brand'] and cd['brand'] is not None:
+            raise forms.ValidationError(
+              ['Brand field and No Brand checkbox cannot both be filled in.'])
+
+        if cd['no_indicia_frequency'] and cd['indicia_frequency']:
+            raise forms.ValidationError(
+              ['Indicica Frequency field and No Indicia Frequency checkbox '
+               'cannot both be filled in.'])
+
+        return cd
 
 class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 
@@ -689,28 +761,12 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
         self.fields.keyOrder = ordering
 
     def clean(self):
-        cd = self.cleaned_data
+        cd = super(WholeNumberIssueRevisionForm, self).clean()
 
-        if self._errors:
-            raise forms.ValidationError('Please correct the field errors.')
-
-        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
-        cd['price'] = cd['price'].strip()
         cd['volume'] = cd['volume'].strip()
-        cd['editing'] = cd['editing'].strip()
-        cd['comments'] = cd['comments'].strip()
-
         if cd['volume'] != "" and cd['no_volume']:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
-
-        if cd['editing'] != "" and cd['no_editing']:
-            raise forms.ValidationError('You cannot specify an editing credit and '
-              'check "no editing" at the same time')
-
-        if cd['no_brand'] and cd['brand'] is not None:
-            raise forms.ValidationError(
-              ['Brand field and No Brand checkbox cannot both be filled in.'])
 
         if cd['first_number'] is None and cd['after'] is not None:
             try:
@@ -741,23 +797,10 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
         self.fields.keyOrder = ordering
 
     def clean(self):
-        cd = self.cleaned_data
+        cd = super(PerVolumeIssueRevisionForm, self).clean()
 
         if self._errors:
-            raise forms.ValidationError('Please correct the field errors.')
-
-        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
-        cd['price'] = cd['price'].strip()
-        cd['editing'] = cd['editing'].strip()
-        cd['comments'] = cd['comments'].strip()
-
-        if cd['editing'] != "" and cd['no_editing']:
-            raise forms.ValidationError('You cannot specify an editing credit and '
-              'check "no editing" at the same time')
-
-        if cd['no_brand'] and cd['brand'] is not None:
-            raise forms.ValidationError(
-              ['Brand field and No Brand checkbox cannot both be filled in.'])
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
         basics = (cd['first_number'], cd['first_volume'])
         if None in basics and cd['after'] is not None:
@@ -837,28 +880,16 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
         self.fields.keyOrder = ordering
 
     def clean(self):
-        cd = self.cleaned_data
+        cd = super(PerYearIssueRevisionForm, self).clean()
 
         if self._errors:
-            raise forms.ValidationError('Please correct the field errors.')
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
-        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
-        cd['price'] = cd['price'].strip()
         cd['volume'] = cd['volume'].strip()
-        cd['editing'] = cd['editing'].strip()
-        cd['comments'] = cd['comments'].strip()
 
         if cd['volume'] != "" and cd['no_volume']:
             raise forms.ValidationError('You cannot specify a volume and check '
               '"no volume" at the same time')
-
-        if cd['editing'] != "" and cd['no_editing']:
-            raise forms.ValidationError('You cannot specify an editing credit and '
-              'check "no editing" at the same time')
-
-        if cd['no_brand'] and cd['brand'] is not None:
-            raise forms.ValidationError(
-              ['Brand field and No Brand checkbox cannot both be filled in.'])
 
         basics = (cd['first_number'], cd['first_year'])
         if None in basics and cd['after'] is not None:
@@ -919,23 +950,10 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
         self.fields.keyOrder = ordering
 
     def clean(self):
-        cd = self.cleaned_data
+        cd = super(PerYearIssueRevisionForm, self).clean()
 
         if self._errors:
-            raise forms.ValidationError('Please correct the field errors.')
-
-        cd['indicia_frequency'] = cd['indicia_frequency'].strip()
-        cd['price'] = cd['price'].strip()
-        cd['editing'] = cd['editing'].strip()
-        cd['comments'] = cd['comments'].strip()
-
-        if cd['editing'] != "" and cd['no_editing']:
-            raise forms.ValidationError('You cannot specify an editing credit and '
-              'check "no editing" at the same time')
-
-        if cd['no_brand'] and cd['brand'] is not None:
-            raise forms.ValidationError(
-              ['Brand field and No Brand checkbox cannot both be filled in.'])
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
         basics = (cd['first_number'], cd['first_volume'], cd['first_year'])
         if None in basics and cd['after'] is not None:

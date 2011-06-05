@@ -73,7 +73,9 @@ The following table is the same as the regular series detail table:
 {% endif %}
     <th> Pages </th>
     <th> Price </th>
+{% if frequency_present %}
     <th> Frequency </th>
+{% endif %}
   </tr>
 
 {% comment %}
@@ -102,7 +104,9 @@ divisible filter.
           {% endif %}
     <td>&nbsp;</td>
     <td>&nbsp;</td>
+          {% if frequency_present %}
     <td>&nbsp;</td>
+          {% endif %}
   </tr>
         {% endfor %}
       {% endwith %}
@@ -129,7 +133,9 @@ cannot be placed in a timeline:
     {% endif %}
     <th> Pages </th>
     <th> Price </th>
+    {% if frequency_present %}
     <th> Frequency </th>
+    {% endif %}
   </tr>
   {% endif %}
 
