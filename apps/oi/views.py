@@ -2492,7 +2492,7 @@ def cover_compare(request, changeset, revision):
         if revision.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, we have width 400
             cover_width = 400
-        else:
+        elif revision.deleted == False:
             if revision.changeset.state == states.DISCARDED:
                 source_name = glob.glob(revision.base_dir() + \
                                         str(revision.id) + '*')[0]
