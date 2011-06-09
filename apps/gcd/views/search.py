@@ -281,7 +281,7 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
         return paginate_response(
           request, things, 'gcd/search/issue_list.html', context)
 
-def compute_isbn_qobj(isbn, prefix):
+def compute_isbn_qobj(isbn, prefix, op):
     if stdisbn.is_valid(isbn):
         isbn_compact = stdisbn.compact(isbn)
         q_obj = Q(**{ '%svalid_isbn' % prefix: isbn_compact})
@@ -295,11 +295,11 @@ def compute_isbn_qobj(isbn, prefix):
             q_obj |= Q(**{ '%svalid_isbn' % prefix:
                            stdisbn.to_isbn13(isbn_compact)})
     else:
-        q_obj = Q(**{ '%sisbn__icontains' % prefix: isbn})
+        q_obj = Q(**{ '%sisbn__%s' % (prefix, op): isbn})
     return q_obj
 
 def issue_by_isbn(request, isbn, sort=ORDER_ALPHA):
-    q_obj = compute_isbn_qobj(isbn, '')
+    q_obj = compute_isbn_qobj(isbn, '', 'icontains')
     return generic_by_name(request, isbn, q_obj, sort, class_=Issue,
                            template='gcd/search/issue_list.html',
                            credit="isbn")
@@ -861,9 +861,9 @@ def search_issues(data, op, stories_q=None):
                 data['indexer'] }) &
           Q(**{ '%srevisions__changeset__state' % prefix: states.APPROVED }))
     if data['isbn']:
-        q_objs.append(compute_isbn_qobj(data['isbn'], prefix))
+        q_objs.append(compute_isbn_qobj(data['isbn'], prefix, op))
     if data['issue_notes']:
-        q_objs.append(Q(**{ '%snotes__icontains' % prefix: data['issue_notes'] }))
+        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op): data['issue_notes'] }))
 
     try:
         if data['issue_pages'] is not None and data['issue_pages'] != '':
