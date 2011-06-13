@@ -863,7 +863,7 @@ def search_issues(data, op, stories_q=None):
     if data['isbn']:
         q_objs.append(compute_isbn_qobj(data['isbn'], prefix, op))
     if data['issue_notes']:
-        q_objs.append(Q(**{ '%snotes__icontains' % prefix: data['issue_notes'] }))
+        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op): data['issue_notes'] }))
 
     try:
         if data['issue_pages'] is not None and data['issue_pages'] != '':
