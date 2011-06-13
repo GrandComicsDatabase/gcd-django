@@ -120,6 +120,7 @@ else:
                    patterns('', (r'^', include('apps.oi.urls')),
                                 (r'^voting/', include('apps.voting.urls')),
                                 (r'^admin/', include(admin.site.urls)),
+                                (r'^projects/', include('apps.projects.urls')),
                            )
                   )
 

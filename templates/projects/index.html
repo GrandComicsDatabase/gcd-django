@@ -1,0 +1,23 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+  GCD :: Projects Overview
+{% endblock %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h2> Overview of Current Data Projects </h2>
+<ul>
+<li> <a href="{% url imprints_in_use %}">Imprints in Use</a>
+</ul>
+
+{% endblock %}
+

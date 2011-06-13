@@ -1,0 +1,99 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% load i18n %}
+{% load display %}
+
+{% block title %}Imprints in Use{% endblock %}
+
+{% block css %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/projects/default.css"/>
+{% endblock %}
+
+{% block body %}
+
+{% include "gcd/bits/search_bar.html" %}
+<div>
+<h1 class="item_id search_id">
+<div class="left">
+  {{ heading }}: {{ search_item }}
+</div>
+</h1>
+
+<!-- this section ripped off from search/list_header.html -->
+<div class="item_id">
+  <div class="left" class="item_data">
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }} still in use. 
+  </div>
+  {% include "gcd/bits/pagination_bar.html" %}
+</div>
+</div>
+<!-- end stuff ripped off from search/list_header.html -->
+
+<p class="imp_in_use">
+The purpose of this project page is to encourage replacing imprints with 
+indicia publisher and brand information, and removing all of the imprints so
+that we can remove or repurpose the field.  Please be careful to double-check
+the information in the imprint field before transferring it to the other fields.
+It is also useful to check the publication notes field and remove any similar
+notations from that field.
+</p>
+<p class="imp_in_use">
+For Marvel series, please note that there is a project on the
+Timely-Atlas mailing list to confirm the correct
+indicia publishers for all pre-1963 Marvel publications.  Unless you can confirm
+the data from a primary source yourself, please check with that list before 
+working on those series.  Folks participating in that project will be updating
+all issues here with the results.
+</p>
+
+<form id="imp_in_use_form" action={% url imprints_in_use %} method="GET">
+  <table>
+    {{ form.as_table }}
+  </table>
+  <input type="submit" value="Submit">
+</form>
+
+<table id="imp_in_use_results" class="listing">
+  <tr>
+    <th colspan="2"> Publisher </th>
+    <th colspan="2" width="40%"> Imprint </th>
+    <th width="40%"> Series </th>
+  </tr>
+{% for imprint in items %}
+  <tr> {# class="{% cycle 'listing_even' 'listing_odd' as row_classes%}"> #}
+    <td rowspan={{ imprint.series_count }}
+        class="listing_country first_row last_row">
+      <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ imprint.parent.country.code|lower }}.png" alt="{{ imprint.parent.country.code|upper }}">
+    </td>
+    <td rowspan={{ imprint.series_count }}
+        class="listing_publisher first_row last_row">
+      {{ imprint.parent|absolute_url }}
+    </td>
+    <td rowspan={{ imprint.series_count }}
+        class="listing_country first_row last_row">
+      <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ imprint.country.code|lower }}.png" alt="{{ imprint.country.code|upper }}">
+    </td>
+    <td rowspan={{ imprint.series_count }}
+        class="listing_publisher first_row last_row">
+      {{ imprint|absolute_url }}
+    </td>
+  {% for series in imprint.active_imprint_series %}
+    {% if not forloop.first %}
+  </tr>
+  <tr>
+    {% endif %}
+    <td class="{% if forloop.first %}first_row{% endif %} {% if forloop.last %}last_row{% endif %} {% cycle 'inner_even' 'inner_odd' as inner_row_classes %}" >
+      {{ series|absolute_url }}
+      (<a href="{% url series_details series_id=series.id %}">details</a>)
+    </td>
+  {% endfor %}
+  </tr>
+{% endfor %}
+</table>
+
+{% include "gcd/bits/search_bar.html" %}
+
+{% endblock %}
+

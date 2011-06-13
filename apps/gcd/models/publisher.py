@@ -81,6 +81,9 @@ class Publisher(BasePublisher):
     def active_series(self):
         return self.series_set.exclude(deleted=True)
 
+    def active_imprint_series(self):
+        return self.imprint_series_set.exclude(deleted=True)
+
     def deletable(self):
         # TODO: check for issue_count instead of series_count. Check for added
         # issue skeletons. Also delete series and not just brands, ind pubs,

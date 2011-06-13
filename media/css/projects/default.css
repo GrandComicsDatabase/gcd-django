@@ -1,0 +1,38 @@
+
+p.imp_in_use {
+    float: left;
+    clear: both;
+    margin-bottom: 0;
+}
+
+form#imp_in_use_form table {
+    margin: 1em;
+    float: left;
+    clear: both;
+}
+
+form#imp_in_use_form input[type="submit"] {
+    float: left;
+    clear: both;
+}
+
+table#imp_in_use_results {
+    border: solid 1px black;
+}
+
+table#imp_in_use_results td.first_row {
+    border-top: 1px dashed;
+}
+
+table#imp_in_use_results td.last_row {
+    border-bottom: 1px dashed;
+}
+
+table#imp_in_use_results td.inner_even {
+    background-color: lightgray;
+}
+
+table#imp_in_use_results td.inner_odd {
+    background-color: white;
+}
+
