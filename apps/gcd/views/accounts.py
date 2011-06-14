@@ -355,7 +355,8 @@ def profile(request, user_id=None, edit=False):
                 [ lang.id for lang in profile_user.indexer.languages.all() ],
               'interests': profile_user.indexer.interests,
               'notify_on_approve': profile_user.indexer.notify_on_approve,
-              'collapse_compare_view': profile_user.indexer.collapse_compare_view 
+              'collapse_compare_view': profile_user.indexer.collapse_compare_view,
+              'show_wiki_links': profile_user.indexer.show_wiki_links,
             })
             context['form'] = form
         else:
@@ -408,6 +409,7 @@ def update_profile(request, user_id=None):
     indexer = request.user.indexer
     indexer.notify_on_approve = form.cleaned_data['notify_on_approve']
     indexer.collapse_compare_view = form.cleaned_data['collapse_compare_view']
+    indexer.show_wiki_links = form.cleaned_data['show_wiki_links']
     indexer.country = form.cleaned_data['country']
     indexer.languages = form.cleaned_data['languages']
     indexer.interests = form.cleaned_data['interests']

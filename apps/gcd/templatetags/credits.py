@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import re
-import icu
+try:
+   import icu
+except:
+   import PyICU as icu
 from decimal import Decimal
 
 from django import template

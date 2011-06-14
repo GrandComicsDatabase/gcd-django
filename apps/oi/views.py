@@ -258,7 +258,7 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
 @permission_required('gcd.can_reserve')
 def edit_revision(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
-    form_class = get_revision_form(revision)
+    form_class = get_revision_form(revision, user=request.user)
     form = form_class(instance=revision)
     return _display_edit_form(request, revision.changeset, form, revision)
 
@@ -269,7 +269,7 @@ def edit(request, id):
     revision = None
     if changeset.inline():
         revision = changeset.inline_revision()
-        form_class = get_revision_form(revision)
+        form_class = get_revision_form(revision, user=request.user)
         form = form_class(instance=revision)
 
     # Note that for non-inline changesets, no form is expected so it may be None.
@@ -899,7 +899,7 @@ def process(request, id):
         changeset = get_object_or_404(Changeset, id=id)
         if changeset.inline():
             revision = changeset.inline_revision()
-            form_class = get_revision_form(revision)
+            form_class = get_revision_form(revision, user=request.user)
             form = form_class(request.POST, instance=revision)
             return _save(request, form, changeset_id=id)
         else:
@@ -1322,7 +1322,7 @@ def add_series(request, publisher_id):
             initial = {}
             initial['country'] = publisher.country.id
             form = get_series_revision_form(publisher,
-                                            indexer=request.user)(initial=initial)
+                                            user=request.user)(initial=initial)
             return _display_add_series_form(request, publisher, imprint, form)
 
         if 'cancel' in request.POST:
@@ -1380,7 +1380,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     form_class = get_revision_form(model_name='issue',
                                    series=series,
                                    publisher=series.publisher,
-                                   variant_of=variant_of)
+                                   variant_of=variant_of,
+                                   user=request.user)
 
     if request.method != 'POST':
         if variant_of:
@@ -1515,7 +1516,8 @@ def add_issues(request, series_id, method=None):
                                     'issue_adds' : issue_adds },
                                   context_instance=RequestContext(request))
 
-    form_class = get_bulk_issue_revision_form(series=series, method=method)
+    form_class = get_bulk_issue_revision_form(series=series, method=method,
+                                              user=request.user)
 
     if request.method != 'POST':
         reversed_issues = series.active_issues().order_by('-sort_code')
@@ -1693,7 +1695,7 @@ def add_story(request, issue_revision_id, changeset_id):
             else:
                 initial = _get_initial_add_story_data(request, issue_revision, 
                                                       seq)
-                form = get_story_revision_form()(initial=initial)
+                form = get_story_revision_form(user=request.user)(initial=initial)
             return _display_add_story_form(request, issue_revision, form, 
                                            changeset_id)
 
@@ -1701,7 +1703,7 @@ def add_story(request, issue_revision_id, changeset_id):
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': changeset_id }))
 
-        form = get_story_revision_form()(request.POST)
+        form = get_story_revision_form(user=request.user)(request.POST)
         if not form.is_valid():
             return _display_add_story_form(request, issue_revision, form, 
                                            changeset_id)

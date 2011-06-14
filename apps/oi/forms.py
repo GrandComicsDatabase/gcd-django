@@ -6,7 +6,6 @@ from django.core import urlresolvers
 from django.db.models import Count, F
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.forms.widgets import TextInput
-from django.core.validators import RegexValidator
 
 from apps.oi.models import *
 from apps.gcd.models import *
@@ -23,6 +22,71 @@ NO_CREATOR_CREDIT_HELP = 'Check this box if %s does not apply to this ' \
 GENERIC_ERROR_MESSAGE = 'Please correct the field errors.  Scroll down to see '\
                         'the specific error message(s) next to each field.'
 
+DOC_URL = 'http://docs.comics.org/wiki/'
+ISSUE_HELP_LINKS = {
+    'number': 'Issue_Numbers',
+    'volume': 'Volume',
+    'no_volume': 'Volume',
+    'display_volume_with_number': 'Display_Volume_with_Issue_Number',
+    'publication_date': 'Published_Date',
+    'indicia_frequency': 'Indicia_frequency',
+    'no_indicia_frequency': 'Indicia_frequency',
+    'key_date': 'Keydate',
+    'indicia_publisher': 'Indicia_publisher',
+    'indicia_pub_not_printed': 'Indicia_publisher',
+    'brand': 'Brand',
+    'no_brand': 'Brand',
+    'price': 'Cover_Price',
+    'page_count': 'Page_Count',
+    'page_count_uncertain': 'Page_Count',
+    'editing': 'Editing',
+    'no_editing': 'Editing',
+    'isbn': 'ISBN',
+    'no_isbn': 'ISBN',
+    'barcode': 'Barcode',
+    'no_barcode': 'Barcode',
+    'notes': 'Notes_%28issue%29',
+    'comments': 'Comments'
+}
+
+SEQUENCE_HELP_LINKS = {
+    'type': 'Type',
+    'title': 'Title',
+    'title_inferred': 'Title',
+    'feature': 'Feature',
+    'page_count': 'Page_Count',
+    'page_count_uncertain': 'Page_Count',
+    'genre': 'Genre',
+    'script': 'Script',
+    'no_script': 'Script',
+    'pencils': 'Pencils',
+    'no_pencils': 'Pencils',
+    'inks': 'Inks',
+    'no_inks': 'Inks',
+    'colors': 'Colors',
+    'no_colors': 'Colors',
+    'letters': 'Letters',
+    'no_letters': 'Letters',
+    'editing': 'Editing',
+    'no_editing': 'Editing',
+    'characters': 'Character_Appearances',
+    'synopsis': 'Synopsis',
+    'job_number': 'Job_Number',
+    'reprint_notes': 'Reprints',
+    'notes': 'Notes',
+    'comments': 'Comments'
+}
+
+def _set_help_labels(self, help_links):
+    for field in self.fields:
+        if field in help_links:
+            if not self.fields[field].label:
+                label =  forms.forms.pretty_name(field)
+            else:
+                label = self.fields[field].label
+            self.fields[field].label = mark_safe(label + \
+              u' <a href="%s%s">[?]</a>' % (DOC_URL, help_links[field]))
+
 def _init_no_isbn(series, revision):
     """
     Set nice defaults for the no_isbn flag if we can figure out when this is.
@@ -30,10 +94,28 @@ def _init_no_isbn(series, revision):
     if revision is not None and revision.issue is not None:
         return revision.issue.no_isbn
 
-    if series.year_ended < 1970:
+    if series.year_ended and series.year_ended < 1970:
         return True
 
     return False
+
+def _init_no_barcode(series, revision):
+    """
+    Set nice defaults for the no_barcode flag if we can figure out when this is.
+    """
+    if revision is not None and revision.issue is not None:
+        return revision.issue.no_barcode
+
+    if series.year_ended and series.year_ended < 1974:
+        return True
+
+    return False
+
+def _get_comments_form_field():
+    return forms.CharField(widget=forms.Textarea, required=False,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
 
 class PageCountInput(TextInput):
     def _format_value(self, value):
@@ -114,7 +196,7 @@ class OngoingReservationForm(forms.ModelForm):
                 'series that does not already '
                 'have an ongoing reservation')
 
-def get_publisher_revision_form(source=None):
+def get_publisher_revision_form(source=None, user=None):
     if source is not None:
         class RuntimePublisherRevisionForm(PublisherRevisionForm):
             # Don't allow country to be un-set:
@@ -155,7 +237,7 @@ class PublisherRevisionForm(forms.ModelForm):
         cd['comments'] = cd['comments'].strip()
         return cd
 
-def get_indicia_publisher_revision_form(source=None):
+def get_indicia_publisher_revision_form(source=None, user=None):
     if source is not None:
         class RuntimeIndiciaPublisherRevisionForm(IndiciaPublisherRevisionForm):
             # Don't allow country to be un-set:
@@ -186,7 +268,7 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
         cd['comments'] = cd['comments'].strip()
         return cd
 
-def get_brand_revision_form(source=None):
+def get_brand_revision_form(source=None, user=None):
     return BrandRevisionForm
 
 class BrandRevisionForm(forms.ModelForm):
@@ -230,12 +312,12 @@ class BrandRevisionForm(forms.ModelForm):
         cd['comments'] = cd['comments'].strip()
         return cd
 
-def get_series_revision_form(publisher=None, source=None, indexer=None):
+def get_series_revision_form(publisher=None, source=None, user=None):
     if source is None:
         can_request = None
         series_fields = _get_series_fields(source)
 
-        if indexer is not None and indexer.indexer.can_reserve_another_ongoing():
+        if user is not None and user.indexer.can_reserve_another_ongoing():
             can_request = True
             series_fields = ['reservation_requested'] + series_fields
 
@@ -384,38 +466,19 @@ def _get_issue_fields():
     ]
 
 def get_issue_revision_form(publisher, series=None, revision=None,
-                            variant_of=None):
+                            variant_of=None, user=None):
     if series is None and revision is not None:
         series = revision.series
 
     class RuntimeIssueRevisionForm(IssueRevisionForm):
-        indicia_publisher = forms.ModelChoiceField(required=False,
-          queryset=publisher.active_indicia_publishers_no_pending(),
-          help_text='The exact corporation listed as the publisher in the '
-                    'indicia, if any.  If there is none, the copyright holder '
-                    '(if any) may be used, with a comment in the notes field')
-
-        indicia_pub_not_printed = forms.BooleanField(required=False,
-          help_text="Check this box if there is no indicia publisher "
-                    "printed on the comic.")
-
-        no_indicia_frequency = forms.BooleanField(required=False,
-          help_text='Check this box if there is no publication frequency printed '
-                    'on the comic.')
-
-        brand = forms.ModelChoiceField(required=False,
-          queryset=publisher.active_brands_no_pending(),
-          help_text="The publisher's logo or tagline on the cover of the comic, "
-                    "if any. Some U.S. golden age publishers did not put any "
-                    "identifiable brand marks on their comics.")
-
-        no_brand = forms.BooleanField(required=False,
-          help_text="Check this box if there is no publisher's logo or tagline "
-                    "on the comic.")
-
-        no_isbn = forms.BooleanField(required=False,
-          initial=_init_no_isbn(series, revision),
-          help_text="Check this box if there is no ISBN printed on the comic.")
+        def __init__(self, *args, **kwargs):
+            super(RuntimeIssueRevisionForm, self).__init__(*args, **kwargs)
+            self.fields['brand'].queryset = \
+              series.publisher.active_brands_no_pending()
+            self.fields['indicia_publisher'].queryset = \
+              series.publisher.active_indicia_publishers_no_pending()
+            self.fields['no_isbn'].initial = _init_no_isbn(series, None)
+            self.fields['no_barcode'].initial = _init_no_barcode(series, None)
 
         def clean(self):
             cd = self.cleaned_data
@@ -456,6 +519,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                   'You cannot list an isbn and check "no isbn" at the same time.')
 
             return cd
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, ISSUE_HELP_LINKS)
+            return super(IssueRevisionForm, self).as_table()
 
     if variant_of:
         class RuntimeAddVariantIssueRevisionForm(RuntimeIssueRevisionForm):
@@ -501,109 +569,20 @@ class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
         fields = _get_issue_fields()
+        widgets = {
+          'number': forms.TextInput(attrs={'class': 'wide'}),
+          'volume': forms.TextInput(attrs={'class': 'wide'}),
+          'key_date': forms.TextInput(attrs={'class': 'key_date'}),
+          'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
+          'editing': forms.TextInput(attrs={'class': 'year'}),
+          'isbn': forms.TextInput(attrs={'class': 'wide'}),
+          'barcode': forms.TextInput(attrs={'class': 'wide'})
+        }
 
-    number = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      help_text='The issue number (or other label) as it appears in the indicia. '
-                'If there is no indicia the cover number may be used. '
-                'Series that number by year (mosty European series) should write '
-                'the year after a slash: "4/2009" for issue #4 in publication '
-                'year 2009.  Place brackets around an issue number if there is an '
-                'indicia but the number does not appear in it.  Use "[nn]" or the '
-                'next logical number in brackets like "[2]" if '
-                'there is no number printed anywhere on the issue.')
+    comments = _get_comments_form_field()
 
-    volume = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False,
-      help_text='Volume number (only if listed on the item). For collections '
-                'or other items that only have a volume or book number, '
-                'put the same number in both this field and the issue number '
-                'and do *not* check "Display volume with number". ')
 
-    no_volume = forms.BooleanField(required=False,
-      help_text='If there is no volume, check this box and leave the volume field '
-                'blank. This lets us distinguish between confirmed no-volume '
-                'issues and issues indexed before we started tracking volume.')
-
-    display_volume_with_number = forms.BooleanField(required=False,
-      help_text='Check to cause the site to display the volume as part of the '
-                'issue number.  For example with a volume of "2" and an issue '
-                'number of "1", checking this box will display "v2#1" instead '
-                'of just "1" in the status grids and issues lists for the series.')
-
-    publication_date = forms.CharField(required=False,
-      help_text='The publicaton date as printed on the comic, except with the '
-                'name of the month (if any) spelled out.  Any part of the date '
-                'that is not printed on the comic but is known should be put '
-                'in square brackets, such as "[January] 2009".  Do NOT use the '
-                'shipping date in this field, only the publication date.')
-
-    key_date = forms.CharField(required=False,
-      widget=forms.TextInput(attrs={'class': 'key_date'}),
-      help_text='Special date form used for sorting:  YYYY.MM.DD where the day '
-                '(DD) shoud be 00 for monthly books, and use arbitrary numbers '
-                'such as 10, 20, 30 to indicate an "early" "mid" or "late" month '
-                'cover date.  For the month (MM) on quarterlies, use 04 for '
-                'Spring, 07 for Summer, 10 for Fall and 01 or 12 for Winter (in '
-                'the northern hemisphere, shift accordingly in the southern).  '
-                'For annuals use a month of 00 or 13 or whatever sorts it best.  '
-                'If and only if none of these rules fit, use anything that '
-                'produces the correct sorting.',
-      validators=[RegexValidator(r'^(17|18|19|20)\d{2}\.(0[0-9]|1[0-3])\.\d{2}$')])
-
-    indicia_frequency = forms.CharField(
-      widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False,
-      help_text='If relevant, the frequency of publication specified in the '
-                'indicia, which may not match the actual publication schedule. '
-                'This is most often found on U.S. ongoing series.')
-
-    price = forms.CharField(required=False,
-      help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
-                '"2.99 CAD" for $2.99 Canadian.  Use a format like '
-                '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
-                'Use "0.00 FREE" for free issues. '
-                'Separate multiple prices with a semicolon.  Use parentheses '
-                'after the currency code for notes: "2.99 USD; 3.99 USD '
-                '(newsstand)" Use country codes after the currency code if more '
-                'than one price uses the same currency: '
-                '"3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
-
-    page_count = forms.DecimalField(widget=PageCountInput, required=False,
-                                    max_digits=10, decimal_places=3,
-      help_text="Count of all pages in the issue, including the covers but "
-                "excluding dust jackets and inserts.  A single sheet of paper "
-                "folded in half would count as 4 pages.")
-    page_count_uncertain = forms.BooleanField(required=False,
-      help_text="Check if you do not know or aren't sure about the page count.")
-
-    editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False,
-      help_text='The editor and any similar credits for the whole issue.  If no '
-                'overall editor is known put a question mark in the field.')
-    no_editing = forms.BooleanField(required=False,
-      help_text='Check if there is no editor or similar credit (such as '
-                'publisher) for the issue as a whole.')
-
-    isbn = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False, label='ISBN', max_length=32,
-      help_text='The ISBN as printed on the item. Do not use this field for '
-                'numbering systems other than ISBN. If both ISBN 10 and '
-                'ISBN 13 are listed, separate them with a semi-colon. '
-                ' Example: "978-0-307-29063-2; 0-307-29063-8".')
-    barcode = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False, max_length=38,
-      help_text='The barcode as printed on the item with no spaces. In case '
-                'two barcodes are present, separate them with a semi-colon.')
-    no_barcode = forms.BooleanField(required=False,
-      help_text='Check if there is no barcode.')
-    
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
-
-def get_bulk_issue_revision_form(series, method):
+def get_bulk_issue_revision_form(series, method, user=None):
     if method == 'number':
         base = WholeNumberIssueRevisionForm
     elif method == 'volume':
@@ -616,40 +595,29 @@ def get_bulk_issue_revision_form(series, method):
         return render_error(request, 'Unknown method of adding issues.')
 
     class RuntimeBulkIssueRevisionForm(base):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
+            self.fields['brand'].queryset = \
+              series.publisher.active_brands_no_pending()
+            self.fields['indicia_publisher'].queryset = \
+              series.publisher.active_indicia_publishers_no_pending()
+            self.fields['no_isbn'].initial = _init_no_isbn(series, None)
+            self.fields['no_barcode'].initial = _init_no_barcode(series, None)
+            
         after = forms.ModelChoiceField(required=False,
           queryset=Issue.objects.exclude(deleted=True).filter(series=series) \
             .order_by('sort_code'),
           empty_label="[add as initial issues]",
           label = "Add these issues after")
 
-        indicia_publisher = forms.ModelChoiceField(required=False,
-          queryset=series.publisher.active_indicia_publishers_no_pending(),
-          help_text='The exact corporation listed as the publisher in the '
-                    'indicia, if any.  If there is none, the copyright holder '
-                    '(if any) may be used, with a comment in the notes field')
-
-        indicia_pub_not_printed = forms.BooleanField(required=False,
-          help_text="Check this box if there is no indicia publisher printed "
-                    "on the comic.")
-
-        brand = forms.ModelChoiceField(required=False,
-          queryset=series.publisher.active_brands_no_pending(),
-          help_text="The publisher's logo or tagline on the cover of the comic, "
-                    "if any. Some U.S. golden age publishers did not put any "
-                    "identifiable brand marks on their comics.")
-
-        no_brand = forms.BooleanField(required=False,
-          help_text="Check this box if there is no publisher's logo or tagline "
-                    "on the comic.")
-
-        no_isbn = forms.BooleanField(required=False,
-          initial=_init_no_isbn(series, None),
-          help_text="Check this box if there is no ISBN printed on any of the "
-                    "issues being added.")
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, ISSUE_HELP_LINKS)
+            return super(base, self).as_table()
 
     return RuntimeBulkIssueRevisionForm
 
-class BulkIssueRevisionForm(forms.Form):
+class BulkIssueRevisionForm(forms.ModelForm):
     first_number = forms.IntegerField(required=False,
       help_text='If blank, starts with the number after the issue specified '
                 'in the "Add issues after" field, or "1" if '
@@ -657,54 +625,23 @@ class BulkIssueRevisionForm(forms.Form):
 
     number_of_issues = forms.IntegerField(min_value=1)
 
-    indicia_frequency = forms.CharField(required=False,
-      help_text='If relevant, the frequency of publication specified in the '
-                'indicia, which may not match the actual publication schedule. '
-                'This is most often found on U.S. ongoing series.')
+    comments = _get_comments_form_field()
 
-    no_indicia_frequency = forms.BooleanField(required=False,
-      help_text='Check this box if there is no frequency printed on any '
-                'of the issues being added.')
-
-    price = forms.CharField(required=False,
-      help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
-                '"2.99 CAD" for $2.99 Canadian.  Use a format like '
-                '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
-                'Use "0.00 FREE" for free issues. '
-                'Separate multiple prices with a semicolon.  Use parentheses '
-                'after the currency code for notes: "2.99 USD; 3.99 USD '
-                '(newsstand)" Use country codes after the currency code if more '
-                'than one price uses the same currency: '
-                '"3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
-
-    page_count = forms.DecimalField(widget=PageCountInput, required=False,
-                                    max_digits=10, decimal_places=3,
-      help_text="Count of all pages in the issue, including the covers but "
-                "excluding dust jackets and inserts.  A single sheet of paper "
-                "folded in half would count as 4 pages.")
-
-    page_count_uncertain = forms.BooleanField(required=False,
-      help_text="Check if you do not know or aren't sure about the page count.")
-
-    editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False,
-      help_text='The editor and any similar credits for the whole issue.  If no '
-                'overall editor is known put a question mark in the field.')
-    no_editing = forms.BooleanField(required=False,
-      help_text='Check if there is no editor or similar credit (such as '
-                'publisher) for the issue as a whole.')
-
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+    class Meta:
+        model = IssueRevision
+        fields = _get_issue_fields()
+        exclude = ['number',]
+        widgets = {
+          'volume': forms.TextInput(attrs={'class': 'wide'}),
+          'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
+          'editing': forms.TextInput(attrs={'class': 'year'}),
+        }
 
     def _shared_key_order(self):
         return ['indicia_publisher', 'indicia_pub_not_printed', 'brand',
                 'no_brand', 'indicia_frequency', 'no_indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
-                'editing', 'no_editing', 'no_isbn', 'comments']
+                'editing', 'no_editing', 'no_isbn', 'no_barcode', 'comments']
 
     def clean(self):
         cd = self.cleaned_data
@@ -733,25 +670,6 @@ class BulkIssueRevisionForm(forms.Form):
         return cd
 
 class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
-
-    volume = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False,
-      help_text='Volume number (only if listed on the item). For collections '
-                'or other items that only have a volume or book number, '
-                'put the same number in both this field and the issue number '
-                'and do *not* check "Display volume with number". ')
-
-    display_volume_with_number = forms.BooleanField(required=False,
-      help_text='Check to cause the site to display the volume as part of the '
-                'issue number.  For example with a volume of "2" and an issue '
-                'number of "1", checking this box will display "v2#1" instead '
-                'of just "1" in the status grids and issues lists for the series.')
-
-    no_volume = forms.BooleanField(required=False,
-      help_text='If there is no volume, check this box and leave the volume field '
-                'blank. This lets us distinguish between confirmed no-volume '
-                'issues and issues indexed before we started tracking volume.')
-
 
     def __init__(self, *args, **kwargs):
         super(WholeNumberIssueRevisionForm, self).__init__(*args, **kwargs)
@@ -852,24 +770,6 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
     issues_per_year = forms.IntegerField(min_value=1, initial=12,
       help_text='Number of issues in each year')
 
-    volume = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False,
-      help_text='Volume number (only if listed on the item). For collections '
-                'or other items that only have a volume or book number, '
-                'put the same number in both this field and the issue number '
-                'and do *not* check "Display volume with number". ')
-
-    display_volume_with_number = forms.BooleanField(required=False,
-      help_text='Check to cause the site to display the volume as part of the '
-                'issue number.  For example with a volume of "2" and an issue '
-                'number of "1", checking this box will display "v2#1" instead '
-                'of just "1" in the status grids and issues lists for the series.')
-
-    no_volume = forms.BooleanField(required=False,
-      help_text='If there is no volume, check this box and leave the volume field '
-                'blank. This lets us distinguish between confirmed no-volume '
-                'issues and issues indexed before we started tracking volume.')
-
 
     def __init__(self, *args, **kwargs):
         super(PerYearIssueRevisionForm, self).__init__(*args, **kwargs)
@@ -935,12 +835,6 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
     issues_per_cycle = forms.IntegerField(min_value=1, initial=12,
       help_text='Number of issues in each year/volume')
 
-    display_volume_with_number = forms.BooleanField(required=False,
-      help_text='Check to cause the site to display the volume as part of the '
-                'issue number.  For example with a volume of "2" and an issue '
-                'number of "1", checking this box will display "v2#1" instead '
-                'of just "1" in the status grids and issues lists for the series.')
-
     def __init__(self, *args, **kwargs):
         super(PerYearIssueRevisionForm, self).__init__(*args, **kwargs)
         ordering = ['after', 'number_of_issues',
@@ -983,7 +877,7 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         return cd
 
-def get_story_revision_form(revision=None):
+def get_story_revision_form(revision=None, user=None):
     extra = {}
     if revision is not None:
         # Don't allow blanking out the type field.  However, when its a new store
@@ -991,7 +885,8 @@ def get_story_revision_form(revision=None):
         # initial value.  So only set None if there is an existing story revision.
         extra['empty_label'] = None
 
-    special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)')
+    special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)', 
+                     'biography (nonfictional)')
     queryset = StoryType.objects.all()
     if revision is None or (revision is not None and
                             revision.type.name not in special_types):
@@ -1001,6 +896,11 @@ def get_story_revision_form(revision=None):
         type = forms.ModelChoiceField(queryset=queryset,
           help_text='Choose the most appropriate available type',
           **extra)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, SEQUENCE_HELP_LINKS)
+            return super(StoryRevisionForm, self).as_table()
     return RuntimeStoryRevisionForm
 
 class StoryRevisionForm(forms.ModelForm):
@@ -1180,8 +1080,7 @@ class StoryRevisionForm(forms.ModelForm):
 
         return cd
 
-
-def get_cover_revision_form(revision=None):
+def get_cover_revision_form(revision=None, user=None):
     compare_url = '<a href="' + urlresolvers.reverse('compare',
       kwargs={ 'id': revision.changeset.id }) + '">Compare Change</a>'
 

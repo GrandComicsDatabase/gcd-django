@@ -64,6 +64,10 @@ class AccountForm(forms.Form):
       help_text=(u'If checked, the change comparison page for an issue will show '
                  u'a shortened version of the unchanged values, with the full '
                  u'view accessible via a link.'))
+    show_wiki_links = forms.BooleanField(label="Wiki Links in OI",
+                                           initial=True,
+                                           required=False,
+      help_text=(u'If checked, the links to the documentation show in the OI'))
 
     def clean(self):
         cd = self.cleaned_data

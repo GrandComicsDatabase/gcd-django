@@ -50,7 +50,8 @@ class Indexer(models.Model):
     imps = models.IntegerField(default=0)
     notify_on_approve = models.BooleanField(db_index=True, default=True)
     collapse_compare_view = models.BooleanField(db_index=True, default=False)
-
+    show_wiki_links = models.BooleanField(db_index=True, default=True)
+    
     def can_reserve_another(self):
         from apps.oi.models import CTYPES
 
