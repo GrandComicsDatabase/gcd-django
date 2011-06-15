@@ -17,6 +17,8 @@ class Issue(models.Model):
 
     # Issue identification
     number = models.CharField(max_length=50, db_index=True)
+    title = models.CharField(max_length=255, db_index=True)
+    no_title = models.BooleanField(default=False, db_index=True)
     volume = models.CharField(max_length=50, db_index=True)
     no_volume = models.BooleanField(default=False, db_index=True)
     display_volume_with_number = models.BooleanField(default=False, db_index=True)
@@ -120,9 +122,13 @@ class Issue(models.Model):
         return list(variants.exclude(deleted=True))
 
     def _display_number(self):
+        if self.title and self.series.has_issue_title:
+            title = " - " + self.title
+        else:
+            title = ""
         if self.display_volume_with_number:
-            return u'v%s#%s' % (self.volume, self.number)
-        return self.number
+            return u'v%s#%s%s' % (self.volume, self.number, title)
+        return self.number + title
     display_number = property(_display_number)
 
     # determine and set whether something has been indexed at all or not

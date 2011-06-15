@@ -11,7 +11,7 @@
         <dd id="issue_price"> {{ issue.price|default:"" }}
         <dt> {% trans "Pages" %}:
         <dd id="issue_pages"> {{ issue|show_page_count }}
-{% if not issue.no_indicia_frequency %}
+{% if not issue.no_indicia_frequency and issue.series.has_indicia_frequency %}
         <dt> {% trans "Indicia frequency" %}:
         <dd id="indicia_frequency"> {{ issue.indicia_frequency|default:"?" }}
 {% endif %}
@@ -24,7 +24,7 @@
         <dt> {% trans "Brand" %}:
         <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}
 {% endif %}
-{% if not issue.no_isbn %}
+{% if not issue.no_isbn and issue.series.has_isbn %}
         <dt>ISBN:
         <dd id="issue_isbn"> 
   {% if issue.valid_isbn %}
@@ -36,7 +36,7 @@
         {{ issue.isbn|default:"?" }}
   {% endif %}
 {% endif %}
-{% if not issue.no_barcode %}
+{% if not issue.no_barcode and issue.series.has_barcode %}
             <dt>Barcode:
             <dd id="barcode">{{ issue.barcode|default:"?" }}
 {% endif %}

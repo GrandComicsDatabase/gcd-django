@@ -12,6 +12,17 @@
     {% endif %}
   {% endif %}
   <td> <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
+  {% if title_present %}
+    {% if issue.no_title %}
+  <td>&nbsp;</td>
+    {% else %}
+      {% if issue.title %}
+  <td> <a href="{{ issue.get_absolute_url }}">{{ issue.title }}</a> </td>
+      {% else %}
+  <td> ? </td>
+      {% endif %}
+    {% endif %}
+  {% endif %}
   <td> {{ issue|show_indicia_pub }} </td>
   {% if brand_present %}
     {% if issue.no_brand %}

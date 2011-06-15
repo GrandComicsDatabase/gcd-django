@@ -1648,6 +1648,11 @@ class SeriesRevisionManager(RevisionManager):
           publication_notes=series.publication_notes,
           tracking_notes=series.tracking_notes,
 
+          has_barcode=series.has_barcode,
+          has_indicia_frequency=series.has_indicia_frequency,
+          has_isbn=series.has_isbn,
+          has_issue_title=series.has_issue_title,
+          
           country=series.country,
           language=series.language,
           publisher=series.publisher,
@@ -1685,6 +1690,12 @@ class SeriesRevision(Revision):
     # Crossref fields don't appear to really be used- nearly all null.
     tracking_notes = models.TextField(blank=True)
 
+    # Fields for handling the presence of certain issue fields
+    has_barcode = models.BooleanField()
+    has_indicia_frequency = models.BooleanField()
+    has_isbn = models.BooleanField()
+    has_issue_title = models.BooleanField()
+    
     notes = models.TextField(blank=True)
 
     # Country and Language info.
@@ -1770,9 +1781,11 @@ class SeriesRevision(Revision):
         return self.series.get_ongoing_revision()
 
     def _field_list(self):
-        return ['name', 'year_began', 'year_ended', 'is_current', 'publisher',
-                'country', 'language', 'tracking_notes', 'publication_notes',
-                'notes', 'format', 'imprint']
+        return ['name', 'publisher', 'format', 'year_began', 'year_ended', 
+                'is_current', 'country', 'language', 'publication_notes',
+                'tracking_notes', 'notes', 'has_barcode', 
+                'has_indicia_frequency', 'has_isbn', 'has_issue_title', 
+                'imprint']
 
     def _get_blank_values(self):
         return {
@@ -1789,6 +1802,10 @@ class SeriesRevision(Revision):
             'language': None,
             'publisher': None,
             'imprint': None,
+            'has_barcode': True,
+            'has_indicia_frequency': True,
+            'has_isbn': True,
+            'has_issue_title': False
         }
 
     def _imps_for(self, field_name):
@@ -1849,6 +1866,11 @@ class SeriesRevision(Revision):
         series.year_began = self.year_began
         series.year_ended = self.year_ended
         series.is_current = self.is_current
+        series.has_barcode = self.has_barcode
+        series.has_indicia_frequency = self.has_indicia_frequency
+        series.has_isbn = self.has_isbn
+        series.has_issue_title = self.has_issue_title
+        
         reservation = series.get_ongoing_reservation()
         if not self.is_current and reservation and self.previous() and \
           self.previous().is_current:
@@ -1938,6 +1960,8 @@ class IssueRevisionManager(RevisionManager):
 
           # copied fields:
           number=issue.number,
+          title=issue.title,
+          no_title=issue.no_title,
           volume=issue.volume,
           no_volume=issue.no_volume,
           display_volume_with_number=issue.display_volume_with_number,
@@ -1999,6 +2023,12 @@ class IssueRevision(Revision):
                 'indicia but the number does not appear in it.  Use "[nn]" or the '
                 'next logical number in brackets like "[2]" if '
                 'there is no number printed anywhere on the issue.')
+
+    title = models.CharField(max_length=255, default='',
+      help_text='The title of the issue. Refer to the wiki for the '
+                'cases when an issue can have a title.')
+    no_title = models.BooleanField(default=False, 
+      help_text='Check if there is no title.')
                 
     volume = models.CharField(max_length=50, blank=True, default='',
       help_text='Volume number (only if listed on the item). For collections '
@@ -2116,9 +2146,13 @@ class IssueRevision(Revision):
         display field and not the source's.  Although the actual construction
         of the string should really be factored out somewhere for consistency.
         """
+        if self.title and self.series.has_issue_title:
+            title = " - " + self.title
+        else:
+            title = ""
         if self.display_volume_with_number:
-            return u'v%s#%s' % (self.volume, self.number)
-        return self.number
+            return u'v%s#%s%s' % (self.volume, self.number, title)
+        return self.number + title
     display_number = property(_display_number)
 
     def _sort_code(self):
@@ -2228,17 +2262,32 @@ class IssueRevision(Revision):
         return [None, None]
 
     def _field_list(self):
-        return ['after', 'number', 'volume', 'no_volume',
-                'display_volume_with_number', 'publication_date',
-                'indicia_frequency', 'no_indicia_frequency', 'key_date',
-                'indicia_publisher', 'indicia_pub_not_printed',
-                'brand', 'no_brand', 'price',
-                'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-                'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes']
-
+        fields = ['after', 'number', 'title', 'no_title', 'volume', 'no_volume',
+                  'display_volume_with_number', 'publication_date',
+                  'indicia_frequency', 'no_indicia_frequency', 'key_date',
+                  'indicia_publisher', 'indicia_pub_not_printed',
+                  'brand', 'no_brand', 'price',
+                  'page_count', 'page_count_uncertain', 'editing', 'no_editing',
+                  'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes']
+        if not self.series.has_barcode:
+            fields.remove('barcode')
+            fields.remove('no_barcode')
+        if not self.series.has_indicia_frequency:
+            fields.remove('indicia_frequency')
+            fields.remove('no_indicia_frequency')
+        if not self.series.has_isbn:
+            fields.remove('isbn')
+            fields.remove('no_isbn')
+        if not self.series.has_issue_title:
+            fields.remove('title')
+            fields.remove('no_title')
+        return fields
+        
     def _get_blank_values(self):
         return {
             'number': '',
+            'title': '',
+            'no_title': None,
             'volume': '',
             'no_volume': None,
             'display_volume_with_number': None,
@@ -2433,6 +2482,16 @@ class IssueRevision(Revision):
                     issue.indicia_publisher.save()
 
         issue.number = self.number
+        # only if the series has_field is True write to issue
+        if issue.series.has_issue_title:
+            issue.title = self.title
+            issue.no_title = self.no_title
+        else: # handle case when series has_field changes during lifetime
+              # of issue changeset, then changeset resets to issue data
+            self.title = issue.title
+            self.no_title = issue.no_title
+            self.save()
+            
         issue.volume = self.volume
         issue.no_volume = self.no_volume
         issue.display_volume_with_number = self.display_volume_with_number
@@ -2440,8 +2499,14 @@ class IssueRevision(Revision):
         issue.variant_name = self.variant_name
         
         issue.publication_date = self.publication_date
-        issue.indicia_frequency = self.indicia_frequency
-        issue.no_indicia_frequency = self.no_indicia_frequency
+        if issue.series.has_indicia_frequency:
+            issue.indicia_frequency = self.indicia_frequency
+            issue.no_indicia_frequency = self.no_indicia_frequency
+        else:
+            self.indicia_frequency = issue.indicia_frequency
+            self.no_indicia_frequency = issue.no_indicia_frequency
+            self.save()
+            
         issue.key_date = self.key_date
 
         issue.price = self.price
@@ -2458,12 +2523,23 @@ class IssueRevision(Revision):
         issue.brand = self.brand
         issue.no_brand = self.no_brand
 
-        issue.isbn = self.isbn
-        issue.no_isbn = self.no_isbn
-        issue.valid_isbn = validated_isbn(issue.isbn)
-        issue.barcode = self.barcode
-        issue.no_barcode = self.no_barcode
-        
+        if issue.series.has_isbn:
+            issue.isbn = self.isbn
+            issue.no_isbn = self.no_isbn
+            issue.valid_isbn = validated_isbn(issue.isbn)
+        else:
+            self.isbn = issue.isbn
+            self.no_isbn = issue.no_isbn
+            self.save()
+            
+        if issue.series.has_barcode:
+            issue.barcode = self.barcode
+            issue.no_barcode = self.no_barcode
+        else:
+            self.barcode = issue.barcode
+            self.no_barcode = issue.no_barcode
+            self.save()
+            
         if clear_reservation:
             issue.reserved = False
 

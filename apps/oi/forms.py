@@ -6,6 +6,7 @@ from django.core import urlresolvers
 from django.db.models import Count, F
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.forms.widgets import TextInput
+from django.utils.safestring import mark_safe
 
 from apps.oi.models import *
 from apps.gcd.models import *
@@ -110,6 +111,17 @@ def _init_no_barcode(series, revision):
         return True
 
     return False
+
+class HiddenInputWithHelp(forms.TextInput):
+    input_type = 'hidden'
+
+    def __init__(self, *args, **kwargs):
+        super(HiddenInputWithHelp, self).__init__(*args, **kwargs)
+        self.attrs = kwargs.get('attrs', {})
+        self.key = self.attrs.get('key', False)
+
+    def render(self, name, value, *args, **kwargs):
+        return mark_safe(super(HiddenInputWithHelp, self).render(name, value, self.attrs))
 
 def _get_comments_form_field():
     return forms.CharField(widget=forms.Textarea, required=False,
@@ -371,6 +383,10 @@ def _get_series_fields(source=None):
       'publication_notes',
       'tracking_notes',
       'notes',
+      'has_barcode',
+      'has_indicia_frequency',
+      'has_isbn',
+      'has_issue_title',
     ]
     if source is None or source.imprint is None:
         return fields
@@ -378,22 +394,6 @@ def _get_series_fields(source=None):
     return fields
 
 class SeriesRevisionForm(forms.ModelForm):
-
-    class Meta:
-        model = SeriesRevision
-        fields = (
-            'name',
-            'imprint',
-            'format',
-            'year_began',
-            'year_ended',
-            'is_current',
-            'publication_notes',
-            'tracking_notes',
-            'country',
-            'language',
-            'notes',
-        )
 
     name = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
       help_text=('Series name as it appears in the indicia (or cover only '
@@ -419,10 +419,17 @@ class SeriesRevisionForm(forms.ModelForm):
       required=False,
       help_text='This is a compound field that holds size, binding, '
                 'paper stock and other information, separated by '
-                'semi-colons.  Consult the wiki for specifics.  This '
-                'field is being replaced by several individual fields '
-                'in the near future.')
+                'semi-colons.  Consult the wiki for specifics.')
 
+    has_barcode = forms.BooleanField(required=False,
+        help_text="Barcodes are present for issues of this series.")
+    has_indicia_frequency = forms.BooleanField(required=False,
+        help_text="Indicia frequencies are present for issues of this series.")
+    has_isbn = forms.BooleanField(required=False,
+        help_text="ISBNs are present for issues of this series.")
+    has_issue_title = forms.BooleanField(required=False,
+        help_text="Titles are present for issues of this series.")
+        
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
       help_text='Comments between the Indexer and Editor about the change. '
@@ -442,6 +449,8 @@ class SeriesRevisionForm(forms.ModelForm):
 def _get_issue_fields():
     return [
         'number',
+        'title',
+        'no_title',
         'volume',
         'display_volume_with_number',
         'no_volume',
@@ -465,6 +474,11 @@ def _get_issue_fields():
         'notes',
     ]
 
+def _get_series_has_fields_off_note(series, field):
+    return 'The %s field is turned off for %s. To enter a value for %s this ' \
+           'setting for the series has to be changed.' % (field, series, field), forms.BooleanField(widget=forms.HiddenInput, 
+                                          required=False, help_text='sdsds')
+
 def get_issue_revision_form(publisher, series=None, revision=None,
                             variant_of=None, user=None):
     if series is None and revision is not None:
@@ -480,6 +494,30 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
 
+        if not series.has_issue_title:
+            help_text, no_title = _get_series_has_fields_off_note(series, 
+                                                                  'title')
+            title = forms.CharField(widget=HiddenInputWithHelp, required=False,
+              help_text=help_text)
+
+        if not series.has_indicia_frequency:
+            help_text, no_indicia_frequency = \
+              _get_series_has_fields_off_note(series, 'indicia frequency')
+            indicia_frequency = forms.CharField(widget=HiddenInputWithHelp, 
+              required=False, 
+              help_text=help_text)
+
+        if not series.has_isbn:
+            help_text, no_isbn = _get_series_has_fields_off_note(series, 'ISBN')
+            isbn = forms.CharField(widget=HiddenInputWithHelp, required=False, 
+              help_text=help_text)
+
+        if not series.has_barcode:
+            help_text, no_barcode = \
+              _get_series_has_fields_off_note(series, 'barcode')
+            barcode = forms.CharField(widget=HiddenInputWithHelp, 
+              required=False, help_text=help_text)
+            
         def clean(self):
             cd = self.cleaned_data
 
@@ -571,6 +609,7 @@ class IssueRevisionForm(forms.ModelForm):
         fields = _get_issue_fields()
         widgets = {
           'number': forms.TextInput(attrs={'class': 'wide'}),
+          'title': forms.TextInput(attrs={'class': 'wide'}),
           'volume': forms.TextInput(attrs={'class': 'wide'}),
           'key_date': forms.TextInput(attrs={'class': 'key_date'}),
           'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),

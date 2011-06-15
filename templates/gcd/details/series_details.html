@@ -75,7 +75,10 @@ The following table is the same as the regular series detail table:
 {% if volume_present %}
     <th> Volume </th>
 {% endif %}
-    <th> Issue </th>
+    <th> Number </th>
+{% if title_present %}
+    <th> Title </th>
+{% endif %}
     <th> Indicia Publisher </th>
 {% if brand_present %}
     <th> Brand </th>
@@ -107,6 +110,9 @@ divisible filter.
     <td>&nbsp;</td>
           {% endif %}
     <td>&nbsp;</td>
+          {% if title_present %}
+    <td>&nbsp;</td>
+          {% endif %}
     <td>&nbsp;</td>
           {% if brand_present %}
     <td>&nbsp;</td>

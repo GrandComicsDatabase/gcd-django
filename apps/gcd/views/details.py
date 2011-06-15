@@ -308,9 +308,11 @@ def series_details(request, series_id, by_date=False):
       series.active_issues().filter(no_volume=True).count() - num_issues
     brand_present = \
       series.active_issues().filter(no_brand=True).count() - num_issues
-    frequency_present = \
+    frequency_present = series.has_indicia_frequency and \
       series.active_issues().filter(no_indicia_frequency=True).count() - num_issues
-
+    title_present = series.has_issue_title and \
+      series.active_issues().filter(no_title=True).count() - num_issues
+      
     return render_to_response('gcd/details/series_details.html',
       {
         'series': series,
@@ -320,6 +322,7 @@ def series_details(request, series_id, by_date=False):
         'volume_present': volume_present,
         'brand_present': brand_present,
         'frequency_present': frequency_present,
+        'title_present': title_present,
         'bad_dates': len(bad_key_dates),
       },
       context_instance=RequestContext(request))

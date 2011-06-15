@@ -66,6 +66,12 @@ class Series(models.Model):
     # Crossref fields don't appear to really be used- nearly all null.
     tracking_notes = models.TextField()
 
+    # Fields for handling the presence of certain issue fields
+    has_barcode = models.BooleanField()
+    has_indicia_frequency = models.BooleanField()
+    has_isbn = models.BooleanField()
+    has_issue_title = models.BooleanField()
+
     # Fields related to cover image galleries.
     has_gallery = models.BooleanField(db_index=True)
 
