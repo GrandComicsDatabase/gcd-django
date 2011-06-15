@@ -23,6 +23,11 @@
 
 {% block view_body %}
 
+{% with series.ordered_brands as brands %}
+{% with series.brand_info_counts as brand_counts %}
+{% with series.ordered_indicia_publishers as indicia_publishers %}
+{% with series.indicia_publisher_info_counts as indicia_publisher_counts %}
+
 {% include "gcd/bits/series_issue_header.html" %}
 
 <div class="control_body">
@@ -36,6 +41,21 @@
   {% else %}
           <a href="{{ series.get_absolute_url }}covers">{{ first_image_tag }}</a>
   {% endif %}
+
+<!--{% if not preview or series.source %}
+          <ul id="series_detail_link_list">
+  {% if series.has_gallery %}
+            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png"><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>
+  {% endif %}
+  {% if preview %}
+            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png"><a  href="{% url series_details series_id=series.source.id %}">Details by Issue</a>
+            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png"><a href="{% url series_timeline series_id=series.source.id %}">Series Timeline</a>
+  {% else %}
+            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png"><a href="{% url series_details series_id=series.id %}">Details by Issue</a>
+            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png"><a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
+  {% endif %}
+          </ul>
+{% endif %}-->
         </div>
 {% endif %}
 
@@ -54,25 +74,74 @@
             <dt class="long"> Format:
             <dd id="series_format"> {{ series.format }}
 {% endif %}
+<!--            <dt class="long"> Series Details:
+            <dd id="series_details"> 
+{% if series.has_gallery %}
+            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png"><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
+{% endif %}
+{% if not preview or series.source %}
+  {% if preview %}
+            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png"><a  href="{% url series_details series_id=series.source.id %}">Details by Issue</a>&nbsp;
+            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png"><a href="{% url series_timeline series_id=series.source.id %}">Series Timeline</a>
+  {% else %}
+            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png"><a href="{% url series_details series_id=series.id %}">Details by Issue</a>&nbsp;
+            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png"><a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
+  {% endif %}
+{% endif %}-->
           </dl>
 
-          <h3 class="series_notes"> Series Details </h3>
+          <div class="series_detail_header">Series Details:</div>
+          <ul class="series_detail_info"><li>
+{% if series.has_gallery %}
+            <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png">Cover Gallery</a>&nbsp;
+{% endif %}
 {% if not preview or series.source %}
-          <ul>
   {% if preview %}
-            <li> <a href="{% url series_details series_id=series.source.id %}">Details by Issue</a>
-            <li> <a href="{% url series_timeline series_id=series.source.id %}">Series Timeline</a>
-    {% if series.has_gallery %}
-            <li><a href="{{ series.source.get_absolute_url }}covers">Cover Gallery</a>
-    {% endif %}
+            <a  href="{% url series_details series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
+            <a href="{% url series_timeline series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
   {% else %}
-            <li> <a href="{% url series_details series_id=series.id %}">Details by Issue</a>
-            <li> <a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
-    {% if series.has_gallery %}
-            <li><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>
-    {% endif %}
+            <a href="{% url series_details series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
+            <a href="{% url series_timeline series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+  {% endif %}
+{% endif %}
+          </ul>
+
+{% if brand_counts.no_brand != series.issue_set.count %}
+          <div class="series_detail_header">Publisher's Brands:</div>
+          <ul class="series_detail_info">
+  {% for brand in brands %}
+            <li> {{ brand|absolute_url }}
+                 ({{ brand.issue_count }} issue{{ brand.issue_count|pluralize }})
+  {% endfor %}
+  {% if brand_counts.no_brand %}
+            <li> no publisher's brand 
+                 ({{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }})
+  {% endif %}
+  {% if brand_counts.unknown %}
+            <li> without publisher's brand information
+                 ({{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }})
+                 
   {% endif %}
           </ul>
+{% endif %}
+
+          <div class="series_detail_header">Indicia Publishers:</div>
+          <ul class="series_detail_info">
+{% for ip in series.ordered_indicia_publishers %}
+            <li> {{ ip|absolute_url }}
+                 ({{ ip.issue_count }} issue{{ ip.issue_count|pluralize }})
+{% endfor %}
+{% if indicia_publisher_counts.unknown %}
+            <li> without indicia publisher information
+                 ({{ indicia_publisher_counts.unknown }} issue{{indicia_publisher_counts.unknown|pluralize }})
+{% endif %}
+        </ul>
+
+{% if series.imprint %}
+        <div class="series_detail_header">Imprint:</div>
+        <ul class="series_detail_info">
+          <li> {{ series.imprint|absolute_url }}
+        </ul>
 {% endif %}
 
           <div id="series_notes">
@@ -183,6 +252,11 @@
 <h3> Cover Status </h3>
 
 {% include "gcd/bits/scan_tables.html" %}
+
+{% endwith %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
 
 {% endblock %}
 

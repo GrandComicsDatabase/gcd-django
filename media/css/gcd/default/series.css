@@ -44,6 +44,25 @@
     margin: 0;
 }
 
+div#series_data img.icon {
+    border: none;
+    margin-right: 0.2em;
+}
+
+div.series_detail_header {
+    font-weight: bold;
+}
+
+ul.series_detail_info {
+    margin-top: 0;
+    padding-left: 2em;
+}
+
+ul#series_detail_link_list {
+    list-style: none;
+    padding-left: 0;
+}
+
 .empty_month {
     color: #777;
 }

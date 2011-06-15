@@ -1722,6 +1722,26 @@ class SeriesRevision(Revision):
         else:
             return self.series.display_publication_dates()
 
+    def ordered_brands(self):
+        if self.series is None:
+            return []
+        return self.series.ordered_brands()
+
+    def brand_info_counts(self):
+        if self.series is None:
+            return { 'unknown': 0, 'no_brand': 0 }
+        return self.series.brand_info_counts()
+
+    def ordered_indicia_publishers(self):
+        if self.series is None:
+            return []
+        return self.series.ordered_indicia_publishers()
+
+    def indicia_publisher_info_counts(self):
+        if self.series is None:
+            return { 'unknown': 0 }
+        return self.series.indicia_publisher_info_counts()
+
     def _source(self):
         return self.series
 

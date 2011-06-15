@@ -4,7 +4,7 @@ from django.core import urlresolvers
 
 from apps.gcd.models.country import Country
 from apps.gcd.models.language import Language
-from apps.gcd.models.publisher import Publisher
+from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -105,6 +105,56 @@ class Series(models.Model):
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
+
+    def ordered_brands(self):
+        """
+        Provide information on publisher's brands in the order they first
+        appear within the series.  Returned as a list so that the UI can check
+        the length of the list and the contents with only one DB call.
+        """
+        return list(Brand.objects.filter(issue__series=self, 
+                                         issue__deleted=False)\
+          .annotate(first_by_brand=models.Min('issue__sort_code'),
+                    issue_count=models.Count('issue'))\
+          .order_by('first_by_brand'))
+
+    def brand_info_counts(self):
+        """
+        Simple method for the UI to use, as the UI can't pass parameters.
+        """
+
+        # There really should be a way to do this in one annotate clause, but I
+        # can't figure it out and the ORM may just not do it.  The SQL would be:
+        # SELECT (brand_id IS NULL AND no_brand = 0) AS unknown, COUNT(*)
+        #   FROM gcd_issue WHERE series_id=x GROUP BY unknown;
+        # replacing x with the series id of course.
+        return {
+            'no_brand': self.active_issues().filter(no_brand=True).count(),
+            'unknown': self.active_issues().filter(no_brand=False,
+                                                   brand__isnull=True).count(),
+        }
+
+    def ordered_indicia_publishers(self):
+        """
+        Provide information on indicia publishers in the order they first
+        appear within the series.  Returned as a list so that the UI can check
+        the length of the list and the contents with only one DB call.
+        """
+        return list(IndiciaPublisher.objects.filter(issue__series=self, 
+                                                    issue__deleted=False)\
+          .annotate(first_by_ind_pub=models.Min('issue__sort_code'),
+                    issue_count=models.Count('issue'))\
+          .order_by('first_by_ind_pub'))
+
+    def indicia_publisher_info_counts(self):
+        """
+        Simple method for the UI to use.  Called _counts (plural) for symmetry
+        with brand_info_counts which actually does return two counts.
+        """
+        return {
+            'unknown': self.active_issues().filter(indicia_publisher__isnull=True)\
+                                           .count(),
+        }
 
     def get_ongoing_reservation(self):
         """

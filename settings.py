@@ -21,6 +21,7 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
 MEDIA_URL = "/site_media/"
+ICON_SET = "gnome"
 
 # absolute path to the directory that holds election files.
 VOTING_DIR = abspath(join(dirname(__file__), 'voting'))
