@@ -1444,8 +1444,8 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
         # create issue revision for the issue of the cover
         if not _do_reserve(changeset.indexer, issue, 'issue', changeset=changeset):
             return False
-        changeset.change_type=CTYPES['variant_add']
-        changeset.save()
+    changeset.change_type=CTYPES['variant_add']
+    changeset.save()
     
     # save issue revision for the new variant record
     issuerevision.save_added_revision(changeset=changeset,
