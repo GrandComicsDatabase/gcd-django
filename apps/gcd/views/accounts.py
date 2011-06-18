@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import hashlib
+import urlparse
 from random import random
 from datetime import date, timedelta
 
@@ -63,6 +64,7 @@ def login(request, template_name):
     except User.DoesNotExist:
         pass
 
+    redirect_override = None
     if 'next' in request.POST:
         next = request.POST['next']
         if re.match(r'/accounts/confirm/', next, flags=re.I):
@@ -73,9 +75,19 @@ def login(request, template_name):
             post = request.POST.copy()
             post['next'] = urlresolvers.reverse('home')
             request.POST = post
+        # The following test is what standard_login() does to disallow
+        # redirects to different hosts, so we check if the host is in
+        # our whitelist in order to override this decision
+        netloc = urlparse.urlparse(next)[1]
+        if (netloc and netloc != request.get_host() and
+            netloc in settings.LOGIN_REDIRECT_WHITELIST):
+                redirect_override = next
 
-    return standard_login(request, template_name=template_name,
-                          authentication_form=LongUsernameAuthenticationForm)
+    response = standard_login(request, template_name=template_name,
+                              authentication_form=LongUsernameAuthenticationForm)
+    if redirect_override and isinstance(response, HttpResponseRedirect):
+	    return HttpResponseRedirect(redirect_override)
+    return response
 
 def logout(request):
     """

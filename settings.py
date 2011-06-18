@@ -138,6 +138,8 @@ RECENTS_COUNT = 5
 
 SITE_URL = 'http://www.comics.org/'
 SITE_NAME = 'Grand Comics Database'
+SESSION_COOKIE_DOMAIN = 'comics.org'
+LOGIN_REDIRECT_WHITELIST = ('docs.comics.org',)
 
 # image directories
 IMAGE_SERVER_URL = 'http://images.comics.org/'
