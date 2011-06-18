@@ -47,7 +47,7 @@ def generic_by_name(request, name, q_obj, sort,
     base_name = 'unknown'
     plural_suffix = 's'
     query_val = {'method': 'icontains'}
-
+    
     if (class_ in (Series, Brand, IndiciaPublisher)):
         if class_ is IndiciaPublisher:
             base_name = 'indicia_publisher'
@@ -132,12 +132,18 @@ def generic_by_name(request, name, q_obj, sort,
     else:
         raise TypeError, "Unsupported search target!"
 
+    if (sort == ORDER_ALPHA):
+        change_order = request.path.replace('alpha', 'chrono')
+    elif (sort == ORDER_CHRONO):
+        change_order = request.path.replace('chrono', 'alpha')
+
     vars = { 'item_name': base_name,
              'plural_suffix': plural_suffix,
              'heading': heading,
              'search_term': name,
              'media_url': settings.MEDIA_URL, 
              'query_string': urlencode(query_val),
+             'change_order': change_order,
              'which_credit': credit }
     return paginate_response(request, things, template, vars)
 

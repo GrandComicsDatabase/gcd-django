@@ -5,6 +5,12 @@
 <div class="left">
   {{ heading }}: {{ search_item }}
 </div>
+<div class="search_id_nav">
+<a name="{{ position }}"></a>
+<a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
+<img src="{{ MEDIA_URL }}/img/gcd/icons/{{ ICON_SET }}/19x19/actions/go-{{ link_direction }}.png">
+</a>
+</div>
 </h1>
 
 <div class="item_id">
@@ -17,6 +23,11 @@
   {% endwith %}
 </div>
 </div>
+{% if position = 'top' %}
 <div id="search_reminder">
 Refine your search using the <a href="{% url apps.gcd.views.search.advanced_search %}?{{ query_string }}">advanced search</a>.
+{% if change_order %}
+Change <a href="{{ change_order}}">sort order</a>
+{% endif %}
 </div>
+{% endif %}

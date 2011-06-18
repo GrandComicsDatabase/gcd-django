@@ -11,18 +11,26 @@
 
 {% block body %}
 
-{% include "gcd/bits/search_bar.html" %}
+  {% include "gcd/bits/search_bar.html" %}
 
-{% include "gcd/search/list_header.html" %}
+  {% with 'top' as position %}
+  {% with 'bottom' as link_direction %}
+    {% include "gcd/search/list_header.html" %}
+  {% endwith %}
+  {% endwith %}
 
-{% block list_contents %}{% endblock %}
+  {% block list_contents %}{% endblock %}
 
-{% if used_search_terms %}
-{% include "gcd/bits/search_terms.html" %}
-{% endif %}
+  {% if used_search_terms %}
+    {% include "gcd/bits/search_terms.html" %}
+  {% endif %}
 
-{% include "gcd/bits/search_bar.html" %}
+  {% include "gcd/bits/search_bar.html" %}
 
-{% include "gcd/search/list_header.html" %}
+  {% with 'bottom' as position %}
+  {% with 'top' as link_direction %}
+    {% include "gcd/search/list_header.html" %}
+  {% endwith %}
+  {% endwith %}
 
 {% endblock %}
