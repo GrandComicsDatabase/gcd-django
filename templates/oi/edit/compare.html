@@ -76,6 +76,12 @@ The above sequence was moved from the following issue.
 {% include 'oi/bits/comments.html' %}
 {% endwith %}
 
+{% if user == changeset.indexer and changeset.state = states.OPEN %}
+<p>
+  <a href="{% url edit id=changeset.id %}">Edit changes</a>
+</p>
+{% endif %}
+
 {% include 'oi/bits/compare_actions.html' %}
 
 {% endblock %}

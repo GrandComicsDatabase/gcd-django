@@ -84,15 +84,15 @@ class Story(models.Model):
                self.inks or \
                self.colors or \
                self.letters or \
-               self.editing
+               self.editing or \
+               self.job_number
 
     def has_content(self):
         """Simplifies UI checks for conditionals.  Content fields"""
         return self.genre or \
                self.characters or \
                self.synopsis or \
-               self.reprint_notes or \
-               self.job_number
+               self.reprint_notes
 
     def has_data(self):
         """Simplifies UI checks for conditionals.  All non-heading fields"""

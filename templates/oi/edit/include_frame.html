@@ -5,7 +5,11 @@
   {% with changeset.comments as comments %}
   {% include 'oi/bits/comments.html' %}
   {% endwith %}
-
+  {% if changeset.comments.count > 1 %} {% comment %} change was sent back {% endcomment %}
+  <p>
+    <a href="{% url compare id=changeset.id %}">Compare changes</a>
+  </p>
+  {% endif %}
   {% ifequal revision.source_label "story" %}
 <input type="submit" name="save" value="Save and continue editing"></input>
 <input type="submit" name="save_return" value="Save and return to issue"></input>

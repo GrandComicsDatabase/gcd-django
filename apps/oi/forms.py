@@ -24,6 +24,43 @@ GENERIC_ERROR_MESSAGE = 'Please correct the field errors.  Scroll down to see '\
                         'the specific error message(s) next to each field.'
 
 DOC_URL = 'http://docs.comics.org/wiki/'
+
+PUBLISHER_HELP_LINKS = {
+    'name' : 'Publisher_Name',
+    'year_began': 'Years_of_Publication',
+    'year_ended': 'Years_of_Publication',
+    'year_began_uncertain': 'Years_of_Publication',
+    'year_ended_uncertain': 'Years_of_Publication',
+    'country': 'Country',
+    'url': 'URL',
+    'notes': 'Notes_%28on_Publisher_Screen%29',
+    'comments': 'Comments '
+}
+
+BRAND_HELP_LINKS = {
+    'name' : 'Brand',
+    'year_began': 'Years_of_Use_%28Brand%29',
+    'year_ended': 'Years_of_Use_%28Brand%29',
+    'year_began_uncertain': 'Years_of_Use_%28Brand%29',
+    'year_ended_uncertain': 'Years_of_Use_%28Brand%29',
+    'url': 'URL_%28Brand%29',
+    'notes': 'Notes_%28Brand%29',
+    'comments': 'Comments '
+}
+
+INDICIA_PUBLISHER_HELP_LINKS = {
+    'name' : 'Indicia_Publisher',
+    'year_began': 'Years_of_Use_%28Indicia_publisher%29',
+    'year_ended': 'Years_of_Use_%28Indicia_publisher%29',
+    'year_began_uncertain': 'Years_of_Use_%28Indicia_publisher%29',
+    'year_ended_uncertain': 'Years_of_Use_%28Indicia_publisher%29',
+    'is_surrogate': 'Surrogate',
+    'country': 'Country_%28Indicia_publisher%29',
+    'url': 'URL_%28Indicia_publisher%29',
+    'notes': 'Notes_%28Indicia_publisher%29',
+    'comments': 'Comments '
+}
+
 ISSUE_HELP_LINKS = {
     'number': 'Issue_Numbers',
     'volume': 'Volume',
@@ -209,8 +246,8 @@ class OngoingReservationForm(forms.ModelForm):
                 'have an ongoing reservation')
 
 def get_publisher_revision_form(source=None, user=None):
-    if source is not None:
-        class RuntimePublisherRevisionForm(PublisherRevisionForm):
+    class RuntimePublisherRevisionForm(PublisherRevisionForm):
+        if source is not None:
             # Don't allow country to be un-set:
             if source.country.code == 'xx':
                 country_queryset = Country.objects.all()
@@ -218,8 +255,11 @@ def get_publisher_revision_form(source=None, user=None):
                 country_queryset = Country.objects.exclude(code='xx')
             country = forms.ModelChoiceField(queryset=country_queryset,
                                              empty_label=None)
-        return RuntimePublisherRevisionForm
-    return PublisherRevisionForm
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, PUBLISHER_HELP_LINKS)
+            return super(RuntimePublisherRevisionForm, self).as_table()
+    return RuntimePublisherRevisionForm
 
 def _get_publisher_fields(middle=None):
     first = ['name', 'year_began', 'year_began_uncertain',
@@ -250,13 +290,16 @@ class PublisherRevisionForm(forms.ModelForm):
         return cd
 
 def get_indicia_publisher_revision_form(source=None, user=None):
-    if source is not None:
-        class RuntimeIndiciaPublisherRevisionForm(IndiciaPublisherRevisionForm):
+    class RuntimeIndiciaPublisherRevisionForm(IndiciaPublisherRevisionForm):
+        if source is not None:
             # Don't allow country to be un-set:
             country = forms.ModelChoiceField(empty_label=None,
               queryset=Country.objects.exclude(code='xx'))
-        return RuntimeIndiciaPublisherRevisionForm
-    return IndiciaPublisherRevisionForm
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, INDICIA_PUBLISHER_HELP_LINKS)
+            return super(RuntimeIndiciaPublisherRevisionForm, self).as_table()
+    return RuntimeIndiciaPublisherRevisionForm
 
 class IndiciaPublisherRevisionForm(PublisherRevisionForm):
     class Meta:
@@ -281,7 +324,12 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
         return cd
 
 def get_brand_revision_form(source=None, user=None):
-    return BrandRevisionForm
+    class RuntimeBrandRevisionForm(BrandRevisionForm):
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, BRAND_HELP_LINKS)
+            return super(RuntimeBrandRevisionForm, self).as_table()
+    return RuntimeBrandRevisionForm
 
 class BrandRevisionForm(forms.ModelForm):
     class Meta:
@@ -561,7 +609,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
                 _set_help_labels(self, ISSUE_HELP_LINKS)
-            return super(IssueRevisionForm, self).as_table()
+            return super(RuntimeIssueRevisionForm, self).as_table()
 
     if variant_of:
         class RuntimeAddVariantIssueRevisionForm(RuntimeIssueRevisionForm):

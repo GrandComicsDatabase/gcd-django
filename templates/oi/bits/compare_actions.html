@@ -33,7 +33,7 @@
 {% if changeset.state == states.REVIEWING %}
   {% if user == changeset.approver %}
   <input type="submit" name="approve" value="Approve">
-    {% if changeset.singular and not changeset.deleted and not is_cover %}
+    {% if changeset.singular and not changeset.deleted %}
   <input type="submit" name="disapprove" value="Send Back to Indexer">
     {% endif %}
   <input type="submit" name="cancel" value="Reject Permanently">
