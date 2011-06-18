@@ -1,6 +1,9 @@
 {% load display %}
 {% if revision.issue and revision.issue.has_covers %}
 <a class="new_window" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>
+  {% if revision.deleted %}
+<span class="comparison_highlight">Note that the cover will be deleted on approval and might need to be saved before that.</span>
+  {% endif %}
 {% endif %}
 {% if user == revision.changeset.indexer %}
   {% if changeset.state == states.OPEN %}
