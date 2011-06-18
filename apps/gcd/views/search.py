@@ -56,13 +56,14 @@ def generic_by_name(request, name, q_obj, sort,
             display_name = class_.__name__
             base_name = display_name.lower()
         plural_suffix = '' if class_ is Series else 's'
+        sort_name = "sort_name" if class_ is Series else "name"
         things = class_.objects.exclude(deleted=True).filter(q_obj)
         if related:
             things = things.select_related(*related)
         if (sort == ORDER_ALPHA):
-            things = things.order_by("name", "year_began")
+            things = things.order_by(sort_name, "year_began")
         elif (sort == ORDER_CHRONO):
-            things = things.order_by("year_began", "name")
+            things = things.order_by(year_began, sort_name)
         heading = '%s Search Results' % display_name
         # query_string for the link to the advanced search
         query_val['target'] = base_name
@@ -73,9 +74,9 @@ def generic_by_name(request, name, q_obj, sort,
         things = Issue.objects.exclude(deleted=True).filter(q_obj) \
                    .select_related('series__publisher')
         if (sort == ORDER_ALPHA):
-            things = things.order_by("series__name", "key_date")
+            things = things.order_by("series__sort_name", "key_date")
         elif (sort == ORDER_CHRONO):
-            things = things.order_by("key_date", "series__name")
+            things = things.order_by("key_date", "series__sort_name")
         heading = 'Issue Search Results'
         # query_string for the link to the advanced search
         query_val['target'] = 'issue'
@@ -95,13 +96,13 @@ def generic_by_name(request, name, q_obj, sort,
         # TODO: This order_by stuff only works for Stories, which is 
         # TODO: OK for now, but might not always be.
         if (sort == ORDER_ALPHA):
-            things = things.order_by("issue__series__name",
+            things = things.order_by("issue__series__sort_name",
                                      "issue__series__year_began",
                                      "issue__key_date",
                                      "sequence_number")
         elif (sort == ORDER_CHRONO):
             things = things.order_by("issue__key_date",
-                                     "issue__series__name",
+                                     "issue__series__sort_name",
                                      "issue__series__year_began",
                                      "sequence_number")
         heading = 'Story Search Results'
@@ -1088,8 +1089,11 @@ def compute_order(data):
             continue
 
         if order == target:
-            terms.append('name')
-
+            if target != 'series':
+                terms.append('name')
+            else:
+                terms.append('sort_name')
+                
         elif target == 'publisher':
             if order == 'date':
                 terms.append('year_began')

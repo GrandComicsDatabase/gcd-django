@@ -40,16 +40,19 @@ class Classification(models.Model):
 class Series(models.Model):
     class Meta:
         app_label = 'gcd'
-        ordering = ['name', 'year_began']
+        ordering = ['sort_name', 'year_began']
     
     # Core series fields.
     name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True)
     classification = models.ForeignKey(Classification, null=True, blank=True)
     format = models.CharField(max_length=255)
     notes = models.TextField()
 
     year_began = models.IntegerField(db_index=True)
     year_ended = models.IntegerField(null=True)
+    year_began_uncertain = models.BooleanField(blank=True)
+    year_ended_uncertain = models.BooleanField(blank=True)
     is_current = models.BooleanField()
     publication_dates = models.CharField(max_length=255)
 

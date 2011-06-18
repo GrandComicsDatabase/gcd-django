@@ -49,7 +49,7 @@ def publisher(request, publisher_id):
     vars = { 'publisher': pub,
              'current': pub.series_set.filter(deleted=False, is_current=True),
              'error_subject': pub }
-    return paginate_response(request, pub.active_series().order_by('name'),
+    return paginate_response(request, pub.active_series().order_by('sort_name'),
                              'gcd/details/publisher.html', vars)
 
 def indicia_publisher(request, indicia_publisher_id):
@@ -114,7 +114,7 @@ def imprint(request, imprint_id):
           kwargs={'model_name': 'imprint', 'id': imprint_id}))
 
     imprint_series = imprint.imprint_series_set.exclude(deleted=True) \
-      .order_by('name')
+      .order_by('sort_name')
 
     vars = { 'publisher' : imprint, 'error_subject': '%s' % imprint }
     return paginate_response(request,

@@ -115,6 +115,23 @@ SEQUENCE_HELP_LINKS = {
     'comments': 'Comments'
 }
 
+SERIES_HELP_LINKS = {
+    'name': 'Book_Name',
+    'leading_article': 'Book_Name',
+    'year_began': 'Years_of_Publication',
+    'year_began_uncertain': 'Years_of_Publication',
+    'year_ended': 'Years_of_Publication',
+    'year_ended_uncertain': 'Years_of_Publication',
+    'is_current': 'Years_of_Publication',
+    'country': 'Country',
+    'language': 'Language',
+    'tracking_notes': 'Tracking',
+    'publication_notes': 'Publication_Notes',
+    'notes': 'Series_Notes',
+    'format': 'Format',
+    'comments': 'Comments'
+}
+
 def _set_help_labels(self, help_links):
     for field in self.fields:
         if field in help_links:
@@ -374,18 +391,20 @@ class BrandRevisionForm(forms.ModelForm):
 
 def get_series_revision_form(publisher=None, source=None, user=None):
     if source is None:
-        can_request = None
-        series_fields = _get_series_fields(source)
-
         if user is not None and user.indexer.can_reserve_another_ongoing():
             can_request = True
-            series_fields = ['reservation_requested'] + series_fields
-
+        else:
+            can_request = False
+            
         class RuntimeAddSeriesRevisionForm(SeriesRevisionForm):
             class Meta:
-                model = SeriesRevision
-                fields = series_fields
-
+                model = SeriesRevisionForm.Meta.model
+                fields = SeriesRevisionForm.Meta.fields
+                exclude = SeriesRevisionForm.Meta.exclude + ['imprint']
+                widgets = SeriesRevisionForm.Meta.widgets
+                if can_request:
+                    fields = ['reservation_requested'] + fields
+                
             if can_request:
                 reservation_requested = forms.BooleanField(required=False,
                   label = 'Request reservation',
@@ -394,99 +413,68 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                             'unless you have gone over your ongoing reservation '
                             'limit at that time.')
 
+            def as_table(self):
+                if not user or user.indexer.show_wiki_links:
+                    _set_help_labels(self, SERIES_HELP_LINKS)
+                return super(SeriesRevisionForm, self).as_table()
+
         return RuntimeAddSeriesRevisionForm
 
     else:
         class RuntimeSeriesRevisionForm(SeriesRevisionForm):
             class Meta:
-                model = SeriesRevision
-                fields = _get_series_fields(source)
+                model = SeriesRevisionForm.Meta.model
+                fields = SeriesRevisionForm.Meta.fields
+                exclude = SeriesRevisionForm.Meta.exclude
+                if not source.imprint:
+                    exclude = exclude + ['imprint']
+                widgets = SeriesRevisionForm.Meta.widgets
 
-            # Don't allow country and language to be un-set:
-            if source.country.code == 'xx':
-                country_queryset = Country.objects.all()
-            else:
-                country_queryset = Country.objects.exclude(code='xx')
-            country = forms.ModelChoiceField(queryset=country_queryset,
-                                             empty_label=None)
-            language = forms.ModelChoiceField(queryset=Language.objects.all(),
-                                              empty_label=None)
+            def __init__(self, *args, **kwargs):
+                # Don't allow country and language to be un-set:
+                super(RuntimeSeriesRevisionForm, self).__init__(*args, **kwargs)
+                self.fields['country'].empty_label = None
+                self.fields['language'].empty_label = None
 
             if source.imprint is not None:
                 imprint = forms.ModelChoiceField(required=False,
                   queryset=Publisher.objects.filter(is_master=False,
                                                     deleted=False,
                                                     parent=publisher))
-        return RuntimeSeriesRevisionForm
+            def as_table(self):
+                if not user or user.indexer.show_wiki_links:
+                    _set_help_labels(self, SERIES_HELP_LINKS)
+                return super(SeriesRevisionForm, self).as_table()
 
-def _get_series_fields(source=None):
-    fields = [
-      'name',
-      'format',
-      'year_began',
-      'year_ended',
-      'is_current',
-      'country',
-      'language',
-      'publication_notes',
-      'tracking_notes',
-      'notes',
-      'has_barcode',
-      'has_indicia_frequency',
-      'has_isbn',
-      'has_issue_title',
-    ]
-    if source is None or source.imprint is None:
-        return fields
-    fields.append('imprint')
-    return fields
+        return RuntimeSeriesRevisionForm
 
 class SeriesRevisionForm(forms.ModelForm):
 
-    name = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-      help_text=('Series name as it appears in the indicia (or cover only '
-                 'if there is no indicia), with any leading article moved '
-                 'to the end after a comma.'))
+    class Meta:
+        model = SeriesRevision
+        fields = get_series_field_list()
+        exclude = ['publisher',]
+        widgets = {
+          'name': forms.TextInput(attrs={'class': 'wide'}),
+          'year_began': forms.TextInput(attrs={'class': 'year'}),
+          'year_ended': forms.TextInput(attrs={'class': 'year'}),
+          'format': forms.TextInput(attrs={'class': 'wide'})
+        }
 
-    year_began = forms.IntegerField(
-      widget=forms.TextInput(attrs={'class': 'year'}),
-      help_text='Year first issue published.')
+    def __init__(self, *args, **kwargs):
+        super(SeriesRevisionForm, self).__init__(*args, **kwargs)
+        self.fields['country'].queryset = Country.objects.exclude(code='xx')
 
-    year_ended = forms.IntegerField(
-      widget=forms.TextInput(attrs={'class': 'year'}),
-      required=False,
-      help_text='Leave blank if the series is still producing new issues.')
 
-    is_current = forms.BooleanField(required=False,
-      help_text='Check if new issues are still being produced for this series.')
-
-    country = forms.ModelChoiceField(queryset=Country.objects.exclude(code='xx'))
-
-    format = forms.CharField(
-      widget=forms.TextInput(attrs={'class': 'wide'}),
-      required=False,
-      help_text='This is a compound field that holds size, binding, '
-                'paper stock and other information, separated by '
-                'semi-colons.  Consult the wiki for specifics.')
-
-    has_barcode = forms.BooleanField(required=False,
-        help_text="Barcodes are present for issues of this series.")
-    has_indicia_frequency = forms.BooleanField(required=False,
-        help_text="Indicia frequencies are present for issues of this series.")
-    has_isbn = forms.BooleanField(required=False,
-        help_text="ISBNs are present for issues of this series.")
-    has_issue_title = forms.BooleanField(required=False,
-        help_text="Titles are present for issues of this series.")
-        
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+    comments = _get_comments_form_field()
 
     def clean(self):
         cd = self.cleaned_data
-        cd['name'] = cd['name'].strip()
+        if 'name' in cd:
+            cd['name'] = cd['name'].strip()
+            if cd['leading_article'] and len(cd['name'].split()) == 1:
+                raise forms.ValidationError('The series name is only one word,'
+                    ' you cannot specify a leading article in this case.')
         cd['format'] = cd['format'].strip()
         cd['publication_notes'] = cd['publication_notes'].strip()
         cd['tracking_notes'] = cd['tracking_notes'].strip()

@@ -1638,11 +1638,14 @@ class SeriesRevisionManager(RevisionManager):
 
           # copied fields:
           name=series.name,
+          leading_article=series.name != series.sort_name,
           classification=series.classification,
           format=series.format,
           notes=series.notes,
           year_began=series.year_began,
           year_ended=series.year_ended,
+          year_began_uncertain=series.year_began_uncertain,
+          year_ended_uncertain=series.year_ended_uncertain,
           is_current=series.is_current,
 
           publication_notes=series.publication_notes,
@@ -1661,6 +1664,13 @@ class SeriesRevisionManager(RevisionManager):
         revision.save()
         return revision
 
+def get_series_field_list():
+    return ['name', 'leading_article', 'imprint', 'format', 'year_began', 
+            'year_began_uncertain', 'year_ended', 'year_ended_uncertain', 
+            'is_current', 'publisher', 'country', 'language', 'has_barcode',
+            'has_indicia_frequency', 'has_isbn', 'has_issue_title',
+            'tracking_notes', 'publication_notes', 'notes']
+
 class SeriesRevision(Revision):
     class Meta:
         db_table = 'oi_series_revision'
@@ -1675,26 +1685,42 @@ class SeriesRevision(Revision):
     # their maximum number of ongoing reservations at the time of approval.
     reservation_requested = models.BooleanField(default=0)
 
-    name = models.CharField(max_length=255, blank=True)
+    name = models.CharField(max_length=255,  
+      help_text='Series name as it appears in the indicia (or cover only '
+                'if there is no indicia).')
+    leading_article = models.BooleanField(default=False, blank=True,
+      help_text='Check if the name starts with an article.')
     classification = models.ForeignKey(Classification, null=True, blank=True)
-    format = models.CharField(max_length=255, blank=True)
-    year_began = models.IntegerField(blank=True)
-    year_ended = models.IntegerField(null=True, blank=True)
-    is_current = models.BooleanField()
+    format = models.CharField(max_length=255, blank=True,
+      help_text='This is a compound field that holds size, binding, '
+                'paper stock and other information, separated by '
+                'semi-colons.  Consult the wiki for specifics.')
+    year_began = models.IntegerField(help_text='Year first issue published.')
+    year_ended = models.IntegerField(null=True, blank=True,
+      help_text='Leave blank if the series is still producing new issues.')
+    year_began_uncertain = models.BooleanField(blank=True,
+      help_text='Check if you are not certain of the beginning year.')
+    year_ended_uncertain = models.BooleanField(blank=True,
+      help_text='Check if you are not certain of the ending year.')
+    is_current = models.BooleanField(
+      help_text='Check if new issues are still being produced for this series.')
 
-    # Publication notes are not displayed in the current UI but may
-    # be accessed in the OI.
     publication_notes = models.TextField(blank=True)
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
-    tracking_notes = models.TextField(blank=True)
+    tracking_notes = models.TextField(blank=True, 
+      help_text='Field to track numbering from one series to another.')
 
     # Fields for handling the presence of certain issue fields
-    has_barcode = models.BooleanField()
-    has_indicia_frequency = models.BooleanField()
-    has_isbn = models.BooleanField()
-    has_issue_title = models.BooleanField()
+    has_barcode = models.BooleanField(
+      help_text="Barcodes are present for issues of this series.")
+    has_indicia_frequency = models.BooleanField(
+      help_text="Indicia frequencies are present for issues of this series.")
+    has_isbn = models.BooleanField(verbose_name='Has ISBN',
+      help_text="ISBNs are present for issues of this series.")
+    has_issue_title = models.BooleanField(
+      help_text="Titles are present for issues of this series.")
     
     notes = models.TextField(blank=True)
 
@@ -1781,20 +1807,19 @@ class SeriesRevision(Revision):
         return self.series.get_ongoing_revision()
 
     def _field_list(self):
-        return ['name', 'publisher', 'format', 'year_began', 'year_ended', 
-                'is_current', 'country', 'language', 'publication_notes',
-                'tracking_notes', 'notes', 'has_barcode', 
-                'has_indicia_frequency', 'has_isbn', 'has_issue_title', 
-                'imprint']
+        return get_series_field_list()
 
     def _get_blank_values(self):
         return {
             'name': '',
+            'leading_article': False,
             'classification': None,
             'format': '',
             'notes': '',
             'year_began': None,
             'year_ended': None,
+            'year_began_uncertain': None,
+            'year_ended_uncertain': None,
             'is_current': None,
             'publication_notes': '',
             'tracking_notes': '',
@@ -1860,11 +1885,18 @@ class SeriesRevision(Revision):
                     check_delete_imprint(self.series.imprint)
 
         series.name = self.name
+        if self.leading_article:
+            len_article = len(self.name.split()[0])
+            series.sort_name = self.name[len_article:].strip()
+        else:
+            series.sort_name = self.name
         series.classification = self.classification
         series.format = self.format
         series.notes = self.notes
         series.year_began = self.year_began
         series.year_ended = self.year_ended
+        series.year_began_uncertain = self.year_began_uncertain
+        series.year_ended_uncertain = self.year_ended_uncertain
         series.is_current = self.is_current
         series.has_barcode = self.has_barcode
         series.has_indicia_frequency = self.has_indicia_frequency
