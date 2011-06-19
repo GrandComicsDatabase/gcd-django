@@ -2421,6 +2421,18 @@ def compare(request, id):
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
+def get_cover_width(name):
+    try:
+        source_name = glob.glob(name)[0]
+    except:
+        if settings.BETA:
+            return "'none given'"
+        else:
+            raise
+    im = Image.open(source_name)
+    cover_width = im.size[0]
+    return cover_width
+    
 @login_required
 def cover_compare(request, changeset, revision):
     ''' 
@@ -2461,13 +2473,11 @@ def cover_compare(request, changeset, revision):
             # uploaded file too old, not stored, we have width 400
             old_cover_width = 400
         else:
-            old_source_name = glob.glob("%s/uploads/%d_%s*" % (
+            old_cover_width = get_cover_width("%s/uploads/%d_%s*" % (
               old_cover.cover.base_dir(), 
               old_cover.cover.id, 
-              old_cover.changeset.created.strftime('%Y%m%d_%H%M%S')))[0]
-            im = Image.open(old_source_name)
-            old_cover_width = im.size[0]
-
+              old_cover.changeset.created.strftime('%Y%m%d_%H%M%S')))
+            
     cover_width = None
     if revision.changeset.state in states.ACTIVE:
         if revision.issue.has_covers():
@@ -2486,25 +2496,21 @@ def cover_compare(request, changeset, revision):
                 pending_covers.append([cover, get_preview_image_tag(cover, 
                                        "pending cover", ZOOM_MEDIUM)])
         if revision.deleted == False:
-            source_name = glob.glob(revision.base_dir() + \
-                                    str(revision.id) + '*')[0]
-            im = Image.open(source_name)
-            cover_width = im.size[0]
+            cover_width = get_cover_width(revision.base_dir() + \
+                                          str(revision.id) + '*')
     else:
         if revision.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, we have width 400
             cover_width = 400
         elif revision.deleted == False:
             if revision.changeset.state == states.DISCARDED:
-                source_name = glob.glob(revision.base_dir() + \
-                                        str(revision.id) + '*')[0]
+                cover_width = get_cover_width(revision.base_dir() + \
+                                              str(revision.id) + '*')
             else:
-                source_name = glob.glob("%s/uploads/%d_%s*" % (
+                cover_width = get_cover_width("%s/uploads/%d_%s*" % (
                   revision.cover.base_dir(), 
                   revision.cover.id, 
-                  revision.changeset.created.strftime('%Y%m%d_%H%M%S')))[0]
-            im = Image.open(source_name)
-            cover_width = im.size[0]
+                  revision.changeset.created.strftime('%Y%m%d_%H%M%S')))
     
     response = render_to_response('oi/edit/compare_cover.html',
                                   { 'changeset': changeset,
