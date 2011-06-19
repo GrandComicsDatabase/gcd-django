@@ -2095,16 +2095,16 @@ class IssueRevision(Revision):
                 'on the comic.')
     key_date = models.CharField(max_length=10, blank=True, default='',
       validators=[RegexValidator(r'^(17|18|19|20)\d{2}\.(0[0-9]|1[0-3])\.\d{2}$')],
-      help_text='Special date form used for sorting:  YYYY.MM.DD where the day '
-                '(DD) shoud be 00 for monthly books, and use arbitrary numbers '
-                'such as 10, 20, 30 to indicate an "early" "mid" or "late" month '
-                'cover date.  For the month (MM) on quarterlies, use 04 for '
-                'Spring, 07 for Summer, 10 for Fall and 01 or 12 for Winter (in '
-                'the northern hemisphere, shift accordingly in the southern).  '
-                'For annuals use a month of 00 or 13 or whatever sorts it best.  '
-                'If and only if none of these rules fit, use anything that '
-                'produces the correct sorting.',
-      )
+      help_text='Keydate is a translation of the publication date into numeric '
+                'form for chronological ordering and searches. It is in the '
+                'format YYYY.MM.DD, where the parts of the date not given are '
+                'filled up with 00. For comics dated only by year, the keydate '
+                'is YYYY.00.00. For comics only dated by month the day (DD) '
+                'is 00, and arbitrary numbers such as 10, 20, 30 are used to '
+                'indicate an "early", "mid", or "late" month cover date. For '
+                'the month (MM) on quarterlies, use 04 for Spring, 07 for '
+                'Summer, 10 for Fall and 01 or 12 for Winter (in the northern '
+                'hemisphere, shift accordingly in the southern).')
 
     price = models.CharField(max_length=255, blank=True, default='',
       help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
