@@ -1,9 +1,10 @@
 {% ifequal changeset.state states.REVIEWING %}
   No actions available
 {% else %}
-{% if perms.gcd.can_approve %}
-  {% ifnotequal changeset.indexer user %}
+  {% if perms.gcd.can_approve and changeset.indexer != user or changeset.indexer = user and changeset.singular and not changeset.deleted and section.object_type != 'cover' %}
 <form action="{% url process id=changeset.id %}" method="POST">
+  <input type="hidden" name="comments" class="comments" />
+    {% if changeset.indexer != user %}
   <input type="submit" name="assign"
     {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and section.object_type != "cover" %}
     value="Assign and mentor"
@@ -11,16 +12,12 @@
     value="Assign"
     {% endif %}
   ></input>
-  <span class="label_binding">
-    <label for="comments">Comments:</label>
-    <input type="text" name="comments" class="comments" />
-  </span>
+    {% else %}
+  <input type="submit" name="retract" value="Retract and edit further">
+    {% endif %}
 </form>
   {% else %}
-    No actions available
-  {% endifnotequal %}
-{% else %}
   No actions available
-{% endif %}
+  {% endif %}
 {% endifequal %}
 

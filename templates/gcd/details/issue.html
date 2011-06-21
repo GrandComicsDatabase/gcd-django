@@ -91,7 +91,7 @@ This issue has variants.
               <a href="{{ issue.get_absolute_url }}cover/4">Large</a>
               <br>
   {% if not preview %}
-              <a href="{% url edit_covers issue_id=issue.id %}">Add/replace cover{{ issue.active_covers.count|pluralize }}</a>
+              <a href="{% url edit_covers issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a>
               <br>
   {% endif %}              
 {% endif %}
