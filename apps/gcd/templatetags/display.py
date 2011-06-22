@@ -16,6 +16,52 @@ from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
 
+def valid_barcode(barcode):
+    '''
+    validates a barcode
+    - ignore the check digit
+    - count from right to left
+    - add odd numbered times 3
+    - add even numbered 
+    - 10 - (result modulo 10) is check digit
+    - check digit of 10 becomes 0
+    '''
+
+    # remove space and hyphens
+    barcode = str(barcode).replace('-', '').replace(' ', '')
+    try: 
+        int(barcode)
+    except ValueError:
+        return False
+
+    # if extra 5 digits remove them (EAN 5)
+    if len(barcode) > 16:
+        barcode = barcode[:-5]
+    elif len(barcode) > 13:
+        # if extra 2 digits remove them (EAN 2)
+        barcode = barcode[:-2]
+
+    if len(barcode) > 13:
+        return False
+    
+    odd = True
+    check_sum = 0
+    # odd/even from back 
+    for number in barcode[:-1][::-1]:
+        if odd:
+            check_sum += int(number)*3
+        else:
+            check_sum += int(number)
+        odd = not odd
+
+    check_digit = 10 - (check_sum % 10)
+    if check_digit == 10:
+        check_digit = 0
+    if int(barcode[-1]) == check_digit:
+        return True
+    else:
+        return False
+
 def absolute_url(item, additional=''):
     if item is not None and hasattr(item, 'get_absolute_url'):
         if additional:
@@ -286,6 +332,14 @@ def field_value(revision, field):
                 return u'%s (note: invalid or inequal ISBNs)' % value
             elif value:
                 return u'%s (note: invalid ISBN)' % value
+    elif field == 'barcode':
+        if value:
+            barcodes = value.split(';')
+            return_val = value + ' (note: '
+            for barcode in barcodes:
+                return_val = return_val + u'%s UPC/EAN; ' % ("valid" \
+                             if valid_barcode(barcode) else "invalid")
+            return return_val[:-2] + ')'
     return value
 
 # translate field name into more human friendly name
