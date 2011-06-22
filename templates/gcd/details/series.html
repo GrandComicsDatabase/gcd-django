@@ -42,20 +42,6 @@
           <a href="{{ series.get_absolute_url }}covers">{{ first_image_tag }}</a>
   {% endif %}
 
-<!--{% if not preview or series.source %}
-          <ul id="series_detail_link_list">
-  {% if series.has_gallery %}
-            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png"><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>
-  {% endif %}
-  {% if preview %}
-            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png"><a  href="{% url series_details series_id=series.source.id %}">Details by Issue</a>
-            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png"><a href="{% url series_timeline series_id=series.source.id %}">Series Timeline</a>
-  {% else %}
-            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png"><a href="{% url series_details series_id=series.id %}">Details by Issue</a>
-            <li> <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png"><a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
-  {% endif %}
-          </ul>
-{% endif %}-->
         </div>
 {% endif %}
 
@@ -74,20 +60,6 @@
             <dt class="long"> Format:
             <dd id="series_format"> {{ series.format }}
 {% endif %}
-<!--            <dt class="long"> Series Details:
-            <dd id="series_details"> 
-{% if series.has_gallery %}
-            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png"><a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
-{% endif %}
-{% if not preview or series.source %}
-  {% if preview %}
-            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png"><a  href="{% url series_details series_id=series.source.id %}">Details by Issue</a>&nbsp;
-            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png"><a href="{% url series_timeline series_id=series.source.id %}">Series Timeline</a>
-  {% else %}
-            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png"><a href="{% url series_details series_id=series.id %}">Details by Issue</a>&nbsp;
-            <img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png"><a href="{% url series_timeline series_id=series.id %}">Series Timeline</a>
-  {% endif %}
-{% endif %}-->
           </dl>
 
           <div class="series_detail_header">Series Details:</div>
@@ -144,18 +116,18 @@
         </ul>
 {% endif %}
 
-          <div id="series_notes">
+          <div class="series_notes">
 {% if series.publication_notes %}
-            <h3 class="series_notes"> Publication Notes </h3>
-            <p> {{ series.publication_notes|linebreaksbr }}</p>
+            <div class="series_detail_header"> Publication Notes </div>
+            <div class="series_notes">{{ series.publication_notes|linebreaksbr }}</div>
 {% endif %}
 {% if series.tracking_notes %}
-            <h3 class="series_notes"> Tracking </h3>
-            <p>{{ series.tracking_notes|linebreaksbr }}</p>
+            <div class="series_detail_header"> Tracking </div>
+            <div class="series_notes">{{ series.tracking_notes|linebreaksbr }}</div>
 {% endif %}
 {% if series.notes %}
-            <h3 class="series_notes"> Notes </h3>
-            <p>{{ series.notes|linebreaksbr }}</p>
+            <div class="series_detail_header"> Notes </div>
+            <div class="series_notes">{{ series.notes|linebreaksbr }}</div>
 {% endif %}
           </div> <!-- series_notes -->
 

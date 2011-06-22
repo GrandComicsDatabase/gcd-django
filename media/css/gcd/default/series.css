@@ -50,12 +50,17 @@ div#series_data img.icon {
 }
 
 div.series_detail_header {
+    font-size: larger;
     font-weight: bold;
 }
 
 ul.series_detail_info {
     margin-top: 0;
     padding-left: 2em;
+}
+
+div.series_notes {
+    margin-bottom: 0.5em;
 }
 
 ul#series_detail_link_list {
