@@ -106,6 +106,7 @@ class AdvancedSearch(forms.Form):
                                     required=False)
     issue_count = forms.CharField(label='Issue Count',
                                   required=False)
+    series_year_began = forms.IntegerField(required=False)
 
     issues = forms.CharField(label='Issues', required=False)
     volume = forms.CharField(label='Volume', required=False)

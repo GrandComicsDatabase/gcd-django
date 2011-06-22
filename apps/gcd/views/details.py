@@ -37,6 +37,9 @@ MIN_GCD_YEAR = 1800
 
 COVER_TABLE_WIDTH = 5
 
+IS_EMPTY = '[IS_EMPTY]'
+IS_NONE = '[IS_NONE]'
+
 def publisher(request, publisher_id):
     """
     Display the details page for a Publisher.
@@ -246,6 +249,8 @@ def show_series(request, series, preview=False):
         'table_width': table_width,
         'error_subject': '%s' % series,
         'preview': preview,
+        'is_empty': IS_EMPTY,
+        'is_none': IS_NONE,
       },
       context_instance=RequestContext(request))
 

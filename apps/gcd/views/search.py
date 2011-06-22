@@ -25,7 +25,7 @@ from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
                                   COUNT_RANGE_REGEXP
-from apps.gcd.views.details import issue, COVER_TABLE_WIDTH 
+from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, IS_NONE
 from apps.gcd.views.covers import get_image_tags_per_page
 
 # Should not be importing anything from oi, but we're doing this in several places.
@@ -724,6 +724,10 @@ def search_brands(data, op):
     q_and_only = []
     q_objs = []
     if data['brand']:
+        if data['brand'] == IS_EMPTY:
+            return Q(**{ '%sisnull' % prefix: True }) & Q(**{ 'no_brand': False })
+        if data['brand'] == IS_NONE:
+            return Q(**{ 'no_brand': True })
         q_objs.append(
           Q(**{ '%sname__%s' % (prefix, op): data['brand'] }))
     if data['brand_notes']:
@@ -744,6 +748,8 @@ def search_indicia_publishers(data, op):
     q_and_only = []
     q_objs = []
     if data['indicia_publisher']:
+        if data['indicia_publisher'] == IS_EMPTY:
+            return Q(**{ '%sisnull' % prefix: True })
         q_objs.append(
           Q(**{ '%sname__%s' % (prefix, op): data['indicia_publisher'] }))
     if data['ind_pub_notes']:
@@ -779,6 +785,8 @@ def search_series(data, op):
     q_objs = []
     if data['series']:
         q_objs.append(Q(**{ '%sname__%s' % (prefix, op): data['series'] }))
+    if 'series_year_began' in data and data['series_year_began']:
+        q_and_only.append(Q(**{ '%syear_began' % prefix: int(data['series_year_began']) }))
     if data['format']:
         q_objs.append(Q(**{ '%sformat__%s' % (prefix, op):  data['format'] }))
     if data['series_notes']:
@@ -849,10 +857,6 @@ def search_issues(data, op, stories_q=None):
     if data['issue_date']:
         q_objs.append(
           Q(**{ '%spublication_date__%s' % (prefix, op): data['issue_date'] }))
-    if data['indicia_publisher']:
-        q_objs.append(
-          Q(**{ '%sindicia_publisher__name__%s' % (prefix, op):
-                data['indicia_publisher'] }))
     if data['cover_needed']:
         q_objs.append(Q(**{ '%scover__isnull' % prefix: True }) |
                       ~Q(**{ '%scover__deleted' % prefix: False }) |

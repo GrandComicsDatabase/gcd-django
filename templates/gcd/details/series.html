@@ -83,16 +83,16 @@
           <ul class="series_detail_info">
   {% for brand in brands %}
             <li> {{ brand|absolute_url }}
-                 ({{ brand.issue_count }} issue{{ brand.issue_count|pluralize }})
+                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name }}&amp;series={{ series.name }}&amp;brand={{ brand }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.issue_count }} issue{{ brand.issue_count|pluralize }}</a>)
   {% endfor %}
   {% if brand_counts.no_brand %}
             <li> no publisher's brand 
-                 ({{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }})
+                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name }}&amp;series={{ series.name }}&amp;brand={{ is_none }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }}</a>)                 
+                 
   {% endif %}
   {% if brand_counts.unknown %}
             <li> without publisher's brand information
-                 ({{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }})
-                 
+                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name }}&amp;series={{ series.name }}&amp;brand={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }}</a>)                 
   {% endif %}
           </ul>
 {% endif %}
@@ -101,11 +101,11 @@
           <ul class="series_detail_info">
 {% for ip in series.ordered_indicia_publishers %}
             <li> {{ ip|absolute_url }}
-                 ({{ ip.issue_count }} issue{{ ip.issue_count|pluralize }})
+                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name }}&amp;series={{ series.name }}&amp;indicia_publisher={{ ip }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ ip.issue_count }} issue{{ ip.issue_count|pluralize }}</a>)
 {% endfor %}
 {% if indicia_publisher_counts.unknown %}
             <li> without indicia publisher information
-                 ({{ indicia_publisher_counts.unknown }} issue{{indicia_publisher_counts.unknown|pluralize }})
+                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name }}&amp;series={{ series.name }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)                 
 {% endif %}
         </ul>
 
