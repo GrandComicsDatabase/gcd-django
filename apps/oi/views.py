@@ -1020,9 +1020,7 @@ def edit_issues_in_bulk(request):
 
     form_class = get_bulk_issue_revision_form(series, 'number')
 
-    # We should be able to access the fields without a dummy revision, or ?
-    fields = IssueRevision._field_list(IssueRevision.objects.get(id=1))
-    fields.remove('after')
+    fields = get_issue_field_list()
     fields.remove('number')
     fields.remove('publication_date')
     fields.remove('key_date')
@@ -1645,13 +1643,18 @@ def _build_issue(form, revision_sort_code, number,
       no_volume=no_volume,
       display_volume_with_number=display_volume_with_number,
       indicia_publisher=cd['indicia_publisher'],
+      indicia_pub_not_printed=cd['indicia_pub_not_printed'],
       brand=cd['brand'],
+      no_brand=cd['no_brand'],
       indicia_frequency=cd['indicia_frequency'],
+      no_indicia_frequency=cd['no_indicia_frequency'],
       price=cd['price'],
       page_count=cd['page_count'],
       page_count_uncertain=cd['page_count_uncertain'],
       editing=cd['editing'],
       no_editing=cd['no_editing'],
+      no_isbn=cd['no_isbn'],
+      no_barcode=cd['no_barcode'],
       revision_sort_code=revision_sort_code)
     issue_revisions.append(revision)
     return issue_revisons
@@ -2398,13 +2401,15 @@ def compare(request, id):
     elif model_name in ['brand', 'indicia_publisher']:
         field_list.remove('parent')
     elif model_name == 'issue':
-        if prev_rev:
-            field_list.remove('after')
-        if changeset.change_type == CTYPES['issue_bulk']:
+        if changeset.change_type == CTYPES['issue_bulk'] or \
+          changeset.change_type == CTYPES['issue_add'] and \
+          changeset.issuerevisions.count() > 1:
             field_list.remove('number')
             field_list.remove('publication_date')
             field_list.remove('key_date')
             field_list.remove('notes')
+            field_list.remove('isbn')
+            field_list.remove('barcode')
 
             
     response = render_to_response(template,
