@@ -97,9 +97,14 @@ def show_revision_type(cover):
     if cover.deleted:
         return u'[DELETED]'
     if cover.cover:
-        return u'[REPLACEMENT]'
-    if cover.issue.has_covers():
+        if cover.cover.marked:
+            return u'[REPLACEMENT]'
+        else:
+            return u'[SUGGESTED REPLACEMENT]'
+    if cover.changeset.issuerevisions.count():
         return u'[VARIANT]'
+    if cover.issue.has_covers():
+        return u'[ADDITIONAL]'
     return u'[ADDED]'
 
 def header_link(changeset):
