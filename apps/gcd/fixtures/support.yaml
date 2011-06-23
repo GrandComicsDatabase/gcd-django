@@ -1171,7 +1171,7 @@
 - fields: {code: zu, name: Zulu}
   model: gcd.language
   pk: 136
-- fields: {name: story, sort_code: 1}
+- fields: {name: comic story, sort_code: 1}
   model: gcd.storytype
   pk: 19
 - fields: {name: text story, sort_code: 2}

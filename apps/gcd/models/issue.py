@@ -134,7 +134,7 @@ class Issue(models.Model):
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
         from story import StoryType
-        if self.active_stories().filter(type=StoryType.objects.get(name='story'))\
+        if self.active_stories().filter(type=StoryType.objects.get(name='comic story'))\
                                 .count() > 0:
             is_indexed = True
         else:
