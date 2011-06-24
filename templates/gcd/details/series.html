@@ -62,23 +62,25 @@
 {% endif %}
           </dl>
 
+{% if series.active_issues.count %}
           <div class="series_detail_header">Series Details:</div>
           <ul class="series_detail_info"><li>
-{% if series.has_gallery %}
+  {% if series.has_gallery %}
             <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png">Cover Gallery</a>&nbsp;
-{% endif %}
-{% if not preview or series.source %}
-  {% if preview %}
+  {% endif %}
+  {% if not preview or series.source %}
+    {% if preview %}
             <a  href="{% url series_details series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
             <a href="{% url series_timeline series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
-  {% else %}
+    {% else %}
             <a href="{% url series_details series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
             <a href="{% url series_timeline series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+    {% endif %}
   {% endif %}
 {% endif %}
           </ul>
 
-{% if brand_counts.no_brand != series.issue_set.count %}
+{% if brand_counts.no_brand != series.active_issues.count %}
           <div class="series_detail_header">Publisher's Brands:</div>
           <ul class="series_detail_info">
   {% for brand in brands %}
@@ -97,17 +99,19 @@
           </ul>
 {% endif %}
 
+{% if series.active_issues.count %}
           <div class="series_detail_header">Indicia Publishers:</div>
           <ul class="series_detail_info">
-{% for ip in series.ordered_indicia_publishers %}
+  {% for ip in series.ordered_indicia_publishers %}
             <li> {{ ip|absolute_url }}
                  (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name }}&amp;series={{ series.name }}&amp;indicia_publisher={{ ip }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ ip.issue_count }} issue{{ ip.issue_count|pluralize }}</a>)
-{% endfor %}
-{% if indicia_publisher_counts.unknown %}
+  {% endfor %}
+  {% if indicia_publisher_counts.unknown %}
             <li> without indicia publisher information
                  (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name }}&amp;series={{ series.name }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)                 
-{% endif %}
+  {% endif %}
         </ul>
+{% endif %}
 
 {% if series.imprint %}
         <div class="series_detail_header">Imprint:</div>
@@ -130,17 +134,6 @@
             <div class="series_notes">{{ series.notes|linebreaksbr }}</div>
 {% endif %}
           </div> <!-- series_notes -->
-
-{% if series.indexers %}
-          <div id="index_credits">
-            <h3 id="indexers_header">{% trans "Indexed by:" %}</h3>
-            <ul>
-  {% for credit in series.index_credit_set.all %}
-              <li> {{ credit.indexer.name }}
-  {% endfor %}
-            </ul>
-          </div> <!-- index_credits -->
-{% endif %}
         </div> <!-- series_data -->
       </div> <!-- class="clear" -->
     </div> <!-- control_center -->
@@ -216,14 +209,16 @@
 
 <hr/>
 
+{% if series.active_issues.count %}
 <h3> Index Status </h3>
 
-{% include "gcd/bits/status_tables.html" %}
+  {% include "gcd/bits/status_tables.html" %}
 <hr/>
 
 <h3> Cover Status </h3>
 
-{% include "gcd/bits/scan_tables.html" %}
+  {% include "gcd/bits/scan_tables.html" %}
+{% endif %}
 
 {% endwith %}
 {% endwith %}
