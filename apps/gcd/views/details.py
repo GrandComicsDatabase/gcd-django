@@ -16,6 +16,7 @@ from django.shortcuts import render_to_response, \
 from django.http import HttpResponseRedirect, Http404
 from django.template import RequestContext
 from django.utils.safestring import mark_safe
+from django.contrib.auth.models import User
 
 from apps.gcd.models import Publisher, Series, Issue, Story, \
                             IndiciaPublisher, Brand, CountStats, \
@@ -624,6 +625,8 @@ def daily_changes(request, show_date=None):
     else:
         date_after = None
 
+    anon = User.objects.get(username=settings.ANON_USER_NAME)
+
     publishers = Publisher.objects.filter(
       is_master=1,
       revisions__changeset__change_type=CTYPES['publisher'],
@@ -632,6 +635,7 @@ def daily_changes(request, show_date=None):
       revisions__changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
+      .exclude(revisions__changeset__indexer=anon)\
       .distinct().select_related('country')
 
     brands = Brand.objects.filter(revisions__changeset__change_type=CTYPES['brand'],
@@ -640,6 +644,7 @@ def daily_changes(request, show_date=None):
                                   revisions__changeset__modified__range=(
                                     datetime.combine(requested_date, time.min),
                                     datetime.combine(requested_date, time.max)))\
+                          .exclude(revisions__changeset__indexer=anon)\
                           .distinct().select_related('parent__country')
 
     indicia_publishers = IndiciaPublisher.objects.filter(
@@ -649,6 +654,7 @@ def daily_changes(request, show_date=None):
       revisions__changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
+      .exclude(revisions__changeset__indexer=anon)\
       .distinct().select_related('parent__country')
 
     series = Series.objects.filter(
@@ -658,6 +664,7 @@ def daily_changes(request, show_date=None):
       revisions__changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
+      .exclude(revisions__changeset__indexer=anon)\
       .distinct().select_related('publisher','country',
                                  'first_issue','last_issue')
 
@@ -667,6 +674,7 @@ def daily_changes(request, show_date=None):
                                   revisions__changeset__modified__range=(
                                     datetime.combine(requested_date, time.min),
                                     datetime.combine(requested_date, time.max)))\
+                          .exclude(revisions__changeset__indexer=anon)\
                           .distinct().select_related('series__publisher',
                                                      'series__country')
 

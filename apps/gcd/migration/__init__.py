@@ -11,7 +11,7 @@ def migrate_reserve(display, label, comment=''):
     if display.reserved == False:
         changeset=_do_reserve(ANON_USER, display, label)
         if changeset == None:
-            raise ValueError
+            raise ValueError, display
         changeset.state=states.OPEN
         changeset.save()
         comment = changeset.comments.create(commenter=ANON_USER,
