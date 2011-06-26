@@ -43,14 +43,19 @@ There exist further variants.
     {% else %}
 This issue has variants.
     {% endif %}
+            </p>
               <ul>
     {% for variant in issue.other_variants %}
                 <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
       {% if variant.variant_name %} [{{ variant.variant_name }}] {% endif %}
     {% endfor %}
-          </ul>
+          </ul><p>
+  {% else %}
+    {% if issue.variant_of %}
+</p><p>
+    {% endif %}  
   {% endif %}
-            <p>{{ issue.notes|linebreaksbr }}
+            {{ issue.notes|linebreaksbr }}
         </div>
       </div>
 {% endif %} <!-- issue.notes -->
