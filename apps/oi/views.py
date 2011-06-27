@@ -1329,7 +1329,7 @@ def add_series(request, publisher_id):
               kwargs={ 'publisher_id': publisher_id }))
 
         form = get_series_revision_form(publisher,
-                                        indexer=request.user)(request.POST)
+                                        user=request.user)(request.POST)
         if not form.is_valid():
             return _display_add_series_form(request, publisher, imprint, form)
 
