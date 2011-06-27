@@ -184,12 +184,9 @@ def _get_comments_form_field():
                 'are not part of the regular display.')
 
 class PageCountInput(TextInput):
-    def _format_value(self, value):
-        return format_page_count(value)
-
     def render(self, name, value, attrs=None):
-        value = self._format_value(value)
-        return super(TextInput, self).render(name, value, attrs)
+        value = format_page_count(value)
+        return super(PageCountInput, self).render(name, value, attrs)
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
     if revision is not None and model_name is None:
@@ -604,7 +601,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             class Meta:
                 model = IssueRevision
                 fields = _get_issue_fields()
-
+                widgets = RuntimeIssueRevisionForm.Meta.widgets
+                
         return RuntimeAddVariantIssueRevisionForm
         
     if revision is None or revision.source is None:
@@ -620,7 +618,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             class Meta:
                 model = IssueRevision
                 fields = add_fields
-
+                widgets = RuntimeIssueRevisionForm.Meta.widgets
+                
             if can_request:
                 reservation_requested = forms.BooleanField(required=False,
                   label = 'Request reservation',
@@ -651,7 +650,8 @@ class IssueRevisionForm(forms.ModelForm):
           'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
           'editing': forms.TextInput(attrs={'class': 'year'}),
           'isbn': forms.TextInput(attrs={'class': 'wide'}),
-          'barcode': forms.TextInput(attrs={'class': 'wide'})
+          'barcode': forms.TextInput(attrs={'class': 'wide'}),
+          'page_count': PageCountInput,
         }
 
     comments = _get_comments_form_field()
