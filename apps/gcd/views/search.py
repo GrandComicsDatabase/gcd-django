@@ -63,7 +63,7 @@ def generic_by_name(request, name, q_obj, sort,
         if (sort == ORDER_ALPHA):
             things = things.order_by(sort_name, "year_began")
         elif (sort == ORDER_CHRONO):
-            things = things.order_by(year_began, sort_name)
+            things = things.order_by("year_began", sort_name)
         heading = '%s Search Results' % display_name
         # query_string for the link to the advanced search
         query_val['target'] = base_name
