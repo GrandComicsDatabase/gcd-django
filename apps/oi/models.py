@@ -1703,7 +1703,9 @@ class SeriesRevision(Revision):
     year_ended_uncertain = models.BooleanField(blank=True,
       help_text='Check if you are not certain of the ending year.')
     is_current = models.BooleanField(
-      help_text='Check if new issues are still being produced for this series.')
+      help_text='Check if new issues are still being produced for this '
+                'series. Only uncheck after the last issue is approved '
+                'and in our database.')
 
     publication_notes = models.TextField(blank=True)
 
