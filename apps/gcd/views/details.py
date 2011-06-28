@@ -28,7 +28,9 @@ from apps.gcd.views.covers import get_image_tag, \
                                   get_image_tags_per_page
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
-from apps.oi.models import IssueRevision, Changeset, CTYPES
+from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
+                           BrandRevision, IndiciaPublisherRevision, \
+                           Changeset, CTYPES
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\.(?P<month>\d{2})\.(?P<day>\d{2})$')
@@ -627,56 +629,64 @@ def daily_changes(request, show_date=None):
 
     anon = User.objects.get(username=settings.ANON_USER_NAME)
 
-    publishers = Publisher.objects.filter(
-      is_master=1,
-      revisions__changeset__change_type=CTYPES['publisher'],
-      revisions__changeset__state=states.APPROVED,
-      revisions__deleted=False,
-      revisions__changeset__modified__range=(
+    publisher_revisions = list(PublisherRevision.objects.filter(
+      changeset__change_type=CTYPES['publisher'],
+      changeset__state=states.APPROVED,
+      deleted=False,
+      changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
-      .exclude(revisions__changeset__indexer=anon)\
-      .distinct().select_related('country')
+      .exclude(changeset__indexer=anon).values_list('publisher', flat=True))
+    publishers = Publisher.objects.filter(is_master=1, 
+      id__in=publisher_revisions).distinct().select_related('country')
 
-    brands = Brand.objects.filter(revisions__changeset__change_type=CTYPES['brand'],
-                                  revisions__changeset__state=states.APPROVED,
-                                  revisions__deleted=False,
-                                  revisions__changeset__modified__range=(
-                                    datetime.combine(requested_date, time.min),
-                                    datetime.combine(requested_date, time.max)))\
-                          .exclude(revisions__changeset__indexer=anon)\
-                          .distinct().select_related('parent__country')
-
+    brand_revisions = list(BrandRevision.objects.filter(
+      changeset__change_type=CTYPES['brand'],
+      changeset__state=states.APPROVED,
+      deleted=False,
+      changeset__modified__range=(
+        datetime.combine(requested_date, time.min),
+        datetime.combine(requested_date, time.max)))\
+        .exclude(changeset__indexer=anon)\
+        .values_list('brand', flat=True))  
+    brands = Brand.objects.filter(id__in=brand_revisions).distinct()\
+      .select_related('parent__country')
+      
+    indicia_publisher_revisions = list(IndiciaPublisherRevision.objects.filter(
+      changeset__change_type=CTYPES['indicia_publisher'],
+      changeset__state=states.APPROVED,
+      deleted=False,
+      changeset__modified__range=(
+        datetime.combine(requested_date, time.min),
+        datetime.combine(requested_date, time.max)))\
+      .exclude(changeset__indexer=anon)\
+      .values_list('indicia_publisher', flat=True))
     indicia_publishers = IndiciaPublisher.objects.filter(
-      revisions__changeset__change_type=CTYPES['indicia_publisher'],
-      revisions__changeset__state=states.APPROVED,
-      revisions__deleted=False,
-      revisions__changeset__modified__range=(
+      id__in=indicia_publisher_revisions).distinct()\
+      .select_related('parent__country')
+
+    series_revisions = list(SeriesRevision.objects.filter(
+      changeset__change_type=CTYPES['series'],
+      changeset__state=states.APPROVED,
+      deleted=False,
+      changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
-      .exclude(revisions__changeset__indexer=anon)\
-      .distinct().select_related('parent__country')
+      .exclude(changeset__indexer=anon).values_list('series', flat=True))
+    series = Series.objects.filter(id__in=series_revisions).distinct()\
+      .select_related('publisher','country', 'first_issue','last_issue')
 
-    series = Series.objects.filter(
-      revisions__changeset__change_type=CTYPES['series'],
-      revisions__changeset__state=states.APPROVED,
-      revisions__deleted=False,
-      revisions__changeset__modified__range=(
+    issues_change_types = [CTYPES['issue'], CTYPES['variant_add']]
+    issue_revisions = list(IssueRevision.objects.filter(\
+      changeset__change_type__in=issues_change_types,
+      changeset__state=states.APPROVED,
+      deleted=False,
+      changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
-      .exclude(revisions__changeset__indexer=anon)\
-      .distinct().select_related('publisher','country',
-                                 'first_issue','last_issue')
-
-    issues = Issue.objects.filter(revisions__changeset__change_type=CTYPES['issue'],
-                                  revisions__changeset__state=states.APPROVED,
-                                  revisions__deleted=False,
-                                  revisions__changeset__modified__range=(
-                                    datetime.combine(requested_date, time.min),
-                                    datetime.combine(requested_date, time.max)))\
-                          .exclude(revisions__changeset__indexer=anon)\
-                          .distinct().select_related('series__publisher',
-                                                     'series__country')
+      .exclude(changeset__indexer=anon).values_list('issue', flat=True))
+    issues = Issue.objects.filter(id__in=issue_revisions).distinct()\
+      .select_related('series__publisher', 'series__country')
 
     return render_to_response('gcd/status/daily_changes.html',
       {
