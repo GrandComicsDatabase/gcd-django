@@ -124,7 +124,7 @@ class Series(models.Model):
         return list(Brand.objects.filter(issue__series=self, 
                                          issue__deleted=False)\
           .annotate(first_by_brand=models.Min('issue__sort_code'),
-                    issue_count=models.Count('issue'))\
+                    used_issue_count=models.Count('issue'))\
           .order_by('first_by_brand'))
 
     def brand_info_counts(self):
@@ -152,7 +152,7 @@ class Series(models.Model):
         return list(IndiciaPublisher.objects.filter(issue__series=self, 
                                                     issue__deleted=False)\
           .annotate(first_by_ind_pub=models.Min('issue__sort_code'),
-                    issue_count=models.Count('issue'))\
+                    used_issue_count=models.Count('issue'))\
           .order_by('first_by_ind_pub'))
 
     def indicia_publisher_info_counts(self):
@@ -198,31 +198,40 @@ class Series(models.Model):
     def issue_indexed_count(self):
         return self.active_issues().filter(is_indexed=True).count()
 
+    def _date_uncertain(self, flag):
+        return u' ?' if flag else u''
+                  
     def display_publication_dates(self):
         if self.issue_count == 0:
-            return unicode(self.year_began)
+            return u'%s%s' % (unicode(self.year_began), 
+                  self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:
             if self.first_issue.publication_date:
                 return self.first_issue.publication_date
             else:
-                return unicode(self.year_began)
+                return u'%s%s' % (unicode(self.year_began), 
+                  self._date_uncertain(self.year_began_uncertain))
         else:
             if self.first_issue.publication_date:
                 date = u'%s - ' % self.first_issue.publication_date
             else:
-                date = u'%s - ' % self.year_began
+                date = u'%s%s - ' % (self.year_began, 
+              self._date_uncertain(self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
-                date += unicode(self.year_ended)
+                date += u'%s%s' % (unicode(self.year_ended), 
+                  self._date_uncertain(self.year_ended_uncertain))
             else:
                 date += u'?'
             return date
 
     def full_name(self):
-        return '%s (%s, %s series)' % (self.name, self.publisher, self.year_began)
+        return '%s (%s, %s%s series)' % (self.name, self.publisher, 
+          self.year_began, self._date_uncertain(self.year_began_uncertain))
 
     def __unicode__(self):
-        return '%s (%s series)' % (self.name, self.year_began)
+        return '%s (%s%s series)' % (self.name, self.year_began, 
+          self._date_uncertain(self.year_began_uncertain))

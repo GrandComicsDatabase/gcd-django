@@ -17,7 +17,7 @@
     <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country.code|lower }}.png" alt="{{ series.country.code|upper }}">
     <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
-    <td> {{ series.year_began }} </td>
+    <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} </td>
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
     <td>
     {% if not series.issue_count %}

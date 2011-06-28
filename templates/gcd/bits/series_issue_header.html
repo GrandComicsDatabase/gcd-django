@@ -29,7 +29,7 @@
   {% if series.imprint %}
     {{ series.imprint|absolute_url }} imprint,
   {% endif %}
-  {{ series.year_began }} Series
+  {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} Series
   </div>
   <div class="right" id="language_country">
   {% if language %}

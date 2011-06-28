@@ -129,7 +129,7 @@
   {% for series in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
-    <td> {{ series.year_began }}
+    <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %}
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
     {% if not series.scan_needed_count %}
     <td> <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
