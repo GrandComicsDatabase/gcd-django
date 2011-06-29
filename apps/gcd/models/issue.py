@@ -192,7 +192,8 @@ class Issue(models.Model):
 
     def deletable(self):
         return self.cover_revisions.filter(changeset__state__in=states.ACTIVE)\
-                                   .count() == 0
+                                   .count() == 0 and \
+               self.variant_set.filter(deleted=False).count() == 0
 
     def can_upload_variants(self):
         if self.has_covers():

@@ -47,7 +47,7 @@
       {% if object_class == "brand" or object_class == "indicia_publisher" %}
     {{ object_name }} cannot be deleted because it is used by an issue or has been added to a pending issue change.
       {% else %}{% if object_class == "issue" %}
-    {{ object_name }} cannot be deleted because there are pending cover changes.
+    {{ object_name }} cannot be deleted because there are pending cover changes or variants exist.
       {% else %}{% if object_class == "series" %}
     {{ object_name }} cannot be deleted because there are issues present or there are pending issue additions.
       {% else %}{% if object_class == "publisher" %}

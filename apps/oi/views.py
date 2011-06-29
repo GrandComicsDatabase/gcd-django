@@ -77,10 +77,15 @@ def delete(request, id, model_name):
         # but as we know, some people do that sort of thing.
         if display_obj.reserved:
             return render_error(request,
-              u'Cannot delete "%s" as it is curently reserved.' % display_obj)
+              u'Cannot delete "%s" as it is curently reserved.' % display_obj,
+              redirect=False)
         if display_obj.deleted:
             return render_error(request,
-              u'Cannot delete "%s" as it is already deleted.' % display_obj)
+              u'Cannot delete "%s" as it is already deleted.' % display_obj,
+              redirect=False)
+        if not display_obj.deletable():
+            return render_error(request,
+              u'"%s" cannot be deleted.' % display_obj, redirect=False)
 
         return render_to_response('oi/edit/deletion_comment.html',
         {
