@@ -25,7 +25,7 @@ from apps.gcd.views import render_error, paginate_response
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 
 from apps.oi.models import *
-from apps.oi.forms import UploadScanForm, GatefoldScanForm
+from apps.oi.forms import UploadScanForm, UploadVariantScanForm, GatefoldScanForm
 
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 
@@ -415,11 +415,14 @@ def handle_gatefold_cover(request, cover, issue, form):
                               context_instance=RequestContext(request))
 
 
-def handle_uploaded_cover(request, cover, issue):
+def handle_uploaded_cover(request, cover, issue, variant=False):
     ''' process the uploaded file and generate CoverRevision '''
 
     try:
-        form = UploadScanForm(request.POST, request.FILES)
+        if variant:
+            form = UploadVariantScanForm(request.POST, request.FILES)
+        else:
+            form = UploadScanForm(request.POST, request.FILES)
     except IOError: # sometimes uploads misbehave. connection dropped ?
         error_text = 'Something went wrong with the upload. ' + \
                         'Please <a href="' + request.path + '">try again</a>.'
@@ -449,6 +452,28 @@ def handle_uploaded_cover(request, cover, issue):
         revision = CoverRevision(changeset=changeset, issue=issue,
             file_source=file_source, marked=marked)
     revision.save()
+
+    # if uploading a variant, generate an issue_revision for
+    # the variant issue and copy the values which would not change
+    # TODO are these reasonable assumptions below ?
+    if variant:
+        issue_revision = IssueRevision(changeset=changeset, 
+          after=issue,
+          number=issue.number,
+          title=issue.title,
+          no_title=issue.no_title,
+          volume=issue.volume,
+          no_volume=issue.no_volume,
+          display_volume_with_number=issue.display_volume_with_number,
+          variant_of=issue,
+          variant_name=form.cleaned_data['variant_name'],
+          page_count=issue.page_count,
+          page_count_uncertain=issue.page_count_uncertain,
+          series=issue.series,
+          editing=issue.editing,
+          no_editing=issue.no_editing,
+          )
+        issue_revision.save()
 
     # put new uploaded covers into 
     # media/<LOCAL_NEW_SCANS>/<monthname>_<year>/ 
@@ -522,6 +547,40 @@ def finish_cover_revision(request, revision, cd):
         kwargs={'revision_id': revision.id} ))
 
 @login_required
+def upload_variant(request, issue_id):
+    """
+    Handles uploading of variant covers
+    """
+    issue = get_object_or_404(Issue, id=issue_id)
+
+    # check if there is a pending issue deletion
+    if IssueRevision.objects.filter(issue=issue, deleted=True,
+                                    changeset__state__in=states.ACTIVE):
+        revision = IssueRevision.objects.get(issue=issue,
+          changeset__state__in=states.ACTIVE)
+        return render_error(request,
+          ('%s is <a href="%s">pending deletion</a>. Covers '
+          'cannot be added or modified.') % (esc(issue),
+          urlresolvers.reverse('compare', kwargs={'id': revision.changeset.id})),
+          redirect=False, is_safe=True)
+
+    # current request is an upload
+    if request.method == 'POST':
+        return handle_uploaded_cover(request, None, issue, variant=True)
+    # request is a GET for the form
+    else:
+        if 'oi_file_source' in request.session:
+            vars = {'source' : request.session['oi_file_source'],
+                    'remember_source' : True}
+        else:
+            vars = None
+        form = UploadVariantScanForm(initial=vars)
+
+        # display the form
+        return _display_cover_upload_form(request, form, None, issue, 
+                                          variant=True)
+
+@login_required
 def upload_cover(request, cover_id=None, issue_id=None):
     """
     Handles uploading of covers be it
@@ -580,12 +639,13 @@ def upload_cover(request, cover_id=None, issue_id=None):
         # display the form
         return _display_cover_upload_form(request, form, cover, issue)
 
-def _display_cover_upload_form(request, form, cover, issue, info_text=''):
+def _display_cover_upload_form(request, form, cover, issue, info_text='', variant = False):
     upload_template = 'oi/edit/upload_cover.html'
 
     # set covers, replace_cover, upload_type
     covers = []
     replace_cover = None
+
     if cover:
         upload_type = 'replacement'
         replace_cover = get_image_tag(cover, "cover to replace", ZOOM_MEDIUM)
@@ -593,9 +653,11 @@ def _display_cover_upload_form(request, form, cover, issue, info_text=''):
         if issue.has_covers():
             covers = get_image_tags_per_issue(issue, "current covers", 
                                               ZOOM_MEDIUM, as_list=True)
-            upload_type = 'variant'
+            upload_type = 'additional'
         else:
             upload_type = ''
+        if variant:
+            upload_type = 'variant'
 
     # generate tags for cover uploads for this issue currently in the queue
     active_covers_tags = []

@@ -959,10 +959,6 @@ def process_revision(request, id, model_name):
 ##############################################################################
 def _clean_bulk_issue_change_form(form, remove_fields, items,
                                   number_of_issues=True):
-    form.fields.pop('after')
-    form.fields.pop('first_number')
-    if number_of_issues:
-        form.fields.pop('number_of_issues')
     for i in remove_fields:
         form.fields.pop(i)
     return form
@@ -1023,7 +1019,7 @@ def edit_issues_in_bulk(request):
         if len(publisher_list) > 1:
             ignore_publisher = True
 
-    form_class = get_bulk_issue_revision_form(series, 'number')
+    form_class = get_bulk_issue_revision_form(series, 'bulk_edit')
 
     fields = get_issue_field_list()
     fields.remove('number')
@@ -1031,7 +1027,9 @@ def edit_issues_in_bulk(request):
     fields.remove('key_date')
     fields.remove('isbn')
     fields.remove('notes')
-
+    fields.remove('barcode')
+    fields.remove('title')
+    
     # look at values for the issue fields
     # if only one it gives the initial value
     # if several, the field is not editable
@@ -1075,7 +1073,6 @@ def edit_issues_in_bulk(request):
                 used_search_terms)
 
     form = form_class(request.POST)
-    form.fields.pop('number_of_issues')
 
     if not form.is_valid():
         form = _clean_bulk_issue_change_form(form, remove_fields, items,
@@ -2413,10 +2410,13 @@ def compare(request, id):
             field_list.remove('publication_date')
             field_list.remove('key_date')
             field_list.remove('notes')
-            field_list.remove('isbn')
-            field_list.remove('barcode')
-
-            
+            if changeset.change_type == CTYPES['issue_bulk']:
+                field_list.remove('title')
+                field_list.remove('isbn')
+                field_list.remove('barcode')
+            else:
+                field_list.remove('after')
+                
     response = render_to_response(template,
                                   {'changeset': changeset,
                                    'revision': revision,

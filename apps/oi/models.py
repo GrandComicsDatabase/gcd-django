@@ -1540,7 +1540,16 @@ class CoverRevision(Revision):
         cover = self.cover
 
         if cover is None:
-            cover = Cover(issue=self.issue)
+            # check for variants having added issue records
+            issue_revisions = self.changeset.issuerevisions.all()
+            if len(issue_revisions) == 0:
+                cover = Cover(issue=self.issue)
+            elif len(issue_revisions) == 1:
+                if not issue_revisions[0].issue:
+                    issue_revisions[0].commit_to_display()
+                cover = Cover(issue=issue_revisions[0].issue)
+            else:
+                raise NotImplementedError
             cover.save()
         elif self.deleted:
             cover.delete()
@@ -1554,7 +1563,7 @@ class CoverRevision(Revision):
 
         if self.cover and self.is_replacement==False:
             # this is a move of a cover
-            if self.change_type == CTYPES['variant_add']:
+            if self.changeset.change_type == CTYPES['variant_add']:
                 old_issue = cover.issue
                 issue_rev = self.changeset.issuerevisions\
                                           .exclude(issue=old_issue).get()
@@ -1577,6 +1586,14 @@ class CoverRevision(Revision):
                 raise NotImplementedError
         else:
             from apps.oi.covers import copy_approved_cover
+            if self.cover is None:
+                self.cover = cover
+                self.save()
+                update_count('covers', 1, language=cover.issue.series.language)
+                if not cover.issue.series.has_gallery:
+                    series = cover.issue.series
+                    series.has_gallery = True
+                    series.save()
             copy_approved_cover(self)
             cover.marked = self.marked
             cover.last_upload = self.changeset.comments.latest('created').created
@@ -1586,14 +1603,6 @@ class CoverRevision(Revision):
             cover.front_top = self.front_top
             cover.front_bottom = self.front_bottom
             cover.save()
-        if self.cover is None:
-            self.cover = cover
-            self.save()
-            update_count('covers', 1, language=cover.issue.series.language)
-            if not cover.issue.series.has_gallery:
-                series = cover.issue.series
-                series.has_gallery = True
-                series.save()
 
     def base_dir(self):
         return settings.MEDIA_ROOT + settings.NEW_COVERS_DIR + \
@@ -1966,6 +1975,16 @@ class SeriesRevision(Revision):
             return u'%s (%s series)' % (self.name, self.year_began)
         return unicode(self.series)
 
+
+def get_issue_field_list():
+    return ['number', 'title', 'no_title', 
+            'volume', 'no_volume', 'display_volume_with_number', 
+            'indicia_publisher', 'indicia_pub_not_printed',
+            'brand', 'no_brand', 'publication_date', 'key_date', 
+            'indicia_frequency', 'no_indicia_frequency', 'price',
+            'page_count', 'page_count_uncertain', 'editing', 'no_editing',
+            'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes']
+            
 class IssueRevisionManager(RevisionManager):
 
     def clone_revision(self, issue, changeset):
@@ -2036,7 +2055,8 @@ class IssueRevision(Revision):
     # If not null, insert or move the issue after the given issue
     # when saving back the the DB. If null, place at the beginning of
     # the series.
-    after = models.ForeignKey(Issue, null=True, related_name='after_revisions')
+    after = models.ForeignKey(Issue, null=True, related_name='after_revisions',
+      verbose_name='Add this issue after')
 
     # This is used *only* for multiple issues within the same changeset.
     # It does NOT correspond directly to gcd_issue.sort_code, which must be
@@ -2046,7 +2066,12 @@ class IssueRevision(Revision):
     # When adding an issue, this requests the reservation upon approval of
     # the new issue.  The request will be granted unless an ongoing reservation
     # is in place at the time of approval.
-    reservation_requested = models.BooleanField(default=False)
+    reservation_requested = models.BooleanField(default=False,
+      verbose_name = 'Request reservation',
+      help_text='Check this box to have this issue reserved to you '
+                'automatically when it is approved, unless someone '
+                'has acquired the series\' ongoing reservation before '
+                'then.')
 
     number = models.CharField(max_length=50,
       help_text='The issue number (or other label) as it appears in the indicia. '
@@ -2058,7 +2083,7 @@ class IssueRevision(Revision):
                 'next logical number in brackets like "[2]" if '
                 'there is no number printed anywhere on the issue.')
 
-    title = models.CharField(max_length=255, default='',
+    title = models.CharField(max_length=255, default='', blank=True,
       help_text='The title of the issue. Refer to the wiki for the '
                 'cases when an issue can have a title.')
     no_title = models.BooleanField(default=False, 
@@ -2080,7 +2105,10 @@ class IssueRevision(Revision):
                 'of just "1" in the status grids and issues lists for the series.')
     variant_of = models.ForeignKey(Issue, null=True,
                                    related_name='variant_revisions')
-    variant_name = models.CharField(max_length=255, blank=True, default='')
+    variant_name = models.CharField(max_length=255, blank=True, default='',
+      help_text='Name of this variant. Examples are: "Cover A" (if listed as '
+        'such in the issue), "2nd printing", "newsstand", "direct", or the '
+        'name of the artist if different from the base issue.')
 
     publication_date = models.CharField(max_length=255, blank=True, default='',
       help_text='The publicaton date as printed on the comic, except with the '
@@ -2141,16 +2169,15 @@ class IssueRevision(Revision):
                 'indicia, if any.  If there is none, the copyright holder '
                 '(if any) may be used, with a comment in the notes field'                                          )
     indicia_pub_not_printed = models.BooleanField(default=False,
-      help_text="Check this box if there is no indicia publisher "
-                "printed on the comic.")
+      help_text="Check this box if no indicia publisher name is "
+                "listed in the indicia.")
     brand = models.ForeignKey(Brand, null=True, default=None, blank=True,
       related_name='issue_revisions',
       help_text="The publisher's logo or tagline on the cover of the comic, "
                 "if any. Some U.S. golden age publishers did not put any "
                 "identifiable brand marks on their comics."                )
     no_brand = models.BooleanField(default=False,
-      help_text="Check this box if there is no publisher's logo or tagline "
-                "on the comic.")
+      help_text="Check this box if there is no publisher's logo or tagline.")
 
     isbn = models.CharField(max_length=32, blank=True, default='', 
       verbose_name='ISBN',
@@ -2159,8 +2186,7 @@ class IssueRevision(Revision):
                 'ISBN 13 are listed, separate them with a semi-colon. '
                 ' Example: "978-0-307-29063-2; 0-307-29063-8".'  )
     no_isbn = models.BooleanField(default=False, verbose_name='No ISBN',
-      help_text="Check this box if there is no ISBN printed on any of the "
-                "issues being added.")
+      help_text="Check this box if there is no ISBN.")
 
     barcode = models.CharField(max_length=38, blank=True, default='',
       help_text='The barcode as printed on the item with no spaces. In case '
@@ -2296,25 +2322,27 @@ class IssueRevision(Revision):
         return [None, None]
 
     def _field_list(self):
-        fields = ['after', 'number', 'title', 'no_title', 'volume', 'no_volume',
-                  'display_volume_with_number', 'publication_date',
-                  'indicia_frequency', 'no_indicia_frequency', 'key_date',
-                  'indicia_publisher', 'indicia_pub_not_printed',
-                  'brand', 'no_brand', 'price',
-                  'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-                  'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes']
-        if not self.series.has_barcode:
+        fields = get_issue_field_list() 
+        if self.changeset.change_type == CTYPES['issue_add']:
+            fields = ['after'] + fields
+        if not self.series.has_barcode and \
+          self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('barcode')
             fields.remove('no_barcode')
-        if not self.series.has_indicia_frequency:
+        if not self.series.has_indicia_frequency and \
+          self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('indicia_frequency')
             fields.remove('no_indicia_frequency')
-        if not self.series.has_isbn:
+        if not self.series.has_isbn and \
+          self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('isbn')
             fields.remove('no_isbn')
-        if not self.series.has_issue_title:
+        if not self.series.has_issue_title and \
+          self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('title')
             fields.remove('no_title')
+        if self.variant_of:
+            fields = ['variant_name'] + fields
         return fields
         
     def _get_blank_values(self):
@@ -2346,6 +2374,7 @@ class IssueRevision(Revision):
             'notes': '',
             'sort_code': None,
             'after': None,
+            'variant_name': '',
         }
 
     def _start_imp_sum(self):
@@ -2517,7 +2546,7 @@ class IssueRevision(Revision):
 
         issue.number = self.number
         # only if the series has_field is True write to issue
-        if issue.series.has_issue_title:
+        if self.series.has_issue_title:
             issue.title = self.title
             issue.no_title = self.no_title
         else: # handle case when series has_field changes during lifetime
@@ -2533,7 +2562,7 @@ class IssueRevision(Revision):
         issue.variant_name = self.variant_name
         
         issue.publication_date = self.publication_date
-        if issue.series.has_indicia_frequency:
+        if self.series.has_indicia_frequency:
             issue.indicia_frequency = self.indicia_frequency
             issue.no_indicia_frequency = self.no_indicia_frequency
         else:
@@ -2557,7 +2586,7 @@ class IssueRevision(Revision):
         issue.brand = self.brand
         issue.no_brand = self.no_brand
 
-        if issue.series.has_isbn:
+        if self.series.has_isbn:
             issue.isbn = self.isbn
             issue.no_isbn = self.no_isbn
             issue.valid_isbn = validated_isbn(issue.isbn)
@@ -2566,7 +2595,7 @@ class IssueRevision(Revision):
             self.no_isbn = issue.no_isbn
             self.save()
             
-        if issue.series.has_barcode:
+        if self.series.has_barcode:
             issue.barcode = self.barcode
             issue.no_barcode = self.no_barcode
         else:
@@ -2602,6 +2631,14 @@ class IssueRevision(Revision):
         Re-implement locally instead of using self.issue because it may change.
         """
         return u'%s #%s' % (self.series, self.display_number)
+
+def get_story_field_list():
+    return ['sequence_number', 'type', 'title', 'title_inferred',
+            'feature', 'genre', 'job_number', 
+            'script', 'no_script', 'pencils', 'no_pencils', 'inks',
+            'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
+            'editing', 'no_editing', 'page_count', 'page_count_uncertain',
+            'characters', 'synopsis', 'reprint_notes', 'notes']
 
 class StoryRevisionManager(RevisionManager):
 
@@ -2748,13 +2785,8 @@ class StoryRevision(Revision):
             raise False
             
     def _field_list(self):
-        return ['sequence_number', 'type', 'title', 'title_inferred',
-                'feature', 'page_count', 'page_count_uncertain', 'genre',
-                'script', 'no_script', 'pencils', 'no_pencils', 'inks',
-                'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
-                'editing', 'no_editing', 'characters', 'synopsis',
-                'job_number', 'reprint_notes', 'notes']
-
+        return get_story_field_list()
+        
     def _get_blank_values(self):
         return {
             'title': '',

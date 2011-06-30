@@ -63,6 +63,8 @@ INDICIA_PUBLISHER_HELP_LINKS = {
 
 ISSUE_HELP_LINKS = {
     'number': 'Issue_Numbers',
+    'title': 'Issue_Title',
+    'no_title': 'Issue_Title',
     'volume': 'Volume',
     'no_volume': 'Volume',
     'display_volume_with_number': 'Display_Volume_with_Issue_Number',
@@ -479,34 +481,6 @@ class SeriesRevisionForm(forms.ModelForm):
         cd['comments'] = cd['comments'].strip()
         return cd
 
-def _get_issue_fields():
-    return [
-        'number',
-        'title',
-        'no_title',
-        'volume',
-        'display_volume_with_number',
-        'no_volume',
-        'indicia_publisher',
-        'indicia_pub_not_printed',
-        'brand',
-        'no_brand',
-        'publication_date',
-        'key_date',
-        'indicia_frequency',
-        'no_indicia_frequency',
-        'price',
-        'page_count',
-        'page_count_uncertain',
-        'editing',
-        'no_editing',
-        'isbn',
-        'no_isbn',
-        'barcode',
-        'no_barcode',
-        'notes',
-    ]
-
 def _get_series_has_fields_off_note(series, field):
     return 'The %s field is turned off for %s. To enter a value for %s this ' \
            'setting for the series has to be changed.' % (field, series, field), forms.BooleanField(widget=forms.HiddenInput, 
@@ -516,6 +490,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                             variant_of=None, user=None):
     if series is None and revision is not None:
         series = revision.series
+    if revision is not None and revision.variant_of:
+        variant_of = revision.variant_of
 
     class RuntimeIssueRevisionForm(IssueRevisionForm):
         def __init__(self, *args, **kwargs):
@@ -600,40 +576,40 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         class RuntimeAddVariantIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta:
                 model = IssueRevision
-                fields = _get_issue_fields()
+                fields = RuntimeIssueRevisionForm.Meta.fields
+                fields = ['variant_name'] + fields
+                if revision is None or revision.source is None:
+                    fields = ['after'] + fields
+                widgets = RuntimeIssueRevisionForm.Meta.widgets
+                widgets['variant_name'] = forms.TextInput(attrs={'class': 'wide'})
+            def __init__(self, *args, **kwargs):
+                super(RuntimeAddVariantIssueRevisionForm, self)\
+                  .__init__(*args, **kwargs)
+                # can add after one of the variants
+                # TODO where to put later printings which come out later
+                if 'after' in self.fields:
+                    self.fields['after'].queryset = variant_of.variant_set.all() \
+                    | Issue.objects.filter(id=variant_of.id)
+                    self.fields['after'].empty_label = None
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
                 
         return RuntimeAddVariantIssueRevisionForm
         
     if revision is None or revision.source is None:
-        add_fields = ['after']
-        add_fields.extend(_get_issue_fields())
-
-        can_request = False
-        if series.get_ongoing_reservation() is None:
-            can_request = True
-            add_fields = ['reservation_requested'] + add_fields
-        
         class RuntimeAddIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta:
                 model = IssueRevision
-                fields = add_fields
+                fields = RuntimeIssueRevisionForm.Meta.fields
+                fields = ['after'] + fields
+                if series.get_ongoing_reservation() is None:
+                    fields = ['reservation_requested'] + fields
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
+                    
+            def __init__(self, *args, **kwargs):
+                super(RuntimeAddIssueRevisionForm, self).__init__(*args, **kwargs)
+                self.fields['after'].queryset = series.active_issues()
+                self.fields['after'].empty_label = '[add as first issue]'
                 
-            if can_request:
-                reservation_requested = forms.BooleanField(required=False,
-                  label = 'Request reservation',
-                  help_text='Check this box to have this issue reserved to you '
-                            'automatically when it is approved, unless someone '
-                            'has acquired the series\' ongoing reservation before '
-                            'then.')
-
-            after = forms.ModelChoiceField(required=False,
-              queryset=Issue.objects.exclude(deleted=True) \
-                .filter(series=series).order_by('sort_code'),
-              empty_label="[add as first issue]",
-              label = "Add this issue after")
-
         return RuntimeAddIssueRevisionForm
 
     return RuntimeIssueRevisionForm
@@ -641,14 +617,14 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
-        fields = _get_issue_fields()
+        fields = get_issue_field_list()
         widgets = {
           'number': forms.TextInput(attrs={'class': 'wide'}),
           'title': forms.TextInput(attrs={'class': 'wide'}),
           'volume': forms.TextInput(attrs={'class': 'wide'}),
           'key_date': forms.TextInput(attrs={'class': 'key_date'}),
           'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
-          'editing': forms.TextInput(attrs={'class': 'year'}),
+          'editing': forms.TextInput(attrs={'class': 'wide' }),
           'isbn': forms.TextInput(attrs={'class': 'wide'}),
           'barcode': forms.TextInput(attrs={'class': 'wide'}),
           'page_count': PageCountInput,
@@ -666,6 +642,8 @@ def get_bulk_issue_revision_form(series, method, user=None):
         base = PerYearIssueRevisionForm
     elif method == 'year_volume':
         base = PerYearVolumeIssueRevisionForm
+    elif method == 'bulk_edit':
+        base = BulkEditIssueRevisionForm
     else:
         return render_error(request, 'Unknown method of adding issues.')
 
@@ -704,12 +682,13 @@ class BulkIssueRevisionForm(forms.ModelForm):
 
     class Meta:
         model = IssueRevision
-        fields = _get_issue_fields()
+        fields = get_issue_field_list()
         exclude = ['number',]
         widgets = {
           'volume': forms.TextInput(attrs={'class': 'wide'}),
           'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
-          'editing': forms.TextInput(attrs={'class': 'year'}),
+          'editing': forms.TextInput(attrs={'class': 'wide'}),
+          'page_count': PageCountInput
         }
 
     def _shared_key_order(self):
@@ -728,6 +707,12 @@ class BulkIssueRevisionForm(forms.ModelForm):
         cd['price'] = cd['price'].strip()
         cd['editing'] = cd['editing'].strip()
         cd['comments'] = cd['comments'].strip()
+        if 'volume' in cd:
+            cd['volume'] = cd['volume'].strip()
+
+            if cd['volume'] != "" and cd['no_volume']:
+                raise forms.ValidationError('You cannot specify a volume and '
+                    'check "no volume" at the same time')
 
         if cd['editing'] != "" and cd['no_editing']:
             raise forms.ValidationError('You cannot specify an editing credit and '
@@ -744,6 +729,14 @@ class BulkIssueRevisionForm(forms.ModelForm):
 
         return cd
 
+class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
+    def __init__(self, *args, **kwargs):
+        super(BulkEditIssueRevisionForm, self).__init__(*args, **kwargs)
+        ordering = ['no_title', 'volume', 'display_volume_with_number', 
+                    'no_volume']
+        ordering.extend(self._shared_key_order())
+        self.fields.keyOrder = ordering
+
 class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 
     def __init__(self, *args, **kwargs):
@@ -755,11 +748,6 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 
     def clean(self):
         cd = super(WholeNumberIssueRevisionForm, self).clean()
-
-        cd['volume'] = cd['volume'].strip()
-        if cd['volume'] != "" and cd['no_volume']:
-            raise forms.ValidationError('You cannot specify a volume and check '
-              '"no volume" at the same time')
 
         if cd['first_number'] is None and cd['after'] is not None:
             try:
@@ -860,12 +848,6 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
-        cd['volume'] = cd['volume'].strip()
-
-        if cd['volume'] != "" and cd['no_volume']:
-            raise forms.ValidationError('You cannot specify a volume and check '
-              '"no volume" at the same time')
-
         basics = (cd['first_number'], cd['first_year'])
         if None in basics and cd['after'] is not None:
             if filter(lambda x: x is not None, basics):
@@ -960,12 +942,16 @@ def get_story_revision_form(revision=None, user=None):
         # initial value.  So only set None if there is an existing story revision.
         extra['empty_label'] = None
 
-    special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)', 
-                     'biography (nonfictional)')
-    queryset = StoryType.objects.all()
-    if revision is None or (revision is not None and
-                            revision.type.name not in special_types):
-        queryset = queryset.exclude(name__in=special_types)
+    # to variants we can only add cover sequences (for now)
+    if revision and revision.issue.variant_of:
+        queryset = StoryType.objects.filter(name='cover')
+    else:
+        special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)', 
+                        'biography (nonfictional)')
+        queryset = StoryType.objects.all()
+        if revision is None or (revision is not None and
+                                revision.type.name not in special_types):
+            queryset = queryset.exclude(name__in=special_types)
 
     class RuntimeStoryRevisionForm(StoryRevisionForm):
         type = forms.ModelChoiceField(queryset=queryset,
@@ -981,33 +967,7 @@ def get_story_revision_form(revision=None, user=None):
 class StoryRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryRevision
-        fields = (
-          'sequence_number',
-          'title',
-          'title_inferred',
-          'type',
-          'feature',
-          'page_count',
-          'page_count_uncertain',
-          'script',
-          'no_script',
-          'pencils',
-          'no_pencils',
-          'inks',
-          'no_inks',
-          'colors',
-          'no_colors',
-          'letters',
-          'no_letters',
-          'editing',
-          'no_editing',
-          'genre',
-          'characters',
-          'job_number',
-          'reprint_notes',
-          'synopsis',
-          'notes',
-        )
+        fields = get_story_field_list()
 
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
@@ -1174,7 +1134,6 @@ def get_cover_revision_form(revision=None, user=None):
 
     return UploadScanCommentForm
 
-
 class UploadScanForm(forms.Form):
     """ Form for cover uploads. """
 
@@ -1214,6 +1173,24 @@ class UploadScanForm(forms.Form):
                'A cover that is both wraparound and gatefold should be '
                'submitted as a gatefold cover.'])
         return cd
+
+class UploadVariantScanForm(UploadScanForm):
+    def __init__(self, *args, **kwargs):
+        super(UploadVariantScanForm, self).__init__(*args, **kwargs)
+        ordering = self.fields.keyOrder
+        ordering.remove('variant_name')
+        ordering = ['variant_name'] + ordering
+        self.fields.keyOrder = ordering
+
+    is_gatefold = forms.CharField(widget=HiddenInputWithHelp, required=False,
+      label="Gatefold cover",
+      help_text='Gatefold uploads are currently not supported when creating '
+        'a variant with a cover image upload. Please first create the '
+        'variant issue before uploading a gatefold cover.')
+    variant_name = forms.CharField(required=False,
+      help_text='Name of this variant. Examples are: "Cover A" (if listed as '
+        'such in the issue), "2nd printing", "newsstand", "direct", or the '
+        'name of the artist if different from the base issue.')
 
 class GatefoldScanForm(forms.Form):
     """ Form for cover uploads. """

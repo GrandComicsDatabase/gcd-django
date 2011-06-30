@@ -53,13 +53,21 @@ Reviewing :: {{ revision }}
   {% if revision.deleted %}
 <h2> cover deletion </h2>
   {% else %}
-<h2> uploaded {% if current_covers %} variant {% endif %} cover </h2>
+<h2> cover uploaded 
+    {% if current_covers or changeset.issuerevisions.count %}
+      {% if changeset.issuerevisions.count %} 
+        for a new <span class="comparison_highlight">variant issue</span>
+      {% else %}
+        as an <span class="comparison_highlight">additional</span> cover (dust jacket, flip cover)
+      {% endif %}
+    {% endif %} 
+</h2>
   {% endif %}
 {% endif %}
 <div class="cover_large">
   <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
 {% if cover_width %}  
-  <div>The full cover file has  a width of {{ cover_width }} pixels.</div>
+  <div>The full cover file has a width of {{ cover_width }} pixels.</div>
 {% endif %}
 {% if revision.is_wraparound %}
 </div>

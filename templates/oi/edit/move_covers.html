@@ -18,7 +18,7 @@ Move Covers :: {{ issue }}
 
 {% block view_body %}
 <h2>Move covers between  
-{{ changeset.issuerevisions.all.0 }} 
+{{ changeset.issuerevisions.all.0 }} {% if changeset.issuerevisions.all.0.variant_name %} [{{ changeset.issuerevisions.all.0.variant_name }}] {% endif %}
 and
 {{ changeset.issuerevisions.all.1 }} 
 </h2>

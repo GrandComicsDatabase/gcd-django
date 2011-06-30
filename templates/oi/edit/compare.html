@@ -51,6 +51,7 @@ The above sequence was moved from the following issue.
     {% with changeset.issuerevisions.all.1 as revision %}
     {% with revision.previews as prev_rev %}
     {% with revision.posterior as post_rev %}
+    {% with revision.field_list as field_list %}
 <h2>
       {{ revision }}
 </h2>
@@ -59,6 +60,7 @@ The above sequence was moved from the following issue.
         {% endif %}
       {{ revision.compare_changes|default:'' }}
       {% include 'oi/bits/compare_issue.html' %}
+    {% endwith %}
     {% endwith %}
     {% endwith %}
     {% endwith %}

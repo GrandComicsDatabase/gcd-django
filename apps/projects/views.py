@@ -2,9 +2,23 @@ from django.db.models import Count
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
-from apps.gcd.models import Publisher, Country
+from apps.gcd.models import Publisher, Country, Series
 from apps.gcd.views import paginate_response
 from apps.projects.forms import ImprintsInUseForm
+
+
+def series_with_both_notes(request):
+    series = Series.objects.filter(deleted=False)\
+                           .exclude(publication_notes='').exclude(notes='')
+    vars = {
+        'heading': 'Series',
+        'search_item': 'With Publication Notes and Notes',
+        'item_name': 'series',
+        'plural_suffix': '',
+    }
+
+    return paginate_response(request, series,
+                             'projects/series_with_both_notes.html', vars)
 
 
 def imprints_in_use(request):

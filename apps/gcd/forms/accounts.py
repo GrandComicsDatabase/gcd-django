@@ -27,8 +27,9 @@ class AccountForm(forms.Form):
       u'for more information.' % '/privacy/'))
     
     _name_help =(u'You must provide at least one name (first, last or both). ' 
-                 u'You do not have to give your real name, but please do '
-                 u'not use someone else\'s real name. '
+                 u'We prefer real names, but you do not have to use them. '
+                 u'If you choose a different name please do not take someone '
+                 u"else's real name and use common sense when choosing one. "
                  u'Your contributions will be credited under the name(s) you '
                  u'provide.')
     first_name = forms.CharField(max_length=30, required=False,

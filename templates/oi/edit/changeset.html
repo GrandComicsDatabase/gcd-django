@@ -92,7 +92,7 @@
   <tr>
     <td>
           {{ issue_revision }}
-          {% if issue_revision.variant_of %} (variant of {{ issue_revision.variant_of }}) {% endif %}
+          {% if issue_revision.variant_of %} ({% if issue_revision.variant_name %}[{{ issue_revision.variant_name }}] {% endif %} variant of {{ issue_revision.variant_of }}) {% endif %}
     </td>
     <td>
       <form class="changeset" method="GET"
@@ -109,6 +109,7 @@
     <td colspan="2" align="left">
       <input type="submit" id="add_story" name="add" value="Add story">
               {% if issue_revision.variant_of %}
+      Note that only a cover sequence can be added to a variant. In the actual issue <br>display the sequences from the <a href="{% url show_issue issue_id=issue_revision.variant_of.id %}">base issue</a> are additionally shown (skipping the first).
       <input type="hidden"
               {% else %}
       Sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
@@ -120,6 +121,15 @@
     </td>
   </form>
   </tr>
+            {% else %}
+              {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
+  <tr>
+    <td colspan="2" align="left">
+      One cannot add another story to this variant since it has a cover sequence.
+      Note that for the issue <br> display the other sequences are taken from the <a href="{% url show_issue issue_id=issue_revision.variant_of.id %}">base issue</a> (skipping the first).
+    </td>
+  </tr>
+              {% endif %}
             {% endif %}
           {% if issue_revision.story_set.count > 1 %}
   <tr>
@@ -152,11 +162,14 @@ Cover is moved from {{ cover.issue }}.   <form action="{% url undo_move_cover id
 <a href="{% url move_cover id=changeset.id %}">Move covers between both issues.<a/>
 </p>
         {% endif %}
-      {% endif %}
+      {% endif %} <!-- variant_add -->
 
       {% if changeset.storyrevisions.count %}
         {% for issuerevision in changeset.issuerevisions.all %}
-{{ issuerevision }}
+{{ issuerevision }} {% if issuerevision.variant_name %}[{{ issuerevision.variant_name }}] {% endif %}
+{% if issuerevision.story_set.count = 0 %}
+<p>No stories for this issue/variant.</p>
+{% endif %}
 <table class="story_list">
           {% for story in issuerevision.ordered_story_revisions %}
   <tr>
@@ -206,7 +219,7 @@ Cover is moved from {{ cover.issue }}.   <form action="{% url undo_move_cover id
           {% endfor %}
 </table>
         {% endfor %}
-      {% endif %}
+      {% endif %} <!-- changeset.storyrevisions.count -->
 
       {% if changeset.issuerevisions.count %}
         {% with changeset.issuerevisions.all.0 as issue_revision %}

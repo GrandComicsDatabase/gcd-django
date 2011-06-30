@@ -34,11 +34,15 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
 <div>    
 <fieldset class="universal">
 <ol>
-    {% ifequal upload_type 'replacement' %}
+    {% if upload_type = 'replacement' %}
         <form action="{% url replace_cover cover_id=cover.id %}" method="post" enctype="multipart/form-data">
     {% else %}
+      {% if upload_type = 'variant' %}
+        <form action="{% url upload_variant issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+      {% else %}
         <form action="{% url upload_cover issue_id=issue.id %}" method="post" enctype="multipart/form-data">
-    {% endifequal %}
+      {% endif %}
+    {% endif %}
     <table class="editing">
     <input type="submit" value="Upload">
     {{ form.as_table }}
