@@ -471,7 +471,8 @@ class SeriesRevisionForm(forms.ModelForm):
         cd = self.cleaned_data
         if 'name' in cd:
             cd['name'] = cd['name'].strip()
-            if cd['leading_article'] and len(cd['name'].split()) == 1:
+            if (cd['leading_article'] and
+                cd['name'] == remove_leading_article(cd['name'])):
                 raise forms.ValidationError('The series name is only one word,'
                     ' you cannot specify a leading article in this case.')
         cd['format'] = cd['format'].strip()

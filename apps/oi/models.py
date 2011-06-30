@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import itertools
 import operator
+import re
 from stdnum import isbn
 
 from django.db import models, settings
@@ -62,7 +63,7 @@ def check_delete_imprint(imprint):
         from apps.oi.views import _do_reserve
         anon = User.objects.get(username=settings.ANON_USER_NAME)
         changeset=_do_reserve(anon, imprint, 'publisher', delete=True)
-        if changeset == None: # something is wrong 
+        if changeset == None: # something is wrong
             raise ValueError
         changeset.state=states.REVIEWING
         changeset.approver = anon
@@ -124,6 +125,17 @@ def validated_isbn(entered_isbn):
             # always store ISBN13 if both exist
             return compacted_isbns[0]
     return ''
+
+def remove_leading_article(name):
+    '''
+    returns the name with the leading article (separated by "'"
+    or whitespace) removed
+    '''
+    article_match = re.match(r"\w+['\s]\s*(.*)$", name, re.UNICODE)
+    if article_match:
+        return article_match.group(1)
+    else:
+        return name
 
 class Changeset(models.Model):
 
@@ -1580,7 +1592,7 @@ class CoverRevision(Revision):
                         issue_rev.series.save()
                     if old_issue.series.scan_count() == 0:
                         old_issue.series.has_gallery = False
-                        old_issue.series.save()                        
+                        old_issue.series.save()
             else:
                 # implement in case we do different kind if cover moves
                 raise NotImplementedError
@@ -1664,7 +1676,7 @@ class SeriesRevisionManager(RevisionManager):
           has_indicia_frequency=series.has_indicia_frequency,
           has_isbn=series.has_isbn,
           has_issue_title=series.has_issue_title,
-          
+
           country=series.country,
           language=series.language,
           publisher=series.publisher,
@@ -1674,8 +1686,8 @@ class SeriesRevisionManager(RevisionManager):
         return revision
 
 def get_series_field_list():
-    return ['name', 'leading_article', 'imprint', 'format', 'year_began', 
-            'year_began_uncertain', 'year_ended', 'year_ended_uncertain', 
+    return ['name', 'leading_article', 'imprint', 'format', 'year_began',
+            'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
             'is_current', 'publisher', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
             'tracking_notes', 'publication_notes', 'notes']
@@ -1694,7 +1706,7 @@ class SeriesRevision(Revision):
     # their maximum number of ongoing reservations at the time of approval.
     reservation_requested = models.BooleanField(default=0)
 
-    name = models.CharField(max_length=255,  
+    name = models.CharField(max_length=255,
       help_text='Series name as it appears in the indicia (or cover only '
                 'if there is no indicia).')
     leading_article = models.BooleanField(default=False, blank=True,
@@ -1720,7 +1732,7 @@ class SeriesRevision(Revision):
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
-    tracking_notes = models.TextField(blank=True, 
+    tracking_notes = models.TextField(blank=True,
       help_text='Field to track numbering from one series to another.')
 
     # Fields for handling the presence of certain issue fields
@@ -1732,7 +1744,7 @@ class SeriesRevision(Revision):
       help_text="ISBNs are present for issues of this series.")
     has_issue_title = models.BooleanField(
       help_text="Titles are present for issues of this series.")
-    
+
     notes = models.TextField(blank=True)
 
     # Country and Language info.
@@ -1897,8 +1909,7 @@ class SeriesRevision(Revision):
 
         series.name = self.name
         if self.leading_article:
-            len_article = len(self.name.split()[0])
-            series.sort_name = self.name[len_article:].strip()
+            series.sort_name = remove_leading_article(self.name)
         else:
             series.sort_name = self.name
         series.classification = self.classification
@@ -1913,7 +1924,7 @@ class SeriesRevision(Revision):
         series.has_indicia_frequency = self.has_indicia_frequency
         series.has_isbn = self.has_isbn
         series.has_issue_title = self.has_issue_title
-        
+
         reservation = series.get_ongoing_reservation()
         if not self.is_current and reservation and self.previous() and \
           self.previous().is_current:
@@ -2086,9 +2097,9 @@ class IssueRevision(Revision):
     title = models.CharField(max_length=255, default='', blank=True,
       help_text='The title of the issue. Refer to the wiki for the '
                 'cases when an issue can have a title.')
-    no_title = models.BooleanField(default=False, 
+    no_title = models.BooleanField(default=False,
       help_text='Check if there is no title.')
-                
+
     volume = models.CharField(max_length=50, blank=True, default='',
       help_text='Volume number (only if listed on the item). For collections '
                 'or other items that only have a volume or book number, '
@@ -2179,7 +2190,7 @@ class IssueRevision(Revision):
     no_brand = models.BooleanField(default=False,
       help_text="Check this box if there is no publisher's logo or tagline.")
 
-    isbn = models.CharField(max_length=32, blank=True, default='', 
+    isbn = models.CharField(max_length=32, blank=True, default='',
       verbose_name='ISBN',
       help_text='The ISBN as printed on the item. Do not use this field for '
                 'numbering systems other than ISBN. If both ISBN 10 and '
@@ -2223,10 +2234,10 @@ class IssueRevision(Revision):
 
     def active_covers(self):
         raise NotImplementedError
-        
+
     def shown_covers(self):
         raise NotImplementedError
-        
+
     def variant_covers(self):
         image_set = Cover.objects.none()
         if self.issue:
@@ -2234,7 +2245,7 @@ class IssueRevision(Revision):
             ids = list(self.changeset.coverrevisions.all()\
                                      .values_list('cover__id', flat=True))
             image_set |= Cover.objects.filter(id__in=ids)
-                
+
             image_set |= self.issue.variant_covers()
         elif self.variant_of:
             image_set |= self.variant_of.variant_covers()
@@ -2248,7 +2259,7 @@ class IssueRevision(Revision):
             else:
                 image_set |= self.variant_of.active_covers()
         return image_set
-    
+
     def has_covers(self):
         if self.issue is None:
             return False
@@ -2262,19 +2273,19 @@ class IssueRevision(Revision):
         else:
             variants = self.variant_set.all()
         variants = list(variants.exclude(deleted=True))
-        
+
         if self.changeset.change_type == CTYPES['variant_add'] \
           and not self.variant_of:
             variants.extend(self.changeset.issuerevisions.exclude(issue=self.issue))
 
         return variants
-        
+
     def _variant_set(self):
         if self.issue is None:
             return Issue.objects.none()
         return self.issue.variant_set.all()
     variant_set = property(_variant_set)
-    
+
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
@@ -2300,10 +2311,10 @@ class IssueRevision(Revision):
                 own_stories = list(self.active_stories())
                 if own_stories:
                     cover_story = own_stories[0]
-        else: 
+        else:
             cover_story = None
         return cover_story, stories
-                
+
     def _story_set(self):
         return self.ordered_story_revisions()
     story_set = property(_story_set)
@@ -2344,7 +2355,7 @@ class IssueRevision(Revision):
         if self.variant_of:
             fields = ['variant_name'] + fields
         return fields
-        
+
     def _get_blank_values(self):
         return {
             'number': '',
@@ -2437,7 +2448,7 @@ class IssueRevision(Revision):
                 self.after = variant_of
                 max_sort = variant_of.variant_set.aggregate(Max('sort_code'))
                 if max_sort['sort_code__max']:
-                    self.after = variant_of.variant_set.get(                    
+                    self.after = variant_of.variant_set.get(
                                    sort_code=max_sort['sort_code__max'])
 
 
@@ -2505,7 +2516,7 @@ class IssueRevision(Revision):
                 self.series.imprint.issue_count = F('issue_count') + 1
                 self.series.imprint.save()
             update_count('issues', 1, language=self.series.language)
-                
+
         elif self.deleted:
             self.series.issue_count = F('issue_count') - 1
             # do NOT save the series here, it gets saved later in
@@ -2554,13 +2565,13 @@ class IssueRevision(Revision):
             self.title = issue.title
             self.no_title = issue.no_title
             self.save()
-            
+
         issue.volume = self.volume
         issue.no_volume = self.no_volume
         issue.display_volume_with_number = self.display_volume_with_number
         issue.variant_of = self.variant_of
         issue.variant_name = self.variant_name
-        
+
         issue.publication_date = self.publication_date
         if self.series.has_indicia_frequency:
             issue.indicia_frequency = self.indicia_frequency
@@ -2569,7 +2580,7 @@ class IssueRevision(Revision):
             self.indicia_frequency = issue.indicia_frequency
             self.no_indicia_frequency = issue.no_indicia_frequency
             self.save()
-            
+
         issue.key_date = self.key_date
 
         issue.price = self.price
@@ -2594,7 +2605,7 @@ class IssueRevision(Revision):
             self.isbn = issue.isbn
             self.no_isbn = issue.no_isbn
             self.save()
-            
+
         if self.series.has_barcode:
             issue.barcode = self.barcode
             issue.no_barcode = self.no_barcode
@@ -2602,7 +2613,7 @@ class IssueRevision(Revision):
             self.barcode = issue.barcode
             self.no_barcode = issue.no_barcode
             self.save()
-            
+
         if clear_reservation:
             issue.reserved = False
 
@@ -2756,14 +2767,14 @@ class StoryRevision(Revision):
 
     def moveable(self):
         """
-        A story revision is moveable 
-        a) if it is not currently attached to an issue and is a revision of a 
+        A story revision is moveable
+        a) if it is not currently attached to an issue and is a revision of a
            previously existing story. Therefore it is a story which was moved
            to the version issue, this way it can be moved back.
         b) an issue version of mine in this changeset has no story attached and
-           it is a cover sequence. Therefore one cover sequence can be moved 
+           it is a cover sequence. Therefore one cover sequence can be moved
            from the base to the version issue.
-        
+
         These conditions work for our current only case of a story move: i.e.
         issue versions.
         """
@@ -2772,10 +2783,10 @@ class StoryRevision(Revision):
                 if self.story == None:
                     return False
                 return True
-            
+
             if self.deleted:
                 return False
-            
+
             if (self.changeset.storyrevisions.exclude(issue=self.issue).count() and
               self.changeset.issuerevisions.filter(variant_of=self.issue).count()) \
               or self.type != StoryType.objects.get(name='Cover'):
@@ -2783,7 +2794,7 @@ class StoryRevision(Revision):
             return True
         else:
             raise False
-            
+
     def _field_list(self):
         return get_story_field_list()
         
