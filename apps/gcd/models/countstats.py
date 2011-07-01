@@ -25,6 +25,9 @@ class CountStatsManager(models.Manager):
               count=Series.objects.filter(deleted=False).count())
             self.create(name='issues', language=language,
               count=Issue.objects.filter(deleted=False).count())
+            self.create(name='variant issues', language=language,
+              count=Issue.objects.filter(deleted=False)\
+              .exclude(variant_of=None).count())
             self.create(name='issue indexes', language=language,
               count=Issue.objects.filter(deleted=False, is_indexed=True).count())
             self.create(name='covers', language=language,
@@ -40,6 +43,10 @@ class CountStatsManager(models.Manager):
         self.create(name='issues', language=language,
           count=Issue.objects.filter(series__language=language,
                                      deleted=False).count())
+                                     
+        self.create(name='variant issues', language=language,
+          count=Issue.objects.filter(series__language=language, \
+              deleted=False).exclude(variant_of=None).count())
 
         self.create(name='issue indexes', language=language,
           count=Issue.objects.filter(series__language=language,
