@@ -42,7 +42,7 @@ def valid_barcode(barcode):
         # if extra 2 digits remove them (EAN 2)
         barcode = barcode[:-2]
 
-    if len(barcode) > 13:
+    if len(barcode) not in (13, 12, 8):
         return False
 
     odd = True
