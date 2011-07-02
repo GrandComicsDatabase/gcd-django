@@ -122,6 +122,9 @@ Disallow: /
 Crawl-delay: 120
 Visit-time: 0600-0845
 
+User-agent: Mediapartners-Google
+Disallow:
+
 ## crawler should forget old URLs
 User-agent: *
 Disallow: /coverview.lasso
@@ -133,4 +136,6 @@ Disallow: /upload_cover/
 Disallow: /edit_covers/
 Disallow: /special/
 Disallow: /data/
-
+# we do not give access to images.comics.org for crawlers anyway
+Disallow: /issue/*/cover/
+Disallow: /changeset/
