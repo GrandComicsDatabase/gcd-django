@@ -1158,13 +1158,13 @@ def add_publisher(request):
           'but will be increased as your first changes are approved.')
 
     if request.method != 'POST':
-        form = get_publisher_revision_form()()
+        form = get_publisher_revision_form(user=request.user)()
         return _display_add_publisher_form(request, form)
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('add'))
 
-    form = get_publisher_revision_form()(request.POST)
+    form = get_publisher_revision_form(user=request.user)(request.POST)
     if not form.is_valid():
         return _display_add_publisher_form(request, form)
 
@@ -1205,7 +1205,7 @@ def add_indicia_publisher(request, parent_id):
               u'since "%s" is deleted or pending deletion.' % parent)
 
         if request.method != 'POST':
-            form = get_indicia_publisher_revision_form()()
+            form = get_indicia_publisher_revision_form(user=request.user)()
             return _display_add_indicia_publisher_form(request, parent, form)
 
         if 'cancel' in request.POST:
@@ -1213,7 +1213,7 @@ def add_indicia_publisher(request, parent_id):
               'apps.gcd.views.details.publisher',
               kwargs={ 'publisher_id': parent_id }))
 
-        form = get_indicia_publisher_revision_form()(request.POST)
+        form = get_indicia_publisher_revision_form(user=request.user)(request.POST)
         if not form.is_valid():
             return _display_add_indicia_publisher_form(request, parent, form)
 
@@ -1259,7 +1259,7 @@ def add_brand(request, parent_id):
               u'since "%s" is deleted or pending deletion.' % parent)
 
         if request.method != 'POST':
-            form = get_brand_revision_form()()
+            form = get_brand_revision_form(user=request.user)()
             return _display_add_brand_form(request, parent, form)
 
         if 'cancel' in request.POST:
@@ -1267,7 +1267,7 @@ def add_brand(request, parent_id):
               'apps.gcd.views.details.publisher',
               kwargs={ 'publisher_id': parent_id }))
 
-        form = get_brand_revision_form()(request.POST)
+        form = get_brand_revision_form(user=request.user)(request.POST)
         if not form.is_valid():
             return _display_add_brand_form(request, parent, form)
 
