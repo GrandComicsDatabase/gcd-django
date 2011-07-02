@@ -6,7 +6,8 @@ from django.utils.html import conditional_escape as esc
 from django import template
 from django.template.defaultfilters import yesno, linebreaksbr, title, urlize
 
-from apps.oi.models import StoryRevision, CTYPES, validated_isbn
+from apps.oi.models import StoryRevision, CTYPES, validated_isbn, \
+                           remove_leading_article
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           sum_page_counts
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
@@ -22,14 +23,14 @@ def valid_barcode(barcode):
     - ignore the check digit
     - count from right to left
     - add odd numbered times 3
-    - add even numbered 
+    - add even numbered
     - 10 - (result modulo 10) is check digit
     - check digit of 10 becomes 0
     '''
 
     # remove space and hyphens
     barcode = str(barcode).replace('-', '').replace(' ', '')
-    try: 
+    try:
         int(barcode)
     except ValueError:
         return False
@@ -43,10 +44,10 @@ def valid_barcode(barcode):
 
     if len(barcode) > 13:
         return False
-    
+
     odd = True
     check_sum = 0
-    # odd/even from back 
+    # odd/even from back
     for number in barcode[:-1][::-1]:
         if odd:
             check_sum += int(number)*3
@@ -75,7 +76,7 @@ def absolute_url(item, additional=''):
 def cover_image_tag(cover, size_alt_text):
     size, alt_text = size_alt_text.split(',')
     return get_image_tag(cover, alt_text, int(size))
-    
+
 def show_story_short(story, no_number=False):
     if no_number:
         story_line = u''
@@ -90,10 +91,10 @@ def show_story_short(story, no_number=False):
     else:
         title = '<span class="no_data">no title</span>'
     if story.feature:
-        story_line = u'%s %s (%s)' % (esc(story_line), title, 
+        story_line = u'%s %s (%s)' % (esc(story_line), title,
                                       esc(story.feature))
     else:
-        story_line = u'%s %s (%s)' % (esc(story_line), title, 
+        story_line = u'%s %s (%s)' % (esc(story_line), title,
                                      '<span class="no_data">no feature</span>')
     story_line = u'%s %s' % (story_line, story.type)
     page_count = show_page_count(story)
@@ -270,7 +271,7 @@ def changed_story_list(changeset):
                 story_changed_list = [u'Sequence deleted']
             else:
                 for field in story_revision._field_list():
-                    if compare_field_between_revs(field, story_revision, 
+                    if compare_field_between_revs(field, story_revision,
                                                   prev_story_rev):
                         story_changed_list.append(field_name(field))
             if story_changed_list:
@@ -281,7 +282,7 @@ def changed_story_list(changeset):
             output = u'<ul>%s</ul>' % output
     return mark_safe(output)
 
-# check to return True for yellow css compare highlighting 
+# check to return True for yellow css compare highlighting
 def check_changed(changed, field):
     if changed:
         return changed[field]
@@ -290,9 +291,12 @@ def check_changed(changed, field):
 # display certain similar fields' data in the same way
 def field_value(revision, field):
     value = getattr(revision, field)
-    if field in ['is_surrogate', 'no_volume', 'display_volume_with_number', 
-                 'no_brand', 'page_count_uncertain', 'title_inferred', 
-                 'no_barcode']:
+    if field in ['is_surrogate', 'no_volume', 'display_volume_with_number',
+                 'no_brand', 'page_count_uncertain', 'title_inferred',
+                 'no_barcode', 'no_indicia_frequency', 'no_isbn',
+                 'has_barcode', 'has_isbn', 'has_issue_title',
+                 'has_indicia_frequency', 'year_began_uncertain',
+                 'year_ended_uncertain']:
         return yesno(value, 'Yes,No')
     elif field in ['is_current']:
         res_holder_display = ''
@@ -340,6 +344,11 @@ def field_value(revision, field):
                 return_val = return_val + u'%s UPC/EAN; ' % ("valid" \
                              if valid_barcode(barcode) else "invalid")
             return return_val[:-2] + ')'
+    elif field == 'leading_article':
+        if value == True:
+            return u'Yes (sorted as: %s)' % remove_leading_article(revision.name)
+        else:
+            return u'No'
     return value
 
 # translate field name into more human friendly name
