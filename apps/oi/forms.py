@@ -142,7 +142,7 @@ def _set_help_labels(self, help_links):
             else:
                 label = self.fields[field].label
             self.fields[field].label = mark_safe(label + \
-              u' <a href="%s%s">[?]</a>' % (DOC_URL, help_links[field]))
+              u' <a href="%s%s" target=_blank>[?]</a>' % (DOC_URL, help_links[field]))
 
 def _init_no_isbn(series, revision):
     """
