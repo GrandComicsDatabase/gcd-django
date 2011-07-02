@@ -131,7 +131,7 @@ def remove_leading_article(name):
     returns the name with the leading article (separated by "'"
     or whitespace) removed
     '''
-    article_match = re.match(r"\w+['\s]\s*(.*)$", name, re.UNICODE)
+    article_match = re.match(r"'?\w+['\s]\s*(.*)$", name, re.UNICODE)
     if article_match:
         return article_match.group(1)
     else:
@@ -236,12 +236,13 @@ class Changeset(models.Model):
             # bulk issue deletions not supported
             return False
 
-    def singular(self):
+    def editable(self):
         """
-        Used for conditionals in templates, as bulk issue adds are treated
-        differently.
+        Used for conditionals in templates, as bulk issue adds and edits as
+        well as deletes cannot be edited after submission.
         """
-        return self.inline() or self.issuerevisions.count() == 1
+        return (self.inline() or self.issuerevisions.count() == 1 or \
+          self.change_type == CTYPES['variant_add']) and not self.deleted()
 
     def ordered_issue_revisions(self):
         """
@@ -1994,14 +1995,14 @@ class SeriesRevision(Revision):
 
 
 def get_issue_field_list():
-    return ['number', 'title', 'no_title', 
-            'volume', 'no_volume', 'display_volume_with_number', 
+    return ['number', 'title', 'no_title',
+            'volume', 'no_volume', 'display_volume_with_number',
             'indicia_publisher', 'indicia_pub_not_printed',
-            'brand', 'no_brand', 'publication_date', 'key_date', 
+            'brand', 'no_brand', 'publication_date', 'key_date',
             'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
             'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes']
-            
+
 class IssueRevisionManager(RevisionManager):
 
     def clone_revision(self, issue, changeset):
@@ -2339,7 +2340,7 @@ class IssueRevision(Revision):
         return [None, None]
 
     def _field_list(self):
-        fields = get_issue_field_list() 
+        fields = get_issue_field_list()
         if self.changeset.change_type == CTYPES['issue_add']:
             fields = ['after'] + fields
         if not self.series.has_barcode and \
@@ -2656,7 +2657,7 @@ class IssueRevision(Revision):
 
 def get_story_field_list():
     return ['sequence_number', 'type', 'title', 'title_inferred',
-            'feature', 'genre', 'job_number', 
+            'feature', 'genre', 'job_number',
             'script', 'no_script', 'pencils', 'no_pencils', 'inks',
             'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
             'editing', 'no_editing', 'page_count', 'page_count_uncertain',
@@ -2808,7 +2809,7 @@ class StoryRevision(Revision):
 
     def _field_list(self):
         return get_story_field_list()
-        
+
     def _get_blank_values(self):
         return {
             'title': '',

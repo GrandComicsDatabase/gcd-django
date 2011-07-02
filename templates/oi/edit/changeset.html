@@ -31,7 +31,7 @@
 {% ifequal changeset.state states.PENDING %}
   This change has been submitted for approval, but is not yet under review.
   {% ifequal changeset.indexer user %}
-    {% if changeset.singular %}
+    {% if changeset.editable %}
   <form action="{% url process id=changeset.id %}" method="POST">
     <input type="submit" name="retract" value="Retract change and edit further" />
     <label for="comments">Comments</label>
@@ -166,10 +166,12 @@ Cover is moved from {{ cover.issue }}.   <form action="{% url undo_move_cover id
 
       {% if changeset.storyrevisions.count %}
         {% for issuerevision in changeset.issuerevisions.all %}
-{{ issuerevision }} {% if issuerevision.variant_name %}[{{ issuerevision.variant_name }}] {% endif %}
-{% if issuerevision.story_set.count = 0 %}
-<p>No stories for this issue/variant.</p>
-{% endif %}
+          {% if changeset.issuerevisions.count > 1 %}
+            {{ issuerevision }} {% if issuerevision.variant_name %}[{{ issuerevision.variant_name }}] {% endif %}
+            {% if issuerevision.story_set.count = 0 %}
+            <p>No stories for this issue/variant.</p>
+            {% endif %}
+          {% endif %}
 <table class="story_list">
           {% for story in issuerevision.ordered_story_revisions %}
   <tr>

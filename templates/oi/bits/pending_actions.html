@@ -1,7 +1,7 @@
 {% ifequal changeset.state states.REVIEWING %}
   No actions available
 {% else %}
-  {% if perms.gcd.can_approve and changeset.indexer != user or changeset.indexer = user and changeset.singular and not changeset.deleted and section.object_type != 'cover' %}
+  {% if perms.gcd.can_approve and changeset.indexer != user or changeset.indexer = user and changeset.editable and section.object_type != 'cover' %}
 <form action="{% url process id=changeset.id %}" method="POST">
   <input type="hidden" name="comments" class="comments" />
     {% if changeset.indexer != user %}

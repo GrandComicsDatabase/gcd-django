@@ -23,7 +23,7 @@
       {% endif %}
   >
     {% else %}
-      {% if changeset.singular and not changeset.deleted and not is_cover %}
+      {% if changeset.editable and not is_cover %}
   <input type="submit" name="retract" value="Retract and edit further">
       {% endif %}
     {% endif %}
@@ -33,7 +33,7 @@
 {% if changeset.state == states.REVIEWING %}
   {% if user == changeset.approver %}
   <input type="submit" name="approve" value="Approve">
-    {% if changeset.singular and not changeset.deleted %}
+    {% if changeset.editable %}
   <input type="submit" name="disapprove" value="Send Back to Indexer">
     {% endif %}
   <input type="submit" name="cancel" value="Reject Permanently">
