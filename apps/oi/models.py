@@ -2359,7 +2359,7 @@ class IssueRevision(Revision):
           self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('title')
             fields.remove('no_title')
-        if self.variant_of:
+        if self.variant_of or (self.issue and self.issue.variant_set):
             fields = ['variant_name'] + fields
         return fields
 
@@ -2403,10 +2403,11 @@ class IssueRevision(Revision):
         self._seen_page_count = False
         self._seen_editing = False
         self._seen_isbn = False
+        self._seen_barcode = False
 
     def _imps_for(self, field_name):
         if field_name in ('number', 'publication_date', 'key_date',
-                          'price', 'notes'):
+                          'price', 'notes', 'variant_name'):
             return 1
         if not self._seen_volume and \
            field_name in ('volume', 'no_volume', 'display_volume_with_number'):
@@ -2432,6 +2433,9 @@ class IssueRevision(Revision):
             return 1
         if not self._seen_isbn and field_name in ('isbn', 'no_isbn'):
             self._seen_isbn = True
+            return 1
+        if not self._seen_barcode and field_name in ('barcode', 'no_barcode'):
+            self._seen_barcode = True
             return 1
         # Note, the "after" field does not directly contribute IMPs.
         return 0

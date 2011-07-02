@@ -394,7 +394,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
             can_request = True
         else:
             can_request = False
-            
+
         class RuntimeAddSeriesRevisionForm(SeriesRevisionForm):
             class Meta:
                 model = SeriesRevisionForm.Meta.model
@@ -403,7 +403,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                 widgets = SeriesRevisionForm.Meta.widgets
                 if can_request:
                     fields = ['reservation_requested'] + fields
-                
+
             if can_request:
                 reservation_requested = forms.BooleanField(required=False,
                   label = 'Request reservation',
@@ -484,8 +484,8 @@ class SeriesRevisionForm(forms.ModelForm):
 
 def _get_series_has_fields_off_note(series, field):
     return 'The %s field is turned off for %s. To enter a value for %s this ' \
-           'setting for the series has to be changed.' % (field, series, field), forms.BooleanField(widget=forms.HiddenInput, 
-                                          required=False, help_text='sdsds')
+           'setting for the series has to be changed.' % (field, series, field), \
+           forms.BooleanField(widget=forms.HiddenInput, required=False)
 
 def get_issue_revision_form(publisher, series=None, revision=None,
                             variant_of=None, user=None):
@@ -505,7 +505,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
 
         if not series.has_issue_title:
-            help_text, no_title = _get_series_has_fields_off_note(series, 
+            help_text, no_title = _get_series_has_fields_off_note(series,
                                                                   'title')
             title = forms.CharField(widget=HiddenInputWithHelp, required=False,
               help_text=help_text)
@@ -513,21 +513,21 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         if not series.has_indicia_frequency:
             help_text, no_indicia_frequency = \
               _get_series_has_fields_off_note(series, 'indicia frequency')
-            indicia_frequency = forms.CharField(widget=HiddenInputWithHelp, 
-              required=False, 
+            indicia_frequency = forms.CharField(widget=HiddenInputWithHelp,
+              required=False,
               help_text=help_text)
 
         if not series.has_isbn:
             help_text, no_isbn = _get_series_has_fields_off_note(series, 'ISBN')
-            isbn = forms.CharField(widget=HiddenInputWithHelp, required=False, 
+            isbn = forms.CharField(widget=HiddenInputWithHelp, required=False,
               help_text=help_text)
 
         if not series.has_barcode:
             help_text, no_barcode = \
               _get_series_has_fields_off_note(series, 'barcode')
-            barcode = forms.CharField(widget=HiddenInputWithHelp, 
+            barcode = forms.CharField(widget=HiddenInputWithHelp,
               required=False, help_text=help_text)
-            
+
         def clean(self):
             cd = self.cleaned_data
 
@@ -590,12 +590,12 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 # TODO where to put later printings which come out later
                 if 'after' in self.fields:
                     self.fields['after'].queryset = variant_of.variant_set.all() \
-                    | Issue.objects.filter(id=variant_of.id)
+                      | Issue.objects.filter(id=variant_of.id)
                     self.fields['after'].empty_label = None
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
-                
+
         return RuntimeAddVariantIssueRevisionForm
-        
+
     if revision is None or revision.source is None:
         class RuntimeAddIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta:
@@ -605,13 +605,25 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 if series.get_ongoing_reservation() is None:
                     fields = ['reservation_requested'] + fields
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
-                    
+
             def __init__(self, *args, **kwargs):
                 super(RuntimeAddIssueRevisionForm, self).__init__(*args, **kwargs)
                 self.fields['after'].queryset = series.active_issues()
                 self.fields['after'].empty_label = '[add as first issue]'
-                
+
         return RuntimeAddIssueRevisionForm
+
+    # the other issuerevision from 'variant_add' was taken care of above
+    if revision.changeset.change_type == CTYPES['variant_add'] or \
+      revision.issue.variant_set.count():
+        class RuntimeBaseIssueRevisionForm(RuntimeIssueRevisionForm):
+            class Meta:
+                model = IssueRevision
+                fields = RuntimeIssueRevisionForm.Meta.fields
+                fields = ['variant_name'] + fields
+                widgets = RuntimeIssueRevisionForm.Meta.widgets
+                widgets['variant_name'] = forms.TextInput(attrs={'class': 'wide'})
+        return RuntimeBaseIssueRevisionForm
 
     return RuntimeIssueRevisionForm
 
@@ -657,7 +669,7 @@ def get_bulk_issue_revision_form(series, method, user=None):
               series.publisher.active_indicia_publishers_no_pending()
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
-            
+
         after = forms.ModelChoiceField(required=False,
           queryset=Issue.objects.exclude(deleted=True).filter(series=series) \
             .order_by('sort_code'),
@@ -733,7 +745,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
 class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
     def __init__(self, *args, **kwargs):
         super(BulkEditIssueRevisionForm, self).__init__(*args, **kwargs)
-        ordering = ['no_title', 'volume', 'display_volume_with_number', 
+        ordering = ['no_title', 'volume', 'display_volume_with_number',
                     'no_volume']
         ordering.extend(self._shared_key_order())
         self.fields.keyOrder = ordering
@@ -761,7 +773,7 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
             cd['first_number'] = 1
 
         return cd
-        
+
 class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
     first_volume = forms.IntegerField(required=False,
       help_text='If blank, first volume is calculated from the issue specified '
@@ -943,11 +955,13 @@ def get_story_revision_form(revision=None, user=None):
         # initial value.  So only set None if there is an existing story revision.
         extra['empty_label'] = None
 
-    # to variants we can only add cover sequences (for now)
-    if revision and revision.issue.variant_of:
+    # for variants we can only have cover sequences (for now)
+    if revision and (revision.issue == None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
+        if revision.type not in queryset:
+            queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     else:
-        special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)', 
+        special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)',
                         'biography (nonfictional)')
         queryset = StoryType.objects.all()
         if revision is None or (revision is not None and
@@ -993,7 +1007,7 @@ class StoryRevisionForm(forms.ModelForm):
       help_text="Check if you do not know or aren't sure about the page count.")
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
-                             required=False, 
+                             required=False,
                              help_text=CREATOR_CREDIT_HELP % 'scripter')
     pencils = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                               required=False,
@@ -1012,7 +1026,7 @@ class StoryRevisionForm(forms.ModelForm):
                              help_text=CREATOR_CREDIT_HELP % 'editor')
 
     no_script = forms.BooleanField(required=False,
-      help_text=NO_CREATOR_CREDIT_HELP % ('script or plot', 
+      help_text=NO_CREATOR_CREDIT_HELP % ('script or plot',
         'e.g. for a cover or single-page illustration', 'script', 'script'))
     no_pencils = forms.BooleanField(required=False,
       help_text=NO_CREATOR_CREDIT_HELP % ('penciler', 'e.g. for '
@@ -1139,22 +1153,22 @@ class UploadScanForm(forms.Form):
     """ Form for cover uploads. """
 
     scan = forms.ImageField(widget=forms.FileInput)
-    source = forms.CharField(label='Source', required=False, 
+    source = forms.CharField(label='Source', required=False,
       help_text='If you upload a scan from another website, please '
                 'ask for permission and mention the source. If you upload '
                 'on behalf of someone you can mention this here as well.')
-    remember_source = forms.BooleanField(label='Remember the source', 
+    remember_source = forms.BooleanField(label='Remember the source',
                                          required=False)
     marked = forms.BooleanField(label="Mark cover", required=False,
       help_text='Uploads of sub-standard scans for older and/or rare comics '
                 'are fine, but please mark them for replacement.')
-    is_wraparound = forms.BooleanField(label="Wraparound cover", 
+    is_wraparound = forms.BooleanField(label="Wraparound cover",
                                        required=False,
       help_text='Cover is a standard wraparound cover: Two pages in width, '
                 'the right half is the front cover and will be automatically '
                 'selected.')
     is_gatefold = forms.BooleanField(label="Gatefold cover",
-                                         required=False, 
+                                         required=False,
       help_text='Cover is a non-standard wraparound cover or a gatefold cover. '
                 'After the upload you will select the front cover part. '
                 'The selection will not work if JavaScript is turned off.')
@@ -1190,7 +1204,7 @@ class UploadVariantScanForm(UploadScanForm):
         'variant issue before uploading a gatefold cover.')
     variant_name = forms.CharField(required=False,
       help_text='Name of this variant. Examples are: "Cover A" (if listed as '
-        'such in the issue), "2nd printing", "newsstand", "direct", or the '
+        'such in the issue), "second printing", "newsstand", "direct", or the '
         'name of the artist if different from the base issue.')
 
 class GatefoldScanForm(forms.Form):
@@ -1205,7 +1219,7 @@ class GatefoldScanForm(forms.Form):
     issue_id = forms.IntegerField(widget=forms.HiddenInput)
     scan_name = forms.CharField(widget=forms.HiddenInput)
     source = forms.CharField(widget=forms.HiddenInput, required=False)
-    remember_source = forms.BooleanField(widget=forms.HiddenInput, 
+    remember_source = forms.BooleanField(widget=forms.HiddenInput,
                                          required=False)
     marked = forms.BooleanField(widget=forms.HiddenInput, required=False)
     comments = forms.CharField(widget=forms.HiddenInput, required=False)
