@@ -84,6 +84,8 @@ class Issue(models.Model):
                 # can have only one sequence, the variant cover
                 if self.active_stories().count():
                     cover_story = self.active_stories()[0]
+        elif self.variant_of and len(list(self.active_stories())):
+            cover_story = self.active_stories()[0]
         else: 
             cover_story = None
         return cover_story, stories

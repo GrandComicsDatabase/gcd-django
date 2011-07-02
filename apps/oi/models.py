@@ -2073,8 +2073,8 @@ class IssueRevision(Revision):
     # If not null, insert or move the issue after the given issue
     # when saving back the the DB. If null, place at the beginning of
     # the series.
-    after = models.ForeignKey(Issue, null=True, related_name='after_revisions',
-      verbose_name='Add this issue after')
+    after = models.ForeignKey(Issue, null=True, blank=True, 
+      related_name='after_revisions', verbose_name='Add this issue after')
 
     # This is used *only* for multiple issues within the same changeset.
     # It does NOT correspond directly to gcd_issue.sort_code, which must be
@@ -2318,6 +2318,8 @@ class IssueRevision(Revision):
                 own_stories = list(self.active_stories())
                 if own_stories:
                     cover_story = own_stories[0]
+        elif self.variant_of and len(list(self.active_stories())):
+            cover_story = self.active_stories()[0]
         else:
             cover_story = None
         return cover_story, stories
