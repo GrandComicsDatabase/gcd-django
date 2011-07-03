@@ -49,7 +49,11 @@ GCD :: {{ user.indexer }} :: Approved Changes
       {% if changeset.change_type == CTYPES.issue_add %}
     <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue skeletons</a></td>
       {% else %}
+        {% if changeset.change_type == CTYPES.issue_bulk %}
     <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue bulk changes</a></td>
+        {% else %}
+    <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue variant add (with base)</a></td>
+        {% endif %}
       {% endif %}
     <td>{{ changeset }}</td>
     {% endif %}
