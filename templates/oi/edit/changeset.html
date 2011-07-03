@@ -109,7 +109,7 @@
     <td colspan="2" align="left">
       <input type="submit" id="add_story" name="add" value="Add story">
               {% if issue_revision.variant_of %}
-      Note that only a cover sequence can be added to a variant. In the actual issue <br>display the sequences from the <a href="{% url show_issue issue_id=issue_revision.variant_of.id %}">base issue</a> are additionally shown (skipping the first).
+      <br>Only a cover sequence can be added to a variant, and only if the cover artwork is different. On the issue display page the <br>sequences from the <a href="{% url show_issue issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence, if that one exists.
       <input type="hidden"
               {% else %}
       Sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
