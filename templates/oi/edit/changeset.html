@@ -125,8 +125,7 @@
               {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
   <tr>
     <td colspan="2" align="left">
-      One cannot add another story to this variant since it has a cover sequence.
-      Note that for the issue <br> display the other sequences are taken from the <a href="{% url show_issue issue_id=issue_revision.variant_of.id %}">base issue</a> (skipping the first).
+      One cannot add another story to this variant since it has a cover sequence. On the issue display page the <br>sequences from the <a href="{% url show_issue issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence.
     </td>
   </tr>
               {% endif %}
