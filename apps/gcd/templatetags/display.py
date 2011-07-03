@@ -341,8 +341,9 @@ def field_value(revision, field):
             barcodes = value.split(';')
             return_val = value + ' (note: '
             for barcode in barcodes:
-                return_val = return_val + u'%s UPC/EAN; ' % ("valid" \
-                             if valid_barcode(barcode) else "invalid")
+                return_val = return_val + u'%s; ' % ("valid UPC/EAN barcode" \
+                             if valid_barcode(barcode) \
+                             else "invalid UPC/EAN or non-standard barcode")
             return return_val[:-2] + ')'
     elif field == 'leading_article':
         if value == True:
