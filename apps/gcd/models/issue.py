@@ -30,7 +30,7 @@ class Issue(models.Model):
     variant_name = models.CharField(max_length=255)
     barcode = models.CharField(max_length=38)
     no_barcode = models.BooleanField(default=False)
-    
+
     # Dates and sorting
     publication_date = models.CharField(max_length=255)
     key_date = models.CharField(max_length=10)
@@ -86,7 +86,7 @@ class Issue(models.Model):
                     cover_story = self.active_stories()[0]
         elif self.variant_of and len(list(self.active_stories())):
             cover_story = self.active_stories()[0]
-        else: 
+        else:
             cover_story = None
         return cover_story, stories
 
@@ -177,8 +177,8 @@ class Issue(models.Model):
           self.series.active_issues().filter(sort_code__lt=self.sort_code)
         earlier_issues = earlier_issues.order_by('-sort_code')
         if earlier_issues:
-            prev_issue = earlier_issues[0]     
-        
+            prev_issue = earlier_issues[0]
+
         later_issues = self.series.active_issues()\
                            .filter(sort_code__gt=self.sort_code)
         later_issues = later_issues.order_by('sort_code')
@@ -210,7 +210,12 @@ class Issue(models.Model):
             kwargs={'issue_id': self.id } )
 
     def full_name(self):
-        return u'%s #%s' % (self.series.full_name(), self.display_number)
+        if self.variant_name:
+            return u'%s #%s [%s]' % (self.series.full_name(),
+                                     self.display_number,
+                                     self.variant_name)
+        else:
+            return u'%s #%s' % (self.series.full_name(), self.display_number)
 
     def __unicode__(self):
         return u'%s #%s' % (self.series, self.display_number)

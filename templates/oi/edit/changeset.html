@@ -79,8 +79,8 @@
       For now, assume the app ensures that there are either many issues and
       no stories, or one issue and optionally stories that may be assumed to
       be associated with that issue.
-      At least currently changesets with many issues but no stories will 
-      never end up here: Bulk adds cannot be edited, only directly submitted. 
+      At least currently changesets with many issues but no stories will
+      never end up here: Bulk adds cannot be edited, only directly submitted.
       Bulk changes have their own page anyway, and cannot be edited like this.
 
       Also, the issue table should not be of class "story_list", need to fix
@@ -91,8 +91,8 @@
         {% for issue_revision in changeset.issuerevisions.all %}
   <tr>
     <td>
-          {{ issue_revision }}
-          {% if issue_revision.variant_of %} ({% if issue_revision.variant_name %}[{{ issue_revision.variant_name }}] {% endif %} variant of {{ issue_revision.variant_of }}) {% endif %}
+          {{ issue_revision.full_name }}
+          {% if issue_revision.variant_of %} (variant of {{ issue_revision.variant_of }}) {% endif %}
     </td>
     <td>
       <form class="changeset" method="GET"
@@ -144,30 +144,31 @@
   </tr>
           {% endif %}
         {% endfor %}
-</table>  
+</table>
       {% endif %} <!-- changeset.issuerevisions.count -->
       {% if changeset.change_type == CTYPES.variant_add %}
         {% if changeset.coverrevisions.count %}
 <div>
           {% for cover in changeset.coverrevisions.all %}
 {{ cover.cover|cover_image_tag:'1, moved_cover' }}
-Cover is moved from {{ cover.issue }}.   <form action="{% url undo_move_cover id=changeset.id, cover_id=cover.id %}" method="POST">
+<br>Cover is moved from {{ cover.issue }}.
+  <form action="{% url undo_move_cover id=changeset.id, cover_id=cover.id %}" method="POST">
     <input type="submit" value="Undo move cover">
   </form>
+  <br>
           {% endfor %}
 </div>
         {% endif %}
         {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}
-<p>
-<a href="{% url move_cover id=changeset.id %}">Move covers between both issues.<a/>
-</p>
+<form action="{% url move_cover id=changeset.id %}" method="GET"><input type="submit" value="Move covers between both issues"></form>
+<br>
         {% endif %}
       {% endif %} <!-- variant_add -->
 
       {% if changeset.storyrevisions.count %}
         {% for issuerevision in changeset.issuerevisions.all %}
           {% if changeset.issuerevisions.count > 1 %}
-            {{ issuerevision }} {% if issuerevision.variant_name %}[{{ issuerevision.variant_name }}] {% endif %}
+            {{ issuerevision.full_name }}
             {% if issuerevision.story_set.count = 0 %}
             <p>No stories for this issue/variant.</p>
             {% endif %}
@@ -190,13 +191,13 @@ Cover is moved from {{ cover.issue }}.   <form action="{% url undo_move_cover id
                value="Remove New Story">
       </form>
             {% else %}
-              {% if story.issue %} 
-              {% comment %} 
-                Only allow deletes when assigned to the original issue in 
+              {% if story.issue %}
+              {% comment %}
+                Only allow deletes when assigned to the original issue in
                 the changeset. Relevant if a story is moved between two
-                issues. story.issue becomes None in an active changeset 
-                in such a case, therefore used as a conditional. 
-                Reconsider once we are working on moves in general, and not 
+                issues. story.issue becomes None in an active changeset
+                in such a case, therefore used as a conditional.
+                Reconsider once we are working on moves in general, and not
                 just issue variants.
               {% endcomment %}
       <form class="story_button" method="POST"

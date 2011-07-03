@@ -264,7 +264,7 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['issue_add']:
             return u'[ADDED]'
         elif self.change_type == CTYPES['variant_add']:
-            return u'[VARIANT]'
+            return u'[VARIANT + BASE]'
         return self.revisions.next().queue_descriptor()
 
     def changeset_action(self):
@@ -2655,7 +2655,12 @@ class IssueRevision(Revision):
         return self.issue.get_absolute_url()
 
     def full_name(self):
-        return u'%s #%s' % (self.series.full_name(), self.display_number)
+        if self.variant_name:
+            return u'%s #%s [%s]' % (self.series.full_name(),
+                                     self.display_number,
+                                     self.variant_name)
+        else:
+            return u'%s #%s' % (self.series.full_name(), self.display_number)
 
     def __unicode__(self):
         """

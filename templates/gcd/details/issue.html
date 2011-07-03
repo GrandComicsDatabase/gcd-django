@@ -47,13 +47,12 @@ This issue has variants.
               <ul>
     {% for variant in issue.other_variants %}
                 <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
-      {% if variant.variant_name %} [{{ variant.variant_name }}] {% endif %}
     {% endfor %}
           </ul><p>
   {% else %}
     {% if issue.variant_of %}
 </p><p>
-    {% endif %}  
+    {% endif %}
   {% endif %}
             {{ issue.notes|linebreaksbr }}
         </div>
@@ -98,13 +97,13 @@ This issue has variants.
   {% if not preview %}
               <a href="{% url edit_covers issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a>
               <br>
-  {% endif %}              
+  {% endif %}
 {% endif %}
 {% if issue.series.has_gallery %}
               <a href="{{ issue.series.get_absolute_url }}covers">Cover gallery</a>
 {% endif %}
             </div>
-          </div> 
+          </div>
         </div> <!-- coverContainer -->
       </div> <!-- cover -->
       <div id="story_data">
