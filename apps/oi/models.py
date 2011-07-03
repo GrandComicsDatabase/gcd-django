@@ -2330,6 +2330,7 @@ class IssueRevision(Revision):
 
     def _reservation_set(self):
         # Just totally fake this for now.
+        # TODO delete this, I think
         return Reservation.objects.filter(pk__isnull=True)
     reservation_set = property(_reservation_set)
 
@@ -2361,7 +2362,8 @@ class IssueRevision(Revision):
           self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('title')
             fields.remove('no_title')
-        if self.variant_of or (self.issue and self.issue.variant_set.count()):
+        if self.variant_of or (self.issue and self.issue.variant_set.count()) \
+          or self.changeset.change_type == CTYPES['variant_add']:
             fields = ['variant_name'] + fields
         return fields
 
