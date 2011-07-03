@@ -138,6 +138,7 @@ RECENTS_COUNT = 5
 
 SITE_URL = 'http://www.comics.org/'
 SITE_NAME = 'Grand Comics Database'
+# set the following to None / something else in settings_local.py
 SESSION_COOKIE_DOMAIN = 'comics.org'
 LOGIN_REDIRECT_WHITELIST = ('docs.comics.org',)
 
