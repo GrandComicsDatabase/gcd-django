@@ -2073,7 +2073,7 @@ class IssueRevision(Revision):
     # If not null, insert or move the issue after the given issue
     # when saving back the the DB. If null, place at the beginning of
     # the series.
-    after = models.ForeignKey(Issue, null=True, blank=True, 
+    after = models.ForeignKey(Issue, null=True, blank=True,
       related_name='after_revisions', verbose_name='Add this issue after')
 
     # This is used *only* for multiple issues within the same changeset.
@@ -2361,7 +2361,7 @@ class IssueRevision(Revision):
           self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('title')
             fields.remove('no_title')
-        if self.variant_of or (self.issue and self.issue.variant_set):
+        if self.variant_of or (self.issue and self.issue.variant_set.count()):
             fields = ['variant_name'] + fields
         return fields
 

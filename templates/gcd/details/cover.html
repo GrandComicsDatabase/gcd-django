@@ -23,7 +23,7 @@
   <a href="{{ issue.get_absolute_url }}">{{ cover_tag }}</a>
   <div class="cover_links">Zoom:&nbsp;<a href="{{ issue.get_absolute_url }}cover/1">Small</a>&nbsp;<a href="{{ issue.get_absolute_url }}cover/2">Medium</a>&nbsp;<a href="{{ issue.get_absolute_url }}cover/4">Large</a>
   <br><a href="{{ issue.get_absolute_url }}">Issue {{ issue.display_number }}</a>
-    <br><a href="{% url edit_covers issue_id=issue.id %}">Add/replace cover</a>
+    <br><a href="{% url edit_covers issue_id=issue.id %}">Edit covers</a>
     <br>
     <a href="{{ issue.series.get_absolute_url }}covers">Series Covers</a>
   </div>
