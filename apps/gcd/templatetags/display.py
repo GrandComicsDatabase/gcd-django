@@ -341,7 +341,7 @@ def field_value(revision, field):
             barcodes = value.split(';')
             return_val = value + ' (note: '
             for barcode in barcodes:
-                return_val = return_val + u'%s; ' % ("valid UPC/EAN barcode" \
+                return_val = return_val + u'%s; ' % ("valid UPC/EAN" \
                              if valid_barcode(barcode) \
                              else "invalid UPC/EAN or non-standard")
             return return_val[:-2] + ')'
