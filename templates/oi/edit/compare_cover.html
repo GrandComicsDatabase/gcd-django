@@ -30,7 +30,7 @@ Reviewing :: {{ revision }}
   <h2>cover to be replaced</h2>
   <div class="cover_large">
     <a href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_tag }}</a>
-  {% if old_cover_width %}  
+  {% if old_cover_width %}
   <div>The full cover file has a width of {{ old_cover_width }} pixels.</div>
   {% endif %}
   {% if old_cover.is_wraparound %}
@@ -53,20 +53,21 @@ Reviewing :: {{ revision }}
   {% if revision.deleted %}
 <h2> cover deletion </h2>
   {% else %}
-<h2> cover uploaded 
+<h2> cover uploaded
     {% if current_covers or changeset.issuerevisions.count %}
-      {% if changeset.issuerevisions.count %} 
+      {% if changeset.issuerevisions.count %}
         for a new <span class="comparison_highlight">variant issue</span>
+        with variant name: {{ changeset.issuerevisions.all.0.variant_name }}
       {% else %}
         as an <span class="comparison_highlight">additional</span> cover (dust jacket, flip cover)
       {% endif %}
-    {% endif %} 
+    {% endif %}
 </h2>
   {% endif %}
 {% endif %}
 <div class="cover_large">
   <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
-{% if cover_width %}  
+{% if cover_width %}
   <div>The full cover file has a width of {{ cover_width }} pixels.</div>
 {% endif %}
 {% if revision.is_wraparound %}
@@ -77,6 +78,13 @@ Reviewing :: {{ revision }}
 {% endif %}
 
   <div>
+{% if revision.deleted %}
+    <div>
+      Cover <a href="{% url compare id=old_cover.changeset.id %}">
+      uploaded on {{ old_cover.created }}</a> by <br>
+      {{ old_cover|show_cover_contributor }}.
+    </div>
+{% endif %}
 Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revision.created }} by <br>
 {{ revision|show_cover_contributor }}.
 {% if revision.marked %}

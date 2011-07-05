@@ -2491,6 +2491,11 @@ def cover_compare(request, changeset, revision):
               old_cover.cover.id,
               old_cover.changeset.created.strftime('%Y%m%d_%H%M%S')))
 
+    if revision.deleted:
+        old_cover = CoverRevision.objects.filter(cover=revision.cover,
+                      created__lt=revision.created,
+                      changeset__state=states.APPROVED).order_by('-created')[0]
+
     cover_width = None
     if revision.changeset.state in states.ACTIVE:
         if revision.issue.has_covers():
