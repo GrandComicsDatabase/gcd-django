@@ -1951,9 +1951,9 @@ class SeriesRevision(Revision):
                              language=self.language)
                 variant_issues = Issue.objects.filter(series=series,
                   deleted=False).exclude(variant_of=None).count()
-                update_count('variant_issues', -issue_indexes,
+                update_count('variant issues', -variant_issues,
                              language=series.language)
-                update_count('variant_issues', issue_indexes,
+                update_count('variant issues', variant_issues,
                              language=self.language)
                 issue_indexes = Issue.objects.filter(series=series,
                                   is_indexed=True, deleted=False).count()
