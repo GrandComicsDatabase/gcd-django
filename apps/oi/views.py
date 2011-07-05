@@ -2454,7 +2454,7 @@ def cover_compare(request, changeset, revision):
     - for replacement show former cover
     - for other active uploads show other existing and active covers
     '''
-    if revision.deleted:
+    if revision.deleted or revision.cover and revision.cover.deleted==True:
         cover_tag = get_image_tag(revision.cover, "deleted cover", ZOOM_LARGE)
     else:
         cover_tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_LARGE)
