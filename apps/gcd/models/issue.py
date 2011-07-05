@@ -218,5 +218,9 @@ class Issue(models.Model):
             return u'%s #%s' % (self.series.full_name(), self.display_number)
 
     def __unicode__(self):
-        return u'%s #%s' % (self.series, self.display_number)
+        if self.variant_name:
+            return u'%s #%s [%s]' % (self.series, self.display_number,
+                                     self.variant_name)
+        else:
+            return u'%s #%s' % (self.series, self.display_number)
 

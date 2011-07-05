@@ -11,6 +11,9 @@
   {% if issue_number %}
   <a href="{{ issue.get_absolute_url }}">{{ issue_number|show_issue_number }}</a>
   {% endif %}
+  {% if issue.variant_name and not no_variant_name %}
+  [{{ issue.variant_name }}]
+  {% endif %}
 </div>
   {% if issue.publication_date %}
 <div class="right">
@@ -64,7 +67,7 @@
     {% endfor %}
       </select>
       <input type="submit" value="{% trans 'Go' %}"/>
-    </form> 
+    </form>
   {% if next_issue %}
     |
     {% if description %}

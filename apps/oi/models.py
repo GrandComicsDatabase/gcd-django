@@ -2344,7 +2344,9 @@ class IssueRevision(Revision):
 
     def _field_list(self):
         fields = get_issue_field_list()
-        if self.changeset.change_type == CTYPES['issue_add']:
+        if self.changeset.change_type == CTYPES['issue_add'] or \
+          self.changeset.change_type == CTYPES['variant_add'] and \
+          self.variant_of:
             fields = ['after'] + fields
         if not self.series.has_barcode and \
           self.changeset.change_type != CTYPES['issue_bulk']:
@@ -2666,7 +2668,11 @@ class IssueRevision(Revision):
         """
         Re-implement locally instead of using self.issue because it may change.
         """
-        return u'%s #%s' % (self.series, self.display_number)
+        if self.variant_name:
+            return u'%s #%s [%s]' % (self.series, self.display_number,
+                                     self.variant_name)
+        else:
+            return u'%s #%s' % (self.series, self.display_number)
 
 def get_story_field_list():
     return ['sequence_number', 'type', 'title', 'title_inferred',

@@ -15,7 +15,9 @@
 
 {% with issue.series as series %}
 {% with issue.display_number as issue_number %}
+{% with 1 as no_variant_name %}
   {% include "gcd/bits/series_issue_header.html" %}
+{% endwith %}
 {% endwith %}
 {% endwith %}
 
