@@ -1690,6 +1690,12 @@ def add_story(request, issue_revision_id, changeset_id):
     try:
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
         issue = issue_revision.issue
+        if issue_revision.variant_of and \
+          issue_revision.active_stories().count():
+            return render_error(request,
+                  'You cannot add more than one story to a variant issue.',
+                  redirect=False)
+
         if request.method != 'POST':
             seq = ''
             if 'added_sequence_number' in request.GET:
@@ -1713,7 +1719,6 @@ def add_story(request, issue_revision_id, changeset_id):
         if not form.is_valid():
             return _display_add_story_form(request, issue_revision, form,
                                            changeset_id)
-
 
         revision = form.save(commit=False)
         stories = issue_revision.active_stories()
