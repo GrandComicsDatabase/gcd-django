@@ -1322,6 +1322,9 @@ def add_series(request, publisher_id):
         if request.method != 'POST':
             initial = {}
             initial['country'] = publisher.country.id
+            initial['has_barcode'] = True
+            initial['has_indicia_frequency'] = True
+            initial['has_isbn'] = True
             form = get_series_revision_form(publisher,
                                             user=request.user)(initial=initial)
             return _display_add_series_form(request, publisher, imprint, form)
