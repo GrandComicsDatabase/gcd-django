@@ -300,7 +300,8 @@ class PublisherRevisionForm(forms.ModelForm):
 
     def clean(self):
         cd = self.cleaned_data
-        cd['name'] = cd['name'].strip()
+        if 'name' in cd:
+            cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
         return cd
@@ -322,7 +323,7 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
         model = IndiciaPublisherRevision
         fields = _get_publisher_fields(middle=('is_surrogate', 'country'))
 
-    name = forms.CharField(max_length=255,
+    name = forms.CharField(max_length=255, required=True,
       help_text='The name exactly as it appears in the indicia, including '
                 'punctuation, abbreviations, suffixes like ", Inc.", etc.  '
                 'Do not move articles to the end of the name.')
@@ -334,7 +335,8 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
 
     def clean(self):
         cd = self.cleaned_data
-        cd['name'] = cd['name'].strip()
+        if 'name' in cd:
+            cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
         return cd
@@ -383,7 +385,8 @@ class BrandRevisionForm(forms.ModelForm):
 
     def clean(self):
         cd = self.cleaned_data
-        cd['name'] = cd['name'].strip()
+        if 'name' in cd:
+            cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
         return cd
@@ -995,7 +998,7 @@ class StoryRevisionForm(forms.ModelForm):
       help_text='If the title is not listed, use the first line of dialog, '
                 'place it in "quotation marks" and check the next box.  Do *not* '
                 'place the title in brackets.  Title is required for sequences of '
-                'type "story", "text story" and "text article", but may be left '
+                'type "comic story", "text story" and "text article", but may be left '
                 'blank for sequences of other types.')
     title_inferred = forms.BooleanField(required=False,
       label='Unofficial title',
