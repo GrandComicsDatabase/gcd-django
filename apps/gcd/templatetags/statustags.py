@@ -24,7 +24,7 @@ def last_updated_issues(parser, token):
     if language_pos > 0:
         language_pos += len('language=')
         code = token.contents[language_pos:].lower().strip()
-        if code in LANGUAGES: # either a supported language code 
+        if code in LANGUAGES: # either a supported language code
             language_code = code
         else: # or the language_code via a template variable
             language_in_context = code
@@ -53,14 +53,14 @@ class LastUpdatedNode(template.Node):
             recents = recents.filter(language__code=self.language_code)
         else:
             recents = recents.filter(language__isnull=True)
- 
+
         return_string = u'<ul>'
         for recent in recents:
             i = recent.issue
             return_string += u'<li><a href="%s">%s #%s</a> (%s)</li>' % \
                              (i.get_absolute_url(), esc(i.series),
                               esc(i.number), esc(i.series.publisher.name))
-        
+
         return mark_safe(return_string+'</ul>')
 
 
