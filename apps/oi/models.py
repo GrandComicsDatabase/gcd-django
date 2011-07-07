@@ -2210,7 +2210,7 @@ class IssueRevision(Revision):
       help_text='The barcode as printed on the item with no spaces. In case '
                 'two barcodes are present, separate them with a semi-colon.')
     no_barcode = models.BooleanField(default=False,
-      help_text='Check if there is no barcode.')
+      help_text='Check this box if there is no barcode.')
 
     date_inferred = models.BooleanField(default=False, blank=True)
 
@@ -2460,14 +2460,6 @@ class IssueRevision(Revision):
         self.series = series
         if variant_of:
             self.variant_of = variant_of
-            # in case of same series sort after base issue
-            if series == variant_of.series:
-                self.after = variant_of
-                max_sort = variant_of.variant_set.aggregate(Max('sort_code'))
-                if max_sort['sort_code__max']:
-                    self.after = variant_of.variant_set.get(
-                                   sort_code=max_sort['sort_code__max'])
-
 
     def _post_commit_to_display(self):
         if self.changeset.changeset_action() == ACTION_MODIFY and \
