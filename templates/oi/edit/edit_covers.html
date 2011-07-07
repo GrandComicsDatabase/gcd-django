@@ -55,7 +55,7 @@ Edit Covers :: {{ issue }}
   {% else %}
     {% if cover.deletable %}
 <div>
-      {% if not cover.issue.variant_of and not issue.reserved and issue.cover_set.count > 1 %}
+      {% if not cover.issue.variant_of and not issue.reserved %}
   <form action="{% url add_variant_issue issue_id=cover.issue.id, cover_id=cover.id %}" method="GET">
     <input title="Press to create a new variant issue with this cover." type="submit" value="Create variant for cover">
   </form>

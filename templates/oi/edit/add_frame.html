@@ -22,6 +22,9 @@ Adding {{ object_name }}
   {{ form.as_table }}
   </table>
   <input type="submit" name="add" value="{{ action_label}} {{ object_name }}"></input>
+{% if alternative_action %}
+  <input type="submit" name="{{ alternative_action }}" value="{{ alternative_label }}"></input>
+{% endif %}
 {% ifequal object_name "Story" %}
   <input type="submit" name="cancel_return" value="Cancel"></input>
 {% else %}

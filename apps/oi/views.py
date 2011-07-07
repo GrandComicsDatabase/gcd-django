@@ -1368,7 +1368,7 @@ def _display_add_series_form(request, publisher, imprint, form):
 
 @permission_required('gcd.can_reserve')
 def add_issue(request, series_id, sort_after=None, variant_of=None,
-              variant_cover=None):
+              variant_cover=None, edit_with_base=False):
     if not request.user.indexer.can_reserve_another():
         return render_error(request,
           'You have reached your limit of open changes.  You must '
@@ -1417,15 +1417,13 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
         return _display_add_issue_form(request, series, form, variant_of,
                                        variant_cover)
 
-    if variant_of and (variant_of.cover_set.count() > 1 or \
-                       variant_of.story_set.filter(type__name='cover').\
-                         count() > 1):
+    if variant_of and edit_with_base:
         kwargs = {'variant_of': variant_of,
                   'issuerevision': form.save(commit=False)}
         if variant_cover:
             return reserve(request, variant_cover.id, 'cover',
                            callback=add_variant_issuerevision,
-                           callback_args = kwargs)
+                           callback_args=kwargs)
         return reserve(request, variant_of.id, 'issue',
                        callback=add_variant_issuerevision,
                        callback_args=kwargs)
@@ -1458,7 +1456,7 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
     return True
 
 @permission_required('gcd.can_reserve')
-def add_variant_issue(request, issue_id, cover_id=None):
+def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
         if cover.issue.id != int(issue_id):
@@ -1467,30 +1465,48 @@ def add_variant_issue(request, issue_id, cover_id=None):
     else:
         cover = None
     issue = get_object_or_404(Issue, id=issue_id)
-    return add_issue(request, issue.series.id, variant_of=issue,
-                     variant_cover=cover)
+
+    if 'edit_with_base' in request.POST or edit_with_base:
+        return add_issue(request, issue.series.id, variant_of=issue,
+                        variant_cover=cover, edit_with_base=True)
+    else:
+        return add_issue(request, issue.series.id, variant_of=issue,
+                         variant_cover=cover)
 
 def _display_add_issue_form(request, series, form, variant_of, variant_cover):
+    action_label = 'Submit new'
+    alternative_action = None
+    alternative_label = None
     if variant_of:
         kwargs = {
             'issue_id': variant_of.id,
         }
         if variant_cover:
             kwargs['cover_id'] = variant_cover.id
+            action_label = 'Save new'
+            object_name = 'Variant Issue for %s and edit both' % variant_of
+        else:
+            alternative_action = 'edit_with_base'
+            alternative_label = 'Save new Variant Issue for %s and edit both' \
+                                % variant_of
+            object_name = 'Variant Issue for %s' % variant_of
+
         url = urlresolvers.reverse('add_variant_issue', kwargs=kwargs)
-        object_name = 'Variant Issue for %s' % variant_of
     else:
         kwargs = {
             'series_id': series.id,
         }
         url = urlresolvers.reverse('add_issue', kwargs=kwargs)
         object_name = 'Issue'
+
     return render_to_response('oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': url,
-        'action_label': 'Submit new',
+        'action_label': action_label,
         'form': form,
+        'alternative_action': alternative_action,
+        'alternative_label': alternative_label
       },
       context_instance=RequestContext(request))
 
