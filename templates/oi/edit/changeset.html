@@ -142,6 +142,18 @@
     </td>
   </tr>
           {% endif %}
+{% if issue_revision.issue and not issue_revision.variant_of and changeset.change_type != CTYPES.variant_add %}
+  <tr>
+    <td colspan="2">
+      <form class="changeset" method="GET"
+            action="{% url add_variant_to_issue_revision issue_revision_id=issue_revision.id, changeset_id=changeset.id %}">
+        <input type="submit" id="add_variant_to_issue_revision_{{ issue_revision.id }}"
+               name="add_variant_to_issue_revision_{{ issue_revision.id }}"
+               value="Add variant issue">
+      </form>Note that you cannot remove a variant from this change afterwards.
+    </td>
+  </tr>
+{% endif %}
         {% endfor %}
 </table>
       {% endif %} <!-- changeset.issuerevisions.count -->

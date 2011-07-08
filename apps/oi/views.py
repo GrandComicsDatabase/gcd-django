@@ -1366,6 +1366,18 @@ def _display_add_series_form(request, publisher, imprint, form):
       },
       context_instance=RequestContext(request))
 
+def init_added_variant(form_class, initial, issue):
+    for key in initial.keys():
+        if key.startswith('_'):
+            initial.pop(key)
+    if issue.brand:
+        initial['brand'] = issue.brand.id
+    if issue.indicia_publisher:
+        initial['indicia_publisher'] = issue.indicia_publisher.id
+    initial['variant_name'] = u''
+    form = form_class(initial=initial)
+    return form
+
 @permission_required('gcd.can_reserve')
 def add_issue(request, series_id, sort_after=None, variant_of=None,
               variant_cover=None, edit_with_base=False):
@@ -1390,14 +1402,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     if request.method != 'POST':
         if variant_of:
             initial = dict(variant_of.__dict__)
-            for key in initial.keys():
-                if key.startswith('_'):
-                    initial.pop(key)
-            if variant_of.brand:
-                initial['brand'] = variant_of.brand.id
-            if variant_of.indicia_publisher:
-                initial['indicia_publisher'] = variant_of.indicia_publisher.id
-            form = form_class(initial=initial)
+            form = init_added_variant(form_class, initial, variant_of)
         else:
             initial = {}
             reversed_issues = series.active_issues().order_by('-sort_code')
@@ -1437,6 +1442,49 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                  variant_of=variant_of)
     return submit(request, changeset.id)
 
+def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
+    changeset = get_object_or_404(Changeset, id=changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may add variants.')
+    if changeset.change_type == CTYPES['variant_add']:
+        return render_error(request,
+          'There already is a variant in this changeset.')
+    issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
+
+    form_class = get_revision_form(model_name='issue',
+                                   series=issue_revision.series,
+                                   publisher=issue_revision.series.publisher,
+                                   variant_of=issue_revision.issue,
+                                   user=request.user)
+
+    if request.method != 'POST':
+        initial = dict(issue_revision.__dict__)
+        form = init_added_variant(form_class, initial, issue_revision)
+        return _display_add_issue_form(request, series, form, None, None,
+                                       issue_revision=issue_revision)
+
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit',
+          kwargs={ 'id': changeset_id }))
+
+    form = form_class(request.POST)
+    if not form.is_valid():
+        return _display_add_issue_form(request, series, form, None, None,
+                                       issue_revision=issue_revision)
+
+    variant_revision = form.save(commit=False)
+    variant_revision.save_added_revision(changeset=changeset,
+                                         series=issue_revision.series,
+                                         variant_of=issue_revision.issue)
+    changeset.change_type=CTYPES['variant_add']
+    changeset.save()
+
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'edit',
+      kwargs={ 'id': changeset_id }))
+
 def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
     if changeset.change_type == CTYPES['cover']:
         issue = revision.issue
@@ -1473,7 +1521,8 @@ def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
         return add_issue(request, issue.series.id, variant_of=issue,
                          variant_cover=cover)
 
-def _display_add_issue_form(request, series, form, variant_of, variant_cover):
+def _display_add_issue_form(request, series, form, variant_of, variant_cover,
+                            issue_revision=None):
     action_label = 'Submit new'
     alternative_action = None
     alternative_label = None
@@ -1492,6 +1541,14 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover):
             object_name = 'Variant Issue for %s' % variant_of
 
         url = urlresolvers.reverse('add_variant_issue', kwargs=kwargs)
+    elif issue_revision:
+        kwargs = {
+            'issue_revision_id': issue_revision.id,
+            'changeset_id': issue_revision.changeset.id,
+        }
+        action_label = 'Save new'
+        url = urlresolvers.reverse('add_variant_to_issue_revision', kwargs=kwargs)
+        object_name = 'Variant Issue for %s' % issue_revision
     else:
         kwargs = {
             'series_id': series.id,
