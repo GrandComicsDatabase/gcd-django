@@ -91,15 +91,35 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
     <p><span class="comparison_highlight">cover is marked for replacement</span></p>
   {% ifequal changeset.state states.REVIEWING %}
     {% ifequal user changeset.approver %}
-    <a href="{% url unmark_cover_revision revision_id=revision.id %}">Remove mark for replacement</a>
+    <form action="{% url unmark_cover_revision revision_id=revision.id %}" method="POST">
+      <input type="submit" value="Remove mark for replacement">
+    </form>
     {% endifequal %}
   {% endifequal %}
 {% else %}
   {% ifequal changeset.state states.REVIEWING %}
     {% ifequal user changeset.approver %}
-    <br><a href="{% url mark_cover_revision revision_id=revision.id %}">Mark for replacement</a>
+    <form action="{% url mark_cover_revision revision_id=revision.id %}" method="POST">
+      <input type="submit" value="Mark for replacement">
+    </form>
     {% endifequal %}
   {% endifequal %}
+{% endif %}
+{% if changeset.issuerevisions.count %}
+  <p>
+  {% if changeset.storyrevisions.count %}
+      The variant cover has artwork <span class="comparison_highlight">different</span> from the base issue, a story sequence with '?' for the credits will be created.
+  {% else %}
+    The variant cover has the same artwork as the base issue, no separate story sequence needed.
+  {% endif %}
+  </p>
+  {% if changeset.state = states.REVIEWING %}
+    {% if user = changeset.approver %}
+      <form action="{% url flip_artwork_flag revision_id=revision.id %}" method="POST">
+        <input type="submit" name="flip_artwork_flag" value="Flip the variant artwork flag" />
+      </form>
+    {% endif %}
+  {% endif %}
 {% endif %}
     <br>
   </div>

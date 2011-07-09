@@ -174,7 +174,9 @@ class Changeset(models.Model):
             return (self.issuerevisions.all().select_related('issue', 'series'),)
 
         if self.change_type == CTYPES['cover']:
-            return (self.coverrevisions.all().select_related('issue__series'),)
+            return (self.coverrevisions.all().select_related('issue__series'),
+                    self.issuerevisions.all().select_related('issue', 'series'),
+                    self.storyrevisions.all())
 
         if self.change_type == CTYPES['series']:
             return (self.seriesrevisions.all(),)

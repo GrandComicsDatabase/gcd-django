@@ -1199,7 +1199,11 @@ class UploadVariantScanForm(UploadScanForm):
         super(UploadVariantScanForm, self).__init__(*args, **kwargs)
         ordering = self.fields.keyOrder
         ordering.remove('variant_name')
+        ordering.remove('variant_artwork')
+        ordering.remove('reservation_requested')
+        ordering = ['variant_artwork'] + ordering
         ordering = ['variant_name'] + ordering
+        ordering = ['reservation_requested'] + ordering
         self.fields.keyOrder = ordering
 
     is_gatefold = forms.CharField(widget=HiddenInputWithHelp, required=False,
@@ -1211,6 +1215,15 @@ class UploadVariantScanForm(UploadScanForm):
       help_text='Name of this variant. Examples are: "Cover A" (if listed as '
         'such in the issue), "second printing", "newsstand", "direct", or the '
         'name of the artist if different from the base issue.')
+    variant_artwork = forms.BooleanField(required=False,
+      label = 'Variant artwork',
+      help_text='Check this box if the uploaded variant cover has artwork '
+        'different from the base issue. If checked a cover sequence will '
+        'be generated with question marks in the creator fields on approval.')
+    reservation_requested = forms.BooleanField(required=False,
+      label = 'Request variant reservation',
+      help_text='Check this box to have the variant issue reserved to you '
+                'automatically when it is approved.')
 
 class GatefoldScanForm(forms.Form):
     """ Form for cover uploads. """

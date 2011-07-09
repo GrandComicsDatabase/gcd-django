@@ -1413,9 +1413,14 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                        variant_cover)
 
     if 'cancel' in request.POST:
-        return HttpResponseRedirect(urlresolvers.reverse(
-          'apps.gcd.views.details.series',
-          kwargs={ 'series_id': series_id }))
+        if variant_of:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'apps.gcd.views.details.issue',
+              kwargs={ 'issue_id': variant_of.id }))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'apps.gcd.views.details.series',
+              kwargs={ 'series_id': series_id }))
 
     form = form_class(request.POST)
     if not form.is_valid():

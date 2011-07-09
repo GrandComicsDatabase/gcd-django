@@ -473,9 +473,19 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
           series=issue.series,
           editing=issue.editing,
           no_editing=issue.no_editing,
+          reservation_requested=form.cleaned_data['reservation_requested']
           )
         issue_revision.save()
-
+        if form.cleaned_data['variant_artwork']:
+            story_revision = StoryRevision(changeset=changeset,
+              type=StoryType.objects.get(name='cover'),
+              pencils='?',
+              inks='?',
+              colors='?',
+              sequence_number=0,
+              page_count=2 if form.cleaned_data['is_wraparound'] else 1,
+              )
+            story_revision.save()
     # put new uploaded covers into
     # media/<LOCAL_NEW_SCANS>/<monthname>_<year>/
     # with name
@@ -681,6 +691,38 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='', varian
                                 'upload_type' : upload_type,
                                 'table_width': UPLOAD_WIDTH},
                               context_instance=RequestContext(request))
+
+@permission_required('gcd.can_approve')
+def flip_artwork_flag(request, revision_id=None):
+    """
+    flips the status in regard to variants with different cover artwork
+    """
+
+    cover = get_object_or_404(CoverRevision, id=revision_id)
+    changeset = cover.changeset
+    if request.user != changeset.approver:
+        return render_error(request,
+          'The variant artwork status may only be changed by the approver.')
+    story = list(changeset.storyrevisions.all())
+    if len(story) == 1:
+        for s in story:
+            s.delete()
+    elif len(story) == 0:
+        story_revision = StoryRevision(changeset=changeset,
+          type=StoryType.objects.get(name='cover'),
+          pencils='?',
+          inks='?',
+          colors='?',
+          sequence_number=0,
+          page_count=2 if cover.is_wraparound else 1,
+          )
+        story_revision.save()
+    else:
+        # this should never happen
+        raise ValueError, 'More than one story sequence in a cover revision.'
+
+    return HttpResponseRedirect(urlresolvers.reverse('compare',
+            kwargs={'id': cover.changeset.id} ))
 
 @permission_required('gcd.can_approve')
 def mark_cover(request, marked, cover_id=None, revision_id=None):
