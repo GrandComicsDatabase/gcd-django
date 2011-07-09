@@ -18,9 +18,7 @@ Move Covers :: {{ issue }}
 
 {% block view_body %}
 <h2>Move covers between
-{{ changeset.issuerevisions.all.0 }} {% if changeset.issuerevisions.all.0.variant_name %} [{{ changeset.issuerevisions.all.0.variant_name }}] {% endif %}
-and
-{{ changeset.issuerevisions.all.1 }} {% if changeset.issuerevisions.all.1.variant_name %} [{{ changeset.issuerevisions.all.1.variant_name }}] {% endif %}
+{{ changeset.issuerevisions.all.0 }} and {{ changeset.issuerevisions.all.1 }}
 </h2>
 
 <table id="covers">
@@ -30,7 +28,7 @@ and
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>
        <span class="cover_links">
-  {{ revision }} {% if revision.variant_name %} [{{ revision.variant_name }}] {% endif %}
+  {{ revision }} 
 <br>
 Zoom:
 <a href="{{ issue.get_absolute_url }}cover/4">Large</a><br>
