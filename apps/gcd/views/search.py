@@ -47,7 +47,7 @@ def generic_by_name(request, name, q_obj, sort,
     base_name = 'unknown'
     plural_suffix = 's'
     query_val = {'method': 'icontains'}
-    
+
     if (class_ in (Series, Brand, IndiciaPublisher)):
         if class_ is IndiciaPublisher:
             base_name = 'indicia_publisher'
@@ -93,7 +93,7 @@ def generic_by_name(request, name, q_obj, sort,
         things = things.select_related('issue__series__publisher',
                                        'type')
 
-        # TODO: This order_by stuff only works for Stories, which is 
+        # TODO: This order_by stuff only works for Stories, which is
         # TODO: OK for now, but might not always be.
         if (sort == ORDER_ALPHA):
             things = things.order_by("issue__series__sort_name",
@@ -121,14 +121,14 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['logic'] = True
         elif credit.startswith('any'):
             query_val['logic'] = True
-            for credit_type in ['script', 'pencils', 'inks', 'colors', 
+            for credit_type in ['script', 'pencils', 'inks', 'colors',
                                 'letters', 'story_editing', 'issue_editing']:
                 query_val[credit_type] = name
         elif credit.startswith('characters'):
             query_val['characters'] = name
-            # OR-logic only applies to credits, so we cannnot use it 
+            # OR-logic only applies to credits, so we cannnot use it
             # to mimic the double search for characters and features here
-            # query_val['feature'] = name 
+            # query_val['feature'] = name
             # query_val['logic'] = True
     else:
         raise TypeError, "Unsupported search target!"
@@ -137,12 +137,14 @@ def generic_by_name(request, name, q_obj, sort,
         change_order = request.path.replace('alpha', 'chrono')
     elif (sort == ORDER_CHRONO):
         change_order = request.path.replace('chrono', 'alpha')
+    else:
+        change_order = ''
 
     vars = { 'item_name': base_name,
              'plural_suffix': plural_suffix,
              'heading': heading,
              'search_term': name,
-             'media_url': settings.MEDIA_URL, 
+             'media_url': settings.MEDIA_URL,
              'query_string': urlencode(query_val),
              'change_order': change_order,
              'which_credit': credit }
@@ -187,7 +189,7 @@ def character_by_name(request, character_name, sort=ORDER_ALPHA):
 
     q_obj = Q(characters__icontains=character_name) | \
             Q(feature__icontains=character_name)
-    return generic_by_name(request, character_name, q_obj, sort, 
+    return generic_by_name(request, character_name, q_obj, sort,
                            credit="characters:" + character_name)
 
 
@@ -218,7 +220,7 @@ def letterer_by_name(request, letterer, sort=ORDER_ALPHA):
 
 def editor_by_name(request, editor, sort=ORDER_ALPHA):
     q_obj = Q(editing__icontains=editor) | Q(issue__editing__icontains=editor)
-    return generic_by_name(request, editor, q_obj, sort, 
+    return generic_by_name(request, editor, q_obj, sort,
                            credit="editing_search:"+editor)
 
 
@@ -261,7 +263,7 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
     """Looks up story by feature."""
     q_obj = Q(feature__icontains = feature)
     return generic_by_name(request, feature, q_obj, sort, credit="feature")
-    
+
 
 def series_by_name(request, series_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains = series_name)
@@ -273,7 +275,7 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     things = Issue.objects.exclude(deleted=True) \
                .filter(series__name__exact = series_name) \
                .filter(number__exact = issue_nr)
-    
+
     if things.count() == 1: # if one display the issue
         return HttpResponseRedirect(urlresolvers.reverse(issue,
                                     kwargs={ 'issue_id': things[0].id }))
@@ -446,7 +448,7 @@ def do_advanced_search(request):
                           "must have at least one search term."
           },
           context_instance=RequestContext(request))
-        
+
     items = []
     if data['target'] == 'publisher':
         filter = Publisher.objects.exclude(deleted=True)
@@ -512,7 +514,7 @@ def used_search(search_values):
             target += 's'
 
     del search_values['target']
-    
+
     if search_values['method'] == 'iexact':
         method = 'Matches Exactly'
     elif search_values['method'] == 'exact':
@@ -575,7 +577,7 @@ def process_advanced(request):
     """
     Runs advanced searches.
     """
-    
+
     try:
         items, target = do_advanced_search(request)
     except ViewTerminationError, response:
@@ -613,7 +615,7 @@ def process_advanced(request):
     context['method'] = method
     context['logic'] = logic
     context['used_search_terms'] = used_search_terms
-    
+
     if item_name == 'cover':
         context['table_width'] = COVER_TABLE_WIDTH
         return paginate_response(request, items, template, context,
@@ -724,9 +726,9 @@ def search_brands(data, op):
     q_and_only = []
     q_objs = []
     if data['brand']:
-        if data['brand'] == IS_EMPTY:
+        if data['brand'] == IS_EMPTY and target == ['issue']:
             return Q(**{ '%sisnull' % prefix: True }) & Q(**{ 'no_brand': False })
-        if data['brand'] == IS_NONE:
+        if data['brand'] == IS_NONE and target == ['issue']:
             return Q(**{ 'no_brand': True })
         q_objs.append(
           Q(**{ '%sname__%s' % (prefix, op): data['brand'] }))
@@ -748,7 +750,7 @@ def search_indicia_publishers(data, op):
     q_and_only = []
     q_objs = []
     if data['indicia_publisher']:
-        if data['indicia_publisher'] == IS_EMPTY:
+        if data['indicia_publisher'] == IS_EMPTY and target == ['issue']:
             return Q(**{ '%sisnull' % prefix: True })
         q_objs.append(
           Q(**{ '%sname__%s' % (prefix, op): data['indicia_publisher'] }))
@@ -1097,7 +1099,7 @@ def compute_order(data):
                 terms.append('name')
             else:
                 terms.append('sort_name')
-                
+
         elif target == 'publisher':
             if order == 'date':
                 terms.append('year_began')
@@ -1131,7 +1133,7 @@ def compute_order(data):
                 terms.append('country__name')
             elif order == 'language':
                 terms.append('language__name')
-            
+
         elif target == 'issue':
             if order == 'date':
                 terms.append('key_date')
@@ -1147,7 +1149,7 @@ def compute_order(data):
                 terms.append('series__country__name')
             elif order == 'language':
                 terms.append('series__language__name')
-            
+
         elif target in ('sequence', 'feature', 'cover'):
             if order == 'publisher':
                 terms.append('issue__series__publisher')
