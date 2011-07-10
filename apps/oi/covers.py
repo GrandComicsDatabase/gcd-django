@@ -479,9 +479,11 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
         if form.cleaned_data['variant_artwork']:
             story_revision = StoryRevision(changeset=changeset,
               type=StoryType.objects.get(name='cover'),
+              no_script=True,
               pencils='?',
               inks='?',
               colors='?',
+              no_letters=True,
               sequence_number=0,
               page_count=2 if form.cleaned_data['is_wraparound'] else 1,
               )
