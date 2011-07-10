@@ -2585,7 +2585,8 @@ def cover_compare(request, changeset, revision):
     cover_width = None
     if revision.changeset.state in states.ACTIVE:
         if revision.issue.has_covers():
-            current_cover_set = revision.issue.active_covers()
+            current_cover_set = revision.issue.active_covers() \
+              | revision.issue.variant_covers()
             if revision.is_replacement or revision.deleted:
                 current_cover_set = current_cover_set.exclude(id=revision.cover.id)
             for cover in current_cover_set:

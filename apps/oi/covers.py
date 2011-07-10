@@ -479,11 +479,9 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
         if form.cleaned_data['variant_artwork']:
             story_revision = StoryRevision(changeset=changeset,
               type=StoryType.objects.get(name='cover'),
-              no_script=True,
               pencils='?',
               inks='?',
               colors='?',
-              no_letters=True,
               sequence_number=0,
               page_count=2 if form.cleaned_data['is_wraparound'] else 1,
               )
@@ -565,6 +563,10 @@ def upload_variant(request, issue_id):
     Handles uploading of variant covers
     """
     issue = get_object_or_404(Issue, id=issue_id)
+
+    if issue.variant_of:
+        return render_error(request,
+          'Variants can only be uploaded to the base issue.')
 
     # check if there is a pending issue deletion
     if IssueRevision.objects.filter(issue=issue, deleted=True,
@@ -665,7 +667,8 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='', varian
     else:
         if issue.has_covers():
             covers = get_image_tags_per_issue(issue, "current covers",
-                                              ZOOM_MEDIUM, as_list=True)
+                                              ZOOM_MEDIUM, as_list=True,
+                                              variants=True)
             upload_type = 'additional'
         else:
             upload_type = ''
@@ -674,9 +677,24 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='', varian
 
     # generate tags for cover uploads for this issue currently in the queue
     active_covers_tags = []
-    active_covers = CoverRevision.objects.filter(issue=issue,
-                    changeset__state__in=states.ACTIVE,
-                    deleted=False).order_by('created')
+    if issue.variant_of:
+        active_covers = CoverRevision.objects\
+                        .filter(issue=issue.variant_of,
+                        changeset__state__in=states.ACTIVE,
+                        deleted=False).order_by('created')
+        active_covers = active_covers | CoverRevision.objects\
+                        .filter(issue__variant_of=issue.variant_of,
+                        changeset__state__in=states.ACTIVE,
+                        deleted=False).order_by('created')
+    else:
+        active_covers = CoverRevision.objects.filter(issue=issue,
+                        changeset__state__in=states.ACTIVE,
+                        deleted=False).order_by('created')
+        active_covers = active_covers | CoverRevision.objects\
+                        .filter(issue__variant_of=issue,
+                        changeset__state__in=states.ACTIVE,
+                        deleted=False).order_by('created')
+
     for active_cover in active_covers:
         active_covers_tags.append([active_cover,
                                    get_preview_image_tag(active_cover,

@@ -1576,6 +1576,9 @@ class CoverRevision(Revision):
                 series.save()
             return
 
+        if clear_reservation:
+            cover.reserved = False
+
         if self.cover and self.is_replacement==False:
             # this is a move of a cover
             if self.changeset.change_type == CTYPES['variant_add']:
