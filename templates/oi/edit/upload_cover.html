@@ -4,8 +4,8 @@
 {% load credits %}
 {% load display %}
 
-{% block title %}
-GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
+{% block title %} 
+GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }} 
 {% endblock %}
 
 {% block css %}
@@ -31,7 +31,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
 {% if info %}
     <h2>{{ info }}<br/></h2>
 {% endif %}
-<div>
+<div>    
 <fieldset class="universal">
 <ol>
     {% if upload_type = 'replacement' %}
@@ -53,7 +53,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
 </fieldset>
 
 
-{% if replace_cover %}
+{% if replace_cover %} 
     <div id="display_cover">
     {{ replace_cover }}
         <div class="issue_cover_links">
@@ -61,23 +61,23 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
         </div>
         <div style="text-align:left">
         <ul>
-        <li>If you are replacing a cover, please make sure that the cover you upload is better than the one that is
-        already there.
+        <li>If you are replacing a cover, please make sure that the cover you upload is better than the one that is 
+        already there. 
         <li>Cover replacements will usually be rejected unless significantly better so do not expect your replacement cover to always be accepted.
-        <li>If you realize in the compare view after the upload that the newly uploaded cover is not better
+        <li>If you realize in the compare view after the upload that the newly uploaded cover is not better 
         please retract and discard the upload.
         </ul>
         </div>
-        </div>
+        </div> 
 {% else %}
     <div id="display_cover">
         {% if current_covers %}
             <span class="instructions">
-            <a href="#current_covers">{{ current_covers|length }} current cover{{ current_covers|length|pluralize }}</a> for this issue and its variants.</span>
+            <a href="#current_covers">{{ current_covers|length }} current cover{{ current_covers|length|pluralize }}</a> for this issue.</span>
         {% endif %}
         {% if active_covers %}
             <span class="instructions">
-            <br><a href="#pending_covers">{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }}</a> for this issue and its variants.</span>
+            <br><a href="#pending_covers">{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }}</a> for this issue.</span>
         {% endif %}
     </div>
 {% endif %}
@@ -131,7 +131,7 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
    <li>The scan needs to be perfectly trimmed - no extra edges around - and not rotated in any way.</li>
    <li>Please do not upload altered scans, scans with watermarks, scans of the cover reprinted in other comics, used for solicitation, etc.</li>
    <li>Images must be at least 400 pixels in width (for landscape covers in height), 1000 pixels wide is preferred.<br/> For wraparound and gatefold covers, the width limit applies to the front part, so the full scan must be at least 800 pixels wide, or possibly wider in some instances.<br/> Do not blow up scans to meet this requirement as this results in muddy pictures.
-   <li>Your username will be stored with the scan. Scan credits mostly do not show on the site, but will in the future.</li>
+   <li>Your username will be stored with the scan. Scan credits do not show on the site, but may in the future.</li>
    <li>If you accidentally upload the wrong cover you can discard your scan from your <a href="{% url editing %}">editing queue<a>.</li>
    <li>Covers <a href="http://docs.comics.org/wiki/Covers_FAQ">FAQ</a></li>
 </UL>
