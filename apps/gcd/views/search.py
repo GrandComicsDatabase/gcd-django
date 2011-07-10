@@ -726,9 +726,9 @@ def search_brands(data, op):
     q_and_only = []
     q_objs = []
     if data['brand']:
-        if data['brand'] == IS_EMPTY and target == ['issue']:
+        if data['brand'] == IS_EMPTY and target == 'issue':
             return Q(**{ '%sisnull' % prefix: True }) & Q(**{ 'no_brand': False })
-        if data['brand'] == IS_NONE and target == ['issue']:
+        if data['brand'] == IS_NONE and target == 'issue':
             return Q(**{ 'no_brand': True })
         q_objs.append(
           Q(**{ '%sname__%s' % (prefix, op): data['brand'] }))
