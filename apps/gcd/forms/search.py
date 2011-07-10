@@ -117,7 +117,7 @@ class AdvancedSearch(forms.Form):
     issue_date = forms.CharField(label='Cover Date', required=False)
     isbn = forms.CharField(label='ISBN', required=False)
 
-    cover_needed = forms.BooleanField(label="Cover is Needed", 
+    cover_needed = forms.BooleanField(label="Cover is Needed",
                                        required=False)
     is_indexed = forms.NullBooleanField(label="Is Indexed", required=False,
       widget=forms.Select(choices=((None, ""),
@@ -208,7 +208,7 @@ class AdvancedSearch(forms.Form):
         if self.is_valid():
             if cleaned_data['cover_needed']:
                 # use of in since after distinction stuff is cleared add series
-                if cleaned_data['target'] not in ['issue','series']: 
+                if cleaned_data['target'] not in ['issue','series']:
                     raise forms.ValidationError(
                       "Searching for covers which are missing or need to be"
                       " replaced is valid only for issue or series searches.")
