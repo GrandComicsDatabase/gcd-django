@@ -750,7 +750,7 @@ def search_indicia_publishers(data, op):
     q_and_only = []
     q_objs = []
     if data['indicia_publisher']:
-        if data['indicia_publisher'] == IS_EMPTY and target == ['issue']:
+        if data['indicia_publisher'] == IS_EMPTY and target == 'issue':
             return Q(**{ '%sisnull' % prefix: True })
         q_objs.append(
           Q(**{ '%sname__%s' % (prefix, op): data['indicia_publisher'] }))
