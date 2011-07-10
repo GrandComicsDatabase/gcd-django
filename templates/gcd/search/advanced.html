@@ -34,9 +34,10 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
   <li> Searching by date is somewhat tricky.  Supported formats include
        "year.month.day", "year-month-day", "month/day/year",
        "month-name day, year", "day month-name, year" and just plain year.
-  <li> You cannot use 00 for month or day, instead use the last day of the preceding year/month
-       if you want to include comics for which we stored the year or month, e.g. 1989.12.31 to 1990.12.31 to get
-       all comics published in 1990.
+  <li> You cannot use 00 for month or day since that is not a date. Instead 
+       use the last day of the preceding year/month, e.g. 1989.12.31 
+       to 1990.12.31 will find all comics we have recorded with a publication 
+       date in 1990.
   <li> Date searching for series and stories uses a hidden field that is
        not always filled out.  This is the same field used for sorting by
        date, which is why sometimes several out-of-sequence results will
