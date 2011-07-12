@@ -1563,6 +1563,7 @@ class CoverRevision(Revision):
                 if not issue_revisions[0].issue:
                     issue_revisions[0].commit_to_display()
                 cover = Cover(issue=issue_revisions[0].issue)
+                self.issue = cover.issue
             else:
                 raise NotImplementedError
             cover.save()
