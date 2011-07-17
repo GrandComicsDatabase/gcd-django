@@ -1020,7 +1020,8 @@ def edit_issues_in_bulk(request):
         if len(publisher_list) > 1:
             ignore_publisher = True
 
-    form_class = get_bulk_issue_revision_form(series, 'bulk_edit')
+    form_class = get_bulk_issue_revision_form(series, 'bulk_edit',
+                                              user=request.user)
 
     fields = get_issue_field_list()
     fields.remove('number')

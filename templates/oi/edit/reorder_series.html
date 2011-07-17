@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block view_body %}
-<h1> {{ series }} Issue Order </h1>
+<h1> <a href="{{ series.get_absolute_url }}">{{ series }}</a> Issue Order </h1>
 
 <p class="instructions">
 <span class="important">Note:</span> Pressing the commit button at the
@@ -82,7 +82,7 @@ will not work.
     {% endifequal %}
   {% endif %}
          > </td>
-    <td> {{ issue|show_issue }} </td>
+    <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a> </td>
     <td> {{ issue.publication_date }} </td>
     <td> {{ issue.key_date }} </td>
   </tr>
