@@ -4,11 +4,10 @@ try:
    import icu
 except:
    import PyICU as icu
-from decimal import Decimal
 
 from django import template
 from django.utils.translation import ugettext as _
-from django.utils.translation import ungettext 
+from django.utils.translation import ungettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -65,13 +64,13 @@ def show_credit(story, credit):
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
             story_credit = getattr(story, c).lower()
             if story_credit:
-                search = icu.StringSearch(target.lower(), 
-                                          story_credit, 
+                search = icu.StringSearch(target.lower(),
+                                          story_credit,
                                           collator)
                 if search.first() != -1:
                     credit_string += ' ' + __format_credit(story, c)
         if story.issue.editing:
-            search = icu.StringSearch(target.lower(), 
+            search = icu.StringSearch(target.lower(),
                                       story.issue.editing.lower(),
                                       collator)
             if search.first() != -1:
@@ -93,8 +92,8 @@ def show_credit(story, credit):
                                    .replace('Editing', 'Story editing')
 
         if story.issue.editing:
-            search = icu.StringSearch(target.lower(), 
-                                      story.issue.editing.lower(), 
+            search = icu.StringSearch(target.lower(),
+                                      story.issue.editing.lower(),
                                       collator)
             if search.first() != -1:
                 formatted_credit += __format_credit(story.issue, 'editing')\
@@ -114,8 +113,8 @@ def show_credit(story, credit):
                 formatted_credit = __format_credit(story, 'characters')
 
         if story.feature:
-            search = icu.StringSearch(target.lower(), 
-                                      story.feature.lower(), 
+            search = icu.StringSearch(target.lower(),
+                                      story.feature.lower(),
                                       collator)
             if search.first() != -1:
                 formatted_credit += __format_credit(story, 'feature')
@@ -157,7 +156,7 @@ def __format_credit(story, credit):
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
     if credit == 'genre':
-        dt += ' short' 
+        dt += ' short'
         dd += ' short'
     dt += '">'
     dd += '">'
@@ -274,16 +273,6 @@ def format_page_count(page_count):
     else:
         return u''
 
-def sum_page_counts(stories):
-    """
-    Return the sum of the story page counts.
-    """
-    count = Decimal(0)
-    for story in stories:
-        if story.page_count and not story.deleted:
-            count += story.page_count
-    return count
-
 def show_title(story):
     """
     Return a properly formatted title.
@@ -303,6 +292,5 @@ register.filter(show_language)
 register.filter(show_issue_number)
 register.filter(show_page_count)
 register.filter(format_page_count)
-register.filter(sum_page_counts)
 register.filter(show_title)
 register.filter(show_cover_contributor)

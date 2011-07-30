@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from decimal import Decimal
+
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -8,8 +10,7 @@ from django.template.defaultfilters import yesno, linebreaksbr, title, urlize
 
 from apps.oi.models import StoryRevision, CTYPES, validated_isbn, \
                            remove_leading_article
-from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
-                                          sum_page_counts
+from apps.gcd.templatetags.credits import show_page_count, format_page_count
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
@@ -288,6 +289,16 @@ def check_changed(changed, field):
         return changed[field]
     return False
 
+def sum_page_counts(stories):
+    """
+    Return the sum of the story page counts.
+    """
+    count = Decimal(0)
+    for story in stories:
+        if story.page_count and not story.deleted:
+            count += story.page_count
+    return count
+
 # display certain similar fields' data in the same way
 def field_value(revision, field):
     value = getattr(revision, field)
@@ -323,8 +334,22 @@ def field_value(revision, field):
         if revision.source_name == 'issue' and \
            revision.changeset.storyrevisions.count():
             # only calculate total sum for issue not sequences
-            sum_story_pages = format_page_count(sum_page_counts(
-                              revision.changeset.storyrevisions.all()))
+            total_pages = sum_page_counts(revision.active_stories())
+            if revision.variant_of:
+                if revision.changeset.issuerevisions.count() > 1:
+                    stories = revision.changeset.storyrevisions\
+                                      .exclude(issue=revision.issue)
+                else:
+                    stories = revision.variant_of.active_stories()
+                if revision.active_stories().count():
+                    # variant has cover sequence, add page counts without cover
+                    stories = stories.exclude(sequence_number=0)
+                    total_pages += sum_page_counts(stories)
+                else:
+                    # variant has no extra cover sequence
+                    total_pages = sum_page_counts(stories)
+            sum_story_pages = format_page_count(total_pages)
+
             return u'%s (note: total sum of story page counts is %s)' % \
                    (format_page_count(value), sum_story_pages)
         return format_page_count(value)
