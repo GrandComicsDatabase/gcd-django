@@ -128,7 +128,6 @@ SERIES_HELP_LINKS = {
     'country': 'Country',
     'language': 'Language',
     'tracking_notes': 'Tracking',
-    'publication_notes': 'Publication_Notes',
     'notes': 'Series_Notes',
     'format': 'Format',
     'comments': 'Comments'
@@ -479,7 +478,6 @@ class SeriesRevisionForm(forms.ModelForm):
                 raise forms.ValidationError('The series name is only one word,'
                     ' you cannot specify a leading article in this case.')
         cd['format'] = cd['format'].strip()
-        cd['publication_notes'] = cd['publication_notes'].strip()
         cd['tracking_notes'] = cd['tracking_notes'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
