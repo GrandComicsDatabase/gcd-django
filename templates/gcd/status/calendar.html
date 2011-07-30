@@ -1,0 +1,16 @@
+{% extends "gcd/base_view.html" %}
+
+{% block title %} GCD :: Calendar {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+<iframe
+src="https://www.google.com/calendar/embed?src=comics.org_v62prlv9dp79hbjt4du2unqmks%40group.calendar.google.com&ctz=GMT"
+style="border: 0" width="900" height="600" frameborder="0"
+scrolling="no"></iframe>
+
+{% endblock %}

@@ -3,7 +3,7 @@
 """View methods for pages displaying entity details."""
 
 import re
-from urllib import urlopen
+from urllib2 import urlopen
 from datetime import date, datetime, time, timedelta
 from operator import attrgetter
 
@@ -13,7 +13,7 @@ from django.core import urlresolvers
 from django.shortcuts import render_to_response, \
                              get_object_or_404, \
                              get_list_or_404
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.template import RequestContext
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
@@ -213,7 +213,7 @@ def series(request, series_id):
     """
     Display the details page for a series.
     """
-    
+
     series = get_object_or_404(Series, id=series_id)
     if series.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
@@ -308,7 +308,7 @@ def series_details(request, series_id, by_date=False):
 
         issues_left_over = series.active_issues().filter(
           no_key_date_q | Q(id__in=bad_key_dates))
-            
+
     # These need to be numbers not True/False booleans so they work
     # in the template.
     num_issues = series.issue_count
@@ -320,7 +320,7 @@ def series_details(request, series_id, by_date=False):
       series.active_issues().filter(no_indicia_frequency=True).count() - num_issues
     title_present = series.has_issue_title and \
       series.active_issues().filter(no_title=True).count() - num_issues
-      
+
     return render_to_response('gcd/details/series_details.html',
       {
         'series': series,
@@ -338,7 +338,7 @@ def series_details(request, series_id, by_date=False):
 def change_history(request, model_name, id):
     if model_name not in ['publisher', 'brand', 'indicia_publisher',
                           'series', 'issue']:
-        if not (model_name == 'imprint' and 
+        if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {
               'error_text' : 'There is no change history for this type of object.'},
@@ -637,7 +637,7 @@ def daily_changes(request, show_date=None):
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
       .exclude(changeset__indexer=anon).values_list('publisher', flat=True))
-    publishers = Publisher.objects.filter(is_master=1, 
+    publishers = Publisher.objects.filter(is_master=1,
       id__in=publisher_revisions).distinct().select_related('country')
 
     brand_revisions = list(BrandRevision.objects.filter(
@@ -648,10 +648,10 @@ def daily_changes(request, show_date=None):
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
         .exclude(changeset__indexer=anon)\
-        .values_list('brand', flat=True))  
+        .values_list('brand', flat=True))
     brands = Brand.objects.filter(id__in=brand_revisions).distinct()\
       .select_related('parent__country')
-      
+
     indicia_publisher_revisions = list(IndiciaPublisherRevision.objects.filter(
       changeset__change_type=CTYPES['indicia_publisher'],
       changeset__state=states.APPROVED,
@@ -830,7 +830,7 @@ def show_issue(request, issue, preview=False):
     alt_text = 'Cover Thumbnail'
     zoom_level = ZOOM_MEDIUM
     if preview:
-        # excludes are currently only relevant for variant_add, maybe later 
+        # excludes are currently only relevant for variant_add, maybe later
         # other cover moves will be possible
         if issue.changeset.change_type == CTYPES['variant_add'] and \
           issue.changeset.coverrevisions.count():
@@ -847,11 +847,11 @@ def show_issue(request, issue, preview=False):
             # add moved cover(s)
             for cover in issue.changeset.coverrevisions\
                                         .exclude(issue=issue.issue):
-                image_tag += get_image_tag(cover.cover, 
+                image_tag += get_image_tag(cover.cover,
                                            alt_text=alt_text,
                                            zoom_level=zoom_level)
             if image_tag == '':
-                image_tag = mark_safe(get_image_tag(cover=None, 
+                image_tag = mark_safe(get_image_tag(cover=None,
                                                     zoom_level=zoom_level,
                                                     alt_text=alt_text))
         elif issue.issue:
@@ -859,20 +859,20 @@ def show_issue(request, issue, preview=False):
                                                  zoom_level=zoom_level,
                                                  alt_text=alt_text)
         else:
-            image_tag = mark_safe(get_image_tag(cover=None, 
+            image_tag = mark_safe(get_image_tag(cover=None,
                                                 zoom_level=zoom_level,                                           alt_text=alt_text))
     else:
         image_tag = get_image_tags_per_issue(issue=issue,
                                              zoom_level=zoom_level,
                                              alt_text=alt_text)
-                                         
+
     variant_image_tags = []
     for variant_cover in issue.variant_covers():
-        variant_image_tags.append([variant_cover.issue, 
-                                   get_image_tag(variant_cover, 
+        variant_image_tags.append([variant_cover.issue,
+                                   get_image_tag(variant_cover,
                                                  zoom_level=ZOOM_SMALL,
                                                  alt_text='Cover Thumbnail')])
-        
+
     series = issue.series
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
@@ -890,7 +890,7 @@ def show_issue(request, issue, preview=False):
     for i in res:
         oi_indexers.append(i.indexer)
 
-    if preview:    
+    if preview:
         if issue.issue:
             res = IssueRevision.objects.filter(issue=issue.issue)
         else:
@@ -940,7 +940,7 @@ def countries_in_use(request):
                             countries_from_series +
                             countries_from_publishers))
         used_countries = [Country.objects.filter(id=id)[0] for id in used_ids]
-        
+
         return render_to_response('gcd/admin/countries.html',
                                   {'countries' : used_countries },
                                   context_instance=RequestContext(request))
@@ -950,3 +950,28 @@ def countries_in_use(request):
           },
           context_instance=RequestContext(request))
 
+def agenda(request, language):
+    f = urlopen("https://www.google.com/calendar/embed?src=comics.org_v62prlv9"
+      "dp79hbjt4du2unqmks%40group.calendar.google.com&showTitle=0&showNav=0&"
+      "showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA"
+      "&height=600&wkst=1&bgcolor=%23FFFFFF&color=%238C500B"
+      "&ctz=America%2FLos_Angeles&hl=de")
+    a = f.read()
+    js_pos = a.find('<script type="text/javascript" src="') + \
+      len('<script type="text/javascript" src="')
+    js_pos_end = a[js_pos:].find('"></script>') + js_pos
+    if language not in ['en', 'de']:
+        language = 'en'
+    a = a[:js_pos] + settings.MEDIA_URL + 'calendar/js/d55029fd56f3be5e874d2c'\
+      '1680fee739embedcompiled__%s.js' % str(language) + a[js_pos_end:]
+
+    #js_pos = a.find('<script type="text/javascript" src="') + len('<script type="text/javascript" src="')
+    #js_pos_end = a[js_pos:].find('"></script>') + js_pos
+    #a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
+
+    css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
+      len('<link type="text/css" rel="stylesheet" href="')
+    css_pos_end = a[css_pos:].find('">') + css_pos
+    a = a[:css_pos]  + settings.MEDIA_URL + 'calendar/css/d55029fd56f3be5e87' \
+      '4d2c1680fee739embedcompiled_fastui.css' + a[css_pos_end:]
+    return HttpResponse(a)

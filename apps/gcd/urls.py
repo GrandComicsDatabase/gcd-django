@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls.defaults import *
 from django.conf import settings
+from django.views.generic.simple import direct_to_template
 
 urlpatterns = patterns('',
     ###########################################################################
@@ -56,7 +57,7 @@ urlpatterns = patterns('',
     (r'^indicia_publisher/name/(?P<ind_pub_name>.+)/$',
      'apps.gcd.views.search.indicia_publisher_by_name'),
 
-    url(r'^imprint/(?P<imprint_id>\d+)/$', 'apps.gcd.views.details.imprint', 
+    url(r'^imprint/(?P<imprint_id>\d+)/$', 'apps.gcd.views.details.imprint',
       name='show_imprint'),
 
     # Series
@@ -180,9 +181,9 @@ urlpatterns = patterns('',
 
     # list covers marked for replacement
     (r'^covers_to_replace/$',
-     'apps.gcd.views.details.covers_to_replace'),    
+     'apps.gcd.views.details.covers_to_replace'),
     (r'^covers_to_replace/with/(?P<starts_with>.+)/$',
-     'apps.gcd.views.details.covers_to_replace'),    
+     'apps.gcd.views.details.covers_to_replace'),
 
     # Reprints
     (r'^reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
@@ -190,7 +191,13 @@ urlpatterns = patterns('',
     (r'^reprint/(?P<reprints>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
     (r'^settings/$',
-     'apps.gcd.views.settings.settings'),    
+     'apps.gcd.views.settings.settings'),
+
+    # calendar
+    (r'^agenda/(?P<language>.+)/$','apps.gcd.views.details.agenda'),
+    (r'^agenda/','apps.gcd.views.details.agenda', {'language' : 'en'}),
+    (r'^calendar/$', direct_to_template,
+        { 'template': 'gcd/status/calendar.html' }),
 
     # admin tools
     (r'^countries/$','apps.gcd.views.details.countries_in_use'),
@@ -209,7 +216,7 @@ urlpatterns = patterns('',
 
 
 urlpatterns += patterns('django.views.generic.simple',
-    ('^covers_for_replacement.lasso/$', 'redirect_to', 
+    ('^covers_for_replacement.lasso/$', 'redirect_to',
      {'url' : '/covers_to_replace/' }),
     ('^index.lasso/$', 'redirect_to', {'url' : '/' }),
     ('^donate.lasso/$', 'redirect_to', {'url' : '/donate/' }),

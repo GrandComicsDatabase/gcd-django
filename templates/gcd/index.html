@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/DTD/strict.dtd"> 
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/DTD/strict.dtd">
 {% load statustags %}
 {% load humanize %}
 {% load i18n %}
@@ -29,17 +29,17 @@
 <!-- 3 column layout with two fixed width sidebars from
 http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
-<div id="main_body"> 
+<div id="main_body">
 {% if BETA %}
   <div id="front_page_beta">
     {% include "gcd/bits/beta_banner.html" %}
   </div>
 {% endif %}
-  <div id="colmid"> 
+  <div id="colmid">
     <div id="colleft">
-      <div id="col1wrap"> 
-        <div id="center_column"> 
-          <!-- Center Column start --> 
+      <div id="col1wrap">
+        <div id="center_column">
+          <!-- Center Column start -->
           <div class="front_page_central">
             <div class="front_page_central_box">
               {% include "gcd/bits/front_page_search_box.html" %}
@@ -67,12 +67,12 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
               </div>
             </div>
           </div>
-          <!-- Center Column end --> 
-        </div> 
-      </div> 
+          <!-- Center Column end -->
+        </div>
+      </div>
 
-      <div id="left_column"> 
-        <!-- Left Column start --> 
+      <div id="left_column">
+        <!-- Left Column start -->
         <div class="front_page_left_box">
           {% include "gcd/bits/front_page_menu.html" %}
         </div>
@@ -101,11 +101,12 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             </a>
           </div>
         </div>
-        <!-- Left Column end --> 
+        <!-- Left Column end -->
+        <iframe src="/agenda/{{ language.code }}/" style=" border-width:0 " width="100%" height="400" frameborder="0" scrolling="no"></iframe>
       </div>
 
-      <div id="right_column"> 
-        <!-- Right Column start --> 
+      <div id="right_column">
+        <!-- Right Column start -->
         {% comment %}
         <div class="front_page_right_box_notice">
           <div class="box_notice_header ">
@@ -177,8 +178,8 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             {% endfor %}
           </div>
         </div>
-        <!-- Right Column end --> 
-      </div> 
+        <!-- Right Column end -->
+      </div>
     </div> <!-- id="colleft"-->
   </div> <!-- id="colmid"-->
 </div> <!-- id="main_body"-->
