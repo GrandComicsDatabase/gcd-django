@@ -1697,7 +1697,7 @@ def get_series_field_list():
             'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
             'is_current', 'publisher', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'tracking_notes', 'publication_notes', 'notes']
+            'tracking_notes', 'notes']
 
 class SeriesRevision(Revision):
     class Meta:
@@ -1837,7 +1837,7 @@ class SeriesRevision(Revision):
         return self.series.get_ongoing_revision()
 
     def _field_list(self):
-        return get_series_field_list()
+        return get_series_field_list() + [u'publication_notes',]
 
     def _get_blank_values(self):
         return {

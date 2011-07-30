@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% ifequal changeset_type 'story' %}
-<h3> Sequence {{ revision.sequence_number }} 
+<h3> Sequence {{ revision.sequence_number }}
 <a name="{{ revision.id }}"></a>
   {% ifequal user revision.changeset.indexer %}
     {% ifequal changeset.state states.OPEN %}
@@ -41,12 +41,12 @@
 {% else %}
   {% if request.GET.collapse and revision.issue and not revision.is_changed %}
   <h4> No changes to the issue information
-  {% if prev_rev %}
+    {% if prev_rev %}
     / <a href="{% url compare id=prev_rev.changeset.id %}?collapse=1"> Previous </a>
-  {% endif %}
-  {% if post_rev %}
+    {% endif %}
+    {% if post_rev %}
     / <a href="{% url compare id=post_rev.changeset.id %}?collapse=1"> Next </a>
-  {% endif %}
+    {% endif %}
   </h4>
     {% with revision as issue %}
   <div class="issue_short">
@@ -77,7 +77,7 @@
         {% endif %}
     </th>
       {% else %}
-    <th> Added 
+    <th> Added
         {% if post_rev %}
         / <a href="{% url compare id=post_rev.changeset.id %}?collapse=1"> Next </a>
         {% endif %}

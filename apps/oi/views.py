@@ -2487,6 +2487,9 @@ def compare(request, id):
     if model_name == 'series':
         if prev_rev is None or prev_rev.imprint is None:
             field_list.remove('imprint')
+        if not (revision.publication_notes or prev_rev and \
+          prev_rev.publication_notes):
+            field_list.remove('publication_notes')
     elif model_name == 'publisher':
         field_list.remove('is_master')
         field_list.remove('parent')
