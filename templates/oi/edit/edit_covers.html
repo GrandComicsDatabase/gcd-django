@@ -17,15 +17,18 @@ Edit Covers :: {{ issue }}
 {% endblock %}
 
 {% block view_body %}
-<h2>Covers for 
-{{ issue.series|absolute_url }} 
-({{ issue.series.publisher|absolute_url }}) 
+<h2>Covers for
+{{ issue.series|absolute_url }}
+({{ issue.series.publisher|absolute_url }})
 <a href="{{ issue.get_absolute_url }}">#{{ issue.display_number }}</a>
+{% if issue.variant_name %} [{{ issue.variant_name }}] {% endif %}
 </h2>
 {% if issue.can_upload_variants %}
+  {% if not issue.variant_of %}
 <form action="{% url upload_variant issue_id=issue.id %}" method="GET">
   <input type="submit" value="Add variant issue with new cover">
 </form>
+  {% endif %}
 <form action="{% url upload_cover issue_id=issue.id %}" method="GET">
   <input type="submit" value="Add additional cover (dust jacket, flip cover)">
 </form>
@@ -69,7 +72,7 @@ Edit Covers :: {{ issue }}
 </div>
     {% endif %}
   {% endif %}
-</span> 
+</span>
    </td>
   {% if forloop.counter|divisibleby:table_width %}
   </tr>
