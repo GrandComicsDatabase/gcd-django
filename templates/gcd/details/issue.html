@@ -127,6 +127,12 @@ This issue has variants.
 {% endif %}
         </div>
 {% if not preview %}
+  {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved and issue.variant_of and not issue.variant_of.reserved %}
+  <form method="POST"
+        action="{% url reserve_two_issues issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
+    <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
+  </form>
+  {% endif %}
   {% with issue as object %}
   {% with 'Issue' as object_name %}
   {% with 'issue' as object_class %}
@@ -139,7 +145,7 @@ This issue has variants.
         action="{% url add_variant_issue issue_id=issue.id %}">
     <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
   </form>
-  {% endif %} <!-- logged in -->
+  {% endif %}
 {% endif %}
       </div>
 

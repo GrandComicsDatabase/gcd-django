@@ -20,8 +20,8 @@ GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
 {{ changeset|header_link }}
 </h1>
 <p>
-Highlighted fields represent <span class="added_highlight">added</span>, 
-<span class="comparison_highlight">changed</span>, and 
+Highlighted fields represent <span class="added_highlight">added</span>,
+<span class="comparison_highlight">changed</span>, and
 <span class="deleted_highlight">deleted</span> data.
 {% if changeset.state != states.APPROVED and not revision.deleted %}
 <a class="new_window" href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview changes</a>
@@ -35,8 +35,8 @@ Highlighted fields represent <span class="added_highlight">added</span>,
     {% endif %}
   {% endif %}
   {% include 'oi/bits/compare_issue.html' %}
-  {% if changeset.change_type == CTYPES.variant_add %}
-    {% if revision.ordered_story_revisions.0.source %}
+  {% if changeset.change_type == CTYPES.variant_add or changeset.change_type == CTYPES.two_issues %}
+    {% if changeset.change_type == CTYPES.variant_add and revision.ordered_story_revisions.0.source %}
 <h2>
 The above sequence was moved from the following issue.
 </h2>

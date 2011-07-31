@@ -29,7 +29,8 @@ CTYPES = {
     'issue': 6,
     'cover': 7,
     'issue_bulk': 8,
-    'variant_add': 9
+    'variant_add': 9,
+    'two_issues': 10
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -166,7 +167,8 @@ class Changeset(models.Model):
         self._inline_revision = None
 
     def _revision_sets(self):
-        if self.change_type in [CTYPES['issue'], CTYPES['variant_add']]:
+        if self.change_type in [CTYPES['issue'], CTYPES['variant_add'],
+                                CTYPES['two_issues']]:
             return (self.issuerevisions.all().select_related('issue', 'series'),
                     self.storyrevisions.all(), self.coverrevisions.all())
 
@@ -257,6 +259,8 @@ class Changeset(models.Model):
             return unicode(self)
         elif self.change_type == CTYPES['issue']:
             return self.revisions.next().queue_name()
+        elif self.change_type  == CTYPES['two_issues']:
+            return self.revisions.next().queue_name() + " and base issue"
         elif self.change_type == CTYPES['variant_add']:
             return self.issuerevisions.get(variant_of__isnull=False).queue_name()
         else:
@@ -552,6 +556,8 @@ class Changeset(models.Model):
             last = self.issuerevisions.order_by('-revision_sort_code')[0]
             return u'%s #%s - %s' % (first.series, first.display_number,
                                                   last.display_number)
+        if self.change_type == CTYPES['two_issues']:
+            return unicode(self.issuerevisions.all()[0]) + ' and base issue'
         if self.change_type == CTYPES['issue_bulk']:
             return unicode(u'%s and %d other issues' %
                            (self.issuerevisions.all()[0], ir_count - 1))
@@ -2262,7 +2268,8 @@ class IssueRevision(Revision):
             image_set |= self.issue.variant_covers()
         elif self.variant_of:
             image_set |= self.variant_of.variant_covers()
-            if self.changeset.change_type == CTYPES['variant_add'] \
+            if self.changeset.change_type in [CTYPES['variant_add'],
+                                              CTYPES['two_issues']] \
               and self.changeset.coverrevisions.count():
                 # maybe a cover move from the base issue (only move allowed)
                 exclude_ids = list(self.changeset.coverrevisions\
@@ -2287,7 +2294,8 @@ class IssueRevision(Revision):
             variants = self.variant_set.all()
         variants = list(variants.exclude(deleted=True))
 
-        if self.changeset.change_type == CTYPES['variant_add'] \
+        if self.changeset.change_type in [CTYPES['variant_add'],
+                                          CTYPES['two_issues']]\
           and not self.variant_of:
             variants.extend(self.changeset.issuerevisions.exclude(issue=self.issue))
 
@@ -2807,7 +2815,8 @@ class StoryRevision(Revision):
         These conditions work for our current only case of a story move: i.e.
         issue versions.
         """
-        if self.changeset.change_type == CTYPES['variant_add']:
+        if self.changeset.change_type == CTYPES['variant_add'] or \
+          self.changeset.change_type == CTYPES['two_issues']:
             if self.issue == None:
                 if self.story == None:
                     return False

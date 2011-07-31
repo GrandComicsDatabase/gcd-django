@@ -16,6 +16,9 @@
       {% else %}
   <a href="{% url edit_revision model_name=changeset_type, id=revision.id %}">edit sequence</a>
       {% endif %}
+      {% if revision.changeset.change_type = CTYPES.two_issues and revision.issue != prev_rev.issue or revision.changeset.change_type = CTYPES.variant_add and revision.issue != prev_rev.issue %}
+          <h3>This sequence is <span class="comparison_highlight">moved from the other issue</span>.</h3>
+      {% endif %}
 </span>
     {% endifequal %}
   {% endifequal %}

@@ -142,7 +142,7 @@
     </td>
   </tr>
           {% endif %}
-{% if issue_revision.issue and not issue_revision.variant_of and changeset.change_type != CTYPES.variant_add %}
+{% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count = 1 %}
   <tr>
     <td colspan="2">
       <form class="changeset" method="GET"
@@ -157,7 +157,7 @@
         {% endfor %}
 </table>
       {% endif %} <!-- changeset.issuerevisions.count -->
-      {% if changeset.change_type == CTYPES.variant_add %}
+      {% if changeset.change_type == CTYPES.variant_add or changeset.change_type == CTYPES.two_issues %}
         {% if changeset.coverrevisions.count %}
 <div>
           {% for cover in changeset.coverrevisions.all %}

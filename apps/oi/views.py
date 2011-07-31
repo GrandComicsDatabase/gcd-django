@@ -130,9 +130,9 @@ def _unreserve(display_obj):
 
 @permission_required('gcd.can_reserve')
 def reserve(request, id, model_name, delete=False, callback=None, callback_args=None):
-    display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
     if request.method != 'POST':
         return _cant_get(request)
+    display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
 
     if display_obj.deleted:
         if model_name == 'cover':
@@ -185,6 +185,9 @@ def reserve(request, id, model_name, delete=False, callback=None, callback_args=
             if callback:
                 if not callback(changeset, display_obj, **callback_args):
                     transaction.rollback()
+                    # the callback can result in a db save of the changeset
+                    # so delete it. This does not fail if no save happened
+                    changeset.delete()
                     _unreserve(display_obj)
                     return render_error(request,
                       'Not all objects could be reserved.')
@@ -259,6 +262,39 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
             imprint_revision.save()
 
     return changeset
+
+@permission_required('gcd.can_reserve')
+# in case of variants: issue_one = variant, issue_two = base
+def reserve_two_issues(request, issue_one_id, issue_two_id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    issue_one = get_object_or_404(Issue, id=issue_one_id)
+    if issue_one.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'issue', 'id': issue_one_id}))
+    issue_two = get_object_or_404(Issue, id=issue_two_id)
+    if issue_two.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'issue', 'id': issue_two_id}))
+
+    kwargs = {'issue_one': issue_one}
+    return reserve(request, issue_two_id, 'issue',
+                   callback=reserve_other_issue,
+                   callback_args=kwargs)
+
+def reserve_other_issue(changeset, revision, issue_one):
+    is_reservable = _is_reservable('issue', issue_one.id)
+
+    if is_reservable == 0:
+        return False
+
+    if not _do_reserve(changeset.indexer, issue_one, 'issue',
+                       changeset=changeset):
+        _unreserve(issue_one)
+        return False
+    changeset.change_type=CTYPES['two_issues']
+    changeset.save()
+    return True
 
 @permission_required('gcd.can_reserve')
 def edit_revision(request, id, model_name):
@@ -1453,9 +1489,9 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     if request.user != changeset.indexer:
         return render_error(request,
           'Only the reservation holder may add variants.')
-    if changeset.change_type == CTYPES['variant_add']:
+    if changeset.change_type in [CTYPES['variant_add'], CTYPES['two_issues']]:
         return render_error(request,
-          'There already is a variant in this changeset.')
+          'You cannot add a variant to this changeset.')
     issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
 
     form_class = get_revision_form(model_name='issue',
@@ -1499,6 +1535,7 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
 
         # create issue revision for the issue of the cover
         if not _do_reserve(changeset.indexer, issue, 'issue', changeset=changeset):
+            _unreserve(issue)
             return False
     changeset.change_type=CTYPES['variant_add']
     changeset.save()
@@ -2371,7 +2408,8 @@ def show_queue(request, queue_name, state):
     series = changes.filter(change_type=CTYPES['series'])
     issue_adds = changes.filter(change_type=CTYPES['issue_add'])
     issues = changes.filter(change_type__in=[CTYPES['issue'],
-                                             CTYPES['variant_add']])
+                                             CTYPES['variant_add'],
+                                             CTYPES['two_issues']])
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])
 
@@ -2470,7 +2508,8 @@ def compare(request, id):
     if changeset.inline():
         revision = changeset.inline_revision()
     elif changeset.change_type in [CTYPES['issue'], CTYPES['issue_add'],
-                                   CTYPES['issue_bulk'], CTYPES['variant_add']]:
+                                   CTYPES['issue_bulk'], CTYPES['variant_add'],
+                                   CTYPES['two_issues']]:
         revision = changeset.issuerevisions.all()[0]
     else:
         # never reached at the moment

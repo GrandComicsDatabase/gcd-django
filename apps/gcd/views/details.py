@@ -832,7 +832,8 @@ def show_issue(request, issue, preview=False):
     if preview:
         # excludes are currently only relevant for variant_add, maybe later
         # other cover moves will be possible
-        if issue.changeset.change_type == CTYPES['variant_add'] and \
+        if issue.changeset.change_type in [CTYPES['variant_add'],
+                                           CTYPES['two_issues']] and \
           issue.changeset.coverrevisions.count():
             # need to exclude the moved one
             image_tag = mark_safe('')

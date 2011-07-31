@@ -170,10 +170,9 @@ def header_link(changeset):
     elif changeset.change_type == CTYPES['series']:
         return mark_safe(u'%s (%s)' %
                          (absolute_url(revision), absolute_url(revision.publisher)))
-    elif changeset.change_type == CTYPES['cover'] or \
-         changeset.change_type == CTYPES['issue'] or \
-         changeset.change_type == CTYPES['variant_add']:
-        if changeset.change_type == CTYPES['variant_add']:
+    elif changeset.change_type in [CTYPES['cover'], CTYPES['issue'],
+                                   CTYPES['variant_add'], CTYPES['two_issues']]:
+        if changeset.change_type in [CTYPES['variant_add'], CTYPES['two_issues']]:
             # second issue revision is base issue and does exist in any case
             revision = changeset.issuerevisions.all()[1]
         series_url = absolute_url(revision.issue.series)
