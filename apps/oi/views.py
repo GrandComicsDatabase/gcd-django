@@ -2178,14 +2178,24 @@ def reorder_series_by_issue_number(request, series_id):
 
     reorder_map = {}
     reorder_list = []
-    number_set = set()
+    variant_counts = {}
+
     try:
         for issue in series.active_issues():
             number = int(issue.number)
-            if number in number_set:
-                return render_error(request,
-                  "Cannot sort by issue with duplicate issue numbers: %i" % number,
-                  redirect=False)
+            if number in reorder_list:
+                if issue.variant_of:
+                    if number in variant_counts:
+                        variant_counts[number] += 1
+                    else:
+                        variant_counts[number] = 1
+                    # there won't be more than 9999 variants...
+                    number = float("%d.%04d" % (number, variant_counts[number]))
+                else:
+                    return render_error(request,
+                      "Cannot sort by issue with duplicate issue numbers: %i" \
+                      % number,
+                      redirect=False)
             reorder_map[number] = issue
             reorder_list.append(number)
 
