@@ -233,9 +233,9 @@ class Changeset(models.Model):
         if self.inline():
             # everything but issues
             return self.inline_revision().deleted
-        elif self.issuerevisions.count() == 1:
+        elif self.change_type == CTYPES['issue']:
             # single issue deletions
-            return self.issuerevisions.all()[0].deleted
+            return self.issuerevisions.get().deleted
         else:
             # bulk issue deletions not supported
             return False
@@ -245,8 +245,9 @@ class Changeset(models.Model):
         Used for conditionals in templates, as bulk issue adds and edits as
         well as deletes cannot be edited after submission.
         """
-        return (self.inline() or self.issuerevisions.count() == 1 or \
-          self.change_type == CTYPES['variant_add']) and not self.deleted()
+        return (self.inline() or self.change_type == CTYPES['issue'] or \
+          self.change_type in [CTYPES['variant_add'], CTYPES['two_issues']]) \
+          and not self.deleted()
 
     def ordered_issue_revisions(self):
         """
@@ -286,6 +287,9 @@ class Changeset(models.Model):
         revision = self.revisions.next()
         if revision.deleted:
             return ACTION_DELETE
+        # issue_adds are separate, avoid revision.previous
+        elif self.change_type == CTYPES['issue']:
+            return ACTION_MODIFY
         elif revision.source is None or revision.previous() is None:
             return ACTION_ADD
         return ACTION_MODIFY
@@ -545,22 +549,24 @@ class Changeset(models.Model):
     def __unicode__(self):
         if self.inline():
             return  unicode(self.inline_revision())
-        ir_count = self.issuerevisions.count()
-        if ir_count == 1:
+        if self.change_type == CTYPES['issue']:
             return unicode(self.issuerevisions.all()[0])
         if self.change_type == CTYPES['variant_add']:
             return unicode(self.issuerevisions.get(variant_of__isnull=False)) \
               + ' [Variant]'
+        if self.change_type == CTYPES['two_issues']:
+            return unicode(self.issuerevisions.all()[0]) + ' and base issue'
+        ir_count = self.issuerevisions.count()
+        if self.change_type == CTYPES['issue_bulk']:
+            return unicode(u'%s and %d other issues' %
+                           (self.issuerevisions.all()[0], ir_count - 1))
         if ir_count > 1 and self.change_type == CTYPES['issue_add']:
             first = self.issuerevisions.order_by('revision_sort_code')[0]
             last = self.issuerevisions.order_by('-revision_sort_code')[0]
             return u'%s #%s - %s' % (first.series, first.display_number,
                                                   last.display_number)
-        if self.change_type == CTYPES['two_issues']:
-            return unicode(self.issuerevisions.all()[0]) + ' and base issue'
-        if self.change_type == CTYPES['issue_bulk']:
-            return unicode(u'%s and %d other issues' %
-                           (self.issuerevisions.all()[0], ir_count - 1))
+        if ir_count == 1 and self.change_type == CTYPES['issue_add']:
+            return unicode(self.issuerevisions.all()[0])
         return 'Changeset: %d' % self.id
 
 class ChangesetComment(models.Model):
@@ -2294,8 +2300,7 @@ class IssueRevision(Revision):
             variants = self.variant_set.all()
         variants = list(variants.exclude(deleted=True))
 
-        if self.changeset.change_type in [CTYPES['variant_add'],
-                                          CTYPES['two_issues']]\
+        if self.changeset.change_type == CTYPES['variant_add'] \
           and not self.variant_of:
             variants.extend(self.changeset.issuerevisions.exclude(issue=self.issue))
 
