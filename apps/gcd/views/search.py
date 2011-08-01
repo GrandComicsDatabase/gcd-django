@@ -266,7 +266,8 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
 
 
 def series_by_name(request, series_name, sort=ORDER_ALPHA):
-    q_obj = Q(name__icontains = series_name)
+    q_obj = Q(name__icontains = series_name) | \
+            Q(issue__title__icontains = series_name)
     return generic_by_name(request, series_name, q_obj, sort,
                            Series, 'gcd/search/series_list.html')
 
@@ -321,6 +322,20 @@ def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
       urlresolvers.reverse(issue_by_isbn,
                            kwargs={ 'isbn': isbn, 'sort': sort }))
 
+def issue_by_barcode(request, barcode, sort=ORDER_ALPHA):
+    q_obj = Q(barcode__icontains = barcode)
+    return generic_by_name(request, barcode, q_obj, sort, class_=Issue,
+                           template='gcd/search/issue_list.html',
+                           credit="barcode")
+
+def issue_by_barcode_name(request, barcode, sort=ORDER_ALPHA):
+    """Handle the form-style URL from the basic search form by mapping
+    it into the by-name lookup URLs the system already knows how to handle."""
+
+    return HttpResponseRedirect(
+      urlresolvers.reverse(issue_by_barcode,
+                           kwargs={ 'barcode': barcode, 'sort': sort }))
+
 def search(request):
     """
     Handle the form-style URL from the basic search form by mapping
@@ -359,6 +374,8 @@ def search(request):
         view = story_by_title
     elif object_type in ('credit', 'job_number', 'feature'):
         view = 'apps.gcd.views.search.story_by_%s' % object_type
+    elif object_type in ('barcode', 'isbn'):
+        view = 'apps.gcd.views.search.issue_by_%s' % object_type
 
     if object_type == 'credit':
         param_type = 'name'
@@ -856,6 +873,12 @@ def search_issues(data, op, stories_q=None):
         q_objs.append(handle_numbers('issues', data, prefix))
     if data['volume']:
         q_objs.append(handle_numbers('volume', data, prefix))
+    if data['issue_title']:
+        q_objs.append(Q(**{ '%stitle__%s' % (prefix, op): \
+                        data['issue_title'] }))
+    if data['variant_name']:
+        q_objs.append(Q(**{ '%svariant_name__%s' % (prefix, op): \
+                        data['variant_name'] }))
     if data['issue_date']:
         q_objs.append(
           Q(**{ '%spublication_date__%s' % (prefix, op): data['issue_date'] }))
@@ -875,6 +898,11 @@ def search_issues(data, op, stories_q=None):
           Q(**{ '%srevisions__changeset__state' % prefix: states.APPROVED }))
     if data['isbn']:
         q_objs.append(compute_isbn_qobj(data['isbn'], prefix, op))
+    if data['barcode']:
+        q_objs.append(Q(**{ '%sbarcode__%s' % (prefix, op): data['barcode'] }))
+    if data['indicia_frequency']:
+        q_objs.append(Q(**{ '%sindicia_frequency__%s' % (prefix, op): \
+          data['indicia_frequency'] }))
     if data['issue_notes']:
         q_objs.append(Q(**{ '%snotes__%s' % (prefix, op): data['issue_notes'] }))
 

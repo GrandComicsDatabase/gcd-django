@@ -101,6 +101,15 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.issue_by_isbn'),
     (r'^isbn/(?P<isbn>.+)/$',
      'apps.gcd.views.search.issue_by_isbn'),
+    # barcodes don't have 'name' in the path, but otherwise work the same
+    (r'^barcode/name/(?P<barcode>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.issue_by_barcode_name'),
+    (r'^barcode/name/(?P<barcode>.+)/$',
+     'apps.gcd.views.search.issue_by_barcode_name'),
+    (r'^barcode/(?P<barcode>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.issue_by_barcode'),
+    (r'^barcode/(?P<barcode>.+)/$',
+     'apps.gcd.views.search.issue_by_barcode'),
 
     # Single Cover
     url(r'^issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',

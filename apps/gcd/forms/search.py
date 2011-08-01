@@ -110,12 +110,17 @@ class AdvancedSearch(forms.Form):
 
     issues = forms.CharField(label='Issues', required=False)
     volume = forms.CharField(label='Volume', required=False)
+    issue_title = forms.CharField(label='Title', required=False)
+    variant_name = forms.CharField(label='Variant Name', required=False)
     price = forms.CharField(required=False)
-    issue_pages = forms.CharField(required=False)
+    issue_pages = forms.CharField(label='Issue Pages', required=False)
     issue_notes = forms.CharField(label='Issue Notes', required=False)
-    issue_editing = forms.CharField(required=False)
+    issue_editing = forms.CharField(label='Issue Editing', required=False)
     issue_date = forms.CharField(label='Cover Date', required=False)
     isbn = forms.CharField(label='ISBN', required=False)
+    barcode = forms.CharField(required=False)
+    indicia_frequency = forms.CharField(label='Indicia Frequency',
+                                        required=False)
 
     cover_needed = forms.BooleanField(label="Cover is Needed",
                                        required=False)
@@ -141,13 +146,13 @@ class AdvancedSearch(forms.Form):
     inks = forms.CharField(required=False)
     colors = forms.CharField(required=False)
     letters = forms.CharField(required=False)
-    story_editing = forms.CharField(required=False)
+    story_editing = forms.CharField(label='Story Editing', required=False)
     job_number = forms.CharField(label='Job Number', required=False)
 
     genre = forms.CharField(required=False)
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
-    reprint_notes = forms.CharField(required=False)
+    reprint_notes = forms.CharField(label='Reprint Notes', required=False)
 
     notes = forms.CharField(label='Notes', required=False)
 

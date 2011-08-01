@@ -34,9 +34,9 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
   <li> Searching by date is somewhat tricky.  Supported formats include
        "year.month.day", "year-month-day", "month/day/year",
        "month-name day, year", "day month-name, year" and just plain year.
-  <li> You cannot use 00 for month or day since that is not a date. Instead 
-       use the last day of the preceding year/month, e.g. 1989.12.31 
-       to 1990.12.31 will find all comics we have recorded with a publication 
+  <li> You cannot use 00 for month or day since that is not a date. Instead
+       use the last day of the preceding year/month, e.g. 1989.12.31
+       to 1990.12.31 will find all comics we have recorded with a publication
        date in 1990.
   <li> Date searching for series and stories uses a hidden field that is
        not always filled out.  This is the same field used for sorting by
@@ -196,12 +196,16 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
   <ol>
     {{ form.issues|show_form }}
     {{ form.volume|show_form }}
+    {{ form.issue_title|show_form }}
+    {{ form.variant_name|show_form }}
     {{ form.issue_date|show_form }}
+    {{ form.indicia_frequency|show_form }}
     {{ form.price|show_form }}
     {{ form.issue_pages|show_form }}
     {{ form.format|show_form }}
     {{ form.issue_editing|show_form }}
     {{ form.isbn|show_form }}
+    {{ form.barcode|show_form }}
     {{ form.issue_notes|show_form }}
     {{ form.cover_needed|show_form }}
     {{ form.is_indexed|show_form }}
