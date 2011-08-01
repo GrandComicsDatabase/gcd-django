@@ -505,7 +505,14 @@ class Changeset(models.Model):
             # the imp revisions and take the maximum value or something.
             self.imps += self.revisions.next().calculate_imps()
         else:
-            for revision in self.revisions:
+            if self.change_type == CTYPES['cover']:
+                # coverrevisions can have issuerevisions and storyrevisions
+                # for variant uploads, but one shouldn't get imps for them
+                revisions = self.coverrevisions.all()
+            else:
+                revisions = self.revisions
+
+            for revision in revisions:
                 # Deletions are a bit strange.  Essentially, you get one
                 # point per button you press, however many objects that
                 # button deletes.  Similar to bulk adds counting the same
