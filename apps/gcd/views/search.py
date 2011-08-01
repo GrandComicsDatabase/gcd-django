@@ -68,6 +68,7 @@ def generic_by_name(request, name, q_obj, sort,
         # query_string for the link to the advanced search
         query_val['target'] = base_name
         query_val[base_name] = name
+        things = things.distinct()
 
     elif class_ is Issue:
         base_name = 'issue'
