@@ -1604,7 +1604,8 @@ class CoverRevision(Revision):
 
         if self.cover and self.is_replacement==False:
             # this is a move of a cover
-            if self.changeset.change_type == CTYPES['variant_add']:
+            if self.changeset.change_type in [CTYPES['variant_add'], \
+              CTYPES['two_issues']]:
                 old_issue = cover.issue
                 issue_rev = self.changeset.issuerevisions\
                                           .exclude(issue=old_issue).get()
