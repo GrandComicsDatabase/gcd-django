@@ -2276,13 +2276,19 @@ class IssueRevision(Revision):
 
     def variant_covers(self):
         image_set = Cover.objects.none()
-        if self.issue:
+        if self.issue and not self.variant_of:
             # maybe a cover move from the base issue (only move allowed)
             ids = list(self.changeset.coverrevisions.all()\
                                      .values_list('cover__id', flat=True))
             image_set |= Cover.objects.filter(id__in=ids)
 
             image_set |= self.issue.variant_covers()
+            # maybe a cover move from the other issue for 'two_issues'
+            if self.changeset.change_type == CTYPES['two_issues'] \
+              and self.changeset.coverrevisions.count():
+                exclude_ids = list(self.changeset.coverrevisions\
+                  .exclude(issue=self.issue).values_list('cover__id', flat=True))
+                image_set = image_set.exclude(id__in=exclude_ids)
         elif self.variant_of:
             image_set |= self.variant_of.variant_covers()
             if self.changeset.change_type in [CTYPES['variant_add'],
@@ -2291,6 +2297,7 @@ class IssueRevision(Revision):
                 # maybe a cover move from the base issue (only move allowed)
                 exclude_ids = list(self.changeset.coverrevisions\
                   .exclude(issue=self.issue).values_list('cover__id', flat=True))
+                image_set = image_set.exclude(id__in=exclude_ids)
                 image_set |= self.variant_of.active_covers()\
                                             .exclude(id__in=exclude_ids)
             else:
