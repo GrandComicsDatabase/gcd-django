@@ -198,7 +198,10 @@ class Changeset(models.Model):
         Fake up an iterable (not actually a list) of all revisions,
         in canonical order.
         """
-        return itertools.chain(*self._revision_sets())
+        # cache the revisions
+        if not hasattr(self, '_save_revisions'):
+            self._save_revisions = self._revision_sets()
+        return itertools.chain(*self._save_revisions)
     revisions = property(_revisions)
 
     def revision_count(self):
