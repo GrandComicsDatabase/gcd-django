@@ -2277,30 +2277,47 @@ class IssueRevision(Revision):
     def variant_covers(self):
         image_set = Cover.objects.none()
         if self.issue and not self.variant_of:
-            # maybe a cover move from the base issue (only move allowed)
-            ids = list(self.changeset.coverrevisions.all()\
-                                     .values_list('cover__id', flat=True))
-            image_set |= Cover.objects.filter(id__in=ids)
-
-            image_set |= self.issue.variant_covers()
-            # maybe a cover move from the other issue for 'two_issues'
-            if self.changeset.change_type == CTYPES['two_issues'] \
-              and self.changeset.coverrevisions.count():
-                exclude_ids = list(self.changeset.coverrevisions\
-                  .exclude(issue=self.issue).values_list('cover__id', flat=True))
-                image_set = image_set.exclude(id__in=exclude_ids)
-        elif self.variant_of:
-            image_set |= self.variant_of.variant_covers()
             if self.changeset.change_type in [CTYPES['variant_add'],
                                               CTYPES['two_issues']] \
               and self.changeset.coverrevisions.count():
-                # maybe a cover move from the base issue (only move allowed)
+                image_set |= self.issue.variant_covers()
+                # maybe a cover move from the issue
+                ids = list(self.changeset.coverrevisions\
+                                         .filter(issue=self.issue)\
+                                         .values_list('cover__id', flat=True))
+                image_set |= Cover.objects.filter(id__in=ids)
+                # maybe a cover move from the other issue for 'two_issues'
+                if self.changeset.change_type == CTYPES['two_issues']:
+                    exclude_ids = list(self.changeset.coverrevisions\
+                      .exclude(issue=self.issue).values_list('cover__id',
+                                                             flat=True))
+                    image_set = image_set.exclude(id__in=exclude_ids)
+            else:
+                image_set |= self.issue.variant_covers()
+        elif self.variant_of:
+            if self.changeset.change_type in [CTYPES['variant_add'],
+                                              CTYPES['two_issues']] \
+              and self.changeset.coverrevisions.count():
+                image_set |= self.variant_of.variant_covers()
+                if self.issue:
+                    # take out owns ones
+                    image_set = image_set.exclude(issue=self.issue)
+                    # maybe a cover move to the other issue for 'two_issues'
+                    ids = list(self.changeset.coverrevisions\
+                                            .filter(issue=self.issue)\
+                                            .values_list('cover__id',
+                                                         flat=True))
+                    image_set |= Cover.objects.filter(id__in=ids)
+                # maybe a cover move from the other issue to exclude
                 exclude_ids = list(self.changeset.coverrevisions\
-                  .exclude(issue=self.issue).values_list('cover__id', flat=True))
-                image_set = image_set.exclude(id__in=exclude_ids)
+                  .exclude(issue=self.issue).values_list('cover__id',
+                                                         flat=True))
                 image_set |= self.variant_of.active_covers()\
                                             .exclude(id__in=exclude_ids)
+            elif self.issue:
+                image_set |= self.issue.variant_covers()
             else:
+                image_set |= self.variant_of.variant_covers()
                 image_set |= self.variant_of.active_covers()
         return image_set
 
