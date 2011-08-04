@@ -268,7 +268,7 @@ def show_page_count(story, show_page=False):
     return p
 
 def format_page_count(page_count):
-    if page_count:
+    if page_count is not None:
         return re.sub(r'\.?0+$', '', unicode(page_count))
     else:
         return u''

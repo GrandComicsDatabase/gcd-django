@@ -550,22 +550,37 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 raise forms.ValidationError('You cannot specify a volume and '
                   'check "no volume" at the same time')
 
+            if cd['no_title'] and cd['title']:
+                raise forms.ValidationError(
+                  'You cannot specify a title and check "no title" at the '
+                  'same time.')
+
             if cd['editing'] != "" and cd['no_editing']:
                 raise forms.ValidationError('You cannot specify an editing '
                   'credit and check "no editing" at the same time')
 
             if cd['no_brand'] and cd['brand'] is not None:
                 raise forms.ValidationError(
-                  ['Brand field and No Brand checkbox cannot both be filled in.'])
+                  'You cannot specify a brand and check "no brand" at the '
+                  'same time.')
 
             if cd['no_indicia_frequency'] and cd['indicia_frequency']:
                 raise forms.ValidationError(
-                  'You cannot list an indicia frequency and check '
+                  'You cannot specify an indicia frequency and check '
                   '"no indicia frequency" at the same time.')
 
             if cd['no_isbn'] and cd['isbn']:
                 raise forms.ValidationError(
-                  'You cannot list an isbn and check "no isbn" at the same time.')
+                  'You cannot specify an isbn and check "no isbn" at the '
+                  'same time.')
+
+            if cd['no_barcode'] and cd['barcode']:
+                raise forms.ValidationError(
+                  'You cannot specify a barcode and check "no barcode" at '
+                  'the same time.')
+
+            if cd['page_count'] == None:
+                cd['page_count_uncertain'] = True
 
             return cd
 
@@ -740,6 +755,9 @@ class BulkIssueRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Indicica Frequency field and No Indicia Frequency checkbox '
                'cannot both be filled in.'])
+
+        if cd['page_count'] == None:
+            cd['page_count_uncertain'] = True
 
         return cd
 
