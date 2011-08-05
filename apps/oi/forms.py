@@ -1100,6 +1100,10 @@ class StoryRevisionForm(forms.ModelForm):
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
 
+        if cd['title_inferred'] and cd['title'] == "":
+            raise forms.ValidationError(
+              ['Empty titles cannot be unofficial.'])
+
         if not cd['no_script'] and cd['script'] == "":
             raise forms.ValidationError(
               ['Script field or No Script checkbox must be filled in.'])
