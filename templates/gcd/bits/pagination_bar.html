@@ -1,5 +1,5 @@
 {% load i18n %}
-  
+
 <div class="right pagination">
     {% if page.has_other_pages %}
     {% if page.has_previous %}
@@ -12,22 +12,22 @@
         &lt; {% trans "Previous" %}
     {% endif %} <!-- has_previous -->
     |
-    {% for number in page.page_range %}  
+    {% for number in page.page_range %}
         {% ifequal number page_number %}
             {{ number }}
         {% else %}
-            {% if not number %} 
-                ...  {# literally dots #}  
-            {% else %}{# pagelink num #}  
+            {% if not number %}
+                ...  {# literally dots #}
+            {% else %}{# pagelink num #}
                 {% if extra_string %}
                     <a href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
                 {% else %}
                     <a href="?page={{ number }}">{{ number }}</a>
                 {% endif %}
-            {% endif %}  
+            {% endif %}
         {% endifequal %}
         |
-    {% endfor %}  
+    {% endfor %}
     {% if page.has_next %}
         {% if extra_string %}
             <a href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
