@@ -198,11 +198,19 @@ class Changeset(models.Model):
         Fake up an iterable (not actually a list) of all revisions,
         in canonical order.
         """
-        # cache the revisions
+        return itertools.chain(*self._revision_sets())
+    revisions = property(_revisions)
+
+    def _cached_revisions(self):
+        """
+        Fake up an iterable (not actually a list) of all revisions,
+        in canonical order.
+        Revisions are cached, this is for the queue view speed-up.
+        """
         if not hasattr(self, '_save_revisions'):
             self._save_revisions = self._revision_sets()
         return itertools.chain(*self._save_revisions)
-    revisions = property(_revisions)
+    cached_revisions = property(_cached_revisions)
 
     def revision_count(self):
         return reduce(operator.add,
@@ -216,7 +224,7 @@ class Changeset(models.Model):
         """
         return self.change_type in CTYPES_INLINE
 
-    def inline_revision(self):
+    def inline_revision(self, cache_safe=False):
         if self.inline():
             if self._inline_revision is None:
                 if self.change_type == CTYPES['publisher']:
@@ -229,7 +237,10 @@ class Changeset(models.Model):
                         self._inline_revision = \
                            self.publisherrevisions.get()
                 else:
-                    self._inline_revision = self.revisions.next()
+                    if cache_safe == True:
+                        return self.cached_revisions.next()
+                    else:
+                        self._inline_revision = self.revisions.next()
         return self._inline_revision
 
     def deleted(self):
@@ -262,20 +273,20 @@ class Changeset(models.Model):
         if self.change_type in CTYPES_BULK:
             return unicode(self)
         elif self.change_type == CTYPES['issue']:
-            return self.revisions.next().queue_name()
+            return self.cached_revisions.next().queue_name()
         elif self.change_type  == CTYPES['two_issues']:
-            return self.revisions.next().queue_name() + " and base issue"
+            return self.cached_revisions.next().queue_name() + " and base issue"
         elif self.change_type == CTYPES['variant_add']:
             return self.issuerevisions.get(variant_of__isnull=False).queue_name()
         else:
-            return self.inline_revision().queue_name()
+            return self.inline_revision(cache_safe=True).queue_name()
 
     def queue_descriptor(self):
         if self.change_type == CTYPES['issue_add']:
             return u'[ADDED]'
         elif self.change_type == CTYPES['variant_add']:
             return u'[VARIANT + BASE]'
-        return self.revisions.next().queue_descriptor()
+        return self.cached_revisions.next().queue_descriptor()
 
     def changeset_action(self):
         """
@@ -287,7 +298,7 @@ class Changeset(models.Model):
         elif self.change_type == CTYPES['issue_bulk']:
             return ACTION_MODIFY
 
-        revision = self.revisions.next()
+        revision = self.cached_revisions.next()
         if revision.deleted:
             return ACTION_DELETE
         # issue_adds are separate, avoid revision.previous
