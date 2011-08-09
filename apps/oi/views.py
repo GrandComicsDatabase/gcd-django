@@ -2612,6 +2612,7 @@ def cover_compare(request, changeset, revision):
     if revision.is_replacement:
         old_cover = CoverRevision.objects.filter(cover=revision.cover,
                       created__lt=revision.created,
+                      changeset__change_type=CTYPES['cover'],
                       changeset__state=states.APPROVED).order_by('-created')[0]
         old_cover_tag = get_preview_image_tag(old_cover, "replaced cover",
                                               ZOOM_LARGE)

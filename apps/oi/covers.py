@@ -63,6 +63,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
 
     if revision.changeset.state == states.APPROVED:
         current_cover = CoverRevision.objects.filter(cover=revision.cover,
+          changeset__change_type=CTYPES['cover'],
           changeset__state=states.APPROVED).order_by('-created')[0]
         if revision==current_cover:
             # Current cover is the one from this revision, show it.
@@ -147,6 +148,7 @@ def copy_approved_cover(cover_revision):
     if cover_revision.is_replacement:
         # get current cover
         old_cover = CoverRevision.objects.filter(cover=cover,
+          changeset__change_type=CTYPES['cover'],
           changeset__state=states.APPROVED).order_by('-created')[0]
         if old_cover.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, copy large file
