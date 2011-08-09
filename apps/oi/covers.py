@@ -592,10 +592,15 @@ def upload_variant(request, issue_id):
         else:
             vars = None
         form = UploadVariantScanForm(initial=vars)
-
+        kwargs={'pending_variant_adds': Changeset.objects\
+          .filter(issuerevisions__variant_of=issue,
+                  #state__in=states.ACTIVE,
+                  state__in=[states.PENDING,states.REVIEWING],
+                  change_type__in=[CTYPES['issue_add'],
+                                   CTYPES['variant_add']])}
         # display the form
         return _display_cover_upload_form(request, form, None, issue,
-                                          variant=True)
+                                          variant=True, kwargs=kwargs)
 
 @login_required
 def upload_cover(request, cover_id=None, issue_id=None):
@@ -656,26 +661,21 @@ def upload_cover(request, cover_id=None, issue_id=None):
         # display the form
         return _display_cover_upload_form(request, form, cover, issue)
 
-def _display_cover_upload_form(request, form, cover, issue, info_text='', variant = False):
+def _display_cover_upload_form(request, form, cover, issue, info_text='',
+                               variant=False, kwargs={}):
     upload_template = 'oi/edit/upload_cover.html'
 
-    # set covers, replace_cover, upload_type
-    covers = []
-    replace_cover = None
-
     if cover:
-        upload_type = 'replacement'
-        replace_cover = get_image_tag(cover, "cover to replace", ZOOM_MEDIUM)
+        kwargs['upload_type'] = 'replacement'
+        kwargs['replace_cover'] = get_image_tag(cover, "cover to replace", ZOOM_MEDIUM)
     else:
         if issue.has_covers():
-            covers = get_image_tags_per_issue(issue, "current covers",
+            kwargs['current_covers'] = get_image_tags_per_issue(issue, "current covers",
                                               ZOOM_MEDIUM, as_list=True,
                                               variants=True)
-            upload_type = 'additional'
-        else:
-            upload_type = ''
+            kwargs['upload_type'] = 'additional'
         if variant:
-            upload_type = 'variant'
+            kwargs['upload_type'] = 'variant'
 
     # generate tags for cover uploads for this issue currently in the queue
     active_covers_tags = []
@@ -701,17 +701,13 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='', varian
         active_covers_tags.append([active_cover,
                                    get_preview_image_tag(active_cover,
                                      "pending cover", ZOOM_MEDIUM)])
-
-    return render_to_response(upload_template, {
-                                'form': form,
-                                'info' : info_text,
-                                'cover' : cover,
-                                'issue' : issue,
-                                'current_covers' : covers,
-                                'replace_cover' : replace_cover,
-                                'active_covers' : active_covers_tags,
-                                'upload_type' : upload_type,
-                                'table_width': UPLOAD_WIDTH},
+    kwargs['form'] = form
+    kwargs['info'] = info_text
+    kwargs['cover'] = cover
+    kwargs['issue'] = issue
+    kwargs['active_covers'] = active_covers_tags
+    kwargs['table_width'] = UPLOAD_WIDTH
+    return render_to_response(upload_template, kwargs,
                               context_instance=RequestContext(request))
 
 @permission_required('gcd.can_approve')

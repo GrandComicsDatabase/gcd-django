@@ -2597,48 +2597,42 @@ def cover_compare(request, changeset, revision):
         cover_tag = get_image_tag(revision.cover, "deleted cover", ZOOM_LARGE)
     else:
         cover_tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_LARGE)
+    kwargs = {'changeset': changeset,
+              'revision': revision,
+              'cover_tag' : cover_tag,
+              'table_width': 5,
+              'states': states }
     if revision.is_wraparound:
-        cover_front_tag = get_preview_image_tag(revision, "uploaded cover",
+        kwargs['cover_front_tag'] = get_preview_image_tag(revision, "uploaded cover",
                                                 ZOOM_MEDIUM)
-    else:
-        cover_front_tag = ''
-
-    current_covers = []
-    pending_covers = []
-    old_cover = None
-    old_cover_tag = ''
-    old_cover_front_tag = ''
-    old_cover_width = None
     if revision.is_replacement:
-        old_cover = CoverRevision.objects.filter(cover=revision.cover,
+        kwargs['old_cover'] = CoverRevision.objects.filter(cover=revision.cover,
                       created__lt=revision.created,
                       changeset__change_type=CTYPES['cover'],
                       changeset__state=states.APPROVED).order_by('-created')[0]
-        old_cover_tag = get_preview_image_tag(old_cover, "replaced cover",
+        kwargs['old_cover_tag'] = get_preview_image_tag(old_cover, "replaced cover",
                                               ZOOM_LARGE)
         if old_cover.is_wraparound:
-            old_cover_front_tag = get_preview_image_tag(old_cover,
+            kwargs['old_cover_front_tag'] = get_preview_image_tag(old_cover,
                                     "replaced cover", ZOOM_MEDIUM)
-        else:
-            old_cover_front_tag = ''
 
         if old_cover.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, we have width 400
-            old_cover_width = 400
+            kwargs['old_cover_width'] = 400
         else:
-            old_cover_width = get_cover_width("%s/uploads/%d_%s*" % (
+            kwargs['old_cover_width'] = get_cover_width("%s/uploads/%d_%s*" % (
               old_cover.cover.base_dir(),
               old_cover.cover.id,
               old_cover.changeset.created.strftime('%Y%m%d_%H%M%S')))
 
     if revision.deleted:
-        old_cover = CoverRevision.objects.filter(cover=revision.cover,
+        kwargs['old_cover'] = CoverRevision.objects.filter(cover=revision.cover,
                       created__lt=revision.created,
                       changeset__state=states.APPROVED).order_by('-created')[0]
 
-    cover_width = None
     if revision.changeset.state in states.ACTIVE:
         if revision.issue.has_covers():
+            current_covers = []
             current_cover_set = revision.issue.active_covers() \
               | revision.issue.variant_covers()
             if revision.is_replacement or revision.deleted:
@@ -2646,7 +2640,9 @@ def cover_compare(request, changeset, revision):
             for cover in current_cover_set:
                 current_covers.append([cover, get_image_tag(cover,
                                        "current cover", ZOOM_MEDIUM)])
+            kwargs['current_covers'] = current_covers
         if CoverRevision.objects.filter(issue=revision.issue).count() > 1:
+            pending_covers = []
             covers = CoverRevision.objects.filter(issue=revision.issue)
             covers = covers.exclude(id=revision.id).filter(cover=None)
             covers = covers.filter(changeset__state__in=states.ACTIVE)
@@ -2654,37 +2650,33 @@ def cover_compare(request, changeset, revision):
             for cover in covers:
                 pending_covers.append([cover, get_preview_image_tag(cover,
                                        "pending cover", ZOOM_MEDIUM)])
+            kwargs['pending_covers'] = pending_covers
+        kwargs['pending_variant_adds'] = Changeset.objects\
+          .filter(issuerevisions__variant_of=revision.issue,
+                  #state__in=states.ACTIVE,
+                  state__in=[states.PENDING,states.REVIEWING],
+                  change_type__in=[CTYPES['issue_add'],
+                                   CTYPES['variant_add']])
+
         if revision.deleted == False:
-            cover_width = get_cover_width(revision.base_dir() + \
+            kwargs['cover_width'] = get_cover_width(revision.base_dir() + \
                                           str(revision.id) + '*')
     else:
         if revision.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, we have width 400
-            cover_width = 400
+            kwargs['cover_width'] = 400
         elif revision.deleted == False:
             if revision.changeset.state == states.DISCARDED:
-                cover_width = get_cover_width(revision.base_dir() + \
+                kwargs['cover_width'] = get_cover_width(revision.base_dir() + \
                                               str(revision.id) + '*')
             else:
-                cover_width = get_cover_width("%s/uploads/%d_%s*" % (
+                kwargs['cover_width'] = get_cover_width("%s/uploads/%d_%s*" % (
                   revision.cover.base_dir(),
                   revision.cover.id,
                   revision.changeset.created.strftime('%Y%m%d_%H%M%S')))
 
     response = render_to_response('oi/edit/compare_cover.html',
-                                  { 'changeset': changeset,
-                                    'revision': revision,
-                                    'cover_tag' : cover_tag,
-                                    'cover_front_tag': cover_front_tag,
-                                    'cover_width': cover_width,
-                                    'current_covers' : current_covers,
-                                    'pending_covers' : pending_covers,
-                                    'old_cover': old_cover,
-                                    'old_cover_tag': old_cover_tag,
-                                    'old_cover_front_tag': old_cover_front_tag,
-                                    'old_cover_width': old_cover_width,
-                                    'table_width': 5,
-                                    'states': states },
+                                  kwargs,
                                   context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response

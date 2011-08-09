@@ -30,7 +30,7 @@ table label {
 }
 
 div.success {
-    clear: left; 
+    clear: left;
     padding: 1em;
 }
 
@@ -48,10 +48,15 @@ div.success {
 #display_cover {
     margin: 1em 0;
     padding: 0;
-    overflow: hidden;
     float: right;
     width: 40%;
     text-align: center;
+}
+
+#display_cover .comparison_highlight {
+    border: solid black 1px;
+    padding: 0.2em;
+    background-color: yellow;
 }
 
 #cover_uploaded {

@@ -19,67 +19,78 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
 
 {% block view_body %}
 <h1 class="item_id search_id">
-<div class="left">
+  <div class="left">
      Upload {{ upload_type }} cover for
-</div>
+  </div>
 </h1>
 <div class="item_id">
-<div class="left">
+  <div class="left">
 {{ issue|absolute_url }}
-</div>
+  </div>
 </div>
 {% if info %}
-    <h2>{{ info }}<br/></h2>
+<h2>{{ info }}<br/></h2>
 {% endif %}
 <div>
-<fieldset class="universal">
-<ol>
-    {% if upload_type = 'replacement' %}
-        <form action="{% url replace_cover cover_id=cover.id %}" method="post" enctype="multipart/form-data">
-    {% else %}
-      {% if upload_type = 'variant' %}
-        <form action="{% url upload_variant issue_id=issue.id %}" method="post" enctype="multipart/form-data">
-      {% else %}
-        <form action="{% url upload_cover issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+  <fieldset class="universal">
+    <ol>
+{% if upload_type = 'replacement' %}
+      <form action="{% url replace_cover cover_id=cover.id %}" method="post" enctype="multipart/form-data">
+{% else %}
+  {% if upload_type = 'variant' %}
+      <form action="{% url upload_variant issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+  {% else %}
+      <form action="{% url upload_cover issue_id=issue.id %}" method="post" enctype="multipart/form-data">
       {% endif %}
-    {% endif %}
-    <table class="editing">
-    <input type="submit" value="Upload">
+  {% endif %}
+        <table class="editing">
+          <input type="submit" value="Upload">
     {{ form.as_table }}
-    </table>
-    <input type="submit" value="Upload">
-    </form>
-</ol>
-</fieldset>
+        </table>
+        <input type="submit" value="Upload">
+      </form>
+    </ol>
+  </fieldset>
 
-
-{% if replace_cover %}
-    <div id="display_cover">
+  {% if replace_cover %}
+  <div id="display_cover">
     {{ replace_cover }}
-        <div class="issue_cover_links">
-          <a href="{{ issue.get_absolute_url }}cover/4">Zoom</a>
-        </div>
-        <div style="text-align:left">
-        <ul>
+    <div class="issue_cover_links">
+      <a href="{{ issue.get_absolute_url }}cover/4">Zoom</a>
+    </div>
+    <div style="text-align:left">
+      <ul>
         <li>If you are replacing a cover, please make sure that the cover you upload is better than the one that is
-        already there.
+            already there.
         <li>Cover replacements will usually be rejected unless significantly better so do not expect your replacement cover to always be accepted.
         <li>If you realize in the compare view after the upload that the newly uploaded cover is not better
-        please retract and discard the upload.
-        </ul>
-        </div>
-        </div>
-{% else %}
-    <div id="display_cover">
-        {% if current_covers %}
-            <span class="instructions">
-            <a href="#current_covers">{{ current_covers|length }} current cover{{ current_covers|length|pluralize }}</a> for this issue and its variants.</span>
-        {% endif %}
-        {% if active_covers %}
-            <span class="instructions">
-            <br><a href="#pending_covers">{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }}</a> for this issue and its variants.</span>
-        {% endif %}
+            please retract and discard the upload.
+      </ul>
     </div>
+  </div>
+  {% else %}
+  <div id="display_cover">
+    {% if current_covers or active_covers %}
+      Please upload covers currently <span class="comparison_highlight">existing or pending</span> only as a replacement.<br>
+    {% endif %}
+    {% if current_covers %}
+    <span class="instructions">
+      <a href="#current_covers">{{ current_covers|length }} current cover{{ current_covers|length|pluralize }}</a>
+    </span> for this issue.
+    {% endif %}
+    {% if active_covers %}
+    <span class="instructions">
+      <br><a href="#pending_covers">{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }}</a>
+    </span> for this issue.
+    {% endif %}
+    {% if pending_variant_adds %}
+    <p>Please do not upload covers which belong to a <span class="comparison_highlight">pending variant add.</span>
+      <span class="instructions">
+        <br><a href="#pending_variant_adds">{{ pending_variant_adds|length }} pending variant add{{ pending_variant_adds|length|pluralize }}</a>
+      </span> for this issue.
+    </p>
+    {% endif %}
+  </div>
 {% endif %}
 </div> <!-- main -->
 
@@ -121,6 +132,16 @@ GCD :: Cover upload for {{ issue.series.name }} #{{ issue.display_number }}
   {% endfor %}
   </tr>
 </table>
+{% endif %}
+
+{% if pending_variant_adds %}
+<a name="pending_variant_adds"></a>
+<h2> pending variant add{{ pending_variant_adds|length|pluralize }} </h2>
+  <ul>
+  {% for variant in pending_variant_adds %}
+  <li><a href="{% url compare id=variant.id %}">{{ variant }}</a>
+  {% endfor %}
+  </ul>
 {% endif %}
 </div>
 <p/>

@@ -177,6 +177,17 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 </table>
 {% endif %}
 
+{% if pending_variant_adds %}
+<div>
+<h2> pending variant add{{ pending_variant_adds|length|pluralize }} </h2>
+  <ul>
+  {% for variant in pending_variant_adds %}
+    <li><a href="{% url compare id=variant.id %}">{{ variant }}</a>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 {% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}
 {% endwith %}
