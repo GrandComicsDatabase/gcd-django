@@ -1,0 +1,23 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+GCD :: Confirm {{ type }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h2>{{ header_text }}</h2>
+<form method="POST" action="{{ url }}">
+<input type="submit" value="Confirm {{ confirm_button }}"></input>
+<input type="submit" name="cancel" value="{{ cancel_button }}"></input>
+</form>
+<br>
+{% endblock %}
+

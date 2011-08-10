@@ -10,6 +10,12 @@
 <a href="{% url edit_revision model_name=model_name,id=revision.id %}">Edit issue data</a>.
   {% endif %}
 {% endif %}
+{% if revision.previous and revision.series != revision.previous.series %}
+<h2> Issue moved from <span class="comparison_highlight">{{ revision.previous.series }}</span> to <span class="comparison_highlight">{{ revision.series }}</span> </h2>
+  {% if revision.changeset.state = states.REVIEWING %}
+After approval the approver should check the sort order of the series this issue is moved to.
+  {% endif %}
+{% endif %}
 <p>
 {% if revision.variant_of %}
 This is a variant of {{ revision.variant_of|absolute_url }}.

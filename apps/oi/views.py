@@ -1925,6 +1925,66 @@ def _display_add_story_form(request, issue, form, changeset_id):
 ##############################################################################
 
 @permission_required('gcd.can_reserve')
+def move_issue(request, issue_revision_id, series_id):
+    """ move issue to series """
+    issue_revision = get_object_or_404(IssueRevision, id=issue_revision_id,
+                                       deleted=False)
+    if request.user != issue_revision.changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may move issues.')
+
+    if series_id == '0':
+        if 'series_id' in request.GET:
+            try:
+                series_id = int(request.GET['series_id'])
+            except ValueError:
+                return render_error(request,
+                                    'Series id must be an integer number.',
+                                    redirect=False)
+        else:
+            return render_error(request,
+                                'No series id given.',
+                                redirect=False)
+    series = Series.objects.filter(id=series_id)
+    if not series:
+        return render_error(request, 'No series with id %s.' \
+                            % series_id, redirect=False)
+    series = series[0]
+    if series.deleted:
+        return render_error(request, 'Series %s with id %s is deleted.' \
+                            % (series, series_id), redirect=False)
+
+    if request.method != 'POST':
+        header_text = "Do you want to move %s to %s ?" % \
+          (issue_revision.issue.full_name(), series.full_name())
+        url = urlresolvers.reverse('move_issue',
+                                   kwargs={'issue_revision_id': issue_revision_id,
+                                           'series_id': series_id})
+        cancel_button = "Cancel"
+        confirm_button = "move of issue %s to series %s" % (issue_revision.issue,
+                                                            series)
+        return render_to_response('oi/edit/confirm.html',
+                                {
+                                    'type': 'Issue Move',
+                                    'header_text': header_text,
+                                    'url': url,
+                                    'cancel_button': cancel_button,
+                                    'confirm_button': confirm_button,
+                                },
+                                context_instance=RequestContext(request))
+    else:
+        if 'cancel' not in request.POST:
+            if issue_revision.series.publisher != series.publisher:
+                issue_revision.brand = None
+                if issue_revision.indicia_publisher:
+                    issue_revision.indicia_publisher = None
+                    issue_revision.no_indicia_publisher = False
+            issue_revision.series = series
+            issue_revision.save()
+        return HttpResponseRedirect(urlresolvers.reverse('edit',
+            kwargs={'id': issue_revision.changeset.id}))
+
+@permission_required('gcd.can_reserve')
 def move_story_revision(request, id):
     """ move story revision between two issue revisions """
     story = get_object_or_404(StoryRevision, id=id)

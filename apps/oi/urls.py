@@ -79,6 +79,8 @@ urlpatterns = patterns('',
     url(r'^issue/(?P<issue_id>\d+)/reorder_stories/(?P<changeset_id>\d+)$',
         oi_views.reorder_stories,
         name='reorder_stories'),
+    url(r'^issue/revision/(?P<issue_revision_id>\d+)/move/(?P<series_id>\d+)/$',
+        oi_views.move_issue, name='move_issue'),
 
     url(r'^bulk_issue_edit/$',
         oi_views.edit_issues_in_bulk,

@@ -2547,6 +2547,7 @@ class IssueRevision(Revision):
 
     def commit_to_display(self, clear_reservation=True, space_count=1):
         issue = self.issue
+        check_series_order = None
 
         if issue is None:
             if self.after is None:
@@ -2633,6 +2634,24 @@ class IssueRevision(Revision):
                     if issue.indicia_publisher:
                         issue.indicia_publisher.issue_count = F('issue_count') - 1
                         issue.indicia_publisher.save()
+            if self.series != issue.series:
+                # move to the end of the new series
+                issue.sort_code = self.series.active_issues()\
+                                      .latest('sort_code').sort_code + 1
+                # update counts
+                self.series.issue_count = F('issue_count') + 1
+                issue.series.issue_count = F('issue_count') - 1
+                if self.series.publisher != issue.series.publisher:
+                    if self.series.publisher:
+                        self.series.publisher.issue_count = F('issue_count') + 1
+                        self.series.publisher.save()
+                    if issue.series.publisher:
+                        issue.series.publisher.issue_count = F('issue_count') - 1
+                        issue.series.publisher.save()
+                if self.series.language != issue.series.language:
+                    update_count('issues', 1, language=self.series.language)
+                    update_count('issues', -1, language=issue.series.language)
+                check_series_order = issue.series
 
         issue.number = self.number
         # only if the series has_field is True write to issue
@@ -2704,6 +2723,10 @@ class IssueRevision(Revision):
             for story in self.changeset.storyrevisions.filter(issue=None):
                 story.issue = issue
                 story.save()
+
+        if check_series_order:
+            set_series_first_last(check_series_order)
+            self._check_first_last()
 
     def _check_first_last(self):
         set_series_first_last(self.series)

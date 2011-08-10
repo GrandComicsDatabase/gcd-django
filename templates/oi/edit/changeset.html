@@ -91,10 +91,16 @@
         {% for issue_revision in changeset.issuerevisions.all %}
   <tr>
     <td>
+          {% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}
+            <span class="comparison_highlight">
+          {% endif %}
           {{ issue_revision.full_name }}
+          {% if issue_revision.issue and revision.series != revision.issue.series %}
+            </span>
+          {% endif %}
           {% if issue_revision.variant_of %} (variant of {{ issue_revision.variant_of }}) {% endif %}
     </td>
-    <td>
+    <td align="right">
       <form class="changeset" method="GET"
             action="{% url edit_revision model_name='issue',id=issue_revision.id %}">
         <input type="submit" id="edit_issue_{{ issue_revision.id }}"
@@ -150,7 +156,18 @@
         <input type="submit" id="add_variant_to_issue_revision_{{ issue_revision.id }}"
                name="add_variant_to_issue_revision_{{ issue_revision.id }}"
                value="Add variant issue">
-      </form>Note that you cannot remove a variant from this change afterwards.
+      </form>Note that you cannot remove a variant from a changeset afterwards.
+    </td>
+  </tr>
+{% endif %}
+{% if issue_revision.issue and not issue_revision.variant_of and perms.gcd.can_approve %}
+  <tr>
+    <td colspan="2">
+      <form method="GET"
+        action="{% url move_issue issue_revision_id=issue_revision.id series_id=0 %}">
+        <input type="submit" value="Move to series with id"></input>
+        <input type="text" name="series_id" size="7"></input> Brand/indicia publisher will be reset.
+      </form>
     </td>
   </tr>
 {% endif %}
