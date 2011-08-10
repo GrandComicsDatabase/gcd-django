@@ -666,6 +666,7 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
     if kwargs == None:
         kwargs = {}
     upload_template = 'oi/edit/upload_cover.html'
+    kwargs['upload_type'] = ''
 
     if cover:
         kwargs['upload_type'] = 'replacement'
