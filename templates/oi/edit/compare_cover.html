@@ -54,12 +54,12 @@ Reviewing :: {{ revision }}
 <h2> cover deletion </h2>
   {% else %}
 <h2> cover uploaded
-    {% if current_covers or changeset.issuerevisions.count %}
+    {% if additional %}
+      as an <span class="comparison_highlight">additional</span> cover (dust jacket, flip cover)
+    {% else %}
       {% if changeset.issuerevisions.count %}
         for a new <span class="comparison_highlight">variant issue</span>
         with variant name: {{ changeset.issuerevisions.all.0.variant_name }}
-      {% else %}
-        as an <span class="comparison_highlight">additional</span> cover (dust jacket, flip cover)
       {% endif %}
     {% endif %}
 </h2>

@@ -662,7 +662,9 @@ def upload_cover(request, cover_id=None, issue_id=None):
         return _display_cover_upload_form(request, form, cover, issue)
 
 def _display_cover_upload_form(request, form, cover, issue, info_text='',
-                               variant=False, kwargs={}):
+                               variant=False, kwargs=None):
+    if kwargs == None:
+        kwargs = {}
     upload_template = 'oi/edit/upload_cover.html'
 
     if cover:
@@ -688,6 +690,15 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
                         .filter(issue__variant_of=issue.variant_of,
                         changeset__state__in=states.ACTIVE,
                         deleted=False).order_by('created')
+        if issue.variant_of.has_covers():
+            covers_list = get_image_tags_per_issue(issue.variant_of, 
+                                                   "current covers",
+                                                   ZOOM_MEDIUM, as_list=True,
+                                                   variants=True)
+            if 'current_covers' in kwargs:
+                kwargs['current_covers'].extend(covers_list)
+            else:
+                kwargs['current_covers'] = covers_list
     else:
         active_covers = CoverRevision.objects.filter(issue=issue,
                         changeset__state__in=states.ACTIVE,

@@ -2632,7 +2632,11 @@ def cover_compare(request, changeset, revision):
                       changeset__state=states.APPROVED).order_by('-created')[0]
 
     if revision.changeset.state in states.ACTIVE:
-        if revision.issue.has_covers():
+        if revision.issue.has_covers() or revision.issue.variant_of.has_covers():
+            # no issuesrevision, so no variant upload, but covers exist for issue
+            if revision.issue.has_covers() and not \
+              revision.changeset.issuerevisions.count():
+                kwargs['additional'] = True
             current_covers = []
             current_cover_set = revision.issue.active_covers() \
               | revision.issue.variant_covers()
@@ -2642,13 +2646,16 @@ def cover_compare(request, changeset, revision):
                 current_covers.append([cover, get_image_tag(cover,
                                        "current cover", ZOOM_MEDIUM)])
             kwargs['current_covers'] = current_covers
-        if CoverRevision.objects.filter(issue=revision.issue).count() > 1:
+        cover_revisions = CoverRevision.objects.filter(issue=revision.issue) | \
+          CoverRevision.objects.filter(issue=revision.issue.variant_of) | \
+          CoverRevision.objects.filter(issue__in=revision.issue.variant_set.all())
+        cover_revisions = cover_revisions.exclude(id=revision.id)\
+                                         .filter(cover=None)\
+                                         .filter(changeset__state__in=states.ACTIVE) \
+                                         .order_by('created')
+        if len(cover_revisions):
             pending_covers = []
-            covers = CoverRevision.objects.filter(issue=revision.issue)
-            covers = covers.exclude(id=revision.id).filter(cover=None)
-            covers = covers.filter(changeset__state__in=states.ACTIVE)
-            covers = covers.order_by('created')
-            for cover in covers:
+            for cover in cover_revisions:
                 pending_covers.append([cover, get_preview_image_tag(cover,
                                        "pending cover", ZOOM_MEDIUM)])
             kwargs['pending_covers'] = pending_covers
