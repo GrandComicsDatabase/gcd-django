@@ -2632,7 +2632,8 @@ def cover_compare(request, changeset, revision):
                       changeset__state=states.APPROVED).order_by('-created')[0]
 
     if revision.changeset.state in states.ACTIVE:
-        if revision.issue.has_covers() or revision.issue.variant_of.has_covers():
+        if revision.issue.has_covers() or (revision.issue.variant_of and \
+                                           revision.issue.variant_of.has_covers()):
             # no issuesrevision, so no variant upload, but covers exist for issue
             if revision.issue.has_covers() and not \
               revision.changeset.issuerevisions.count():
