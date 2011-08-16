@@ -264,18 +264,41 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
     return changeset
 
 @permission_required('gcd.can_reserve')
+def confirm_two_edits(request, issue_id):
+    if 'issue_two_id' not in request.GET:
+        return _cant_get(request)
+    try:
+        issue_two_id = int(request.GET['issue_two_id'])
+    except ValueError:
+        return render_error(request, 'Issue id must be an integer number.',
+                            redirect=False)
+    issue_one = get_object_or_404(Issue, id=issue_id, deleted=False)
+    if issue_one.reserved:
+        return render_error(request, 'Issue %s is reserved.' % issue_one,
+                            redirect=False)
+
+    issue_two = Issue.objects.filter(id=issue_two_id, deleted=False)
+    if not issue_two:
+        return render_error(request, 'No issue with id %s.' \
+                            % issue_two_id, redirect=False)
+    issue_two = issue_two[0]
+    if issue_two.reserved:
+        return render_error(request, 'Issue %s is reserved.' % issue_two,
+                            redirect=False)
+    return render_to_response('oi/edit/confirm_two_edits.html',
+        {'issue_one': issue_one, 'issue_two': issue_two},
+        context_instance=RequestContext(request))
+
+@permission_required('gcd.can_reserve')
 # in case of variants: issue_one = variant, issue_two = base
 def reserve_two_issues(request, issue_one_id, issue_two_id):
     if request.method != 'POST':
         return _cant_get(request)
-    issue_one = get_object_or_404(Issue, id=issue_one_id)
-    if issue_one.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'issue', 'id': issue_one_id}))
-    issue_two = get_object_or_404(Issue, id=issue_two_id)
-    if issue_two.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'issue', 'id': issue_two_id}))
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('show_issue',
+          kwargs={'issue_id': issue_one_id}))
+    issue_one = get_object_or_404(Issue, id=issue_one_id, deleted=False)
+    issue_two = get_object_or_404(Issue, id=issue_two_id, deleted=False)
 
     kwargs = {'issue_one': issue_one}
     return reserve(request, issue_two_id, 'issue',
@@ -1945,14 +1968,11 @@ def move_issue(request, issue_revision_id, series_id):
             return render_error(request,
                                 'No series id given.',
                                 redirect=False)
-    series = Series.objects.filter(id=series_id)
+    series = Series.objects.filter(id=series_id, deleted=False)
     if not series:
         return render_error(request, 'No series with id %s.' \
                             % series_id, redirect=False)
     series = series[0]
-    if series.deleted:
-        return render_error(request, 'Series %s with id %s is deleted.' \
-                            % (series, series_id), redirect=False)
 
     if request.method != 'POST':
         header_text = "Do you want to move %s to %s ?" % \

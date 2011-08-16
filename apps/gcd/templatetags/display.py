@@ -172,15 +172,27 @@ def header_link(changeset):
                          (absolute_url(revision), absolute_url(revision.publisher)))
     elif changeset.change_type in [CTYPES['cover'], CTYPES['issue'],
                                    CTYPES['variant_add'], CTYPES['two_issues']]:
-        if changeset.change_type in [CTYPES['variant_add'], CTYPES['two_issues']]:
+        if changeset.change_type == CTYPES['variant_add']:
             # second issue revision is base issue and does exist in any case
             revision = changeset.issuerevisions.all()[1]
+        if changeset.change_type == CTYPES['two_issues']:
+            revision = changeset.issuerevisions.all()[0]
         series_url = absolute_url(revision.issue.series)
         pub_url = absolute_url(revision.issue.series.publisher)
         issue_url = revision.issue.get_absolute_url()
         issue_num = revision.issue.display_number
-        return mark_safe(u'%s (%s) <a href="%s">#%s</a>' %
+        header_link = mark_safe(u'%s (%s) <a href="%s">#%s</a>' %
                          (series_url, pub_url, issue_url, issue_num))
+        if changeset.change_type == CTYPES['two_issues']:
+            revision = changeset.issuerevisions.all()[1]
+            series_url = absolute_url(revision.issue.series)
+            pub_url = absolute_url(revision.issue.series.publisher)
+            issue_url = revision.issue.get_absolute_url()
+            issue_num = revision.issue.display_number
+            header_link += mark_safe(u' and %s (%s) <a href="%s">#%s</a>' %
+                            (series_url, pub_url, issue_url, issue_num))
+        return header_link
+
     elif changeset.change_type == CTYPES['issue_add']:
         series_url = absolute_url(revision.series)
         pub_url = absolute_url(revision.series.publisher)

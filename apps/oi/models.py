@@ -271,11 +271,29 @@ class Changeset(models.Model):
 
     def queue_name(self):
         if self.change_type in CTYPES_BULK:
-            return unicode(self)
+            ir_count = self.issuerevisions.count()
+            if self.change_type == CTYPES['issue_bulk']:
+                return unicode(u'%s and %d other issues' %
+                               (self.issuerevisions.all()[0], ir_count - 1))
+            if self.change_type == CTYPES['issue_add']:
+                if ir_count == 1:
+                    return unicode(self.issuerevisions.all()[0])
+                elif ir_count > 1:
+                    first = self.issuerevisions.order_by('revision_sort_code')[0]
+                    last = self.issuerevisions.order_by('-revision_sort_code')[0]
+                    return u'%s #%s - %s' % (first.series, first.display_number,
+                                                        last.display_number)
+            return u'Unknown State'
         elif self.change_type == CTYPES['issue']:
             return self.cached_revisions.next().queue_name()
         elif self.change_type  == CTYPES['two_issues']:
-            return self.cached_revisions.next().queue_name() + " and base issue"
+            issuerevisions = self.issuerevisions.all()
+            name = issuerevisions[0].queue_name() + " and "
+            if issuerevisions[0].variant_of == issuerevisions[1].issue:
+                name += "base issue"
+            else:
+                name += issuerevisions[1].queue_name()
+            return name
         elif self.change_type == CTYPES['variant_add']:
             return self.issuerevisions.get(variant_of__isnull=False).queue_name()
         else:
@@ -569,25 +587,15 @@ class Changeset(models.Model):
 
     def __unicode__(self):
         if self.inline():
-            return  unicode(self.inline_revision())
+            return unicode(self.inline_revision())
+        if self.change_type in CTYPES_BULK:
+            return self.queue_name()
         if self.change_type == CTYPES['issue']:
             return unicode(self.issuerevisions.all()[0])
-        if self.change_type == CTYPES['variant_add']:
-            return unicode(self.issuerevisions.get(variant_of__isnull=False)) \
-              + ' [Variant]'
         if self.change_type == CTYPES['two_issues']:
-            return unicode(self.issuerevisions.all()[0]) + ' and base issue'
-        ir_count = self.issuerevisions.count()
-        if self.change_type == CTYPES['issue_bulk']:
-            return unicode(u'%s and %d other issues' %
-                           (self.issuerevisions.all()[0], ir_count - 1))
-        if ir_count > 1 and self.change_type == CTYPES['issue_add']:
-            first = self.issuerevisions.order_by('revision_sort_code')[0]
-            last = self.issuerevisions.order_by('-revision_sort_code')[0]
-            return u'%s #%s - %s' % (first.series, first.display_number,
-                                                  last.display_number)
-        if ir_count == 1 and self.change_type == CTYPES['issue_add']:
-            return unicode(self.issuerevisions.all()[0])
+            return self.queue_name()
+        if self.change_type == CTYPES['variant_add']:
+            return self.queue_name() + u' [Variant]'
         return 'Changeset: %d' % self.id
 
 class ChangesetComment(models.Model):
@@ -2285,6 +2293,17 @@ class IssueRevision(Revision):
     def shown_covers(self):
         raise NotImplementedError
 
+    def _other_issue_revision(self):
+        if self.changeset.change_type in [CTYPES['variant_add'],
+                                          CTYPES['two_issues']]:
+            if not hasattr(self, '_saved_other_issue'):
+                self._saved_other_issue_revision = self.changeset\
+                  .issuerevisions.exclude(issue=self.issue)[0]
+            return self._saved_other_issue_revision
+        else:
+            raise ValueError
+    other_issue_revision = property(_other_issue_revision)
+
     def variant_covers(self):
         image_set = Cover.objects.none()
         if self.issue and not self.variant_of:
@@ -2292,17 +2311,18 @@ class IssueRevision(Revision):
                                               CTYPES['two_issues']] \
               and self.changeset.coverrevisions.count():
                 image_set |= self.issue.variant_covers()
-                # maybe a cover move from the issue
-                ids = list(self.changeset.coverrevisions\
-                                         .filter(issue=self.issue)\
-                                         .values_list('cover__id', flat=True))
-                image_set |= Cover.objects.filter(id__in=ids)
-                # maybe a cover move from the other issue for 'two_issues'
-                if self.changeset.change_type == CTYPES['two_issues']:
-                    exclude_ids = list(self.changeset.coverrevisions\
-                      .exclude(issue=self.issue).values_list('cover__id',
-                                                             flat=True))
-                    image_set = image_set.exclude(id__in=exclude_ids)
+                if self.other_issue_revision.variant_of == self.issue:
+                    # maybe a cover move from the variant issue
+                    ids = list(self.changeset.coverrevisions\
+                                            .filter(issue=self.issue)\
+                                            .values_list('cover__id', flat=True))
+                    image_set |= Cover.objects.filter(id__in=ids)
+                    # maybe a cover move from the other issue for 'two_issues'
+                    if self.changeset.change_type == CTYPES['two_issues']:
+                        exclude_ids = list(self.changeset.coverrevisions\
+                        .exclude(issue=self.issue).values_list('cover__id',
+                                                                flat=True))
+                        image_set = image_set.exclude(id__in=exclude_ids)
             else:
                 image_set |= self.issue.variant_covers()
         elif self.variant_of:
@@ -2313,18 +2333,22 @@ class IssueRevision(Revision):
                 if self.issue:
                     # take out owns ones
                     image_set = image_set.exclude(issue=self.issue)
-                    # maybe a cover move to the other issue for 'two_issues'
-                    ids = list(self.changeset.coverrevisions\
-                                            .filter(issue=self.issue)\
-                                            .values_list('cover__id',
-                                                         flat=True))
-                    image_set |= Cover.objects.filter(id__in=ids)
-                # maybe a cover move from the other issue to exclude
-                exclude_ids = list(self.changeset.coverrevisions\
-                  .exclude(issue=self.issue).values_list('cover__id',
-                                                         flat=True))
-                image_set |= self.variant_of.active_covers()\
-                                            .exclude(id__in=exclude_ids)
+                    if self.variant_of == self.other_issue_revision.issue:
+                        # maybe a cover move to the other issue for 'two_issues'
+                        ids = list(self.changeset.coverrevisions\
+                                                .filter(issue=self.issue)\
+                                                .values_list('cover__id',
+                                                            flat=True))
+                        image_set |= Cover.objects.filter(id__in=ids)
+                if self.variant_of == self.other_issue_revision.issue:
+                    # maybe a cover move from the other issue to exclude
+                    exclude_ids = list(self.changeset.coverrevisions\
+                    .exclude(issue=self.issue).values_list('cover__id',
+                                                            flat=True))
+                    image_set |= self.variant_of.active_covers()\
+                                                .exclude(id__in=exclude_ids)
+                else:
+                    image_set |= self.variant_of.active_covers()
             elif self.issue:
                 image_set |= self.issue.variant_covers()
             else:
@@ -2867,6 +2891,13 @@ class StoryRevision(Revision):
     issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
     date_inferred = models.BooleanField(default=False, blank=True)
 
+    def _my_issue_revision(self):
+        if not hasattr(self, '_saved_my_issue_revision'):
+            self._saved_my_issue_revision = self.changeset\
+                  .issuerevisions.filter(issue=self.issue)[0]
+            return self._saved_my_issue_revision
+    my_issue_revision = property(_my_issue_revision)
+
     def toggle_deleted(self):
         """
         Mark this revision as deleted, meaning that instead of copying it
@@ -2899,10 +2930,13 @@ class StoryRevision(Revision):
             if self.deleted:
                 return False
 
-            if (self.changeset.storyrevisions.exclude(issue=self.issue).count() and
-              self.changeset.issuerevisions.filter(variant_of=self.issue).count()) \
-              or self.type != StoryType.objects.get(name='Cover'):
-                return False
+            if self.my_issue_revision.other_issue_revision.variant_of != None:
+                # variants can only have one sequence, and it needs to be cover
+                if self.changeset.storyrevisions.exclude(issue=self.issue).count() \
+                  or self.type != StoryType.objects.get(name='Cover'):
+                    return False
+                else:
+                    return True
             return True
         else:
             raise False

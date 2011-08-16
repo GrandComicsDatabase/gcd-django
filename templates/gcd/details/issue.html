@@ -127,6 +127,13 @@ This issue has variants.
 {% endif %}
         </div>
 {% if not preview %}
+  {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved %}
+  <form method="GET"
+        action="{% url confirm_two_edits issue_id=issue.id %}">
+    <input type="submit" value="{% trans 'Edit with issue id' %}"></input>
+    <input type="text" name="issue_two_id" size="7"></input>
+  </form>
+  {% endif %}
   {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved and issue.variant_of and not issue.variant_of.reserved %}
   <form method="POST"
         action="{% url reserve_two_issues issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
