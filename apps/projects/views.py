@@ -1,24 +1,11 @@
 from django.db.models import Count
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.db.models import F
 
-from apps.gcd.models import Publisher, Country, Series
+from apps.gcd.models import Publisher, Country, Issue, StoryType
 from apps.gcd.views import paginate_response
-from apps.projects.forms import ImprintsInUseForm
-
-
-def series_with_both_notes(request):
-    series = Series.objects.filter(deleted=False)\
-                           .exclude(publication_notes='').exclude(notes='')
-    vars = {
-        'heading': 'Series',
-        'search_item': 'With Publication Notes and Notes',
-        'item_name': 'series',
-        'plural_suffix': '',
-    }
-
-    return paginate_response(request, series,
-                             'projects/series_with_both_notes.html', vars)
+from apps.projects.forms import ImprintsInUseForm, IssuesWithCoversForm, IssueCoverNotesForm
 
 
 def imprints_in_use(request):
@@ -73,4 +60,98 @@ def imprints_in_use(request):
 
     return paginate_response(request, imprints,
                              'projects/imprints_in_use.html', vars)
+
+def issues_with_several_covers(request):
+    """
+    This project is geared towards moving variant covers into variant issues.
+    For this we need a list of such issues that can be filtered and sorted
+    by a few basic attributes.
+    """
+
+    issues=Issue.objects.annotate(covers=Count('cover'))
+    issues=issues.filter(covers__gt=1, deleted=False)
+
+    qargs = {'deleted': False}
+    qorder = ['series__name', 'series__year_began', 'number']
+
+    vars = {
+        'heading': 'Issues',
+        'search_item': 'with several covers',
+        'item_name': 'issue',
+        'plural_suffix': 's',
+    }
+
+    if (request.GET):
+        form = IssuesWithCoversForm(request.GET)
+        form.is_valid()
+        if form.is_valid():
+            data = form.cleaned_data
+
+            # Extra filters
+            if data['publisher']:
+                qargs['series__publisher__id'] = data['publisher']
+
+        get_copy = request.GET.copy()
+        get_copy.pop('page', None)
+        vars['query_string'] = get_copy.urlencode()
+    else:
+        form = IssuesWithCoversForm()
+        issues = issues.filter(series__publisher__id=54) # initial is DC, need to keep #issues smaller
+        # for the pagination bar and select box
+        vars['query_string'] = 'publisher=54'
+        get_copy = request.GET.copy()
+        get_copy['items'] = [(u'publisher', 54),]
+        request.GET = get_copy
+    issues = issues.filter(**qargs).order_by(*qorder)
+    vars['form'] = form
+    vars['advanced_search'] = True
+
+    return paginate_response(request, issues,
+                             'projects/issues_with_several_covers.html', vars, page_size=50)
+
+
+def issue_cover_notes(request):
+    """
+    This project is geared towards cleaning up identical cover and issue notes.
+    For this we need a list of such issues that can be filtered and sorted
+    by a few basic attributes.
+    """
+    cover = StoryType.objects.get(name='cover')
+    issues = Issue.objects.exclude(notes__exact='').\
+             filter(story__type=cover, story__notes=F('notes'),
+                    deleted=False).all()
+
+    qargs = {'deleted': False}
+    qorder = ['series__name', 'series__year_began', 'number']
+
+    vars = {
+        'heading': 'Issues',
+        'search_item': 'with idential notes and cover notes',
+        'item_name': 'issue',
+        'plural_suffix': 's',
+    }
+
+    if (request.GET):
+        form = IssueCoverNotesForm(request.GET)
+        form.is_valid()
+        if form.is_valid():
+            data = form.cleaned_data
+
+            # Extra filters
+            if data['publisher']:
+                qargs['series__publisher__id'] = data['publisher']
+            if data['country']:
+                qargs['series__country'] = data['country']
+
+        get_copy = request.GET.copy()
+        get_copy.pop('page', None)
+        vars['query_string'] = get_copy.urlencode()
+    else:
+        form = IssueCoverNotesForm()
+    issues = issues.filter(**qargs).order_by(*qorder)
+    vars['form'] = form
+    vars['advanced_search'] = True
+
+    return paginate_response(request, issues,
+                             'projects/issue_cover_notes.html', vars, page_size=50)
 

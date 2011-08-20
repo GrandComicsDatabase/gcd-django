@@ -9,6 +9,11 @@ IMPRINTS_IN_USE_ORDERINGS = [
     ['parent__country__name', 'Parent Country'],
 ]
 
+PUBLISHERS = [[p.id, p.name]
+                  for p in Publisher.objects
+                                    .filter(is_master=True,
+                                            deleted=False)
+                                    .order_by('name')]
 IMPRINTS_IN_USE_COUNTRIES = [['', '--']]
 IMPRINTS_IN_USE_COUNTRIES.extend([c.id, c.name.title()]
                                  for c in Country.objects.order_by('name'))
@@ -44,3 +49,22 @@ class ImprintsInUseForm(forms.Form):
                                required=False,
                                label='Third By')
 
+class IssuesWithCoversForm(forms.Form):
+    """
+    Form for filtering the listing of issues with several covers.
+    """
+    publisher = forms.ChoiceField(required=False,
+                                  choices=PUBLISHERS,
+                                  initial=54)
+
+class IssueCoverNotesForm(forms.Form):
+    """
+    Form for filtering the listing of issues with several covers.
+    """
+    choices = [['', '--']]
+    choices.extend(PUBLISHERS)
+    publisher = forms.ChoiceField(required=False,
+                                  choices=choices)
+    country = forms.ChoiceField(required=False,
+                                choices=IMPRINTS_IN_USE_COUNTRIES,
+                                initial='')

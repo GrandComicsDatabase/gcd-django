@@ -3,7 +3,7 @@
 {% load i18n %}
 {% load display %}
 
-{% block title %}Series with publication notes and notes{% endblock %}
+{% block title %}Isses with Several Covers{% endblock %}
 
 {% block css %}
 {{ block.super }}
@@ -24,35 +24,43 @@
 <!-- this section ripped off from search/list_header.html -->
 <div class="item_id">
   <div class="left" class="item_data">
-  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }} with both notes. 
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }} with identical issue and cover notes.
   </div>
+  {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
+  {% endwith %}
 </div>
 </div>
 <!-- end stuff ripped off from search/list_header.html -->
 
 <p class="imp_in_use">
-The purpose of this project page is to combine publication notes together with notes.
 </p>
+<p class="imp_in_use">
+</p>
+
+<form id="imp_in_use_form" action={% url issue_cover_notes %} method="GET">
+  <table>
+    {{ form.as_table }}
+  </table>
+  <input type="submit" value="Submit">
+</form>
 
 <table id="imp_in_use_results" class="listing">
   <tr>
-    <th colspan="2"> Publisher </th>
-    <th colspan="2"> Series </th>
+    <th> Publisher </th>
+    <th width="40%"> Series </th>
+    <th width="40%"> Issue </th>
   </tr>
-{% for series in items %}
+{% for issue in items %}
   <tr> {# class="{% cycle 'listing_even' 'listing_odd' as row_classes%}"> #}
-    <td class="listing_country first_row last_row">
-      <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.publisher.country.code|lower }}.png" alt="{{ series.publisher.country.code|upper }}">
+    <td class="listing_publisher first_row last_row">
+      {{ issue.series.publisher|absolute_url }}
     </td>
     <td class="listing_publisher first_row last_row">
-      {{ series.publisher|absolute_url }}
-    </td>
-    <td class="listing_country first_row last_row">
-      <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country.code|lower }}.png" alt="{{ series.country.code|upper }}">
+      {{ issue.series|absolute_url }}
     </td>
     <td class="listing_publisher first_row last_row">
-      {{ series|absolute_url }}
+      {{ issue|absolute_url }}
     </td>
   </tr>
 {% endfor %}
