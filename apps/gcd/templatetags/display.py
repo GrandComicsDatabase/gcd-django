@@ -191,6 +191,13 @@ def header_link(changeset):
             issue_num = revision.issue.display_number
             header_link += mark_safe(u' and %s (%s) <a href="%s">#%s</a>' %
                             (series_url, pub_url, issue_url, issue_num))
+        if changeset.change_type == CTYPES['cover']:
+            if revision.issue.variant_name:
+                header_link += mark_safe(' [%s]' % \
+                                         esc(revision.issue.variant_name))
+        if changeset.change_type == CTYPES['issue']:
+            if revision.variant_name:
+                header_link += mark_safe(' [%s]' % esc(revision.variant_name))
         return header_link
 
     elif changeset.change_type == CTYPES['issue_add']:
