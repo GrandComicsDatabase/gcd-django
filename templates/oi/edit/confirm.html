@@ -15,6 +15,9 @@ GCD :: Confirm {{ type }}
 
 <h2>{{ header_text }}</h2>
 <form method="POST" action="{{ url }}">
+<p>
+<input type="hidden" name="comments">
+</p>
 <input type="submit" value="Confirm {{ confirm_button }}"></input>
 <input type="submit" name="cancel" value="{{ cancel_button }}"></input>
 </form>

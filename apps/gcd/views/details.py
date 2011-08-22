@@ -21,8 +21,7 @@ from django.contrib.auth.models import User
 from apps.gcd.models import Publisher, Series, Issue, Story, \
                             IndiciaPublisher, Brand, CountStats, \
                             Country, Language, Indexer, IndexCredit, Cover
-from apps.gcd.views import render_error, paginate_response, \
-                           ORDER_ALPHA, ORDER_CHRONO
+from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, \
                                   get_image_tags_per_issue, \
                                   get_image_tags_per_page

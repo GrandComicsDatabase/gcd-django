@@ -43,6 +43,8 @@ urlpatterns = patterns('',
     url(r'^series/(?P<series_id>\d+)/reorder/issue_number/$',
         oi_views.reorder_series_by_issue_number,
         name='reorder_series_issue_number'),
+    url(r'^series/revision/(?P<series_revision_id>\d+)/move/(?P<publisher_id>\d+)/$',
+        oi_views.move_series, name='move_series'),
 
     # Issue URLs
     url(r'^series/(?P<series_id>\d+)/add_issue/$', oi_views.add_issue,

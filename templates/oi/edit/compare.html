@@ -67,8 +67,15 @@ The above sequence was moved from the following issue.
   <!-- end of variant_add -->
   {% endif %}
 {% else %}
+  {% if changeset_type = 'series' %}
+    {% if revision.previous and revision.publisher != revision.previous.publisher %}
+    <div class="edit">
+    <h2> Series moved from <span class="comparison_highlight">{{ revision.previous.publisher }}</span> to <span class="comparison_highlight">{{ revision.publisher }}</span> </h2>
+    The brands and indicia publishers of the {{ revision.series.issue_count }} issues of this series will be <span class="comparison_highlight">reset</span>.
+    </div>
+    {% endif %}
+  {% endif %}
 </p>
-
   {% include 'oi/bits/compare.html' %}
 {% endif %}
 

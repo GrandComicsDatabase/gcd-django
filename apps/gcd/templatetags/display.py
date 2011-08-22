@@ -168,8 +168,13 @@ def header_link(changeset):
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.parent), absolute_url(revision)))
     elif changeset.change_type == CTYPES['series']:
+        if revision.series and revision.publisher != revision.series.publisher:
+            publisher_string = u'<span class="comparison_highlight">%s</span>'\
+              % absolute_url(revision.publisher)
+        else:
+            publisher_string = absolute_url(revision.publisher)
         return mark_safe(u'%s (%s)' %
-                         (absolute_url(revision), absolute_url(revision.publisher)))
+                         (absolute_url(revision), publisher_string))
     elif changeset.change_type in [CTYPES['cover'], CTYPES['issue'],
                                    CTYPES['variant_add'], CTYPES['two_issues']]:
         if changeset.change_type == CTYPES['variant_add']:

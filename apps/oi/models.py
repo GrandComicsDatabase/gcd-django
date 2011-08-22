@@ -211,7 +211,8 @@ class Changeset(models.Model):
                     self.storyrevisions.all())
 
         if self.change_type == CTYPES['series']:
-            return (self.seriesrevisions.all(),)
+            return (self.seriesrevisions.all().select_related('series'),
+                    self.issuerevisions.all().select_related('issue'))
 
         if self.change_type == CTYPES['publisher']:
             return (self.publisherrevisions.all(), self.brandrevisions.all(),
@@ -1987,6 +1988,15 @@ class SeriesRevision(Revision):
                     self.series.imprint.series_count = F('series_count') - 1
                     self.series.imprint.save()
                     check_delete_imprint(self.series.imprint)
+            if self.publisher != self.series.publisher:
+                self.publisher.issue_count = F('issue_count') + \
+                                                series.issue_count
+                self.publisher.series_count = F('series_count') + 1
+                self.publisher.save()
+                self.series.publisher.issue_count = F('issue_count') - \
+                                                series.issue_count
+                self.series.publisher.series_count = F('series_count') - 1
+                self.series.publisher.save()
 
         series.name = self.name
         if self.leading_article:

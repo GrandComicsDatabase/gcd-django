@@ -18,6 +18,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.db import transaction
 from django.db.models import Min, Max
 from django.core.exceptions import *
+from django.utils.html import conditional_escape as esc
 
 from django.contrib.auth.views import login
 from django.contrib.auth.decorators import login_required, permission_required
@@ -406,6 +407,12 @@ thanks,
 
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
+def show_error_with_return(request, text, changeset):
+    return render_error(request, '%s <a href="%s">Return to changeset.</a>' \
+        % (esc(text), urlresolvers.reverse('edit',
+                                           kwargs={ 'id': changeset.id })),
+        is_safe=True)
+
 def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
     if form.is_valid():
         revision = form.save(commit=False)
@@ -420,6 +427,29 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                                          new_state=changeset.state)
 
         revision.save()
+        if revision.changeset.change_type == CTYPES['series'] and \
+          'move_to_publisher_with_id' in form.cleaned_data and \
+          request.user.has_perm('gcd.can_approve') and \
+          form.cleaned_data['move_to_publisher_with_id']:
+            try:
+                publisher_id = form.cleaned_data['move_to_publisher_with_id']
+                publisher = Publisher.objects.get(id=publisher_id,
+                                                  deleted=False, is_master=True)
+            except Publisher.DoesNotExist:
+                return show_error_with_return(request,
+                  'No publisher with id %d.' % publisher_id, changeset)
+            if publisher.pending_deletion():
+                return show_error_with_return(request, 'Publisher %s is '
+                  'pending deletion' % unicode(publisher), changeset)
+            if revision.changeset.issuerevisions.count() == 0:
+                if revision.series.active_issues().filter(reserved=True):
+                    return show_error_with_return(request, 'Some issues for series'
+                    ' %s are reserved. No move possible.' % revision.series,
+                    changeset)
+            return HttpResponseRedirect(urlresolvers.reverse('move_series',
+                kwargs={'series_revision_id': revision.id,
+                        'publisher_id': publisher_id}))
+
         if hasattr(revision, 'save_m2m'):
             revision.save_m2m()
         if 'submit' in request.POST:
@@ -1371,7 +1401,7 @@ def add_series(request, publisher_id):
 
     # Process add form if this is a POST.
     try:
-        publisher = Publisher.objects.get(id=publisher_id)
+        publisher = Publisher.objects.get(id=publisher_id, is_master=True)
         if publisher.deleted or publisher.pending_deletion():
             return render_error(request, u'Cannot add series '
               u'since "%s" is deleted or pending deletion.' % publisher)
@@ -1949,6 +1979,74 @@ def _display_add_story_form(request, issue, form, changeset_id):
 ##############################################################################
 # Moving Items
 ##############################################################################
+
+@permission_required('gcd.can_reserve')
+def move_series(request, series_revision_id, publisher_id):
+    series_revision = get_object_or_404(SeriesRevision, id=series_revision_id,
+                                        deleted=False)
+    if request.user != series_revision.changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may move series.')
+
+    publisher = Publisher.objects.filter(id=publisher_id, is_master=True,
+                                         deleted=False)
+    if not publisher:
+        return render_error(request, 'No publisher with id %s.' \
+                            % publisher_id, redirect=False)
+    publisher = publisher[0]
+
+    if request.method != 'POST':
+        header_text = 'Do you want to move %s to <a href="%s">%s</a> ?' % \
+          (esc(series_revision.series.full_name()), publisher.get_absolute_url(),
+           esc(publisher))
+        url = urlresolvers.reverse('move_series',
+          kwargs={'series_revision_id': series_revision_id,
+                  'publisher_id': publisher_id})
+        cancel_button = "Cancel"
+        confirm_button = "move of series %s to publisher %s" % \
+          (series_revision.series, publisher)
+        return render_to_response('oi/edit/confirm.html',
+                                {
+                                    'type': 'Series Move',
+                                    'header_text': mark_safe(header_text),
+                                    'url': url,
+                                    'cancel_button': cancel_button,
+                                    'confirm_button': confirm_button,
+                                },
+                                context_instance=RequestContext(request))
+    else:
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse('edit',
+              kwargs={'id': series_revision.changeset.id}))
+        else:
+            if series_revision.changeset.issuerevisions.count() == 0:
+                for issue in series_revision.series.active_issues():
+                    is_reservable = _is_reservable('issue', issue.id)
+
+                    if is_reservable == 0:
+                        for issue_rev in series_revision.changeset\
+                                                        .issuerevisions.all():
+                            _unreserve(issue_rev.issue)
+                        return show_error_with_return(request, 'Error while'
+                        ' reserving issues.', series_revision.changeset)
+
+                    if not _do_reserve(series_revision.changeset.indexer, issue,
+                                    'issue', changeset=series_revision.changeset):
+                        _unreserve(issue)
+                        for issue_rev in series_revision.changeset\
+                                                        .issuerevisions.all():
+                            _unreserve(issue_rev.issue)
+                        return show_error_with_return(request, 'Error while'
+                        ' reserving issues.', series_revision.changeset)
+                for issue_revision in series_revision.changeset.issuerevisions.all():
+                    issue_revision.brand = None
+                    if issue_revision.indicia_publisher:
+                        issue_revision.indicia_publisher = None
+                        issue_revision.no_indicia_publisher = False
+                    issue_revision.save()
+            series_revision.publisher = publisher
+            series_revision.save()
+            return submit(request, series_revision.changeset.id)
 
 @permission_required('gcd.can_reserve')
 def move_issue(request, issue_revision_id, series_id):

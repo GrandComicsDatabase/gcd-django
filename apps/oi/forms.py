@@ -441,6 +441,14 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                 self.fields['country'].empty_label = None
                 self.fields['language'].empty_label = None
 
+            if user.has_perm('gcd.can_approve'):
+                move_to_publisher_with_id = forms.IntegerField(required=False,
+                  help_text="Only editors can move a series. A confirmation "
+                    "page will follow to confirm the move.<br>"
+                    "The move of a series is only possible if no issues are "
+                    "reserved. Brand and indicia publisher entries of the "
+                    "issues will be reset. ")
+
             if source.imprint is not None:
                 imprint = forms.ModelChoiceField(required=False,
                   queryset=Publisher.objects.filter(is_master=False,
