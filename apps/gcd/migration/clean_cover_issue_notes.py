@@ -27,7 +27,7 @@ def cleanup_cover_notes(issues, clean_all=False):
                     sr.save()
             changes.append((c, True))
         else:
-            print "%d is reserved" % i
+            print "%s is reserved" % i
     do_auto_approve(changes, 'cleaning cover notes')
 
 @transaction.commit_on_success
