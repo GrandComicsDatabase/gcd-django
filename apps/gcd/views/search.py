@@ -861,10 +861,15 @@ def search_issues(data, op, stories_q=None):
 
     q_and_only = []
     if target in ['issue', 'cover', 'feature', 'sequence']:
-        date_formatter = lambda d: '%04d.%02d.%02d' % (d.year, d.month, d.day)
-        q_and_only.extend(search_dates(data, date_formatter,
-                                       '%skey_date' % prefix,
-                                       '%skey_date' % prefix))
+        date_formatter = lambda d: '%04d-%02d-%02d' % (d.year, d.month, d.day)
+        if data['use_on_sale_date']:
+            q_and_only.extend(search_dates(data, date_formatter,
+                                        '%son_sale_date' % prefix,
+                                        '%son_sale_date' % prefix))
+        else:
+            q_and_only.extend(search_dates(data, date_formatter,
+                                        '%skey_date' % prefix,
+                                        '%skey_date' % prefix))
 
     if data['price']:
         q_and_only.append(Q(**{ '%sprice__%s' % (prefix, op): data['price'] }))

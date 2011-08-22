@@ -72,6 +72,10 @@ ISSUE_HELP_LINKS = {
     'indicia_frequency': 'Indicia_frequency',
     'no_indicia_frequency': 'Indicia_frequency',
     'key_date': 'Keydate',
+    'on_sale_date': 'On-sale_date',
+    'year_on_sale': 'On-sale_date',
+    'month_on_sale': 'On-sale_date',
+    'day_on_sale': 'On-sale_date',
     'indicia_publisher': 'Indicia_publisher',
     'indicia_pub_not_printed': 'Indicia_publisher',
     'brand': 'Brand',
@@ -529,6 +533,35 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             barcode = forms.CharField(widget=HiddenInputWithHelp,
               required=False, help_text=help_text)
 
+        def clean_year_on_sale(self):
+            year_on_sale = self.cleaned_data['year_on_sale']
+            year_string = str(year_on_sale)[:2]
+            if year_on_sale != None and (year_string <= '18' or year_string > '20'):
+                raise forms.ValidationError('Unreasonable year entered.')
+            return year_on_sale
+
+        def clean_month_on_sale(self):
+            month_on_sale = self.cleaned_data['month_on_sale']
+
+            if month_on_sale != None and not month_on_sale in range(1,13):
+                raise forms.ValidationError(
+                  'If entered, month needs to be between 1 and 12.')
+            return month_on_sale
+
+        def clean_day_on_sale(self):
+            day_on_sale = self.cleaned_data['day_on_sale']
+
+            if day_on_sale != None and not day_on_sale in range(1,32):
+                raise forms.ValidationError(
+                  'If entered, day needs to be between 1 and 31.')
+            return day_on_sale
+
+        def clean_key_date(self):
+            key_date = self.cleaned_data['key_date']
+            if key_date != None:
+                key_date = key_date.replace('.', '-')
+            return key_date
+
         def clean(self):
             cd = self.cleaned_data
 
@@ -573,6 +606,16 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 raise forms.ValidationError(
                   'You cannot specify an isbn and check "no isbn" at the '
                   'same time.')
+
+            if cd['on_sale_date'] and (cd['year_on_sale'] or \
+                                       cd['month_on_sale'] or \
+                                       cd['day_on_sale']):
+                raise forms.ValidationError(
+                  'You can only use either the on-sale date-field or the '
+                  'three separate date fields, not both data entering options.')
+            elif cd['on_sale_date']:
+                cd['year_on_sale'], cd['month_on_sale'], cd['day_on_sale'] = \
+                  on_sale_date_fields(cd['on_sale_date'])
 
             if cd['no_barcode'] and cd['barcode']:
                 raise forms.ValidationError(
@@ -647,6 +690,7 @@ class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
         fields = get_issue_field_list()
+        fields.insert(fields.index('year_on_sale'), 'on_sale_date')
         widgets = {
           'number': forms.TextInput(attrs={'class': 'wide'}),
           'title': forms.TextInput(attrs={'class': 'wide'}),
@@ -660,6 +704,16 @@ class IssueRevisionForm(forms.ModelForm):
         }
 
     comments = _get_comments_form_field()
+    on_sale_date = forms.CharField(widget=forms.TextInput(attrs={'class': 'key_date'}),
+      required=False, validators=[RegexValidator\
+      (r'^(18|19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-9]|3[0-1])$')],
+      help_text='The on-sale date can be entered in two ways. Either in this '
+                'field in the format YYYY-MM-DD, where all parts need to be '
+                'entered, or using the following three fields. If only '
+                'partial information is known you need to use the second '
+                'option and enter the part of the date which is known. '
+                'If you only know the decade you can enter the first three '
+                'digits, e.g. 199 for the decade 1990-1999.')
 
 
 def get_bulk_issue_revision_form(series, method, user=None):

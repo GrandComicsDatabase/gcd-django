@@ -138,6 +138,36 @@ def remove_leading_article(name):
     else:
         return name
 
+def on_sale_date_as_string(issue):
+    date = u''
+    if issue.year_on_sale:
+        date += u'{0:?<4d}'.format(issue.year_on_sale)
+    elif issue.day_on_sale or issue.month_on_sale:
+        date += u'????'
+    if issue.month_on_sale:
+        date += u'-{0:02d}'.format(issue.month_on_sale)
+    elif issue.day_on_sale:
+        date += u'-??'
+    if issue.day_on_sale:
+        date += u'-{0:02d}'.format(issue.day_on_sale)
+    return date
+
+def on_sale_date_fields(on_sale_date):
+    year_string = on_sale_date[:4].strip('?')
+    if year_string:
+        year = int(year_string)
+    else:
+        year = None
+    month = None
+    day = None
+    if len(on_sale_date) > 4:
+        month_string = on_sale_date[5:7].strip('?')
+        if month_string:
+            month = int(month_string)
+        if len(on_sale_date) > 7:
+            day = int(on_sale_date[8:10].strip('?'))
+    return year, month, day
+
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
@@ -768,6 +798,8 @@ class Revision(models.Model):
         # prev_rev stays None for additions
         self._prev_rev = None
 
+        # TODO why not filter for states.APPROVED instead of
+        # exclude STATES.DISCARDED
         if self.source is not None:
             prev_revs = self.source.revisions \
               .exclude(changeset__state=states.DISCARDED) \
@@ -2047,6 +2079,7 @@ def get_issue_field_list():
             'volume', 'no_volume', 'display_volume_with_number',
             'indicia_publisher', 'indicia_pub_not_printed',
             'brand', 'no_brand', 'publication_date', 'key_date',
+            'year_on_sale', 'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
             'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
             'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes']
@@ -2085,8 +2118,9 @@ class IssueRevisionManager(RevisionManager):
           no_volume=issue.no_volume,
           display_volume_with_number=issue.display_volume_with_number,
           publication_date=issue.publication_date,
-          price=issue.price,
           key_date=issue.key_date,
+          on_sale_date_uncertain=issue.on_sale_date_uncertain,
+          price=issue.price,
           indicia_frequency=issue.indicia_frequency,
           no_indicia_frequency=issue.no_indicia_frequency,
           series=issue.series,
@@ -2105,6 +2139,10 @@ class IssueRevisionManager(RevisionManager):
           variant_of=issue.variant_of,
           variant_name=issue.variant_name,
           notes=issue.notes)
+
+        if issue.on_sale_date:
+            revision.year_on_sale, revision.month_on_sale, \
+              revision.day_on_sale = on_sale_date_fields(issue.on_sale_date)
 
         revision.save()
         return revision
@@ -2182,6 +2220,25 @@ class IssueRevision(Revision):
                 'that is not printed on the comic but is known should be put '
                 'in square brackets, such as "[January] 2009".  Do NOT use the '
                 'shipping date in this field, only the publication date.')
+    key_date = models.CharField(max_length=10, blank=True, default='',
+      validators=[RegexValidator(r'^(17|18|19|20)\d{2}(\.|-)(0[0-9]|1[0-3])(\.|-)\d{2}$')],
+      help_text='Keydate is a translation of the publication date into numeric '
+                'form for chronological ordering and searches. It is in the '
+                'format YYYY-MM-DD, where the parts of the date not given are '
+                'filled up with 00. For comics dated only by year, the keydate '
+                'is YYYY-00-00. For comics only dated by month the day (DD) '
+                'is 00, and arbitrary numbers such as 10, 20, 30 are used to '
+                'indicate an "early", "mid", or "late" month cover date. For '
+                'the month (MM) on quarterlies, use 04 for Spring, 07 for '
+                'Summer, 10 for Fall and 01 or 12 for Winter (in the northern '
+                'hemisphere, shift accordingly in the southern).')
+    year_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
+    month_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
+    day_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
+    on_sale_date_uncertain = models.BooleanField(blank=True,
+      help_text='The uncertain flag only relates to the actual entered data, '
+        'therefore if e.g. no day is entered, but the month and year are '
+        'certain, the uncertain flag is not set.')
     indicia_frequency = models.CharField(max_length=255, blank=True, default='',
       help_text='If relevant, the frequency of publication specified in the '
                 'indicia, which may not match the actual publication schedule. '
@@ -2189,18 +2246,6 @@ class IssueRevision(Revision):
     no_indicia_frequency = models.BooleanField(default=False,
       help_text='Check this box if there is no publication frequency printed '
                 'on the comic.')
-    key_date = models.CharField(max_length=10, blank=True, default='',
-      validators=[RegexValidator(r'^(17|18|19|20)\d{2}\.(0[0-9]|1[0-3])\.\d{2}$')],
-      help_text='Keydate is a translation of the publication date into numeric '
-                'form for chronological ordering and searches. It is in the '
-                'format YYYY.MM.DD, where the parts of the date not given are '
-                'filled up with 00. For comics dated only by year, the keydate '
-                'is YYYY.00.00. For comics only dated by month the day (DD) '
-                'is 00, and arbitrary numbers such as 10, 20, 30 are used to '
-                'indicate an "early", "mid", or "late" month cover date. For '
-                'the month (MM) on quarterlies, use 04 for Spring, 07 for '
-                'Summer, 10 for Fall and 01 or 12 for Winter (in the northern '
-                'hemisphere, shift accordingly in the southern).')
 
     price = models.CharField(max_length=255, blank=True, default='',
       help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
@@ -2286,6 +2331,10 @@ class IssueRevision(Revision):
             return 0
         return self.issue.sort_code
     sort_code = property(_sort_code)
+
+    def _on_sale_date(self):
+        return on_sale_date_as_string(self)
+    on_sale_date = property(_on_sale_date)
 
     def active_covers(self):
         raise NotImplementedError
@@ -2469,6 +2518,10 @@ class IssueRevision(Revision):
             'publication_date': '',
             'price': '',
             'key_date': '',
+            'year_on_sale': None,
+            'month_on_sale': None,
+            'day_on_sale': None,
+            'on_sale_date_uncertain': False,
             'indicia_frequency': '',
             'no_indicia_frequency': None,
             'series': None,
@@ -2499,6 +2552,7 @@ class IssueRevision(Revision):
         self._seen_editing = False
         self._seen_isbn = False
         self._seen_barcode = False
+        self._seen_on_sale_date = False
 
     def _imps_for(self, field_name):
         if field_name in ('number', 'publication_date', 'key_date',
@@ -2532,6 +2586,15 @@ class IssueRevision(Revision):
         if not self._seen_barcode and field_name in ('barcode', 'no_barcode'):
             self._seen_barcode = True
             return 1
+        if not self._seen_on_sale_date and field_name in ('year_on_sale',
+          'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain'):
+            self._seen_on_sale_date = True
+            if field_name in ('year_on_sale', 'month_on_sale', 'day_on_sale'):
+                return 1
+
+            if field_name == 'on_sale_date_uncertain':
+                if self.year_on_sale or self.month_on_sale or self.day_on_sale:
+                    return 1
         # Note, the "after" field does not directly contribute IMPs.
         return 0
 
@@ -2695,6 +2758,10 @@ class IssueRevision(Revision):
         issue.variant_name = self.variant_name
 
         issue.publication_date = self.publication_date
+        issue.key_date = self.key_date
+        issue.on_sale_date = on_sale_date_as_string(self)
+        issue.on_sale_date_uncertain=self.on_sale_date_uncertain
+
         if self.series.has_indicia_frequency:
             issue.indicia_frequency = self.indicia_frequency
             issue.no_indicia_frequency = self.no_indicia_frequency
@@ -2703,7 +2770,6 @@ class IssueRevision(Revision):
             self.no_indicia_frequency = issue.no_indicia_frequency
             self.save()
 
-        issue.key_date = self.key_date
 
         issue.price = self.price
         issue.page_count = self.page_count

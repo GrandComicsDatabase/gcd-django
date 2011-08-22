@@ -15,8 +15,13 @@
         <dt> {% trans "Indicia frequency" %}:
         <dd id="indicia_frequency"> {{ issue.indicia_frequency|default:"?" }}
 {% endif %}
-        {{ issue|show_credit:"editing" }}
+{% if issue.on_sale_date %}
+        <dt> {% trans "On-sale date" %}:
+        <dd id="on_sale_date">
+        {{ issue.on_sale_date }}{% if issue.on_sale_date_uncertain %} ? {% endif %}
+{% endif %}
       </dl>
+        {{ issue|show_credit:"editing" }}
       <dl>
         <dt> {% trans "Indicia Publisher" %}:
         <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}
@@ -26,7 +31,7 @@
 {% endif %}
 {% if not issue.no_isbn and issue.series.has_isbn %}
         <dt>ISBN:
-        <dd id="issue_isbn"> 
+        <dd id="issue_isbn">
   {% if issue.valid_isbn %}
           <a title="Search at WorldCat" href="http://worldcat.org/isbn/{{ issue.valid_isbn }}">
             {{ issue.isbn }}

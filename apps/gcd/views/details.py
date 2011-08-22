@@ -33,7 +33,7 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            Changeset, CTYPES
 
 KEY_DATE_REGEXP = \
-  re.compile(r'^(?P<year>\d{4})\.(?P<month>\d{2})\.(?P<day>\d{2})$')
+  re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
 
 # TODO: Pull this from the DB somehow, but not on every page load.
 MIN_GCD_YEAR = 1800

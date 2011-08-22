@@ -34,6 +34,8 @@ class Issue(models.Model):
     # Dates and sorting
     publication_date = models.CharField(max_length=255)
     key_date = models.CharField(max_length=10)
+    on_sale_date = models.CharField(max_length=10)
+    on_sale_date_uncertain = models.BooleanField(blank=True)
     sort_code = models.IntegerField(db_index=True)
     indicia_frequency = models.CharField(max_length=255)
     no_indicia_frequency = models.BooleanField(default=False, db_index=True)

@@ -80,6 +80,8 @@ class AdvancedSearch(forms.Form):
                                  input_formats=DATE_FORMATS)
     end_date = forms.DateField(label='End Date', required=False,
                                  input_formats=DATE_FORMATS)
+    use_on_sale_date = forms.BooleanField(label="Use On-Sale Date",
+                                          required=False)
 
     pub_name = forms.CharField(label='Publisher', required=False)
     pub_notes = forms.CharField(label='Notes', required=False)
@@ -222,4 +224,9 @@ class AdvancedSearch(forms.Form):
                   .get(name='cover') not in cleaned_data['type']:
                     raise forms.ValidationError("When searching for covers"
                           " only type cover can be selected.")
+            if cleaned_data['use_on_sale_date']:
+                if cleaned_data['target'] not in ['issue','story']:
+                    raise forms.ValidationError(
+                      "The on-sale date can only be used in issue or story "
+                      "searches.")
         return cleaned_data
