@@ -2847,6 +2847,10 @@ def cover_compare(request, changeset, revision):
                   state__in=[states.PENDING,states.REVIEWING],
                   change_type__in=[CTYPES['issue_add'],
                                    CTYPES['variant_add']])
+        # TODO This doesn't include the case of a variant with a
+        # deleted cover scan.
+        kwargs['variants_without_covers'] = revision.issue.variant_set\
+                                                    .filter(cover=None)
 
         if revision.deleted == False:
             kwargs['cover_width'] = get_cover_width(revision.base_dir() + \

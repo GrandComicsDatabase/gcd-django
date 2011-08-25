@@ -188,6 +188,17 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 </div>
 {% endif %}
 
+{% if variants_without_covers %}
+<div>
+<h2> Existing variant{{ variants_without_covers|length|pluralize }} with covers </h2>
+  <ul>
+  {% for variant in variants_without_covers %}
+    <li><a href="{% url compare id=variant.id %}">{{ variant }}</a>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 {% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}
 {% endwith %}
