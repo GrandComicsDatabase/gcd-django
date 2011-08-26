@@ -11,9 +11,9 @@
   {% endif %}
 {% endif %}
 {% if revision.previous and revision.series != revision.previous.series %}
-<h2> Issue moved from <span class="comparison_highlight">{{ revision.previous.series }}</span> to <span class="comparison_highlight">{{ revision.series }}</span> </h2>
+<h2> Issue moved from <span class="comparison_highlight">{{ revision.previous.series.full_name }}</span> to <span class="comparison_highlight"><a href="{{ revision.series.get_absolute_url }}">{{ revision.series.full_name }}</a></span> </h2>
   {% if revision.changeset.state = states.REVIEWING %}
-After approval the approver should check the sort order of the series this issue is moved to.
+After approval the <span class="comparison_highlight">approver needs to check the sort order</span> of the series this issue is moved to.
   {% endif %}
 {% endif %}
 <p>

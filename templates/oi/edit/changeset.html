@@ -92,11 +92,11 @@
   <tr>
     <td>
           {% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}
-            <span class="comparison_highlight">
+            <span class="comparison_highlight"><a href="{{ issue_revision.series.get_absolute_url }}">
           {% endif %}
           {{ issue_revision.full_name }}
           {% if issue_revision.issue and revision.series != revision.issue.series %}
-            </span>
+            </a></span>
           {% endif %}
           {% if issue_revision.variant_of %} (variant of {{ issue_revision.variant_of }}) {% endif %}
     </td>
@@ -160,13 +160,13 @@
     </td>
   </tr>
 {% endif %}
-{% if issue_revision.issue and not issue_revision.variant_of and perms.gcd.can_approve %}
+{% if issue_revision.issue and perms.gcd.can_approve %}
   <tr>
     <td colspan="2">
       <form method="GET"
         action="{% url move_issue issue_revision_id=issue_revision.id series_id=0 %}">
         <input type="submit" value="Move to series with id"></input>
-        <input type="text" name="series_id" size="7"></input> Brand/indicia publisher reset if publisher changes.
+        <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"></input> Brand/indicia publisher reset if publisher changes.
       </form>
     </td>
   </tr>

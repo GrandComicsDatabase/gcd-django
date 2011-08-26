@@ -222,7 +222,7 @@ div.search_id_nav {
     font-size: 0.8em;
 }
 
-.search_bar img, #plain_bar img { 
+.search_bar img, #plain_bar img {
     display: inline;
     height: 2em;
     position: relative;
@@ -260,7 +260,7 @@ div.search_id_nav {
 }
 #control_container{
 	float:left;
-	width:100%;	
+	width:100%;
 	border-right:14em; /* The width of the right rail */
 	margin-right:-14em;
 	display:inline; /* So IE plays nice */
@@ -299,6 +299,10 @@ div.search_id_nav {
     padding: 0.4em;
 }
 
+.edit_label {
+    font-size: 1.2em;
+    margin: 2px;
+}
 /* Some of this goes down to cover.css, some is common.  TODO: Figure out. */
 
 table#covers {
@@ -364,7 +368,7 @@ table#covers span.modify {
     background-color: black;
     color: black;
     margin-left: 15px;
-    padding-right: 15px; 
+    padding-right: 15px;
     background: transparent no-repeat right center url(foldoutarrow_100.png);
 }
 
@@ -382,7 +386,7 @@ table#covers span.modify {
     border: solid 1px;
     margin-top: 1em;
     margin-bottom: 1em;
-    padding-right: 15px; 
+    padding-right: 15px;
     background: transparent no-repeat right center url(foldoutarrow_100.png);
 }
 
@@ -594,8 +598,8 @@ div.ongoing_status form {
 
 /* behaviour for links */
 a.new_window {
-    padding-right: 13px; 
-    background: transparent no-repeat right center url(external.png); 
+    padding-right: 13px;
+    background: transparent no-repeat right center url(external.png);
 }
 
 a.link_info_left
@@ -621,13 +625,13 @@ a.link_info_left:hover span
     position:absolute;
     left:-11em;
     width:10em;
-    border:1px solid black; 
+    border:1px solid black;
     background-color: #DDD;
     color:#000;
     text-align: center;
     padding: 5px;
     font-size: 0.8em;
-} 
+}
 
 #donate_table {
     width: 100%;

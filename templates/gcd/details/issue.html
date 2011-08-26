@@ -127,19 +127,6 @@ This issue has variants.
 {% endif %}
         </div>
 {% if not preview %}
-  {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved %}
-  <form method="GET"
-        action="{% url confirm_two_edits issue_id=issue.id %}">
-    <input type="submit" value="{% trans 'Edit with issue id' %}"></input>
-    <input type="text" name="issue_two_id" size="7"></input>
-  </form>
-  {% endif %}
-  {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved and issue.variant_of and not issue.variant_of.reserved %}
-  <form method="POST"
-        action="{% url reserve_two_issues issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
-    <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
-  </form>
-  {% endif %}
   {% with issue as object %}
   {% with 'Issue' as object_name %}
   {% with 'issue' as object_class %}
@@ -147,10 +134,23 @@ This issue has variants.
   {% endwith %}
   {% endwith %}
   {% endwith %}
-  {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved and not issue.variant_of %}
+  {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved %}
+    {% if not issue.variant_of %}
   <form method="GET"
         action="{% url add_variant_issue issue_id=issue.id %}">
     <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
+  </form>
+    {% endif %}
+    {% if issue.variant_of and not issue.variant_of.reserved %}
+  <form method="POST"
+        action="{% url reserve_two_issues issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
+    <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
+  </form>
+    {% endif %}
+  <form method="GET"
+        action="{% url confirm_two_edits issue_id=issue.id %}">
+    <input type="submit" value="{% trans 'Edit with another issue' %}"></input>
+    <label class="edit_label" title="Enter the id of the other issue from its url: www.comics.org/issue/#id">Enter issue-id:</label><input title="Enter the id of the other issue from its url: www.comics.org/issue/#id" type="text" name="issue_two_id" size="7"></input>
   </form>
   {% endif %}
 {% endif %}
