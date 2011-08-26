@@ -511,8 +511,11 @@ msgstr "Serien"
 msgid "issues"
 msgstr "Comics"
 
+msgid "variant issues"
+msgstr "Variantausgaben"
+
 msgid "issue indexes"
-msgstr "davon erfasst"
+msgstr "Comics erfasst"
 
 msgid "covers"
 msgstr "Titelbilder"
