@@ -1,0 +1,28 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+GCD :: Clearing Reservations
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h2>Changes submitted</h2>
+{% for change in submitted_list %}
+{{ change }}<br>
+{% endfor %}
+
+
+<h2>Changes discarded</h2>
+{% for change in discarded_list %}
+{{ change }}<br>
+{% endfor %}
+
+{% endblock %}
+

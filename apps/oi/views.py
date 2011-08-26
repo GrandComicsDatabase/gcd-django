@@ -2264,9 +2264,12 @@ def toggle_delete_story_revision(request, id):
 @permission_required('gcd.can_reserve')
 def ongoing(request, user_id=None):
     """
-    Handle the ongoing reservatin page.  Display on GET.  On POST, process
-    the form and re-display with error or success message as appropriate.
+    Handle the ongoing reservation, process the request and form and
+    return with error or success message as appropriate.
     """
+    if request.method != 'POST':
+        return _cant_get(request)
+
     if (request.user.ongoing_reservations.count() >=
         request.user.indexer.max_ongoing):
         return render_error(request, 'You have reached the maximum number of '
@@ -2280,6 +2283,7 @@ def ongoing(request, user_id=None):
         return render_error(request, u'Cannot reserve issues '
           u'since "%s" is deleted or pending deletion.' % series)
 
+    # TODO no need for the form, since different workflow as originally intended
     form = OngoingReservationForm()
     message = ''
     if request.method == 'POST':
@@ -2292,13 +2296,6 @@ def ongoing(request, user_id=None):
             return HttpResponseRedirect(urlresolvers.reverse(
               'apps.gcd.views.details.series',
                kwargs={ 'series_id': reservation.series.id }))
-
-    return render_to_response('oi/edit/ongoing.html',
-                              {
-                                'form': form,
-                                'message': message,
-                              },
-                              context_instance=RequestContext(request))
 
 def delete_ongoing(request, series_id):
     if request.method != 'POST':

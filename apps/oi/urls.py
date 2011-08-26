@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from apps.oi import views as oi_views
 from apps.oi import covers as oi_covers
 from apps.oi import import_export as oi_import
+from apps.oi import coordinators as oi_coordinators
 from apps.oi import states
 
 urlpatterns = patterns('',
@@ -182,6 +183,15 @@ urlpatterns = patterns('',
         name='pending_covers'),
 
     url(r'^download/', oi_views.download, {}, name='download'),
+
+    url(r'^coordinator/clear_publisher_series',
+      oi_coordinators.clear_reservations_one_week,
+      {}, name='clear_publisher_series'),
+    url(r'^coordinator/clear_issues',
+      oi_coordinators.clear_reservations_nine_weeks,
+      {}, name='clear_issues'),
+    url(r'^coordinator/$',  direct_to_template,
+        { 'template': 'oi/edit/coordinators.html' }, name='coordinators_toc'),
 )
 
 urlpatterns += patterns('django.views.generic.simple',
