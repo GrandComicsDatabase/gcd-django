@@ -2534,7 +2534,7 @@ class IssueRevision(Revision):
             fields.remove('display_volume_with_number')
         if self.variant_of or (self.issue and self.issue.variant_set.count()) \
           or self.changeset.change_type == CTYPES['variant_add']:
-            fields = ['variant_name'] + fields
+            fields = fields[0:1] + ['variant_name'] + fields[1:]
         return fields
 
     def _get_blank_values(self):
@@ -2892,7 +2892,7 @@ class IssueRevision(Revision):
             return u'%s #%s' % (self.series, self.display_number)
 
 def get_story_field_list():
-    return ['sequence_number', 'type', 'title', 'title_inferred',
+    return ['sequence_number', 'title', 'type', 'title_inferred',
             'feature', 'genre', 'job_number',
             'script', 'no_script', 'pencils', 'no_pencils', 'inks',
             'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',

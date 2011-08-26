@@ -293,6 +293,7 @@ class PublisherRevisionForm(forms.ModelForm):
     class Meta:
         model = PublisherRevision
         fields = _get_publisher_fields(middle=('country',))
+        widgets = {'name': forms.TextInput(attrs={'autofocus':''})}
 
     country = forms.ModelChoiceField(queryset=Country.objects.exclude(code='xx'))
     comments = forms.CharField(widget=forms.Textarea,
@@ -326,7 +327,8 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
         model = IndiciaPublisherRevision
         fields = _get_publisher_fields(middle=('is_surrogate', 'country'))
 
-    name = forms.CharField(max_length=255, required=True,
+    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
+      max_length=255, required=True,
       help_text='The name exactly as it appears in the indicia, including '
                 'punctuation, abbreviations, suffixes like ", Inc.", etc.  '
                 'Do not move articles to the end of the name.')
@@ -358,7 +360,8 @@ class BrandRevisionForm(forms.ModelForm):
         fields = ['name', 'year_began', 'year_began_uncertain',
                   'year_ended', 'year_ended_uncertain', 'url', 'notes']
 
-    name = forms.CharField(max_length=255,
+    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
+      max_length=255,
       help_text='The name of the brand as it appears on the logo.  If the logo '
                 'does not use words, then the name of the brand as it is '
                 'commonly used.  Consult an editor if in doubt.')
@@ -468,7 +471,7 @@ class SeriesRevisionForm(forms.ModelForm):
         fields = get_series_field_list()
         exclude = ['publisher',]
         widgets = {
-          'name': forms.TextInput(attrs={'class': 'wide'}),
+          'name': forms.TextInput(attrs={'class': 'wide', 'autofocus':''}),
           'year_began': forms.TextInput(attrs={'class': 'year'}),
           'year_ended': forms.TextInput(attrs={'class': 'year'}),
           'format': forms.TextInput(attrs={'class': 'wide'})
@@ -652,7 +655,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             class Meta:
                 model = IssueRevision
                 fields = RuntimeIssueRevisionForm.Meta.fields
-                fields = ['variant_name'] + fields
+                fields = fields[0:1] + ['variant_name'] + fields[1:]
                 if revision is None or revision.source is None:
                     fields = ['after'] + fields
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
@@ -694,7 +697,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             class Meta:
                 model = IssueRevision
                 fields = RuntimeIssueRevisionForm.Meta.fields
-                fields = ['variant_name'] + fields
+                fields = fields[0:1] + ['variant_name'] + fields[1:]
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
                 widgets['variant_name'] = forms.TextInput(attrs={'class': 'wide'})
         return RuntimeBaseIssueRevisionForm
@@ -707,7 +710,7 @@ class IssueRevisionForm(forms.ModelForm):
         fields = get_issue_field_list()
         fields.insert(fields.index('year_on_sale'), 'on_sale_date')
         widgets = {
-          'number': forms.TextInput(attrs={'class': 'wide'}),
+          'number': forms.TextInput(attrs={'class': 'wide', 'autofocus':''}),
           'title': forms.TextInput(attrs={'class': 'wide'}),
           'volume': forms.TextInput(attrs={'class': 'wide'}),
           'key_date': forms.TextInput(attrs={'class': 'key_date'}),
@@ -774,7 +777,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 'in the "Add issues after" field, or "1" if '
                 'inserting issues at the beginning')
 
-    number_of_issues = forms.IntegerField(min_value=1)
+    number_of_issues = forms.IntegerField(min_value=1,
+      widget=forms.TextInput(attrs={'autofocus':''}))
 
     comments = _get_comments_form_field()
 
@@ -783,7 +787,6 @@ class BulkIssueRevisionForm(forms.ModelForm):
         fields = get_issue_field_list()
         exclude = ['number',]
         widgets = {
-          'volume': forms.TextInput(attrs={'class': 'wide'}),
           'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
           'editing': forms.TextInput(attrs={'class': 'wide'}),
           'page_count': PageCountInput
@@ -1078,7 +1081,8 @@ class StoryRevisionForm(forms.ModelForm):
     # for new stories we add it through the initial value of a hidden field.
     sequence_number = forms.IntegerField(widget=forms.HiddenInput)
 
-    title = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+    title = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide',
+                                                          'autofocus':''}),
                             required=False,
       help_text='If the title is not listed, use the first line of dialog, '
                 'place it in "quotation marks" and check the next box.  Do *not* '
