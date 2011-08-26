@@ -3,7 +3,7 @@
 {% load credits %}
 
       <dl id="issue_data_list">
-{% if not issue.no_volume %}
+{% if not issue.no_volume and issue.series.has_volume %}
         <dt> {% trans "Volume" %}:
         <dd> {{ issue|show_volume }}
 {% endif %}

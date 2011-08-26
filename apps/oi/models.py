@@ -801,6 +801,12 @@ class Revision(models.Model):
 
         # TODO why not filter for states.APPROVED instead of
         # exclude STATES.DISCARDED
+        # TODO why not use created instead of modified ?
+        # Updating approved revisions via python scripts changes the
+        # modified value. So either switch to created, or all python
+        # scripts need to keep the modified value. But changes to older
+        # revisions should normally not take place anyway, only field
+        # creations and stuff which are done in mysql.
         if self.source is not None:
             prev_revs = self.source.revisions \
               .exclude(changeset__state=states.DISCARDED) \
@@ -819,7 +825,7 @@ class Revision(models.Model):
     def posterior(self):
         # This would be in the db cache anyway, but this way we
         # save db-calls in some cases.
-        # Inside a transaction we cannot gain a new revision, so it's safe
+        # During normal operation we cannot gain a new revision, so it's safe
         if hasattr(self, '_post_rev'):
             return self._post_rev
 
@@ -1761,6 +1767,7 @@ class SeriesRevisionManager(RevisionManager):
           has_barcode=series.has_barcode,
           has_indicia_frequency=series.has_indicia_frequency,
           has_isbn=series.has_isbn,
+          has_volume=series.has_volume,
           has_issue_title=series.has_issue_title,
 
           country=series.country,
@@ -1776,7 +1783,7 @@ def get_series_field_list():
             'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
             'is_current', 'publisher', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'tracking_notes', 'notes']
+            'has_volume', 'tracking_notes', 'notes']
 
 class SeriesRevision(Revision):
     class Meta:
@@ -1830,6 +1837,8 @@ class SeriesRevision(Revision):
       help_text="ISBNs are present for issues of this series.")
     has_issue_title = models.BooleanField(
       help_text="Titles are present for issues of this series.")
+    has_volume = models.BooleanField(
+      help_text="Volume numbers are present for issues of this series.")
 
     notes = models.TextField(blank=True)
 
@@ -1939,7 +1948,8 @@ class SeriesRevision(Revision):
             'has_barcode': True,
             'has_indicia_frequency': True,
             'has_isbn': True,
-            'has_issue_title': False
+            'has_issue_title': False,
+            'has_volume': True,
         }
 
     def _imps_for(self, field_name):
@@ -2019,6 +2029,7 @@ class SeriesRevision(Revision):
         series.has_indicia_frequency = self.has_indicia_frequency
         series.has_isbn = self.has_isbn
         series.has_issue_title = self.has_issue_title
+        series.has_volume = self.has_volume
 
         reservation = series.get_ongoing_reservation()
         if not self.is_current and reservation and self.previous() and \
@@ -2516,6 +2527,11 @@ class IssueRevision(Revision):
           self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('title')
             fields.remove('no_title')
+        if not self.series.has_volume and \
+          self.changeset.change_type != CTYPES['issue_bulk']:
+            fields.remove('volume')
+            fields.remove('no_volume')
+            fields.remove('display_volume_with_number')
         if self.variant_of or (self.issue and self.issue.variant_set.count()) \
           or self.changeset.change_type == CTYPES['variant_add']:
             fields = ['variant_name'] + fields
@@ -2765,9 +2781,16 @@ class IssueRevision(Revision):
             self.no_title = issue.no_title
             self.save()
 
-        issue.volume = self.volume
-        issue.no_volume = self.no_volume
-        issue.display_volume_with_number = self.display_volume_with_number
+        if self.series.has_volume:
+            issue.volume = self.volume
+            issue.no_volume = self.no_volume
+            issue.display_volume_with_number = self.display_volume_with_number
+        else:
+            self.volume = issue.volume
+            self.no_volume = issue.no_volume
+            self.display_volume_with_number = issue.display_volume_with_number
+            self.save()
+
         issue.variant_of = self.variant_of
         issue.variant_name = self.variant_name
 

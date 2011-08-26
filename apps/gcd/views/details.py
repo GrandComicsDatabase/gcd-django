@@ -311,7 +311,7 @@ def series_details(request, series_id, by_date=False):
     # These need to be numbers not True/False booleans so they work
     # in the template.
     num_issues = series.issue_count
-    volume_present = \
+    volume_present = series.has_volume and \
       series.active_issues().filter(no_volume=True).count() - num_issues
     brand_present = \
       series.active_issues().filter(no_brand=True).count() - num_issues

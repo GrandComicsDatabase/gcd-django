@@ -41,7 +41,7 @@ class Series(models.Model):
     class Meta:
         app_label = 'gcd'
         ordering = ['sort_name', 'year_began']
-    
+
     # Core series fields.
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
@@ -74,6 +74,7 @@ class Series(models.Model):
     has_indicia_frequency = models.BooleanField()
     has_isbn = models.BooleanField()
     has_issue_title = models.BooleanField()
+    has_volume = models.BooleanField()
 
     # Fields related to cover image galleries.
     has_gallery = models.BooleanField(db_index=True)
@@ -121,7 +122,7 @@ class Series(models.Model):
         appear within the series.  Returned as a list so that the UI can check
         the length of the list and the contents with only one DB call.
         """
-        return list(Brand.objects.filter(issue__series=self, 
+        return list(Brand.objects.filter(issue__series=self,
                                          issue__deleted=False)\
           .annotate(first_by_brand=models.Min('issue__sort_code'),
                     used_issue_count=models.Count('issue'))\
@@ -149,7 +150,7 @@ class Series(models.Model):
         appear within the series.  Returned as a list so that the UI can check
         the length of the list and the contents with only one DB call.
         """
-        return list(IndiciaPublisher.objects.filter(issue__series=self, 
+        return list(IndiciaPublisher.objects.filter(issue__series=self,
                                                     issue__deleted=False)\
           .annotate(first_by_ind_pub=models.Min('issue__sort_code'),
                     used_issue_count=models.Count('issue'))\
@@ -189,7 +190,7 @@ class Series(models.Model):
 
     def issues_without_covers(self):
         from apps.gcd.models.issue import Issue
-        issues = Issue.objects.filter(series=self).exclude(deleted=True) 
+        issues = Issue.objects.filter(series=self).exclude(deleted=True)
         return issues.exclude(cover__isnull=False, cover__deleted=False).distinct()
 
     def scan_needed_count(self):
@@ -200,38 +201,38 @@ class Series(models.Model):
 
     def _date_uncertain(self, flag):
         return u' ?' if flag else u''
-                  
+
     def display_publication_dates(self):
         if self.issue_count == 0:
-            return u'%s%s' % (unicode(self.year_began), 
+            return u'%s%s' % (unicode(self.year_began),
                   self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:
             if self.first_issue.publication_date:
                 return self.first_issue.publication_date
             else:
-                return u'%s%s' % (unicode(self.year_began), 
+                return u'%s%s' % (unicode(self.year_began),
                   self._date_uncertain(self.year_began_uncertain))
         else:
             if self.first_issue.publication_date:
                 date = u'%s - ' % self.first_issue.publication_date
             else:
-                date = u'%s%s - ' % (self.year_began, 
+                date = u'%s%s - ' % (self.year_began,
               self._date_uncertain(self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
-                date += u'%s%s' % (unicode(self.year_ended), 
+                date += u'%s%s' % (unicode(self.year_ended),
                   self._date_uncertain(self.year_ended_uncertain))
             else:
                 date += u'?'
             return date
 
     def full_name(self):
-        return '%s (%s, %s%s series)' % (self.name, self.publisher, 
+        return '%s (%s, %s%s series)' % (self.name, self.publisher,
           self.year_began, self._date_uncertain(self.year_began_uncertain))
 
     def __unicode__(self):
-        return '%s (%s%s series)' % (self.name, self.year_began, 
+        return '%s (%s%s series)' % (self.name, self.year_began,
           self._date_uncertain(self.year_began_uncertain))

@@ -328,9 +328,7 @@ def field_value(revision, field):
     if field in ['is_surrogate', 'no_volume', 'display_volume_with_number',
                  'no_brand', 'page_count_uncertain', 'title_inferred',
                  'no_barcode', 'no_indicia_frequency', 'no_isbn',
-                 'has_barcode', 'has_isbn', 'has_issue_title',
-                 'has_indicia_frequency', 'year_began_uncertain',
-                 'year_ended_uncertain']:
+                 'year_began_uncertain', 'year_ended_uncertain']:
         return yesno(value, 'Yes,No')
     elif field in ['is_current']:
         res_holder_display = ''
@@ -398,6 +396,17 @@ def field_value(revision, field):
             return u'Yes (sorted as: %s)' % remove_leading_article(revision.name)
         else:
             return u'No'
+    elif field in ['has_barcode', 'has_isbn', 'has_issue_title',
+                   'has_indicia_frequency', 'has_volume']:
+        if hasattr(revision, 'changed'):
+            if revision.changed[field] and value == False:
+                kwargs = {field[4:]: ''}
+                value_count = revision.series.active_issues()\
+                                            .exclude(**kwargs).count()
+                if value_count:
+                    return 'No (note: %d issues have a non-empty %s value)' % \
+                            (value_count, field[4:])
+        return yesno(value, 'Yes,No')
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
         return ''

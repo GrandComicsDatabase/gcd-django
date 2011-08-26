@@ -523,6 +523,13 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             title = forms.CharField(widget=HiddenInputWithHelp, required=False,
               help_text=help_text)
 
+        if not series.has_volume:
+            help_text, no_volume = _get_series_has_fields_off_note(series,
+                                                                   'volume')
+            help_text, display_volume_with_number = \
+              _get_series_has_fields_off_note(series, 'volume')
+            volume = forms.CharField(widget=HiddenInputWithHelp, required=False,
+              help_text=help_text)
         if not series.has_indicia_frequency:
             help_text, no_indicia_frequency = \
               _get_series_has_fields_off_note(series, 'indicia frequency')
