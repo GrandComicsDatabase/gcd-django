@@ -2541,9 +2541,9 @@ class IssueRevision(Revision):
         return {
             'number': '',
             'title': '',
-            'no_title': None,
+            'no_title': False,
             'volume': '',
-            'no_volume': None,
+            'no_volume': False,
             'display_volume_with_number': None,
             'publication_date': '',
             'price': '',
@@ -2553,20 +2553,20 @@ class IssueRevision(Revision):
             'day_on_sale': None,
             'on_sale_date_uncertain': False,
             'indicia_frequency': '',
-            'no_indicia_frequency': None,
+            'no_indicia_frequency': False,
             'series': None,
             'indicia_publisher': None,
-            'indicia_pub_not_printed': None,
+            'indicia_pub_not_printed': False,
             'brand': None,
-            'no_brand': None,
+            'no_brand': False,
             'page_count': None,
-            'page_count_uncertain': None,
+            'page_count_uncertain': False,
             'editing': '',
-            'no_editing': None,
+            'no_editing': False,
             'isbn': '',
-            'no_isbn': None,
+            'no_isbn': False,
             'barcode': '',
-            'no_barcode': None,
+            'no_barcode': False,
             'notes': '',
             'sort_code': None,
             'after': None,
@@ -2575,6 +2575,7 @@ class IssueRevision(Revision):
 
     def _start_imp_sum(self):
         self._seen_volume = False
+        self._seen_title = False
         self._seen_indicia_publisher = False
         self._seen_indicia_frequency = False
         self._seen_brand = False
@@ -2592,6 +2593,9 @@ class IssueRevision(Revision):
            field_name in ('volume', 'no_volume', 'display_volume_with_number'):
             self._seen_volume = True
             return 1
+        if not self._seen_title and field_name in ('title', 'no_title'):
+            self._seen_title = True
+            return 1
         if not self._seen_indicia_publisher and \
            field_name in ('indicia_publisher', 'indicia_pub_not_printed'):
             self._seen_indicia_publisher = True
@@ -2603,10 +2607,16 @@ class IssueRevision(Revision):
         if not self._seen_brand and field_name in ('brand', 'no_brand'):
             self._seen_brand = True
             return 1
-        if not self._seen_page_count and \
-           field_name in ('page_count', 'page_count_uncertain'):
+        if not self._seen_page_count:
             self._seen_page_count = True
-            return 1
+            if field_name == 'page_count':
+                return 1
+
+            # checking the 'uncertain' box  without also at least guessing the page
+            # count itself doesn't count as IMP-worthy information.
+            if field_name == 'page_count_uncertain' and \
+               self.page_count is not None:
+                return 1
         if not self._seen_editing and field_name in ('editing', 'no_editing'):
             self._seen_editing = True
             return 1
@@ -3053,19 +3063,19 @@ class StoryRevision(Revision):
             'title_inferred': '',
             'feature': '',
             'page_count': None,
-            'page_count_uncertain': None,
+            'page_count_uncertain': False,
             'script': '',
             'pencils': '',
             'inks': '',
             'colors': '',
             'letters': '',
             'editing': '',
-            'no_script': None,
-            'no_pencils': None,
-            'no_inks': None,
-            'no_colors': None,
-            'no_letters': None,
-            'no_editing': None,
+            'no_script': False,
+            'no_pencils': False,
+            'no_inks': False,
+            'no_colors': False,
+            'no_letters': False,
+            'no_editing': False,
             'notes': '',
             'synopsis': '',
             'characters': '',

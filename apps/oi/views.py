@@ -2787,6 +2787,14 @@ def cover_compare(request, changeset, revision):
         kwargs['cover_front_tag'] = get_preview_image_tag(revision, "uploaded cover",
                                                 ZOOM_MEDIUM)
     if revision.is_replacement:
+        # change this to use cover.previous() once we are using
+        # cover.reserved = True for cover replacements and
+        # cleared out cover uploads from editing limbo
+        # possible problem scenario:
+        # replacement a) is retracted/sent back
+        # replacement b) is submitted and approved
+        # replacement a) is submitted and approved
+        # then the order would be wrong
         old_cover = CoverRevision.objects.filter(cover=revision.cover,
                       created__lt=revision.created,
                       changeset__change_type=CTYPES['cover'],
