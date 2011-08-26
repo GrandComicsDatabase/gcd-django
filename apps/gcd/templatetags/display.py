@@ -398,6 +398,9 @@ def field_value(revision, field):
             return u'Yes (sorted as: %s)' % remove_leading_article(revision.name)
         else:
             return u'No'
+    elif field == 'after' and not hasattr(revision, 'changed'):
+        # for previous revision (no attr changed) display empty string
+        return ''
     return value
 
 # translate field name into more human friendly name

@@ -20,14 +20,15 @@ After approval the approver should check the sort order of the series this issue
 {% if revision.variant_of %}
 This is a variant of {{ revision.variant_of|absolute_url }}.
   {% if not revision.issue %} {% comment %} only relevant for variant adds, i.e. issue is not set {% endcomment %}
-  <ul>
-  {% for cover_revision in revision.variant_of.cover_revisions.all %}
-    {% if cover_revision.changeset.state == states.PENDING or cover_revision.changeset.state == states.REVIEWING %}
-      <li>Current <a href="{% url compare id=cover_revision.changeset.id %}">cover upload</a> for the base issue.
-    {% endif %}
-  {% endfor %}
+<ul>
+    {% for cover_revision in revision.variant_of.cover_revisions.all %}
+      {% if cover_revision.changeset.state == states.PENDING or cover_revision.changeset.state == states.REVIEWING %}
+  <li>Current <a href="{% url compare id=cover_revision.changeset.id %}">cover upload</a> for the base issue.
+      {% endif %}
+    {% endfor %}
+</ul>
+<p>The compare of the following issue record for the new variant is against the current issue data of the base issue.</p>
   {% endif %}
-  </ul>
 {% endif %}
 {% with revision.previous as prev_rev %}
 {% with revision.posterior as post_rev %}

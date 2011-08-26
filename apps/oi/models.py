@@ -809,6 +809,10 @@ class Revision(models.Model):
               .order_by('-modified', '-id')
             if prev_revs.count() > 0:
                 self._prev_rev = prev_revs[0]
+        elif type(self) == IssueRevision: # only checked for adds
+            if self.variant_of: # for variant adds compare against base issue
+                self._prev_rev = self.variant_of.revisions\
+                  .filter(changeset__state=states.APPROVED).latest('modified')
         return self._prev_rev
 
 
