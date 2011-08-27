@@ -179,17 +179,21 @@ def _calculate_results(unresolved):
 def _send_result_email(topic, extra=''):
     for list_config in topic.agenda.agenda_mailing_lists.all():
         if list_config.on_vote_close:
+            result = None
             if topic.invalid:
                 result = ('This vote failed to produce a valid result, '
                           'possibly because of a tie.  '
                           'The vote administrators will follow up as needed.')
             elif topic.vote_type.name in (TYPE_PASS_FAIL, TYPE_CHARTER):
-                if topic.options.get(result=True).name == 'For':
+                result_name = topic.options.get(result=True).name
+                if result_name == 'For':
                     result = 'The motion PASSED'
-                else:
+                elif result_name == 'Against':
                     result = 'The motion FAILED'
 
-            else:
+            if result is None:
+                # Either it's not a pass/fail or charter, or the options
+                # were renamed so we can't convert to PASS/FAIL.
                 result = 'The following option(s) won:\n'
                 for winner in topic.options.filter(result=True):
                     result += '  * %s\n' % winner.name
