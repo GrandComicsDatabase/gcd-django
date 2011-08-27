@@ -708,7 +708,7 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
                         .filter(issue__variant_of=issue,
                         changeset__state__in=states.ACTIVE,
                         deleted=False).order_by('created')
-
+    active_covers = active_covers.exclude(changeset__change_type=CTYPES['variant_add'])
     for active_cover in active_covers:
         active_covers_tags.append([active_cover,
                                    get_preview_image_tag(active_cover,

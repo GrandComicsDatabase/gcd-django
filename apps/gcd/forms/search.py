@@ -225,7 +225,7 @@ class AdvancedSearch(forms.Form):
                     raise forms.ValidationError("When searching for covers"
                           " only type cover can be selected.")
             if cleaned_data['use_on_sale_date']:
-                if cleaned_data['target'] not in ['issue','story']:
+                if cleaned_data['target'] not in ['issue','sequence']:
                     raise forms.ValidationError(
                       "The on-sale date can only be used in issue or story "
                       "searches.")
