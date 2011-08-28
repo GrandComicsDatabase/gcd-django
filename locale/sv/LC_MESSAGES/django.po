@@ -1,7 +1,7 @@
-# German translations for the GCD website.
+﻿# German translations for the GCD website.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Jochen Garcke <gcdmail@garcke.de>, 2008.
+# Per Sandell, 2011.
 #
 #, fuzzy
 msgid ""
@@ -105,36 +105,36 @@ msgstr "Logga ut"
 
 #: templates/gcd/bits/front_page_login.html:14
 msgid "username"
-msgstr "Name"
+msgstr "Användarnamn"
 
 #: templates/gcd/bits/front_page_login.html:16
 msgid "password"
-msgstr ""
+msgstr "Lösenord"
 
 #: templates/gcd/bits/front_page_login.html:22
 msgid "Forgot password?"
-msgstr ""
+msgstr "Glömt lösenordet?"
 
 #: templates/gcd/bits/front_page_login.html:25
 msgid "Register"
-msgstr ""
+msgstr "Registrera dig"
 
 #: templates/gcd/bits/front_page_menu.html:15
 msgid "Contact Us"
-msgstr ""
+msgstr "Kontakta oss"
 
 #: templates/gcd/bits/front_page_search_box.html:5
 #: templates/gcd/bits/front_page_search_box.html:11
 msgid "Search"
-msgstr ""
+msgstr "Sök"
 
 #: templates/gcd/bits/front_page_search_box.html:9
 msgid "Sort by"
-msgstr ""
+msgstr "Sortera"
 
 #: templates/gcd/bits/front_page_search_box.html:12
 msgid "Advanced&nbsp;Search"
-msgstr ""
+msgstr "Avancerad sökning"
 
 #: templates/gcd/bits/legalese.html:3
 #, python-format
@@ -144,16 +144,19 @@ msgid ""
 "<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
 "product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
 "   target=\"_blank\">let us know</a> (opens new window).\n"
-msgstr ""
+msgstr "Om du anser att någon information är fel, var vänlig\n"
+"<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"   target=\"_blank\">meddela oss detta</a> (opens new window).\n"
 
 #: templates/gcd/bits/legalese.html:11
 msgid "Cover thumbnails are used for identification purposes only."
-msgstr ""
+msgstr "Omslagsbilder används endast för identifikation av publikationerna"
 
 #: templates/gcd/bits/legalese.html:12
 msgid ""
 "All rights to cover images reserved by the respective copyright holders."
-msgstr ""
+msgstr "Alla rättigheter som rör omslagsbilderna är respektive copyright-hållares"
 
 #: templates/gcd/bits/legalese.html:17
 #, python-format
@@ -175,25 +178,25 @@ msgstr ""
 ""
 
 msgid "publishers"
-msgstr ""
+msgstr "förlagsgrupp"
 
 msgid "brands"
-msgstr ""
+msgstr "förlagslogo"
 
 msgid "indicia publishers"
-msgstr ""
+msgstr "förlag"
 
 msgid "series"
-msgstr ""
+msgstr "serier"
 
 msgid "issues"
-msgstr ""
+msgstr "publikationer"
 
 msgid "issue indexes"
-msgstr ""
+msgstr "indexerade"
 
 msgid "covers"
-msgstr ""
+msgstr "omslag"
 
 msgid "stories"
-msgstr ""
+msgstr "sekvenser"
