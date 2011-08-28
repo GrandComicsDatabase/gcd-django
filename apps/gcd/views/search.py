@@ -815,9 +815,6 @@ def search_series(data, op):
     if data['tracking_notes']:
         q_objs.append(Q(**{ '%stracking_notes__%s' % (prefix, op):
                              data['tracking_notes']}))
-    if data['publication_notes']:
-        q_objs.append(Q(**{ '%spublication_notes__%s' % (prefix, op):
-                             data['publication_notes']}))
     if data['not_reserved']:
         q_objs.append(Q(**{ '%songoing_reservation__isnull' % prefix: True }) &
                       Q(**{ '%sis_current' % prefix: True }))
