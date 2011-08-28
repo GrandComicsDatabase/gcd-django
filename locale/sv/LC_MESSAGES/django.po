@@ -1,4 +1,4 @@
-﻿# German translations for the GCD website.
+# Swedish translations for the GCD website.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Per Sandell, 2011.
@@ -144,7 +144,9 @@ msgid ""
 "<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
 "product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
 "   target=\"_blank\">let us know</a> (opens new window).\n"
-msgstr "Om du anser att någon information är fel, var vänlig\n"
+msgstr ""
+"\n"
+"Om du anser att någon information är fel, var vänlig\n"
 "<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
 "product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
 "   target=\"_blank\">meddela oss detta</a> (opens new window).\n"
