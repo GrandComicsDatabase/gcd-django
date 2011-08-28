@@ -2712,7 +2712,8 @@ def compare(request, id):
     field_list = revision.field_list()
     # eliminate fields that shouldn't appear in the compare
     if model_name == 'series':
-        if prev_rev is None or prev_rev.imprint is None:
+        if not revision.imprint and \
+          (prev_rev is None or prev_rev.imprint is None):
             field_list.remove('imprint')
         if not (revision.publication_notes or prev_rev and \
           prev_rev.publication_notes):

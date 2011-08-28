@@ -1781,7 +1781,7 @@ class SeriesRevisionManager(RevisionManager):
 def get_series_field_list():
     return ['name', 'leading_article', 'imprint', 'format', 'year_began',
             'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
-            'is_current', 'publisher', 'country', 'language', 'has_barcode',
+            'is_current', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
             'has_volume', 'tracking_notes', 'notes']
 
@@ -1925,7 +1925,10 @@ class SeriesRevision(Revision):
         return self.series.get_ongoing_revision()
 
     def _field_list(self):
-        return get_series_field_list() + [u'publication_notes',]
+        fields = get_series_field_list()
+        if self.previous() and (self.previous().publisher != self.publisher):
+            fields = fields[0:2] + ['publisher'] + fields[2:]
+        return fields + [u'publication_notes',]
 
     def _get_blank_values(self):
         return {
@@ -2535,6 +2538,8 @@ class IssueRevision(Revision):
         if self.variant_of or (self.issue and self.issue.variant_set.count()) \
           or self.changeset.change_type == CTYPES['variant_add']:
             fields = fields[0:1] + ['variant_name'] + fields[1:]
+        if self.previous() and (self.previous().series != self.series):
+            fields = ['series'] + fields
         return fields
 
     def _get_blank_values(self):
@@ -2586,7 +2591,7 @@ class IssueRevision(Revision):
         self._seen_on_sale_date = False
 
     def _imps_for(self, field_name):
-        if field_name in ('number', 'publication_date', 'key_date',
+        if field_name in ('number', 'publication_date', 'key_date', 'series',
                           'price', 'notes', 'variant_name'):
             return 1
         if not self._seen_volume and \
@@ -2779,6 +2784,15 @@ class IssueRevision(Revision):
                     update_count('issues', 1, language=self.series.language)
                     update_count('issues', -1, language=issue.series.language)
                 check_series_order = issue.series
+                # new series might have gallery after move
+                # do NOT save the series here, it gets saved later
+                if self.series.has_gallery == False:
+                    if issue.active_covers().count():
+                        self.series.has_gallery = True
+                # old series might have lost gallery after move
+                if issue.series.scan_count() == \
+                    issue.active_covers().count():
+                    issue.series.has_gallery = False
 
         issue.number = self.number
         # only if the series has_field is True write to issue
