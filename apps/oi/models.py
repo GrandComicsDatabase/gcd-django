@@ -1625,6 +1625,8 @@ class CoverRevision(Revision):
         return {}
 
     def calculate_imps(self, prev_rev=None):
+        if self.changeset.change_type != CTYPES['cover']:
+            return 1
         return IMP_COVER_VALUE
 
     def _imps_for(self, field_name):
@@ -3069,7 +3071,10 @@ class StoryRevision(Revision):
             raise False
 
     def _field_list(self):
-        return get_story_field_list()
+        fields = get_story_field_list()
+        if self.previous() and (self.previous().issue != self.issue):
+            fields = ['issue'] + fields
+        return fields
 
     def _get_blank_values(self):
         return {
