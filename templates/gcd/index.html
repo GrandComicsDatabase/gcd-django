@@ -133,6 +133,9 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
               {% ifnotequal language.code 'de' %}
               <li><a href="{% url apps.gcd.views.index %}?lang=de">Deutsche Startseite</a></li>
               {% endifnotequal %}
+              {% ifnotequal language.code 'sv' %}
+              <li><a href="{% url apps.gcd.views.index %}?lang=sv">Svensk startsida</a></li>
+              {% endifnotequal %}
             </ul>
           </div>
         </div>
