@@ -460,8 +460,13 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
     # the variant issue and copy the values which would not change
     # TODO are these reasonable assumptions below ?
     if variant:
+        current_variants = issue.variant_set.all().order_by('-sort_code')
+        if current_variants:
+            add_after = current_variants[0]
+        else:
+            add_after = issue
         issue_revision = IssueRevision(changeset=changeset,
-          after=issue,
+          after=add_after,
           number=issue.number,
           title=issue.title,
           no_title=issue.no_title,
@@ -692,7 +697,7 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
                         changeset__state__in=states.ACTIVE,
                         deleted=False).order_by('created')
         if issue.variant_of.has_covers():
-            covers_list = get_image_tags_per_issue(issue.variant_of, 
+            covers_list = get_image_tags_per_issue(issue.variant_of,
                                                    "current covers",
                                                    ZOOM_MEDIUM, as_list=True,
                                                    variants=True)

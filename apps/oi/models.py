@@ -2769,9 +2769,12 @@ class IssueRevision(Revision):
                         issue.indicia_publisher.issue_count = F('issue_count') - 1
                         issue.indicia_publisher.save()
             if self.series != issue.series:
-                # move to the end of the new series
-                issue.sort_code = self.series.active_issues()\
-                                      .latest('sort_code').sort_code + 1
+                if self.series.issue_count:
+                    # move to the end of the new series
+                    issue.sort_code = self.series.active_issues()\
+                                        .latest('sort_code').sort_code + 1
+                else:
+                    issue.sort_code = 0
                 # update counts
                 self.series.issue_count = F('issue_count') + 1
                 issue.series.issue_count = F('issue_count') - 1
