@@ -2911,7 +2911,7 @@ class IssueRevision(Revision):
             return u'%s #%s' % (self.series, self.display_number)
 
 def get_story_field_list():
-    return ['sequence_number', 'title', 'type', 'title_inferred',
+    return ['sequence_number', 'title', 'title_inferred', 'type',
             'feature', 'genre', 'job_number',
             'script', 'no_script', 'pencils', 'no_pencils', 'inks',
             'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
