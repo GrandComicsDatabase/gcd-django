@@ -718,7 +718,7 @@ class IssueRevisionForm(forms.ModelForm):
           'editing': forms.TextInput(attrs={'class': 'wide' }),
           'isbn': forms.TextInput(attrs={'class': 'wide'}),
           'barcode': forms.TextInput(attrs={'class': 'wide', 
-            'onKeyPress':'return disableEnterKey(event);'}),
+            'onKeyPress': 'return disableEnterKey(event);'}),
           'page_count': PageCountInput,
         }
 
