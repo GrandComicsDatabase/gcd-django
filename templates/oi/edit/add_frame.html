@@ -11,6 +11,9 @@ Adding {{ object_name }}
       href="{{ MEDIA_URL }}css/oi/default.css"/>
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
 <script type="text/javascript">
 function disableEnterKey(e) {
    var key;
@@ -22,9 +25,7 @@ function disableEnterKey(e) {
     else return true;
 }
 </script>
-{% endblock %}
 
-{% block view_body %}
 <h1>Adding {{ object_name }}</h1>
 
 <div class="edit">
