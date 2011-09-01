@@ -1418,6 +1418,7 @@ def add_series(request, publisher_id):
             initial['has_barcode'] = True
             initial['has_indicia_frequency'] = True
             initial['has_isbn'] = True
+            initial['has_volume'] = True
             form = get_series_revision_form(publisher,
                                             user=request.user)(initial=initial)
             return _display_add_series_form(request, publisher, imprint, form)
