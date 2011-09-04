@@ -5,6 +5,7 @@ import tempfile
 import os
 from codecs import EncodedFile, BOM_UTF16
 from decimal import Decimal, InvalidOperation
+from datetime import datetime
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
@@ -17,7 +18,7 @@ from apps.oi.models import *
 from apps.oi.forms import *
 
 MIN_ISSUE_FIELDS = 10
-MAX_ISSUE_FIELDS = 12
+MAX_ISSUE_FIELDS = 14
 MIN_SEQUENCE_FIELDS = 10
 MAX_SEQUENCE_FIELDS = 16
 
@@ -33,10 +34,13 @@ ISSUE_PAGE_COUNT = 8
 ISSUE_EDITING = 9
 ISBN = 10
 ISSUE_NOTES = 11
+BARCODE = 12
+ON_SALE_DATE = 13
 
 ISSUE_FIELDS = ['number', 'volume', 'indicia_publisher', 'brand',
-                'publication_date', 'key_date', 'indicia_frequency', 'price', 
-                'page_count', 'editing', 'isbn', 'notes']
+                'publication_date', 'key_date', 'indicia_frequency', 'price',
+                'page_count', 'editing', 'isbn', 'notes', 'barcode',
+                'on_sale_date']
 
 TITLE = 0
 TYPE = 1
@@ -64,7 +68,7 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
     """
     Try interpreting s using several possible encodings.
     The return value is a two-element tuple.  The first element is either an
-    ASCII string or a Unicode object.  The second element is True if the 
+    ASCII string or a Unicode object.  The second element is True if the
     decoder was not successfully.
     """
     if isinstance(s, unicode):
@@ -90,7 +94,7 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
                 re.search(r"[\x80-\x9f]", s) is not None):
                 continue
 
-            # Characters in the given range are more likely to be 
+            # Characters in the given range are more likely to be
             # symbols used in iso-8859-15, so even though unicode()
             # may accept such strings with those encodings, skip them.
 
@@ -112,15 +116,15 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
 def _handle_import_error(request, changeset, error_text):
     response = render_error(request,
       '%s Back to the <a href="%s">editing page</a>.' % \
-        (error_text, urlresolvers.reverse('edit', 
-                                          kwargs={'id': changeset.id})), 
+        (error_text, urlresolvers.reverse('edit',
+                                          kwargs={'id': changeset.id})),
       is_safe=True)
     # there might be a temporary file attached
     if hasattr(request, "tmpfile"):
         request.tmpfile.close()
         os.remove(request.tmpfile_name)
     return response, True
-    
+
 
 def _process_file(request, changeset, is_issue):
     '''
@@ -139,7 +143,7 @@ def _process_file(request, changeset, is_issue):
         os.write(tmpfile_handle, chunk)
     os.close(tmpfile_handle)
     tmpfile = open(tmpfile_name, 'U')
-    request.tmpfile = tmpfile 
+    request.tmpfile = tmpfile
     request.tmpfile_name = tmpfile_name
 
     # check if file starts with byte order mark
@@ -168,7 +172,7 @@ def _process_file(request, changeset, is_issue):
         split_line = decoded_line.strip('\n').split('\t')
 
         # if is_issue is set, the first line should be issue line
-        if is_issue and not lines: 
+        if is_issue and not lines:
             # check number of fields
             line_length = len(split_line)
             if line_length not in range(MIN_ISSUE_FIELDS,MAX_ISSUE_FIELDS+1):
@@ -181,13 +185,13 @@ def _process_file(request, changeset, is_issue):
                 for i in range(MAX_ISSUE_FIELDS - line_length):
                     split_line.append('')
         # later lines are story lines
-        else: 
+        else:
             # we had an empty line just before
-            if empty_line: 
+            if empty_line:
                 error_text = 'The file includes an empty line.'
                 return _handle_import_error(request, changeset, error_text)
             # we have an empty line now, OK if it is the last line
-            if len(split_line) == 1: 
+            if len(split_line) == 1:
                 empty_line = True
                 continue
 
@@ -206,7 +210,7 @@ def _process_file(request, changeset, is_issue):
 
             # check here for story_type, otherwise sequences up to an error
             # will be be added
-            response, failure = _find_story_type(request, changeset, 
+            response, failure = _find_story_type(request, changeset,
                                                  split_line)
             if failure:
                 return response, True
@@ -254,8 +258,8 @@ def _parse_volume(volume):
 
 
 def _find_story_type(request, changeset, split_line):
-    ''' 
-    make sure that we have a valid StoryType 
+    '''
+    make sure that we have a valid StoryType
     returns two values
     if all correct:
       - the story type
@@ -271,13 +275,13 @@ def _find_story_type(request, changeset, split_line):
     except StoryType.DoesNotExist:
         error_text = 'Story type "%s" in line %s does not exist.' \
             % (esc(split_line[TYPE]), esc(split_line))
-        return _handle_import_error(request, changeset, error_text)        
+        return _handle_import_error(request, changeset, error_text)
 
 
 def _import_sequences(request, issue_id, changeset, lines, running_number):
     """
-    Processing of story lines happens here. 
-    lines is a list of lists. 
+    Processing of story lines happens here.
+    lines is a list of lists.
     This routine is independent of a particular format of the file,
     as long as the order of the fields in lines matches.
     """
@@ -290,7 +294,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         title = fields[TITLE].strip()
         if title.startswith('[') and title.endswith(']'):
             title = title[1:-1]
-            title_inferred = True        
+            title_inferred = True
         else:
             title_inferred = False
         feature = fields[FEATURE].strip()
@@ -313,7 +317,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         notes = fields[STORY_NOTES].strip()
 
         story_revision = StoryRevision(changeset=changeset,
-                                       title=title, 
+                                       title=title,
                                        title_inferred=title_inferred,
                                        feature=feature,
                                        type=story_type,
@@ -346,7 +350,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
       kwargs={ 'id': changeset.id }))
 
 
-def _find_publisher_object(request, changeset, name, publisher_objects, 
+def _find_publisher_object(request, changeset, name, publisher_objects,
                            object_type, publisher):
     if not name:
         return None, False
@@ -358,7 +362,7 @@ def _find_publisher_object(request, changeset, name, publisher_objects,
     else:
         error_text = '%s "%s" does not exist for publisher %s.' % \
           (object_type, esc(name), esc(publisher))
-        return _handle_import_error(request, changeset, error_text)        
+        return _handle_import_error(request, changeset, error_text)
 
 
 @permission_required('gcd.can_reserve')
@@ -375,14 +379,14 @@ def import_issue_from_file(request, issue_id, changeset_id):
                 return render_error(request,
                   'There are already sequences present for %s in this'
                   ' changeset. Back to the <a href="%s">editing page</a>.'\
-                   % (esc(issue_revision), urlresolvers.reverse('edit', 
+                   % (esc(issue_revision), urlresolvers.reverse('edit',
                       kwargs={'id': changeset.id})), is_safe=True)
             lines, failure = _process_file(request, changeset, is_issue=True)
             if failure:
                 return lines
 
             # parse the issue line
-            issue_fields = lines.pop(0) 
+            issue_fields = lines.pop(0)
             issue_revision.number = issue_fields[NUMBER].strip()
             issue_revision.volume, issue_revision.no_volume = \
               _parse_volume(issue_fields[VOLUME].strip())
@@ -390,8 +394,8 @@ def import_issue_from_file(request, issue_id, changeset_id):
             indicia_publisher_name, issue_revision.indicia_pub_not_printed = \
               _check_for_none(issue_fields[INDICIA_PUBLISHER])
             indicia_publisher, failure = _find_publisher_object(request,
-              changeset, indicia_publisher_name, 
-              IndiciaPublisher.objects.all(), "Indicia publisher", 
+              changeset, indicia_publisher_name,
+              IndiciaPublisher.objects.all(), "Indicia publisher",
               issue_revision.issue.series.publisher)
             if failure:
                 return indicia_publisher
@@ -400,8 +404,8 @@ def import_issue_from_file(request, issue_id, changeset_id):
 
             brand_name, issue_revision.no_brand = \
               _check_for_none(issue_fields[BRAND])
-            brand, failure = _find_publisher_object(request, changeset, 
-              brand_name, Brand.objects.all(), "Brand", 
+            brand, failure = _find_publisher_object(request, changeset,
+              brand_name, Brand.objects.all(), "Brand",
               issue_revision.issue.series.publisher)
             if failure:
                 return brand
@@ -410,28 +414,52 @@ def import_issue_from_file(request, issue_id, changeset_id):
 
             issue_revision.publication_date = issue_fields[PUBLICATION_DATE]\
               .strip()
-            issue_revision.key_date = issue_fields[KEY_DATE].strip()
-            if not re.search(KEY_DATE_REGEXP, issue_revision.key_date):
-                issue_revision.key_date = ''
+            issue_revision.key_date = issue_fields[KEY_DATE].strip()\
+                                                            .replace('.', '-')
+            if issue_revision.key_date and \
+              not re.search(KEY_DATE_REGEXP, issue_revision.key_date):
+                return render_error(request,
+                  "key_date '%s' is invalid." % issue_revision.key_date)
 
-            issue_revision.indicia_frequency = issue_fields[INDICIA_FREQUENCY]\
-              .strip()
+            issue_revision.indicia_frequency, \
+              issue_revision.no_indicia_frequency = \
+              _check_for_none(issue_fields[INDICIA_FREQUENCY])
             issue_revision.price = issue_fields[PRICE].strip()
             issue_revision.page_count, issue_revision.page_count_uncertain =\
               _check_page_count(issue_fields[ISSUE_PAGE_COUNT])
             issue_revision.editing, issue_revision.no_editing = \
               _check_for_none(issue_fields[ISSUE_EDITING])
-            issue_revision.isbn = issue_fields[ISBN].strip()
+            issue_revision.isbn, issue_revision.no_isbn = \
+              _check_for_none(issue_fields[ISBN])
+            issue_revision.barcode, issue_revision.no_barcode = \
+              _check_for_none(issue_fields[BARCODE])
+            on_sale_date = issue_fields[ON_SALE_DATE].strip()
+            if on_sale_date:
+                if on_sale_date[-1] == '?':
+                    issue_revision.on_sale_date_uncertain = True
+                    on_sale_date = on_sale_date[:-1].strip()
+                else:
+                    issue_revision.on_sale_date_uncertain = False
+                try:
+                    # only full dates can be imported
+                    sale_date = datetime.strptime(on_sale_date, '%Y-%m-%d')
+                    issue_revision.year_on_sale = sale_date.year
+                    issue_revision.month_on_sale = sale_date.month
+                    issue_revision.day_on_sale = sale_date.day
+                except ValueError:
+                    return render_error(request,
+                      "on-sale_date '%s' is invalid." % \
+                      on_sale_date)
             issue_revision.notes = issue_fields[ISSUE_NOTES].strip()
             issue_revision.save()
             running_number = 0
-            return _import_sequences(request, issue_id, changeset, 
+            return _import_sequences(request, issue_id, changeset,
                                      lines, running_number)
         else:
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': changeset.id }))
 
-    except (Issue.DoesNotExist, Issue.MultipleObjectsReturned, 
+    except (Issue.DoesNotExist, Issue.MultipleObjectsReturned,
             IssueRevision.DoesNotExist):
         return render_error(request,
           'Could not find issue for id %s and changeset %s' \
@@ -452,13 +480,13 @@ def import_sequences_from_file(request, issue_id, changeset_id):
             if failure:
                 return lines
             running_number = issue_revision.next_sequence_number()
-            return _import_sequences(request, issue_id, changeset, 
+            return _import_sequences(request, issue_id, changeset,
                                      lines, running_number)
         else:
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': changeset.id }))
 
-    except (Issue.DoesNotExist, Issue.MultipleObjectsReturned, 
+    except (Issue.DoesNotExist, Issue.MultipleObjectsReturned,
             IssueRevision.DoesNotExist):
         return render_error(request,
           'Could not find issue for id %s and changeset %s' \
@@ -470,18 +498,19 @@ def export_issue_to_file(request, issue_id):
     export = ''
     for field_name in ISSUE_FIELDS:
         if field_name == 'brand' and not issue.brand and not issue.no_brand:
-            export += "\t" 
+            export += "\t"
         elif field_name == 'indicia_publisher' and not \
           issue.indicia_publisher and not issue.indicia_pub_not_printed:
-            export += "\t" 
-        elif field_name == 'editing' and getattr(issue, 'no_editing'):
+            export += "\t"
+        elif field_name in ['editing', 'indicia_frequency', 'isbn', 'barcode']\
+          and getattr(issue, 'no_%s' % field_name):
             export += "None\t"
         else:
             export += "%s\t" % unicode(getattr(issue, field_name))
     export = export[:-1] + '\r\n'
     for sequence in issue.active_stories():
         for field_name in SEQUENCE_FIELDS:
-            if field_name in ['script', 'pencils', 'inks', 'colors', 
+            if field_name in ['script', 'pencils', 'inks', 'colors',
                               'letters', 'editing'] and \
                              getattr(sequence, 'no_%s' % field_name):
                 export += "None\t"

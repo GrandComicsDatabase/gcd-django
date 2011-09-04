@@ -10,7 +10,7 @@
         <dt> {% trans "Price" %}:
         <dd id="issue_price"> {{ issue.price|default:"" }}
         <dt> {% trans "Pages" %}:
-        <dd id="issue_pages"> {{ issue|show_page_count }}
+        <dd id="issue_pages"> {{ issue|show_page_count|default:"?" }}
 {% if not issue.no_indicia_frequency and issue.series.has_indicia_frequency %}
         <dt> {% trans "Indicia frequency" %}:
         <dd id="indicia_frequency"> {{ issue.indicia_frequency|default:"?" }}

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+from datetime import datetime
 
 from django import forms
 from django.core import urlresolvers
@@ -632,16 +633,18 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                   'You can only use either the on-sale date-field or the '
                   'three separate date fields, not both data entering options.')
             elif cd['on_sale_date']:
-                cd['year_on_sale'], cd['month_on_sale'], cd['day_on_sale'] = \
-                  on_sale_date_fields(cd['on_sale_date'])
+                # only full dates can be entered this way
+                if cd['on_sale_date'].year < 1800 or \
+                  cd['on_sale_date'].year >= 2100:
+                    raise forms.ValidationError('Unreasonable year entered.')
+                cd['year_on_sale'] = cd['on_sale_date'].year
+                cd['month_on_sale'] = cd['on_sale_date'].month
+                cd['day_on_sale'] = cd['on_sale_date'].day
 
             if cd['no_barcode'] and cd['barcode']:
                 raise forms.ValidationError(
                   'You cannot specify a barcode and check "no barcode" at '
                   'the same time.')
-
-            if cd['page_count'] == None:
-                cd['page_count_uncertain'] = True
 
             return cd
 
@@ -715,17 +718,16 @@ class IssueRevisionForm(forms.ModelForm):
           'volume': forms.TextInput(attrs={'class': 'wide'}),
           'key_date': forms.TextInput(attrs={'class': 'key_date'}),
           'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
+          'price': forms.TextInput(attrs={'class': 'wide'}),
           'editing': forms.TextInput(attrs={'class': 'wide' }),
           'isbn': forms.TextInput(attrs={'class': 'wide'}),
-          'barcode': forms.TextInput(attrs={'class': 'wide', 
+          'barcode': forms.TextInput(attrs={'class': 'wide',
             'onKeyPress': 'return disableEnterKey(event);'}),
           'page_count': PageCountInput,
         }
 
     comments = _get_comments_form_field()
-    on_sale_date = forms.CharField(widget=forms.TextInput(attrs={'class': 'key_date'}),
-      required=False, validators=[RegexValidator\
-      (r'^(18|19|20)\d{2}-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-9]|3[0-1])$')],
+    on_sale_date = forms.DateField(required=False, input_formats=['%Y-%m-%d'],
       help_text='The on-sale date can be entered in two ways. Either in this '
                 'field in the format YYYY-MM-DD, where all parts need to be '
                 'entered, or using the following three fields. If only '
@@ -733,7 +735,6 @@ class IssueRevisionForm(forms.ModelForm):
                 'option and enter the part of the date which is known. '
                 'If you only know the decade you can enter the first three '
                 'digits, e.g. 199 for the decade 1990-1999.')
-
 
 def get_bulk_issue_revision_form(series, method, user=None):
     if method == 'number':
@@ -828,9 +829,6 @@ class BulkIssueRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Indicica Frequency field and No Indicia Frequency checkbox '
                'cannot both be filled in.'])
-
-        if cd['page_count'] == None:
-            cd['page_count_uncertain'] = True
 
         return cd
 
