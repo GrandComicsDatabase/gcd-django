@@ -193,7 +193,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 <h2> Existing variant{{ variants_without_covers|length|pluralize }} with covers </h2>
   <ul>
   {% for variant in variants_without_covers %}
-    <li><a href="{% url compare id=variant.id %}">{{ variant }}</a>
+    <li><a href="{% url show_issue issue_id=variant.id %}">{{ variant }}</a>
   {% endfor %}
   </ul>
 </div>
