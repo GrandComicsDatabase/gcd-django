@@ -1119,6 +1119,7 @@ def edit_issues_in_bulk(request):
     fields.remove('year_on_sale')
     fields.remove('month_on_sale')
     fields.remove('day_on_sale')
+    fields.remove('on_sale_date_uncertain')
     fields.remove('isbn')
     fields.remove('notes')
     fields.remove('barcode')
