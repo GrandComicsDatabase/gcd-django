@@ -20,9 +20,6 @@
         <dd id="on_sale_date">
         {{ issue.on_sale_date }}{% if issue.on_sale_date_uncertain %} ? {% endif %}
 {% endif %}
-      </dl>
-        {{ issue|show_credit:"editing" }}
-      <dl>
         <dt> {% trans "Indicia Publisher" %}:
         <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}
 {% if not issue.no_brand %}
@@ -46,6 +43,11 @@
             <dd id="barcode">{{ issue.barcode|default:"?" }}
 {% endif %}
       </dl>
+{% if issue.editing %}
+<dl>
+{{ issue|show_credit:"editing" }}
+</dl>
+{% endif %}
 {% if issue.series.format %}
       <dl>
         <dt>Format:
