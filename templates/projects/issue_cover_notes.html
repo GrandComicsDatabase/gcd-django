@@ -52,7 +52,7 @@
     <th width="40%"> Issue </th>
   </tr>
 {% for issue in items %}
-  <tr> {# class="{% cycle 'listing_even' 'listing_odd' as row_classes%}"> #}
+  <tr class="{% cycle 'listing_even' 'listing_odd' as row_classes %}">
     <td class="listing_publisher first_row last_row">
       {{ issue.series.publisher|absolute_url }}
     </td>
@@ -61,6 +61,11 @@
     </td>
     <td class="listing_publisher first_row last_row">
       {{ issue|absolute_url }}
+    </td>
+  </tr>
+  <tr class="{{ row_classes }}">
+    <td colspan="3" class="listing_publisher first_row last_row">
+      <b>Notes:</b> {{ issue.notes }}
     </td>
   </tr>
 {% endfor %}

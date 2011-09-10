@@ -3,7 +3,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db.models import F
 
-from apps.gcd.models import Publisher, Country, Issue, StoryType
+from apps.gcd.models import Publisher, Country, Language, Issue, StoryType
 from apps.gcd.views import paginate_response
 from apps.projects.forms import ImprintsInUseForm, IssuesWithCoversForm, IssueCoverNotesForm
 
@@ -126,7 +126,7 @@ def issue_cover_notes(request):
 
     vars = {
         'heading': 'Issues',
-        'search_item': 'with idential notes and cover notes',
+        'search_item': 'with identical notes and cover notes',
         'item_name': 'issue',
         'plural_suffix': 's',
     }
@@ -142,6 +142,8 @@ def issue_cover_notes(request):
                 qargs['series__publisher__id'] = data['publisher']
             if data['country']:
                 qargs['series__country'] = data['country']
+            if data['language']:
+                qargs['series__language'] = data['language']
 
         get_copy = request.GET.copy()
         get_copy.pop('page', None)
