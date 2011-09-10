@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import re
-from datetime import datetime
 
 from django import forms
 from django.core import urlresolvers
