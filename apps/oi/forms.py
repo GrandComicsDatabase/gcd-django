@@ -645,6 +645,9 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                   'You cannot specify a barcode and check "no barcode" at '
                   'the same time.')
 
+            if cd['barcode']:
+                cd['barcode'] = cd['barcode'].replace('-', '').replace(' ', '')
+                cd['barcode'] = cd['barcode'].replace(';', '; ')
             return cd
 
         def as_table(self):
