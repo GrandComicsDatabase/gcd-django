@@ -328,7 +328,8 @@ def field_value(revision, field):
     if field in ['is_surrogate', 'no_volume', 'display_volume_with_number',
                  'no_brand', 'page_count_uncertain', 'title_inferred',
                  'no_barcode', 'no_indicia_frequency', 'no_isbn',
-                 'year_began_uncertain', 'year_ended_uncertain']:
+                 'year_began_uncertain', 'year_ended_uncertain',
+                 'on_sale_date_uncertain']:
         return yesno(value, 'Yes,No')
     elif field in ['is_current']:
         res_holder_display = ''
