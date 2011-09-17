@@ -402,11 +402,12 @@ def field_value(revision, field):
         if hasattr(revision, 'changed'):
             if revision.changed[field] and value == False:
                 kwargs = {field[4:]: ''}
-                value_count = revision.series.active_issues()\
-                                            .exclude(**kwargs).count()
-                if value_count:
-                    return 'No (note: %d issues have a non-empty %s value)' % \
-                            (value_count, field[4:])
+                if revision.series:
+                    value_count = revision.series.active_issues()\
+                                                 .exclude(**kwargs).count()
+                    if value_count:
+                        return 'No (note: %d issues have a non-empty %s value)' % \
+                                (value_count, field[4:])
         return yesno(value, 'Yes,No')
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
