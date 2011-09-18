@@ -2047,6 +2047,7 @@ def move_series(request, series_revision_id, publisher_id):
                         issue_revision.no_indicia_publisher = False
                     issue_revision.save()
             series_revision.publisher = publisher
+            series_revision.imprint = None
             series_revision.save()
             return submit(request, series_revision.changeset.id)
 

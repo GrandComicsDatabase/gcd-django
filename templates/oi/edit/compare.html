@@ -1,6 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% load display %}
+{% load mathfilter %}
 
 {% block title %}
 GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
@@ -71,7 +72,8 @@ The above sequence was moved from the following issue.
     {% if revision.previous and revision.publisher != revision.previous.publisher %}
     <div class="edit">
     <h2> Series moved from <span class="comparison_highlight">{{ revision.previous.publisher }}</span> to <span class="comparison_highlight">{{ revision.publisher }}</span> </h2>
-    The brands and indicia publishers of the {{ revision.series.issue_count }} issues of this series will be <span class="comparison_highlight">reset</span>.
+
+The <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:revision.series.brand_info_counts.unknown }} set</span> brands and <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:revision.series.indicia_publisher_info_counts.unknown }} set</span> indicia publishers of the {{ revision.series.issue_count }} issues of this series will be <span class="comparison_highlight">reset</span>.
     </div>
     {% endif %}
   {% endif %}
