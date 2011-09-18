@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db.models import F
@@ -69,7 +69,8 @@ def issues_with_several_covers(request):
     """
 
     issues=Issue.objects.annotate(covers=Count('cover'))
-    issues=issues.filter(covers__gt=1, deleted=False)
+    issues=issues.annotate(covers_deleted=Sum('cover__deleted'))
+    issues=issues.filter(covers__gt=1+F('covers_deleted'), deleted=False)
 
     qargs = {'deleted': False}
     qorder = ['series__name', 'series__year_began', 'number']
