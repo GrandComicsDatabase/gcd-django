@@ -2076,7 +2076,7 @@ class SeriesRevision(Revision):
                 update_count('stories', -story_count,
                              language=series.language)
                 update_count('stories', story_count,
-                                 language=self.language)
+                             language=self.language)
                 update_count('covers', -series.scan_count(),
                              language=series.language)
                 update_count('covers', series.scan_count(),
@@ -2788,6 +2788,12 @@ class IssueRevision(Revision):
                 if self.series.language != issue.series.language:
                     update_count('issues', 1, language=self.series.language)
                     update_count('issues', -1, language=issue.series.language)
+                    story_count = self.issue.active_stories.count()
+                    update_count('stories', story_count,
+                                language=self.series.language)
+                    update_count('stories', -story_count,
+                                language=issue.series.language)
+
                 check_series_order = issue.series
                 # new series might have gallery after move
                 # do NOT save the series here, it gets saved later
@@ -3218,7 +3224,19 @@ class StoryRevision(Revision):
         story.title = self.title
         story.title_inferred = self.title_inferred
         story.feature = self.feature
-        story.issue = self.issue
+        if story.issue and (story.issue != self.issue):
+            if story.issue.series.language != self.issue.series.language:
+                update_count('stories', 1,
+                            language=self.issue.series.language)
+                update_count('stories', -1,
+                            language=story.issue.series.language)
+            old_issue = story.issue
+            story.issue = self.issue
+            if old_issue.set_indexed_status() == False:
+                update_count('issue indexes', -1,
+                             language=old_issue.series.language)
+        else:
+            story.issue = self.issue
         story.page_count = self.page_count
         story.page_count_uncertain = self.page_count_uncertain
 
