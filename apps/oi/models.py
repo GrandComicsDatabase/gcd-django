@@ -3224,7 +3224,7 @@ class StoryRevision(Revision):
         story.title = self.title
         story.title_inferred = self.title_inferred
         story.feature = self.feature
-        if story.issue and (story.issue != self.issue):
+        if hasattr(story, 'issue') and (story.issue != self.issue):
             if story.issue.series.language != self.issue.series.language:
                 update_count('stories', 1,
                             language=self.issue.series.language)
