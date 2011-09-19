@@ -517,9 +517,12 @@ def do_advanced_search(request):
 
 
 def used_search(search_values):
-    del search_values['order1']
-    del search_values['order2']
-    del search_values['order3']
+    try:
+        del search_values['order1']
+        del search_values['order2']
+        del search_values['order3']
+    except KeyError:
+        pass
     if search_values['target'] == 'sequence':
         target = 'Stories'
     elif search_values['target'] == 'indicia_publisher':
