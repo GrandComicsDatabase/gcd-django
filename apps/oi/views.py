@@ -56,6 +56,13 @@ DISPLAY_CLASSES = {
     'cover': Cover,
 }
 
+REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
+  'must submit or discard some changes from your edit queue before you ' \
+  'can edit any more.  If you are a new user this number is very low ' \
+  'but will be increased as your first changes are approved. ' \
+  'If you are an experienced indexer and frequently hit ' \
+  'your reservation limit please contact us.'
+
 ##############################################################################
 # Helper functions
 ##############################################################################
@@ -168,11 +175,7 @@ def reserve(request, id, model_name, delete=False, callback=None, callback_args=
 
         if changeset is None:
             _unreserve(display_obj)
-            return render_error(request,
-              'You have reached your limit of open changes.  You must '
-              'submit or discard some changes from your edit queue before you '
-              'can edit any more.  If you are a new user this number is very low '
-              'but will be increased as your first changes are approved.')
+            return render_error(request, REACHED_CHANGE_LIMIT)
 
         if delete:
             changeset.submit(notes=request.POST['comments'], delete=True)
@@ -1056,11 +1059,7 @@ def _clean_bulk_issue_change_form(form, remove_fields, items,
 @permission_required('gcd.can_reserve')
 def edit_issues_in_bulk(request):
     if not request.user.indexer.can_reserve_another():
-        return render_error(request,
-          'You have reached your limit of open changes.  You must '
-          'submit or discard some changes from your edit queue before you '
-          'can edit any more.  If you are a new user this number is very low '
-          'but will be increased as your first changes are approved.')
+        return render_error(request, REACHED_CHANGE_LIMIT)
 
     if request.method == 'GET' and request.GET['target'] != 'issue':
         return HttpResponseRedirect(urlresolvers.reverse \
@@ -1245,11 +1244,7 @@ def _display_bulk_issue_change_form(request, form,
 @permission_required('gcd.can_reserve')
 def add_publisher(request):
     if not request.user.indexer.can_reserve_another():
-        return render_error(request,
-          'You have reached your limit of open changes.  You must '
-          'submit or discard some changes from your edit queue before you '
-          'can edit any more.  If you are a new user this number is very low '
-          'but will be increased as your first changes are approved.')
+        return render_error(request, REACHED_CHANGE_LIMIT)
 
     if request.method != 'POST':
         form = get_publisher_revision_form(user=request.user)()
@@ -1286,11 +1281,7 @@ def _display_add_publisher_form(request, form):
 @permission_required('gcd.can_reserve')
 def add_indicia_publisher(request, parent_id):
     if not request.user.indexer.can_reserve_another():
-        return render_error(request,
-          'You have reached your limit of open changes.  You must '
-          'submit or discard some changes from your edit queue before you '
-          'can edit any more.  If you are a new user this number is very low '
-          'but will be increased as your first changes are approved.')
+        return render_error(request, REACHED_CHANGE_LIMIT)
 
     try:
         parent = Publisher.objects.get(id=parent_id, is_master=True)
@@ -1340,11 +1331,7 @@ def _display_add_indicia_publisher_form(request, parent, form):
 @permission_required('gcd.can_reserve')
 def add_brand(request, parent_id):
     if not request.user.indexer.can_reserve_another():
-        return render_error(request,
-          'You have reached your limit of open changes.  You must '
-          'submit or discard some changes from your edit queue before you '
-          'can edit any more.  If you are a new user this number is very low '
-          'but will be increased as your first changes are approved.')
+        return render_error(request, REACHED_CHANGE_LIMIT)
 
     try:
         parent = Publisher.objects.get(id=parent_id, is_master=True)
@@ -1394,11 +1381,7 @@ def _display_add_brand_form(request, parent, form):
 @permission_required('gcd.can_reserve')
 def add_series(request, publisher_id):
     if not request.user.indexer.can_reserve_another():
-        return render_error(request,
-          'You have reached your limit of open changes.  You must '
-          'submit or discard some changes from your edit queue before you '
-          'can edit any more.  If you are a new user this number is very low '
-          'but will be increased as your first changes are approved.')
+        return render_error(request, REACHED_CHANGE_LIMIT)
 
     # Process add form if this is a POST.
     try:
@@ -1477,11 +1460,7 @@ def init_added_variant(form_class, initial, issue):
 def add_issue(request, series_id, sort_after=None, variant_of=None,
               variant_cover=None, edit_with_base=False):
     if not request.user.indexer.can_reserve_another():
-        return render_error(request,
-          'You have reached your limit of open changes.  You must '
-          'submit or discard some changes from your edit queue before you '
-          'can edit any more.  If you are a new user this number is very low '
-          'but will be increased as your first changes are approved.')
+        return render_error(request, REACHED_CHANGE_LIMIT)
 
     series = get_object_or_404(Series, id=series_id)
     if series.deleted or series.pending_deletion():
@@ -1671,11 +1650,7 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
 @permission_required('gcd.can_reserve')
 def add_issues(request, series_id, method=None):
     if not request.user.indexer.can_reserve_another():
-        return render_error(request,
-          'You have reached your limit of open changes.  You must '
-          'submit or discard some changes from your edit queue before you '
-          'can edit any more.  If you are a new user this number is very low '
-          'but will be increased as your first changes are approved.')
+        return render_error(request, REACHED_CHANGE_LIMIT)
 
     issue_annotated = Changeset.objects.annotate(
       issue_revision_count=Count('issuerevisions'))
