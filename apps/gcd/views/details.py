@@ -952,7 +952,7 @@ def countries_in_use(request):
 
 def agenda(request, language):
     f = urlopen("https://www.google.com/calendar/embed?src=comics.org_v62prlv9"
-      "dp79hbjt4du2unqmks%40group.calendar.google.com&showTitle=1&showNav=0&"
+      "dp79hbjt4du2unqmks%40group.calendar.google.com&showTitle=0&showNav=0&"
       "showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA"
       "&height=600&wkst=1&bgcolor=%23FFFFFF&color=%238C500B"
       "&ctz=America%2FLos_Angeles&hl=de")

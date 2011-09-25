@@ -3,23 +3,26 @@
 <div id="front_page_menu">
   <div id="front_page_menu_header">
     <img src="{{ MEDIA_URL }}/img/logo.png" alt="GCD">
-  </div>
-  <a href="http://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a>
-  <a href="http://docs.comics.org/wiki/The_GCD_Charter">{% trans "GCD Charter" %}</a>
-  <br/>
-  <a href="http://docs.comics.org/wiki/How_To_Contribute_FAQ">{% trans "How To Help" %}</a>
-  <a href="http://docs.comics.org/">{% trans "Documentation Wiki" %}</a>
-  <a href="http://docs.comics.org/wiki/OI_Tutorial">Indexing Tutorial</a>
-  <br/>
-  <a href="{% url donate %}">{% trans "About Donations" %}</a>
-  <a href="{% url privacy %}">{% trans 'Privacy Policy' %}</a>
-  <a href="http://docs.comics.org/wiki/Email_Lists_FAQ">{% trans "Mailing Lists" %}</a>
+  <p>
+  <a href="http://docs.comics.org/wiki/How_To_Contribute_FAQ">{% trans "How To Help" %}</a> |
+  <a href="http://docs.comics.org/wiki/OI_Tutorial"> Tutorial</a><br>
+  <a href="http://docs.comics.org/">{% trans "Documentation Wiki" %}</a><br>
+  </p>
+  <p>
+  <a href="http://docs.comics.org/wiki/Email_Lists_FAQ">{% trans "Mailing Lists" %}</a> |
   <a href="mailto:{% trans 'contact@comics.org' %}">{% trans "Contact Us" %}</a>
-  <br/>
-  <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+  </p>
+  <p>
+  <a href="http://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a>
+  </p>
+  <form action="https://www.paypal.com/cgi-bin/webscr" method="post" class="login_form">
     <input type="hidden" name="cmd" value="_s-xclick">
     <input type="hidden" name="hosted_button_id" value="8787588">
-    <input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+    <input style="text-align:center" type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
     <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
   </form>
+   <br>
+  <a href="{% url donate %}">{% trans "About Donations" %}</a>
+  </div>
 </div>
+

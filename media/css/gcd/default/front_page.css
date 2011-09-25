@@ -6,7 +6,7 @@ body {
     margin:0;
     padding:0;
     border:0;           /* This removes the border around the viewport in old versions of IE */
-    width:95%;
+    width:100%;
     background:#fff;
     min-width:45em;     /* Minimum width of layout - remove line if not required [15 + 45 + 24]*/
                         /* The min-width property does not work in old versions of Internet Explorer */
@@ -35,20 +35,20 @@ body {
     width:100%;
     margin-left:-50%;
     position:relative;
-    left:30em;;              /* Left column width + right column width  [15 + 15]*/
+    left:33em;              /* Left column width + right column width  [15 + 15]*/
 }
 
 #col1wrap {
     float:left;
     width:50%;
     position:relative;
-    right:15em;             /* Width of left column  [1 + 13 + 2]*/
+    right:18em;             /* Width of left column  [1 + 13 + 2]*/
     padding-bottom:1em;     /* Centre column bottom padding. Leave it out if it's zero */
 }
 
 #center_column {
                             /* Centre column side padding:*/
-    margin-left: 16em;      /* Left padding = left column width + centre column left padding width*/
+    margin-left: 19em;      /* Left padding = left column width + centre column left padding width*/
     margin-right: 16em;     /* Right padding = right column width + centre column right padding width */
     position:relative;
     left:200%;
@@ -58,7 +58,7 @@ body {
 #left_column {
     float:left;
     float:right;            /* This overrides the float:left above */
-    width:13em;             /* Width of left column content (left column width minus left and right padding)*/
+    width:16em;             /* Width of left column content (left column width minus left and right padding)*/
     position:relative;
     right:1em;              /* Width of the left-had side padding on the left column */
 }
@@ -84,7 +84,7 @@ body {
 
 .front_page_left_box {
     border: solid 1px;
-    width: 13em;
+    width: 16em;
     margin-bottom: 1em;
     float: left;
 }
@@ -126,12 +126,11 @@ body {
 
 #front_page_menu_header {
     margin-top: 0.5em;
-    margin-bottom: 1.5em;
+    margin-bottom: 0.5em;
     text-align: center;
 }
 
 #front_page_menu a {
-    display: block;
     color: white;
 }
 
