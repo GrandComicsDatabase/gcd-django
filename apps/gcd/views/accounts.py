@@ -489,8 +489,10 @@ def mentor_not_new(request, indexer_id):
     else:
         if request.method == 'POST':
             indexer.is_new = False
-            indexer.max_reservations = settings.RESERVE_MAX_DEFAULT
-            indexer.max_ongoing = settings.RESERVE_MAX_ONGOING_DEFAULT
+            indexer.max_reservations = max(settings.RESERVE_MAX_DEFAULT,
+                                           indexer.max_reservations)
+            indexer.max_ongoing = max(settings.RESERVE_MAX_ONGOING_DEFAULT,
+                                      indexer.max_ongoing)
             indexer.save()
     
     return HttpResponseRedirect(urlresolvers.reverse('mentoring'))
