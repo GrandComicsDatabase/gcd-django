@@ -7,11 +7,15 @@ from apps.gcd.models.publisher import Publisher
 from apps.gcd.models.indexer import Indexer
 from apps.oi.models import *
 
-from apps.gcd.migration.history.publisher import MigratoryPublisherRevision, \
-                                                 LogPublisher
-from apps.gcd.migration.history.series import MigratorySeriesRevision, LogSeries
-from apps.gcd.migration.history.issue import MigratoryIssueRevision, LogIssue
-from apps.gcd.migration.history.story import MigratoryStoryRevision, LogStory
+#from apps.gcd.migration.history.publisher import MigratoryPublisherRevision, \
+#                                                 LogPublisher
+#from apps.gcd.migration.history.series import MigratorySeriesRevision, LogSeries
+#from apps.gcd.migration.history.issue import MigratoryIssueRevision, LogIssue
+#from apps.gcd.migration.history.story import MigratoryStoryRevision, LogStory
+from apps.gcd.migration.history.publisher import LogPublisher
+from apps.gcd.migration.history.series import LogSeries
+from apps.gcd.migration.history.issue import LogIssue
+#from apps.gcd.migration.history.story import MigratoryStoryRevision, LogStory
 
 def main():
     logging.basicConfig(level=logging.NOTSET,
@@ -44,8 +48,8 @@ def main():
     cursor.close()
 
     for old_table, log_class in (('LogPublishers', LogPublisher),
-                                 ('LogSeries', LogSeries),
-                                 ('LogIssues', LogIssue),
+                                 #('LogSeries', LogSeries),
+                                 #('LogIssues', LogIssue),
                                  # ('LogStories', LogStory),
                                 ):
         table_name = log_class._meta.db_table
@@ -102,7 +106,7 @@ UPDATE %s SET sort_old=@sort_old:=@sort_old + 1,
         cursor.execute("""
 SET @first_day='2002-01-01';
 SET @first_time='00:00:00';
-UPDATE %s new LEFT OUTER JOIN %s old 
+UPDATE %s new LEFT OUTER JOIN %s old
     ON old.sort_old=new.sort_new AND old.%s=new.%s
     SET new.userid_new=IF(old.id IS NULL, %d, old.UserID),
         new.modified_new=IF(old.id IS NULL, @first_day, old.Modified),

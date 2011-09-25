@@ -50,7 +50,8 @@ class LogPublisher(LogRecord):
 
     @classmethod
     def group_duplicate_fields(klass):
-        return 'pubname, notes, yearbegan, yearended, countryid, publisherid, web'
+        return ('pubname collate utf8_bin, notes collate utf8_bin, yearbegan, '
+                'yearended, countryid, publisherid, web')
 
     @classmethod
     def alter_table(klass, anon):
@@ -69,14 +70,18 @@ ALTER TABLE log_publisher
         cursor.execute("""
 INSERT INTO log_publisher
     (PubName, Notes, YearBegan, YearEnded, CountryID, Web, UserID, PublisherID)
-  SELECT 
+  SELECT
     name, notes, year_began, year_ended, country_id, url, %d, id
-  FROM migrated.gcd_publisher;
+  FROM old_publisher;
 """ % anon.id)
 
     @classmethod
     def fix_values(klass, anon, unknown_country, undetermined_language):
         cursor = connection.cursor()
+        # Set 'uk' country to 'gb'
+        cursor.execute("""
+UPDATE log_publisher SET CountryID = 75 WHERE CountryID = 223
+""")
         # Set unknown countries to the special unknown value, convert codes to ids.
         cursor.execute("""
 UPDATE log_publisher p LEFT OUTER JOIN gcd_country c ON p.CountryID = c.id
@@ -104,6 +109,12 @@ UPDATE log_publisher p LEFT OUTER JOIN gcd_country c ON p.CountryID = c.id
     @classmethod
     def get_related(klass):
         return ('Country', 'DisplayPublisher', 'User__user')
+
+    def revision_exists(self):
+        if PublisherRevision.objects.filter(created=self.dt, publisher=self.DisplayPublisher):
+            return True
+        else:
+            return False
 
     def convert(self, changeset):
         # create publisher revision, is_master always true since not

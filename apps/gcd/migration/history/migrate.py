@@ -19,8 +19,8 @@ def main():
 
     anon = Indexer.objects.filter(user__username='anon').select_related('user')[0]
     for log_class in (LogPublisher,
-                      LogSeries,
-                      LogIssue,
+                      #LogSeries,
+                      #LogIssue,
                      ):
         log_class.migrate(anon)
 

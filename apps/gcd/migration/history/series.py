@@ -55,8 +55,9 @@ class LogSeries(LogRecord):
 
     @classmethod
     def group_duplicate_fields(klass):
-        return ('Bk_Name, CounCode, Format, LangCode, Notes, PubID, Pub_Note, '
-                'SeriesID, Tracking, Yr_Began, Yr_Ended, ImprintID')
+        return ('Bk_Name collate utf8_bin, CounCode, Format collate utf8_bin, '
+                'LangCode, Notes collate utf8_bin, PubID, Pub_Note, '
+                'SeriesID, Tracking collate utf8_bin, Yr_Began, Yr_Ended, ImprintID')
 
     @classmethod
     def alter_table(klass, anon):
@@ -81,14 +82,19 @@ INSERT INTO log_series
     SELECT
         s.name, s.publisher_id, c.code, l.code, s.format, s.tracking_notes,
         s.publication_notes, s.notes, s.year_began, s.year_ended, s.imprint_id, %d, s.id
-    FROM migrated.gcd_series s
-        INNER JOIN migrated.gcd_country c ON s.country_id = c.id
-        INNER JOIN migrated.gcd_language l on s.language_id = l.id;
+    FROM old_series s
+        INNER JOIN gcd_country c ON s.country_id = c.id
+        INNER JOIN gcd_language l on s.language_id = l.id;
 """ % anon.id)
 
     @classmethod
     def fix_values(klass, anon, unknown_country, undetermined_language):
         cursor = connection.cursor()
+
+        # Set 'uk' country code to 'gb'
+        cursor.execute("""
+UPDATE log_series SET CounCode = 'gb' WHERE CounCode = 'uk'
+""")
 
         # Set unknown countries to the special unknown value, convert codes to ids.
         cursor.execute("""
@@ -184,7 +190,23 @@ UPDATE log_series s LEFT OUTER JOIN gcd_publisher i ON s.ImprintID = i.id
                      .update(Modified=datetime.date(2002, 1, 1),
                              dt_inferred=True)
 
+    def revision_exists(self):
+        if SeriesRevision.objects.filter(created=self.dt, series=self.DisplaySeries):
+            return True
+        else:
+            return False
+
     def convert(self, changeset):
+        if self.Yr_Ended and self.Yr_Ended < 1970:
+            has_isbn = False
+        else:
+            has_isbn = True
+
+        if self.Yr_Ended and self.Yr_Ended < 1974:
+            has_barcode = False
+        else:
+            has_barcode = True
+
         revision = SeriesRevision(changeset=changeset,
                                   series=self.DisplaySeries,
                                   country=self.Country,
@@ -198,6 +220,11 @@ UPDATE log_series s LEFT OUTER JOIN gcd_publisher i ON s.ImprintID = i.id
                                   publication_notes=self.Pub_Note,
                                   tracking_notes=self.Tracking,
                                   notes=self.Notes,
+                                  has_isbn=has_isbn,
+                                  has_barcode=has_barcode,
+                                  has_indicia_frequency=True,
+                                  has_issue_title=False,
+                                  has_volume=True,
                                   date_inferred=changeset.date_inferred)
         revision.save()
         return revision

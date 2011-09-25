@@ -140,7 +140,7 @@ class LogRecord(models.Model):
 
         # ADDTIME won't work unless all dates and times are not NULL.
         cursor = connection.cursor()
-        cursor.execute("""UPDATE %s SET dt=ADDTIME(modified_new, modtime_new);""" % 
+        cursor.execute("""UPDATE %s SET dt=ADDTIME(modified_new, modtime_new);""" %
                        klass._meta.db_table)
         cursor.close()
 
@@ -164,11 +164,17 @@ class LogRecord(models.Model):
             log_history = log_history.select_related(*related)
 
         for change in log_history.iterator():
-            if counter % 1000 == 1:
-                logging.info("Converting %s row %d" % (table_name, counter))
-            counter += 1
-            changeset = change.create_changeset(anon)
-            change.create_revision(changeset, anon)
+            if not change.revision_exists():
+                # temporary change for series history fixes
+                #if counter % 1000 == 1:
+                    #logging.info("Converting %s row %d" % (table_name, counter))
+                #print change.SeriesID
+                #print counter, change.DisplaySeries, change.Bk_Name, change.dt
+                print change.PublisherID
+                print change.DisplayPublisher, change.PubName, change.dt
+                counter += 1
+                #changeset = change.create_changeset(anon)
+                #change.create_revision(changeset, anon)
 
     def create_changeset(self, anon):
         # create changeset
