@@ -62,9 +62,14 @@ class LogStory(LogRecord):
 
     @classmethod
     def group_duplicate_fields(klass):
-        return ('Seq_No, Title, Feature, Type, Pg_Cnt, '
-                'Script, Pencils, Inks, Colors, Letters, Editing, '
-                'Genre, Char_App, Synopsis, Reprints, JobNo, Notes')
+        return ('Seq_No, Title collate utf8_bin, Feature collate utf8_bin, '
+                'Type collate utf8_bin, Pg_Cnt, Script collate utf8_bin, '
+                'Pencils collate utf8_bin, Inks collate utf8_bin, '
+                'Colors collate utf8_bin, Letters collate utf8_bin, '
+                'Editing collate utf8_bin, Genre collate utf8_bin, '
+                'Char_App collate utf8_bin, Synopsis collate utf8_bin, '
+                'Reprints collate utf8_bin, JobNo collate utf8_bin, '
+                'Notes collate utf8_bin')
 
     @classmethod
     def alter_table(klass, anon):
@@ -125,24 +130,27 @@ DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
                                        'back cover')).update(
             StoryType=StoryType.objects.get(
               name='(backcovers) *do not use* / *please fix*'))
-        klass.objects.filter(Type__in=('biography', 'bio')).update(
+        klass.objects.filter(Type__in=('biography', 'bio',
+                                       'biography (nonfictional)')).update(
             StoryType=StoryType.objects.get(name='biography (nonfictional)'))
         klass.objects.filter(Type__in=('cartoon', 'cartoons')).update(
             StoryType=StoryType.objects.get(name='cartoon'))
         klass.objects.filter(Type__in=('cover', 'front cover')).update(
             StoryType=StoryType.objects.get(name='cover'))
-        klass.objects.filter(Type__in=('cover reprint', 'cover reprints')).update(
+        klass.objects.filter(Type__in=('cover reprint', 'cover reprints',
+                                'cover reprint (on interior page)')).update(
             StoryType=StoryType.objects.get(
               name='cover reprint (on interior page)'))
         klass.objects.filter(Type='credits').update(
             StoryType=StoryType.objects.get(name='credits'))
         klass.objects.filter(Type='filler').update(
             StoryType=StoryType.objects.get(name='filler'))
-        klass.objects.filter(Type__in=('foreword', 'foreward',
-                                       'intro', 'introduction')).update(
+        klass.objects.filter(Type__in=('foreword', 'foreward', 'intro',
+          'introduction', 'foreword, introduction, preface, afterword')).update(
             StoryType=StoryType.objects.get(
               name='foreword, introduction, preface, afterword'))
-        klass.objects.filter(Type__in=('insert', 'dust jacket')).update(
+        klass.objects.filter(Type__in=('insert', 'dust jacket',
+                                       'insert or dust jacket')).update(
             StoryType=StoryType.objects.get(name='insert or dust jacket'))
         klass.objects.filter(Type__in=('letter', 'letter page',
                                        'letters page', 'letters')).update(
@@ -152,16 +160,18 @@ DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
         klass.objects.filter(Type__in=('pinup', 'illustration', 'illustrations',
                                        'pin-up', 'pin up')).update(
             StoryType=StoryType.objects.get(name='illustration'))
-        klass.objects.filter(Type='profile').update(
+        klass.objects.filter(Type='profile', 'character profile').update(
             StoryType=StoryType.objects.get(name='character profile'))
-        klass.objects.filter(Type__in=('promo', 'house ad', 'house ads')).update(
+        klass.objects.filter(Type__in=('promo', 'house ad', 'house ads',
+                                       'promo (ad from the publisher)')).update(
             StoryType=StoryType.objects.get(name='promo (ad from the publisher)'))
-        klass.objects.filter(Type__in=('psa', 'public service')).update(
+        klass.objects.filter(Type__in=('psa', 'public service',
+                                       'public service announcement')).update(
             StoryType=StoryType.objects.get(name='public service announcement'))
         klass.objects.filter(Type='recap').update(
             StoryType=StoryType.objects.get(name='recap'))
         klass.objects.filter(Type='story').update(
-            StoryType=StoryType.objects.get(name='story'))
+            StoryType=StoryType.objects.get(name='comic story'))
         klass.objects.filter(Type='text article').update(
             StoryType=StoryType.objects.get(name='text article'))
         klass.objects.filter(Type='text story').update(

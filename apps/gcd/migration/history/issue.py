@@ -51,7 +51,8 @@ class LogIssue(LogRecord):
 
     @classmethod
     def group_duplicate_fields(klass):
-        return 'VolumeNum, SeriesID, Pub_Date, Price, Key_Date, Issue, IssueID'
+        return ('VolumeNum, SeriesID, Pub_Date collate utf8_bin, '
+                'Price collate utf8_bin, Key_Date, Issue collate utf8_bin, IssueID')
 
     @classmethod
     def alter_table(klass, anon):
