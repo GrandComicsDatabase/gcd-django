@@ -39,8 +39,8 @@
   {% endif %}
   </h4>
   <tr>
-    <td>{{ revision.story|show_story_short }}</td>
-    <td>{{ revision.story|show_credit_status }}</td>
+    <td>{{ revision|show_story_short }}</td>
+    <td>{{ revision|show_credit_status }}</td>
     <td><a href="{% url compare id=revision.changeset.id %}">Expand compare view</a></td>
   </tr>
 {% else %}
