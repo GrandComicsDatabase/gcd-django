@@ -2788,7 +2788,7 @@ class IssueRevision(Revision):
                 if self.series.language != issue.series.language:
                     update_count('issues', 1, language=self.series.language)
                     update_count('issues', -1, language=issue.series.language)
-                    story_count = self.issue.active_stories.count()
+                    story_count = self.issue.active_stories().count()
                     update_count('stories', story_count,
                                 language=self.series.language)
                     update_count('stories', -story_count,
