@@ -120,7 +120,7 @@ def issue_cover_notes(request):
     cover = StoryType.objects.get(name='cover')
     issues = Issue.objects.exclude(notes__exact='').\
              filter(story__type=cover, story__notes=F('notes'),
-                    deleted=False).all()
+                    story__deleted=False, deleted=False).all()
 
     qargs = {'deleted': False}
     qorder = ['series__name', 'series__year_began', 'number']
