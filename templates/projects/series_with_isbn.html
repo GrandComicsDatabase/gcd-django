@@ -1,0 +1,63 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% load i18n %}
+{% load display %}
+
+{% block title %}Series with ISBN in notes{% endblock %}
+
+{% block css %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/projects/default.css"/>
+{% endblock %}
+
+{% block body %}
+
+{% include "gcd/bits/search_bar.html" %}
+<div>
+<h1 class="item_id search_id">
+<div class="left">
+  {{ heading }}: {{ search_item }}
+</div>
+</h1>
+
+<!-- this section ripped off from search/list_header.html -->
+<div class="item_id">
+  <div class="left" class="item_data">
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }} with ISBN in notes.
+  </div>
+  {% with query_string as extra_string %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endwith %}
+</div>
+</div>
+<!-- end stuff ripped off from search/list_header.html -->
+
+<table id="imp_in_use_results" class="listing">
+  <tr>
+    <th colspan=2> Publisher </th>
+    <th width="40%"> Series </th>
+    <th width="20%"> Issues </th>
+  </tr>
+{% for series in items %}
+  <tr> {# class="{% cycle 'listing_even' 'listing_odd' as row_classes%}"> #}
+    <td class="listing_publisher first_row last_row">
+      <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.publisher.country.code|lower }}.png" alt="{{ series.publisher.country.code|upper }}">
+    </td>
+    <td class="listing_publisher first_row last_row">
+      {{ series.publisher|absolute_url }}
+    </td>
+    <td class="listing_publisher first_row last_row">
+      {{ series|absolute_url }}
+    </td>
+    <td class="listing_publisher first_row last_row">
+      {{ series.issue_count }} ({{ series.issue_indexed_count }}&nbsp;indexed)
+    </td>
+  </tr>
+{% endfor %}
+</table>
+
+{% include "gcd/bits/search_bar.html" %}
+
+{% endblock %}
+

@@ -3,7 +3,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db.models import F
 
-from apps.gcd.models import Publisher, Country, Language, Issue, StoryType
+from apps.gcd.models import Publisher, Country, Language, Issue, StoryType, Series
 from apps.gcd.views import paginate_response
 from apps.projects.forms import ImprintsInUseForm, IssuesWithCoversForm, IssueCoverNotesForm
 
@@ -157,4 +157,28 @@ def issue_cover_notes(request):
 
     return paginate_response(request, issues,
                              'projects/issue_cover_notes.html', vars, page_size=50)
+
+def series_with_isbn(request):
+    series = Series.objects.filter(notes__icontains='ISBN',deleted=False).\
+             exclude(notes__icontains='ISBN 91-88334-36-8')
+
+    qargs = {'deleted': False}
+    qorder = ['name', 'year_began']
+
+    vars = {
+        'heading': 'Series',
+        'search_item': 'with ISBN in notes',
+        'item_name': 'series',
+        'plural_suffix': '',
+    }
+
+    if (request.GET):
+        get_copy = request.GET.copy()
+        get_copy.pop('page', None)
+        vars['query_string'] = get_copy.urlencode()
+    series = series.filter(**qargs).order_by(*qorder)
+    vars['advanced_search'] = True
+
+    return paginate_response(request, series,
+                             'projects/series_with_isbn.html', vars, page_size=50)
 
