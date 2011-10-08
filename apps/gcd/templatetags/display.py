@@ -402,6 +402,8 @@ def field_value(revision, field):
         if hasattr(revision, 'changed'):
             if revision.changed[field] and value == False:
                 kwargs = {field[4:]: ''}
+                if field[4:] == 'issue_title':
+                    kwargs = {'title': ''}
                 if revision.series:
                     value_count = revision.series.active_issues()\
                                                  .exclude(**kwargs).count()
