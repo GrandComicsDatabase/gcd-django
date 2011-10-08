@@ -168,7 +168,7 @@ def header_link(changeset):
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.parent), absolute_url(revision)))
     elif changeset.change_type == CTYPES['series']:
-        if revision.series and revision.publisher != revision.series.publisher:
+        if revision.previous() and revision.previous().publisher != revision.publisher:
             publisher_string = u'<span class="comparison_highlight">%s</span>'\
               % absolute_url(revision.publisher)
         else:
