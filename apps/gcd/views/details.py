@@ -336,12 +336,16 @@ def series_details(request, series_id, by_date=False):
 
 def change_history(request, model_name, id):
     if model_name not in ['publisher', 'brand', 'indicia_publisher',
-                          'series', 'issue']:
+                          'series', 'issue', 'cover']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {
               'error_text' : 'There is no change history for this type of object.'},
               context_instance=RequestContext(request))
+    if model_name == 'cover' and not request.user.has_perm('gcd.can_approve'):
+        return render_to_response('gcd/error.html', {
+          'error_text' : 'Only editors can access the change history for covers.'},
+          context_instance=RequestContext(request))
 
     template = 'gcd/details/change_history.html'
     prev_issue = None

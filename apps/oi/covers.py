@@ -41,7 +41,7 @@ NEW_COVERS_LOCATION = settings.IMAGE_SERVER_URL + settings.NEW_COVERS_DIR
 # only while testing:
 NEW_COVERS_LOCATION = settings.MEDIA_URL + LOCAL_NEW_SCANS
 
-def get_preview_image_tag(revision, alt_text, zoom_level):
+def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
     if revision is None:
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
                'img/nocover.gif" alt="No image yet" class="cover_img"/>')
@@ -69,27 +69,33 @@ def get_preview_image_tag(revision, alt_text, zoom_level):
             # Current cover is the one from this revision, show it.
             return get_image_tag(revision.cover, esc(alt_text), zoom_level)
         else:
-            # The cover was replaced by now, show original uploaded file,
-            # scaled in the browser.
-            # It is the real uploaded file for uploads on the new server, and
-            # the large scan for older uploads, copied on replacement.
-            suffix = "/uploads/%d_%s" % (revision.cover.id,
-                     revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
-            if revision.created > settings.NEW_SITE_COVER_CREATION_DATE:
-                filename = glob.glob(revision.cover.base_dir() + suffix + '*')[0]
-                file_extension = os.path.splitext(filename)[1]
+            if request and request.user.has_perm('gcd.can_approve') \
+              and not settings.BETA:
+                # The cover was replaced by now, show original uploaded file,
+                # scaled in the browser.
+                # It is the real uploaded file for uploads on the new server, and
+                # the large scan for older uploads, copied on replacement.
+                suffix = "/uploads/%d_%s" % (revision.cover.id,
+                        revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
+                if revision.created > settings.NEW_SITE_COVER_CREATION_DATE:
+                    filename = glob.glob(revision.cover.base_dir() + suffix + '*')[0]
+                    file_extension = os.path.splitext(filename)[1]
+                else:
+                    file_extension = ".jpg"
+                # TODO:
+                suffix = "%d/uploads/%d_%s" % (int(revision.cover.id/1000),
+                        revision.cover.id,
+                        revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
+                img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR +\
+                        suffix + file_extension
+                # for old covers do manual scaling, since it is the uploaded file
+                return mark_safe('<img src="' + img_url + '" alt="' + \
+                esc(alt_text) + '" width="' + str(width) + \
+                '" class="' + img_class + '"/>')
+            elif settings.BETA:
+                return 'no old covers on BETA'
             else:
-                file_extension = ".jpg"
-            # TODO:
-            suffix = "%d/uploads/%d_%s" % (int(revision.cover.id/1000),
-                     revision.cover.id,
-                     revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
-            img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR +\
-                      suffix + file_extension
-            # for old covers do manual scaling, since it is the uploaded file
-            return mark_safe('<img src="' + img_url + '" alt="' + \
-              esc(alt_text) + '" width="' + str(width) + \
-              '" class="' + img_class + '"/>')
+                return 'only editors can view covers which were replaced'
     elif revision.deleted:
         return get_image_tag(revision.cover, esc(alt_text), zoom_level)
     else:

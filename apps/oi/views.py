@@ -2753,15 +2753,17 @@ def cover_compare(request, changeset, revision):
     if revision.deleted or revision.cover and revision.cover.deleted==True:
         cover_tag = get_image_tag(revision.cover, "deleted cover", ZOOM_LARGE)
     else:
-        cover_tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_LARGE)
+        cover_tag = get_preview_image_tag(revision, "uploaded cover",
+                                          ZOOM_LARGE, request=request)
     kwargs = {'changeset': changeset,
               'revision': revision,
               'cover_tag' : cover_tag,
               'table_width': 5,
-              'states': states }
+              'states': states,
+              'settings': settings}
     if revision.is_wraparound:
         kwargs['cover_front_tag'] = get_preview_image_tag(revision, "uploaded cover",
-                                                ZOOM_MEDIUM)
+                                                ZOOM_MEDIUM, request=request)
     if revision.is_replacement:
         # change this to use cover.previous() once we are using
         # cover.reserved = True for cover replacements and
@@ -2777,10 +2779,10 @@ def cover_compare(request, changeset, revision):
                       changeset__state=states.APPROVED).order_by('-created')[0]
         kwargs['old_cover'] = old_cover
         kwargs['old_cover_tag'] = get_preview_image_tag(old_cover, "replaced cover",
-                                              ZOOM_LARGE)
+                                              ZOOM_LARGE, request=request)
         if old_cover.is_wraparound:
             kwargs['old_cover_front_tag'] = get_preview_image_tag(old_cover,
-                                    "replaced cover", ZOOM_MEDIUM)
+                                    "replaced cover", ZOOM_MEDIUM, request=request)
 
         if old_cover.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, we have width 400

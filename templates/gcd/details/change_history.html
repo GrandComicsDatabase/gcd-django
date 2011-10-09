@@ -89,5 +89,19 @@ should include a comment explaining the deletion.
 </table>
 </div>
 
+{% if description = "Issue" and perms.gcd.can_approve %}
+<div>
+<table class="listing">
+  {% for cover in object.cover_set.all %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td><a href="{% url change_history model_name='cover' id=cover.id %}?collapse=1"> {{ cover }} </a></td>
+    <td>{{ cover.last_upload }}</td>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+{% endif %}
+
 {% endblock %}
 

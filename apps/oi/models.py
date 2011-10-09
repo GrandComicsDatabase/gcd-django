@@ -2,6 +2,7 @@
 import itertools
 import operator
 import re
+import os, glob
 from stdnum import isbn
 
 from django.db import models, settings
@@ -1713,6 +1714,27 @@ class CoverRevision(Revision):
     def base_dir(self):
         return settings.MEDIA_ROOT + settings.NEW_COVERS_DIR + \
                  self.changeset.created.strftime('%B_%Y/').lower()
+
+    def approved_file(self):
+        if not settings.BETA:
+            if self.created > settings.NEW_SITE_COVER_CREATION_DATE:
+                if self.changeset.state == states.APPROVED:
+                    suffix = "/uploads/%d_%s" % (self.cover.id,
+                        self.changeset.created.strftime('%Y%m%d_%H%M%S'))
+                    return "%s%s%d%s%s" % (settings.IMAGE_SERVER_URL,
+                    settings.COVERS_DIR, int(self.cover.id/1000), suffix,
+                    os.path.splitext(glob.glob(self.cover.base_dir() + suffix + '*')[0])[1])
+                else:
+                    filename = "%s/%d" % (self.base_dir(), self.id)
+                    return "%s%s%s%d%s" % (settings.IMAGE_SERVER_URL,
+                      settings.NEW_COVERS_DIR,
+                      self.changeset.created.strftime('%B_%Y/').lower(),
+                      self.id,
+                      os.path.splitext(glob.glob(filename + '*')[0])[1])
+            else:
+                return "not supported for covers from the old site"
+        else:
+            return "not supported on BETA"
 
     def get_absolute_url(self):
         if self.cover is None:

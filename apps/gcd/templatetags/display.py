@@ -14,6 +14,7 @@ from apps.gcd.templatetags.credits import show_page_count, format_page_count
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
+from apps.gcd.models.cover import Cover
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
@@ -254,6 +255,8 @@ def changed_fields(changeset, object):
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
+    elif object_class is Cover:
+        return ""
 
     prev_rev = revision.previous()
     changed_list = []

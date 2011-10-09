@@ -70,6 +70,9 @@ Reviewing :: {{ revision }}
 {% if cover_width %}
   <div>The full cover file has a width of {{ cover_width }} pixels.</div>
 {% endif %}
+{% if perms.gcd.can_approve and revision.created > settings.NEW_SITE_COVER_CREATION_DATE and not settings.BETA %}
+<a href="{{ revision.approved_file }}">full uploaded cover</a>
+{% endif %}
 {% if revision.is_wraparound %}
 </div>
 <div class="cover_medium">
