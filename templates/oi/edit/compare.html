@@ -45,7 +45,7 @@ The above sequence was moved from the following issue.
 <div>
     {% for cover in changeset.coverrevisions.all %}
 <h3>Cover is moved from {{ cover.issue }}.</h3>
-      {{ cover.cover|cover_image_tag:'1, moved_cover' }}
+      <a title="click cover for large view" href="{{ cover.cover.get_base_url}}/w400/{{ cover.cover.id }}.jpg">{{ cover.cover|cover_image_tag:'1, moved_cover' }}</a>
     {% endfor %}
 </div>
 <hr>
