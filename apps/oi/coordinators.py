@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import permission_required
 from apps.oi import states
 from apps.oi.models import *
 
-SCRIPT_DEBUG = True
+SCRIPT_DEBUG = False
 
 @permission_required('oi.change_ongoingreservation')
 def clear_reservations_nine_weeks(request=None):
