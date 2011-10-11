@@ -123,7 +123,7 @@ def issue_cover_notes(request):
                     story__deleted=False, deleted=False).all()
 
     qargs = {'deleted': False}
-    qorder = ['series__name', 'series__year_began', 'number']
+    qorder = ['series__sort_name', 'series__year_began', 'sort_code', 'number']
 
     vars = {
         'heading': 'Issues',
@@ -163,7 +163,7 @@ def series_with_isbn(request):
              exclude(notes__icontains='ISBN 91-88334-36-8')
 
     qargs = {'deleted': False}
-    qorder = ['name', 'year_began']
+    qorder = ['sort_name', 'year_began']
 
     vars = {
         'heading': 'Series',
