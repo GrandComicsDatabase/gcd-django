@@ -43,11 +43,9 @@
             <dd id="barcode">{{ issue.barcode|default:"?" }}
 {% endif %}
       </dl>
-{% if issue.editing %}
 <dl>
 {{ issue|show_credit:"editing" }}
 </dl>
-{% endif %}
 {% if issue.series.format %}
       <dl>
         <dt>Format:
