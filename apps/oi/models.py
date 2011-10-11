@@ -1717,13 +1717,20 @@ class CoverRevision(Revision):
 
     def approved_file(self):
         if not settings.BETA:
-            if self.created > settings.NEW_SITE_COVER_CREATION_DATE:
-                if self.changeset.state == states.APPROVED:
-                    suffix = "/uploads/%d_%s" % (self.cover.id,
-                        self.changeset.created.strftime('%Y%m%d_%H%M%S'))
+            if self.created > settings.NEW_SITE_COVER_CREATION_DATE and not \
+              (self.deleted and \
+               self.previous().created < settings.NEW_SITE_COVER_CREATION_DATE):
+                if self.changeset.state == states.APPROVED or self.deleted:
+                    if self.deleted:
+                        suffix = "/uploads/%d_%s" % (self.cover.id,
+                            self.previous().changeset.created.strftime('%Y%m%d_%H%M%S'))
+                    else:
+                        suffix = "/uploads/%d_%s" % (self.cover.id,
+                            self.changeset.created.strftime('%Y%m%d_%H%M%S'))
                     return "%s%s%d%s%s" % (settings.IMAGE_SERVER_URL,
                     settings.COVERS_DIR, int(self.cover.id/1000), suffix,
-                    os.path.splitext(glob.glob(self.cover.base_dir() + suffix + '*')[0])[1])
+                    os.path.splitext(glob.glob(self.cover.base_dir() + \
+                                               suffix + '*')[0])[1])
                 else:
                     filename = "%s/%d" % (self.base_dir(), self.id)
                     return "%s%s%s%d%s" % (settings.IMAGE_SERVER_URL,
