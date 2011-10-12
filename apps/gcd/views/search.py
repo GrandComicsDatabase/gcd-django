@@ -777,7 +777,7 @@ def search_indicia_publishers(data, op):
           Q(**{ '%sname__%s' % (prefix, op): data['indicia_publisher'] }))
     if data['ind_pub_notes']:
         q_objs.append(
-          Q(**{ '%notes__%s' % (prefix, op): data['ind_pub_notes'] }))
+          Q(**{ '%snotes__%s' % (prefix, op): data['ind_pub_notes'] }))
     if data['is_surrogate'] is not None:
         if data['is_surrogate'] is True:
             q_objs.append(Q(**{ '%sis_surrogate' % prefix: True }))
