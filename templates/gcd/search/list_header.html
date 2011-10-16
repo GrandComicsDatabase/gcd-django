@@ -27,7 +27,10 @@
 <div id="search_reminder">
 Refine your search using the <a href="{% url apps.gcd.views.search.advanced_search %}?{{ query_string }}">advanced search</a>.
 {% if change_order %}
-Change <a href="{{ change_order}}">sort order</a>
+Change <a href="{{ change_order}}">sort order</a>.
+  {% if item_name = 'series' %}
+Series search results also show series for which an issue title matches.
+  {% endif %}
 {% endif %}
 </div>
 {% endif %}
