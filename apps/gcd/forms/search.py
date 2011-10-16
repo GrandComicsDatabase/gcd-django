@@ -38,6 +38,7 @@ class AdvancedSearch(forms.Form):
                                         ['indicia_publisher', 'Indicia Publisher'],
                                         ['series', 'Series'],
                                         ['issue', 'Issues'],
+                                        ['issue_cover', 'Covers for Issues'],
                                         ['sequence', 'Stories'],
                                         ['cover', 'Covers']],
                                initial='sequence',

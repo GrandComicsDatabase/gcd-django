@@ -8,6 +8,7 @@ from urllib import urlopen, quote, urlencode
 from decimal import Decimal
 from string import capitalize
 from stdnum import isbn as stdisbn
+from random import randint
 
 from django.db.models import Q
 from django.conf import settings
@@ -499,7 +500,7 @@ def do_advanced_search(request):
         items = filter.order_by(*terms).select_related(
           'series__publisher').distinct()
 
-    elif data['target'] == 'cover':
+    elif data['target'] in ['cover', 'issue_cover']:
         filter = Cover.objects.exclude(deleted=True)
         if query:
             filter = filter.filter(query)
@@ -529,6 +530,8 @@ def used_search(search_values):
         target = 'Indicia Publishers'
     elif search_values['target'] == 'brand':
         target = "Publisher's Brands"
+    elif search_values['target'] == 'issue_cover':
+        target = "Covers"
     else:
         target = capitalize(search_values['target'])
         if target[-1] != 's':
@@ -604,6 +607,12 @@ def process_advanced(request):
     except ViewTerminationError, response:
         return response.response
 
+    if 'random_search' in request.GET:
+        count = items.count()
+        select = randint(1, count)
+        item = items[select]
+        return HttpResponseRedirect(item.get_absolute_url())
+
     item_name = target
     plural_suffix = 's'
     if item_name == 'sequence':
@@ -637,7 +646,7 @@ def process_advanced(request):
     context['logic'] = logic
     context['used_search_terms'] = used_search_terms
 
-    if item_name == 'cover':
+    if item_name in ['cover', 'issue_cover']:
         context['table_width'] = COVER_TABLE_WIDTH
         return paginate_response(request, items, template, context,
                              page_size=50, callback_key='tags',
@@ -1051,7 +1060,7 @@ def compute_prefix(target, current):
             return 'parent__'
         if target == 'issue':
             return 'series__publisher__'
-        if target in ('sequence', 'feature', 'cover'):
+        if target in ('sequence', 'feature', 'cover', 'issue_cover'):
             return 'issue__series__publisher__'
     elif current == 'brand':
         if target == 'indicia_publisher':
@@ -1059,7 +1068,7 @@ def compute_prefix(target, current):
               'Publisher Brand attributes, as they are not directly related')
         if target in ('publisher', 'issue'):
             return 'brand__'
-        if target in ('series', 'sequence', 'feature', 'cover'):
+        if target in ('series', 'sequence', 'feature', 'cover', 'issue_cover'):
             return 'issue__brand__'
     elif current == 'indicia_publisher':
         if target == 'brand':
@@ -1069,16 +1078,16 @@ def compute_prefix(target, current):
             return 'indiciapublisher__'
         if target == 'issue':
             return 'indicia_publisher__'
-        if target in ('series', 'sequence', 'feature', 'cover'):
+        if target in ('series', 'sequence', 'feature', 'cover', 'issue_cover'):
             return 'issue__indicia_publisher__'
     elif current == 'series':
         if target in ('issue', 'publisher'):
             return 'series__'
-        if target in ('sequence', 'feature', 'cover',
+        if target in ('sequence', 'feature', 'cover', 'issue_cover',
                       'brand', 'indicia_publisher'):
             return 'issue__series__'
     elif current == 'issue':
-        if target in ('sequence', 'feature', 'cover', 'series',
+        if target in ('sequence', 'feature', 'cover', 'issue_cover', 'series',
                       'brand', 'indicia_publisher'):
             return 'issue__'
         if target == 'publisher':
@@ -1086,7 +1095,8 @@ def compute_prefix(target, current):
     elif current == 'sequence':
         if target == 'issue':
             return 'story__'
-        if target in ('series', 'cover', 'brand', 'indicia_publisher'):
+        if target in ('series', 'cover', 'issue_cover', 'brand',
+                      'indicia_publisher'):
             return 'issue__story__'
         if target == 'publisher':
             return 'series__issue__story__'

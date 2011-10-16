@@ -1,4 +1,5 @@
 from django.db import models
+from django.core import urlresolvers
 
 from series import Series
 from issue import Issue
@@ -70,7 +71,7 @@ class Story(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=0, db_index=True)
-    
+
     def delete(self):
         self.deleted = True
         self.reserved = False
@@ -97,6 +98,11 @@ class Story(models.Model):
     def has_data(self):
         """Simplifies UI checks for conditionals.  All non-heading fields"""
         return self.has_credits() or self.has_content() or self.notes
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_issue',
+            kwargs={'issue_id': self.issue_id } ) + "#%d" % self.id
 
     def __unicode__(self):
         return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
