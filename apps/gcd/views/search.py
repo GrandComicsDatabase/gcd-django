@@ -607,8 +607,8 @@ def process_advanced(request):
     except ViewTerminationError, response:
         return response.response
 
-    if 'random_search' in request.GET:
-        count = items.count()
+    count = items.count()
+    if count and 'random_search' in request.GET:
         select = randint(1, count)
         item = items[select]
         return HttpResponseRedirect(item.get_absolute_url())
