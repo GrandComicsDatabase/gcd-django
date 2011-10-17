@@ -609,8 +609,10 @@ def process_advanced(request):
 
     count = items.count()
     if count and 'random_search' in request.GET:
+        # using DB random via order_by('?') is rather expensive
         select = randint(1, count)
-        item = items[select]
+        # nullify imposed ordering, use db one
+        item = items.order_by()[select]
         return HttpResponseRedirect(item.get_absolute_url())
 
     item_name = target
