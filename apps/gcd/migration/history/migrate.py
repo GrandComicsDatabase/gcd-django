@@ -18,9 +18,9 @@ def main():
                         format='%(asctime)s %(levelname)s: %(message)s')
 
     anon = Indexer.objects.filter(user__username='anon').select_related('user')[0]
-    for log_class in (LogPublisher,
+    for log_class in (#LogPublisher,
                       #LogSeries,
-                      #LogIssue,
+                      LogIssue,
                      ):
         log_class.migrate(anon)
 

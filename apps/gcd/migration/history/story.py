@@ -28,7 +28,8 @@ class LogStory(LogRecord):
     Feature = models.CharField(max_length=255)
     Type = models.CharField(max_length=255)
     StoryType = models.ForeignKey('gcd.StoryType', db_column='type_id')
-    Pg_Cnt = models.IntegerField()
+    Pg_Cnt = models.CharField(max_length=10)
+    page_count_uncertain = models.BooleanField(default=False)
 
     Script = models.CharField(max_length=255)
     Pencils = models.CharField(max_length=255)
@@ -69,7 +70,7 @@ class LogStory(LogRecord):
                 'Editing collate utf8_bin, Genre collate utf8_bin, '
                 'Char_App collate utf8_bin, Synopsis collate utf8_bin, '
                 'Reprints collate utf8_bin, JobNo collate utf8_bin, '
-                'Notes collate utf8_bin')
+                'Notes collate utf8_bin, StoryID')
 
     @classmethod
     def alter_table(klass, anon):
@@ -86,8 +87,10 @@ ALTER TABLE log_story
     MODIFY COLUMN Synopsis longtext,
     MODIFY COLUMN Reprints longtext,
     MODIFY COLUMN Notes longtext,
+    MODIFY COLUMN Pg_Cnt varchar(10),
     ADD INDEX (Type),
     ADD COLUMN type_id int(11) default NULL,
+    ADD COLUMN page_count_uncertain tinyint(1) NOT NULL default 0,
     %s,
     ADD INDEX (IssueID),
     ADD INDEX (StoryID);
@@ -101,12 +104,12 @@ INSERT INTO log_story
          Genre, Char_App, Synopsis, Reprints, JobNo, Notes,
          UserID)
     SELECT
-        s.id, s.issue_id, s.sequence_number, s.title, s.feature, t.name,
-        s.page_count, s.script, s.pencils, s.inks, s.colors, s.letters, s.editing,
-        s.genre, s.characters, s.synopsis, s.reprint_notes, s.job_number, s.notes,
-        %d
+        s.ID, s.IssueID, s.Seq_No, s.Title, s.Feature, s.Type, s.Pg_Cnt,
+         s.Script, s.Pencils, s.Inks, s.Colors, s.Letters, s.Editing,
+         s.Genre, s.Char_App, s.Synopsis, s.Reprints, s.JobNo, s.Notes,
+         %d
     FROM
-        migrated.gcd_story s INNER JOIN migrated.gcd_story_type t ON s.type_id=t.id;
+        GCDOnline.stories s;
 """ % anon.id)
 
     @classmethod
@@ -118,6 +121,20 @@ INSERT INTO log_story
 DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
     WHERE gi.id IS NULL;
 """)
+        # this is from database/0.1_prototype/migrate-1-tables.sql
+        # need to fix Pg_Cnt for conversion to Decimal when creating the revisions
+        cursor.execute("""
+UPDATE log_story SET page_count_uncertain=1,
+                   Pg_Cnt=TRIM(TRAILING '?' FROM Pg_Cnt)
+    WHERE Pg_Cnt LIKE '_%?';
+UPDATE log_story SET Pg_Cnt=NULL WHERE Pg_Cnt IN ('?', 'unknown', '');
+UPDATE log_story SET Pg_Cnt=0 WHERE Pg_Cnt IN ('none', 'n/a');
+UPDATE log_story SET Pg_Cnt=REPLACE(Pg_Cnt, ',', '.') WHERE Pg_Cnt LIKE ('%,%');
+UPDATE log_story SET Pg_Cnt=TRIM(Pg_Cnt);
+UPDATE log_story SET Pg_Cnt='0.5' WHERE Pg_Cnt = '1/2';
+UPDATE log_story SET Pg_Cnt='20' WHERE Pg_Cnt = '[20]';
+ALTER TABLE log_story CHANGE COLUMN Pg_Cnt Pg_Cnt decimal(10, 3);
+""")
         cursor.close()
 
         # Fix types, setting up join field.
@@ -125,9 +142,8 @@ DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
             StoryType=StoryType.objects.get(name='activity'))
         klass.objects.filter(Type__in=('advertisement', 'ad')).update(
             StoryType=StoryType.objects.get(name='advertisement'))
-        klass.objects.filter(Type__in=('backcovers',
-                                       'backcover',
-                                       'back cover')).update(
+        klass.objects.filter(Type__in=('backcovers', 'backcover', 'back cover',
+                            '(backcovers) *do not use* / *please fix*')).update(
             StoryType=StoryType.objects.get(
               name='(backcovers) *do not use* / *please fix*'))
         klass.objects.filter(Type__in=('biography', 'bio',
@@ -135,7 +151,8 @@ DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
             StoryType=StoryType.objects.get(name='biography (nonfictional)'))
         klass.objects.filter(Type__in=('cartoon', 'cartoons')).update(
             StoryType=StoryType.objects.get(name='cartoon'))
-        klass.objects.filter(Type__in=('cover', 'front cover')).update(
+        klass.objects.filter(Type__in=('cover', 'front cover',
+                                       'copertina')).update(
             StoryType=StoryType.objects.get(name='cover'))
         klass.objects.filter(Type__in=('cover reprint', 'cover reprints',
                                 'cover reprint (on interior page)')).update(
@@ -160,7 +177,7 @@ DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
         klass.objects.filter(Type__in=('pinup', 'illustration', 'illustrations',
                                        'pin-up', 'pin up')).update(
             StoryType=StoryType.objects.get(name='illustration'))
-        klass.objects.filter(Type='profile', 'character profile').update(
+        klass.objects.filter(Type__in=('profile', 'character profile')).update(
             StoryType=StoryType.objects.get(name='character profile'))
         klass.objects.filter(Type__in=('promo', 'house ad', 'house ads',
                                        'promo (ad from the publisher)')).update(
@@ -170,7 +187,7 @@ DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
             StoryType=StoryType.objects.get(name='public service announcement'))
         klass.objects.filter(Type='recap').update(
             StoryType=StoryType.objects.get(name='recap'))
-        klass.objects.filter(Type='story').update(
+        klass.objects.filter(Type__in=('story', 'storia')).update(
             StoryType=StoryType.objects.get(name='comic story'))
         klass.objects.filter(Type='text article').update(
             StoryType=StoryType.objects.get(name='text article'))
@@ -256,6 +273,7 @@ DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
                                  feature=self.Feature,
                                  type=self.StoryType,
                                  page_count=self.Pg_Cnt,
+                                 page_count_uncertain=self.page_count_uncertain,
                                  script=self.Script,
                                  pencils=self.Pencils,
                                  inks=self.Inks,

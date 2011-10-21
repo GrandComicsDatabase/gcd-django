@@ -69,8 +69,8 @@ ALTER TABLE log_issue
 INSERT INTO log_issue
         (VolumeNum, SeriesID, Pub_Date, Price, Key_Date, Issue, IssueID, UserID)
     SELECT
-        volume, series_id, publication_date, price, key_date, number, id, %d
-    FROM migrated.gcd_issue;
+        VolumeNum, SeriesID, Pub_Date, Price, Key_Date, Issue, ID, %d
+    FROM GCDOnline.issues;
 """ % anon.id)
 
     @classmethod
@@ -83,6 +83,7 @@ INSERT INTO log_issue
         cursor.execute("""
 DELETE li.* FROM log_issue li LEFT OUTER JOIN gcd_series gs ON li.SeriesID = gs.id
     WHERE gs.id IS NULL;
+UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
 """)
         klass.objects.filter(Pub_Date__isnull=True).update(Pub_Date='')
         klass.objects.filter(Key_Date__isnull=True).update(Key_Date='')
@@ -170,6 +171,34 @@ DELETE li.* FROM log_issue li LEFT OUTER JOIN gcd_series gs ON li.SeriesID = gs.
                 # We have found a new issue, save the last state of the
                 # previous issue and clear the tracked stories.
 
+                # Look for stories after last issues datetime
+                later_story_set = LogStory.objects.filter(is_duplicate=False)\
+                                        .filter(DisplayIssue=last_i.DisplayIssue)\
+                                        .filter(dt__gte=last_i.dt)
+                for s in later_story_set.order_by('dt').select_related(*story_related):
+                    if scounter % 5000 == 1:
+                        logging.info("Story set loop %d" % scounter)
+                    scounter += 1
+
+                    # Check to see if we need to save based on this new story record.
+                    if last_user is not None and  s.UserID != last_user:
+                        # Same story, but a different user, and at least one of
+                        # the current objects needs saving.  So save under the old
+                        # user and mark all stories as clean.
+                        klass.gather_changeset(last_i, attached_stories, anon)
+
+                    elif last_dt is not None and s.dt > last_dt + EPSILON:
+                        # Same story, same user, but there's a large gap, so treat
+                        # it as a new change.
+                        klass.gather_changeset(last_i, attached_stories, anon)
+
+                    # Either there was no old story, or we saved it, or
+                    # we determined that it can be supplanted by this one
+                    # because they were close enough together.  So track this new one.
+                    attached_stories[s.StoryID] = s
+                    last_user = s.UserID
+                    last_dt = s.dt
+
                 klass.gather_changeset(last_i, attached_stories, anon)
                 attached_stories = {}
 
@@ -188,6 +217,35 @@ DELETE li.* FROM log_issue li LEFT OUTER JOIN gcd_series gs ON li.SeriesID = gs.
         # And save anything left over at the end because we always
         # rely on a later object to trigger saves, and at this point
         # there aren't any more objects.
+
+        # Look for stories after this issues datetime
+        later_story_set = LogStory.objects.filter(is_duplicate=False)\
+                                .filter(DisplayIssue=last_i.DisplayIssue)\
+                                .filter(dt__gte=last_i.dt)
+        for s in later_story_set.order_by('dt').select_related(*story_related):
+            if scounter % 5000 == 1:
+                logging.info("Story set loop %d" % scounter)
+            scounter += 1
+
+            # Check to see if we need to save based on this new story record.
+            if last_user is not None and  s.UserID != last_user:
+                # Same story, but a different user, and at least one of
+                # the current objects needs saving.  So save under the old
+                # user and mark all stories as clean.
+                klass.gather_changeset(last_i, attached_stories, anon)
+
+            elif last_dt is not None and s.dt > last_dt + EPSILON:
+                # Same story, same user, but there's a large gap, so treat
+                # it as a new change.
+                klass.gather_changeset(last_i, attached_stories, anon)
+
+            # Either there was no old story, or we saved it, or
+            # we determined that it can be supplanted by this one
+            # because they were close enough together.  So track this new one.
+            attached_stories[s.StoryID] = s
+            last_user = s.UserID
+            last_dt = s.dt
+
         klass.gather_changeset(last_i, attached_stories, anon)
 
     @classmethod
@@ -223,6 +281,17 @@ DELETE li.* FROM log_issue li LEFT OUTER JOIN gcd_series gs ON li.SeriesID = gs.
             volume = ''
         else:
             volume = '%s' % self.VolumeNum
+
+        if self.DisplaySeries.year_ended and self.DisplaySeries.year_ended < 1970:
+            no_isbn = True
+        else:
+            no_isbn = False
+
+        if self.DisplaySeries.year_ended and self.DisplaySeries.year_ended < 1974:
+            no_barcode = True
+        else:
+            no_barcode = False
+
         revision = IssueRevision(changeset=changeset,
                                  issue=self.DisplayIssue,
                                  number=self.Issue,
@@ -231,6 +300,8 @@ DELETE li.* FROM log_issue li LEFT OUTER JOIN gcd_series gs ON li.SeriesID = gs.
                                  publication_date=self.Pub_Date,
                                  key_date=self.Key_Date,
                                  price=self.Price,
+                                 no_barcode=no_barcode,
+                                 no_isbn=no_isbn,
                                  date_inferred=changeset.date_inferred)
         revision.save()
         return revision

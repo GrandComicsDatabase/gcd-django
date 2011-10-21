@@ -164,7 +164,13 @@ class LogRecord(models.Model):
             log_history = log_history.select_related(*related)
 
         for change in log_history.iterator():
-            if not change.revision_exists():
+            if counter % 1000 == 1:
+                logging.info("Converting %s row %d" % (table_name, counter))
+            counter += 1
+            changeset = change.create_changeset(anon)
+            change.create_revision(changeset, anon)
+
+            #if not change.revision_exists():
                 # temporary change for series history fixes
                 #if counter % 1000 == 1:
                     #logging.info("Converting %s row %d" % (table_name, counter))
