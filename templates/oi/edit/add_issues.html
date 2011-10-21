@@ -64,6 +64,7 @@ you must wait until those issues are approved.<br>
   <td> 1, 2, 3, ... </td>
 </tr>
 
+{% if series.has_volume %}
 <tr>
   <td>
     <form method="GET"
@@ -75,6 +76,7 @@ you must wait until those issues are approved.<br>
   <td> Add multiple issues that renumber with each volume </td>
   <td> v1#1, v1#2, ..., v2#1, v2#2, ... </td>
 </tr>
+{% endif %}
 
 <tr>
   <td>
@@ -88,6 +90,7 @@ you must wait until those issues are approved.<br>
   <td> 1/2000, 2/2000, ..., 1/2001, 2/2001, ... </td>
 </tr>
 
+{% if series.has_volume %}
 <tr>
   <td>
     <form method="GET"
@@ -100,6 +103,7 @@ you must wait until those issues are approved.<br>
   <td> 1/2000, 2/2000, ... are all part of volume 1;
        1/2001, 2/2001, ... are all part of volume 2; ... </td>
 </tr>
+{% endif %}
 </table>
 </div>
 {% endblock %}
