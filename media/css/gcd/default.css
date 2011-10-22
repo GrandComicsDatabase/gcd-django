@@ -534,7 +534,9 @@ dl.pub_data dd {
 .index_status_reviewing,
 .index_status_4,
 .index_status_pending,
-.index_status_2 {
+.index_status_2,
+.index_status_discussed,
+.index_status_3 {
     background-color: #EA7;
 }
 

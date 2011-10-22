@@ -59,6 +59,7 @@ CSS_NAME = {
     BASELINE: 'baseline',
     OPEN: 'editing',
     PENDING: 'pending',
+    DISCUSSED: 'discussed',
     REVIEWING: 'reviewing',
     APPROVED: 'approved',
     DISCARDED: 'discarded',

@@ -20,13 +20,13 @@
     (<a href="{% url compare id=changeset.id %}">view the edits</a>)
       {% endif %}
     {% endifequal %}
-    {% ifequal changeset.state states.REVIEWING %}
+    {% if changeset.state = states.REVIEWING or changeset.state = states.DISCUSSED %}
     Edits to this {{ object_name }}
     are being reviewed by GCD Editor {{ changeset.approver.indexer }}
       {% if request.user.is_authenticated %}
     (<a href="{% url compare id=changeset.id %}">view the edits</a>)
       {% endif %}
-    {% endifequal %}
+    {% endif %}
   </span>
 </div>
   {% endwith %}

@@ -15,6 +15,7 @@
 
 .status_pending,
 .status_reviewing,
+.status_discussed,
 .status_2 {
     background-color: #F93;
 }
