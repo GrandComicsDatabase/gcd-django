@@ -761,12 +761,16 @@ def get_bulk_issue_revision_form(series, method, user=None):
               series.publisher.active_indicia_publishers_no_pending()
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
-            if method != 'bulk_edit':
-                if not series.has_indicia_frequency:
-                    self.fields.pop('indicia_frequency')
-                if not series.has_volume:
-                    self.fields.pop('volume')
-                    self.fields.pop('display_volume_with_number')
+
+        if method != 'bulk_edit':
+            if not series.has_indicia_frequency:
+                indicia_frequency = forms.CharField(widget=forms.HiddenInput,
+                                                    required=False)
+            if not series.has_volume:
+                volume = forms.CharField(widget=forms.HiddenInput,
+                                                required=False)
+                display_volume_with_number = \
+                  forms.CharField(widget=forms.HiddenInput, required=False)
 
         after = forms.ModelChoiceField(required=False,
           queryset=Issue.objects.exclude(deleted=True).filter(series=series) \
