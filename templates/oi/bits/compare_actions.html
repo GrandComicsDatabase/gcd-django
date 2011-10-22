@@ -30,9 +30,12 @@
   {% endif %}
 {% endif %}
 
-{% if changeset.state == states.REVIEWING %}
+{% if changeset.state == states.REVIEWING or changeset.state == states.DISCUSSED %}
   {% if user == changeset.approver %}
   <input type="submit" name="approve" value="Approve">
+    {% if changeset.state != states.DISCUSSED %}
+  <input type="submit" name="discuss" value="Discuss">
+    {% endif %}
     {% if changeset.editable %}
   <input type="submit" name="disapprove" value="Send Back to Indexer">
     {% endif %}

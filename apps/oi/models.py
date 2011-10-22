@@ -439,7 +439,8 @@ class Changeset(models.Model):
         reservation, or by an approver, effectively canceling it.
         """
         if self.state not in states.ACTIVE:
-            raise ValueError, "Only OPEN or REVIEWING changes may be discarded."
+            raise ValueError, "Only OPEN, PENDING, DISCUSSED, or REVIEWING " \
+                              "changes may be discarded."
 
         self.comments.create(commenter=discarder,
                              text=notes,
@@ -482,7 +483,7 @@ class Changeset(models.Model):
            self.approver is None:
             raise ValueError, "Only changes with an approver may be unassigned."
 
-        if self.state == states.REVIEWING:
+        if self.state in [states.DISCUSSED, states.REVIEWING]:
             new_state = states.PENDING
         else:
             new_state = self.state
@@ -495,6 +496,18 @@ class Changeset(models.Model):
         self.state = new_state
         self.save()
 
+    def discuss(self, notes=''):
+        if self.state != states.REVIEWING or \
+           self.approver is None:
+            raise ValueError, "Only changes with an approver may be discussed."
+
+        self.comments.create(commenter=self.approver,
+                             text=notes,
+                             old_state=self.state,
+                             new_state=states.DISCUSSED)
+        self.state = states.DISCUSSED
+        self.save()
+
     def approve(self, notes=''):
         """
         Approve a pending index from an approver's queue into production.
@@ -503,7 +516,8 @@ class Changeset(models.Model):
         production display table.
         """
 
-        if self.state != states.REVIEWING or self.approver is None:
+        if self.state not in [states.DISCUSSED, states.REVIEWING] \
+          or self.approver is None:
             raise ValueError, \
                   "Only REVIEWING changes with an approver can be approved."
 
@@ -546,7 +560,8 @@ class Changeset(models.Model):
         # through the approver_notes field here or in the view layer?
         # Where should validation go in general?
 
-        if self.state != states.REVIEWING or self.approver is None:
+        if self.state not in [states.DISCUSSED, states.REVIEWING] \
+          or self.approver is None:
             raise ValueError, \
                   "Only REVIEWING changes with an approver can be disapproved."
         self.comments.create(commenter=self.approver,

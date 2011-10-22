@@ -24,6 +24,11 @@ The reservation has been submitted for approval, but is not being examined.
 PENDING = 2
 
 """
+The reservation is being discussed between indexer, approver and others.
+"""
+DISCUSSED = 3
+
+"""
 The change is being examined for approval.
 """
 REVIEWING = 4
@@ -43,6 +48,7 @@ DISPLAY_NAME = {
     BASELINE: 'Baseline',
     OPEN: 'Editing',
     PENDING: 'Pending Review',
+    DISCUSSED: 'In Discussion',
     REVIEWING: 'Under Review',
     APPROVED: 'Approved',
     DISCARDED: 'Discarded',
@@ -58,6 +64,6 @@ CSS_NAME = {
     DISCARDED: 'discarded',
 }
 
-ACTIVE = (OPEN, PENDING, REVIEWING)
+ACTIVE = (OPEN, PENDING, DISCUSSED, REVIEWING)
 
 CLOSED = (APPROVED, DISCARDED)

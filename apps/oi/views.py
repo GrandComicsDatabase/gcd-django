@@ -707,6 +707,31 @@ def release(request, id):
         return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 @permission_required('gcd.can_approve')
+def discuss(request, id):
+    """
+    Move a change into the discussion state and go back to your queue.
+    """
+    if request.method != 'POST':
+        return _cant_get(request)
+
+    changeset = get_object_or_404(Changeset, id=id)
+    if request.user != changeset.approver:
+        return render_to_response('gcd/error.html',
+          {'error_text': 'A change may only be put into discussion by its ' \
+                         'approver.'},
+          context_instance=RequestContext(request))
+    if changeset.state != states.REVIEWING:
+        return render_error(request,
+          'Only REVIEWING changes can be put into discussion.')
+
+    changeset.discuss(notes=request.POST['comments'])
+
+    if request.user.approved_changeset.filter(state=states.REVIEWING).count():
+        return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('pending'))
+
+@permission_required('gcd.can_approve')
 def approve(request, id):
     """
     Approve a change and return to your approvals queue.
@@ -719,7 +744,8 @@ def approve(request, id):
         return render_error(request,
           'A change may only be approved by its approver.')
 
-    if changeset.state != states.REVIEWING or changeset.approver is None:
+    if changeset.state not in [states.DISCUSSED, states.REVIEWING] \
+      or changeset.approver is None:
         return render_error(request,
           'Only REVIEWING changes with an approver can be approved.')
 
@@ -1014,6 +1040,9 @@ def process(request, id):
 
     if 'release' in request.POST:
         return release(request, id)
+
+    if 'discuss' in request.POST:
+        return discuss(request, id)
 
     if 'approve' in request.POST:
         return approve(request, id)
@@ -2263,17 +2292,18 @@ def ongoing(request, user_id=None):
 
     # TODO no need for the form, since different workflow as originally intended
     form = OngoingReservationForm()
-    message = ''
     if request.method == 'POST':
         form = OngoingReservationForm(request.POST)
         if form.is_valid():
             reservation = form.save(commit=False)
             reservation.indexer = request.user
             reservation.save()
-            message = 'Series %s reserved' % form.cleaned_data['series']
             return HttpResponseRedirect(urlresolvers.reverse(
               'apps.gcd.views.details.series',
                kwargs={ 'series_id': reservation.series.id }))
+        else:
+            return render_error(request, u'Something went wrong while reserving'
+              ' the series. Please contact us if this error persists.')
 
 def delete_ongoing(request, series_id):
     if request.method != 'POST':
@@ -2546,10 +2576,12 @@ def show_queue(request, queue_name, state):
         kwargs['indexer'] = request.user
         kwargs['state__in'] = states.ACTIVE
     if 'pending' == queue_name:
-        kwargs['state__in'] = (states.PENDING, states.REVIEWING)
+        kwargs['state__in'] = (states.PENDING, states.DISCUSSED,
+                               states.REVIEWING)
     if 'reviews' == queue_name:
         kwargs['approver'] = request.user
-        kwargs['state__in'] = (states.OPEN, states.REVIEWING)
+        kwargs['state__in'] = (states.OPEN, states.DISCUSSED,
+                               states.REVIEWING)
     if 'covers' == queue_name:
         return show_cover_queue(request)
     if 'approved' == queue_name:

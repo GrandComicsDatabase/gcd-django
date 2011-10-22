@@ -1,5 +1,12 @@
-{% ifequal changeset.state states.REVIEWING %}
+{% if changeset.state = states.REVIEWING or changeset.state = states.DISCUSSED %}
+  {% if changeset.approver == user %}
+<form action="{% url process id=changeset.id %}" method="POST">
+  <input type="submit" name="release" value="Unassign" />
+  <input type="hidden" name="comments" class="comments" />
+</form>
+  {% else %}
   No actions available
+  {% endif %}
 {% else %}
   {% if perms.gcd.can_approve and changeset.indexer != user or changeset.indexer = user and changeset.editable and section.object_type != 'cover' %}
 <form action="{% url process id=changeset.id %}" method="POST">
@@ -19,5 +26,5 @@
   {% else %}
   No actions available
   {% endif %}
-{% endifequal %}
+{% endif %}
 
