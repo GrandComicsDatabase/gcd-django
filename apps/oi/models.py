@@ -2484,6 +2484,35 @@ class IssueRevision(Revision):
             return False
         return self.issue.has_covers()
 
+    def has_reprints(self):
+        if self.issue is None:
+            return False
+        return self.issue.has_reprints()
+
+    def _to_reprints(self):
+        if self.issue is None:
+            return ReprintFromIssue.objects.none()
+        return self.issue.to_reprints.all()
+    to_reprints = property(_to_reprints)
+
+    def _to_issue_reprints(self):
+        if self.issue is None:
+            return IssueReprint.objects.none()
+        return self.issue.to_issue_reprints.all()
+    to_issue_reprints = property(_to_issue_reprints)
+
+    def _from_reprints(self):
+        if self.issue is None:
+            return ReprintToIssue.objects.none()
+        return self.issue.from_reprints.all()
+    from_reprints = property(_from_reprints)
+
+    def _from_issue_reprints(self):
+        if self.issue is None:
+            return IssueReprint.objects.none()
+        return self.issue.from_issue_reprints.all()
+    from_issue_reprints = property(_from_issue_reprints)
+
     def other_variants(self):
         if self.variant_of:
             variants = self.variant_of.variant_set.all()
@@ -3324,6 +3353,36 @@ class StoryRevision(Revision):
             if self.issue.set_indexed_status() == False:
                 update_count('issue indexes', -1,
                              language=self.issue.series.language)
+
+    def _from_reprints(self):
+        if self.story is None:
+            return Reprints.objects.none()
+        return self.story.from_reprints.all()
+    from_reprints = property(_from_reprints)
+
+    def _from_issue_reprints(self):
+        if self.story is None:
+            return ReprintFromIssue.objects.none()
+        return self.story.from_issue_reprints.all()
+    from_issue_reprints = property(_from_issue_reprints)
+
+    def _to_reprints(self):
+        if self.story is None:
+            return Reprints.objects.none()
+        return self.story.to_reprints.all()
+    to_reprints = property(_to_reprints)
+
+    def _to_issue_reprints(self):
+        if self.story is None:
+            return ReprintToIssue.objects.none()
+        return self.story.to_issue_reprints.all()
+    to_issue_reprints = property(_to_issue_reprints)
+
+    def _migration_status(self):
+        if self.story is None:
+            return MigrationStoryStatus.objects.none()
+        return self.story.migration_status
+    migration_status = property(_migration_status)
 
     def has_credits(self):
         return self.script or \

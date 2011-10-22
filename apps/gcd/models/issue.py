@@ -194,6 +194,13 @@ class Issue(models.Model):
         self.reserved = False
         self.save()
 
+    def has_reprints(self):
+        """Simplifies UI checks for conditionals.  notes and reprint fields"""
+        return self.from_reprints.count() or \
+               self.to_reprints.count() or \
+               self.from_issue_reprints.count() or \
+               self.to_issue_reprints.count()
+
     def deletable(self):
         return self.cover_revisions.filter(changeset__state__in=states.ACTIVE)\
                                    .count() == 0 and \

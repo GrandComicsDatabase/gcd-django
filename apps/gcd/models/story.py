@@ -93,7 +93,11 @@ class Story(models.Model):
         return self.genre or \
                self.characters or \
                self.synopsis or \
-               self.reprint_notes
+               self.reprint_notes or \
+               self.from_reprints.count() or \
+               self.to_reprints.count() or \
+               self.from_issue_reprints.count() or \
+               self.to_issue_reprints.count()
 
     def has_data(self):
         """Simplifies UI checks for conditionals.  All non-heading fields"""

@@ -12,4 +12,9 @@ from indexcredit import IndexCredit
 from reservation import Reservation
 from error import Error
 from countstats import CountStats
+from migrationstorystatus import MigrationStoryStatus
+from issuereprint import IssueReprint
+from reprint import Reprint
+from reprinttoissue import ReprintToIssue
+from reprintfromissue import ReprintFromIssue
 from recent import RecentIndexedIssue
