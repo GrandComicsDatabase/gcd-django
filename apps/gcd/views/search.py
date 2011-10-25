@@ -1196,7 +1196,7 @@ def compute_order(data):
             elif order == 'language':
                 terms.append('series__language__name')
 
-        elif target in ('sequence', 'feature', 'cover'):
+        elif target in ('sequence', 'feature', 'cover', 'issue_cover'):
             if order == 'publisher':
                 terms.append('issue__series__publisher')
             elif order == 'brand':
@@ -1213,6 +1213,8 @@ def compute_order(data):
                 terms.append('issue__series__language__name')
             elif target != 'cover':
                 terms.append(order)
+        else:
+            raise ValueError
 
     return terms
 
