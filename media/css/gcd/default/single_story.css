@@ -60,7 +60,7 @@ dl.contents dd.short {
  * Story layout elements
  */
 
-#story_data {
+#story_data, #cover_data {
     clear: left;
     margin-bottom: 1em;
     margin-right: 1.5em;
@@ -104,7 +104,7 @@ div.single_story {
     margin: 0;
 }
 
-.single_story a {
+.single_story_navigation a {
     color: white;
     font-size: 0.8em;
     font-weight: normal;

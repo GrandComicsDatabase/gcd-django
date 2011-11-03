@@ -29,11 +29,12 @@
   <div id="control_container">
     <div id="control_center">
 {% include "gcd/bits/issue_data.html" %}
-{% if issue.notes or issue.variant_of or issue.variant_set.count %}
+
+{% if issue.notes or issue.variant_of or issue.variant_set.count or issue.has_reprints %}
       <div class="issue_notes">
         <div class="issue_notes_border">
           <h3 class="notes_header"> Issue Notes </h3>
-            <p>
+          <p>
   {% if issue.variant_of %}
 This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ issue.variant_of.full_name }}</a>.
   {% endif %}
@@ -43,18 +44,23 @@ There exist further variants.
     {% else %}
 This issue has variants.
     {% endif %}
-            </p>
-              <ul>
+          </p>
+          <ul>
     {% for variant in issue.other_variants %}
-                <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
+            <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
     {% endfor %}
           </ul><p>
   {% else %}
     {% if issue.variant_of %}
-</p><p>
+          </p><p>
     {% endif %}
   {% endif %}
             {{ issue.notes|linebreaksbr }}
+  {% if issue.has_reprints %}
+            <dl class="contents">
+            {{ issue|show_reprints_for_issue }}
+            </dl>
+  {% endif %}
         </div>
       </div>
 {% endif %} <!-- issue.notes -->

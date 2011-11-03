@@ -142,8 +142,8 @@ div#format {
 }
 .coverImage .wraparound_cover_img {
     border: solid 1px;
-    padding-right: 15px; 
-    background: transparent no-repeat right center url(../foldoutarrow_100.png); 
+    padding-right: 15px;
+    background: transparent no-repeat right center url(../foldoutarrow_100.png);
 }
 
 #index_credits {
@@ -188,5 +188,9 @@ div.issue_notes h3 {
 div.issue_notes p {
     padding: 0.2em 6px;
     margin: 0 0 0.5em 0;
+}
+
+div.issue_notes dt {
+    padding-left: 6px;
 }
 

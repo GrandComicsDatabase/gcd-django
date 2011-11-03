@@ -1,12 +1,13 @@
 {% load i18n %}
 {% load credits %}
+{% load display %}
 {% load mathfilter %}
 
     <div class="single_story">
       <a name="{{ story.id }}"></a>
       <h2 class="sequence header title">
         <span class="title left">{{ story|show_title }}</span>
-        <span class="right"><a href="#toc">(Table of Contents)</a></span>
+        <span class="right single_story_navigation"><a class="toc" href="#toc">(Table of Contents)</a></span>
       </h2>
       <h3 class="sequence_header feature">
         <span class="left">
@@ -26,7 +27,7 @@
         {%endif %}
         </span>
         {% if not preview %}
-        <span class="right"><a href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}%23{{ story.id }}&amp;short_desc={{ error_subject|urlencode }}%20-%20{{story|show_title|urlencode}}" target="_blank">(report information)</a></span>
+        <span class="right single_story_navigation"><a href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}%23{{ story.id }}&amp;short_desc={{ error_subject|urlencode }}%20-%20{{story|show_title|urlencode}}" target="_blank">(report information)</a></span>
         {% endif %}
       </h3>
 
@@ -49,7 +50,7 @@
           {{ story|show_credit:"genre" }}
           {{ story|show_credit:"characters"|linebreaksbr }}
           {{ story|show_credit:"synopsis"|linebreaksbr }}
-          {{ story|show_credit:"reprint_notes"|linebreaksbr }}
+          {{ story|show_reprints|linebreaksbr }}
         </dl>
       {% endif %}
 
