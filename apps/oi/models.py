@@ -2849,23 +2849,30 @@ class IssueRevision(Revision):
                 else:
                     issue.sort_code = 0
                 # update counts
-                self.series.issue_count = F('issue_count') + 1
-                issue.series.issue_count = F('issue_count') - 1
-                if self.series.publisher != issue.series.publisher:
-                    if self.series.publisher:
-                        self.series.publisher.issue_count = F('issue_count') + 1
-                        self.series.publisher.save()
-                    if issue.series.publisher:
-                        issue.series.publisher.issue_count = F('issue_count') - 1
-                        issue.series.publisher.save()
-                if self.series.language != issue.series.language:
-                    update_count('issues', 1, language=self.series.language)
-                    update_count('issues', -1, language=issue.series.language)
-                    story_count = self.issue.active_stories().count()
-                    update_count('stories', story_count,
-                                language=self.series.language)
-                    update_count('stories', -story_count,
-                                language=issue.series.language)
+                if self.variant_of:
+                    if self.series.language != issue.series.language:
+                        update_count('variant_issues', 1,
+                                     language=self.series.language)
+                        update_count('variant_issues', -1,
+                                     language=issue.series.language)
+                else:
+                    self.series.issue_count = F('issue_count') + 1
+                    issue.series.issue_count = F('issue_count') - 1
+                    if self.series.publisher != issue.series.publisher:
+                        if self.series.publisher:
+                            self.series.publisher.issue_count = F('issue_count') + 1
+                            self.series.publisher.save()
+                        if issue.series.publisher:
+                            issue.series.publisher.issue_count = F('issue_count') - 1
+                            issue.series.publisher.save()
+                    if self.series.language != issue.series.language:
+                        update_count('issues', 1, language=self.series.language)
+                        update_count('issues', -1, language=issue.series.language)
+                        story_count = self.issue.active_stories().count()
+                        update_count('stories', story_count,
+                                    language=self.series.language)
+                        update_count('stories', -story_count,
+                                    language=issue.series.language)
 
                 check_series_order = issue.series
                 # new series might have gallery after move
