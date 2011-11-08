@@ -2045,10 +2045,22 @@ def move_series(request, series_revision_id, publisher_id):
                         return show_error_with_return(request, 'Error while'
                         ' reserving issues.', series_revision.changeset)
                 for issue_revision in series_revision.changeset.issuerevisions.all():
-                    issue_revision.brand = None
+                    if issue_revision.brand:
+                        new_brand = publisher.active_brands()\
+                          .filter(name=issue_revision.brand.name)
+                        if new_brand.count() == 1:
+                            issue_revision.brand = new_brand[0]
+                        else:
+                            issue_revision.brand = None
                     if issue_revision.indicia_publisher:
-                        issue_revision.indicia_publisher = None
-                        issue_revision.no_indicia_publisher = False
+                        new_indicia_publisher = publisher.active_indicia_publishers()\
+                          .filter(name=issue_revision.indicia_publisher.name)
+                        if new_indicia_publisher.count() == 1:
+                            issue_revision.indicia_publisher = \
+                              new_indicia_publisher[0]
+                        else:
+                            issue_revision.indicia_publisher = None
+                            issue_revision.no_indicia_publisher = False
                     issue_revision.save()
             series_revision.publisher = publisher
             series_revision.imprint = None
@@ -2103,10 +2115,23 @@ def move_issue(request, issue_revision_id, series_id):
     else:
         if 'cancel' not in request.POST:
             if issue_revision.series.publisher != series.publisher:
-                issue_revision.brand = None
+                if issue_revision.brand:
+                    new_brand = series.publisher.active_brands()\
+                        .filter(name=issue_revision.brand.name)
+                    if new_brand.count() == 1:
+                        issue_revision.brand = new_brand[0]
+                    else:
+                        issue_revision.brand = None
                 if issue_revision.indicia_publisher:
-                    issue_revision.indicia_publisher = None
-                    issue_revision.no_indicia_publisher = False
+                    new_indicia_publisher = series.publisher\
+                                                  .active_indicia_publishers()\
+                        .filter(name=issue_revision.indicia_publisher.name)
+                    if new_indicia_publisher.count() == 1:
+                        issue_revision.indicia_publisher = \
+                            new_indicia_publisher[0]
+                    else:
+                        issue_revision.indicia_publisher = None
+                        issue_revision.no_indicia_publisher = False
             issue_revision.series = series
             issue_revision.save()
         return HttpResponseRedirect(urlresolvers.reverse('edit',

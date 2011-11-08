@@ -73,7 +73,7 @@ The above sequence was moved from the following issue.
     <div class="edit">
     <h2> Series moved from <span class="comparison_highlight">{{ revision.previous.publisher }}</span> to <span class="comparison_highlight">{{ revision.publisher }}</span> </h2>
 
-The <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:revision.series.brand_info_counts.unknown }} set</span> brands and <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:revision.series.indicia_publisher_info_counts.unknown }} set</span> indicia publishers of the {{ revision.series.issue_count }} issues of this series will be <span class="comparison_highlight">reset</span>.
+The <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:revision.series.brand_info_counts.unknown }} set</span> brands and <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:revision.series.indicia_publisher_info_counts.unknown }} set</span> indicia publishers of the {{ revision.series.issue_count }} issues of this series will be <span class="comparison_highlight">reset</span> unless they exist under the identical name at the new publisher.
     </div>
     {% endif %}
   {% endif %}
