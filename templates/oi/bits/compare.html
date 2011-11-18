@@ -102,6 +102,23 @@
       {% endif %}
   </tr>
     {% endfor %}
+    {% ifequal changeset_type 'story' %}
+      {% if revision.has_reprint_revisions %}
+  <tr class="True">
+      {% else %}
+  <tr class="False">
+      {% endif %}
+    <td class="field_name"> Reprint Links </td>
+      {% if prev_rev %}
+    <td>
+      {{ prev_rev.compare_reprint_revisions }}
+    </td>
+      {% endif %}
+    <td>
+       {{ revision.compare_reprint_revisions }}
+    </td>
+  </tr>
+    {% endifequal %}
   {% endif %}
 {% endif %}
 </table>

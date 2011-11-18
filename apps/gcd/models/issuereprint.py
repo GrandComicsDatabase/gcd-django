@@ -15,5 +15,18 @@ class IssueReprint(models.Model):
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
 
+    def get_compare_string(self, base_issue):
+        if self.source.issue == base_issue:
+            direction = 'in'
+            issue = self.target_issue
+        else:
+            direction = 'from'
+            issue = self.source_issue
+        reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
+                    (direction, issue.get_absolute_url(), esc(story.issue))
+        if self.notes:
+            reprint = '%s [%s]' % (reprint, esc(self.notes))
+        return mark_safe(reprint)
+
     def __unicode__(self):
         return "from %s reprint in %s" % (self.source_issue, self.target_issue)

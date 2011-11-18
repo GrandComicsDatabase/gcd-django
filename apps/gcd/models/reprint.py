@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from story import Story
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 class Reprint(models.Model):
     class Meta:
@@ -13,6 +15,20 @@ class Reprint(models.Model):
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
+
+    def get_compare_string(self, base_issue):
+        if self.source.issue == base_issue:
+            direction = 'in'
+            story = self.target
+        else:
+            direction = 'from'
+            story = self.source
+        reprint = u'%s <a target="_blank" href="%s#%d">%s</a> of %s' % \
+                    (direction, story.issue.get_absolute_url(),
+                    story.id, esc(story), esc(story.issue))
+        if self.notes:
+            reprint = '%s [%s]' % (reprint, esc(self.notes))
+        return mark_safe(reprint)
 
     def __unicode__(self):
         return "from %s reprint in %s" % (self.source, self.target)
