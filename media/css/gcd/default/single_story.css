@@ -100,7 +100,7 @@ div.single_story {
 }
 
 .single_story dl {
-    padding: 0.2em 0; 
+    padding: 0.2em 0;
     margin: 0;
 }
 
@@ -158,7 +158,7 @@ span.seq_no {
     font-weight: bold;
 }
 
-span.type {
+span.type, span.non_bold {
     font-weight: normal;
 }
 

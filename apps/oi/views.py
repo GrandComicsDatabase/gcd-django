@@ -2950,6 +2950,58 @@ def preview(request, id, model_name):
     return render_error(request,
       u'No preview for "%s" revisions.' % model_name)
 
+
+##############################################################################
+# Cache Objects
+##############################################################################
+
+
+def get_cached_issue(request):
+    cached_issue = request.session.get('cached_issue', None)
+    if cached_issue:
+        try:
+            cached_issue = Issue.objects.get(id=cached_issue)
+        except Issue.DoesNotExist:
+            cached_issue = None
+            del request.session['cached_issue']
+    return cached_issue
+
+
+def get_cached_story(request):
+    cached_story = request.session.get('cached_story', None)
+    if cached_story:
+        try:
+            cached_story = Story.objects.get(id=cached_story)
+        except Story.DoesNotExist:
+            cached_story = None
+            del request.session['cached_story']
+    return cached_story
+
+
+def get_cached_cover(request):
+    cached_cover = request.session.get('cached_cover', None)
+    if cached_cover:
+        try:
+            cached_cover = Story.objects.get(id=cached_cover)
+        except Story.DoesNotExist:
+            cached_cover = None
+            del request.session['cached_cover']
+    return cached_cover
+
+
+def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
+    """
+    Store an issue_id or story_id in the session.
+    Only one of each can be stored at a time.
+    """
+    if issue_id:
+        request.session['cached_issue'] = issue_id
+    if story_id:
+        request.session['cached_story'] = story_id
+    if cover_story_id:
+        request.session['cached_cover'] = cover_story_id
+    return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
 ##############################################################################
 # Mentoring
 ##############################################################################

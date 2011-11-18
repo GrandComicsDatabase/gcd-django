@@ -130,6 +130,7 @@ This issue has variants.
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-save.png" alt="download issue data" style="border:0;">
             </a>
           </div>
+<a class="right cache_link" href="{% url cache_issue issue_id=issue.id %}">(remember issue)</a>
 {% endif %}
         </div>
 {% if not preview %}

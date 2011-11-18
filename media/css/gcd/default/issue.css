@@ -68,6 +68,11 @@ div#format {
     font-size: 0.85em;
 }
 
+a.cache_link {
+    color:  black;
+    font-weight: normal;
+}
+
 .toc_story_title {
     /* font-style: italic; */
 }
