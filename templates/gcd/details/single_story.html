@@ -58,7 +58,11 @@
           {{ story|show_credit:"genre" }}
           {{ story|show_credit:"characters"|linebreaksbr }}
           {{ story|show_credit:"synopsis"|linebreaksbr }}
-          {{ story|show_reprints|linebreaksbr }}
+          {% if not preview and show_original %}
+            {{ story|show_reprints:'True'|linebreaksbr }}
+          {% else %}
+            {{ story|show_reprints|linebreaksbr }}
+          {% endif %}
         </dl>
       {% endif %}
 

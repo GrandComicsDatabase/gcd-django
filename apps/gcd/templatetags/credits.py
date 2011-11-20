@@ -358,7 +358,7 @@ def show_reprints(story, original = False):
         else:
             if not story.migration_status.reprint_confirmed:
                 label += '<span class="linkify">' + \
-                        '<a href="?original_reprints=True">' + \
+                        '<a href="?original_reprint_notes=True">' + \
                         'show reprint note before migration</a></span>'
             if story.migration_status.reprint_needs_inspection:
                 label += ' (migrated reprint links need inspection)'

@@ -907,6 +907,11 @@ def show_issue(request, issue, preview=False):
         oi_indexers.append(i.changeset.indexer.indexer)
     oi_indexers = list(set(oi_indexers))
 
+    show_original = False
+    if (request.GET.has_key('original_reprint_notes')):
+        if request.GET['original_reprint_notes'] == 'True':
+            show_original = True
+
     return render_to_response(
       'gcd/details/issue.html',
       {
@@ -918,6 +923,7 @@ def show_issue(request, issue, preview=False):
         'oi_indexers' : oi_indexers,
         'image_tag': image_tag,
         'variant_image_tags': variant_image_tags,
+        'show_original': show_original,
         'error_subject': '%s' % issue,
         'preview': preview,
       },
