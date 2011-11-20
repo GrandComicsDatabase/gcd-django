@@ -25,8 +25,8 @@ class IssueReprint(models.Model):
         reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
                     (direction, issue.get_absolute_url(), esc(story.issue))
         if self.notes:
-            reprint = '%s [%s]' % (reprint, esc(self.notes))
+            reprint = u'%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
     def __unicode__(self):
-        return "from %s reprint in %s" % (self.source_issue, self.target_issue)
+        return u'from %s reprint in %s' % (self.source_issue, self.target_issue)

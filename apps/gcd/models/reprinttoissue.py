@@ -25,8 +25,9 @@ class ReprintToIssue(models.Model):
                         (self.target_issue.get_absolute_url(),
                          esc(self.target_issue))
         if self.notes:
-            reprint = '%s [%s]' % (reprint, esc(self.notes))
+            reprint = u'%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
     def __unicode__(self):
-        return "from %s reprint in %s" % (self.source, self.target_issue)
+        return u'%s of %s reprinted in %s' % (self.source, self.source.issue,
+                                             self.target_issue)
