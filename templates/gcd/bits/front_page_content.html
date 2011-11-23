@@ -1,5 +1,14 @@
 <div id="front_page_content_inner">
 <h2>Welcome to the {{ site_name }}!</h2>
+{% if BETA %}
+<div class="instructions">
+<h3>This is the BETA site.</h3>
+<p>
+If you have no particular reason to visit our BETA site, you probably want to use the <a href="http://www.comics.org">real site.</a>
+</p>
+</div>
+{% else %}
+
 <p>
 We're  a nonprofit, Internet-based organization of international volunteers
 dedicated to building a database covering all printed comics throughout the world,
@@ -28,7 +37,7 @@ Changes visible for indexers
   <li> Added help links to the editing page for all fields, experienced users can turn these off in their profile.
   <li> Changed order of fields on the editing pages, field orders are now consistent on edit and compare pages.
 </ul>
-
+{% endif %}
 <div class="instructions">
 <h3><a name="help">We Need Volunteer Web Designers and Programmers!</a></h3>
 <p>
