@@ -27,7 +27,7 @@
         {%endif %}
         </span>
         {% if not preview %}
-          {% if user.is_authenticated %}
+          {% if user.is_authenticated and story %}
             {% if is_cover %}
         <span class="right single_story_navigation"><a href="{% url cache_cover cover_story_id=story.id %}">(remember cover)</a></span>
             {% else %}
