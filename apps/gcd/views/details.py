@@ -3,7 +3,7 @@
 """View methods for pages displaying entity details."""
 
 import re
-from urllib2 import urlopen
+from urllib2 import urlopen, HTTPError
 from datetime import date, datetime, time, timedelta
 from operator import attrgetter
 
@@ -961,11 +961,15 @@ def countries_in_use(request):
           context_instance=RequestContext(request))
 
 def agenda(request, language):
-    f = urlopen("https://www.google.com/calendar/embed?src=comics.org_v62prlv9"
-      "dp79hbjt4du2unqmks%40group.calendar.google.com&showTitle=0&showNav=0&"
-      "showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA"
-      "&height=600&wkst=1&bgcolor=%23FFFFFF&color=%238C500B"
-      "&ctz=America%2FLos_Angeles&hl=de")
+    try:
+        f = urlopen("https://www.google.com/calendar/embed?src=comics.org_v62prlv9"
+          "dp79hbjt4du2unqmks%40group.calendar.google.com&showTitle=0&showNav=0&"
+          "showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA"
+          "&height=600&wkst=1&bgcolor=%23FFFFFF&color=%238C500B"
+          "&ctz=America%2FLos_Angeles&hl=de")
+    except HTTPError:
+        raise Http404
+
     a = f.read()
     js_pos = a.find('<script type="text/javascript" src="') + \
       len('<script type="text/javascript" src="')
