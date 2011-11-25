@@ -32,14 +32,16 @@ CTYPES = {
     'cover': 7,
     'issue_bulk': 8,
     'variant_add': 9,
-    'two_issues': 10
+    'two_issues': 10,
+    'reprint': 11,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['brand'],
                            CTYPES['indicia_publisher'],
                            CTYPES['series'],
-                           CTYPES['cover']))
+                           CTYPES['cover'],
+                           CTYPES['reprint']))
 
 # Change types that *might* be bulk changes.  But might just have one revision.
 CTYPES_BULK = frozenset((CTYPES['issue_bulk'],
@@ -67,6 +69,13 @@ REPRINT_CLASSES = {
     1: ReprintToIssue,
     2: ReprintFromIssue,
     3: IssueReprint
+}
+
+REPRINT_FIELD = {
+    0: 'reprint',
+    1: 'reprint_to_issue',
+    2: 'reprint_from_issue',
+    3: 'issue_reprint'
 }
 
 def check_delete_imprint(imprint):
@@ -240,6 +249,9 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['indicia_publisher']:
             return (self.indiciapublisherrevisions.all(),)
+
+        if self.change_type == CTYPES['reprint']:
+            return (self.reprintrevisions.all(),)
 
     def _revisions(self):
         """
@@ -3435,7 +3447,6 @@ class StoryRevision(Revision):
               reprint.get_compare_string(self.issue))
 
         # existing reprint links which are not changed
-        print as_source.count(), as_target.count(), as_target_from_issue.count()
         if as_source.count() or as_target.count() or as_target_from_issue.count():
             reprint_current_string = ''
             for reprint in as_source:
@@ -3486,7 +3497,7 @@ class StoryRevision(Revision):
 
 class ReprintRevisionManager(RevisionManager):
 
-    def clone_revision(self, reprint, changeset, issue_revision):
+    def clone_revision(self, reprint, changeset):
         """
         Given an existing Reprint instance, create a new revision based on it.
 
@@ -3495,10 +3506,9 @@ class ReprintRevisionManager(RevisionManager):
         return RevisionManager.clone_revision(self,
                                               instance=reprint,
                                               instance_class=type(reprint),
-                                              changeset=changeset,
-                                              issue_revision=issue_revision)
+                                              changeset=changeset)
 
-    def _do_create_revision(self, reprint, changeset, issue_revision):
+    def _do_create_revision(self, reprint, changeset):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
@@ -3585,19 +3595,70 @@ class ReprintRevision(Revision):
     target_issue = models.ForeignKey(Issue, null=True,
                               related_name='target_reprint_revisions')
 
-    notes = models.TextField(max_length = 255, null=True)
+    notes = models.TextField(max_length = 255, default='')
 
     in_type = models.IntegerField(db_index=True, null=True)
     out_type = models.IntegerField(db_index=True, null=True)
 
-    # TODO I think we need our own previous routine, figure it out
+    previous_revision = models.ForeignKey('self', null=True)
+
     def previous(self):
-        raise NotImplementedError
+        return self.previous_revision
+
+    def _source(self):
+        if self.deleted and self.changeset.state == states.APPROVED:
+            return None
+        if self.out_type != None:
+            reprint_type = self.out_type
+        elif self.in_type != None:
+            reprint_type = self.in_type
+        else:
+            return None
+        # reprint link objects can be deleted, so the source may be gone
+        # could access source for change history, so catch it
+        if reprint_type == REPRINT_TYPES['story_to_story'] \
+          and self.reprint:
+            return self.reprint
+        if reprint_type == REPRINT_TYPES['issue_to_story'] \
+          and self.reprint_from_issue:
+            return self.reprint_from_issue
+        if reprint_type == REPRINT_TYPES['story_to_issue'] \
+          and self.reprint_to_issue:
+            return self.reprint_to_issue
+        if reprint_type == REPRINT_TYPES['issue_to_issue'] \
+          and self.issue_reprint:
+            return self.issue_reprint
+        # TODO is None the right return ? Maybe placeholder object ?
+        return None
+
+    def _source_name(self):
+        return 'reprint'
+
+    def _field_list(self):
+        return ['source_story', 'source_revision', 'source_issue',
+                'target_story', 'target_revision', 'target_issue',
+                'notes']
+
+    def _get_blank_values(self):
+        return {
+            'source_story': None,
+            'source_revision': None,
+            'source_issue': None,
+            'target_story': None,
+            'target_revision': None,
+            'target_issue': None,
+            'notes': '',
+        }
 
     def commit_to_display(self, clear_reservation=True):
-        # TODO need to handle delete of a reprint link
         if self.deleted:
-            raise NotImplementedError
+            deleted_link = self.source
+            field_name = REPRINT_FIELD[self.in_type] + '_id'
+            for revision in deleted_link.revisions.all():
+                setattr(revision, field_name, None)
+                revision.save()
+            deleted_link.delete()
+            return
         # first figure out which reprint out_type it is, it depends
         # on which fields are set
         if self.source_story or self.source_revision:
@@ -3625,7 +3686,12 @@ class ReprintRevision(Revision):
                 out_type = REPRINT_TYPES['issue_to_issue']
 
         if self.in_type and self.in_type != out_type:
-            self.source.delete()
+            deleted_link = self.source
+            field_name = REPRINT_FIELD[self.in_type] + '_id'
+            for revision in deleted_link.revisions.all():
+                setattr(revision, field_name, None)
+                revision.save()
+            deleted_link.delete()
         self.out_type = out_type
 
         # actual save of the data
@@ -3638,7 +3704,7 @@ class ReprintRevision(Revision):
             else:
                 self.reprint.source = source
                 self.reprint.target = target
-                self.reprint.notes = notes
+                self.reprint.notes = self.notes
                 self.reprint.save()
         elif out_type == REPRINT_TYPES['issue_to_story']:
             if self.in_type != out_type:
@@ -3675,25 +3741,6 @@ class ReprintRevision(Revision):
                 self.issue_reprint.save()
         self.save()
 
-    def _source(self):
-        if self.out_type != None:
-            reprint_type = self.out_type
-        elif self.in_type != None:
-            reprint_type = self.in_type
-        else:
-            return None
-        if reprint_type == REPRINT_TYPES['story_to_story']:
-            return self.reprint
-        if reprint_type == REPRINT_TYPES['issue_to_story']:
-            return self.reprint_from_issue
-        if reprint_type == REPRINT_TYPES['story_to_issue']:
-            return self.reprint_to_issue
-        if reprint_type == REPRINT_TYPES['issue_to_issue']:
-            return self.issue_reprint
-
-    def _source_name(self):
-        return 'reprint'
-
     def get_compare_string(self, base_issue):
         if (self.source_story and self.source_story.issue == base_issue) \
           or (self.source_revision and self.source_revision.issue == base_issue) \
@@ -3727,8 +3774,8 @@ class ReprintRevision(Revision):
                         (direction, issue.get_absolute_url(), esc(issue))
         if self.notes:
             reprint = '%s [%s]' % (reprint, esc(self.notes))
-        if not self.source:
-            reprint += ' [ADDED]'
+        if self.deleted:
+            reprint += ' [DELETED]'
         return mark_safe(reprint)
 
     def __unicode__(self):
@@ -3739,7 +3786,7 @@ class ReprintRevision(Revision):
                 story = self.source_revision
             reprint = u'%s of %s ' % (story, story.issue)
         else:
-            reprint = u'%s ' % (self.issue_revision)
+            reprint = u'%s ' % (self.source_issue)
         if self.target_story or self.target_revision:
             if self.target_story:
                 target = self.target_story
@@ -3750,8 +3797,8 @@ class ReprintRevision(Revision):
             reprint += u'reprinted in %s' % (self.target_issue)
         if self.notes:
             reprint = '%s [%s]' % (reprint, esc(self.notes))
-        if not self.source:
-            reprint += ' [ADDED]'
+        if self.deleted:
+            reprint += ' [DELETED]'
         return mark_safe(reprint)
 
 class Download(models.Model):

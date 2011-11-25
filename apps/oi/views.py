@@ -44,6 +44,7 @@ REVISION_CLASSES = {
     'issue': IssueRevision,
     'story': StoryRevision,
     'cover': CoverRevision,
+    'reprint': ReprintRevision,
 }
 
 DISPLAY_CLASSES = {
