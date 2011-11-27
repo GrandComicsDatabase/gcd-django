@@ -3391,7 +3391,7 @@ class StoryRevision(Revision):
 
     def _from_reprints(self):
         if self.story is None:
-            return Reprints.objects.none()
+            return Reprint.objects.none()
         return self.story.from_reprints.all()
     from_reprints = property(_from_reprints)
 
@@ -3403,7 +3403,7 @@ class StoryRevision(Revision):
 
     def _to_reprints(self):
         if self.story is None:
-            return Reprints.objects.none()
+            return Reprint.objects.none()
         return self.story.to_reprints.all()
     to_reprints = property(_to_reprints)
 
