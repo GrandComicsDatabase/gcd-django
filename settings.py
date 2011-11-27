@@ -10,6 +10,9 @@ TEMPLATE_DEBUG = DEBUG
 
 BETA = False
 
+ADVERTISING = True
+CALENDAR = True
+
 # Set to True to avoid hitting comics.org for every cover image.
 # If True, the same cover image will be used for every issue.
 FAKE_COVER_IMAGES = False

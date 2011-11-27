@@ -108,8 +108,10 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
           </div>
         </div>
         <!-- Left Column end -->
+{% if settings.CALENDAR %}
         <span id="calendarTitle" style="font-size:medium"><a href="/calendar/">Comics Calendar</a></span>
         <iframe src="/agenda/{{ language.code }}/" style=" border-width:0 " width="100%" height="400" frameborder="0" scrolling="no"></iframe>
+{% endif %}
       </div>
 
       <div id="right_column">
