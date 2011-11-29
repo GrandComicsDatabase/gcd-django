@@ -27,21 +27,22 @@
   {% endif %}
   </tr>
 {% endfor %}
-{% if agenda.has_expected_voters and not topic.invalid %}
-  {% with topic.absent_voters as av %}
+
+{% with topic.absent_voters as av %}
+  {% if av.count and not topic.invalid %}
   <tr>
     <td> Absent Voters </td>
     <td> {{ av.count }} </td>
-    {% if not agenda.secret_ballto %}
+    {% if not agenda.secret_ballot %}
     <td>
       <ul class="compact">
-      {% for voter in av %}
-        <li> {{ voter.first_name }} {{ voter.last_name }} </li>
+      {% for exp_voter in av.all %}
+        <li> {{ exp_voter.voter_name }} </li>
       {% endfor %}
       </ul>
     </td>
     {% endif %}
   </tr>
-  {% endwith %}
-{% endif %}
+  {% endif %}
+{% endwith %}
 </table>

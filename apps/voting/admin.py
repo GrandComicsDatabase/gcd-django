@@ -25,9 +25,14 @@ class AgendaItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'state', 'owner')
     list_filter = ('agenda', 'state')
 
+class ExpectedVoterAdmin(admin.ModelAdmin):
+    raw_id_fields = ('voter',)
+    list_display = ('voter_name', 'agenda', 'tenure_began', 'tenure_ended')
+
 admin.site.register(Agenda, AgendaAdmin)
 admin.site.register(AgendaItem, AgendaItemAdmin)
 admin.site.register(MailingList)
 admin.site.register(Topic, TopicAdmin)
 admin.site.register(VoteType)
+admin.site.register(ExpectedVoter, ExpectedVoterAdmin)
 

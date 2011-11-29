@@ -1,9 +1,10 @@
 import hashlib
 from random import random
+from datetime import datetime
 
 from django.conf import settings
 from django.db import models
-from django.db.models import Count
+from django.db.models import Q, Count
 from django.core import urlresolvers
 from django.core.mail import send_mail, send_mass_mail
 from django.contrib.auth.models import User, Group, Permission
@@ -80,20 +81,6 @@ class Agenda(models.Model):
 
     subscribers = models.ManyToManyField(User, related_name='subscribed_agendas',
                                                editable=False)
-    @property
-    def has_expected_voters(self):
-        # This should be a flag on the agenda, but for now it is intended only
-        # for Board votes.  So to avoid having to run a database script for
-        # deploying this, just special case it.  We can add a field if needed later.
-        return self.name == 'Board of Directors'
-
-    def expected_voters(self):
-        if self.has_expected_voters:
-            # You can't actually filter for users by permission without doing
-            # crazy stuff to factor in group membership.  Since we're special-casing
-            # anyway, and we know that the permission is attached to a group,
-            # just do the much more simple lookup for the group.
-            return User.objects.filter(groups__name='board')
 
     def get_absolute_url(self):
         return urlresolvers.reverse('agenda', kwargs={'id': self.id})
@@ -306,11 +293,19 @@ class Topic(models.Model):
         voters who did not vote.  Returns an empty list if the voter pool
         is flexible.  Primarily intended for Board votes.
         """
-        expected_voters = self.agenda.expected_voters()
-        if expected_voters is None:
+        expected_for_topic = self.agenda.expected_voters\
+                                 .filter(Q(tenure_began__lte=self.deadline) &
+                                         (Q(tenure_ended__isnull=True) |
+                                          Q(tenure_ended__gte=self.deadline)))\
+                                 .order_by('tenure_began', 'tenure_ended',
+                                           'voter__last_name',
+                                           'voter__first_name')\
+                                 .select_related('voter')
+        if expected_for_topic.count() == 0:
             return []
         voters = User.objects.filter(votes__option__topic=self).distinct()
-        return expected_voters.exclude(id__in=voters.values_list('id', flat=True))
+        return expected_for_topic.exclude(voter__in=voters.values_list('id',
+                                                                       flat=True))
 
     def has_vote_from(self, user):
         votes = self.options.filter(votes__voter=user)
@@ -419,4 +414,28 @@ class Vote(models.Model):
         if self.rank is not None:
             return string + (' %d' % self.rank)
         return string
+
+class ExpectedVoter(models.Model):
+    voter = models.ForeignKey(User, related_name='voting_expectations')
+    agenda = models.ForeignKey(Agenda, related_name='expected_voters')
+    tenure_began = models.DateTimeField()
+    tenure_ended = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'voting_expected_voter'
+        ordering = ('tenure_began', 'tenure_ended',
+                    'voter__last_name', 'voter__first_name')
+
+    def __unicode__(self):
+        uni = '%s (%s - ' % (self.voter_name(), self.tenure_began)
+        if self.tenure_ended is None:
+            return uni + 'present)'
+        return uni + ('%s)' % self.tenure_ended)
+
+    def voter_name(self):
+        if (self.voter.first_name != ''):
+            # If last name is empty, this just adds a harmless trailing space.
+            return '%s %s' % (self.voter.first_name, self.voter.last_name)
+        return self.voter.last_name
+    voter_name.admin_order_field = 'voter__last_name'
 
