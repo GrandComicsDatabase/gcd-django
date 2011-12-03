@@ -17,7 +17,7 @@
 
 {% if user.is_authenticated %}
 <p>
-Please 
+Please
 <form id="inline_logout" action="{% url logout %}" method="POST">
   <input type="submit" name="logout" value="Log Out" />
   <input type="hidden" name="next" value="{{ request.get_full_path }}" />
@@ -36,16 +36,20 @@ before registering a new account.
 {% endif %}
 
 <p>
-Please note that all of our content and search features are available 
+Please note that all of our content and search features are available
 without logging in. Signing up for one of our
-<a href="http://docs.comics.org/wiki/Email_Lists_FAQ">mailing lists</a> 
+<a href="http://docs.comics.org/wiki/Email_Lists_FAQ">mailing lists</a>
 does not require an account either.
 You only need an account if you want to edit or add information.
 </p>
 <p>
 Once you register, you will not be able to log in until you confirm your
-email address.  You will receive an email telling you how to do that
-within a few hours (often only a few minutes) of submitting this form.
+email address.  You will receive an automatic email telling you how to do that
+within a few hours (typically only a few minutes) of submitting this form.
+You might need to also check your spam folder.
+If you have other setups to prevent unsolicited email please
+make sure that our automatic email gets through, you may have to temporarily turn
+these off.
 </p>
 
 {{ form.non_field_errors }}
