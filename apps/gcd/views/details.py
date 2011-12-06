@@ -71,7 +71,7 @@ def indicia_publisher(request, indicia_publisher_id):
 
 def show_indicia_publisher(request, indicia_publisher, preview=False):
     indicia_publisher_issues = indicia_publisher.active_issues().order_by(
-      'series__name', 'sort_code')
+      'series__sort_name', 'sort_code')
 
     vars = { 'indicia_publisher' : indicia_publisher,
              'error_subject': '%s' % indicia_publisher,
@@ -93,7 +93,8 @@ def brand(request, brand_id):
     return show_brand(request, brand)
 
 def show_brand(request, brand, preview=False):
-    brand_issues = brand.active_issues().order_by('series__name', 'sort_code')
+    brand_issues = brand.active_issues().order_by('series__sort_name',
+                                                  'sort_code')
 
     vars = {
         'brand' : brand,
