@@ -190,15 +190,15 @@ def main():
     ['Vill Vest  (Se-Bladene, 1957 series)', 'Vill Vest (Se-Bladene, 1955 series)'],
     ['; o; ', '; '],
     ]
-    #for [old, new] in reprint_notes:
-        #fix_reprint_notes_global(old, new)
+#    for [old, new] in reprint_notes:
+#        fix_reprint_notes_global(old, new)
 
 
     old_reprint_note = ' in Vill Vest (Se-Bladene, 1955 series)'
     new_reprint_note = '; in Vill Vest  (Se-Bladene, 1955 series)'
     issues = Issue.objects.filter(story__reprint_notes__iregex='The Lone Ranger [0-9]', series__id=538,
                                   story__deleted=False).filter(deleted=False).distinct()
-    #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
+    fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     series_reprint_notes = [
         [7049,'From Superman #','From Superman (DC, 1939 series) #'],
@@ -237,55 +237,62 @@ def main():
     new_reprint_note = "Chip 'n' Dale (Dell, 1955 series) #"
     issues = Issue.objects.filter(story__reprint_notes__regex="Chip'N'Dale [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
+    print issues.count(), old_reprint_note
     #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     old_reprint_note = "Chip'n'Dale "
     new_reprint_note = "Chip 'n' Dale (Dell, 1955 series) #"
+    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__regex="Chip'n'Dale [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
     #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     old_reprint_note = "Donald Duck "
     new_reprint_note = "Donald Duck (Dell, 1952 series) #"
+    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__iregex="Donald Duck [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
     #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     old_reprint_note = "Mickey Mouse "
     new_reprint_note = "Mickey Mouse (Dell, 1952 series) #"
+    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__iregex="Mickey Mouse [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
     #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     old_reprint_note = "Dell Giant "
     new_reprint_note = "Dell Giant (Dell, 1959 series) #"
+    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__iregex="Dell Giant [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
-    #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
+    fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
 
     old_reprint_note = "Walt Disney's Comics and Stories "
     new_reprint_note = "Walt Disney's Comics and Stories (Dell, 1940 series) #"
+    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__iregex="Walt Disney's Comics and Stories [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
+
     #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     for i in range(86,126):
         old = '2000 AD (IPC Magazines Ltd, 1977 series) #%d' % i
         new = '2000 AD and Star Lord (IPC Magazines Ltd, 1978 series) #%d' % i
-        #fix_reprint_notes_global(old, new)
+        fix_reprint_notes_global(old, new)
 
     for i in range(127, 177):
         old = '2000 AD (IPC Magazines Ltd, 1977 series) #%d' % i
         new = '2000 AD and Tornado (IPC Magazines Ltd, 1978 series) #%d' % i
-        #fix_reprint_notes_global(old, new)
+        fix_reprint_notes_global(old, new)
 
     norwegian_series=[
         [22049,' in Kamp Serien (Se-Bladene, 1964)','; from Kamp Serien (Se-Bladene, 1964)'],
         [22049,' in Kamp serien (Se-Bladene, 1964)','; from Kamp Serien (Se-Bladene, 1964)'],
         [22049,uni(' in På Vingene '),uni('; in På Vingene ')],
         [10459,uni(' in På Vingene '),uni('; in På Vingene ')],
-        [28131,' in Vill Vest (Se-Bladene, 1955 series)','; in Vill Vest  (Se-Bladene, 1957 series)'],
+        [28131,' in Vill Vest (Se-Bladene, 1955 series)','; in Vill Vest (Se-Bladene, 1955 series)'],
         [21672,' in Action serien (1976 series)','; in Action serien (Atlantic, 1976 series)'],
         [21672,'from Combat Picture Library (1960','from Combat Picture Library (Micron, 1960'],
         [21672,'from Combat Picture Library #','from Combat Picture Library (Micron, 1960 series) #'],
@@ -335,8 +342,8 @@ def main():
         [16197, ') in ', '); in '],
         [16994, ') in ', '); in '],
         ]
-    #for [series, old, new] in norwegian_series:
-        #fix_reprint_notes_series(series, old, new, check_double_semi=True)
+    for [series, old, new] in norwegian_series:
+        fix_reprint_notes_series(series, old, new, check_double_semi=True)
 
 if __name__ == '__main__':
     main()
