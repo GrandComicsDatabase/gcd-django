@@ -1211,7 +1211,7 @@ def compute_order(data):
                 terms.append('issue__series__country__name')
             elif order == 'language':
                 terms.append('issue__series__language__name')
-            elif target != 'cover':
+            elif target not in ['cover', 'issue_cover']:
                 terms.append(order)
         else:
             raise ValueError
