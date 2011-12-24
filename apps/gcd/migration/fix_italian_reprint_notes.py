@@ -250,13 +250,13 @@ def fix_italian_series_687():
 
 
 def fix_italian_series():
-    #fix_italian(7536, 'Albi di Topolino nuova serie')
-    #fix_italian(7593, 'Tutto Disney')
-    #fix_italian(7540, 'Almanacco Topolino')
-    #fix_italian(7539, 'Almanacco Topolino nuova serie')
-    #fix_italian(3706, 'Grandi Classici Disney')
-    #fix_italian(7569, 'Grandi Classici Disney')
-    #fix_italian(7566, 'I Classici di Walt Disney prima serie')
+    fix_italian(7536, 'Albi di Topolino nuova serie')
+    fix_italian(7593, 'Tutto Disney')
+    fix_italian(7540, 'Almanacco Topolino')
+    fix_italian(7539, 'Almanacco Topolino nuova serie')
+    fix_italian(3706, 'Grandi Classici Disney')
+    fix_italian(7569, 'Grandi Classici Disney')
+    fix_italian(7566, 'I Classici di Walt Disney prima serie')
     fix_italian_series_687()
 
 if __name__ == '__main__':
