@@ -221,7 +221,6 @@ def find_migration_candidates(story, string, standard = True):
                     notes += " Confirm: direction of reprint"
                 else:
                     notes = "Confirm: direction of reprint"
-                # TODO set migration_status
             else:
                 source = True
             if notes:
@@ -240,7 +239,6 @@ def find_migration_candidates(story, string, standard = True):
                 if notes.lower().find('originally titled'):
                     pos = notes.lower().find('originally titled')
                     notes.replace(notes[pos:pos+len('originally titled')], 'original title')
-            # TODO if not standard, set migration_status needs confirmation
             if nr >= 0:
                 other_story = Story.objects.filter(issue = reprint[0])
                 other_story = other_story.filter(sequence_number = nr)
@@ -385,6 +383,9 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
         if i.reprint_notes != text_reprint:
             i.reprint_notes = text_reprint
             i.save()
+            if not standard:
+                i.story.migration_status.reprint_needs_inspection = True
+                i.story.migration_status.save()
             return True
         else:
             return False
@@ -419,7 +420,7 @@ def migrate_reprints_series(number, standard = True, do_save = True):
                 #else:
                     #i.save()
             if is_changed or changeset.reprintrevisions.count():
-                migrated.append((changeset, True))
+                migrated.append((changeset, True))                
             else: # nothing migrated
                 print issue, 'nothing migrated'
                 changeset.discard(changeset.indexer) # free reservation

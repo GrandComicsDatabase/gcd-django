@@ -190,8 +190,8 @@ def main():
     ['Vill Vest  (Se-Bladene, 1957 series)', 'Vill Vest (Se-Bladene, 1955 series)'],
     ['; o; ', '; '],
     ]
-#    for [old, new] in reprint_notes:
-#        fix_reprint_notes_global(old, new)
+    for [old, new] in reprint_notes:
+        fix_reprint_notes_global(old, new)
 
 
     old_reprint_note = ' in Vill Vest (Se-Bladene, 1955 series)'
@@ -220,62 +220,60 @@ def main():
         [36980, 'from Wonder Woman Vol.1 (DC, 1942 Series)','from Wonder Woman (DC, 1942 Series)'],
         [18732, '. Sequence', '.Sequence'],
         [3771, 'from BLACK CAT #','from Black Cat (Harvey, 1946 series) #'],
-        [687,"Uncle Scrooge #3","Uncle Scrooge (Dell, 1953) #3"],
         [687,"Dell Giant Comics","Dell Giant"],
-        [687,"Four Color Comics","Four Color"],
         [687,"Four Color Comic","Four Color"],
         [687,"Walt Disney's Stories and Comics","Walt Disney's Comics and Stories"],
         [7540,'in Walt Disney Stories and Comics (Gemstone, 2003 series) #668 May 2006','in Walt Disney\'s Comics and Stories (Gemstone, 2003 series) #668'],
         [7540,'da Kalle Anka & C:o (Egmont, serie del 1948) #1979-34 (22 Agosto 1979) [Svezia]','da Kalle Anka & C:o (Hemmets Journal, 1957) #34/1979 (22 Agosto 1979)'],
         [7540,'da Kalle Anka & C:o (Egmont, serie del 1948) #1979-35 (29 Agosto 1979) [Svezia]','da Kalle Anka & C:o (Hemmets Journal, 1957) #35/1979'],
-        [7566,'Topolino (Libretto) 7/12','Topolino (Libretto) 7, Topolino (Libretto) 8, Topolino (Libretto) 9, Topolino (Libretto) 10, Topolino   (Libretto) 11, Topolino (Libretto) 12']
+        [7566,'Topolino (Libretto) 7/12','Topolino (Libretto) 7, Topolino (Libretto) 8, Topolino (Libretto) 9, Topolino (Libretto) 10, Topolino   (Libretto) 11, Topolino (Libretto) 12'],
+        [1701, "Ripley's Believe It or Not True (Gold Key, 1965 series)", "Ripley's Believe It or Not (Gold Key, 1965 series)"]
         ]
-    #for [series, old, new] in series_reprint_notes:
-        #fix_reprint_notes_series(series, old, new)
+    for [series, old, new] in series_reprint_notes:
+        fix_reprint_notes_series(series, old, new)
 
     old_reprint_note = "Chip'N'Dale "
     new_reprint_note = "Chip 'n' Dale (Dell, 1955 series) #"
     issues = Issue.objects.filter(story__reprint_notes__regex="Chip'N'Dale [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
     print issues.count(), old_reprint_note
-    #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
+    fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     old_reprint_note = "Chip'n'Dale "
     new_reprint_note = "Chip 'n' Dale (Dell, 1955 series) #"
-    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__regex="Chip'n'Dale [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
-    #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
+    print issues.count(), old_reprint_note
+    fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     old_reprint_note = "Donald Duck "
     new_reprint_note = "Donald Duck (Dell, 1952 series) #"
-    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__iregex="Donald Duck [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
-    #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
+    print issues.count(), old_reprint_note
+    fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     old_reprint_note = "Mickey Mouse "
     new_reprint_note = "Mickey Mouse (Dell, 1952 series) #"
-    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__iregex="Mickey Mouse [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
-    #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
+    print issues.count(), old_reprint_note
+    fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     old_reprint_note = "Dell Giant "
     new_reprint_note = "Dell Giant (Dell, 1959 series) #"
-    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__iregex="Dell Giant [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
+    print issues.count(), old_reprint_note
     fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
 
     old_reprint_note = "Walt Disney's Comics and Stories "
     new_reprint_note = "Walt Disney's Comics and Stories (Dell, 1940 series) #"
-    print issues.count(), old_reprint_note
     issues = Issue.objects.filter(story__reprint_notes__iregex="Walt Disney's Comics and Stories [0-9]", series__id=687,
                                   story__deleted=False).filter(deleted=False).distinct()
-
-    #fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
+    print issues.count(), old_reprint_note
+    fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
     for i in range(86,126):
         old = '2000 AD (IPC Magazines Ltd, 1977 series) #%d' % i
@@ -341,6 +339,7 @@ def main():
         [16059, ') in ', '); in '],
         [16197, ') in ', '); in '],
         [16994, ') in ', '); in '],
+        [58343, 'from Harry die bunte Jugendzeitung (Lehning, 1958 series)#', '; from Harry die bunte Jugendzeitung (Lehning, 1958 series) #'],
         ]
     for [series, old, new] in norwegian_series:
         fix_reprint_notes_series(series, old, new, check_double_semi=True)
