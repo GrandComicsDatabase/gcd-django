@@ -104,6 +104,13 @@ ABSOLUTE_URL_OVERRIDES = {
     'auth.user': lambda o: "/accounts/profile/%d/" % o.id,
 }
 
+# for local installations, who don't have memcached, exchange these two
+# CACHE_BACKEND = 'locmem://'
+CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
+
+# have two choices for caches, this one has persistent, cached session data
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
 # Corresponds to the django_site database table. As far
 # as I know, we won't be using this for the GCD.
 SITE_ID = 1
