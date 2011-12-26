@@ -1,0 +1,71 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<p>
+{{ heading }}
+Search for {{ target }} by entering the relevant information here:
+<form action="{% url select_object_search select_key=select_key %}" method="GET">
+<table class="editing">
+  <tr>
+{% for field in search_form.visible_fields %}
+<th>{{ field.label_tag }}</th>
+{% endfor %}
+</tr>
+{% if search_form.errors %}
+<tr>
+{% for field in search_form %}
+<td>{{ field.errors }}</td>
+{% endfor %}
+</tr>
+{% endif %}
+<tr>
+{% for field in search_form %}
+<td>{{ field }}</td>
+{% endfor %}
+</tr>
+</table>
+{% if story %}
+  <input type="submit" name="search_story" value="Search for stories"></input>
+  <input type="submit" name="search_cover" value="Search for covers"></input>
+{% endif %}  
+{% if issue or story %}
+  <input type="submit" name="search_issue" value="Search for issues"></input>
+{% endif %}
+</p>
+</form>
+<form action="{% url select_object select_key=select_key %}" method="POST">
+<p>
+{% if cache_form.visible_fields %}
+or select from the data cache:
+<table class="editing">
+{{ cache_form.as_table }}
+</table>
+  <input type="submit" name="select_object" value="Select marked"></input>
+{% endif %}
+{% if issue %}
+</p>
+<p>
+or enter the id of an issue (from its url: www.comics.org/issue/#id)
+<p></p>
+  </form>
+<form action="{% url select_object select_key=select_key %}" method="POST">
+    <input type="submit" value="Select issue">
+    <input title="Enter the id of the other issue from its url: www.comics.org/issue/#id" type="text" name="entered_issue_id" size="7"></input>
+{% endif %}
+<p></p>
+  <input type="submit" name="cancel" value="Cancel"></input>
+</p>
+  </form>
+{% endblock %}
