@@ -176,9 +176,9 @@ class LogRecord(models.Model):
                     #logging.info("Converting %s row %d" % (table_name, counter))
                 #print change.SeriesID
                 #print counter, change.DisplaySeries, change.Bk_Name, change.dt
-                print change.PublisherID
-                print change.DisplayPublisher, change.PubName, change.dt
-                counter += 1
+                #print change.PublisherID
+                #print change.DisplayPublisher, change.PubName, change.dt
+                #counter += 1
                 #changeset = change.create_changeset(anon)
                 #change.create_revision(changeset, anon)
 
