@@ -4,6 +4,7 @@ import sys
 from django.db import transaction, connection, settings
 from django.contrib.auth.models import User
 from django.utils.encoding import smart_unicode as uni
+from django.utils.encoding import smart_str
 
 from apps.gcd.models import Issue
 from apps.gcd.migration import migrate_reserve, do_auto_approve
@@ -49,14 +50,14 @@ def fix_reprint_notes(issues, old_reprint_note, new_reprint_note, check_double_s
 def fix_reprint_notes_global(old_reprint_note, new_reprint_note):
     issues = Issue.objects.filter(story__reprint_notes__icontains=old_reprint_note,
                                   story__deleted=False).filter(deleted=False).distinct()
-    print issues.count(), old_reprint_note
+    print smart_str("cnt %d: %s" % (issues.count(), old_reprint_note.encode("utf-8")))
     fix_reprint_notes(issues, old_reprint_note, new_reprint_note)
 
 def fix_reprint_notes_series(series_id, old_reprint_note, new_reprint_note, check_double_semi=False):
     issues = Issue.objects.filter(story__reprint_notes__icontains=old_reprint_note,
                                   story__deleted=False,
                                   series__id=series_id).filter(deleted=False).distinct()
-    print issues.count(), old_reprint_note
+    print smart_str("cnt %d: %s" % (issues.count(), old_reprint_note.encode("utf-8")))
     fix_reprint_notes(issues, old_reprint_note, new_reprint_note, check_double_semi)
 
 @transaction.commit_on_success
@@ -91,6 +92,7 @@ def main():
     [') in Kamp Spesial #', '); in Kamp Spesial (Se-Bladene, 1986 Series) #'],
     ['in Kamp Serien #', 'in Kamp Serien (Se-Bladene, 1964 Series) #'],
     ['Kamp Spesial #', 'Kamp Spesial (Se-Bladene, 1986 Series) #'],
+    ['\r\nfrom Harry die bunte Jugendzeitung (Lehning, 1958 series)#', '; from Harry die bunte Jugendzeitung (Lehning, 1958 series) #'],
     ['eries)#','eries) #'],
     ['Superman Extra (DC, 1980 Serie)','Superman Extra (Ehapa, 1980 Serie)'],
     ['Superman Taschenbuch (DC, 1976 Serie)','Superman Taschenbuch (Ehapa, 1976 Serie)'],
@@ -189,6 +191,7 @@ def main():
     ['Lucky Luke (Dupuis Publishing, 1949 series)', uni('Lucky Luke (Editions Dupuis, 1949 series)')],
     ['Vill Vest  (Se-Bladene, 1957 series)', 'Vill Vest (Se-Bladene, 1955 series)'],
     ['; o; ', '; '],
+    [uni('from (À Suivre) (Casterman', uni('from À Suivre (Casterman')],
     ]
     for [old, new] in reprint_notes:
         fix_reprint_notes_global(old, new)
@@ -339,7 +342,6 @@ def main():
         [16059, ') in ', '); in '],
         [16197, ') in ', '); in '],
         [16994, ') in ', '); in '],
-        [58343, 'from Harry die bunte Jugendzeitung (Lehning, 1958 series)#', '; from Harry die bunte Jugendzeitung (Lehning, 1958 series) #'],
         ]
     for [series, old, new] in norwegian_series:
         fix_reprint_notes_series(series, old, new, check_double_semi=True)

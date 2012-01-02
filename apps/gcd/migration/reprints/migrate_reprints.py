@@ -12,6 +12,7 @@ from django.shortcuts import render_to_response, \
 from django.http import HttpResponseRedirect
 from django.views.generic.list_detail import object_list
 from django.utils.encoding import smart_unicode as uni
+from django.utils.encoding import smart_str
 from django.db import transaction
 
 from apps.gcd.models import Publisher, Series, Issue, Story, Reprint, ReprintFromIssue, ReprintToIssue
@@ -32,7 +33,7 @@ def migrate_reprints_lars():
     # 36975  Superman Superband
     # 36964  Roter Blitz
     issues = Issue.objects.filter(series__id__in = [18732,26245,31648,36955,36980,36973,36949,36975,36964], reserved=False)
-    issues = Issue.objects.filter(series__id__in = [36975,36964], reserved=False)
+    #issues = Issue.objects.filter(series__id__in = [36975,36964], reserved=False)
     migrated = []
     for migrate_issue in issues:
         changeset = migrate_reserve(migrate_issue, 'issue', 'to migrate reprint notes into links')
@@ -52,7 +53,7 @@ def migrate_reprints_lars():
                     issue, notes, sequence_number, story = parse_reprint_lars(string)
                     if issue and issue.series.language.code.lower() == 'en' and string.startswith('in '):
                         # Lars sometimes copied further US printings, don't create links
-                        print "double", string
+                        #print "double", string
                         issue = None
                     #print issue, notes, sequence_number, story
                     if sequence_number < 0 and issue:
@@ -64,8 +65,8 @@ def migrate_reprints_lars():
                                 sequence_number = 0
                             else:
                                 story = False
-                        else:
-                            print "no sequence number found", string, issue
+                        #else:
+                            #print "no sequence number found", string, issue
                     #print issue
                     if issue:
                         if sequence_number >= 0 and story:
@@ -92,7 +93,7 @@ def migrate_reprints_lars():
                         text_reprint += string + "; "
                 if len(text_reprint) > 0:
                     text_reprint = text_reprint[:-2]
-                    print "Reprint Note Left: ", i.issue, i.issue.id, text_reprint
+                    #print "Reprint Note Left: ", i.issue, i.issue.id, text_reprint
                     i.migration_status.reprint_needs_inspection = True
                     i.migration_status.save()
                 i.reprint_notes = text_reprint
@@ -279,6 +280,8 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
     for string in split_reprint_string(i.reprint_notes):
         issue, notes, sequence_number, story,is_source = \
           find_migration_candidates(i, string, standard=standard)
+        if notes == None:
+            notes = ''
         if issue and sequence_number < 0:
             if i.sequence_number == 0 and is_source == False:
                 sequence_number = 0
@@ -615,12 +618,13 @@ def merge_reprint_link_notes(keep, delete):
         revision.out_type = revision_keep.out_type
         revision.in_type = revision_keep.out_type
 
-    print revision_delete.changeset.id, revision_keep.changeset.id
-    print changeset, changeset.id, revision_keep.notes
+    #print revision_delete.changeset.id, revision_keep.changeset.id
+    #print changeset, changeset.id, revision_keep.notes
     #print changeset.reprintrevisions.all()
     #print keep.revisions.all()
-    print u"delete:", uni(delete)
-    print u"keep:", uni(keep)
+    #print smart_str("cnt %d: %s" % (issues.count(), old_reprint_note.encode("utf-8")))
+    print smart_str("delete: %s" % str(delete))
+    print smart_str("keep: %s" % str(keep))
     if mod_notes:
         revision.comments.create(commenter=changeset.indexer,
                                     changeset=changeset,
@@ -631,6 +635,7 @@ def merge_reprint_link_notes(keep, delete):
 
 def check_double_links():
     max_cnt = 10000000
+#    max_cnt = 1
     cnt = 0
     for i in ReprintToIssue.objects.all():
         a = Reprint.objects.filter(source = i.source,
@@ -655,7 +660,7 @@ def check_double_links():
 def merge_reprint_links(from_issue, to_issue, cover=False):
     #print from_issue, from_issue.id, from_issue.revisions.all()
     #print to_issue, to_issue.id, to_issue.revisions.all()
-    #from_issue.delete()
+    #to_issue.delete()
     #return
     revision_from = from_issue.revisions.latest('modified')
     revision_to = to_issue.revisions.latest('modified')
@@ -716,11 +721,11 @@ def merge_reprint_links(from_issue, to_issue, cover=False):
         revision_newer.save()
 
     #print revision_older.changeset.id, revision_newer.changeset.id
-    print changeset, changeset.id, revision_newer.notes
+    #print changeset, changeset.id, revision_newer.notes
     #print changeset.reprintrevisions.all()
     #print keep.revisions.all()
-    print u"older:", uni(older)
-    print u"newer:", uni(newer)
+    print smart_str("older: %s" % str(older))
+    print smart_str("newer: %s" % str(newer))
     #print newer.revisions.all()
     #print older.revisions.all()
     #print "newer:", revision_newer
@@ -743,7 +748,7 @@ def merge_reprint_links(from_issue, to_issue, cover=False):
     newer.delete()
 
 def merge_return_links_cover():
-    max_cnt = 500
+    max_cnt = 5000000
     cnt = 0
     for i in ReprintToIssue.objects.filter(source__type__name = 'cover'):
         a = ReprintFromIssue.objects.filter(source_issue = i.source.issue,
@@ -767,7 +772,7 @@ def merge_return_links_cover():
                     return
 
 def merge_links_story():
-    max_cnt = 5000
+    max_cnt = 50000000
     cnt = 0
     for i in ReprintToIssue.objects.filter(source__type__name = 'comic story'):
         if i.source.issue.active_stories().filter(type=i.source.type).count() == 1:
@@ -860,6 +865,13 @@ def check_return_links_story():
                 #reprint.delete()
 
 #migrate_reprints_lars()
+#migrate_reprints_standard()
+#migrate_reprints_other()
+
+#check_double_links()
+#merge_return_links_cover()
+merge_links_story()
+
 #migrate_reprints_series(28131)
 #migrate_reprints_series(38517)
 #migrate_reprints_series(44227)
