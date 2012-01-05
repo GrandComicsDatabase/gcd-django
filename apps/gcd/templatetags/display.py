@@ -383,7 +383,11 @@ def field_value(revision, field):
             if validated_isbn(value):
                 return u'%s (note: valid ISBN)' % value
             elif len(value.split(';')) > 1:
-                return u'%s (note: invalid or inequal ISBNs)' % value
+                return_val = value + ' (note: '
+                for isbn in value.split(';'):
+                    return_val = return_val + u'%s; ' % ("valid ISBN" \
+                                   if validated_isbn(isbn) else "invalid ISBN")
+                return return_val + 'ISBNs are inequal)'
             elif value:
                 return u'%s (note: invalid ISBN)' % value
     elif field == 'barcode':
