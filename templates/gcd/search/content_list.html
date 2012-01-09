@@ -6,6 +6,9 @@
 {% block list_contents %}
 <table class="listing">
   <tr>
+    {% if select_key %}
+    <th> Selection </th>
+    {% endif %}
     {% if which_credit %}
     <th> Matched Search </th>
     {% endif %}
@@ -16,6 +19,18 @@
 {% for story in items %}
   {% with story.issue.get_absolute_url as url %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    {% if select_key %}
+    <td>
+    <form action="{% url select_object select_key=select_key %}" method="POST">
+    <input type="submit" name="search_select" value="Select this story"></input>
+    <input type="hidden" name="object_choice" value="story_{{ story.id }}"></input>
+    </form>
+    <form action="{% url select_object select_key=select_key %}" method="POST">
+    <input type="submit" name="search_select" value="Select this issue"></input>
+    <input type="hidden" name="object_choice" value="issue_{{ story.issue.id }}"></input>
+    </form>
+    </td>
+    {% endif %}
     {% if which_credit %}<td>
       <dl class="credits">
       {{ story|show_credit:which_credit|safe }}

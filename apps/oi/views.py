@@ -7,6 +7,8 @@ import glob
 import Image
 import stat
 import errno
+import hashlib
+from random import random
 from datetime import datetime, timedelta
 
 from django.core import urlresolvers
@@ -19,6 +21,7 @@ from django.db import transaction
 from django.db.models import Min, Max
 from django.core.exceptions import *
 from django.utils.html import conditional_escape as esc
+from django.utils.datastructures import MultiValueDictKeyError
 
 from django.contrib.auth.views import login
 from django.contrib.auth.decorators import login_required, permission_required
@@ -267,26 +270,35 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
             imprint_revision.save()
 
     return changeset
-
+    
 @permission_required('gcd.can_reserve')
-def confirm_two_edits(request, issue_id):
-    if 'issue_two_id' not in request.GET:
-        return _cant_get(request)
-    try:
-        issue_two_id = int(request.GET['issue_two_id'])
-    except ValueError:
-        return render_error(request, 'Issue id must be an integer number.',
+def edit_two_issues(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id, deleted=False)
+    if issue.reserved:
+        return render_error(request, 'Issue %s is reserved.' % issue,
                             redirect=False)
-    issue_one = get_object_or_404(Issue, id=issue_id, deleted=False)
+    data = {'issue_id': issue_id,
+            'issue': True,
+            'heading': mark_safe('<h2>Select issue to edit with %s</h2>' \
+                                    % esc(issue.full_name())),
+            'target': 'an issue',
+            'return': confirm_two_edits,
+            'cancel': HttpResponseRedirect(urlresolvers.reverse('show_issue',
+                        kwargs={'issue_id': issue_id}))}
+    select_key = store_select_data(request, None, data)
+    return HttpResponseRedirect(urlresolvers.reverse('select_object',
+          kwargs={'select_key': select_key}))
+    
+@permission_required('gcd.can_reserve')
+def confirm_two_edits(request, data, object_type, issue_two_id):
+    if object_type != 'issue':
+        raise ValueError
+    issue_one = get_object_or_404(Issue, id=data['issue_id'], deleted=False)
     if issue_one.reserved:
         return render_error(request, 'Issue %s is reserved.' % issue_one,
                             redirect=False)
 
-    issue_two = Issue.objects.filter(id=issue_two_id, deleted=False)
-    if not issue_two:
-        return render_error(request, 'No issue with id %s.' \
-                            % issue_two_id, redirect=False)
-    issue_two = issue_two[0]
+    issue_two = get_object_or_404(Issue, id=issue_two_id, deleted=False)
     if issue_two.reserved:
         return render_error(request, 'Issue %s is reserved.' % issue_two,
                             redirect=False)
@@ -2951,11 +2963,197 @@ def preview(request, id, model_name):
     return render_error(request,
       u'No preview for "%s" revisions.' % model_name)
 
-
 ##############################################################################
-# Cache Objects
+# Cache and select objects
 ##############################################################################
 
+def store_select_data(request, select_key, data):
+    if not select_key:
+        salt = hashlib.sha1(str(random())).hexdigest()[:5]
+        select_key = hashlib.sha1(salt + unicode(request.user)).hexdigest()
+    for item in data:
+        request.session['%s_%s' % (select_key, item)] = data[item]
+    request.session['%s_items' % select_key] = data.keys() 
+    return select_key
+
+def get_select_data(request, select_key):
+    keys = request.session['%s_items' % select_key]
+    data = {}
+    for item in keys:
+        data[item] = request.session['%s_%s' % (select_key, item)]
+    return data
+
+def get_select_forms(request, initial, data, series=False, issue=False, story=False):
+    if issue or story:
+        cached_issue = get_cached_issue(request)
+    else:
+        cached_issue = None
+    if story:
+        cached_story = get_cached_story(request)
+        cached_cover = get_cached_cover(request)
+    else:
+        cached_story = None
+        cached_cover = None
+    
+    if data:
+        search_form = get_select_search_form(series, issue, story)(data)
+    else:
+        search_form = get_select_search_form(series, issue, story)(initial=initial)
+
+    cache_form = get_select_cache_form(cached_issue=cached_issue,
+        cached_story=cached_story, cached_cover=cached_cover)()
+
+    return search_form, cache_form
+
+@permission_required('gcd.can_reserve')
+def process_select_search(request, select_key):
+    try:
+        data = get_select_data(request, select_key)
+    except KeyError:
+        return _cant_get(request)
+    series = data.get('series', False)
+    issue =  data.get('issue', False)
+    story =  data.get('story', False)    
+    
+    search_form = get_select_search_form(series=series, issue=issue, story=story)(request.GET)
+    if not search_form.is_valid():
+        return HttpResponseRedirect(urlresolvers.reverse('select_object',
+                                      kwargs={'select_key': select_key}) \
+                                    + '?' + request.META['QUERY_STRING'])
+    cd = search_form.cleaned_data
+
+    if 'search_story' in request.GET or 'search_cover' in request.GET:
+        search = Story.objects.filter(issue__number=cd['number'],
+                    issue__series__name__icontains=cd['series'],
+                    issue__series__publisher__name__icontains=cd['publisher'])
+        publisher = cd['publisher'] if cd['publisher'] else '?'
+        if cd['year']:
+            search = search.filter(issue__series__year_began=cd['year'])
+            heading = '%s (%s, %d series) #%s' % (cd['series'],
+                                                  publisher,
+                                                  cd['year'],
+                                                  cd['number'])
+        else:
+            heading = '%s (%s, ? series) #%s' % (cd['series'], publisher, 
+                                       cd['number'])
+        if cd['sequence_number']:
+            search = search.filter(sequence_number=cd['sequence_number'])
+            heading += ', seq.# ' + str(cd['sequence_number'])
+        if 'search_cover' in request.GET:
+                # ? make StoryType.objects.get(name='cover').id a CONSTANT ?
+            search = search.filter(type=StoryType.objects.get(name='cover'))
+            base_name = 'cover'
+            plural_suffix = 's'
+        else:
+            base_name = 'stor'
+            plural_suffix = 'y,ies'
+        template='gcd/search/content_list.html'
+        heading = 'Search for: ' + heading,
+        search = search.order_by("issue__series__name",
+                                 "issue__series__year_began",
+                                 "issue__key_date",
+                                 "sequence_number")
+    elif 'search_issue' in request.GET:
+        search = Issue.objects.filter(number=cd['number'],
+                    series__name__icontains=cd['series'],
+                    series__publisher__name__icontains=cd['publisher'])
+        publisher = cd['publisher'] if cd['publisher'] else '?'
+        if cd['year']:
+            search = search.filter(series__year_began=cd['year'])
+            heading = '%s (%s, %d series) #%s' % (cd['series'], publisher,
+                                                  cd['year'], cd['number'])
+        else:
+            heading = '%s (%s, ? series) #%s' % (cd['series'], publisher,
+                                                 cd['number'])
+        heading = 'Issue search for: ' + heading
+        template='gcd/search/issue_list.html'
+        base_name = 'issue'
+        plural_suffix = 's'
+        search = search.order_by("series__name", "series__year_began",
+                                 "key_date")
+        
+    context = { 'item_name': base_name,
+        'plural_suffix': plural_suffix,
+        'items' : search,
+        'heading' : heading,
+        'select_key': select_key,
+        'query_string': request.META['QUERY_STRING'],
+        'publisher': cd['publisher'] if cd['publisher'] else '',
+        'series': cd['series'] if cd['series'] else '',
+        'year': cd['year'] if cd['year'] else '',
+        'number': cd['number'] if cd['number'] else ''
+    }
+    return paginate_response(request, search, template, context)
+
+@permission_required('gcd.can_reserve')
+def select_object(request, select_key):
+    try:
+        data = get_select_data(request, select_key)
+    except KeyError:
+        return _cant_get(request)
+    if request.method == 'GET':
+        if 'refine_search' in request.GET or 'search_issue' in request.GET:
+            request_data = request.GET
+        else:
+            request_data = None
+        initial = data.get('initial', {})
+        initial['select_key'] = select_key
+        series = data.get('series', False)
+        issue =  data.get('issue', False)
+        story =  data.get('story', False)
+        search_form, cache_form = get_select_forms(request, 
+                                    initial, request_data, 
+                                    series=series, issue=issue, story=story)
+        return render_to_response('oi/edit/select_object.html',
+        {
+            'heading': data['heading'],
+            'select_key': select_key,
+            'cache_form': cache_form,
+            'search_form': search_form,
+            'series': series,
+            'issue': issue,
+            'story': story,
+            'target': data['target']
+        },
+        context_instance=RequestContext(request))
+    
+    if 'cancel' in request.POST: 
+        return data['cancel']
+    elif 'select_object' in request.POST:
+        try:
+            choice = request.POST['object_choice']
+            object_type, selected_id = choice.split('_')
+            if object_type == 'cover':
+                object_type = 'story'
+        except MultiValueDictKeyError:
+            return render_error(request,
+                                'You did not select a cached object. '
+                                'Please use the back button to return.',
+                                redirect=False)
+    elif 'search_select' in request.POST:
+        choice = request.POST['object_choice']
+        object_type, selected_id = choice.split('_')
+    elif 'entered_issue_id' in request.POST:
+        object_type = 'issue'
+        try:
+            selected_id = int(request.POST['entered_issue_id'])
+        except ValueError:
+            return render_error(request,
+                                'Entered Id must be an integer number. '
+                                'Please use the back button to return.',
+                                redirect=False)
+    elif 'entered_story_id' in request.POST:
+        object_type = 'story'
+        try:
+            selected_id = int(request.POST['entered_story_id'])
+        except ValueError:
+            return render_error(request,
+                                'Entered Id must be an integer number. '
+                                'Please use the back button to return.',
+                                redirect=False)
+    else:
+        raise ValueError
+    return data['return'](request, data, object_type, selected_id)
 
 def get_cached_issue(request):
     cached_issue = request.session.get('cached_issue', None)
@@ -2990,6 +3188,7 @@ def get_cached_cover(request):
     return cached_cover
 
 
+@permission_required('gcd.can_reserve')
 def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
     """
     Store an issue_id or story_id in the session.

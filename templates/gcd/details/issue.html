@@ -155,9 +155,8 @@ This issue has variants.
   </form>
     {% endif %}
   <form method="GET"
-        action="{% url confirm_two_edits issue_id=issue.id %}">
-    <input type="submit" value="{% trans 'Edit with another issue' %}"></input>
-    <label class="edit_label" title="Enter the id of the other issue from its url: www.comics.org/issue/#id">Enter issue-id:</label><input title="Enter the id of the other issue from its url: www.comics.org/issue/#id" type="text" name="issue_two_id" size="7"></input>
+        action="{% url edit_two_issues issue_id=issue.id %}">
+    <input type="submit" value="{% trans 'Edit with another issue' %}">
   </form>
   {% endif %}
 {% endif %}

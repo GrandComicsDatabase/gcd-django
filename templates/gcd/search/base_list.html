@@ -19,6 +19,24 @@
   {% endwith %}
   {% endwith %}
 
+  {% if select_key %}
+<div class='left'>  
+<p>
+<form action="{% url select_object select_key=select_key %}" method="POST">
+  <input type="submit" name="cancel" value="Cancel"> the search for an object to select.
+</form>
+<form action="{% url select_object select_key=select_key %}" method="GET">
+  <input type="submit" name="refine_search" value="Refine"> the search for an object to select.
+  <input type="hidden" name="select_key" value="{{ select_key }}" id="id_select_key" />
+  <input type="hidden" name="publisher" value="{{ publisher }}" id="id_publisher" />
+  <input type="hidden" name="year" value="{{ year }}" id="id_year" />
+  <input type="hidden" name="series" value="{{ series }}" id="id_series" />
+  <input type="hidden" name="number" value="{{ number }}" id="id_number" />
+</form>
+</p>
+</div>
+  {% endif %}
+
   {% block list_contents %}{% endblock %}
 
   {% if used_search_terms %}

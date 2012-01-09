@@ -4,7 +4,7 @@
 
 {% block list_contents %}
 
-{% if request.user.is_authenticated and items %}
+{% if request.user.is_authenticated and items and not select_key %}
 <div id="bulk_change_info">
 {% ifequal paginator.num_pages 1 %}
 &nbsp;Use this search result for a <a href="{% url edit_issues_in_bulk %}?{{ query_string }}">
@@ -17,12 +17,23 @@ bulk change</a>
 
 <table class="listing">
   <tr>
+    {% if select_key %}
+    <th> Selection </th>
+    {% endif %}
     <th colspan="2"> Publisher </th>
     <th> Issue </th>
     <th> Date </th>
   </tr>
 {% for issue in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    {% if select_key %}
+    <td>
+    <form action="{% url select_object select_key=select_key %}" method="POST">
+    <input type="submit" name="search_select" value="Select this issue"></input>
+    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}"></input>
+    </form>
+    </td>
+    {% endif %}
     <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ issue.series.country.code|lower }}.png" alt="{{ issue.series.country.code|upper }}">
     <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
     <td> {{ issue|show_issue }} </td>
