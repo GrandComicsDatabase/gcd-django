@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.utils.safestring import mark_safe
@@ -438,6 +439,14 @@ def field_name(field):
     else:
         return title(field.replace('_', ' '))
 
+def is_overdue(changeset):
+    # do this correctly and with variables in settings if we ever do the 
+    # enforcing of the reservation limit according to the vote
+    if datetime.today() - changeset.created > timedelta(weeks=8):
+        return mark_safe("class='overdue'")
+    else:
+        return ""
+
 register.filter(absolute_url)
 register.filter(cover_image_tag)
 register.filter(show_story_short)
@@ -452,3 +461,4 @@ register.filter(changed_story_list)
 register.filter(check_changed)
 register.filter(field_value)
 register.filter(field_name)
+register.filter(is_overdue)

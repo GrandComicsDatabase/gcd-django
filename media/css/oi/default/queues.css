@@ -36,6 +36,10 @@
     background-color: tomato;
 }
 
+.queues td.overdue {
+    color: red;
+}
+
 .queues form {
     margin: 0;
     padding: 0;

@@ -45,7 +45,7 @@
     <td> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
         {% endif %}
     <td> {{ changeset.display_state }} </td>
-    <td> {{ changeset.modified }} </td>
+    <td {% if queue_name == 'editing' %} {{ changeset|is_overdue }} {% endif %}> {{ changeset.modified }} </td>
     <td> {% with changeset.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>
       {% endfor %}
