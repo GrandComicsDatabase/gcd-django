@@ -93,12 +93,31 @@ class Story(models.Model):
         return self.genre or \
                self.characters or \
                self.synopsis or \
-               self.reprint_notes or \
+               self.has_reprints()
+               
+    def has_reprints(self, notes=True):
+        return (notes and self.reprint_notes) or \
                self.from_reprints.count() or \
                self.to_reprints.count() or \
                self.from_issue_reprints.count() or \
                self.to_issue_reprints.count()
 
+    def _reprint_needs_inspection(self):
+        if self.migration_status:
+            return self.migration_status.reprint_needs_inspection
+        else:
+            return False
+    reprint_needs_inspection = property(_reprint_needs_inspection)
+
+    def _reprint_confirmed(self):
+        if self.migration_status:
+            return self.migration_status.reprint_confirmed
+        else:
+            return False
+    reprint_confirmed = property(_reprint_confirmed)
+        
+
+               
     def has_data(self):
         """Simplifies UI checks for conditionals.  All non-heading fields"""
         return self.has_credits() or self.has_content() or self.notes

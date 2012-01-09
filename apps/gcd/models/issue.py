@@ -78,7 +78,7 @@ class Issue(models.Model):
             stories_from = self
         stories = list(stories_from.active_stories()
                                    .order_by('sequence_number')
-                                   .select_related('type'))
+                                   .select_related('type', 'migration_status'))
 
         if (len(stories) > 0):
             cover_story = stories.pop(0)

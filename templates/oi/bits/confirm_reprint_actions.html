@@ -1,0 +1,26 @@
+<table class="editing">
+  <tr>
+    <th><label for="reprint_notes">Notes for this reprint link:</label> </th>
+    <td><textarea id="reprint_notes" name="reprint_link_notes"></textarea></td>
+  </tr>
+  <tr>
+    <th><label for="reprint_notes">Story reprint notes:</label> </th>
+    <td>
+      <textarea id="reprint_notes" name="reprint_notes">{{ story.reprint_notes }}</textarea>
+      <br>
+      Reprint notes for the story. Might need editing if a text note is converted into a link.
+    </td>
+  </tr>
+  <tr>
+    <th><label for="comments">Comment:</label></th>
+    <td>
+      <textarea id="comments" name="comments"></textarea>
+      <br>
+      Comments between the Indexer and Editor about the change.  These comments
+      are part of the public change history, but are not part of the regular
+      display.
+    </td>
+  </tr>
+</table>
+<input type="submit" name="add" value="Confirm reprint entry"></input>
+<input type="submit" name="cancel" value="Cancel"></input>

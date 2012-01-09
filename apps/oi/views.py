@@ -1996,6 +1996,206 @@ def _display_add_story_form(request, issue, form, changeset_id):
       context_instance=RequestContext(request))
 
 ##############################################################################
+# Reprint Link Editing
+##############################################################################
+
+def parse_reprint(reprints):
+    """ parse a reprint entry for exactly our standard """
+    reprint_direction_from = ["from", "da", "di", "de", "uit", u"från", "aus"]
+    reprint_direction_to = ["in", "i"]
+    from_to = reprints.split(' ')[0].lower()
+    if from_to in reprint_direction_from + reprint_direction_to:
+        try:# our format: seriesname (publisher, year <series>) #nr
+            position = reprints.find(' (')
+            series = reprints[len(from_to) + 1:position]
+            string = reprints[position + 2:]
+            after_series = string
+            end_bracket = string.find(')')
+            position = string[:end_bracket].rfind(', ')
+            if position < 0:
+                series_pos = string.lower().find('series)')
+                if series_pos > 0:
+                    position = string[:series_pos].rfind(', ')
+            publisher = string[:position].strip()
+            position += 2
+            string = string[position:]
+            year = string[:4]
+            if from_to in ['da ', 'in ', 'de ', 'en ']: #italian and spanish from/in
+                if year.isdigit() != True:
+                    position = string.find(')')
+                    year = string[position-4:position]
+            string = string[4:]
+            position = string.find(' #')
+            if position > 0 and len(string[position+2:]):
+                string = string[position + 2:]
+                position = string.find(' [') #check for notes
+                if position > 0:
+                    position_end = string.find(']')
+                    if position_end > position:
+                        notes = string[position+2:position_end]
+                    date_pos = string.find(' (') #check for (date)
+                    if date_pos > 0 and date_pos < position:
+                        position = date_pos
+                else:
+                    position = string.find(' (') #check for (date)
+                    if position > 0: #if found ignore later
+                        pass
+                volume = None
+                if string.isdigit(): #in this case we are fine
+                    number = string
+                elif string[0].lower() == 'v' and string.find('#') > 0:
+                    n_pos = string.find('#')
+                    volume = string[1:n_pos]
+                    if position > 0:
+                        number = string[n_pos+1:position]
+                    else:
+                        number = string[n_pos+1:]
+                else:
+                    hyphen = string.find(' -')
+                    # following issue title after number
+                    if hyphen > 0 and string[:hyphen].isdigit() and not string[hyphen+2:].strip()[0].isdigit():
+                        number = string[:hyphen]
+                    else:
+                        if position > 0:
+                            number = string[:position].strip('., ')
+                        else:
+                            number = string.strip('., ')
+                if number == 'nn':
+                    number = '[nn]'
+                if number == '?':
+                    number = None
+            else:
+                number = None
+                volume = None
+            return publisher, series, year, number, volume
+        except:
+            pass
+    return None, None, None, None, None
+
+@permission_required('gcd.can_reserve')
+def add_reprint(request, story_id, changeset_id, reprint_note=''):
+    story = get_object_or_404(StoryRevision, id=story_id,
+                                changeset__id=changeset_id)
+    if reprint_note:
+        publisher, series, year, number, volume = \
+            parse_reprint(reprint_note)
+        initial = { 'series': series, 'publisher': publisher,
+                    'year': year, 'number': number }
+        print initial
+    else:
+        initial = {}
+    data = {'story_id': story_id,
+            'changeset_id': changeset_id,
+            'story': True,
+            'issue': True,
+            'initial': initial,
+            'heading': mark_safe('<h2>Select story/issue for the reprint link with %s</h2>' \
+                                    % esc(story)),
+            'target': 'a story or issue',
+            'return': confirm_story_reprint,
+            'cancel': HttpResponseRedirect(urlresolvers.reverse('edit',
+                        kwargs={'id': changeset_id}))}
+    select_key = store_select_data(request, None, data)
+    return HttpResponseRedirect(urlresolvers.reverse('select_object',
+          kwargs={'select_key': select_key}))
+
+@permission_required('gcd.can_reserve')
+def confirm_story_reprint(request, data, object_type, selected_id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('edit',
+          kwargs={ 'id': changeset_id }))
+    current_story = get_object_or_404(StoryRevision, id=data['story_id'],
+                                      changeset__id=data['changeset_id'])
+    if object_type == 'story':
+        selected_story = get_object_or_404(Story, id=selected_id)
+        selected_issue = None
+    else:
+        selected_issue = get_object_or_404(Issue, id=selected_id)
+        selected_story = None
+
+    return render_to_response('oi/edit/confirm_story_reprint.html',
+        {
+        'story': current_story,
+        'selected_story': selected_story,
+        'selected_issue': selected_issue,
+        'changeset': current_story.changeset,
+        },
+        context_instance=RequestContext(request))
+
+@permission_required('gcd.can_reserve')
+def save_reprint(request, changeset_id, story_one_id=None, story_revision_id=None,
+                issue_one_id=None, story_two_id=None, issue_two_id=None,
+                reprint_revision_id=None):
+    if request.method != 'POST':
+        return _cant_get(request)
+    if story_one_id and (story_revision_id or issue_one_id):
+        return _cant_get(request)
+    if story_two_id and issue_two_id:
+        return _cant_get(request)
+
+    changeset = Changeset.objects.get(id=changeset_id)
+
+    source_story = None
+    source_revision = None
+    source_issue = None
+    target_story = None
+    target_revision = None
+    target_issue = None
+
+    if story_revision_id:
+        story_revision = StoryRevision.objects.get(id=story_revision_id)
+        story_revision.reprint_notes = request.POST['reprint_notes']
+        story_revision.save()
+        if story_revision.story:
+            story_one_id = story_revision.story.id
+            story_revision_id = None
+            
+    if request.POST['direction'] == 'from':
+        if story_one_id:
+            target_story = Story.objects.get(id=story_one_id)
+        elif story_revision_id:
+            target_revision = story_revision            
+        else:
+            target_issue = Issue.objects.get(id=issue_one_id)
+        if story_two_id:
+            source_story = Story.objects.get(id=story_two_id)
+        else:
+            source_issue = Issue.objects.get(id=issue_two_id)
+    else:
+        if story_one_id:
+            source_story = Story.objects.get(id=story_one_id)
+        elif story_revision_id:
+            source_revision = story_revision
+        else:
+            source_issue = Issue.objects.get(id=issue_one_id)
+        if story_two_id:
+            target_story = Story.objects.get(id=story_two_id)
+        else:
+            target_issue = Issue.objects.get(id=issue_two_id)
+            
+    notes = request.POST['reprint_link_notes']
+    revision = ReprintRevision(source_story=source_story,
+                               source_revision=source_revision,
+                               source_issue=source_issue,
+                               target_story=target_story,
+                               target_revision=target_revision,
+                               target_issue=target_issue,
+                               notes=notes)
+    revision.save_added_revision(changeset=changeset)
+    if request.POST['comments']:
+        revision.comments.create(commenter=request.user,
+                                 changeset=changeset,
+                                 text=request.POST['comments'],
+                                 old_state=changeset.state,
+                                 new_state=changeset.state)
+
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+        kwargs={ 'id': changeset_id }))
+          
+
+##############################################################################
 # Moving Items
 ##############################################################################
 

@@ -144,6 +144,13 @@ urlpatterns = patterns('',
     url(r'^ongoing/(?P<series_id>\d+)/delete/$', oi_views.delete_ongoing,
         name='delete_ongoing'),
 
+    url(r'^story/revision/(?P<story_id>\d+)/add_reprint/(?P<changeset_id>\d+)/$',
+      oi_views.add_reprint, name='add_story_reprint'),
+    url(r'^story/revision/(?P<story_revision_id>\d+)/confirm_reprint/(?P<changeset_id>\d+)/story/(?P<story_two_id>\d+)/$',
+      oi_views.save_reprint, name='save_revision_story_reprint'),
+    url(r'^story/revision/(?P<story_revision_id>\d+)/confirm_reprint/(?P<changeset_id>\d+)/issue/(?P<issue_two_id>\d+)/$',
+      oi_views.save_reprint, name='save_revision_issue_reprint'),
+
     url(r'^select_object/(?P<select_key>.+)/search/$',
       oi_views.process_select_search, name='select_object_search'),
     url(r'^select_object/(?P<select_key>.+)/$', oi_views.select_object,
