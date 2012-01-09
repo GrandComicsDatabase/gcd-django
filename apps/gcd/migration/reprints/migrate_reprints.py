@@ -306,20 +306,21 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
                             existing_revision = existing_revision[0]
                             if existing_revision.notes != notes:
                                 if existing_revision.notes:
-                                    existing_revision.notes += '\n' + notes
+                                    existing_revision.notes += '; ' + notes
                                 else:
                                     existing_revision.notes = notes
+                                existing_revision.save()
                         else:
                             existing = Reprint.objects.get(source = i.story,
                                                             target = story)
-                            if existing:
-                                if existing.notes and existing.notes != notes:
-                                    reprint_revision = ReprintRevision.objects.clone_revision(\
-                                        reprint=existing, changeset=i.changeset)
-                                    if reprint_revision.notes:
-                                        reprint_revision.notes += '\n' + notes
-                                    else:
-                                        reprint_revision.notes = notes
+                            if existing.notes != notes:
+                                reprint_revision = ReprintRevision.objects.clone_revision(\
+                                    reprint=existing, changeset=i.changeset)
+                                if reprint_revision.notes:
+                                    reprint_revision.notes += '; ' + notes
+                                else:
+                                    reprint_revision.notes = notes
+                                reprint_revision.save()
                 else:
                     if do_save:
                         i.changeset.reprintrevisions.create(source_story=i.story, target_story=story, notes=notes)
@@ -341,20 +342,21 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
                             existing_revision = existing_revision[0]
                             if existing_revision.notes != notes:
                                 if existing_revision.notes:
-                                    existing_revision.notes += '\n' + notes
+                                    existing_revision.notes += '; ' + notes
                                 else:
                                     existing_revision.notes = notes
+                                existing_revision.save()
                         else:
                             existing = Reprint.objects.get(source = story,
                                                             target = i.story)
-                            if existing:
-                                if existing.notes and existing.notes != notes:
-                                    reprint_revision = ReprintRevision.objects.clone_revision(\
-                                        reprint=existing, changeset=i.changeset)
-                                    if reprint_revision.notes:
-                                        reprint_revision.notes += '\n' + notes
-                                    else:
-                                        reprint_revision.notes = notes
+                            if existing.notes != notes:
+                                reprint_revision = ReprintRevision.objects.clone_revision(\
+                                    reprint=existing, changeset=i.changeset)
+                                if reprint_revision.notes:
+                                    reprint_revision.notes += '; ' + notes
+                                else:
+                                    reprint_revision.notes = notes
+                                reprint_revision.save()
                 else:
                     if do_save:
                         i.changeset.reprintrevisions.create(source_story=story, target_story=i.story, notes=notes)
@@ -574,7 +576,7 @@ def consistency_check_double_links():
                 print a[1].notes
                 c = a[0]
                 if c.notes:
-                    c.notes += '\n' + a[1].notes
+                    c.notes += '; ' + a[1].notes
                 else:
                     c.notes = a[1].notes
                 c.save()
@@ -590,7 +592,7 @@ def merge_reprint_link_notes(keep, delete):
     if revision_delete.notes and revision_delete.notes != revision_keep.notes:
         if revision_keep.notes:
             if revision_delete.notes != revision_keep.notes:
-                revision_keep.notes = revision_keep.notes + '\n' + revision_delete.notes
+                revision_keep.notes = revision_keep.notes + '; ' + revision_delete.notes
         else:
             revision_keep.notes = revision_delete.notes
         revision_keep.save()
@@ -715,7 +717,7 @@ def merge_reprint_links(from_issue, to_issue, cover=False):
     if revision_older.notes and revision_older.notes != revision_newer.notes:
         if revision_newer.notes:
             if revision_older.notes != revision_newer.notes:
-                revision_newer.notes = revision_newer.notes + '\n' + revision_older.notes
+                revision_newer.notes = revision_newer.notes + '; ' + revision_older.notes
         else:
             revision_newer.notes = revision_older.notes
         revision_newer.save()
