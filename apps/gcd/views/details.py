@@ -272,7 +272,7 @@ def series_details(request, series_id, by_date=False):
 
         prev_year = None
         prev_month = None
-        for issue in with_key_dates.order_by('key_date'):
+        for issue in with_key_dates.order_by('key_date', 'sort_code'):
             m = re.search(KEY_DATE_REGEXP, issue.key_date)
             if m is None:
                 bad_key_dates.append(issue.id)
@@ -313,14 +313,15 @@ def series_details(request, series_id, by_date=False):
     # in the template.
     num_issues = series.issue_count
     volume_present = series.has_volume and \
-      series.active_issues().filter(no_volume=True).count() - num_issues
+      series.active_issues().filter(no_volume=True, variant_of=None).count() - num_issues
     brand_present = \
-      series.active_issues().filter(no_brand=True).count() - num_issues
+      series.active_issues().filter(no_brand=True, variant_of=None).count() - num_issues
     frequency_present = series.has_indicia_frequency and \
-      series.active_issues().filter(no_indicia_frequency=True).count() - num_issues
+      series.active_issues().filter(no_indicia_frequency=True, variant_of=None).count() - num_issues
     title_present = series.has_issue_title and \
-      series.active_issues().filter(no_title=True).count() - num_issues
-
+      series.active_issues().filter(no_title=True, variant_of=None).count() - num_issues
+    on_sale_date_present = series.active_issues().exclude(on_sale_date='').count()
+    
     return render_to_response('gcd/details/series_details.html',
       {
         'series': series,
@@ -331,6 +332,7 @@ def series_details(request, series_id, by_date=False):
         'brand_present': brand_present,
         'frequency_present': frequency_present,
         'title_present': title_present,
+        'on_sale_date_present': on_sale_date_present,
         'bad_dates': len(bad_key_dates),
       },
       context_instance=RequestContext(request))

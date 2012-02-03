@@ -88,6 +88,9 @@ The following table is the same as the regular series detail table:
 {% if frequency_present %}
     <th> Frequency </th>
 {% endif %}
+{% if on_sale_date_present %}
+    <th> On-sale date </th>
+{% endif %}
   </tr>
 
 {% comment %}
@@ -122,6 +125,9 @@ divisible filter.
           {% if frequency_present %}
     <td>&nbsp;</td>
           {% endif %}
+          {% if on_sale_date_present %}
+    <td>&nbsp;</td>
+          {% endif %}
   </tr>
         {% endfor %}
       {% endwith %}
@@ -150,6 +156,9 @@ cannot be placed in a timeline:
     <th> Price </th>
     {% if frequency_present %}
     <th> Frequency </th>
+    {% endif %}
+    {% if on_sale_date_present %}
+    <th> On-sale date </th>
     {% endif %}
   </tr>
   {% endif %}

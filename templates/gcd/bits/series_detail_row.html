@@ -11,7 +11,7 @@
   <td> {{ issue|show_volume }} </td>
     {% endif %}
   {% endif %}
-  <td> <a href="{{ issue.get_absolute_url }}">{{ issue.number }}</a> </td>
+  <td> <a href="{{ issue.get_absolute_url }}">{{ issue.number }}{% if issue.variant_name %} [{{ issue.variant_name }}]{% endif %}</a> </td>
   {% if title_present %}
     {% if issue.no_title %}
   <td>&nbsp;</td>
@@ -39,6 +39,9 @@
     {% else %}
   <td> {{ issue.indicia_frequency|default:"?" }} </td>
     {% endif %}
+  {% endif %}
+  {% if on_sale_date_present %}
+  <td>{{ issue.on_sale_date }} {% if issue.on_sale_date_uncertain %}?{% endif %}</td>
   {% endif %}
 </tr>
 
