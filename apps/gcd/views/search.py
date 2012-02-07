@@ -892,7 +892,8 @@ def search_issues(data, op, stories_q=None):
         q_objs.append(handle_numbers('volume', data, prefix))
     if data['issue_title']:
         q_objs.append(Q(**{ '%stitle__%s' % (prefix, op): \
-                        data['issue_title'] }))
+                        data['issue_title'] }) &\
+                      Q(**{ '%sseries__has_issue_title' % prefix: True }))
     if data['variant_name']:
         q_objs.append(Q(**{ '%svariant_name__%s' % (prefix, op): \
                         data['variant_name'] }))
@@ -914,12 +915,15 @@ def search_issues(data, op, stories_q=None):
                 data['indexer'] }) &
           Q(**{ '%srevisions__changeset__state' % prefix: states.APPROVED }))
     if data['isbn']:
-        q_objs.append(compute_isbn_qobj(data['isbn'], prefix, op))
+        q_objs.append(compute_isbn_qobj(data['isbn'], prefix, op) &\
+                             Q(**{ '%sseries__has_isbn' % prefix: True }))
     if data['barcode']:
-        q_objs.append(Q(**{ '%sbarcode__%s' % (prefix, op): data['barcode'] }))
+        q_objs.append(Q(**{ '%sbarcode__%s' % (prefix, op): data['barcode'] }) &\
+                             Q(**{ '%sseries__has_barcode' % prefix: True }))
     if data['indicia_frequency']:
         q_objs.append(Q(**{ '%sindicia_frequency__%s' % (prefix, op): \
-          data['indicia_frequency'] }))
+                             data['indicia_frequency'] }) &\
+                      Q(**{ '%sseries__has_indicia_frequency' % prefix: True }))
     if data['issue_notes']:
         q_objs.append(Q(**{ '%snotes__%s' % (prefix, op): data['issue_notes'] }))
 
@@ -979,7 +983,8 @@ def handle_numbers(field, data, prefix):
         if field == 'issues':
             q_or_only.append(Q(**{ '%snumber__in' % prefix: nums_in }))
         else:
-            q_or_only.append(Q(**{ '%svolume__in' % prefix: nums_in }))
+            q_or_only.append(Q(**{ '%svolume__in' % prefix: nums_in }) &\
+                             Q(**{ '%sseries__has_volume' % prefix: True }))
 
     return reduce(lambda x, y: x | y, q_or_only)
 
