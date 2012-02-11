@@ -1269,7 +1269,7 @@ class UploadScanForm(forms.Form):
                 'on behalf of someone you can mention this here as well.')
     remember_source = forms.BooleanField(label='Remember the source',
                                          required=False)
-    marked = forms.BooleanField(label="Mark cover", required=False,
+    marked = forms.BooleanField(label="Mark cover for replacement", required=False,
       help_text='Uploads of sub-standard scans for older and/or rare comics '
                 'are fine, but please mark them for replacement.')
     is_wraparound = forms.BooleanField(label="Wraparound cover",
@@ -1327,8 +1327,9 @@ class UploadVariantScanForm(UploadScanForm):
         'be generated with question marks in the creator fields on approval.')
     reservation_requested = forms.BooleanField(required=False,
       label = 'Request variant reservation',
-      help_text='Check this box to have the variant issue reserved to you '
-                'automatically when it is approved.')
+      help_text='Ideally you request a reservation for the new variant to later'
+        ' fill in the missing data. Check this box to have the variant issue '
+        'reserved to you automatically when it is approved.')
 
 class GatefoldScanForm(forms.Form):
     """ Form for cover uploads. """
