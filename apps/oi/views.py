@@ -737,8 +737,42 @@ def discuss(request, id):
         return render_error(request,
           'Only REVIEWING changes can be put into discussion.')
 
-    changeset.discuss(notes=request.POST['comments'])
+    notes = request.POST['comments']
+    changeset.discuss(notes=notes)
 
+    if notes:
+        email_comments = ' with the comment:\n"%s"' % notes
+    else:
+        email_comments = '.'
+        
+    email_body = u"""
+Hello from the %s!
+
+
+  Your change for "%s" was put into the discussion state by GCD editor %s%s
+
+You can view the full change at %s.
+
+thanks,
+-the %s team
+
+%s
+""" % (settings.SITE_NAME,
+       unicode(changeset),
+       unicode(changeset.approver.indexer),
+       email_comments,
+       settings.SITE_URL.rstrip('/') +
+         urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+       settings.SITE_NAME,
+       settings.SITE_URL)
+
+    if notes.strip():
+        subject = 'GCD change put into discussion with a comment'
+    else:
+        subject = 'GCD change put into discussion'
+            
+    changeset.indexer.email_user(subject, email_body, settings.EMAIL_INDEXING)
+          
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
@@ -802,8 +836,11 @@ thanks,
        settings.SITE_URL,
        postscript)
 
-
-        changeset.indexer.email_user('GCD change approved', email_body,
+        if notes.strip():
+            subject = 'GCD change approved with a comment'
+        else:
+            subject = 'GCD change approved'
+        changeset.indexer.email_user(subject, email_body,
           settings.EMAIL_INDEXING)
 
 
@@ -1017,6 +1054,14 @@ thanks,
         if changeset.approver and request.user != changeset.approver:
             changeset.approver.email_user('GCD comment', email_body,
               settings.EMAIL_INDEXING)
+        commenters = set(changeset.comments.exclude(text='')\
+                            .exclude(commenter__in=[changeset.indexer,
+                                                    changeset.approver,
+                                                    request.user])\
+                            .values_list('commenter', flat=True))
+        for commenter in commenters:
+            User.objects.get(id=commenter).email_user('GCD comment',
+                email_body, settings.EMAIL_INDEXING)
 
     return HttpResponseRedirect(urlresolvers.reverse(compare,
                                                      kwargs={ 'id': id }))
