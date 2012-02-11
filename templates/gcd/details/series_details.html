@@ -72,6 +72,9 @@ The following table is the same as the regular series detail table:
   <tr>
     <th> Key Date </th>
     <th> Pub. Date </th>
+{% if on_sale_date_present %}
+    <th> On-sale date </th>
+{% endif %}
 {% if volume_present %}
     <th> Volume </th>
 {% endif %}
@@ -88,8 +91,8 @@ The following table is the same as the regular series detail table:
 {% if frequency_present %}
     <th> Frequency </th>
 {% endif %}
-{% if on_sale_date_present %}
-    <th> On-sale date </th>
+{% if barcode_present %}
+    <th> Barcode </th>
 {% endif %}
   </tr>
 
