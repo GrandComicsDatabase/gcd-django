@@ -906,9 +906,11 @@ def search_issues(data, op, stories_q=None):
                       Q(**{ '%scover__marked' % prefix: True }))
     if data['is_indexed'] is not None:
         if data['is_indexed'] is True:
-            q_objs.append(Q(**{ '%sis_indexed' % prefix: True }))
+            q_objs.append(Q(**{ '%sis_indexed' % prefix: True }) &\
+                          Q(**{ '%svariant_of' % prefix: None }))
         else:
-            q_objs.append(Q(**{ '%sis_indexed' % prefix: False }))
+            q_objs.append(Q(**{ '%sis_indexed' % prefix: False }) &\
+                          Q(**{ '%svariant_of' % prefix: None }))
     if data['indexer']:
         q_objs.append(
           Q(**{ '%srevisions__changeset__indexer__indexer__in' % prefix:
