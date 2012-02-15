@@ -2282,7 +2282,7 @@ class IssueRevision(Revision):
     number = models.CharField(max_length=50,
       help_text='The issue number (or other label) as it appears in the indicia. '
                 'If there is no indicia the cover number may be used. '
-                'Series that number by year (mosty European series) should write '
+                'Series that number by year (mostly European series) should write '
                 'the year after a slash: "4/2009" for issue #4 in publication '
                 'year 2009.  Place brackets around an issue number if there is an '
                 'indicia but the number does not appear in it.  Use "[nn]" or the '
