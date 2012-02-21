@@ -195,9 +195,9 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.covers_to_replace'),
 
     # Reprints
-    (r'^reprint/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
+    (r'^reprint/name/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
-    (r'^reprint/(?P<reprints>.+)/$',
+    (r'^reprint/name/(?P<reprints>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
     (r'^settings/$',
      'apps.gcd.views.settings.settings'),

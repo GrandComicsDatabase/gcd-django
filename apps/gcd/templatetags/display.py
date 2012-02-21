@@ -10,7 +10,8 @@ from django import template
 from django.template.defaultfilters import yesno, linebreaksbr, title, urlize
 
 from apps.oi.models import StoryRevision, CTYPES, validated_isbn, \
-                           remove_leading_article
+                           remove_leading_article, ReprintRevision
+from apps.oi import states
 from apps.gcd.templatetags.credits import show_page_count, format_page_count
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
 from apps.gcd.models.series import Series
@@ -447,6 +448,118 @@ def is_overdue(changeset):
     else:
         return ""
 
+def link_other_reprint(reprint, is_source):
+    if is_source:
+        if hasattr(reprint, 'target'):
+            text = '<a href="%s">%s</a> <br> of %s' % \
+                     (reprint.target.get_absolute_url(),
+                      show_story_short(reprint.target),
+                      reprint.target.issue)
+        else:
+            text = '<a href="%s">%s</a>' % \
+                     (reprint.target_issue.get_absolute_url(),
+                      reprint.target_issue)
+    else:    
+        if hasattr(reprint, 'origin'):
+            text = '<a href="%s">%s</a> <br> of %s' % \
+                     (reprint.origin.get_absolute_url(),
+                      show_story_short(reprint.origin),
+                      reprint.origin.issue)
+        else:
+            text = '<a href="%s">%s</a>' % \
+                     (reprint.origin_issue.get_absolute_url(),
+                      reprint.origin_issue)
+    return mark_safe(text)
+
+def compare_current_reprints(object_type, changeset):
+    if object_type.changeset != changeset:
+        if not object_type.source:
+            return ''
+        active = ReprintRevision.objects.filter(next_revision__in=changeset.reprintrevisions.all())
+        if type(object_type) == StoryRevision:
+            active_origin = active.filter(origin_story=object_type.source)
+            active_target = active.filter(target_story=object_type.source)
+        else:
+            active_origin = active.filter(origin_issue=object_type.source)
+            active_target = active.filter(target_issue=object_type.source)
+    else:
+        if not object_type.source:
+            active_origin = object_type.origin_reprint_revisions\
+                                       .filter(changeset=changeset)
+            active_target = object_type.target_reprint_revisions\
+                                       .filter(changeset=changeset)
+        else:
+            active_origin = object_type.source.origin_reprint_revisions\
+                .filter(changeset=changeset)
+            active_target = object_type.source.target_reprint_revisions\
+                .filter(changeset=changeset)
+
+    if not object_type.source:
+        kept_origin = ReprintRevision.objects.none()
+        kept_target = ReprintRevision.objects.none()
+    else:
+        kept_origin = object_type.source.origin_reprint_revisions\
+          .filter(changeset__modified__lte=changeset.modified)\
+          .filter(next_revision=None).exclude(changeset=changeset)\
+          .filter(changeset__state=states.APPROVED)\
+          .exclude(deleted=True)
+        kept_origin = kept_origin | object_type.source.origin_reprint_revisions\
+          .filter(changeset__modified__lte=changeset.modified)\
+          .exclude(changeset=changeset).filter(changeset__state=states.APPROVED)\
+          .exclude(deleted=True).exclude(next_revision=None)
+
+        kept_target = object_type.source.target_reprint_revisions\
+          .filter(changeset__modified__lte=changeset.modified)\
+          .filter(next_revision=None).exclude(changeset=changeset)\
+          .filter(changeset__state=states.APPROVED)\
+          .exclude(deleted=True)        
+        kept_target = kept_target | object_type.source.target_reprint_revisions\
+          .filter(changeset__modified__lte=changeset.modified)\
+          .exclude(changeset=changeset).filter(changeset__state=states.APPROVED)\
+          .exclude(deleted=True).exclude(next_revision=None)
+                
+    if active_origin.count() or active_target.count():
+        if object_type.changeset != changeset:
+            reprint_string = '<ul>The following reprint links are edited in the ' \
+            'compared changeset.'
+        else:
+            reprint_string = '<ul>The following reprint links are edited ' \
+            'in this changeset.'
+            
+        for reprint in (active_origin | active_target):
+            if object_type.changeset != changeset:
+                action = ''
+            else:
+                if reprint.in_type == None:
+                    action = " <span class='added'>[ADDED]</span>"
+                elif reprint.deleted:
+                    action = " <span class='deleted'>[DELETED]</span>"
+                else:
+                    action = ""
+            reprint_string = '%s<li>%s%s</li>' % (reprint_string,
+            reprint.get_compare_string(object_type.issue), action)
+        reprint_string += '</ul>'
+    else:
+        reprint_string = ''
+
+    if kept_origin.count() or kept_target.count():
+        kept_string = ''
+        for reprint in (kept_origin | kept_target):
+            # the checks for nex_revision.changeset seemingly cannot be done
+            # in the filter/exclude process above. next_revision does not need
+            # to exists and makes problems in that.
+            if not hasattr(reprint, 'next_revision') or \
+              ( reprint.next_revision.changeset != changeset and not
+                ( reprint.next_revision.changeset.state == states.APPROVED and
+                  reprint.next_revision.changeset.modified <= changeset.modified)):
+                kept_string = '%s<li>%s</li>' % (kept_string,
+                  reprint.get_compare_string(object_type.issue))
+        if kept_string != '':
+            reprint_string += '</ul>The following reprint links are not ' \
+                'part of this change.<ul>' + kept_string
+            
+    return mark_safe(reprint_string)
+    
 register.filter(absolute_url)
 register.filter(cover_image_tag)
 register.filter(show_story_short)
@@ -462,3 +575,5 @@ register.filter(check_changed)
 register.filter(field_value)
 register.filter(field_name)
 register.filter(is_overdue)
+register.filter(link_other_reprint)
+register.filter(compare_current_reprints)

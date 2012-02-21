@@ -1,0 +1,676 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Reprint links for {{ issue_revision }}      <form class="changeset" method="GET"
+            action="{% url add_issue_reprint issue_id=issue_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" value="Add reprint">
+      </form>
+    </h1>
+
+<p>
+  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+</p>
+
+{% with issue_revision as issue %}
+  {% if issue.from_reprints_oi.count %}
+<h3>parts of this issue are reprinted from the sequence</h3>
+<table class="story_list">
+    {% with 0 as is_source %}
+    {% with 'reprint_to_issue' as reprint_type %}
+      {% for reprint in issue.from_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.from_issue_reprints_oi.count %}
+<h3>parts of this issue are reprinted from the issue</h3>
+<table class="story_list">
+    {% with 0 as is_source %}
+    {% with 'issue_reprint' as reprint_type %}
+      {% for reprint in issue.from_issue_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.to_reprints_oi.count %}
+<h3>parts of this issue are reprinted in the sequence</h3>
+<table class="story_list">
+    {% with 1 as is_source %}
+    {% with 'reprint_from_issue' as reprint_type %}
+      {% for reprint in issue.to_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.to_issue_reprints_oi.count %}
+<h3>parts of this issue are reprinted in the issue</h3>
+<table class="story_list">
+    {% with 1 as is_source %}
+    {% with 'issue_reprint' as reprint_type %}
+      {% for reprint in issue.to_issue_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+{% endwith %}
+
+{% for story_revision in issue_revision.ordered_story_revisions %}
+<h2>{{ story_revision|show_story_short }}
+  {% if not story_revision.deleted %}
+  <form class="story_button" method="GET"
+            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
+               value="Add reprint">
+  </form>
+  {% endif %}
+</h2>
+
+  {% if story_revision.reprint_notes %}
+<h3>Current reprint notes:</h3>
+<ul>
+    {% for reprint in story_revision.reprint_notes|split_reprint_string %}
+  <li>{{ reprint }}
+      {% if not story_revision.deleted %}
+    <form class="story_button" method="GET"
+            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id,reprint_note=reprint|urlencode %}">
+        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
+               value="Add reprint">
+    </form>
+      {% endif %}
+  </li>
+    {% endfor %}
+</ul>
+  {% endif %}
+
+    {% with story_revision as story %}
+
+      {% if story.from_reprints_oi.count %}
+<h3>reprinted from the sequence:</h3>
+<table class="story_list">
+        {% with 0 as is_source %}
+        {% with 'reprint' as reprint_type %}
+          {% for reprint in story.from_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+    
+      {% if story.from_issue_reprints_oi.count %}
+<h3>reprinted from parts of the issue:</h3>
+<table class="story_list">
+        {% with 'reprint_from_issue' as reprint_type %}
+        {% with 0 as is_source %}
+          {% for reprint in story.from_issue_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+
+      {% if story.to_reprints_oi.count %}
+<h3>reprinted in the sequence:</h3>
+<table class="story_list">
+        {% with 1 as is_source %}
+        {% with 'reprint' as reprint_type %}
+          {% for reprint in story.to_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+
+      {% if story.to_issue_reprints_oi.count %}
+<h3>reprinted as parts of the issue:</h3>
+<table class="story_list">
+        {% with 1 as is_source %}
+        {% with 'reprint_to_issue' as reprint_type %}
+          {% for reprint in story.to_issue_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+       {% endwith %}
+</table>
+      {% endif %}
+
+    {% endwith %}
+{% endfor %}
+
+<p>
+  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+</p>
+
+{% endblock %}
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Reprint links for {{ issue_revision }}      <form class="changeset" method="GET"
+            action="{% url add_issue_reprint issue_id=issue_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" value="Add reprint">
+      </form>
+    </h1>
+
+<p>
+  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+</p>
+
+{% with issue_revision as issue %}
+  {% if issue.from_reprints_oi.count %}
+<h3>parts of this issue are reprinted from the sequence</h3>
+<table class="story_list">
+    {% with 0 as is_source %}
+    {% with 'reprint_to_issue' as reprint_type %}
+      {% for reprint in issue.from_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.from_issue_reprints_oi.count %}
+<h3>parts of this issue are reprinted from the issue</h3>
+<table class="story_list">
+    {% with 0 as is_source %}
+    {% with 'issue_reprint' as reprint_type %}
+      {% for reprint in issue.from_issue_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.to_reprints_oi.count %}
+<h3>parts of this issue are reprinted in the sequence</h3>
+<table class="story_list">
+    {% with 1 as is_source %}
+    {% with 'reprint_from_issue' as reprint_type %}
+      {% for reprint in issue.to_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.to_issue_reprints_oi.count %}
+<h3>parts of this issue are reprinted in the issue</h3>
+<table class="story_list">
+    {% with 1 as is_source %}
+    {% with 'issue_reprint' as reprint_type %}
+      {% for reprint in issue.to_issue_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+{% endwith %}
+
+{% for story_revision in issue_revision.ordered_story_revisions %}
+<h2>{{ story_revision|show_story_short }}
+  {% if not story_revision.deleted %}
+  <form class="story_button" method="GET"
+            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
+               value="Add reprint">
+  </form>
+  {% endif %}
+</h2>
+
+  {% if story_revision.reprint_notes %}
+<h3>Current reprint notes:</h3>
+<ul>
+    {% for reprint in story_revision.reprint_notes|split_reprint_string %}
+  <li>{{ reprint }}
+      {% if not story_revision.deleted %}
+    <form class="story_button" method="GET"
+            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id,reprint_note=reprint|urlencode %}">
+        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
+               value="Add reprint">
+    </form>
+      {% endif %}
+  </li>
+    {% endfor %}
+</ul>
+  {% endif %}
+
+    {% with story_revision as story %}
+
+      {% if story.from_reprints_oi.count %}
+<h3>reprinted from the sequence:</h3>
+<table class="story_list">
+        {% with 0 as is_source %}
+        {% with 'reprint' as reprint_type %}
+          {% for reprint in story.from_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+    
+      {% if story.from_issue_reprints_oi.count %}
+<h3>reprinted from parts of the issue:</h3>
+<table class="story_list">
+        {% with 'reprint_from_issue' as reprint_type %}
+        {% with 0 as is_source %}
+          {% for reprint in story.from_issue_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+
+      {% if story.to_reprints_oi.count %}
+<h3>reprinted in the sequence:</h3>
+<table class="story_list">
+        {% with 1 as is_source %}
+        {% with 'reprint' as reprint_type %}
+          {% for reprint in story.to_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+
+      {% if story.to_issue_reprints_oi.count %}
+<h3>reprinted as parts of the issue:</h3>
+<table class="story_list">
+        {% with 1 as is_source %}
+        {% with 'reprint_to_issue' as reprint_type %}
+          {% for reprint in story.to_issue_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+       {% endwith %}
+</table>
+      {% endif %}
+
+    {% endwith %}
+{% endfor %}
+
+<p>
+  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+</p>
+
+{% endblock %}
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Reprint links for {{ issue_revision }}      <form class="changeset" method="GET"
+            action="{% url add_issue_reprint issue_id=issue_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" value="Add reprint">
+      </form>
+    </h1>
+
+<p>
+  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+</p>
+
+{% with issue_revision as issue %}
+  {% if issue.from_reprints_oi.count %}
+<h3>parts of this issue are reprinted from the sequence</h3>
+<table class="story_list">
+    {% with 0 as is_source %}
+    {% with 'reprint_to_issue' as reprint_type %}
+      {% for reprint in issue.from_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.from_issue_reprints_oi.count %}
+<h3>parts of this issue are reprinted from the issue</h3>
+<table class="story_list">
+    {% with 0 as is_source %}
+    {% with 'issue_reprint' as reprint_type %}
+      {% for reprint in issue.from_issue_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.to_reprints_oi.count %}
+<h3>parts of this issue are reprinted in the sequence</h3>
+<table class="story_list">
+    {% with 1 as is_source %}
+    {% with 'reprint_from_issue' as reprint_type %}
+      {% for reprint in issue.to_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.to_issue_reprints_oi.count %}
+<h3>parts of this issue are reprinted in the issue</h3>
+<table class="story_list">
+    {% with 1 as is_source %}
+    {% with 'issue_reprint' as reprint_type %}
+      {% for reprint in issue.to_issue_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+{% endwith %}
+
+{% for story_revision in issue_revision.ordered_story_revisions %}
+<h2>{{ story_revision|show_story_short }}
+  {% if not story_revision.deleted %}
+  <form class="story_button" method="GET"
+            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
+               value="Add reprint">
+  </form>
+  {% endif %}
+</h2>
+
+  {% if story_revision.reprint_notes %}
+<h3>Current reprint notes:</h3>
+<ul>
+    {% for reprint in story_revision.reprint_notes|split_reprint_string %}
+  <li>{{ reprint }}
+      {% if not story_revision.deleted %}
+    <form class="story_button" method="GET"
+            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id,reprint_note=reprint|urlencode %}">
+        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
+               value="Add reprint">
+    </form>
+      {% endif %}
+  </li>
+    {% endfor %}
+</ul>
+  {% endif %}
+
+    {% with story_revision as story %}
+
+      {% if story.from_reprints_oi.count %}
+<h3>reprinted from the sequence:</h3>
+<table class="story_list">
+        {% with 0 as is_source %}
+        {% with 'reprint' as reprint_type %}
+          {% for reprint in story.from_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+    
+      {% if story.from_issue_reprints_oi.count %}
+<h3>reprinted from parts of the issue:</h3>
+<table class="story_list">
+        {% with 'reprint_from_issue' as reprint_type %}
+        {% with 0 as is_source %}
+          {% for reprint in story.from_issue_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+
+      {% if story.to_reprints_oi.count %}
+<h3>reprinted in the sequence:</h3>
+<table class="story_list">
+        {% with 1 as is_source %}
+        {% with 'reprint' as reprint_type %}
+          {% for reprint in story.to_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+
+      {% if story.to_issue_reprints_oi.count %}
+<h3>reprinted as parts of the issue:</h3>
+<table class="story_list">
+        {% with 1 as is_source %}
+        {% with 'reprint_to_issue' as reprint_type %}
+          {% for reprint in story.to_issue_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+       {% endwith %}
+</table>
+      {% endif %}
+
+    {% endwith %}
+{% endfor %}
+
+<p>
+  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+</p>
+
+{% endblock %}
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Reprint links for {{ issue_revision }}      <form class="changeset" method="GET"
+            action="{% url add_issue_reprint issue_id=issue_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" value="Add reprint">
+      </form>
+    </h1>
+
+<p>
+  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+</p>
+
+{% with issue_revision as issue %}
+  {% if issue.from_reprints_oi.count %}
+<h3>parts of this issue are reprinted from the sequence</h3>
+<table class="story_list">
+    {% with 0 as is_source %}
+    {% with 'reprint_to_issue' as reprint_type %}
+      {% for reprint in issue.from_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.from_issue_reprints_oi.count %}
+<h3>parts of this issue are reprinted from the issue</h3>
+<table class="story_list">
+    {% with 0 as is_source %}
+    {% with 'issue_reprint' as reprint_type %}
+      {% for reprint in issue.from_issue_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.to_reprints_oi.count %}
+<h3>parts of this issue are reprinted in the sequence</h3>
+<table class="story_list">
+    {% with 1 as is_source %}
+    {% with 'reprint_from_issue' as reprint_type %}
+      {% for reprint in issue.to_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+
+  {% if issue.to_issue_reprints_oi.count %}
+<h3>parts of this issue are reprinted in the issue</h3>
+<table class="story_list">
+    {% with 1 as is_source %}
+    {% with 'issue_reprint' as reprint_type %}
+      {% for reprint in issue.to_issue_reprints_oi.all %}
+        {% include 'oi/bits/reprint_type_list.html' %}
+      {% endfor %}
+    {% endwith %}
+    {% endwith %}
+</table>
+  {% endif %}
+{% endwith %}
+
+{% for story_revision in issue_revision.ordered_story_revisions %}
+<h2>{{ story_revision|show_story_short }}
+  {% if not story_revision.deleted %}
+  <form class="story_button" method="GET"
+            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
+               value="Add reprint">
+  </form>
+  {% endif %}
+</h2>
+
+  {% if story_revision.reprint_notes %}
+<h3>Current reprint notes:</h3>
+<ul>
+    {% for reprint in story_revision.reprint_notes|split_reprint_string %}
+  <li>{{ reprint }}
+      {% if not story_revision.deleted %}
+    <form class="story_button" method="GET"
+            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id,reprint_note=reprint|urlencode %}">
+        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
+               value="Add reprint">
+    </form>
+      {% endif %}
+  </li>
+    {% endfor %}
+</ul>
+  {% endif %}
+
+    {% with story_revision as story %}
+
+      {% if story.from_reprints_oi.count %}
+<h3>reprinted from the sequence:</h3>
+<table class="story_list">
+        {% with 0 as is_source %}
+        {% with 'reprint' as reprint_type %}
+          {% for reprint in story.from_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+    
+      {% if story.from_issue_reprints_oi.count %}
+<h3>reprinted from parts of the issue:</h3>
+<table class="story_list">
+        {% with 'reprint_from_issue' as reprint_type %}
+        {% with 0 as is_source %}
+          {% for reprint in story.from_issue_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+
+      {% if story.to_reprints_oi.count %}
+<h3>reprinted in the sequence:</h3>
+<table class="story_list">
+        {% with 1 as is_source %}
+        {% with 'reprint' as reprint_type %}
+          {% for reprint in story.to_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+        {% endwith %}
+</table>
+      {% endif %}
+
+      {% if story.to_issue_reprints_oi.count %}
+<h3>reprinted as parts of the issue:</h3>
+<table class="story_list">
+        {% with 1 as is_source %}
+        {% with 'reprint_to_issue' as reprint_type %}
+          {% for reprint in story.to_issue_reprints_oi.all %}
+            {% include 'oi/bits/reprint_type_list.html' %}
+          {% endfor %}
+        {% endwith %}
+       {% endwith %}
+</table>
+      {% endif %}
+
+    {% endwith %}
+{% endfor %}
+
+<p>
+  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+</p>
+
+{% endblock %}

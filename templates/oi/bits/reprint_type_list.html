@@ -1,0 +1,260 @@
+{% load display %}
+<tr colspan="2" align="left" {% if reprint.deleted %} class="deleted" {% endif %} {% if reprint.changeset and reprint.in_type = None and reprint.out_type = None %} class="added" {% endif %}>
+  {% if reprint.changeset and not reprint.changeset = changeset and reprint.source %}
+  <td> {{ reprint.source|link_other_reprint:is_source }}</td>
+  {% else %}
+  <td> {{ reprint|link_other_reprint:is_source }}</td>
+  {% endif %}
+  <td>
+{% if not reprint.reserved and not reprint.changeset %}
+<form action="{% url reserve_reprint reprint_id=reprint.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+  {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+    <input type="submit" name="edit_origin" value="Change origin">
+  {% if is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+    <input type="submit" name="flip_direction" value="Flip reprint direction">
+    <input type="submit" name="delete" value="Mark to Delete">
+</form>
+{% else %}
+    {% if reprint.changeset_id = changeset.id %}
+<form action="{% url edit_reprint id=reprint.id %}" method="POST">
+      {% if reprint.deleted %}
+    <input type="submit" name="restore" value="Restore">
+      {% else %}
+        {% if not is_source %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target" value="Change target">
+    <input type="submit" name="edit_origin" value="Change origin">
+      {% else %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_target" value="Change target">
+      {% endif %}
+    <input type="submit" name="flip_direction" value="Flip2 reprint direction">
+      {% if reprint.source %}
+    <input type="submit" name="delete" value="Mark to Delete">
+      {% else %}
+    <input type="submit" name="remove" value="Remove">
+      {% endif %}
+    {% endif %}
+</form>
+    {% else %}
+      {% if reprint.changeset.state = states.APPROVED %}
+<form action="{% url reserve_reprint reprint_id=reprint.source.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+        {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+    <input type="submit" name="edit_origin" value="Change origin">
+        {% if is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+    <input type="submit" name="flip_direction" value="Flip3 reprint direction">
+    <input type="submit" name="delete" value="Mark to Delete">
+</form>
+      {% else %}
+        {% if reprint.changeset %}
+    Is reserved in a different <a href="{% url compare id=reprint.changeset.id %}">changeset</a>.
+        {% else %}
+    Is reserved in a different <a href="{% url compare id=reprint.revisions.latest.changeset.id %}">changeset</a>.
+        {% endif %}
+      {% endif %}
+    {% endif %}
+{% endif %}
+  </td>
+</tr>
+{% load display %}
+<tr colspan="2" align="left" {% if reprint.deleted %} class="deleted" {% endif %} {% if reprint.changeset and reprint.in_type = None and reprint.out_type = None %} class="added" {% endif %}>
+  {% if reprint.changeset and not reprint.changeset = changeset and reprint.source %}
+  <td> {{ reprint.source|link_other_reprint:is_source }}</td>
+  {% else %}
+  <td> {{ reprint|link_other_reprint:is_source }}</td>
+  {% endif %}
+  <td>
+{% if not reprint.reserved and not reprint.changeset %}
+<form action="{% url reserve_reprint reprint_id=reprint.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+  {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+    <input type="submit" name="edit_origin" value="Change origin">
+  {% if is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+    <input type="submit" name="flip_direction" value="Flip reprint direction">
+    <input type="submit" name="delete" value="Mark to Delete">
+</form>
+{% else %}
+    {% if reprint.changeset_id = changeset.id %}
+<form action="{% url edit_reprint id=reprint.id %}" method="POST">
+      {% if reprint.deleted %}
+    <input type="submit" name="restore" value="Restore">
+      {% else %}
+        {% if not is_source %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target" value="Change target">
+    <input type="submit" name="edit_origin" value="Change origin">
+      {% else %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_target" value="Change target">
+      {% endif %}
+    <input type="submit" name="flip_direction" value="Flip2 reprint direction">
+      {% if reprint.source %}
+    <input type="submit" name="delete" value="Mark to Delete">
+      {% else %}
+    <input type="submit" name="remove" value="Remove">
+      {% endif %}
+    {% endif %}
+</form>
+    {% else %}
+      {% if reprint.changeset.state = states.APPROVED %}
+<form action="{% url reserve_reprint reprint_id=reprint.source.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+        {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+    <input type="submit" name="edit_origin" value="Change origin">
+        {% if is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+    <input type="submit" name="flip_direction" value="Flip3 reprint direction">
+    <input type="submit" name="delete" value="Mark to Delete">
+</form>
+      {% else %}
+        {% if reprint.changeset %}
+    Is reserved in a different <a href="{% url compare id=reprint.changeset.id %}">changeset</a>.
+        {% else %}
+    Is reserved in a different <a href="{% url compare id=reprint.revisions.latest.changeset.id %}">changeset</a>.
+        {% endif %}
+      {% endif %}
+    {% endif %}
+{% endif %}
+  </td>
+</tr>
+{% load display %}
+<tr colspan="2" align="left" {% if reprint.deleted %} class="deleted" {% endif %} {% if reprint.changeset and reprint.in_type = None and reprint.out_type = None %} class="added" {% endif %}>
+  {% if reprint.changeset and not reprint.changeset = changeset and reprint.source %}
+  <td> {{ reprint.source|link_other_reprint:is_source }}</td>
+  {% else %}
+  <td> {{ reprint|link_other_reprint:is_source }}</td>
+  {% endif %}
+  <td>
+{% if not reprint.reserved and not reprint.changeset %}
+<form action="{% url reserve_reprint reprint_id=reprint.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+  {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+    <input type="submit" name="edit_origin" value="Change origin">
+  {% if is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+    <input type="submit" name="flip_direction" value="Flip reprint direction">
+    <input type="submit" name="delete" value="Mark to Delete">
+</form>
+{% else %}
+    {% if reprint.changeset_id = changeset.id %}
+<form action="{% url edit_reprint id=reprint.id %}" method="POST">
+      {% if reprint.deleted %}
+    <input type="submit" name="restore" value="Restore">
+      {% else %}
+        {% if not is_source %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target" value="Change target">
+    <input type="submit" name="edit_origin" value="Change origin">
+      {% else %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_target" value="Change target">
+      {% endif %}
+    <input type="submit" name="flip_direction" value="Flip2 reprint direction">
+      {% if reprint.source %}
+    <input type="submit" name="delete" value="Mark to Delete">
+      {% else %}
+    <input type="submit" name="remove" value="Remove">
+      {% endif %}
+    {% endif %}
+</form>
+    {% else %}
+      {% if reprint.changeset.state = states.APPROVED %}
+<form action="{% url reserve_reprint reprint_id=reprint.source.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+        {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+    <input type="submit" name="edit_origin" value="Change origin">
+        {% if is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+    <input type="submit" name="flip_direction" value="Flip3 reprint direction">
+    <input type="submit" name="delete" value="Mark to Delete">
+</form>
+      {% else %}
+        {% if reprint.changeset %}
+    Is reserved in a different <a href="{% url compare id=reprint.changeset.id %}">changeset</a>.
+        {% else %}
+    Is reserved in a different <a href="{% url compare id=reprint.revisions.latest.changeset.id %}">changeset</a>.
+        {% endif %}
+      {% endif %}
+    {% endif %}
+{% endif %}
+  </td>
+</tr>
+{% load display %}
+<tr colspan="2" align="left" {% if reprint.deleted %} class="deleted" {% endif %} {% if reprint.changeset and reprint.in_type = None and reprint.out_type = None %} class="added" {% endif %}>
+  {% if reprint.changeset and not reprint.changeset = changeset and reprint.source %}
+  <td> {{ reprint.source|link_other_reprint:is_source }}</td>
+  {% else %}
+  <td> {{ reprint|link_other_reprint:is_source }}</td>
+  {% endif %}
+  <td>
+{% if not reprint.reserved and not reprint.changeset %}
+<form action="{% url reserve_reprint reprint_id=reprint.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+  {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+    <input type="submit" name="edit_origin" value="Change origin">
+  {% if is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+    <input type="submit" name="flip_direction" value="Flip reprint direction">
+    <input type="submit" name="delete" value="Mark to Delete">
+</form>
+{% else %}
+    {% if reprint.changeset_id = changeset.id %}
+<form action="{% url edit_reprint id=reprint.id %}" method="POST">
+      {% if reprint.deleted %}
+    <input type="submit" name="restore" value="Restore">
+      {% else %}
+        {% if not is_source %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target" value="Change target">
+    <input type="submit" name="edit_origin" value="Change origin">
+      {% else %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_target" value="Change target">
+      {% endif %}
+    <input type="submit" name="flip_direction" value="Flip2 reprint direction">
+      {% if reprint.source %}
+    <input type="submit" name="delete" value="Mark to Delete">
+      {% else %}
+    <input type="submit" name="remove" value="Remove">
+      {% endif %}
+    {% endif %}
+</form>
+    {% else %}
+      {% if reprint.changeset.state = states.APPROVED %}
+<form action="{% url reserve_reprint reprint_id=reprint.source.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+        {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+    <input type="submit" name="edit_origin" value="Change origin">
+        {% if is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+    <input type="submit" name="flip_direction" value="Flip3 reprint direction">
+    <input type="submit" name="delete" value="Mark to Delete">
+</form>
+      {% else %}
+        {% if reprint.changeset %}
+    Is reserved in a different <a href="{% url compare id=reprint.changeset.id %}">changeset</a>.
+        {% else %}
+    Is reserved in a different <a href="{% url compare id=reprint.revisions.latest.changeset.id %}">changeset</a>.
+        {% endif %}
+      {% endif %}
+    {% endif %}
+{% endif %}
+  </td>
+</tr>

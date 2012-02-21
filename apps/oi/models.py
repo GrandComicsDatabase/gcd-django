@@ -61,7 +61,11 @@ REPRINT_TYPES = {
     'story_to_story': 0,
     'story_to_issue': 1,
     'issue_to_story': 2,
-    'issue_to_issue': 3
+    'issue_to_issue': 3,
+    'reprint': 0,
+    'reprint_to_issue': 1,
+    'reprint_from_issue': 2,
+    'issue_reprint': 3
 }
 
 REPRINT_CLASSES = {
@@ -481,6 +485,10 @@ class Changeset(models.Model):
             if revision.source is not None:
                 revision.source.reserved = False
                 revision.source.save()
+                # if this becomes relevant for other revisions make a method
+                if type(revision) == ReprintRevision:
+                    revision.previous_revision = None
+                    revision.save()
         if self.approver:
             self.approver.indexer.add_imps(IMP_APPROVER_VALUE)
 
@@ -919,7 +927,9 @@ class Revision(models.Model):
                 field_changed = old != new
             self.changed[field_name] = field_changed
             self.is_changed |= field_changed
-
+        if not self.is_changed and type(self) in [IssueRevision, StoryRevision]:
+            self.is_changed = self.has_reprint_revisions()
+            
     def _start_imp_sum(self):
         """
         Hook for subclasses to initialize state for an IMP calculation.
@@ -2517,30 +2527,170 @@ class IssueRevision(Revision):
             return False
         return self.issue.has_reprints()
 
-    def _to_reprints(self):
-        if self.issue is None:
-            return ReprintFromIssue.objects.none()
-        return self.issue.to_reprints.all()
-    to_reprints = property(_to_reprints)
+    # we need two checks if relevant reprint revisions exist:
+    # 1) revisions which are active and link self.issue with a story/issue
+    #    in the current direction under consideration
+    # 2) existing reprints which are reserved and which link self.issue
+    #    with a story/issue in the current direction under consideration
+    # if this is the case we return reprintrevisions and not reprint links
+    # returned reprint links are three cases:
+    # a) revisions in the current changeset which link self.issue with a
+    #    story/issue in the current direction under consideration
+    # b) newly added and active revisions in other changesets
+    #    we do not need .exclude(changeset__id=self.changeset_id)\ the new
+    #    ones from the current changeset we want anyway
+    # c) for the current corresponding reprint links the latest revisions
+    #    which are not in the current changeset, the latest can be fetched
+    #    via next_revision=None, that way we get either approved or active ones
 
-    def _to_issue_reprints(self):
-        if self.issue is None:
-            return IssueReprint.objects.none()
-        return self.issue.to_issue_reprints.all()
-    to_issue_reprints = property(_to_issue_reprints)
-
-    def _from_reprints(self):
+    def old_revisions_base(self):
+        revs = ReprintRevision.objects.exclude(changeset__id=self.changeset_id)\
+                                      .exclude(changeset__state=states.DISCARDED)
+        return revs
+    
+    def from_reprints_oi(self, preview=False):
         if self.issue is None:
             return ReprintToIssue.objects.none()
-        return self.issue.from_reprints.all()
+        elif self.issue.target_reprint_revisions\
+          .filter(changeset__state__in=states.ACTIVE)\
+          .filter(origin_issue=None).count() \
+          or self.issue.from_reprints.filter(reserved=True).count():
+            new_revisions = self.issue.target_reprint_revisions\
+              .filter(changeset__id=self.changeset_id)\
+              .filter(origin_issue=None)
+            if not preview:
+                new_revisions |= self.issue.target_reprint_revisions\
+                .filter(changeset__state__in=states.ACTIVE, in_type=None)\
+                .filter(origin_issue=None)
+            else:
+                new_revisions = new_revisions.exclude(deleted=True)
+            existing_reprints = self.issue.from_reprints.all()
+            old_revisions = self.old_revisions_base()\
+              .filter(reprint_to_issue__in=existing_reprints,
+                      next_revision=None)
+            return new_revisions | old_revisions
+        else:
+            return self.issue.from_reprints.all()
+    def _from_reprints(self):
+        return self.from_reprints_oi(preview=True)
     from_reprints = property(_from_reprints)
 
-    def _from_issue_reprints(self):
+    def from_issue_reprints_oi(self, preview=False):
         if self.issue is None:
             return IssueReprint.objects.none()
-        return self.issue.from_issue_reprints.all()
+        elif self.issue.target_reprint_revisions\
+          .filter(changeset__state__in=states.ACTIVE)\
+          .exclude(origin_issue=None).count() \
+          or self.issue.from_issue_reprints.filter(reserved=True).count():
+            new_revisions = self.issue.target_reprint_revisions\
+              .filter(changeset__id=self.changeset_id)\
+              .exclude(origin_issue=None)
+            if not preview:
+                new_revisions |= self.issue.target_reprint_revisions\
+                .filter(changeset__state__in=states.ACTIVE, in_type=None)\
+                .exclude(origin_issue=None)
+            else:
+                new_revisions = new_revisions.exclude(deleted=True)
+            existing_reprints = self.issue.from_issue_reprints.all()
+            old_revisions = self.old_revisions_base()\
+              .filter(issue_reprint__in=existing_reprints, next_revision=None)
+            return new_revisions | old_revisions
+        else:
+            return self.issue.from_issue_reprints.all()
+    def _from_issue_reprints(self):
+        return self.from_issue_reprints_oi(preview=True)
     from_issue_reprints = property(_from_issue_reprints)
 
+    def to_reprints_oi(self, preview=False):
+        if self.issue is None:
+            return ReprintFromIssue.objects.none()
+        elif self.issue.origin_reprint_revisions\
+          .filter(changeset__state__in=states.ACTIVE)\
+          .filter(target_issue=None).count() \
+          or self.issue.to_reprints.filter(reserved=True).count():
+            new_revisions = self.issue.origin_reprint_revisions\
+              .filter(changeset__id=self.changeset_id)\
+              .filter(target_issue=None)
+            if not preview:
+                new_revisions |= self.issue.origin_reprint_revisions\
+                .filter(changeset__state__in=states.ACTIVE, in_type=None)\
+                .filter(target_issue=None)
+            else:
+                new_revisions = new_revisions.exclude(deleted=True)
+            existing_reprints = self.issue.to_reprints.all()
+            old_revisions = self.old_revisions_base()\
+              .filter(reprint_from_issue__in=existing_reprints,
+                      next_revision=None)
+            return new_revisions | old_revisions
+        else:
+            return self.issue.to_reprints.all()
+    def _to_reprints(self):
+        return self.to_reprints_oi(preview=True)
+    to_reprints = property(_to_reprints)
+
+    def to_issue_reprints_oi(self, preview=False):
+        if self.issue is None:
+            return IssueReprint.objects.none()
+        elif self.issue.origin_reprint_revisions\
+          .filter(changeset__state__in=states.ACTIVE)\
+          .exclude(target_issue=None).count() \
+          or self.issue.to_issue_reprints.filter(reserved=True).count():
+            new_revisions = self.issue.origin_reprint_revisions\
+              .filter(changeset__id=self.changeset_id)\
+              .exclude(target_issue=None)
+            if not preview:
+                new_revisions |= self.issue.origin_reprint_revisions\
+                .filter(changeset__state__in=states.ACTIVE, in_type=None)\
+                .exclude(target_issue=None)
+            else:
+                new_revisions = new_revisions.exclude(deleted=True)
+            existing_reprints = self.issue.to_issue_reprints.all()
+            old_revisions = self.old_revisions_base()\
+              .filter(issue_reprint__in=existing_reprints, next_revision=None)
+            return new_revisions | old_revisions
+        else:
+            return self.issue.to_issue_reprints.all()
+    def _to_issue_reprints(self):
+        return self.to_issue_reprints_oi(preview=True)
+    to_issue_reprints = property(_to_issue_reprints)
+        
+    def has_reprint_revisions(self):
+        if self.issue is None:
+            if self.target_reprint_revisions\
+                .filter(changeset__id=self.changeset_id).count():
+                return True
+            elif self.origin_reprint_revisions\
+                .filter(changeset__id=self.changeset_id).count():
+                return True
+            else:
+                return False
+        if self.issue.target_reprint_revisions\
+            .filter(changeset__id=self.changeset_id).count():
+            return True
+        elif self.issue.origin_reprint_revisions\
+            .filter(changeset__id=self.changeset_id).count():
+            return True
+        if self.issue.to_reprints.filter(reserved=True,
+          revisions__changeset=self.changeset).count():
+            return True
+        if self.issue.from_reprints.filter(reserved=True,
+          revisions__changeset=self.changeset).count():
+            return True
+        if self.issue.to_issue_reprints.filter(reserved=True,
+          revisions__changeset=self.changeset).count():
+            return True
+        if self.issue.from_issue_reprints.filter(reserved=True,
+          revisions__changeset=self.changeset).count():
+            return True
+        if self.changeset.state == states.APPROVED:
+            active = ReprintRevision.objects.\
+              filter(next_revision__in=self.changeset.reprintrevisions.all())
+            if active.filter(origin_issue=self.issue):
+                return True
+            if active.filter(target_issue=self.issue):
+                return True
+        return False
+        
     def other_variants(self):
         if self.variant_of:
             variants = self.variant_of.variant_set.all()
@@ -3154,7 +3304,7 @@ class StoryRevision(Revision):
         self.save()
 
     def deletable(self):
-        if self.changeset.reprintrevisions.filter(source_story=self.story).count() \
+        if self.changeset.reprintrevisions.filter(origin_story=self.story).count() \
           or self.changeset.reprintrevisions.filter(target_story=self.story).count() \
           or (self.story and self.story.has_reprints(notes=False)):
             return False
@@ -3397,94 +3547,138 @@ class StoryRevision(Revision):
                 update_count('issue indexes', -1,
                              language=self.issue.series.language)
 
-    def _from_reprints(self):
+    # we need two checks if relevant reprint revisions exist:
+    # 1) revisions which are active and link self.story with a story/issue
+    #    in the current direction under consideration
+    # 2) existing reprints which are reserved and which link self.story 
+    #    with a story/issue in the current direction under consideration
+    # if this is the case we return reprintrevisions and not reprint links
+    # returned reprint links are three cases:
+    # a) revisions in the current changeset which link self.story with a
+    #    story/issue in the current direction under consideration
+    # b) newly added and active revisions in other changesets
+    #    we do not need .exclude(changeset__id=self.changeset_id)\ the new
+    #    ones from the current changeset we want anyway
+    # c) for the current corresponding reprint links the latest revisions
+    #    which are not in the current changeset, the latest can be fetched
+    #    via next_revision=None, that way we get either approved or active ones
+    
+    # for newly added stories it is easy, just show reprintrevision which
+    # point to the new story in the right ways
+
+    def old_revisions_base(self):
+        revs = ReprintRevision.objects.exclude(changeset__id=self.changeset_id)\
+                                      .exclude(changeset__state=states.DISCARDED)
+        return revs
+        
+    def from_reprints_oi(self, preview=False):
         if self.story is None:
-            if self.target_reprint_revisions\
-              .filter(changeset__id=self.changeset_id,
-                      source_issue=None).count():
-                return self.target_reprint_revisions\
-                  .filter(changeset__id=self.changeset_id, source_issue=None)
-            else:
-                return Reprint.objects.none()
+            return self.target_reprint_revisions\
+                .filter(changeset__id=self.changeset_id, origin_issue=None)
         elif self.story.target_reprint_revisions\
-          .filter(changeset__id=self.changeset_id, source_issue=None).count():
-            revisions = self.story.target_reprint_revisions\
-              .filter(changeset__id=self.changeset_id, source_issue=None)
-            older_revisions = self.story.target_reprint_revisions\
-              .exclude(changeset__id=self.changeset_id)\
-              .filter(next_revision=None).filter(source_issue=None)
-            return revisions | older_revisions
+          .filter(changeset__state__in=states.ACTIVE)\
+          .filter(origin_issue=None).count() \
+          or self.story.from_reprints.filter(reserved=True).count():
+            new_revisions = self.story.target_reprint_revisions\
+              .filter(changeset__id=self.changeset_id)\
+              .filter(origin_issue=None)
+            if not preview:
+                new_revisions |= self.story.target_reprint_revisions\
+                .filter(changeset__state__in=states.ACTIVE, in_type=None)\
+                .filter(origin_issue=None)
+            else:
+                new_revisions = new_revisions.exclude(deleted=True)
+            existing_reprints = self.story.from_reprints.all()
+            old_revisions = self.old_revisions_base()\
+              .filter(reprint__in=existing_reprints, next_revision=None)
+            return new_revisions | old_revisions
         else:
             return self.story.from_reprints.all()
+    def _from_reprints(self):
+        return self.from_reprints_oi(preview=True)
     from_reprints = property(_from_reprints)
 
-    def _from_issue_reprints(self):
+    def from_issue_reprints_oi(self, preview=False):
         if self.story is None:
-            if self.target_reprint_revisions\
-              .filter(changeset__id=self.changeset_id)\
-              .exclude(source_issue=None).count():
-                return self.target_reprint_revisions\
-                  .filter(changeset__id=self.changeset_id)\
-                  .exclude(source_issue=None)
-            else:
-                return ReprintFromIssue.objects.none()
+            return self.target_reprint_revisions\
+                .filter(changeset__id=self.changeset_id)\
+                .exclude(origin_issue=None)
         elif self.story.target_reprint_revisions\
-          .filter(changeset__id=self.changeset_id)\
-          .exclude(source_issue=None).count():
-            revisions = self.story.target_reprint_revisions\
+          .filter(changeset__state__in=states.ACTIVE)\
+          .exclude(origin_issue=None).count() \
+          or self.story.from_issue_reprints.filter(reserved=True).count():
+            new_revisions = self.story.target_reprint_revisions\
               .filter(changeset__id=self.changeset_id)\
-              .exclude(source_issue=None)
-            older_revisions = self.story.target_reprint_revisions\
-              .exclude(changeset__id=self.changeset_id)\
-              .filter(next_revision=None).exclude(source_issue=None)
-            return revisions | older_revisions
+              .exclude(origin_issue=None)
+            if not preview:
+                new_revisions |= self.story.target_reprint_revisions\
+                .filter(changeset__state__in=states.ACTIVE, in_type=None)\
+                .exclude(origin_issue=None)
+            else:
+                new_revisions = new_revisions.exclude(deleted=True)
+            existing_reprints = self.story.from_issue_reprints.all()
+            old_revisions = self.old_revisions_base()\
+              .filter(reprint_from_issue__in=existing_reprints, next_revision=None)
+            return new_revisions | old_revisions
         else:
             return self.story.from_issue_reprints.all()
+    def _from_issue_reprints(self):
+        return self.from_issue_reprints_oi(preview=True)
     from_issue_reprints = property(_from_issue_reprints)
 
-    def _to_reprints(self):
+    def to_reprints_oi(self, preview=False):
         if self.story is None:
-            if self.source_reprint_revisions\
-              .filter(changeset__id=self.changeset_id,
-                      target_issue=None).count():
-                return self.source_reprint_revisions\
-                  .filter(changeset__id=self.changeset_id, target_issue=None)
+            return self.origin_reprint_revisions\
+                .filter(changeset__id=self.changeset_id, target_issue=None)
+        elif self.story.origin_reprint_revisions\
+          .filter(changeset__state__in=states.ACTIVE)\
+          .filter(target_issue=None).count() \
+          or self.story.to_reprints.filter(reserved=True).count():
+            new_revisions = self.story.origin_reprint_revisions\
+              .filter(changeset__id=self.changeset_id)\
+              .filter(target_issue=None)
+            if not preview:
+                new_revisions |= self.story.origin_reprint_revisions\
+                .filter(changeset__state__in=states.ACTIVE, in_type=None)\
+                .filter(target_issue=None)
             else:
-                return Reprint.objects.none()
-        elif self.story.source_reprint_revisions\
-          .filter(changeset__id=self.changeset_id, target_issue=None).count():
-            revisions = self.story.source_reprint_revisions\
-              .filter(changeset__id=self.changeset_id, target_issue=None)
-            older_revisions = self.story.source_reprint_revisions\
-              .exclude(changeset__id=self.changeset_id)\
-              .filter(next_revision=None).filter(target_issue=None)
-            return revisions | older_revisions
+                new_revisions = new_revisions.exclude(deleted=True)
+            existing_reprints = self.story.to_reprints.all()
+            old_revisions = self.old_revisions_base()\
+              .filter(reprint__in=existing_reprints, next_revision=None)
+            return new_revisions | old_revisions
         else:
             return self.story.to_reprints.all()
+    def _to_reprints(self):
+        return self.to_reprints_oi(preview=True)
     to_reprints = property(_to_reprints)
 
-    def _to_issue_reprints(self):
+    def to_issue_reprints_oi(self, preview=False):
         if self.story is None:
-            if self.source_reprint_revisions\
-              .filter(changeset__id=self.changeset_id)\
-              .exclude(target_issue=None).count():
-                return self.source_reprint_revisions\
-                  .filter(changeset__id=self.changeset_id)\
-                  .exclude(target_issue=None)
-            else:
-                return ReprintToIssue.objects.none()
-        elif self.story.source_reprint_revisions\
-          .filter(changeset__id=self.changeset_id)\
-          .exclude(target_issue=None).count():
-            revisions = self.story.source_reprint_revisions\
+            return self.origin_reprint_revisions\
+                .filter(changeset__id=self.changeset_id)\
+                .exclude(target_issue=None)
+        elif self.story.origin_reprint_revisions\
+          .filter(changeset__state__in=states.ACTIVE)\
+          .exclude(target_issue=None).count() \
+          or self.story.to_issue_reprints.filter(reserved=True).count():
+            new_revisions = self.story.origin_reprint_revisions\
               .filter(changeset__id=self.changeset_id)\
               .exclude(target_issue=None)
-            older_revisions = self.story.source_reprint_revisions\
-              .exclude(changeset__id=self.changeset_id)\
-              .filter(next_revision=None).exclude(target_issue=None)
-            return revisions | older_revisions
+            if not preview:
+                new_revisions |= self.story.origin_reprint_revisions\
+                .filter(changeset__state__in=states.ACTIVE, in_type=None)\
+                .exclude(target_issue=None)
+            else:
+                new_revisions = new_revisions.exclude(deleted=True)
+            existing_reprints = self.story.to_issue_reprints.all()
+            old_revisions = self.old_revisions_base()\
+              .filter(reprint_to_issue__in=existing_reprints, next_revision=None)
+            return new_revisions | old_revisions
         else:
             return self.story.to_issue_reprints.all()
+    def _to_issue_reprints(self):
+        return self.to_issue_reprints_oi(preview=True)
     to_issue_reprints = property(_to_issue_reprints)
 
     def _migration_status(self):
@@ -3494,72 +3688,35 @@ class StoryRevision(Revision):
     migration_status = property(_migration_status)
 
     def has_reprint_revisions(self):
-        reprints_count = self.source_reprint_revisions\
-          .filter(changeset=self.changeset).count() + \
-          self.target_reprint_revisions.filter(changeset=self.changeset).count()
-        if self.story:
-            reprints_count += self.story.source_reprint_revisions\
-              .filter(changeset=self.changeset).count() + \
-              self.story.target_reprint_revisions\
-                .filter(changeset=self.changeset).count()
-        return reprints_count
-
-    def compare_reprint_revisions(self):
-        reprint_string = '<ul>'
-        source_reprints = self.source_reprint_revisions\
-          .filter(changeset=self.changeset)
-        if self.story:
-            source_reprints |= self.story.source_reprint_revisions\
-              .filter(changeset=self.changeset)
-            as_source = self.story.to_reprints\
-              .exclude(revisions__changeset=self.changeset)
-        else:
-            as_source = Reprint.objects.none()
-        for reprint in source_reprints:
-            reprint_string = '%s<li>%s</li>' % (reprint_string,
-              reprint.get_compare_string(self.issue))
-
-        target_reprints = self.target_reprint_revisions\
-          .filter(changeset=self.changeset)
-        if self.story:
-            target_reprints |= self.story.target_reprint_revisions\
-              .filter(changeset=self.changeset)
-            as_target = self.story.from_reprints\
-              .exclude(revisions__changeset=self.changeset)
-            as_target_from_issue = self.story.from_issue_reprints\
-              .exclude(revisions__changeset=self.changeset)
-        else:
-            as_target = Reprint.objects.none()
-            as_target_from_issue = ReprintFromIssue.objects.none()
-        for reprint in target_reprints:
-            reprint_string = '%s<li>%s</li>' % (reprint_string,
-              reprint.get_compare_string(self.issue))
-
-        # existing reprint links which are not changed
-        if as_source.count() or as_target.count() or as_target_from_issue.count():
-            reprint_current_string = ''
-            for reprint in as_source:
-                if reprint.revisions.latest('created').created < self.created:
-                    reprint_current_string = '%s<li>%s</li>' % \
-                      (reprint_current_string,
-                       reprint.get_compare_string(self.issue))
-            for reprint in as_target:
-                if reprint.revisions.latest('created').created < self.created:
-                    reprint_current_string = '%s<li>%s</li>' % \
-                      (reprint_current_string,
-                       reprint.get_compare_string(self.issue))
-            for reprint in as_target_from_issue:
-                if reprint.revisions.latest('created').created < self.created:
-                    reprint_current_string = '%s<li>%s</li>' % \
-                      (reprint_current_string,
-                       reprint.get_compare_string(self.issue))
-            if reprint_current_string != '':
-                reprint_string += '</ul>The following reprint links are not ' \
-                  'part of this change. Shown are the <br>current links, the ' \
-                  'links at the time of the change may be different.<ul>' \
-                  + reprint_current_string
-        return mark_safe(reprint_string + '</ul>')
-
+        if self.story is None:
+            if self.target_reprint_revisions\
+                .filter(changeset__id=self.changeset_id).count():
+                return True
+            elif self.origin_reprint_revisions\
+                .filter(changeset__id=self.changeset_id).count():
+                return True
+            else:
+                return False
+        if self.story.target_reprint_revisions\
+            .filter(changeset__id=self.changeset_id).count():
+            return True
+        if self.story.origin_reprint_revisions\
+            .filter(changeset__id=self.changeset_id).count():
+            return True
+        if self.story.to_reprints.filter(reserved=True,
+          revisions__changeset=self.changeset).count():
+            return True
+        if self.story.from_reprints.filter(reserved=True,
+          revisions__changeset=self.changeset).count():
+            return True
+        if self.story.to_issue_reprints.filter(reserved=True,
+          revisions__changeset=self.changeset).count():
+            return True
+        if self.story.from_issue_reprints.filter(reserved=True,
+          revisions__changeset=self.changeset).count():
+            return True
+        return False
+        
     def has_credits(self):
         return self.script or \
                self.pencils or \
@@ -3605,6 +3762,9 @@ class StoryRevision(Revision):
         """
         return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
 
+def get_reprint_field_list():
+    return ['notes']
+
 class ReprintRevisionManager(RevisionManager):
 
     def clone_revision(self, reprint, changeset):
@@ -3623,49 +3783,56 @@ class ReprintRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         if isinstance(reprint, Reprint):
+            previous_revision = ReprintRevision.objects.get(reprint=reprint,
+                                                next_revision=None,
+                                                changeset__state=states.APPROVED)
             revision = ReprintRevision(
                 # revision-specific fields:
-                changeset=changeset,
-                reprint = reprint,
+                reprint=reprint,
                 in_type=REPRINT_TYPES['story_to_story'],
                 # copied fields:
-                source_story=reprint.source,
+                origin_story=reprint.origin,
                 target_story=reprint.target,
-                notes=reprint.notes
             )
         if isinstance(reprint, ReprintFromIssue):
+            previous_revision = ReprintRevision.objects.get(reprint_from_issue=reprint,
+                                                next_revision=None,
+                                                changeset__state=states.APPROVED)
             revision = ReprintRevision(
                 # revision-specific fields:
-                changeset=changeset,
-                reprint_from_issue = reprint,
+                reprint_from_issue=reprint,
                 in_type=REPRINT_TYPES['issue_to_story'],
                 # copied fields:
                 target_story=reprint.target,
-                source_issue=reprint.source_issue,
-                notes=reprint.notes
+                origin_issue=reprint.origin_issue,
             )
         if isinstance(reprint, ReprintToIssue):
+            previous_revision = ReprintRevision.objects.get(reprint_to_issue=reprint,
+                                                next_revision=None,
+                                                changeset__state=states.APPROVED)
             revision = ReprintRevision(
                 # revision-specific fields:
-                changeset=changeset,
-                reprint_to_issue = reprint,
+                reprint_to_issue=reprint,
                 in_type=REPRINT_TYPES['story_to_issue'],
                 # copied fields:
-                source_story=reprint.source,
-                target_issue = reprint.target_issue,
-                notes=reprint.notes
+                origin_story=reprint.origin,
+                target_issue=reprint.target_issue,
             )
         if isinstance(reprint, IssueReprint):
+            previous_revision = ReprintRevision.objects.get(issue_reprint=reprint,
+                                                next_revision=None,
+                                                changeset__state=states.APPROVED)
             revision = ReprintRevision(
                 # revision-specific fields:
-                changeset=changeset,
-                issue_reprint = reprint,
+                issue_reprint=reprint,
                 in_type=REPRINT_TYPES['issue_to_issue'],
                 # copied fields:
-                source_issue=reprint.source_issue,
+                origin_issue=reprint.origin_issue,
                 target_issue=reprint.target_issue,
-                notes=reprint.notes
             )
+        revision.previous_revision = previous_revision
+        revision.changeset = changeset
+        revision.notes = reprint.notes
         revision.save()
         return revision
 
@@ -3680,6 +3847,7 @@ class ReprintRevision(Revision):
     class Meta:
         db_table = 'oi_reprint_revision'
         ordering = ['-created', '-id']
+        get_latest_by = "created"
 
     objects = ReprintRevisionManager()
 
@@ -3692,26 +3860,71 @@ class ReprintRevision(Revision):
     issue_reprint = models.ForeignKey(IssueReprint, null=True,
                                 related_name='revisions')
 
-    source_story = models.ForeignKey(Story, null=True,
-                                     related_name='source_reprint_revisions')
-    source_revision = models.ForeignKey(StoryRevision, null=True,
-                                       related_name='source_reprint_revisions')
-    def _source(self):
-        return self.source_story
-    source = property(_source)
-    source_issue = models.ForeignKey(Issue, null=True,
-                              related_name='source_reprint_revisions')
+    origin_story = models.ForeignKey(Story, null=True,
+                                     related_name='origin_reprint_revisions')
+    origin_revision = models.ForeignKey(StoryRevision, null=True,
+                                       related_name='origin_reprint_revisions')
+    def _origin(self):
+        if self.origin_story:
+            return self.origin_story
+        elif self.origin_revision:
+            return self.origin_revision
+        else:
+            raise AttributeError
+    origin = property(_origin)
+    origin_issue = models.ForeignKey(Issue, null=True,
+                              related_name='origin_reprint_revisions')
+    def _origin_sort(self):
+        if self.origin_issue:
+            if self.origin_issue.key_date:
+                sort = self.origin_issue.key_date
+            else:
+                sort = '9999-99-99'
+            return "%s-%d-%d" % (sort, self.origin_issue.series.year_began,
+                                self.origin_issue.sort_code)
+        else:
+            if self.origin.issue.key_date:
+                sort = self.origin.issue.key_date
+            else:
+                sort = '9999-99-99'
+            return "%s-%d-%d" % (sort, self.origin.issue.series.year_began,
+                                self.origin.issue.sort_code)
+                                
+    origin_sort = property(_origin_sort)
                             
     target_story = models.ForeignKey(Story, null=True,
                                      related_name='target_reprint_revisions')
     target_revision = models.ForeignKey(StoryRevision, null=True,
                                        related_name='target_reprint_revisions')
     def _target(self):
-        return self.target_story
+        if self.target_story:
+            return self.target_story
+        elif self.target_revision:
+            return self.target_revision
+        else:
+            raise AttributeError
     target = property(_target)
+    
     target_issue = models.ForeignKey(Issue, null=True,
                               related_name='target_reprint_revisions')
 
+    def _target_sort(self):
+        if self.target_issue:
+            if self.target_issue.key_date:
+                sort = self.target_issue.key_date
+            else:
+                sort = '9999-99-99'
+            return "%s-%d-%d" % (sort, self.target_issue.series.year_began,
+                                self.target_issue.sort_code)
+        else:
+            if self.target.issue.key_date:
+                sort = self.target.issue.key_date
+            else:
+                sort = '9999-99-99'
+            return "%s-%d-%d" % (sort, self.target.issue.series.year_began,
+                                self.target.issue.sort_code)
+    target_sort = property(_target_sort)
+    
     notes = models.TextField(max_length = 255, default='')
 
     in_type = models.IntegerField(db_index=True, null=True)
@@ -3753,26 +3966,43 @@ class ReprintRevision(Revision):
         return 'reprint'
 
     def _field_list(self):
-        return ['source_story', 'source_revision', 'source_issue',
+        return ['origin_story', 'origin_revision', 'origin_issue',
                 'target_story', 'target_revision', 'target_issue',
                 'notes']
 
     def _get_blank_values(self):
         return {
-            'source_story': None,
-            'source_revision': None,
-            'source_issue': None,
+            'origin_story': None,
+            'origin_revision': None,
+            'origin_issue': None,
             'target_story': None,
             'target_revision': None,
             'target_issue': None,
             'notes': '',
         }
 
+    def _start_imp_sum(self):
+        self._seen_origin = False
+        self._seen_target = False
+
     def _imps_for(self, field_name):
         """
         All current reprint fields are simple one point fields.
+        Only point for changing origin issue to origin story, etc.
         """
-        return 1
+        if field_name in ('origin_story', 'origin_story_revision',
+                          'origin_issue'):
+           if not self._seen_origin:
+                self._seen_origin = True
+                return 1
+        if field_name in ('target_story', 'target_story_revision',
+                          'target_issue'):
+           if not self._seen_target:
+                self._seen_target = True
+                return 1
+        if field_name == 'notes':
+            return 1
+        return 0
         
     def commit_to_display(self, clear_reservation=True):
         if self.deleted:
@@ -3785,12 +4015,12 @@ class ReprintRevision(Revision):
             return
         # first figure out which reprint out_type it is, it depends
         # on which fields are set
-        if self.source_story or self.source_revision:
+        if self.origin_story or self.origin_revision:
             # TODO on commit change from revision to story ???
-            if self.source_story:
-                source = self.source_story
+            if self.origin_story:
+                origin = self.origin_story
             else:
-                source = self.source_revision.story
+                origin = self.origin_revision.story
             if self.target_story:
                 out_type = REPRINT_TYPES['story_to_story']
                 target = self.target_story
@@ -3810,12 +4040,13 @@ class ReprintRevision(Revision):
             else:
                 out_type = REPRINT_TYPES['issue_to_issue']
 
-        if self.in_type and self.in_type != out_type:
+        if self.in_type != None and self.in_type != out_type:
             deleted_link = self.source
             field_name = REPRINT_FIELD[self.in_type] + '_id'
             for revision in deleted_link.revisions.all():
                 setattr(revision, field_name, None)
                 revision.save()
+            setattr(self, field_name, None)
             deleted_link.delete()
         self.out_type = out_type
 
@@ -3823,53 +4054,59 @@ class ReprintRevision(Revision):
         if out_type == REPRINT_TYPES['story_to_story']:
             if self.in_type != out_type:
                 self.reprint = Reprint.objects.create( \
-                                 source=source,
+                                 origin=origin,
                                  target=target,
                                  notes=self.notes)
             else:
-                self.reprint.source = source
+                self.reprint.origin = origin
                 self.reprint.target = target
                 self.reprint.notes = self.notes
                 self.reprint.save()
         elif out_type == REPRINT_TYPES['issue_to_story']:
             if self.in_type != out_type:
                 self.reprint_from_issue = ReprintFromIssue.objects.create( \
-                                            source_issue=self.source_issue,
+                                            origin_issue=self.origin_issue,
                                             target=target,
                                             notes=self.notes)
             else:
-                self.reprint_from_issue.source_issue = self.source_issue
+                self.reprint_from_issue.origin_issue = self.origin_issue
                 self.reprint_from_issue.target = story
                 self.reprint_from_issue.notes = self.notes
                 self.reprint_from_issue.save()
         elif out_type == REPRINT_TYPES['story_to_issue']:
             if self.in_type != out_type:
                 self.reprint_to_issue = ReprintToIssue.objects.create( \
-                                          source=source,
+                                          origin=origin,
                                           target_issue=self.target_issue,
                                           notes=self.notes)
             else:
-                self.reprint_to_issue.source = source
+                self.reprint_to_issue.origin = origin
                 self.reprint_to_issue.target_issue = self.target_issue
                 self.reprint_to_issue.notes = self.notes
                 self.reprint_to_issue.save()
         elif out_type == REPRINT_TYPES['issue_to_issue']:
             if self.in_type != out_type:
                 self.issue_reprint = IssueReprint.objects.create( \
-                                       source_issue=self.source_issue,
+                                       origin_issue=self.origin_issue,
                                        target_issue=self.target_issue,
                                        notes=self.notes)
             else:
-                self.issue_reprint.source_issue = self.source_issue
+                self.issue_reprint.origin_issue = self.origin_issue
                 self.issue_reprint.target_issue = self.target_issue
                 self.issue_reprint.notes = self.notes
                 self.issue_reprint.save()
+
+        if clear_reservation and self.source:
+            reprint = self.source
+            reprint.reserved = False
+            reprint.save()
+      
         self.save()
 
     def get_compare_string(self, base_issue):
-        if (self.source_story and self.source_story.issue == base_issue) \
-          or (self.source_revision and self.source_revision.issue == base_issue) \
-          or self.source_issue == base_issue:
+        if (self.origin_story and self.origin_story.issue == base_issue) \
+          or (self.origin_revision and self.origin_revision.issue == base_issue) \
+          or self.origin_issue == base_issue:
             direction = 'in'
             if self.target_issue:
                 story = None
@@ -3881,14 +4118,14 @@ class ReprintRevision(Revision):
                     story = self.target_revision
         else:
             direction = 'from'
-            if self.source_issue:
+            if self.origin_issue:
                 story = None
-                issue = self.source_issue
+                issue = self.origin_issue
             else:
-                if self.source_story:
-                    story = self.source_story
+                if self.origin_story:
+                    story = self.origin_story
                 else:
-                    story = self.source_revision
+                    story = self.origin_revision
         if story:
             issue = story.issue
             reprint = u'%s <a target="_blank" href="%s#%d">%s</a> of %s' % \
@@ -3899,19 +4136,17 @@ class ReprintRevision(Revision):
                         (direction, issue.get_absolute_url(), esc(issue))
         if self.notes:
             reprint = '%s [%s]' % (reprint, esc(self.notes))
-        if self.deleted:
-            reprint += ' [DELETED]'
         return mark_safe(reprint)
 
     def __unicode__(self):
-        if self.source_story or self.source_revision:
-            if self.source_story:
-                story = self.source_story
+        if self.origin_story or self.origin_revision:
+            if self.origin_story:
+                story = self.origin_story
             else:
-                story = self.source_revision
+                story = self.origin_revision
             reprint = u'%s of %s ' % (story, story.issue)
         else:
-            reprint = u'%s ' % (self.source_issue)
+            reprint = u'%s ' % (self.origin_issue)
         if self.target_story or self.target_revision:
             if self.target_story:
                 target = self.target_story

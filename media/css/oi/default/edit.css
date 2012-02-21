@@ -70,7 +70,7 @@ table.comparison td.field_name {
     background-color: yellow;
 }
 
-table.deleted tr {
+table.deleted tr, tr.deleted, span.deleted {
     background-color: tomato;
 }
 
@@ -80,7 +80,7 @@ table.deleted tr {
     background-color: tomato;
 }
 
-table.added tr.True {
+table.added tr.True, tr.added, span.added {
     background-color: palegreen;
 }
 

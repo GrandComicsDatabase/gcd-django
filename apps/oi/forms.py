@@ -64,6 +64,7 @@ INDICIA_PUBLISHER_HELP_LINKS = {
 
 ISSUE_HELP_LINKS = {
     'number': 'Issue_Numbers',
+    'variant_name': 'Variant_Issues',
     'title': 'Issue_Title',
     'no_title': 'Issue_Title',
     'volume': 'Volume',
@@ -227,6 +228,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'story':
         return get_story_revision_form(revision, **kwargs)
+
+    if model_name == 'reprint':
+        return get_reprint_revision_form(revision, **kwargs)
 
     if model_name == 'cover':
         return get_cover_revision_form(revision, **kwargs)
@@ -1050,6 +1054,20 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         return cd
 
+def get_reprint_revision_form(revision=None, user=None):
+    class RuntimeReprintRevisionForm(ReprintRevisionForm):
+        def as_table(self):
+            #if not user or user.indexer.show_wiki_links:
+                #_set_help_labels(self, REPRINT_HELP_LINKS)
+            return super(RuntimeReprintRevisionForm, self).as_table()
+    return RuntimeReprintRevisionForm
+
+class ReprintRevisionForm(forms.ModelForm):
+    class Meta:
+        model = ReprintRevision
+        fields = get_reprint_field_list()
+
+
 def get_story_revision_form(revision=None, user=None):
     extra = {}
     if revision is not None:
@@ -1373,10 +1391,10 @@ def get_select_search_form(series=False, issue=False, story=False,
                     revision_id=None, return_type_='reprint'):
     class SelectSearchForm(forms.Form):
         publisher = forms.CharField(label='Publisher', required=False)
-        year = forms.IntegerField(label='Series year', required=False,
-                                  min_value=1800, max_value=2020)
         if series or issue or story:
             series = forms.CharField(label='Series', required=False)
+            year = forms.IntegerField(label='Series year', required=False,
+                                      min_value=1800, max_value=2020)
         if issue or story:
             number = forms.CharField(label='Issue Number', 
                                      required=True)

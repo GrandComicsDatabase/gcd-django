@@ -102,7 +102,7 @@
       {% endif %}
   </tr>
     {% endfor %}
-    {% ifequal changeset_type 'story' %}
+    {% if changeset_type == 'story' or changeset_type == 'issue' %}
       {% if revision.has_reprint_revisions %}
   <tr class="True">
       {% else %}
@@ -111,14 +111,14 @@
     <td class="field_name"> Reprint Links </td>
       {% if prev_rev %}
     <td>
-      {{ prev_rev.compare_reprint_revisions }}
+      {{ prev_rev|compare_current_reprints:changeset }}
     </td>
       {% endif %}
     <td>
-       {{ revision.compare_reprint_revisions }}
+      {{ revision|compare_current_reprints:changeset }}
     </td>
   </tr>
-    {% endifequal %}
+    {% endif %}
   {% endif %}
 {% endif %}
 </table>

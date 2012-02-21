@@ -191,6 +191,7 @@ def main():
     ['Lucky Luke (Dupuis Publishing, 1949 series)', uni('Lucky Luke (Editions Dupuis, 1949 series)')],
     ['Vill Vest  (Se-Bladene, 1957 series)', 'Vill Vest (Se-Bladene, 1955 series)'],
     ['; o; ', '; '],
+    ['(Oog & Blick, ', '(Oog & Blik, '],
     [uni('from (À Suivre) (Casterman'), uni('from À Suivre (Casterman')],
     ]
     for [old, new] in reprint_notes:

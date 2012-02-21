@@ -70,25 +70,25 @@ def migrate_reprints_lars():
                     #print issue
                     if issue:
                         if sequence_number >= 0 and story:
-                            changeset.reprintrevisions.create(source_story=story, target_story=i.story, notes=notes)
+                            changeset.reprintrevisions.create(origin_story=story, target_story=i.story, notes=notes)
                         else:
                             if issue.series.language.code.lower() == 'de':
                                 nr = find_reprint_sequence_in_issue(i.story, issue.id)
                                 if string.lower().startswith('from'):
                                     if nr > 0:
                                         story = issue.active_stories().get(sequence_number = nr)
-                                        changeset.reprintrevisions.create(source_story=story, target_story=i.story, notes=notes)
+                                        changeset.reprintrevisions.create(origin_story=story, target_story=i.story, notes=notes)
                                     else:
-                                        changeset.reprintrevisions.create(source_issue=issue, target_story=i.story, notes=notes)
+                                        changeset.reprintrevisions.create(origin_issue=issue, target_story=i.story, notes=notes)
                                 else:
                                     if nr > 0:
                                         story = issue.active_stories().get(sequence_number = nr)
-                                        changeset.reprintrevisions.create(source_story=i.story, target_story=story, notes=notes)
+                                        changeset.reprintrevisions.create(origin_story=i.story, target_story=story, notes=notes)
                                     else:
                                         changeset.reprintrevisions.create(target_issue=issue,
-                                                            source_story=i.story, notes=notes)
+                                                            origin_story=i.story, notes=notes)
                             else:
-                                changeset.reprintrevisions.create(source_issue=issue, target_story=i.story, notes=notes)
+                                changeset.reprintrevisions.create(origin_issue=issue, target_story=i.story, notes=notes)
                     else:
                         text_reprint += string + "; "
                 if len(text_reprint) > 0:
@@ -117,8 +117,8 @@ def find_migration_candidates(story, string, standard = True):
     returns:
         found issue
         notes found in []
-        sequence number of source story (if found)
-        source story (if found)
+        sequence number of origin story (if found)
+        origin story (if found)
         True if story is original, False otherwise
     """
 
@@ -215,15 +215,15 @@ def find_migration_candidates(story, string, standard = True):
                                                     reprint[0].id)
             if from_to in ["from ", "aus ", "da ", "di ", "de ", \
                             "uit ",u"från "]:
-                source = False
+                origin = False
             elif from_to == "":
-                source = False
+                origin = False
                 if notes:
                     notes += " Confirm: direction of reprint"
                 else:
                     notes = "Confirm: direction of reprint"
             else:
-                source = True
+                origin = True
             if notes:
                 if notes.lower().find('originaltitel'):
                     pos = notes.lower().find('originaltitel')
@@ -243,7 +243,7 @@ def find_migration_candidates(story, string, standard = True):
             if nr >= 0:
                 other_story = Story.objects.filter(issue = reprint[0])
                 other_story = other_story.filter(sequence_number = nr)
-                return reprint[0],notes,nr,other_story[0],source
+                return reprint[0],notes,nr,other_story[0],origin
             elif notes and notes.lower().find('original ti') >=0:
                 pos = notes.lower().find('original ti')
                 pos2 = notes[pos:].find('"')
@@ -268,22 +268,22 @@ def find_migration_candidates(story, string, standard = True):
                 results = results.filter(title__icontains = original_title.strip(' !.":'))
                 if results.count() == 1:
                     notes = notes[:pos] + notes[end_title:]
-                    return reprint[0],notes,results[0].sequence_number,results[0],source
+                    return reprint[0],notes,results[0].sequence_number,results[0],origin
                 else:
-                    return reprint[0],notes,-1,False,source
+                    return reprint[0],notes,-1,False,origin
             else:
-                return reprint[0],notes,-1,False,source
+                return reprint[0],notes,-1,False,origin
     return False,'',-1,False,False
 
 def migrate_reprint_notes(i, standard = True, do_save = True):
     text_reprint = ""
     for string in split_reprint_string(i.reprint_notes):
-        issue, notes, sequence_number, story,is_source = \
+        issue, notes, sequence_number, story,is_origin = \
           find_migration_candidates(i, string, standard=standard)
         if notes == None:
             notes = ''
         if issue and sequence_number < 0:
-            if i.sequence_number == 0 and is_source == False:
+            if i.sequence_number == 0 and is_origin == False:
                 sequence_number = 0
                 story = Story.objects.filter(issue = issue)
                 story = story.filter(sequence_number = \
@@ -294,11 +294,11 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
                     sequence_number = -1
                     story = None
         if story:
-            if is_source:
-                if Reprint.objects.filter(source = i.story, target = story).count() > 0 \
-                  or ReprintRevision.objects.filter(source_story=i.story, target_story=story, changeset__state=1).count() > 0:
+            if is_origin:
+                if Reprint.objects.filter(origin = i.story, target = story).count() > 0 \
+                  or ReprintRevision.objects.filter(origin_story=i.story, target_story=story, changeset__state=1).count() > 0:
                     if notes:
-                        existing_revision = ReprintRevision.objects.filter(source_story = i.story,
+                        existing_revision = ReprintRevision.objects.filter(origin_story = i.story,
                                                           target_story = story, changeset__state=1)
                         if existing_revision:
                             if existing_revision.count() > 1:
@@ -311,7 +311,7 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
                                     existing_revision.notes = notes
                                 existing_revision.save()
                         else:
-                            existing = Reprint.objects.get(source = i.story,
+                            existing = Reprint.objects.get(origin = i.story,
                                                             target = story)
                             if existing.notes != notes:
                                 reprint_revision = ReprintRevision.objects.clone_revision(\
@@ -323,18 +323,18 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
                                 reprint_revision.save()
                 else:
                     if do_save:
-                        i.changeset.reprintrevisions.create(source_story=i.story, target_story=story, notes=notes)
-                        #test = Reprint(source=i, target=story,
+                        i.changeset.reprintrevisions.create(origin_story=i.story, target_story=story, notes=notes)
+                        #test = Reprint(origin=i, target=story,
                                                     #notes=notes)
                         #test.save()
                     else:
                         print "S2S:",string, "to:"
                         print i, i.issue, story, story.issue
             else:
-                if Reprint.objects.filter(source = story, target = i.story).count() > 0 \
-                  or ReprintRevision.objects.filter(source_story=story, target_story=i.story, changeset__state=1).count() > 0:
+                if Reprint.objects.filter(origin = story, target = i.story).count() > 0 \
+                  or ReprintRevision.objects.filter(origin_story=story, target_story=i.story, changeset__state=1).count() > 0:
                     if notes:
-                        existing_revision = ReprintRevision.objects.filter(source_story = story,
+                        existing_revision = ReprintRevision.objects.filter(origin_story = story,
                                                           target_story = i.story, changeset__state=1)
                         if existing_revision:
                             if existing_revision.count() > 1:
@@ -347,7 +347,7 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
                                     existing_revision.notes = notes
                                 existing_revision.save()
                         else:
-                            existing = Reprint.objects.get(source = story,
+                            existing = Reprint.objects.get(origin = story,
                                                             target = i.story)
                             if existing.notes != notes:
                                 reprint_revision = ReprintRevision.objects.clone_revision(\
@@ -359,8 +359,8 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
                                 reprint_revision.save()
                 else:
                     if do_save:
-                        i.changeset.reprintrevisions.create(source_story=story, target_story=i.story, notes=notes)
-                        #test = Reprint(source=story, target=i,
+                        i.changeset.reprintrevisions.create(origin_story=story, target_story=i.story, notes=notes)
+                        #test = Reprint(origin=story, target=i,
                                                     #notes=notes)
                         #test.save()
                     else:
@@ -368,13 +368,13 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
                         print story, story.issue, i, i.issue
         elif issue:
             if do_save:
-                if is_source:
-                    i.changeset.reprintrevisions.create(source_story=i.story, target_issue=issue, notes=notes)
-                    #test = ReprintToIssue(source=i, target_issue=issue,
+                if is_origin:
+                    i.changeset.reprintrevisions.create(origin_story=i.story, target_issue=issue, notes=notes)
+                    #test = ReprintToIssue(origin=i, target_issue=issue,
                                                         #notes=notes)
                 else:
-                    i.changeset.reprintrevisions.create(source_issue=issue, target_story=i.story, notes=notes)
-                    #test = ReprintFromIssue(source_issue=issue, target=i,
+                    i.changeset.reprintrevisions.create(origin_issue=issue, target_story=i.story, notes=notes)
+                    #test = ReprintFromIssue(origin_issue=issue, target=i,
                                                         #notes=notes)
                 #test.save()
             else:
@@ -569,9 +569,9 @@ def consistency_check_double_links():
     # helper routine for after devel runs
     # should catch these while adding them
     for i in Reprint.objects.all():
-        a = Reprint.objects.filter(source = i.source, target = i.target)
+        a = Reprint.objects.filter(origin = i.origin, target = i.target)
         if a.count() > 1:
-            print a[0].source, a[0].source.issue, a[0].target, i.target.issue, a[0].notes
+            print a[0].origin, a[0].origin.issue, a[0].target, i.target.issue, a[0].notes
             if a[1].notes:
                 print a[1].notes
                 c = a[0]
@@ -640,7 +640,7 @@ def check_double_links():
 #    max_cnt = 1
     cnt = 0
     for i in ReprintToIssue.objects.all():
-        a = Reprint.objects.filter(source = i.source,
+        a = Reprint.objects.filter(origin = i.origin,
                                             target__issue = i.target_issue)
         if a.count()==1:
             merge_reprint_link_notes(a[0], i)
@@ -650,7 +650,7 @@ def check_double_links():
 
     cnt = 0
     for i in ReprintFromIssue.objects.all():
-        a = Reprint.objects.filter(source__issue = i.source_issue,
+        a = Reprint.objects.filter(origin__issue = i.origin_issue,
                                                     target = i.target)
         if a.count()==1:
             merge_reprint_link_notes(a[0], i)
@@ -700,8 +700,8 @@ def merge_reprint_links(from_issue, to_issue, cover=False):
         #print "A", revision_newer
         revision_newer.previous_revision = revision_older
         revision_newer.in_type = revision_older.out_type
-        revision_newer.source_story = revision_older.source_story
-        revision_newer.source_issue = None
+        revision_newer.origin_story = revision_older.origin_story
+        revision_newer.origin_issue = None
         field_name = REPRINT_FIELD[revision_newer.out_type] + '_id'
         setattr(revision_newer, field_name, None)
         revision_newer.out_type = None
@@ -732,11 +732,11 @@ def merge_reprint_links(from_issue, to_issue, cover=False):
     #print older.revisions.all()
     #print "newer:", revision_newer
     #print "previous:", revision_newer.previous_revision
-    #print "newer:", revision_newer.source
-    #print "previous:", revision_newer.previous_revision.source
+    #print "newer:", revision_newer.origin
+    #print "previous:", revision_newer.previous_revision.origin
     revision_newer.commit_to_display()
-    #print "newer source:", revision_newer.source
-    #print "previous source:", revision_newer.previous_revision.source
+    #print "newer origin:", revision_newer.origin
+    #print "previous origin:", revision_newer.previous_revision.origin
     if cover:
         text='Automatic merging of back and forth cover from/to-issue links.'
     else:
@@ -752,8 +752,8 @@ def merge_reprint_links(from_issue, to_issue, cover=False):
 def merge_return_links_cover():
     max_cnt = 5000000
     cnt = 0
-    for i in ReprintToIssue.objects.filter(source__type__name = 'cover'):
-        a = ReprintFromIssue.objects.filter(source_issue = i.source.issue,
+    for i in ReprintToIssue.objects.filter(origin__type__name = 'cover'):
+        a = ReprintFromIssue.objects.filter(origin_issue = i.origin.issue,
                                             target__issue = i.target_issue)
         if a.count():
             b = a.filter(target__type__name= 'cover')
@@ -767,7 +767,7 @@ def merge_return_links_cover():
                     a = a.filter(target__type__name__icontains = 'illustration')
             if a.count() == 1:
                 #reprint = a[0]
-                #print reprint.source_issue, i.source, reprint.target, i.target_issue
+                #print reprint.origin_issue, i.origin, reprint.target, i.target_issue
                 merge_reprint_links(a[0], i, cover=True)
                 cnt += 1
                 if cnt > max_cnt:
@@ -776,18 +776,18 @@ def merge_return_links_cover():
 def merge_links_story():
     max_cnt = 50000000
     cnt = 0
-    for i in ReprintToIssue.objects.filter(source__type__name = 'comic story'):
-        if i.source.issue.active_stories().filter(type=i.source.type).count() == 1:
-            if i.target_issue.active_stories().filter(type=i.source.type).count() == 1:
-                a = ReprintFromIssue.objects.filter(source_issue = i.source.issue,
+    for i in ReprintToIssue.objects.filter(origin__type__name = 'comic story'):
+        if i.origin.issue.active_stories().filter(type=i.origin.type).count() == 1:
+            if i.target_issue.active_stories().filter(type=i.origin.type).count() == 1:
+                a = ReprintFromIssue.objects.filter(origin_issue = i.origin.issue,
                                                     target__issue = i.target_issue,
                                                     target__type__name = 'comic story')
                 if a.count() == 1:
                     reprint = a[0]
-                    if ReprintToIssue.objects.filter(source__issue = i.source.issue,
+                    if ReprintToIssue.objects.filter(origin__issue = i.origin.issue,
                                                     target_issue = i.target_issue,
-                                                    source__type__name = 'comic story').count() == 1:
-                        #print i.source, reprint.source_issue, reprint.target, i.target_issue
+                                                    origin__type__name = 'comic story').count() == 1:
+                        #print i.origin, reprint.origin_issue, reprint.target, i.target_issue
                         merge_reprint_links(reprint, i)
                         cnt += 1
                         if cnt > max_cnt:
@@ -797,21 +797,21 @@ def check_return_links_story():
     changesets = []
     for i in ReprintFromIssue.objects.filter(target__type__name = 'comic story'):
         results = Story.objects.all()
-        results = results.filter(issue = i.source_issue)
+        results = results.filter(issue = i.origin_issue)
         results = results.filter(type = i.target.type)
         if results.count() == 1:
-            if ReprintFromIssue.objects.filter(target__issue=i.target.issue, target__type__name='comic story', source_issue=i.source_issue).count() == 1:
+            if ReprintFromIssue.objects.filter(target__issue=i.target.issue, target__type__name='comic story', origin_issue=i.origin_issue).count() == 1:
                 story = results[0]
-                print i.source_issue, i.target.issue
-                changeset = migrate_reserve(i.source_issue, 'issue', 'to merge reprint links')
+                print i.origin_issue, i.target.issue
+                changeset = migrate_reserve(i.origin_issue, 'issue', 'to merge reprint links')
                 if not changeset:
                     changeset = migrate_reserve(i.target.issue, 'issue', 'to merge reprint links')
                 if not changeset:
                     raise ValueError
                 revision = ReprintRevision.objects.clone_revision(\
                     reprint=i, changeset=changeset)
-                revision.source = story
-                revision.source__issue = None
+                revision.origin = story
+                revision.origin__issue = None
                 revision.save()
                 changesets.append((changeset, True))
         if len(changesets) > 100:
@@ -820,15 +820,15 @@ def check_return_links_story():
     do_auto_approve(changesets, 'reprint link merging')
     changesets = []
 
-    for i in ReprintToIssue.objects.filter(source__type__name = 'comic story'):
+    for i in ReprintToIssue.objects.filter(origin__type__name = 'comic story'):
         results = Story.objects.all()
         results = results.filter(issue = i.target_issue)
-        results = results.filter(type = i.source.type)
+        results = results.filter(type = i.origin.type)
         if results.count() == 1:
-            if ReprintToIssue.objects.filter(source__issue=i.source.issue, source__type__name='comic story', target_issue = i.target_issue).count() == 1:
+            if ReprintToIssue.objects.filter(origin__issue=i.origin.issue, origin__type__name='comic story', target_issue = i.target_issue).count() == 1:
                 story = results[0]
-                print i.source.issue, i.target_issue
-                changeset = migrate_reserve(i.source.issue, 'issue', 'to merge reprint links')
+                print i.origin.issue, i.target_issue
+                changeset = migrate_reserve(i.origin.issue, 'issue', 'to merge reprint links')
                 if not changeset:
                     changeset = migrate_reserve(i.target_issue, 'issue', 'to merge reprint links')
                 if not changeset:
@@ -848,20 +848,20 @@ def check_return_links_story():
 
 #def check_return_links():
     #for i in ReprintToIssue.objects.all():
-        #a = ReprintFromIssue.objects.filter(source_issue = i.source.issue, target__issue = i.target_issue)
+        #a = ReprintFromIssue.objects.filter(origin_issue = i.origin.issue, target__issue = i.target_issue)
         #if a.count() == 1:
             #reprint = a[0]
-            #b = ReprintToIssue.objects.filter(source__issue = i.source.issue, target_issue = i.target)
-            #if b.count() > 1 and i.source.type == reprint.target.type:
-                #b = b.filter(source__type = i.source.type)
+            #b = ReprintToIssue.objects.filter(origin__issue = i.origin.issue, target_issue = i.target)
+            #if b.count() > 1 and i.origin.type == reprint.target.type:
+                #b = b.filter(origin__type = i.origin.type)
             #if b.count() == 1:
-                #print reprint.source, i.source, reprint.target, i.target_issue
+                #print reprint.origin, i.origin, reprint.target, i.target_issue
                 #notes = ""
                 #if i.notes:
                     #notes = i.notes
                 #if reprint.notes:
                     #notes += reprint.notes
-                #test = Reprint(source=i.source, target=reprint.target, notes=notes)
+                #test = Reprint(origin=i.origin, target=reprint.target, notes=notes)
                 #test.save()
                 #i.delete()
                 #reprint.delete()

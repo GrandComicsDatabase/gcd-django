@@ -10,26 +10,44 @@ class ReprintFromIssue(models.Model):
         db_table = 'gcd_reprint_from_issue'
 
     id = models.AutoField(primary_key = True)
-    source_issue = models.ForeignKey(Issue, related_name = 'to_reprints')
+    origin_issue = models.ForeignKey(Issue, related_name = 'to_reprints')
     target = models.ForeignKey(Story, related_name = 'from_issue_reprints')
     notes = models.TextField(max_length = 255)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
 
+    def _origin_sort(self):
+        if self.origin_issue.key_date:
+            sort = self.origin_issue.key_date
+        else:
+            sort = '9999-99-99'
+        return "%s-%d-%d" % (sort, self.origin_issue.series.year_began,
+                             self.origin_issue.sort_code)
+    origin_sort = property(_origin_sort)
+
+    def _target_sort(self):
+        if self.target.issue.key_date:
+            sort = self.target.issue.key_date
+        else:
+            sort = '9999-99-99'
+        return "%s-%d-%d" % (sort, self.target.issue.series.year_began,
+                             self.target.issue.sort_code)
+    target_sort = property(_target_sort)
+    
     def get_compare_string(self, base_issue):
-        if self.source_issue == base_issue:
+        if self.origin_issue == base_issue:
             reprint = u'in <a target="_blank" href="%s#%d">%s</a> of %s' % \
                         (self.target.issue.get_absolute_url(),
                          self.target.id, esc(self.target), esc(self.target.issue))
         else:
             reprint = u'from <a target="_blank" href="%s">%s</a>' % \
-                        (self.source_issue.get_absolute_url(),
-                         esc(self.source_issue))
+                        (self.origin_issue.get_absolute_url(),
+                         esc(self.origin_issue))
         if self.notes:
             reprint = u'%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
     def __unicode__(self):
-        return u'%s reprinted in %s of %s' % (self.source_issue, self.target,
+        return u'%s reprinted in %s of %s' % (self.origin_issue, self.target,
                                              self.target.issue)

@@ -11,7 +11,8 @@ from django.utils.translation import ungettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models import Issue, Country, Language
+from apps.gcd.models import Issue, Country, Language, Reprint
+from apps.oi.models import ReprintRevision
 
 register = template.Library()
 
@@ -324,23 +325,32 @@ def show_reprints(story, original = False):
 
     reprint = ""
 
-    for from_reprint in story.from_reprints.select_related().all():
-        reprint += generate_reprint_link_sequence(from_reprint.source,
-                                                  "from ",
-                                                  notes = from_reprint.notes)
-    for to_reprint in story.to_reprints.select_related().all():
-        reprint += generate_reprint_link_sequence(to_reprint.target,
-                                                  "in ",
-                                                  notes = to_reprint.notes)
-    for to_reprint in story.to_issue_reprints.select_related().all():
-        reprint += generate_reprint_link(to_reprint.target_issue,
-                                         "in ",
-                                         notes = to_reprint.notes)
-    for from_reprint in story.from_issue_reprints.select_related().all():
-        reprint += generate_reprint_link(from_reprint.source_issue,
-                                         "from ",
-                                         notes = from_reprint.notes)
+    from_reprints = list(story.from_reprints.select_related().all())
+    from_reprints.extend(list(story.from_issue_reprints.select_related().all()))
+    from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+    for from_reprint in from_reprints:
+        if hasattr(from_reprint, 'origin_issue') and from_reprint.origin_issue:
+            reprint += generate_reprint_link(from_reprint.origin_issue,
+                                            "from ",
+                                            notes = from_reprint.notes)
+        else:
+            reprint += generate_reprint_link_sequence(from_reprint.origin,
+                                                    "from ",
+                                                    notes = from_reprint.notes)
 
+    to_reprints = list(story.to_reprints.select_related().all())
+    to_reprints.extend(list(story.to_issue_reprints.select_related().all()))
+    to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
+    for to_reprint in to_reprints:
+        if hasattr(to_reprint, 'target_issue') and to_reprint.target_issue:
+            reprint += generate_reprint_link(to_reprint.target_issue,
+                                            "in ",
+                                            notes = to_reprint.notes)
+        else:
+            reprint += generate_reprint_link_sequence(to_reprint.target,
+                                                    "in ",
+                                                    notes = to_reprint.notes)
+    
     if story.reprint_notes:
         for string in split_reprint_string(story.reprint_notes):
             string = string.strip()
@@ -376,27 +386,32 @@ def show_reprints_for_issue(issue):
     """ show reprints stored on the issue level. """
 
     reprint = ""
-    if issue.from_reprints.count() > 0:
-        for from_reprint in issue.from_reprints.select_related().all():
-            reprint += generate_reprint_link_sequence(from_reprint.source,
+    from_reprints = list(issue.from_reprints.select_related().all())
+    from_reprints.extend(list(issue.from_issue_reprints.select_related().all()))
+    from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+    for from_reprint in from_reprints:
+        if hasattr(from_reprint, 'origin_issue') and from_reprint.origin_issue:
+            reprint += generate_reprint_link(from_reprint.origin_issue,
+                                            "from ",
+                                            notes = from_reprint.notes)
+        else:
+            reprint += generate_reprint_link_sequence(from_reprint.origin,
                                                     "from ",
                                                     notes = from_reprint.notes)
-    if issue.from_issue_reprints.count() > 0:
-        for from_reprint in issue.from_issue_reprints.select_related().all():
-            reprint += generate_reprint_link(from_reprint.source_issue,
-                                             "from ",
-                                             notes = from_reprint.notes)
-    if issue.to_reprints.count() > 0:
-        for to_reprint in issue.to_reprints.select_related().all():
+
+    to_reprints = list(issue.to_reprints.select_related().all())
+    to_reprints.extend(list(issue.to_issue_reprints.select_related().all()))
+    to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
+    for to_reprint in to_reprints:
+        if hasattr(to_reprint, 'target_issue') and to_reprint.target_issue:
+            reprint += generate_reprint_link(to_reprint.target_issue,
+                                            "in ",
+                                            notes = to_reprint.notes)
+        else:
             reprint += generate_reprint_link_sequence(to_reprint.target,
                                                     "in ",
                                                     notes = to_reprint.notes)
-    if issue.to_issue_reprints.count() > 0:
-        for to_reprint in issue.to_issue_reprints.select_related().all():
-            reprint += generate_reprint_link(to_reprint.target_issue,
-                                             "in ",
-                                             notes = to_reprint.notes)
-
+                                                    
     if reprint != '':
         label = _('Parts of this issue are reprinted') + ': '
         dt = '<dt class="credit_tag>'
@@ -418,3 +433,4 @@ register.filter(show_title)
 register.filter(show_cover_contributor)
 register.filter(show_reprints)
 register.filter(show_reprints_for_issue)
+register.filter(split_reprint_string)

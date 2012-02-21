@@ -148,7 +148,26 @@
     </td>
   </tr>
           {% endif %}
-{% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count = 1 %}
+          {% if issue_revision.source and changeset.change_type == CTYPES.issue %}
+  <tr>
+    <td>
+      <form class="changeset" method="GET"
+            action="{% url list_issue_reprints id=issue_revision.id %}">
+        <input type="submit" id="list_reprints_{{ issue_revision.id }}"
+               name="list_issue_reprints_{{ issue_revision.id }}" value="Edit issue reprint links">
+      </form>
+    </td>
+    <td align="right">
+            {% if changeset.change_type == CTYPES.issue %}
+      <form class="changeset" method="GET"
+            action="{% url add_issue_reprint issue_id=issue_revision.id,changeset_id=changeset.id %}">
+        <input type="submit" value="Add reprint">
+      </form>
+            {% endif %}
+    </td>
+  </tr>
+          {% endif %}
+          {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count = 1 and changeset.reprintrevisions.count = 0 %}
   <tr>
     <td colspan="2">
       <form class="changeset" method="GET"
@@ -159,8 +178,8 @@
       </form>Note that you cannot remove a variant from a changeset afterwards.
     </td>
   </tr>
-{% endif %}
-{% if issue_revision.issue %}
+          {% endif %}
+          {% if issue_revision.issue %}
   <tr>
     <td colspan="2">
       <form method="GET"
@@ -170,7 +189,7 @@
       </form>
     </td>
   </tr>
-{% endif %}
+          {% endif %}
         {% endfor %}
 </table>
       {% endif %} <!-- changeset.issuerevisions.count -->
@@ -203,54 +222,59 @@
           {% endif %}
 <table class="story_list">
           {% for story in issuerevision.ordered_story_revisions %}
-  <tr>
+  <tr{% if story.deleted %} class="deleted"{% endif %}>
     <td> {{ story|show_story_short }} </td>
     <td>{{ story|show_credit_status }}</td>
     <td>
+            {% if not story.deleted %}
       <form class="changeset" method="GET"
             action="{% url edit_revision model_name='story',id=story.id %}">
         <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
                value="Edit">
       </form>
+              {% if changeset.change_type == CTYPES.issue %}
       <form class="story_button" method="GET"
             action="{% url add_story_reprint story_id=story.id,changeset_id=changeset.id %}">
         <input type="submit" id="reprint_{{ story.id }}" name="reprint_{{ story.id }}"
                value="Add reprint">
       </form>
-            {% if not story.story %}
+              {% endif %}
+              {% if not story.story and not story.has_reprint_revisions %}
       <form class="story_button" method="GET"
             action="{% url remove_story_revision id=story.id %}">
         <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
                value="Remove New Story">
       </form>
-            {% else %}
-              {% if story.issue %}
-              {% comment %}
+              {% else %}
+                {% if story.issue %}
+                {% comment %}
                 Only allow deletes when assigned to the original issue in
                 the changeset. Relevant if a story is moved between two
                 issues. story.issue becomes None in an active changeset
                 in such a case, therefore used as a conditional.
                 Reconsider once we are working on moves in general, and not
                 just issue variants.
-              {% endcomment %}
+                {% endcomment %}
+                  {% if story.deletable %}
       <form class="story_button" method="POST"
             action="{% url toggle_delete_story_revision id=story.id %}">
-                {% if story.deleted %}
-        <input type="submit" value="Restore">
-                {% else %}
-                  {% if story.deletable %}
         <input type="submit" value="Mark to Delete">
+      </form>
                   {% endif %}
                 {% endif %}
-      </form>
               {% endif %}
-            {% endif %}
-            {% if story.moveable %}
+              {% if story.moveable %}
       <form class="story_button" method="POST"
             action="{% url move_story_revision id=story.id %}">
         <input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
                value="Move To Other Issue">
       </form>
+              {% endif %}              
+            {% else %}
+      <form class="story_button" method="POST"
+            action="{% url toggle_delete_story_revision id=story.id %}">
+        <input type="submit" value="Restore">
+      </form>            
             {% endif %}
     </td>
   </tr>

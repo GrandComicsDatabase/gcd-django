@@ -3,6 +3,7 @@
     <th><label for="reprint_notes">Notes for this reprint link:</label> </th>
     <td><textarea id="reprint_notes" name="reprint_link_notes"></textarea></td>
   </tr>
+{% if story_revision and story_revision.reprint_notes %}
   <tr>
     <th><label for="reprint_notes">Story reprint notes:</label> </th>
     <td>
@@ -11,6 +12,7 @@
       Reprint notes for the story. Might need editing if a text note is converted into a link.
     </td>
   </tr>
+{% endif %}  
   <tr>
     <th><label for="comments">Comment:</label></th>
     <td>
