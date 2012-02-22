@@ -225,18 +225,27 @@ def find_migration_candidates(story, string, standard = True):
             else:
                 origin = True
             if notes:
-                if notes.lower().find('originaltitel'):
-                    pos = notes.lower().find('originaltitel')
+                if notes.find('originaltitel'):
+                    pos = notes.find('originaltitel')
                     notes.replace(notes[pos:pos+len('originaltitel')], 'original title')
+                if notes.find('Originaltitel'):
+                    pos = notes.find('Originaltitel')
+                    notes.replace(notes[pos:pos+len('Originaltitel')], 'original title')
                 if notes.lower().find(uni('história original')):
                     pos = notes.lower().find(uni('história original'))
                     notes.replace(notes[pos:pos+len(uni('história original'))], 'original title')
+                if notes.lower().find(uni('História original')):
+                    pos = notes.lower().find(uni('História original'))
+                    notes.replace(notes[pos:pos+len(uni('História original'))], 'original title')
                 if notes.lower().find('titolo originale'):
                     pos = notes.lower().find('titolo originale')
                     notes.replace(notes[pos:pos+len('titolo originale')], 'original title')
-                if notes.lower().find('titre original'):
-                    pos = notes.lower().find('titre original')
+                if notes.find('titre original'):
+                    pos = notes.find('titre original')
                     notes.replace(notes[pos:pos+len('titre original')], 'original title')
+                if notes.find('Titre original'):
+                    pos = notes.find('Titre original')
+                    notes.replace(notes[pos:pos+len('Titre original')], 'original title')
                 if notes.lower().find('originally titled'):
                     pos = notes.lower().find('originally titled')
                     notes.replace(notes[pos:pos+len('originally titled')], 'original title')
