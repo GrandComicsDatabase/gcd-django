@@ -235,7 +235,6 @@ def show_series(request, series, preview=False):
         display_series = series
 
     scans, first_image_tag = _get_scan_table(display_series)
-    issues = series.active_issues().exclude(variant_of__series=series)
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -244,7 +243,6 @@ def show_series(request, series, preview=False):
       'gcd/details/series.html',
       {
         'series': series,
-        'issues': issues,
         'scans': scans,
         'first_image_tag': first_image_tag,
         'country': series.country,
@@ -436,13 +434,11 @@ def status(request, series_id):
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'series', 'id': series_id}))
 
-    issues = series.active_issues().exclude(variant_of__series=series)
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
 
     return render_to_response('gcd/status/status.html', {
       'series': series,
-      'issues': issues,
       'table_width': table_width },
       context_instance=RequestContext(request))
 

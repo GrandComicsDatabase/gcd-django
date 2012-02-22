@@ -59,11 +59,13 @@
           action="{% url apps.gcd.views.details.issue_form %}">
       <input type="hidden" name="extra" value="{{ extra }}">
       <select name="id" id="id">
-    {% for other_issue in series.active_issues %}
+    {% for other_issue in series.active_base_issues %}
         <option value="{{ other_issue.id }}"
       {% ifequal issue.id other_issue.id %}
                 selected
-      {% endifequal %}>{{ other_issue.display_number }}</option>
+      {% endifequal %}>{{ other_issue.display_number }}
+      {% if other_issue.variant_set.count %}*{{ other_issue.variant_set.count|add:1 }}{% endif %}
+        </option>
     {% endfor %}
       </select>
       <input type="submit" value="{% trans 'Go' %}"/>

@@ -185,13 +185,13 @@ class Issue(models.Model):
         prev_issue = None
         next_issue = None
 
-        earlier_issues = \
-          self.series.active_issues().filter(sort_code__lt=self.sort_code)
+        earlier_issues = self.series.active_base_issues()\
+                             .filter(sort_code__lt=self.sort_code)
         earlier_issues = earlier_issues.order_by('-sort_code')
         if earlier_issues:
             prev_issue = earlier_issues[0]
 
-        later_issues = self.series.active_issues()\
+        later_issues = self.series.active_base_issues()\
                            .filter(sort_code__gt=self.sort_code)
         later_issues = later_issues.order_by('sort_code')
         if later_issues:

@@ -12,7 +12,7 @@
 <p class="spacer"/>
 <table border="1" class="status">
   <tr>
-  {% for issue in issues %}
+  {% for issue in series.active_base_issues %}
     <td class="status_{{ issue.index_status_name }}">
       <a href="{{ issue.get_absolute_url }}">{{ issue.display_number }}</a> </td>
     {% if forloop.counter|divisibleby:table_width %}

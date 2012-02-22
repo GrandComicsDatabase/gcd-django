@@ -116,6 +116,9 @@ class Series(models.Model):
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
 
+    def active_base_issues(self):
+        return self.active_issues().exclude(variant_of__series=self)
+        
     def ordered_brands(self):
         """
         Provide information on publisher's brands in the order they first
