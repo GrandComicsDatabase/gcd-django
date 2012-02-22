@@ -17,6 +17,7 @@ from django.core.validators import RegexValidator
 
 from apps.oi import states
 from apps.gcd.models import *
+from apps.gcd.models.issue import INDEXED
 
 LANGUAGE_STATS = ['de',]
 
@@ -2148,7 +2149,9 @@ class SeriesRevision(Revision):
                 update_count('variant issues', variant_issues,
                              language=self.language)
                 issue_indexes = Issue.objects.filter(series=series,
-                                  is_indexed=True, deleted=False).count()
+                                                     deleted=False)\
+                                     .exclude(is_indexed=INDEXED['skeleton'])\
+                                     .count()
                 update_count('issue indexes', -issue_indexes,
                              language=series.language)
                 update_count('issue indexes', issue_indexes,
@@ -2913,7 +2916,7 @@ class IssueRevision(Revision):
 
     def _post_commit_to_display(self):
         if self.changeset.changeset_action() == ACTION_MODIFY and \
-           self.issue.is_indexed:
+           self.issue.is_indexed != INDEXED['skeleton']:
             RecentIndexedIssue.objects.update_recents(self.issue)
 
     def _story_revisions(self):
@@ -3478,8 +3481,8 @@ class StoryRevision(Revision):
             story = Story()
             update_count('stories', 1, language=self.issue.series.language)
         elif self.deleted:
-            if self.issue.is_indexed == True:
-                if self.issue.set_indexed_status() == False:
+            if self.issue.is_indexed != INDEXED['skeleton']:
+                if self.issue.set_indexed_status() == INDEXED['skeleton']:
                     update_count('issue indexes', -1,
                                  language=story.issue.series.language)
             update_count('stories', -1, language=story.issue.series.language)
@@ -3538,12 +3541,12 @@ class StoryRevision(Revision):
             self.story = story
             self.save()
 
-        if self.issue.is_indexed == False:
-            if self.issue.set_indexed_status():
+        if self.issue.is_indexed == INDEXED['skeleton']:
+            if self.issue.set_indexed_status() != INDEXED['skeleton']:
                 update_count('issue indexes', 1,
                              language=self.issue.series.language)
         else:
-            if self.issue.set_indexed_status() == False:
+            if self.issue.set_indexed_status() == INDEXED['skeleton']:
                 update_count('issue indexes', -1,
                              language=self.issue.series.language)
 

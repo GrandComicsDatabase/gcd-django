@@ -26,6 +26,11 @@
     background-color: #3C3;
 }
 
+.status_partial,
+.status_4 {
+    background-color: #77E;
+}
+
 /* Note that these tables have border="1" specified in
  * the HTML source to allow user agents such as elinks
  * to render a border.  Which means the CSS related to

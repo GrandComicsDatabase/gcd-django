@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from decimal import Decimal
+
 from django.db import models
 from django.core import urlresolvers
 from django.db.models import Sum, Count
@@ -9,6 +11,13 @@ from series import Series
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
 from apps.oi import states
+
+INDEXED = {
+    'skeleton': 0,
+    'full': 1,
+    'partial': 2
+}
+
 
 class Issue(models.Model):
     class Meta:
@@ -57,7 +66,7 @@ class Issue(models.Model):
     brand = models.ForeignKey(Brand, null=True)
     no_brand = models.BooleanField(default=False, db_index=True)
 
-    is_indexed = models.BooleanField(default=False, db_index=True)
+    is_indexed = models.IntegerField(default=0, db_index=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -138,17 +147,16 @@ class Issue(models.Model):
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
         from story import StoryType
-        if self.active_stories().filter(type=StoryType.objects.get(name='comic story'))\
-                                .count() > 0:
-            is_indexed = True
-        else:
+        is_indexed = INDEXED['skeleton']
+        if self.page_count > 0:
             total_count = self.active_stories()\
                               .aggregate(Sum('page_count'))['page_count__sum']
-            if (total_count is not None and self.page_count is not None and
-                    total_count * 2 > self.page_count):
-                is_indexed = True
-            else:
-                is_indexed = False
+            if total_count > 0 and total_count >= Decimal('0.4') * self.page_count:
+                is_indexed = INDEXED['full']
+        if is_indexed != INDEXED['full'] and self.active_stories()\
+          .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
+            is_indexed = INDEXED['partial']
+            
         if self.is_indexed != is_indexed:
             self.is_indexed = is_indexed
             self.save()
@@ -162,8 +170,10 @@ class Issue(models.Model):
         if self.reserved:
             active =  self.revisions.get(changeset__state__in=states.ACTIVE)
             return states.CSS_NAME[active.changeset.state]
-        elif self.is_indexed:
+        elif self.is_indexed == INDEXED['full']:
             return 'approved'
+        elif self.is_indexed == INDEXED['partial']:
+            return 'partial'
         else:
             return 'available'
 

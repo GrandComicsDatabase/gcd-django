@@ -197,7 +197,8 @@ class Series(models.Model):
         return self.issues_without_covers().count() + self.marked_scans_count()
 
     def issue_indexed_count(self):
-        return self.active_issues().filter(is_indexed=True).count()
+        from apps.gcd.models.issue import INDEXED
+        return self.active_issues().exclude(is_indexed=INDEXED['skeleton']).count()
 
     def _date_uncertain(self, flag):
         return u' ?' if flag else u''

@@ -22,6 +22,7 @@ from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             Country, Language, Indexer, Brand, IndiciaPublisher
+from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
@@ -906,10 +907,10 @@ def search_issues(data, op, stories_q=None):
                       Q(**{ '%scover__marked' % prefix: True }))
     if data['is_indexed'] is not None:
         if data['is_indexed'] is True:
-            q_objs.append(Q(**{ '%sis_indexed' % prefix: True }) &\
+            q_objs.append(Q(**{ '%sis_indexed' % prefix: INDEXED['full'] }) &\
                           Q(**{ '%svariant_of' % prefix: None }))
         else:
-            q_objs.append(Q(**{ '%sis_indexed' % prefix: False }) &\
+            q_objs.append(~Q(**{ '%sis_indexed' % prefix: INDEXED['full'] }) &\
                           Q(**{ '%svariant_of' % prefix: None }))
     if data['indexer']:
         q_objs.append(

@@ -4,7 +4,7 @@ from django.db import models
 from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
 from apps.gcd.models.language import Language
 from apps.gcd.models.series import Series
-from apps.gcd.models.issue import Issue
+from apps.gcd.models.issue import Issue, INDEXED
 from apps.gcd.models.story import Story
 from apps.gcd.models.cover import Cover
 
@@ -29,7 +29,8 @@ class CountStatsManager(models.Manager):
               count=Issue.objects.filter(deleted=False)\
               .exclude(variant_of=None).count())
             self.create(name='issue indexes', language=language,
-              count=Issue.objects.filter(deleted=False, is_indexed=True).count())
+              count=Issue.objects.filter(deleted=False)\
+                         .exclude(is_indexed=INDEXED['skeleton']).count())
             self.create(name='covers', language=language,
               count=Cover.objects.filter(deleted=False).count())
             self.create(name='stories', language=language,
@@ -50,8 +51,8 @@ class CountStatsManager(models.Manager):
 
         self.create(name='issue indexes', language=language,
           count=Issue.objects.filter(series__language=language,
-                                     deleted=False,
-                                     is_indexed=True).count())
+                                     deleted=False)\
+                     .exclude(is_indexed=INDEXED['skeleton']).count())
 
         self.create(name='covers', language=language,
           count=Cover.objects.filter(issue__series__language=language,

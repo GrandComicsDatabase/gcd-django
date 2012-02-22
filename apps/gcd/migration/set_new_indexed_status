@@ -1,0 +1,11 @@
+issues=Issue.objects.filter(is_indexed=1, deleted=False, variant_of=None)
+
+for i in issues:
+    if i.set_indexed_status() != 1:
+        print i.id, i
+
+issues=Issue.objects.filter(is_indexed=0, deleted=False, variant_of=None).exclude(story=None)
+for i in issues:
+    if i.set_indexed_status() != 0:
+        print i.id, i, i.series.id, i.is_indexed
+
