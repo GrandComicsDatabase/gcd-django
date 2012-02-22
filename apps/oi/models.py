@@ -162,7 +162,7 @@ def remove_leading_article(name):
     returns the name with the leading article (separated by "'"
     or whitespace) removed
     '''
-    article_match = re.match(r"'?\w+['\s]\s*(.*)$", name, re.UNICODE)
+    article_match = re.match(r"\S?\w+['\s]\s*(.*)$", name, re.UNICODE)
     if article_match:
         return article_match.group(1)
     else:
