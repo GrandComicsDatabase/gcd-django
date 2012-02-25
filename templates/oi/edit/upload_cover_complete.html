@@ -46,7 +46,7 @@ This cover upload has been successfully submitted and is awaiting approval by an
     <ul>
     Issues missing covers
   {% for issue in blank_issues %}
-      <li><a href="{% url upload_cover issue_id=issue.id %}">{{ issue.series }} #{{ issue.display_number }}</a>
+      <li><a href="{% url upload_cover issue_id=issue.id %}">{{ issue.short_name }}</a>
       </li>
   {% endfor %}
     </ul>
@@ -55,14 +55,14 @@ This cover upload has been successfully submitted and is awaiting approval by an
     <ul>
     Covers marked for replacement
   {% for cover in marked_covers %}
-      <li><a href="{{ cover.get_status_url }}">{{ cover.issue.series }} #{{ cover.issue.display_number }}</a>
+      <li><a href="{{ cover.get_status_url }}">{{ cover.issue.short_name }}</a>
       </li>
   {% endfor %}
     </ul>
 {% endif %}
     <ul>
     Add a variant cover
-    <li><a href="{% url upload_variant issue_id=issue.id %}">{{ issue.series }} #{{ issue.display_number }}</a>
+    <li><a href="{% url upload_variant issue_id=issue.id %}">{{ issue.short_name }}</a>
     </li>
     </ul>
   </div>

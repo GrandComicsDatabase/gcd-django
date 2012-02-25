@@ -236,6 +236,14 @@ class Issue(models.Model):
         else:
             return u'%s #%s' % (self.series.full_name(), self.display_number)
 
+    def short_name(self):
+        if self.variant_name:
+            return u'%s #%s [%s]' % (self.series.name,
+                                     self.display_number,
+                                     self.variant_name)
+        else:
+            return u'%s #%s' % (self.series.name, self.display_number)
+
     def __unicode__(self):
         if self.variant_name:
             return u'%s #%s [%s]' % (self.series, self.display_number,
