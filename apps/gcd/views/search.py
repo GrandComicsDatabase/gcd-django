@@ -543,7 +543,7 @@ def used_search(search_values):
     if search_values['method'] == 'iexact':
         method = 'Matches Exactly'
     elif search_values['method'] == 'exact':
-        method = 'Matches Excactly (case sensitive)'
+        method = 'Matches Exactly (case sensitive)'
     elif search_values['method'] == 'istartswith':
         method = 'Starts With'
     elif search_values['method'] == 'startswith':
