@@ -52,12 +52,12 @@
 {% endif %}
           <p>
           <dt> Total Number of Series:
-          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name }}">{{ publisher.series_count }}</a>
+          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode }}">{{ publisher.series_count }}</a>
           <dt> Total Number of Issues:
-          <dd> <a href="/search/advanced/process/?target=issue&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name }}">{{ publisher.issue_count }}</a>
+          <dd> <a href="/search/advanced/process/?target=issue&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode }}">{{ publisher.issue_count }}</a>
 {% if not publisher.year_ended %}
           <dt> Number of Current Series:
-          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name }}&is_current=on">{{ current.count }}</a>
+          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode  }}&is_current=on">{{ current.count }}</a>
 {% endif %}
 {% if publisher.url or publisher.notes %}
           <p>
