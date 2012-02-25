@@ -288,7 +288,7 @@ msgstr "gcd-contact-de@comics.org"
 
 #: templates/gcd/bits/front_page_menu.html:15
 msgid "Contact Us"
-msgstr "Kontakt aufnehmen"
+msgstr "Kontakt"
 
 #: templates/gcd/bits/front_page_search_box.html:5
 #: templates/gcd/bits/front_page_search_box.html:11

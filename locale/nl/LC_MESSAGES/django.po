@@ -1,14 +1,14 @@
-# SOME DESCRIPTIVE TITLE.
+# Swedish translations for the GCD website.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Per Sandell, 2011.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-19 18:26+0200\n"
+"POT-Creation-Date: 2010-05-08 00:12+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,107 +16,187 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: apps/gcd/templatetags/credits.py:59
-msgid "Job Number:"
+#: templates/gcd/index.html:61 templates/gcd/bits/front_page_login.html:18
+msgid "Login"
+msgstr "Inloggen"
+
+#: templates/gcd/index.html:69
+msgid "Disclaimer"
 msgstr ""
 
-#: apps/gcd/templatetags/credits.py:68
-msgid "search and link"
+#: templates/gcd/index.html:73
+msgid ""
+"The Grand Comics Database Project (GCD) is a volunteer project with the goal "
+"of documenting and indexing all comics for the free use of scholars, "
+"historians, researchers, and fans."
+msgstr ""
+"De Grand Comics Database Project (GCD) is een vrijwilligersorganisatie die "
+"zich tot doel stelt alle strips te documenteren voor wetenschap, "
+"geschiedkundigen, onderzoekers en liefhebbers."
+
+#: templates/gcd/index.html:76
+msgid ""
+"The GCD acknowledges that the all-encompassing research nature of the "
+"project may result in the posting of cover scans for comics with images that "
+"some may find objectionable."
+msgstr ""
+"De GCD erkent dat, door de alomvattende aard van het project, het mogelijk "
+"is dat er afbeeldingen getoond worden die sommigen aanstootgevend zullen vinden."
+
+#: templates/gcd/index.html:79
+msgid "Viewer discretion is advised."
+msgstr "Daarom raden we de website met discretie te gebruiken."
+
+#: templates/gcd/index.html:82
+msgid "The Grand Comics Database Team"
+msgstr "Het Grand Comics Database Team"
+
+#: templates/gcd/index.html:103
+msgid "Useful Links"
+msgstr "Handige links"
+
+#: templates/gcd/index.html:107
+msgid "Today's covers"
+msgstr "Omslagscans van vandaag"
+
+#: templates/gcd/index.html:111
+msgid "Today's changes"
+msgstr "Veranderingen van vandaag"
+
+#: templates/gcd/index.html:112
+msgid "Covers to replace"
+msgstr "Omslagen ter vervanging"
+
+#: templates/gcd/index.html:113
+msgid "International statistics"
+msgstr "Internationale statistieken"
+
+#: templates/gcd/index.html:117
+msgid "Last Updated Language Issues"
+msgstr "Laatste bijgewerkte delen"
+
+#: templates/gcd/index.html:125
+msgid "Statistics for Language Comics"
+msgstr "Statistieken"
+
+#: templates/gcd/index.html:136
+msgid "Last Updated Issues"
+msgstr "Laatste bijgewerkte delen"
+
+#: templates/gcd/index.html:144
+msgid "Statistics"
+msgstr "Statistieken"
+
+#: templates/gcd/bits/front_page_login.html:5
+msgid "You are logged in as "
+msgstr "Je bent ingelogd als "
+
+#: templates/gcd/bits/front_page_login.html:6
+msgid "Editing"
+msgstr "Bewerken"
+
+#: templates/gcd/bits/front_page_login.html:6
+msgid "Profile"
+msgstr "Profiel"
+
+#: templates/gcd/bits/front_page_login.html:9
+msgid "Logout"
 msgstr ""
 
-#: apps/gcd/templatetags/migration/reprints.py:457
-#: apps/gcd/templatetags/migration/reprints.py:541
-msgid "Reprints"
+#: templates/gcd/bits/front_page_login.html:14
+msgid "username"
 msgstr ""
 
-#: templates/gcd/covers_to_replace.html:19
-msgid "Covers marked for replacement"
+#: templates/gcd/bits/front_page_login.html:16
+msgid "password"
 msgstr ""
 
-#: templates/gcd/daily_covers.html:19
-msgid "Covers for "
+#: templates/gcd/bits/front_page_login.html:22
+msgid "Forgot password?"
 msgstr ""
 
-#: templates/gcd/daily_covers.html:22
-msgid "day before"
+#: templates/gcd/bits/front_page_login.html:25
+msgid "Register"
 msgstr ""
 
-#: templates/gcd/daily_covers.html:24
-msgid "day after"
+#: templates/gcd/bits/front_page_menu.html:15
+msgid "Contact Us"
 msgstr ""
 
-#: templates/gcd/daily_covers.html:31
-msgid " covers posted"
+#: templates/gcd/bits/front_page_search_box.html:5
+#: templates/gcd/bits/front_page_search_box.html:11
+msgid "Search"
 msgstr ""
 
-#: templates/gcd/issue.html:52
-msgid "Price"
+#: templates/gcd/bits/front_page_search_box.html:9
+msgid "Sort by"
 msgstr ""
 
-#: templates/gcd/issue.html:54
-msgid "Pages"
+#: templates/gcd/bits/front_page_search_box.html:12
+msgid "Advanced&nbsp;Search"
 msgstr ""
 
-#: templates/gcd/issue.html:112
-msgid "Issues in this series have been indexed by:"
-msgstr ""
-
-#: templates/gcd/one_issue_series.html:5
-msgid "Publication Notes"
-msgstr ""
-
-#: templates/gcd/one_issue_series.html:10
-msgid "Tracking"
-msgstr ""
-
-#: templates/gcd/one_issue_series.html:15
-msgid "Title Notes"
-msgstr ""
-
-#: templates/gcd/pagination_bar.html:7 templates/gcd/pagination_bar.html:9
-#: templates/gcd/pagination_bar.html:12
-msgid "Previous"
-msgstr ""
-
-#: templates/gcd/pagination_bar.html:29 templates/gcd/pagination_bar.html:31
-#: templates/gcd/pagination_bar.html:34
-msgid "Next"
-msgstr ""
-
-#: templates/gcd/series.html:74
-msgid "Indexed by:"
-msgstr ""
-
-#: templates/gcd/series_issue_header.html:39
-msgid "Previous Issue"
-msgstr ""
-
-#: templates/gcd/series_issue_header.html:45
-msgid "Next Issue"
-msgstr ""
-
-#: templates/gcd/single_story.html:23 templates/gcd/single_story.html.py:48
+#: templates/gcd/bits/legalese.html:3
 #, python-format
 msgid ""
 "\n"
-"              page%(suffix)s\n"
-"            "
+"If you believe any of this data to be incorrect, please\n"
+"<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"   target=\"_blank\">let us know</a> (opens new window).\n"
 msgstr ""
 
-#~ msgid "Script"
-#~ msgstr "Scenario"
+#: templates/gcd/bits/legalese.html:11
+msgid "Cover thumbnails are used for identification purposes only."
+msgstr ""
 
-#~ msgid "Pencils"
-#~ msgstr "Potloodtekenaar"
+#: templates/gcd/bits/legalese.html:12
+msgid ""
+"All rights to cover images reserved by the respective copyright holders."
+msgstr ""
 
-#~ msgid "Inks"
-#~ msgstr "Inkter"
+#: templates/gcd/bits/legalese.html:17
+#, python-format
+msgid ""
+"\n"
+"All portions of <a href=\"http://www.comics.org/\" rel=\"cc:attributionURL"
+"\">the %(site_name)s</a> that are subject to copyright are licensed under a "
+"<a rel=\"license\" href=\"http://creativecommons.org/licenses/by/3.0/"
+"\">Creative Commons Attribution 3.0 Unported License</a>.  This includes but "
+"is not necessarily limited to our database schema and data distribution "
+"format.\n"
+msgstr ""
 
-#~ msgid "Colors"
-#~ msgstr "Inkleuring"
+#: templates/gcd/bits/legalese.html:22
+msgid ""
+"The GCD Web Site code is licensed under the <a href=\"http://www.gnu.org/"
+"licenses/gpl.html\">GNU General Public License</a>"
+msgstr ""
+""
 
-#~ msgid "Letters"
-#~ msgstr "Lettering"
+msgid "publishers"
+msgstr "uitgevers"
 
-#~ msgid "Editor"
-#~ msgstr "Redacteur"
+msgid "brands"
+msgstr "beeldmerken"
+
+msgid "indicia publishers"
+msgstr "officiële uitgeversnamen"
+
+msgid "series"
+msgstr "series"
+
+msgid "issues"
+msgstr "delen"
+
+msgid "variant issues"
+msgstr "varianten"
+
+msgid "issue indexes"
+msgstr "geïndexeerde delen"
+
+msgid "covers"
+msgstr "omslagen"
+
+msgid "stories"
+msgstr "verhalen"

@@ -42,10 +42,10 @@ def index(request):
 
 
     if language:
-        front_page_content = "gcd/bits/front_page_content_%s.html" % language.code
+        front_page_content = "gcd/front_page/front_page_content_%s.html" % language.code
         stats_for_language = CountStats.objects.filter(language=language)
     else:
-        front_page_content = "gcd/bits/front_page_content.html"
+        front_page_content = "gcd/front_page/front_page_content.html"
         stats_for_language = None
 
     vars = { 'stats' : stats, 'language' : language,
