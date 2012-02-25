@@ -59,7 +59,7 @@ class LastUpdatedNode(template.Node):
             i = recent.issue
             return_string += u'<li><a href="%s">%s #%s</a> (%s)</li>' % \
                              (i.get_absolute_url(), esc(i.series),
-                              esc(i.number), esc(i.series.publisher.name))
+                              esc(i.display_number), esc(i.series.publisher.name))
 
         return mark_safe(return_string+'</ul>')
 
