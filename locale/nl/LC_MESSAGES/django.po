@@ -73,11 +73,11 @@ msgstr "Internationale statistieken"
 
 #: templates/gcd/index.html:117
 msgid "Last Updated Language Issues"
-msgstr "Laatste bijgewerkte delen"
+msgstr "Nieuwste Nederlandse bijdrages"
 
 #: templates/gcd/index.html:125
 msgid "Statistics for Language Comics"
-msgstr "Statistieken"
+msgstr "Statistieken voor Nederlandse strips"
 
 #: templates/gcd/index.html:136
 msgid "Last Updated Issues"
