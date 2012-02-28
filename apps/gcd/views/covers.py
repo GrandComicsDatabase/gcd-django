@@ -9,7 +9,7 @@ from apps.gcd.models import Issue
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
 
-def get_image_tag(cover, alt_text, zoom_level):
+def get_image_tag(cover, alt_text, zoom_level, is_comics_publication=True):
     img_class = 'cover_img'
     if zoom_level == ZOOM_SMALL:
         width = 100
@@ -26,10 +26,15 @@ def get_image_tag(cover, alt_text, zoom_level):
         size = 'large'
 
     if cover is None:
-        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
-               'img/nocover_' + size +'.png" alt="No image yet"' + \
-               'class="cover_img">')
-
+        if is_comics_publication:
+            return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+                'img/nocover_' + size +'.png" alt="No image yet"' + \
+                'class="cover_img">')
+        else:
+            return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+                'img/noupload_' + size +'.png" alt="No image"' + \
+                'class="cover_img">')
+            
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
@@ -62,7 +67,9 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
             covers = covers | issue.variant_covers()
     else:
         return mark_safe(get_image_tag(cover=None, zoom_level=zoom_level,
-                                       alt_text=alt_text))
+                    alt_text=alt_text,
+                    is_comics_publication=issue.series.is_comics_publication))
+                    
     if exclude_ids:
         covers = covers.exclude(id__in=exclude_ids)
     if as_list:

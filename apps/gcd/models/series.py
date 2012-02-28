@@ -76,6 +76,8 @@ class Series(models.Model):
     has_issue_title = models.BooleanField()
     has_volume = models.BooleanField()
 
+    is_comics_publication = models.BooleanField()
+
     # Fields related to cover image galleries.
     has_gallery = models.BooleanField(db_index=True)
 

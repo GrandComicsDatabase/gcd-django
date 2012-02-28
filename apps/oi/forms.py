@@ -136,6 +136,7 @@ SERIES_HELP_LINKS = {
     'tracking_notes': 'Tracking',
     'notes': 'Series_Notes',
     'format': 'Format',
+    'is_comics_publication': 'Comics_Publication',
     'comments': 'Comments'
 }
 
@@ -1068,7 +1069,7 @@ class ReprintRevisionForm(forms.ModelForm):
         fields = get_reprint_field_list()
 
 
-def get_story_revision_form(revision=None, user=None):
+def get_story_revision_form(revision=None, user=None, is_comics_publication=True):
     extra = {}
     if revision is not None:
         # Don't allow blanking out the type field.  However, when its a new store
@@ -1076,8 +1077,12 @@ def get_story_revision_form(revision=None, user=None):
         # initial value.  So only set None if there is an existing story revision.
         extra['empty_label'] = None
 
+    if not is_comics_publication:
+        queryset = StoryType.objects.filter(name__in=['comic story',
+                                                      'photo story',
+                                                      'cartoon'])
     # for variants we can only have cover sequences (for now)
-    if revision and (revision.issue == None or revision.issue.variant_of):
+    elif revision and (revision.issue == None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
         # TODO prevent adding of non-covers directly in the form cleanup
@@ -1090,7 +1095,7 @@ def get_story_revision_form(revision=None, user=None):
         if revision is None or (revision is not None and
                                 revision.type.name not in special_types):
             queryset = queryset.exclude(name__in=special_types)
-
+        
     class RuntimeStoryRevisionForm(StoryRevisionForm):
         type = forms.ModelChoiceField(queryset=queryset,
           help_text='Choose the most appropriate available type',

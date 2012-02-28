@@ -633,6 +633,9 @@ def upload_cover(request, cover_id=None, issue_id=None):
     # no cover_id, therefore upload a cover to an issue (first or variant)
     else:
         issue = get_object_or_404(Issue, id=issue_id)
+        if not issue.series.is_comics_publication:
+            return render_error(request,
+              'No covers for non-comics publications.', redirect=False)
         cover = None
 
     # check if there is a pending issue deletion

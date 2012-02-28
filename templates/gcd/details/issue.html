@@ -87,7 +87,11 @@ This issue has variants.
             {{ image_tag }}
     {% endif %}
   {% else %}
+    {% if issue.series.is_comics_publication %}
             <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
+    {% else %}
+      {{ image_tag }}
+    {% endif %}
   {% endif %}
 {% endif %}
 {% if variant_image_tags %}

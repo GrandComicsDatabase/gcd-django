@@ -1950,7 +1950,9 @@ def add_story(request, issue_revision_id, changeset_id):
             else:
                 initial = _get_initial_add_story_data(request, issue_revision,
                                                       seq)
-                form = get_story_revision_form(user=request.user)(initial=initial)
+                form = get_story_revision_form(user=request.user,
+                  is_comics_publication=issue.series.is_comics_publication)\
+                  (initial=initial)
             return _display_add_story_form(request, issue_revision, form,
                                            changeset_id)
 
