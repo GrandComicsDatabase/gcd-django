@@ -368,7 +368,7 @@ def topic_post_save(sender, **kwargs):
               topic.text,
               settings.SITE_URL.rstrip('/') + topic.get_absolute_url(),
               token_string,
-              topic.deadline.strftime('%d %B %Y %H:%M:%S'))
+              topic.deadline.strftime('%d %B %Y %H:%M:%S ') + settings.TIME_ZONE)
 
             list_config.send_mail("GCD Ballot Open: %s" % topic, email_body)
 
