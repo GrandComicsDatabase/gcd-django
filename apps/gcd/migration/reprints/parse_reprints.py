@@ -23,7 +23,7 @@ leading_articles = ['the', 'an', 'a', 'die', 'der', 'das', 'ein', 'los',
 def find_reprint_sequence_in_issue(from_story,to_issue):
     '''look for sequence in <to_issue> which fits <from_story>'''
 
-    results = Story.objects.all()
+    results = Story.objects.exclude(deleted=True)
     results = results.filter(issue__id = to_issue)
     # limit to the same (or closely related) sequence
     # 6,7 are cover and cover reprint
@@ -113,7 +113,7 @@ def parse_reprint_lars(reprints, max_found = 10):
     #if publisher == 'Ehapa':
         #print series, year, number
     try:
-        results = Issue.objects.filter(variant_of=None)
+        results = Issue.objects.exclude(deleted=True).filter(variant_of=None)
         results = results.filter(series__name__icontains = series)
         results = results.filter(series__publisher__name__icontains
         = publisher)
@@ -127,7 +127,7 @@ def parse_reprint_lars(reprints, max_found = 10):
                 number = string[:position].strip('.,')
             else:
                 number = string.strip('.,')
-            results = Issue.objects.filter(variant_of=None)
+            results = Issue.objects.exclude(deleted=True).filter(variant_of=None)
             results = results.filter(series__name__icontains = series)
             results = results.filter(series__publisher__name__icontains
             = publisher)
@@ -141,7 +141,7 @@ def parse_reprint_lars(reprints, max_found = 10):
                 #print position_before, string[position_before:position].strip(' [')
                 sequence_number = int(string[position_before:position].strip(' ['))
                 #print sequence_number
-                story = Story.objects.filter(issue=results[0])
+                story = Story.objects.exclude(deleted=True).filter(issue=results[0])
                 story = story.filter(sequence_number=sequence_number, type=story_type)
                 if story.count() > 0:
                     story = story[0]
@@ -168,7 +168,7 @@ def parse_reprint_fr(reprints):
         string = reprints[position:]
         position = string.find('(')
         number = string[:position].strip()
-        results = Issue.objects.filter(variant_of=None)
+        results = Issue.objects.exclude(deleted=True).filter(variant_of=None)
         results = results.filter(series__name__icontains = series)
         results = results.filter(number__exact = number)
     except:
@@ -198,7 +198,7 @@ def parse_reprint_fr(reprints):
                 number = string
             else:
                 number = string[:string.find(' ')].strip()
-            results = Issue.objects.filter(variant_of=None)
+            results = Issue.objects.exclude(deleted=True).filter(variant_of=None)
             results = results.filter(series__name__icontains = series)
             results = results.filter(number__exact = number)
             if year:
@@ -213,7 +213,7 @@ def parse_reprint_full(reprints, from_to, max_found = 10):
     """ parse a reprint entry, first for our standard, them some for
     other common version.  We may turn the others off or add even more. ;-)"""
     notes = ''
-    all_issues = Issue.objects.filter(variant_of=None, deleted=False)
+    all_issues = Issue.objects.exclude(deleted=True).filter(variant_of=None, deleted=False)
     results = None
     if reprints.lower().startswith(from_to):
         try:# our preferred format: seriesname (publisher, year <series>) #nr
@@ -489,7 +489,7 @@ def parse_reprint(reprints, from_to):
                 #print "A", series
                 series = series[series.rfind(', ')+2:] + " " + series[:series.rfind(', ')]
                 #print series
-            results = Issue.objects.filter(variant_of=None, deleted=False)
+            results = Issue.objects.exclude(deleted=True).filter(variant_of=None, deleted=False)
             results = results.filter(series__name__icontains = series)
             results = results.filter(series__publisher__name__icontains
             = publisher)

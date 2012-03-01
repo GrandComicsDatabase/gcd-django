@@ -32,7 +32,7 @@ def migrate_reprints_lars():
     # 36949  Batman Sonderausgabe
     # 36975  Superman Superband
     # 36964  Roter Blitz
-    issues = Issue.objects.filter(series__id__in = [18732,26245,31648,36955,36980,36973,36949,36975,36964], reserved=False)
+    issues = Issue.objects.exclude(deleted=True).filter(series__id__in = [18732,26245,31648,36955,36980,36973,36949,36975,36964], reserved=False)
     #issues = Issue.objects.filter(series__id__in = [36975,36964], reserved=False)
     migrated = []
     for migrate_issue in issues:
@@ -58,7 +58,7 @@ def migrate_reprints_lars():
                     #print issue, notes, sequence_number, story
                     if sequence_number < 0 and issue:
                         if i.sequence_number == 0:
-                            story = Story.objects.filter(issue = issue)
+                            story = Story.objects.exclude(deleted=True).filter(issue = issue)
                             story = story.filter(sequence_number = 0)
                             if story.count() == 1:
                                 story = story[0]
@@ -250,7 +250,7 @@ def find_migration_candidates(story, string, standard = True):
                     pos = notes.lower().find('originally titled')
                     notes.replace(notes[pos:pos+len('originally titled')], 'original title')
             if nr >= 0:
-                other_story = Story.objects.filter(issue = reprint[0])
+                other_story = Story.objects.exclude(deleted=True).filter(issue = reprint[0])
                 other_story = other_story.filter(sequence_number = nr)
                 return reprint[0],notes,nr,other_story[0],origin
             elif notes and notes.lower().find('original ti') >=0:
@@ -272,7 +272,7 @@ def find_migration_candidates(story, string, standard = True):
                     else:
                         original_title = ''
                         end_title = len(notes)
-                results = Story.objects.all()
+                results = Story.objects.exclude(deleted=True)
                 results = results.filter(issue = reprint[0])
                 results = results.filter(title__icontains = original_title.strip(' !.":'))
                 if results.count() == 1:
@@ -294,7 +294,7 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
         if issue and sequence_number < 0:
             if i.sequence_number == 0 and is_origin == False:
                 sequence_number = 0
-                story = Story.objects.filter(issue = issue)
+                story = Story.objects.exclude(deleted=True).filter(issue = issue)
                 story = story.filter(sequence_number = \
                                                 sequence_number)
                 if len(story) == 1:
@@ -413,7 +413,7 @@ def migrate_reprint_notes(i, standard = True, do_save = True):
 
 @transaction.commit_on_success
 def migrate_reprints_series(number, standard = True, do_save = True):
-    issues = Issue.objects.filter(series__id = number, reserved=False).filter(story__reprint_notes__contains=' ').distinct()
+    issues = Issue.objects.exclude(deleted=True).filter(series__id = number, reserved=False).filter(story__reprint_notes__contains=' ').distinct()
     migrated = []
     for issue in issues:
         #print issue
@@ -450,7 +450,7 @@ def migrate_reprints(request, select = 1):
     return render_to_response('gcd/index.html')
 
 def migrate_reprints_standard(select = -1):
-    series = Series.objects.order_by("id")
+    series = Series.objects.exclude(deleted=True).order_by("id")
     # exclude Lars
     series = series.exclude(id__in = [18732,26245,31648,36955,36980,36973,36949,36964])
     if type(select) != int:
@@ -468,7 +468,7 @@ def migrate_reprints_second(request):
     return render_to_response('gcd/index.html')
 
 def migrate_reprints_other(select = -1):
-    series = Series.objects.order_by("id")
+    series = Series.objects.exclude(deleted=True).order_by("id")
     if select > 0:
         series = series.filter(id__gt = str((select-1)*1000))
         series = series.filter(id__lte = str(select*1000))
@@ -805,7 +805,7 @@ def merge_links_story():
 def check_return_links_story():
     changesets = []
     for i in ReprintFromIssue.objects.filter(target__type__name = 'comic story'):
-        results = Story.objects.all()
+        results = Story.objects.exclude(deleted=True).all()
         results = results.filter(issue = i.origin_issue)
         results = results.filter(type = i.target.type)
         if results.count() == 1:
@@ -830,7 +830,7 @@ def check_return_links_story():
     changesets = []
 
     for i in ReprintToIssue.objects.filter(origin__type__name = 'comic story'):
-        results = Story.objects.all()
+        results = Story.objects.exclude(deleted=True).all()
         results = results.filter(issue = i.target_issue)
         results = results.filter(type = i.origin.type)
         if results.count() == 1:
