@@ -122,6 +122,10 @@ class AdvancedSearch(forms.Form):
     barcode = forms.CharField(required=False)
     indicia_frequency = forms.CharField(label='Indicia Frequency',
                                         required=False)
+    issue_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "From"),
+                                   (False, "In"))))
 
     cover_needed = forms.BooleanField(label="Cover is Needed",
                                        required=False)
@@ -154,6 +158,10 @@ class AdvancedSearch(forms.Form):
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
+    story_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "From"),
+                                   (False, "In"))))
 
     notes = forms.CharField(label='Notes', required=False)
 

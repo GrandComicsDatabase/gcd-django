@@ -930,6 +930,14 @@ def search_issues(data, op, stories_q=None):
     if data['issue_notes']:
         q_objs.append(Q(**{ '%snotes__%s' % (prefix, op): data['issue_notes'] }))
 
+    if data['issue_reprinted'] is not None:
+        if data['issue_reprinted'] == True:
+            q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: False }) | \
+                   Q(**{ '%sfrom_issue_reprints__isnull' % prefix: False }))
+        else:
+            q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
+                   Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
+
     try:
         if data['issue_pages'] is not None and data['issue_pages'] != '':
             range_match = match(PAGE_RANGE_REGEXP, data['issue_pages'])
@@ -1019,6 +1027,14 @@ def search_stories(data, op):
     if data['story_editing']:
         q_objs.append(Q(**{ '%sediting__%s' % (prefix, op):
                             data['story_editing'] }))
+
+    if data['story_reprinted'] is not None:
+        if data['story_reprinted'] == True:
+            q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: False }) | \
+                   Q(**{ '%sfrom_issue_reprints__isnull' % prefix: False }))
+        else:
+            q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
+                   Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
 
     try:
         if data['pages'] is not None and data['pages'] != '':
