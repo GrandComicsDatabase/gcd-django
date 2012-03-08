@@ -640,7 +640,8 @@ class Changeset(models.Model):
                 # matter what else was in the changeset.
 
                 if revision.deleted:
-                    if isinstance(revision, StoryRevision):
+                    if isinstance(revision, StoryRevision) or \
+                      isinstance(revision, ReprintRevision):
                         self.imps += IMP_DELETE
                     else:
                         self.imps = IMP_DELETE
