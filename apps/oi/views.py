@@ -394,12 +394,12 @@ def submit(request, id):
         return render_to_response('gcd/error.html',
           {'error_text': 'A change may only be submitted by its author.'},
           context_instance=RequestContext(request))
-
-    changeset.submit(notes=request.POST['comments'])
+    comment_text = request.POST['comments'].strip()
+    changeset.submit(notes=comment_text)
     if changeset.approver is not None:
-        if request.POST['comments']:
+        if comment_text:
             comment = u'The submission includes the comment:\n"%s"' % \
-                      request.POST['comments']
+                      comment_text
         else:
             comment = ''
         email_body = u"""
@@ -424,6 +424,9 @@ thanks,
 
         changeset.approver.email_user('GCD change to review', email_body,
           settings.EMAIL_INDEXING)
+          
+    if comment_text:
+        send_comment_observer(request, changeset, comment_text)
 
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
@@ -506,7 +509,11 @@ def retract(request, id):
         return render_to_response('gcd/error.html',
           {'error_text': 'A change may only be retracted by its author.'},
           context_instance=RequestContext(request))
-    changeset.retract(notes=request.POST['comments'])
+    comment_text = request.POST['comments'].strip()
+    changeset.retract(notes=comment_text)
+    
+    if comment_text:
+        send_comment_observer(request, changeset, comment_text)
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',
                                                      kwargs={'id': changeset.id }))
@@ -533,10 +540,11 @@ def confirm_discard(request, id, has_comment=0):
 
     if 'discard' in request.POST:
         if has_comment == '1' and changeset.approver:
-            text = changeset.comments.latest('created').text
-            comment = u'The discard includes the comment:\n"%s"' % text
+            comment_text = changeset.comments.latest('created').text
+            comment = u'The discard includes the comment:\n"%s"' % comment_text
         else:
             comment = ''
+            comment_text = ''
         changeset.discard(discarder=request.user)
         if changeset.approver:
             email_body = u"""
@@ -561,6 +569,8 @@ thanks,
 
             changeset.approver.email_user('Reviewed GCD change discarded',
               email_body, settings.EMAIL_INDEXING)
+        if comment_text:
+            send_comment_observer(request, changeset, comment_text)
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
         # it would be nice if we would be able to go back the page
@@ -585,7 +595,8 @@ def discard(request, id):
             'Only the author or the assigned editor can discard a change.' },
           context_instance=RequestContext(request))
 
-    if request.user != changeset.indexer and not request.POST['comments']:
+    comment_text = request.POST['comments'].strip()
+    if request.user != changeset.indexer and not comment_text:
         return render_error(request,
                             'You must explain why you are rejecting this '
                             'change.  Please press the "back" button and use '
@@ -593,10 +604,9 @@ def discard(request, id):
 
     # get a confirmation to avoid unwanted discards
     if request.user == changeset.indexer:
-        if request.POST['comments']:
-            notes = request.POST['comments']
+        if comment_text:
             changeset.comments.create(commenter=request.user,
-                                      text=notes,
+                                      text=comment_text,
                                       old_state=changeset.state,
                                       new_state=changeset.state)
             has_comment = 1
@@ -606,8 +616,7 @@ def discard(request, id):
                                     kwargs={'id': changeset.id,
                                             'has_comment': has_comment}))
 
-    notes = request.POST['comments']
-    changeset.discard(discarder=request.user, notes=notes)
+    changeset.discard(discarder=request.user, notes=comment_text)
 
     if request.user == changeset.approver:
         email_body = u"""
@@ -629,7 +638,7 @@ thanks,
 """ % (settings.SITE_NAME,
            unicode(changeset),
            unicode(changeset.approver.indexer),
-           notes,
+           comment_text,
            settings.SITE_URL.rstrip('/') +
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
            changeset.approver.email,
@@ -638,7 +647,8 @@ thanks,
 
         changeset.indexer.email_user('GCD change rejected', email_body,
           settings.EMAIL_INDEXING)
-
+        if comment_text:
+            send_comment_observer(request, changeset, comment_text)
         if request.user.approved_changeset.filter(state=states.REVIEWING).count():
             return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
         else:
@@ -659,11 +669,12 @@ def assign(request, id):
     if request.user == changeset.indexer:
         return render_error(request, 'You may not approve your own changes.')
 
+    comment_text = request.POST['comments'].strip()
     # TODO: rework error checking strategy.  This is a hack for the most
     # common case but we probably shouldn't be doing this check in the
     # model layer in the first place.  See tech bug #199.
     try:
-        changeset.assign(approver=request.user, notes=request.POST['comments'])
+        changeset.assign(approver=request.user, notes=comment_text)
     except ValueError:
         if changeset.approver is None:
             return render_error(request,
@@ -694,6 +705,32 @@ def assign(request, id):
                 # Someone is already reviewing this.  Unlikely, and just let it go.
                 pass
 
+    if comment_text:
+        email_body = u"""
+Hello from the %s!
+
+
+  %s became editor of the change "%s" with the comment:
+"%s"
+
+You can view the full change at %s.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+           unicode(request.user.indexer),
+           unicode(changeset),
+           comment_text,
+           settings.SITE_URL.rstrip('/') +
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+           settings.SITE_NAME,
+           settings.SITE_URL)
+        changeset.indexer.email_user('GCD comment', email_body,
+            settings.EMAIL_INDEXING)
+        
+        send_comment_observer(request, changeset, comment_text)
+        
     if changeset.approver.indexer.collapse_compare_view:
         option = '?collapse=1'
     else:
@@ -715,8 +752,34 @@ def release(request, id):
         return render_to_response('gcd/error.html',
           {'error_text': 'A change may only be released by its approver.'},
           context_instance=RequestContext(request))
+          
+    comment_text = request.POST['comments'].strip()
+    changeset.release(notes=comment_text)
+    if comment_text:
+        email_body = u"""
+Hello from the %s!
 
-    changeset.release(notes=request.POST['comments'])
+
+  editor %s released the change "%s" with the comment:
+"%s"
+
+You can view the full change at %s.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+           unicode(request.user.indexer),
+           unicode(changeset),
+           comment_text,
+           settings.SITE_URL.rstrip('/') +
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+           settings.SITE_NAME,
+           settings.SITE_URL)
+        changeset.indexer.email_user('GCD comment', email_body,
+            settings.EMAIL_INDEXING)
+            
+        send_comment_observer(request, changeset, comment_text)
 
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
@@ -741,11 +804,11 @@ def discuss(request, id):
         return render_error(request,
           'Only REVIEWING changes can be put into discussion.')
 
-    notes = request.POST['comments']
-    changeset.discuss(notes=notes)
+    comment_text = request.POST['comments'].strip()
+    changeset.discuss(notes=comment_text)
 
-    if notes:
-        email_comments = ' with the comment:\n"%s"' % notes
+    if comment_text:
+        email_comments = ' with the comment:\n"%s"' % comment_text
     else:
         email_comments = '.'
         
@@ -770,8 +833,9 @@ thanks,
        settings.SITE_NAME,
        settings.SITE_URL)
 
-    if notes.strip():
+    if comment_text:
         subject = 'GCD change put into discussion with a comment'
+        send_comment_observer(request, changeset, comment_text)
     else:
         subject = 'GCD change put into discussion'
             
@@ -800,13 +864,13 @@ def approve(request, id):
         return render_error(request,
           'Only REVIEWING changes with an approver can be approved.')
 
-    notes = request.POST['comments']
-    changeset.approve(notes=notes)
+    comment_text = request.POST['comments'].strip()
+    changeset.approve(notes=comment_text)
 
     email_comments = '.'
     postscript = ''
-    if notes:
-        email_comments = ' with the comment:\n"%s"' % notes
+    if comment_text:
+        email_comments = ' with the comment:\n"%s"' % comment_text
     else:
         postscript = """
 PS: You can change your email settings on your profile page:
@@ -816,7 +880,7 @@ if the approver did not comment.  To turn these off, just edit your profile
 and uncheck the "Approval emails" box.
 """ % (settings.SITE_URL.rstrip('/') + urlresolvers.reverse('default_profile'))
 
-    if changeset.indexer.indexer.notify_on_approve or notes.strip():
+    if changeset.indexer.indexer.notify_on_approve or comment_text:
         email_body = u"""
 Hello from the %s!
 
@@ -840,8 +904,9 @@ thanks,
        settings.SITE_URL,
        postscript)
 
-        if notes.strip():
+        if comment_text:
             subject = 'GCD change approved with a comment'
+            send_comment_observer(request, changeset, comment_text)
         else:
             subject = 'GCD change approved'
         changeset.indexer.email_user(subject, email_body,
@@ -976,14 +1041,14 @@ def disapprove(request, id):
         return render_error(request,
           'A change may only be rejected by its approver.')
 
-    if not request.POST['comments']:
+    comment_text = request.POST['comments'].strip()
+    if not comment_text:
         return render_error(request,
                             'You must explain why you are disapproving this '
                             'change.  Please press the "back" button and use '
                             'the comments field for the explanation.')
 
-    notes = request.POST['comments']
-    changeset.disapprove(notes=notes)
+    changeset.disapprove(notes=comment_text)
 
     email_body = u"""
 Hello from the %s!
@@ -1000,7 +1065,7 @@ thanks,
 """ % (settings.SITE_NAME,
        unicode(changeset),
        unicode(changeset.approver.indexer),
-       notes,
+       comment_text,
        settings.SITE_URL.rstrip('/') +
          urlresolvers.reverse('edit', kwargs={'id': changeset.id }),
        settings.SITE_NAME,
@@ -1008,12 +1073,46 @@ thanks,
 
     changeset.indexer.email_user('GCD change sent back', email_body,
       settings.EMAIL_INDEXING)
+      
+    send_comment_observer(request, changeset, comment_text)
 
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
+def send_comment_observer(request, changeset, comments):
+    email_body = u"""
+Hello from the %s!
+
+
+  %s added a comment to the change "%s" to which you added a comment before:
+"%s"
+
+You can view the full change at %s.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+           unicode(request.user.indexer),
+           unicode(changeset),
+           comments,
+           settings.SITE_URL.rstrip('/') +
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+           settings.SITE_NAME,
+           settings.SITE_URL)
+           
+    if changeset.approver:
+        excluding = [changeset.indexer, changeset.approver, request.user]
+    else:
+        excluding = [changeset.indexer, request.user]
+    commenters = set(changeset.comments.exclude(text='')\
+                     .exclude(commenter__in=excluding)\
+                     .values_list('commenter', flat=True))
+    for commenter in commenters:
+        User.objects.get(id=commenter).email_user('GCD comment',
+            email_body, settings.EMAIL_INDEXING)
 
 @permission_required('gcd.can_reserve')
 def add_comments(request, id):
@@ -1024,10 +1123,10 @@ def add_comments(request, id):
         return _cant_get(request)
 
     changeset = get_object_or_404(Changeset, id=id)
-    comments = request.POST['comments']
-    if comments is not None and comments != '':
+    comment_text = request.POST['comments'].strip()
+    if comment_text:
         changeset.comments.create(commenter=request.user,
-                                  text=comments,
+                                  text=comment_text,
                                   old_state=changeset.state,
                                   new_state=changeset.state)
 
@@ -1046,7 +1145,7 @@ thanks,
 """ % (settings.SITE_NAME,
            unicode(request.user.indexer),
            unicode(changeset),
-           comments,
+           comment_text,
            settings.SITE_URL.rstrip('/') +
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
            settings.SITE_NAME,
@@ -1058,14 +1157,8 @@ thanks,
         if changeset.approver and request.user != changeset.approver:
             changeset.approver.email_user('GCD comment', email_body,
               settings.EMAIL_INDEXING)
-        commenters = set(changeset.comments.exclude(text='')\
-                            .exclude(commenter__in=[changeset.indexer,
-                                                    changeset.approver,
-                                                    request.user])\
-                            .values_list('commenter', flat=True))
-        for commenter in commenters:
-            User.objects.get(id=commenter).email_user('GCD comment',
-                email_body, settings.EMAIL_INDEXING)
+              
+        send_comment_observer(request, changeset, comment_text)
 
     return HttpResponseRedirect(urlresolvers.reverse(compare,
                                                      kwargs={ 'id': id }))
@@ -2477,7 +2570,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
                                    target_issue=target_issue,
                                    notes=notes)
         revision.save_added_revision(changeset=changeset)
-    if request.POST['comments']:
+    if request.POST['comments'].strip():
         revision.comments.create(commenter=request.user,
                                  changeset=changeset,
                                  text=request.POST['comments'],
