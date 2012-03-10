@@ -1,0 +1,36 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}/issue.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}/single_story.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Confirm reprint note migration </h1>
+<h2>{{ story }} / {{ story.title }}  of {{ story.issue }}</h2>
+<div class="edit">
+<form id="confirm" action="{% url confirm_reprint_migration id=story.id,changeset_id=changeset.id %}" method="POST">
+
+{% with 1 as no_navigation %}
+{% with 1 as show_original %}
+  <div id="story_data">
+  {% include "gcd/details/single_story.html" %}
+  </div>
+{% endwith %}
+{% endwith %}
+
+<input type="submit" name="confirm" value="Confirm reprint migration"></input>
+<input type="submit" name="cancel" value="Cancel"></input>
+</form>
+</div>
+{% endblock %}

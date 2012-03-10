@@ -2143,6 +2143,27 @@ def _display_add_story_form(request, issue, form, changeset_id):
 # Reprint Link Editing
 ##############################################################################
 
+def confirm_reprint_migration(request, id, changeset_id):
+    changeset = get_object_or_404(Changeset, id=changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may confirm the reprint migration.')
+    migration_status = get_object_or_404(MigrationStoryStatus, story__id=id)
+    if request.method == 'GET':
+        return render_to_response('oi/edit/confirm_reprint_migration.html',
+          {
+              'story': migration_status.story,
+              'changeset': changeset,
+          },
+          context_instance=RequestContext(request))
+    else:
+        if 'confirm' in request.POST:
+            migration_status.reprint_confirmed = True
+            migration_status.reprint_needs_inspection = False
+            migration_status.save()
+        return HttpResponseRedirect(urlresolvers.reverse('edit',
+          kwargs={ 'id': changeset_id }))
+
 def parse_reprint(reprints):
     """ parse a reprint entry for exactly our standard """
     reprint_direction_from = ["from", "da", "di", "de", "uit", u"från", "aus"]

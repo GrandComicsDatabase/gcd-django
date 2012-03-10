@@ -102,6 +102,26 @@
       {% endif %}
   </tr>
     {% endfor %}
+    {% if changeset_type == 'story' %}
+      {% if revision.migration_status and not revision.migration_status.reprint_confirmed or revision.migration_status.modified > revision.changeset.created and revision.changeset.modified > revision.migration_status.modified or revision.migration_status.modified > revision.changeset.created and not revision.changeset.state = states.APPROVED %}
+        {% if not revision.migration_status.reprint_confirmed %}
+  <tr class="False">
+        {% else %}
+  <tr class="True">
+        {% endif %}
+    <td class="field_name"> Original Reprint Notes </td>
+    <td></td>
+    <td>
+        {% if not revision.migration_status.reprint_confirmed %}
+        The migration of the following original reprint notes needs confirmation:
+        {% else %}
+        The migration of the following original reprint notes was confirmed in this change:
+        {% endif %}
+      <br>{{ revision.migration_status.reprint_original_notes }}
+    </td>
+  </tr>
+      {% endif %}
+    {% endif %}
     {% if changeset_type == 'story' or changeset_type == 'issue' %}
       {% if revision.has_reprint_revisions %}
   <tr class="True">

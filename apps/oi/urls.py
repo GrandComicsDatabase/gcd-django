@@ -107,6 +107,8 @@ urlpatterns = patterns('',
         name='move_story_revision'),
     url(r'^story/(?P<story_id>\d+)/cache/$', oi_views.cache_content,
         name='cache_story'),
+    url(r'^story/(?P<id>\d+)/reprint_migration/(?P<changeset_id>\d+)/$', oi_views.confirm_reprint_migration,
+        name='confirm_reprint_migration'),
     url(r'^cover/(?P<cover_story_id>\d+)/cache/$', oi_views.cache_content,
         name='cache_cover'),
 

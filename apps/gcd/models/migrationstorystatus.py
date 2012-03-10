@@ -16,3 +16,4 @@ class MigrationStoryStatus(models.Model):
     reprint_confirmed = models.BooleanField(default=0)
     reprint_original_notes = models.TextField(null=True)
 
+    modified = models.DateTimeField(auto_now=True)

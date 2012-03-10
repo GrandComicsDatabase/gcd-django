@@ -490,6 +490,13 @@ class Changeset(models.Model):
                 if type(revision) == ReprintRevision:
                     revision.previous_revision = None
                     revision.save()
+                if type(revision) == StoryRevision:
+                    if revision.story and revision.story.migration_status \
+                      and revision.story.migration_status.reprint_confirmed \
+                      and revision.story.migration_status.modified > \
+                          revision.changeset.created:
+                        revision.story.migration_status.reprint_confirmed = False
+                        revision.story.migration_status.save()
         if self.approver:
             self.approver.indexer.add_imps(IMP_APPROVER_VALUE)
 
@@ -931,7 +938,11 @@ class Revision(models.Model):
             self.is_changed |= field_changed
         if not self.is_changed and type(self) in [IssueRevision, StoryRevision]:
             self.is_changed = self.has_reprint_revisions()
-            
+        if not self.is_changed and type(self) == StoryRevision:
+            if self.migration_status and self.migration_status.reprint_confirmed \
+              and self.migration_status.modified > self.changeset.created:
+                self.is_changed = True
+        
     def _start_imp_sum(self):
         """
         Hook for subclasses to initialize state for an IMP calculation.
