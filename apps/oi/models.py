@@ -972,8 +972,10 @@ class Revision(models.Model):
         self.compare_changes()
         if self.deleted or not self.is_changed:
             return imps
-
-        self._start_imp_sum()
+            
+        other_imp = self._start_imp_sum()
+        if other_imp:
+            imps += other_imp
         for field_name in self.field_list():
             if field_name in self.changed and self.changed[field_name]:
                 imps += self._imps_for(field_name)
@@ -3467,7 +3469,10 @@ class StoryRevision(Revision):
         self._seen_editing = False
         self._seen_page_count = False
         self._seen_title = False
-
+        if self.migration_status and self.migration_status.reprint_confirmed \
+            and self.migration_status.modified > self.changeset.created:
+                return 1
+        
     def _imps_for(self, field_name):
         if field_name in ('sequence_number', 'type', 'feature', 'genre',
                           'characters', 'synopsis', 'job_number', 'reprint_notes',
