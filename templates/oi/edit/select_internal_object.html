@@ -1,0 +1,38 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Change <span class="comparison_highlight">{{ which_side }}</span> of <br>{{ reprint_revision }}
+    </h1>
+
+</p>
+<h2>
+      <form class="changeset" method="GET"
+            action="{% url select_internal_issue id=reprint_revision.id,issue_id=issue_revision.id,changeset_id=changeset.id,which_side=which_side %}">
+        <input type="submit" value="Select issue">
+      </form>
+{{ issue_revision }}
+</h2>
+{% for story_revision in issue_revision.ordered_story_revisions %}
+<h2>
+  <form class="changeset" method="GET"
+            action="{% url select_internal_story id=reprint_revision.id,story_id=story_revision.id,changeset_id=changeset.id,which_side=which_side %}">
+        <input type="submit" {% if story_revision.deleted %} disabled="disabled" {% endif %} id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
+               value="Select sequence">
+  </form>
+{{ story_revision|show_story_short }}
+</h2>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}/issue.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}/single_story.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Edit Reprint information</h1>
+{% if this_story %}
+<h2>{{ this_story }} / {{ this_story.title }}  of {{ this_story.issue }}</h2>
+{% endif %}
+<div class="edit">
+{% if other_story %}
+  {% if this_story %}
+  <form id="confirm" action="{% url save_revision_story_reprint story_revision_id=this_story.id,changeset_id=changeset.id,story_two_id=other_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  {% else %}
+  <form id="confirm" action="{% url save_issue_story_reprint issue_one_id=this_issue.issue.id,changeset_id=changeset.id,story_two_id=other_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  {% endif %}
+{% else %}
+  {% if this_story %}
+  <form id="confirm" action="{% url save_revision_issue_reprint story_revision_id=this_story.id,changeset_id=changeset.id,issue_two_id=other_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  {% else %}
+  <form id="confirm" action="{% url save_issue_issue_reprint issue_one_id=this_issue.issue.id,changeset_id=changeset.id,issue_two_id=other_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  {% endif %}
+{% endif %}
+
+  <hr class="divider">
+{% if this_story %}
+  {% with 1 as no_navigation %}
+  {% with 1 as preview %}
+  {% with this_story as story %}
+  <div id="story_data">
+    {% include "gcd/details/single_story.html" %}
+  </div>
+  {% endwith %}
+  {% endwith %}
+  {% endwith %}
+{% else %}
+  <h2>Part of {{ this_issue.full_name }}</h2>
+{% endif %}
+  <hr class="divider">
+
+is {{ which_side }}
+<select name="direction" id="id_direction">
+<option value="from" {% if which_side = 'target' %}selected="selected"{% else %}disabled="disabled"{% endif %}>reprinted from
+<option type="hidden" value="to" {% if which_side = 'origin' %}selected="selected"{% else %}disabled="disabled"{% endif %}>reprinted in
+</select>
+
+<hr class="divider">
+
+{% if other_story %}
+  <h2>{{ other_story }} / {{ other_story.title }}  of {{ other_story.issue }}</h2>
+  {% with 1 as no_navigation %}
+  {% with other_story as story %}
+<div id="story_data">
+    {% include "gcd/details/single_story.html" %}
+</div>
+  {% endwith %}
+  {% endwith %}
+{% else %}
+<h2>{{ other_issue.full_name }}</h2>
+{% endif %}
+
+
+<hr class="divider">
+
+{% include "oi/bits/confirm_reprint_actions.html" %}
+</form>
+</div>
+{% endblock %}

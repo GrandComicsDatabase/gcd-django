@@ -2257,8 +2257,12 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
           'Only the reservation holder may access this page.')
     if 'edit_origin' in request.POST:
         which_side = 'origin'
+    elif 'edit_origin_internal' in request.POST:
+        which_side = 'origin_internal'
     elif 'edit_target' in request.POST:
         which_side = 'target'
+    elif 'edit_target_internal' in request.POST:
+        which_side = 'target_internal'
     elif 'flip_direction' in request.POST:
         which_side = 'flip_direction'
     elif 'delete' in request.POST:
@@ -2276,7 +2280,7 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
     return HttpResponseRedirect(urlresolvers.reverse('edit_reprint',
         kwargs={'id': revision.id, 'which_side': which_side }))
 
-
+        
 @permission_required('gcd.can_reserve')
 def edit_reprint(request, id, which_side=None):
     reprint_revision = get_object_or_404(ReprintRevision, id=id)
@@ -2288,8 +2292,12 @@ def edit_reprint(request, id, which_side=None):
     if not which_side:
         if 'edit_origin' in request.POST:
             which_side = 'origin'
+        elif 'edit_origin_internal' in request.POST:
+            which_side = 'origin_internal'
         elif 'edit_target' in request.POST:
             which_side = 'target'
+        elif 'edit_target_internal' in request.POST:
+            which_side = 'target_internal'
         elif 'flip_direction' in request.POST:
             which_side = 'flip_direction'
         elif 'delete' in request.POST:
@@ -2306,14 +2314,16 @@ def edit_reprint(request, id, which_side=None):
     issue = None
     story = None
     story_revision = None
-    if which_side == 'origin':
+    if which_side.startswith('origin'):
         if reprint_revision.origin_story:
             select_issue = reprint_revision.origin_story.issue
             sequence_number = reprint_revision.origin_story.sequence_number
         elif reprint_revision.origin_issue:
             select_issue = reprint_revision.origin_issue
             sequence_number = None
-        else: # for newly added stories problematic
+        elif which_side == 'origin_internal':
+            select_issue = reprint_revision.origin_revision.issue
+        else: # for newly added stories problematic otherwise
             raise NotImplementedError
         if reprint_revision.target_issue:
             issue = reprint_revision.target_issue
@@ -2321,14 +2331,16 @@ def edit_reprint(request, id, which_side=None):
             story = reprint_revision.target_story
         else:
             story_revision = reprint_revision.target_revision
-    elif which_side == 'target':
+    elif which_side.startswith('target'):
         if reprint_revision.target_story:
             select_issue = reprint_revision.target_story.issue
             sequence_number = reprint_revision.target_story.sequence_number
         elif reprint_revision.target_issue:
             select_issue = reprint_revision.target_issue
             sequence_number = None
-        else: # for newly added stories problematic
+        elif which_side == 'target_internal':
+            select_issue = reprint_revision.target_revision.issue
+        else: # for newly added stories problematic otherwise
             raise NotImplementedError
         if reprint_revision.origin_issue:
             issue = reprint_revision.origin_issue
@@ -2367,6 +2379,14 @@ def edit_reprint(request, id, which_side=None):
             kwargs={ 'id': id }))
     else:
         raise NotImplementedError
+
+    if which_side.endswith('internal'):
+        issue_revision  = select_issue.revisions.get(changeset=changeset)
+        return render_to_response('oi/edit/select_internal_object.html',
+            { 'issue_revision': issue_revision, 'changeset': changeset,
+              'reprint_revision': reprint_revision, 'which_side': which_side[:6]},
+        context_instance=RequestContext(request))
+        
     initial = {'series': select_issue.series.name,
                'publisher': select_issue.series.publisher,
                'year': select_issue.series.year_began,
@@ -2407,10 +2427,6 @@ def edit_reprint(request, id, which_side=None):
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
         kwargs={'select_key': select_key}))
 
-    return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
-        kwargs={ 'model_name': 'reprint', 'id': revision.id }))
-
-
 @permission_required('gcd.can_reserve')
 def add_reprint(request, changeset_id, story_id=None, issue_id=None, reprint_note=''):
     if story_id:
@@ -2447,6 +2463,51 @@ def add_reprint(request, changeset_id, story_id=None, issue_id=None, reprint_not
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
           kwargs={'select_key': select_key}))
 
+@permission_required('gcd.can_reserve')
+def select_internal_object(request, id, changeset_id, which_side,
+                           issue_id=None, story_id=None):
+    reprint_revision = get_object_or_404(ReprintRevision, id=id)
+    if reprint_revision.changeset.id != int(changeset_id):
+        return _cant_get(request)
+    changeset = reprint_revision.changeset
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may access this page.')
+    if which_side == 'origin':
+        if reprint_revision.target_story:
+            other_story = reprint_revision.target_story
+            other_issue = None
+        elif reprint_revision.target_issue:
+            other_issue = reprint_revision.target_issue
+            other_story = None
+        else:
+            raise NotImplementedError
+    elif which_side == 'target':
+        if reprint_revision.origin_story:
+            other_story = reprint_revision.origin_story
+            other_issue = None
+        elif reprint_revision.origin_issue:
+            other_issue = reprint_revision.origin_issue
+            other_story = None
+        else:
+            raise NotImplementedError
+    else:
+        return _cant_get(request)
+
+    if issue_id:
+        this_issue = get_object_or_404(IssueRevision, id=issue_id)
+        this_story = None
+    else:
+        this_story = get_object_or_404(StoryRevision, id=story_id)
+        this_issue = None
+
+    return render_to_response('oi/edit/confirm_internal.html',
+        { 'this_issue': this_issue, 'this_story': this_story,
+          'other_issue': other_issue, 'other_story': other_story,
+          'changeset': changeset, 'reprint_revision_id': reprint_revision.id,
+          'which_side': which_side },
+        context_instance=RequestContext(request))
+          
 @permission_required('gcd.can_reserve')
 def confirm_reprint(request, data, object_type, selected_id):
     if request.method != 'POST':
@@ -2520,6 +2581,9 @@ def save_reprint(request, reprint_revision_id, changeset_id,
                  story_two_id=None, issue_two_id=None):
     if request.method != 'POST':
         return _cant_get(request)
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('edit',
+          kwargs={ 'id': changeset_id }))
     if story_one_id and (story_revision_id or issue_one_id):
         return _cant_get(request)
     if story_two_id and issue_two_id:

@@ -866,7 +866,8 @@ def show_issue(request, issue, preview=False):
                                                  alt_text=alt_text)
         else:
             image_tag = mark_safe(get_image_tag(cover=None,
-                                                zoom_level=zoom_level,                                           alt_text=alt_text))
+                                                zoom_level=zoom_level,
+                                                alt_text=alt_text))
     else:
         image_tag = get_image_tags_per_issue(issue=issue,
                                              zoom_level=zoom_level,

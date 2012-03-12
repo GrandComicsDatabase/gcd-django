@@ -9,12 +9,25 @@
 {% if not reprint.reserved and not reprint.changeset %}
 <form action="{% url reserve_reprint reprint_id=reprint.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
   {% if not is_source %}
+    <input type="submit" name="edit_target_internal" value="Change target">
+    <input type="submit" name="edit_origin" value="Change origin">
+  {% else %}
+    <input type="submit" name="edit_origin_internal" value="Change origin">
     <input type="submit" name="edit_target" value="Change target">
+  {% endif %}
+  {% comment %}
+  keep this as an alternativ, with this we could make a reprint point out of the current issue
+  but this might make things more complicated for indexer and editor
+  {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+    <input type="submit" name="edit_target_internal" value="Change target internally">
   {% endif %}
     <input type="submit" name="edit_origin" value="Change origin">
   {% if is_source %}
+    <input type="submit" name="edit_origin_internal" value="Change origin internally">
     <input type="submit" name="edit_target" value="Change target">
   {% endif %}
+  {% endcomment %}
     <input type="submit" name="flip_direction" value="Flip reprint direction">
     <input type="submit" name="delete" value="Mark to Delete">
 </form>
@@ -25,30 +38,56 @@
     <input type="submit" name="restore" value="Restore">
       {% else %}
         {% if not is_source %}
-    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target" value="Change target">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target_internal" value="Change target">
     <input type="submit" name="edit_origin" value="Change origin">
-      {% else %}
-    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin" value="Change origin">
+        {% else %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin_internal" value="Change origin">
     <input type="submit" name="edit_target" value="Change target">
-      {% endif %}
+        {% endif %}
+        {% comment %}
+        keep this as an alternativ, with this we could make a reprint point out of the current issue
+        but this might make things more complicated for indexer and editor
+        {% if not is_source %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target" value="Change target">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target_internal" value="Change target internally">
+    <input type="submit" name="edit_origin" value="Change origin">
+        {% else %}
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin" value="Change origin">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin_internal" value="Change origin internally">
+    <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+        {% endcomment %}
     <input type="submit" name="flip_direction" value="Flip2 reprint direction">
-      {% if reprint.source %}
+        {% if reprint.source %}
     <input type="submit" name="delete" value="Mark to Delete">
-      {% else %}
+        {% else %}
     <input type="submit" name="remove" value="Remove">
+        {% endif %}
       {% endif %}
-    {% endif %}
 </form>
     {% else %}
       {% if reprint.changeset.state = states.APPROVED %}
 <form action="{% url reserve_reprint reprint_id=reprint.source.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
         {% if not is_source %}
+    <input type="submit" name="edit_target_internal" value="Change target">
+    <input type="submit" name="edit_origin" value="Change origin">
+        {% else %}
+    <input type="submit" name="edit_origin_internal" value="Change origin">
     <input type="submit" name="edit_target" value="Change target">
+        {% endif %}
+        {% comment %}
+        keep this as an alternativ, with this we could make a reprint point out of the current issue
+        but this might make things more complicated for indexer and editor
+        {% if not is_source %}
+    <input type="submit" name="edit_target" value="Change target">
+    <input type="submit" name="edit_target_internal" value="Change target internally">
         {% endif %}
     <input type="submit" name="edit_origin" value="Change origin">
         {% if is_source %}
+    <input type="submit" name="edit_origin_internal" value="Change origin internally">
     <input type="submit" name="edit_target" value="Change target">
         {% endif %}
+        {% endcomment %}
     <input type="submit" name="flip_direction" value="Flip3 reprint direction">
     <input type="submit" name="delete" value="Mark to Delete">
 </form>

@@ -192,6 +192,10 @@ urlpatterns = patterns('',
 
     url(r'^reprint/revision/(?P<id>\d+)/remove/$',
         oi_views.remove_reprint_revision, name='remove_reprint_revision'),
+    url(r'^reprint/revision/(?P<id>\d+)/select_internal/issue/(?P<issue_id>\d+)/changeset/(?P<changeset_id>\d+)/side/(?P<which_side>.+)/$',
+      oi_views.select_internal_object, name='select_internal_issue'),
+    url(r'^reprint/revision/(?P<id>\d+)/select_internal/story/(?P<story_id>\d+)/changeset/(?P<changeset_id>\d+)/side/(?P<which_side>.+)/$',
+      oi_views.select_internal_object, name='select_internal_story'),
 
     url(r'^select_object/(?P<select_key>.+)/search/$',
       oi_views.process_select_search, name='select_object_search'),
