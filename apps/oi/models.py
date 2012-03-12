@@ -2781,15 +2781,18 @@ class IssueRevision(Revision):
         else:
             stories = list(self.active_stories().order_by('sequence_number')\
                                                 .select_related('type'))
-        if (len(stories) > 0):
-            cover_story = stories.pop(0)
-            if self.variant_of:
-                # can have only one sequence, the variant cover
-                own_stories = list(self.active_stories())
-                if own_stories:
-                    cover_story = own_stories[0]
-        elif self.variant_of and len(list(self.active_stories())):
-            cover_story = self.active_stories()[0]
+        if self.series.is_comics_publication:
+            if (len(stories) > 0):
+                cover_story = stories.pop(0)
+                if self.variant_of:
+                    # can have only one sequence, the variant cover
+                    own_stories = list(self.active_stories())
+                    if own_stories:
+                        cover_story = own_stories[0]
+            elif self.variant_of and len(list(self.active_stories())):
+                cover_story = self.active_stories()[0]
+            else:
+                cover_story = None
         else:
             cover_story = None
         return cover_story, stories
