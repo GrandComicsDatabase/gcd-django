@@ -73,7 +73,8 @@ INSTALLED_APPS = (
     'apps.gcd',
     'apps.oi',
     'apps.voting',
-    'compressor'
+    'compressor',
+    'templatesadmin'
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -181,6 +182,8 @@ DOWNLOAD_DELTA = 5
 
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
                         'compressor.filters.csstidy.CSSTidyFilter']
+
+TEMPLATESADMIN_TEMPLATE_DIRS = ['templates/gcd/front_page']
 
 # get local settings, will override settings from here
 try:
