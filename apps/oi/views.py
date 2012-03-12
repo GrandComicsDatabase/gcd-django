@@ -2663,9 +2663,12 @@ def save_reprint(request, reprint_revision_id, changeset_id,
                                  text=request.POST['comments'],
                                  old_state=changeset.state,
                                  new_state=changeset.state)
-
-    return HttpResponseRedirect(urlresolvers.reverse('edit',
-        kwargs={ 'id': changeset_id }))
+    if 'add_reprint_view' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
+            kwargs={ 'id': changeset.issuerevisions.get().id }))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('edit',
+            kwargs={ 'id': changeset_id }))
           
 
 @permission_required('gcd.can_reserve')
