@@ -113,10 +113,8 @@ class Story(models.Model):
         if self.migration_status:
             return self.migration_status.reprint_confirmed
         else:
-            return False
+            return True
     reprint_confirmed = property(_reprint_confirmed)
-        
-
                
     def has_data(self):
         """Simplifies UI checks for conditionals.  All non-heading fields"""

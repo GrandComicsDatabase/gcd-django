@@ -1583,10 +1583,12 @@ def add_series(request, publisher_id):
         if request.method != 'POST':
             initial = {}
             initial['country'] = publisher.country.id
+            # TODO: make these using same code as get_blank_values
             initial['has_barcode'] = True
             initial['has_indicia_frequency'] = True
             initial['has_isbn'] = True
             initial['has_volume'] = True
+            initial['is_comics_publication'] = True
             form = get_series_revision_form(publisher,
                                             user=request.user)(initial=initial)
             return _display_add_series_form(request, publisher, imprint, form)
@@ -2114,7 +2116,7 @@ def _get_initial_add_story_data(request, issue_revision, seq):
         seq_num = int(float_num)
 
     initial = {'no_editing' : True }
-    if seq_num == 0:
+    if seq_num == 0 and issue_revision.series.is_comics_publication:
         # Do not default other sequences, because if we do we
         # will get a lot of people leaving the default values
         # by accident.  Only sequence zero is predictable.

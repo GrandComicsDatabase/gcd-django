@@ -20,8 +20,8 @@
     <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} </td>
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
     <td>
-    {% if not series.issue_count %}
-      No Issues
+    {% if not series.issue_count or not series.is_comics_publication %}
+      No Covers
     {% else %}
       {% if not series.scan_needed_count %}
       <a href="{% url apps.gcd.views.details.covers series_id=series.id %}">Gallery</a>
