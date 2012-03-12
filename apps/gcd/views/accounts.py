@@ -195,8 +195,7 @@ please confirm your account by going to:
 within the next %d days.
 
   If you did not register for an account, then someone else is trying to
-use your email address.  In that case, simply do not confirm the account
-and it will expire after %d days.
+use your email address.  In that case, simply do not confirm the account.
 
 thanks,
 -the %s team
@@ -204,7 +203,6 @@ thanks,
 """ % (settings.SITE_NAME,
        settings.SITE_URL.rstrip('/') +
          urlresolvers.reverse('confirm', kwargs={ 'key': key }),
-       settings.REGISTRATION_EXPIRATION_DELTA,
        settings.REGISTRATION_EXPIRATION_DELTA,
        settings.SITE_NAME,
        settings.SITE_URL)
@@ -316,13 +314,50 @@ def handle_existing_account(request, users):
           settings.EMAIL_CONTACT, is_safe=True)
 
     elif not user.indexer.is_banned:
-        # TODO: automatic reactivation, but have to merge fields?  Complicated.
-        return render_error(request, 
-          ('An account with this email address already exists, '
-           'but is deactivated.  Please '
-           '<a href="mailto:%s">contact us</a> '
-           'if you would like to reactivate it.') % settings.EMAIL_CONTACT,
-           is_safe=True)
+        if user.indexer.registration_expires is not None:
+            user.indexer.registration_expires = date.today() + \
+              timedelta(settings.REGISTRATION_EXPIRATION_DELTA)
+            user.indexer.save()
+            
+            email_body = u"""
+Hello from the %s!
+
+  We've received a request for resending the confirmation information
+for an account using this email address.  If you did indeed register
+an account with us, please confirm your account by going to:
+
+%s
+
+within the next %d days.
+
+  If you did not register for an account, then someone else is trying to
+use your email address.  In that case, simply do not confirm the account.
+
+thanks,
+-the %s team
+%s
+""" % (settings.SITE_NAME,
+       settings.SITE_URL.rstrip('/') +
+         urlresolvers.reverse('confirm',
+                              kwargs={ 'key': user.indexer.registration_key }),
+       settings.REGISTRATION_EXPIRATION_DELTA,
+       settings.SITE_NAME,
+       settings.SITE_URL)
+
+            send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
+                    recipient_list=[user.email],
+                    subject='GCD new account confirmation - resend',
+                    message=email_body,
+                    fail_silently=(not settings.BETA))
+
+            return HttpResponseRedirect(urlresolvers.reverse('resend_instructions'))
+        else:
+            return render_error(request,
+              ('An account with this email address already exists, '
+               'but is deactivated.  Please '
+               '<a href="mailto:%s">contact us</a> '
+               'if you would like to reactivate it.') % settings.EMAIL_CONTACT,
+              is_safe=True)
     else:
         return render_error(request,
           'A prior account with this email address has been '
