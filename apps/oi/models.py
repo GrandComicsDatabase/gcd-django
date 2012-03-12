@@ -4165,6 +4165,7 @@ class ReprintRevision(Revision):
         self.save()
 
     def get_compare_string(self, base_issue):
+        from apps.gcd.templatetags.credits import show_title
         if (self.origin_story and self.origin_story.issue == base_issue) \
           or (self.origin_revision and self.origin_revision.issue == base_issue) \
           or self.origin_issue == base_issue:
@@ -4189,9 +4190,9 @@ class ReprintRevision(Revision):
                     story = self.origin_revision
         if story:
             issue = story.issue
-            reprint = u'%s <a target="_blank" href="%s#%d">%s</a> of %s' % \
+            reprint = u'%s <a target="_blank" href="%s#%d">%s %s</a> of %s' % \
                         (direction, issue.get_absolute_url(),
-                        story.id, esc(story), esc(issue))
+                        story.id, esc(story), show_title(story), esc(issue))
         else:
             reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
                         (direction, issue.get_absolute_url(), esc(issue))
@@ -4200,12 +4201,13 @@ class ReprintRevision(Revision):
         return mark_safe(reprint)
 
     def __unicode__(self):
+        from apps.gcd.templatetags.credits import show_title
         if self.origin_story or self.origin_revision:
             if self.origin_story:
-                story = self.origin_story
+                origin = self.origin_story
             else:
-                story = self.origin_revision
-            reprint = u'%s of %s ' % (story, story.issue)
+                origin = self.origin_revision
+            reprint = u'%s %s of %s ' % (origin, show_title(origin), origin.issue)
         else:
             reprint = u'%s ' % (self.origin_issue)
         if self.target_story or self.target_revision:
@@ -4213,7 +4215,8 @@ class ReprintRevision(Revision):
                 target = self.target_story
             else:
                 target = self.target_revision
-            reprint += u'reprinted in %s of %s' % (target, target.issue)
+            reprint += u'reprinted in %s %s of %s' % (target,
+              show_title(target), target.issue)
         else:
             reprint += u'reprinted in %s' % (self.target_issue)
         if self.notes:
