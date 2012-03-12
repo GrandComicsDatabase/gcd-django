@@ -484,7 +484,7 @@ def parse_reprint(reprints, from_to):
             if number == 'nn':
                 number = '[nn]'
             # TODO change series name for trailing articles
-            #print series, number
+            # print publisher, series, number, year
             if series[series.rfind(', ')+2:].lower() in leading_articles:
                 #print "A", series
                 series = series[series.rfind(', ')+2:] + " " + series[:series.rfind(', ')]

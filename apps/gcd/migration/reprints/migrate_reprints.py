@@ -270,8 +270,13 @@ def find_migration_candidates(story, string, standard = True):
                         original_title = notes[pos+len('original title'):pos+pos2]
                         end_title = pos+pos2+1
                     else:
-                        original_title = ''
-                        end_title = len(notes)
+                        pos2 = notes[pos:].find(';')
+                        if pos2 > 0:
+                            original_title = notes[pos+len('original title'):pos+pos2]
+                            end_title = pos+pos2+1
+                        else:
+                            original_title = notes[pos+len('original title'):]
+                            end_title = len(notes)
                 results = Story.objects.exclude(deleted=True)
                 results = results.filter(issue = reprint[0])
                 results = results.filter(title__icontains = original_title.strip(' !.":'))
