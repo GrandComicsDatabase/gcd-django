@@ -193,6 +193,8 @@ def main():
     ['; o; ', '; '],
     ['(Oog & Blick, ', '(Oog & Blik, '],
     [uni('from (À Suivre) (Casterman'), uni('from À Suivre (Casterman')],
+    ['(I.W. Publishing;Super Comics'), 'I. W. Publishing; Super Comics'],
+    ['(I.W. Publishing; Super Comics'), 'I. W. Publishing; Super Comics'],
     ]
     for [old, new] in reprint_notes:
         fix_reprint_notes_global(old, new)

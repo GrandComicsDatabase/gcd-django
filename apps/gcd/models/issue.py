@@ -214,9 +214,18 @@ class Issue(models.Model):
                self.to_issue_reprints.count()
 
     def deletable(self):
-        return self.cover_revisions.filter(changeset__state__in=states.ACTIVE)\
-                                   .count() == 0 and \
-               self.variant_set.filter(deleted=False).count() == 0
+        if self.cover_revisions.filter(changeset__state__in=states.ACTIVE)\
+                                   .count() > 0:
+            return False
+        if self.variant_set.filter(deleted=False).count() > 0:
+            return False
+        if self.has_reprints():
+            return False
+        if self.active_stories().count():
+            for story in self.active_stories():
+                if story.has_reprints(notes=False):
+                    return False
+        return True
 
     def can_upload_variants(self):
         if self.has_covers():
