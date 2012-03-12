@@ -2074,7 +2074,7 @@ class SeriesRevision(Revision):
         series = self.series
         if series is None:
             series = Series(issue_count=0)
-            if series.is_comics_publication:
+            if self.is_comics_publication:
                 self.publisher.series_count = F('series_count') + 1
                 self.publisher.save()
                 update_count('series', 1, language=self.language)
@@ -2736,6 +2736,11 @@ class IssueRevision(Revision):
             if active.filter(target_issue=self.issue):
                 return True
         return False
+
+    def _empty_reprint_revisions(self):
+        return ReprintRevision.objects.none()
+    origin_reprint_revisions = property(_empty_reprint_revisions)
+    target_reprint_revisions = property(_empty_reprint_revisions)
         
     def other_variants(self):
         if self.variant_of:
@@ -3224,6 +3229,14 @@ class IssueRevision(Revision):
                                      self.variant_name)
         else:
             return u'%s #%s' % (self.series.full_name(), self.display_number)
+
+    def short_name(self):
+        if self.variant_name:
+            return u'%s #%s [%s]' % (self.series.name,
+                                     self.display_number,
+                                     self.variant_name)
+        else:
+            return u'%s #%s' % (self.series.name, self.display_number)
 
     def __unicode__(self):
         """
@@ -4049,7 +4062,7 @@ class ReprintRevision(Revision):
     def _imps_for(self, field_name):
         """
         All current reprint fields are simple one point fields.
-        Only point for changing origin issue to origin story, etc.
+        Only one point for changing origin issue to origin story, etc.
         """
         if field_name in ('origin_story', 'origin_story_revision',
                           'origin_issue'):
@@ -4077,27 +4090,26 @@ class ReprintRevision(Revision):
         # first figure out which reprint out_type it is, it depends
         # on which fields are set
         if self.origin_story or self.origin_revision:
-            # TODO on commit change from revision to story ???
-            if self.origin_story:
-                origin = self.origin_story
-            else:
-                origin = self.origin_revision.story
-            if self.target_story:
+            if self.origin_revision:
+                self.origin_story = self.origin_revision.story
+                self.origin_revision = None
+            origin = self.origin_story
+            if self.target_story or self.target_revision:
+                if self.target_revision:
+                    self.target_story = self.target_revision.story
+                    self.target_revision = None
                 out_type = REPRINT_TYPES['story_to_story']
                 target = self.target_story
-            elif self.target_revision:
-                out_type = REPRINT_TYPES['story_to_story']
-                target = self.target_revision.story
             else:
                 out_type = REPRINT_TYPES['story_to_issue']
                 target_issue = self.target_issue
         else: # issue is source
-            if self.target_story:
+            if self.target_story or self.target_revision:
+                if self.target_revision:
+                    self.target_story = self.target_revision.story
+                    self.target_revision = None                    
                 out_type = REPRINT_TYPES['issue_to_story']
                 target = self.target_story
-            elif self.target_revision:
-                out_type = REPRINT_TYPES['issue_to_story']
-                target = self.target_revision.story
             else:
                 out_type = REPRINT_TYPES['issue_to_issue']
 
