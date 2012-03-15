@@ -786,6 +786,21 @@ def merge_return_links_cover():
                 cnt += 1
                 if cnt > max_cnt:
                     return
+                    
+    for i in ReprintFromIssue.objects.filter(target__type__name = 'cover reprint'):
+        a = ReprintToIssue.objects.filter(target_issue = i.target.issue,
+                                          origin__issue = i.origin_issue)
+        if a.count():
+            b = a.filter(origin__type__name= 'cover')
+            if b.count() == 1:
+                a = b
+            if a.count() == 1:
+                #reprint = a[0]
+                #print reprint.origin_issue, i.origin, reprint.target, i.target_issue
+                merge_reprint_links(i, a[0], cover=True)
+                cnt += 1
+                if cnt > max_cnt:
+                    return
 
 def merge_links_story():
     max_cnt = 50000000
