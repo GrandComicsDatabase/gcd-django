@@ -693,7 +693,7 @@ def assign(request, id):
 
     if changeset.indexer.indexer.is_new and \
        changeset.indexer.indexer.mentor is None and\
-       changeset.coverrevisions.count() != 1:
+       changeset.change_type is not CTYPES['cover']:
 
         changeset.indexer.indexer.mentor = request.user
         changeset.indexer.indexer.save()
