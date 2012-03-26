@@ -568,7 +568,7 @@ def daily_covers(request, show_date=None):
                                   deleted=False)
 
     covers = covers.order_by("issue__series__publisher__name",
-                             "issue__series__name",
+                             "issue__series__sort_name",
                              "issue__series__year_began",
                              "issue__sort_code")
 
