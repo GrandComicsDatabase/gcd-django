@@ -492,6 +492,29 @@ def import_sequences_from_file(request, issue_id, changeset_id):
           'Could not find issue for id %s and changeset %s' \
             % (issue_id, changeset_id))
 
+def generate_reprint_link(reprints, direction):
+    reprint_note = ''
+    for reprint in reprints:
+        if direction == 'from':
+            if hasattr(reprint, 'origin_issue') and \
+                reprint.origin_issue:
+                issue = reprint.origin_issue
+            else:
+                issue = reprint.origin.issue
+        else:
+            if hasattr(reprint, 'target_issue') and \
+                reprint.target_issue:
+                issue = reprint.target_issue
+            else:
+                issue = reprint.target.issue
+        reprint_note += u'%s %s' % (direction, issue.full_name() )
+        if reprint.notes:
+            reprint_note = u'%s [%s]' % (reprint_note, reprint.notes)
+        if issue.publication_date:
+            reprint_note += u" (" + issue.publication_date + ")"
+        reprint_note += '; '
+    return reprint_note
+    
 @permission_required('gcd.can_reserve')
 def export_issue_to_file(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id)
@@ -507,6 +530,19 @@ def export_issue_to_file(request, issue_id):
             export += "None\t"
         else:
             export += "%s\t" % unicode(getattr(issue, field_name))
+    reprint = ''
+    from_reprints = list(issue.from_reprints.select_related().all())
+    from_reprints.extend(list(issue.from_issue_reprints.select_related().all()))
+    from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+    reprint += generate_reprint_link(from_reprints, 'from')
+    
+    to_reprints = list(issue.to_reprints.select_related().all())
+    to_reprints.extend(list(issue.to_issue_reprints.select_related().all()))
+    to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
+    reprint += generate_reprint_link(to_reprints, 'in')
+    if reprint != '':
+        reprint = reprint[:-2]
+    export += reprint
     export = export[:-1] + '\r\n'
     for sequence in issue.active_stories():
         for field_name in SEQUENCE_FIELDS:
@@ -514,6 +550,29 @@ def export_issue_to_file(request, issue_id):
                               'letters', 'editing'] and \
                              getattr(sequence, 'no_%s' % field_name):
                 export += "None\t"
+            elif field_name == 'reprint_notes':
+                reprint = ''
+                from_reprints = list(sequence.from_reprints.select_related()
+                                                           .all())
+                from_reprints.extend(list(sequence.from_issue_reprints
+                                                  .select_related().all()))
+                from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+                reprint += generate_reprint_link(from_reprints, 'from')
+                
+                to_reprints = list(sequence.to_reprints.select_related().all())
+                to_reprints.extend(list(sequence.to_issue_reprints
+                                                .select_related().all()))
+                to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
+                reprint += generate_reprint_link(to_reprints, 'in')
+                        
+                if reprint != '':
+                    if sequence.reprint_notes:
+                        reprint += sequence.reprint_notes
+                    else:
+                        reprint = reprint[:-2]
+                else:
+                    reprint = sequence.reprint_notes
+                export += "%s\t" % unicode(reprint)
             else:
                 export += "%s\t" % unicode(getattr(sequence, field_name))
         export = export[:-1] + '\r\n'
