@@ -3477,8 +3477,7 @@ def compare(request, id):
 
     revision.compare_changes()
 
-    if changeset.change_type == CTYPES['issue_add'] and \
-      changeset.issuerevisions.count() > 1:
+    if changeset.change_type == CTYPES['issue_add']:
         template = 'oi/edit/compare_issue_skeletons.html'
     elif changeset.change_type == CTYPES['issue_bulk']:
         template = 'oi/edit/compare_bulk_issue.html'
@@ -3509,6 +3508,10 @@ def compare(request, id):
             field_list.remove('publication_date')
             field_list.remove('key_date')
             field_list.remove('notes')
+            field_list.remove('year_on_sale')
+            field_list.remove('month_on_sale')
+            field_list.remove('day_on_sale')
+            field_list.remove('on_sale_date_uncertain')
             if changeset.change_type == CTYPES['issue_bulk']:
                 field_list.remove('title')
                 field_list.remove('isbn')

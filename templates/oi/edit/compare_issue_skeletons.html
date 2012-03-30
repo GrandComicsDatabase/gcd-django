@@ -13,6 +13,9 @@ Reviewing :: {{ revision }}
       href="{{ MEDIA_URL }}css/oi/default.css">
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}css/oi/default/edit.css">
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default/status.css">
+</link>
 {% endblock %}
 
 {% block view_body %}
@@ -24,40 +27,52 @@ This change adds to {{ revision.series|absolute_url:'target="_blank"' }}
 published by {{ revision.series.publisher|absolute_url:'target="_blank"' }}
 after issue
 <span class="comparison_highlight">{{ changeset.ordered_issue_revisions.0.after }}</span>
-the following issues (links open in new windows):
+the following issue{% if changeset.issuerevisions.count > 1 %}s (links open in new windows):
 <table class="comparison added">
 <tr>
   <th> Volume </th>
   <th> Issue Number</th>
   <th> Display Number </th>
   <th> Preview </th>
-{% if changeset.state == states.APPROVED %}
+  {% if changeset.state == states.APPROVED %}
   <th> Next Change </th>
-{% endif %}
-
+  {% endif %}
+    
 </tr>
-{% for issue in changeset.ordered_issue_revisions %}
+  {% for issue in changeset.ordered_issue_revisions %}
 <tr>
   <td> {{ issue.volume }}
   <td> {{ issue.number }}
   <td> {{ issue.display_number }}
   <td> <a class="new_window" href="{% url preview_revision model_name=model_name,id=issue.id %}" target=_blank>Preview</a>
-{% if changeset.state = states.APPROVED %}
+    {% if changeset.state = states.APPROVED %}
   <td> {% if issue.posterior %}<a href="{% url compare id=issue.posterior.changeset.id %}?collapse=1"> Next Change ({{ issue.posterior.modified|date:"Y-m-d" }}) {% endif %} </a>
-{% endif %}
+    {% endif %}
 </tr>
-{% endfor %}
+  {% endfor %}
 </table>
 
 <p>
 The following fields are set for all issues in the issue range.  Keep in mind
 that publication date, key date and notes will always be blank.
-</p><p>
+</p>
+{% else %}:
+<a class="new_window" href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview</a>
+{% endif %}
+<p>
 Highlighted fields represent <span class="added_highlight">added</span> data.
 </p>
 
 {% with 1 as no_prev_link %}
 {% include 'oi/bits/compare.html' %}
+{% endwith %}
+
+<hr>
+<h3>Current issues</h3>
+{% with revision.series as series %}
+{% with 12 as table_width %}
+{% include "gcd/bits/status_tables.html" %}
+{% endwith %}
 {% endwith %}
 
 <hr>
