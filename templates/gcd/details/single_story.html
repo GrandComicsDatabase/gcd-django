@@ -74,7 +74,7 @@
              one or both set of notes need editing as a result of our recent
              migration to having separate issue and cover notes.]
       {% else %}
-        <p>{{ story.notes|linebreaksbr }}</p>
+        <p>{{ story.notes|urlizetrunc:75|linebreaksbr }}</p>
       {% endifequal %}
       {% endif %}
 

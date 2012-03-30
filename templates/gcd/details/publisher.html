@@ -67,7 +67,7 @@
   {% endif %}
   {% if publisher.notes and page_number = 1 %}
           <dt> Notes:
-          <dd> {{ publisher.notes|linebreaksbr }}
+          <dd> {{ publisher.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
 {% endif %}
         </dl>

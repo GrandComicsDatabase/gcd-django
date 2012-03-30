@@ -55,7 +55,7 @@ This issue has variants.
           </p><p>
     {% endif %}
   {% endif %}
-            {{ issue.notes|linebreaksbr }}
+            {{ issue.notes|urlizetrunc:75|linebreaksbr }}
   {% if issue.has_reprints %}
             <dl class="contents">
             {{ issue|show_reprints_for_issue }}

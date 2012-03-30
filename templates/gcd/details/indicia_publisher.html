@@ -42,7 +42,7 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
 {% endif %}
 {% if indicia_publisher.notes %}
         <dt> Notes:
-        <dd> {{ indicia_publisher.notes|linebreaksbr }}
+        <dd> {{ indicia_publisher.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
 {% ifequal page.object_list.count 0 %}
         <dt> Issues:

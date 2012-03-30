@@ -121,17 +121,13 @@
 {% endif %}
 
           <div class="series_notes">
-{% if series.publication_notes %}
-            <div class="series_detail_header"> Publication Notes </div>
-            <div class="series_notes">{{ series.publication_notes|linebreaksbr }}</div>
-{% endif %}
 {% if series.tracking_notes %}
             <div class="series_detail_header"> Tracking </div>
             <div class="series_notes">{{ series.tracking_notes|linebreaksbr }}</div>
 {% endif %}
 {% if series.notes %}
             <div class="series_detail_header"> Notes </div>
-            <div class="series_notes">{{ series.notes|linebreaksbr }}</div>
+            <div class="series_notes">{{ series.notes|urlizetrunc:75|linebreaksbr }}</div>
 {% endif %}
           </div> <!-- series_notes -->
         </div> <!-- series_data -->

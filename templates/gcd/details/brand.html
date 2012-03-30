@@ -34,7 +34,7 @@ GCD :: Brand :: {{ brand.name }}
 {% endif %}
 {% if brand.notes %}
         <dt> Notes:
-        <dd> {{ brand.notes|linebreaksbr }}
+        <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
 {% ifequal page.object_list.count 0 %}
         <dt> Issues:
