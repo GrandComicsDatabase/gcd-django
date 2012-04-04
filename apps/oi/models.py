@@ -491,12 +491,12 @@ class Changeset(models.Model):
                     revision.previous_revision = None
                     revision.save()
                 if type(revision) == StoryRevision:
-                    if revision.story and revision.story.migration_status \
-                      and revision.story.migration_status.reprint_confirmed \
-                      and revision.story.migration_status.modified > \
+                    if revision.migration_status \
+                      and revision.migration_status.reprint_confirmed \
+                      and revision.migration_status.modified > \
                           revision.changeset.created:
-                        revision.story.migration_status.reprint_confirmed = False
-                        revision.story.migration_status.save()
+                        revision.migration_status.reprint_confirmed = False
+                        revision.migration_status.save()
         if self.approver:
             self.approver.indexer.add_imps(IMP_APPROVER_VALUE)
 
@@ -1480,10 +1480,10 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             ipub.delete()
             return
 
-        self._assign_base_fields(ipub)
         ipub.is_surrogate = self.is_surrogate
         ipub.country = self.country
         ipub.parent = self.parent
+        self._assign_base_fields(ipub)
 
         if clear_reservation:
             ipub.reserved = False
@@ -1612,8 +1612,8 @@ class BrandRevision(PublisherRevisionBase):
             brand.delete()
             return
 
-        self._assign_base_fields(brand)
         brand.parent = self.parent
+        self._assign_base_fields(brand)
 
         if clear_reservation:
             brand.reserved = False
@@ -2573,7 +2573,10 @@ class IssueRevision(Revision):
     def has_reprints(self):
         if self.issue is None:
             return False
-        return self.issue.has_reprints()
+        return self.from_reprints.count() or \
+               self.to_reprints.count() or \
+               self.from_issue_reprints.count() or \
+               self.to_issue_reprints.count()
 
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.issue with a story/issue
@@ -3092,7 +3095,7 @@ class IssueRevision(Revision):
                         if self.series.is_comics_publication:
                             update_count('variant_issues', 1,
                                         language=self.series.language)
-                        if series.is_comics_publication:
+                        if issue.series.is_comics_publication:
                             update_count('variant_issues', -1,
                                         language=issue.series.language)
                 else:
@@ -3103,14 +3106,14 @@ class IssueRevision(Revision):
                             if self.series.publisher:
                                 self.series.publisher.issue_count = F('issue_count') + 1
                                 self.series.publisher.save()
-                        if series.is_comics_publication:
+                        if issue.series.is_comics_publication:
                             if issue.series.publisher:
                                 issue.series.publisher.issue_count = F('issue_count') - 1
                                 issue.series.publisher.save()
                     if self.series.language != issue.series.language:
                         if self.series.is_comics_publication:
                             update_count('issues', 1, language=self.series.language)
-                        if series.is_comics_publication:
+                        if issue.series.is_comics_publication:
                             update_count('issues', -1, language=issue.series.language)
                         story_count = self.issue.active_stories().count()
                         update_count('stories', story_count,
@@ -3764,7 +3767,7 @@ class StoryRevision(Revision):
     to_issue_reprints = property(_to_issue_reprints)
 
     def _migration_status(self):
-        if self.story is None:
+        if self.story is None or not hasattr(self.story, 'migration_status'):
             return MigrationStoryStatus.objects.none()
         return self.story.migration_status
     migration_status = property(_migration_status)
