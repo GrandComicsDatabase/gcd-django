@@ -1073,6 +1073,7 @@ class PublisherRevisionManagerBase(RevisionManager):
           'year_began_uncertain': instance.year_began_uncertain,
           'year_ended_uncertain': instance.year_ended_uncertain,
           'notes': instance.notes,
+          'keywords': '; '.join(str(i) for i in instance.keywords.all()),
           'url': instance.url,
         }
 
@@ -1096,6 +1097,11 @@ class PublisherRevisionBase(Revision):
     notes = models.TextField(blank=True,
       help_text='Anything that doesn\'t fit in other fields.  These notes '
                 'are part of the regular display.')
+    keywords = models.TextField(blank=True, default='',
+      help_text='Significant objects, locations, or themes (NOT characters) '
+                'depicted in the content, such as "Phantom Zone", '
+                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
+                'entries are to be separated by semi-colons.')
     url = models.URLField(blank=True,
       help_text='The official web site of the publisher.')
 
@@ -1107,7 +1113,8 @@ class PublisherRevisionBase(Revision):
                         'year_ended',
                         'year_ended_uncertain',
                         'url',
-                        'notes']
+                        'notes',
+                        'keywords']
 
     def _assign_base_fields(self, target):
         target.name = self.name
@@ -1116,6 +1123,13 @@ class PublisherRevisionBase(Revision):
         target.year_began_uncertain = self.year_began_uncertain
         target.year_ended_uncertain = self.year_ended_uncertain
         target.notes = self.notes
+        target.save()
+        if self.keywords:
+            target.keywords.set(*[x.strip() for x in self.keywords.split(';')])
+            self.keywords='; '.join(str(i) for i in target.keywords.all().order_by('name'))
+            self.save()
+        else:
+            target.keywords.set()
         target.url = self.url
 
     def _field_list(self):
@@ -1248,6 +1262,7 @@ class PublisherRevision(PublisherRevisionBase):
             'year_ended_uncertain': None,
             'url': '',
             'notes': '',
+            'keywords': '',
             'is_master': True,
             'parent': None,
         }
@@ -1428,6 +1443,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             'is_surrogate': None,
             'url': '',
             'notes': '',
+            'keywords': '',            
             'parent': None,
         }
 
@@ -1563,6 +1579,7 @@ class BrandRevision(PublisherRevisionBase):
             'year_ended_uncertain': None,
             'url': '',
             'notes': '',
+            'keywords': '',
             'parent': None,
         }
 
@@ -1854,6 +1871,7 @@ class SeriesRevisionManager(RevisionManager):
           classification=series.classification,
           format=series.format,
           notes=series.notes,
+          keywords='; '.join(str(i) for i in series.keywords.all()),
           year_began=series.year_began,
           year_ended=series.year_ended,
           year_began_uncertain=series.year_began_uncertain,
@@ -1883,7 +1901,8 @@ def get_series_field_list():
             'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
             'is_current', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'has_volume', 'is_comics_publication', 'tracking_notes', 'notes']
+            'has_volume', 'is_comics_publication', 'tracking_notes', 'notes',
+            'keywords']
 
 class SeriesRevision(Revision):
     class Meta:
@@ -1943,6 +1962,11 @@ class SeriesRevision(Revision):
       help_text="Publications in this series are mostly comics publications.")
 
     notes = models.TextField(blank=True)
+    keywords = models.TextField(blank=True, default='',
+      help_text='Significant objects, locations, or themes (NOT characters) '
+                'depicted in the content, such as "Phantom Zone", '
+                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
+                'entries are to be separated by semi-colons.')
 
     # Country and Language info.
     country = models.ForeignKey(Country, related_name='series_revisions')
@@ -2039,6 +2063,7 @@ class SeriesRevision(Revision):
             'classification': None,
             'format': '',
             'notes': '',
+            'keywords': '',
             'year_began': None,
             'year_ended': None,
             'year_began_uncertain': None,
@@ -2129,6 +2154,7 @@ class SeriesRevision(Revision):
         series.classification = self.classification
         series.format = self.format
         series.notes = self.notes
+
         series.year_began = self.year_began
         series.year_ended = self.year_ended
         series.year_began_uncertain = self.year_began_uncertain
@@ -2219,6 +2245,13 @@ class SeriesRevision(Revision):
             series.reserved = False
 
         series.save()
+        if self.keywords:
+            series.keywords.set(*[x.strip() for x in self.keywords.split(';')])
+            self.keywords='; '.join(str(i) for i in series.keywords.all().order_by('name'))
+            self.save()
+        else:
+            series.keywords.set()
+        series.save()
         if self.series is None:
             self.series = series
             self.save()
@@ -2242,7 +2275,7 @@ def get_issue_field_list():
             'year_on_sale', 'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
             'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-            'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes']
+            'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes', 'keywords']
 
 class IssueRevisionManager(RevisionManager):
 
@@ -2298,7 +2331,8 @@ class IssueRevisionManager(RevisionManager):
           no_isbn=issue.no_isbn,
           variant_of=issue.variant_of,
           variant_name=issue.variant_name,
-          notes=issue.notes)
+          notes=issue.notes,
+          keywords='; '.join(str(i) for i in issue.keywords.all()))
 
         if issue.on_sale_date:
             revision.year_on_sale, revision.month_on_sale, \
@@ -2432,6 +2466,11 @@ class IssueRevision(Revision):
       help_text='Check if there is no editor or similar credit (such as '
                 'publisher) for the issue as a whole.')
     notes = models.TextField(blank=True, default='')
+    keywords = models.TextField(blank=True, default='',
+      help_text='Significant objects, locations, or themes (NOT characters) '
+                'depicted in the content, such as "Phantom Zone", '
+                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
+                'entries are to be separated by semi-colons.')
 
     series = models.ForeignKey(Series, related_name='issue_revisions')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True, blank=True,
@@ -2888,6 +2927,7 @@ class IssueRevision(Revision):
             'sort_code': None,
             'after': None,
             'variant_name': '',
+            'keywords': ''
         }
 
     def _start_imp_sum(self):
@@ -2904,7 +2944,7 @@ class IssueRevision(Revision):
 
     def _imps_for(self, field_name):
         if field_name in ('number', 'publication_date', 'key_date', 'series',
-                          'price', 'notes', 'variant_name'):
+                          'price', 'notes', 'variant_name', 'keywords'):
             return 1
         if not self._seen_volume and \
            field_name in ('volume', 'no_volume', 'display_volume_with_number'):
@@ -3182,7 +3222,6 @@ class IssueRevision(Revision):
         issue.editing = self.editing
         issue.no_editing = self.no_editing
         issue.notes = self.notes
-
         issue.series = self.series
         issue.indicia_publisher = self.indicia_publisher
         issue.indicia_pub_not_printed = self.indicia_pub_not_printed
@@ -3209,6 +3248,13 @@ class IssueRevision(Revision):
         if clear_reservation:
             issue.reserved = False
 
+        issue.save()
+        if self.keywords:
+            issue.keywords.set(*[x.strip() for x in self.keywords.split(';')])
+            self.keywords='; '.join(str(i) for i in issue.keywords.all().order_by('name'))
+            self.save()
+        else:
+            issue.keywords.set()
         issue.save()
         if self.issue is None:
             self.issue = issue
@@ -3262,7 +3308,7 @@ def get_story_field_list():
             'script', 'no_script', 'pencils', 'no_pencils', 'inks',
             'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
             'editing', 'no_editing', 'page_count', 'page_count_uncertain',
-            'characters', 'synopsis', 'reprint_notes', 'notes']
+            'characters', 'synopsis', 'reprint_notes', 'notes', 'keywords']
 
 class StoryRevisionManager(RevisionManager):
 
@@ -3312,6 +3358,7 @@ class StoryRevisionManager(RevisionManager):
           no_editing=story.no_editing,
 
           notes=story.notes,
+          keywords='; '.join(str(i) for i in story.keywords.all()),
           synopsis=story.synopsis,
           characters=story.characters,
           reprint_notes=story.reprint_notes,
@@ -3365,6 +3412,11 @@ class StoryRevision(Revision):
     synopsis = models.TextField(blank=True)
     reprint_notes = models.TextField(blank=True)
     notes = models.TextField(blank=True)
+    keywords = models.TextField(blank=True, default='',
+      help_text='Significant objects, locations, or themes (NOT characters) '
+                'depicted in the content, such as "Phantom Zone", '
+                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
+                'entries are to be separated by semi-colons.')
 
     issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
     date_inferred = models.BooleanField(default=False, blank=True)
@@ -3453,6 +3505,7 @@ class StoryRevision(Revision):
             'no_letters': False,
             'no_editing': False,
             'notes': '',
+            'keywords': '',
             'synopsis': '',
             'characters': '',
             'reprint_notes': '',
@@ -3479,7 +3532,7 @@ class StoryRevision(Revision):
     def _imps_for(self, field_name):
         if field_name in ('sequence_number', 'type', 'feature', 'genre',
                           'characters', 'synopsis', 'job_number', 'reprint_notes',
-                          'notes'):
+                          'notes', 'keywords'):
             return 1
         if not self._seen_title and field_name in ('title', 'title_inferred'):
             self._seen_title = True
@@ -3617,6 +3670,13 @@ class StoryRevision(Revision):
         if clear_reservation:
             story.reserved = False
 
+        story.save()
+        if self.keywords:
+            story.keywords.set(*[x.strip() for x in self.keywords.split(';')])
+            self.keywords='; '.join(str(i) for i in story.keywords.all().order_by('name'))
+            self.save()
+        else:
+            story.keywords.set()
         story.save()
 
         if self.story is None:
@@ -4154,7 +4214,7 @@ class ReprintRevision(Revision):
                                             notes=self.notes)
             else:
                 self.reprint_from_issue.origin_issue = self.origin_issue
-                self.reprint_from_issue.target = story
+                self.reprint_from_issue.target = target
                 self.reprint_from_issue.notes = self.notes
                 self.reprint_from_issue.save()
         elif out_type == REPRINT_TYPES['story_to_issue']:

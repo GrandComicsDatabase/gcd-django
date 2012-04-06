@@ -1,6 +1,8 @@
 from django.db import models
 from django.core import urlresolvers
 
+from taggit.managers import TaggableManager
+
 from series import Series
 from issue import Issue
 
@@ -61,6 +63,7 @@ class Story(models.Model):
     synopsis = models.TextField()
     reprint_notes = models.TextField()
     notes = models.TextField()
+    keywords = TaggableManager()
 
     # Fields from issue.
     issue = models.ForeignKey(Issue)
@@ -93,6 +96,7 @@ class Story(models.Model):
         return self.genre or \
                self.characters or \
                self.synopsis or \
+               self.keywords.count() or \
                self.has_reprints()
                
     def has_reprints(self, notes=True):
@@ -103,14 +107,14 @@ class Story(models.Model):
                self.to_issue_reprints.count()
 
     def _reprint_needs_inspection(self):
-        if self.migration_status:
+        if hasattr(self, 'migration_status'):
             return self.migration_status.reprint_needs_inspection
         else:
             return False
     reprint_needs_inspection = property(_reprint_needs_inspection)
 
     def _reprint_confirmed(self):
-        if self.migration_status:
+        if hasattr(self, 'migration_status'):
             return self.migration_status.reprint_confirmed
         else:
             return True

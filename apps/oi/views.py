@@ -1307,6 +1307,7 @@ def edit_issues_in_bulk(request):
     fields.remove('notes')
     fields.remove('barcode')
     fields.remove('title')
+    fields.remove('keywords')
 
     # look at values for the issue fields
     # if only one it gives the initial value

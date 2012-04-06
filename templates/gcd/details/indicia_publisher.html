@@ -2,6 +2,7 @@
 
 {% load i18n %}
 {% load display %}
+{% load credits %}
 
 {% block title %}
 GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
@@ -44,6 +45,7 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
         <dt> Notes:
         <dd> {{ indicia_publisher.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
+{{ indicia_publisher|show_credit:'keywords' }}
 {% ifequal page.object_list.count 0 %}
         <dt> Issues:
         <dd> None

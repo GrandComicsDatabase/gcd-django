@@ -2,6 +2,7 @@
 
 {% load i18n %}
 {% load display %}
+{% load credits %}
 
 {% block title %}
 GCD :: Brand :: {{ brand.name }}
@@ -36,6 +37,7 @@ GCD :: Brand :: {{ brand.name }}
         <dt> Notes:
         <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
+{{ brand|show_credit:'keywords' }}
 {% ifequal page.object_list.count 0 %}
         <dt> Issues:
         <dd> None

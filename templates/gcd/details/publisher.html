@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load i18n %}
+{% load credits %}
 
 {% block title %}
   {% if publisher.is_imprint %}
@@ -59,7 +60,7 @@
           <dt> Number of Current Series:
           <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode  }}&is_current=on">{{ current.count }}</a>
 {% endif %}
-{% if publisher.url or publisher.notes %}
+{% if publisher.url or publisher.notes or publisher.keywords.count %}
           <p>
   {% if publisher.url %}
           <dt> Web Site:
@@ -69,6 +70,7 @@
           <dt> Notes:
           <dd> {{ publisher.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
+  {{ publisher|show_credit:'keywords' }}
 {% endif %}
         </dl>
       </div> <!-- pub_data -->

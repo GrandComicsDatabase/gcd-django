@@ -60,6 +60,7 @@
             <dt class="long"> Format:
             <dd id="series_format"> {{ series.format }}
 {% endif %}
+{{ series|show_credit:'keywords' }}
           </dl>
 
 {% if series.active_issues.count %}

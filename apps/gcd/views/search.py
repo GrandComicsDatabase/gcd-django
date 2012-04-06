@@ -436,8 +436,14 @@ def do_advanced_search(request):
         stq_obj = search_stories(data, op)
         iq_obj = search_issues(data, op)
         sq_obj = search_series(data, op)
-        ipq_obj = search_indicia_publishers(data, op)
-        bq_obj = search_brands(data, op)
+        if data['target'] != 'brand':
+            ipq_obj = search_indicia_publishers(data, op)
+        else:
+            ipq_obj = None
+        if data['target'] != 'indicia_publisher':
+            bq_obj = search_brands(data, op)
+        else:
+            bq_obj = None
         pq_obj = search_publishers(data, op)
 
         # if there are sequence searches limit to type cover
@@ -458,7 +464,8 @@ def do_advanced_search(request):
           },
           context_instance=RequestContext(request))
 
-    if (not query) and terms:
+    if (not query) and terms \
+      and (not data['keywords'] or data['target'] in ['cover', 'issue_cover']):
         raise ViewTerminationError, render_to_response(
           'gcd/search/advanced.html',
           {
@@ -515,6 +522,10 @@ def do_advanced_search(request):
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
 
+    if data['keywords'] and data['target'] not in ['cover', 'issue_cover']:
+        for keyword in data['keywords'].split(';'):
+            items = items.filter(Q(**{ 'keywords__name__%s' % (op): keyword.strip() }))
+        
     return items, data['target']
 
 

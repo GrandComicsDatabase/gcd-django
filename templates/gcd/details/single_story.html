@@ -63,6 +63,7 @@
           {% else %}
             {{ story|show_reprints|linebreaksbr }}
           {% endif %}
+          {{ story|show_credit:"keywords" }}
         </dl>
       {% endif %}
 

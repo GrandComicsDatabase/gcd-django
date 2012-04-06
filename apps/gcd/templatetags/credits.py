@@ -145,13 +145,20 @@ def __format_credit(story, credit):
     else:
         label = _(credit.title()) + ':'
 
-    if (credit == 'reprint_notes'):
+    if (credit in ['reprint_notes', 'reprint_original_notes']):
         label = _('Reprinted:')
         values = split_reprint_string(credit_value)
         credit_value = '<ul>'
         for value in values:
             credit_value += '<li>' + esc(value)
         credit_value += '</ul>'
+    elif credit == 'keywords':
+        if type(story.keywords) == unicode:
+            credit_value = story.keywords
+        else:
+            credit_value = esc('; '.join(str(i) for i in story.keywords.all().order_by('name')))
+        if credit_value == '':
+            return ''
     else: # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'

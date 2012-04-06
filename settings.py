@@ -74,7 +74,8 @@ INSTALLED_APPS = (
     'apps.oi',
     'apps.voting',
     'compressor',
-    'templatesadmin'
+    'templatesadmin',
+    'taggit'
 )
 
 # Used to provide a seed in secret-key hashing algorithms.

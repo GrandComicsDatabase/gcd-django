@@ -35,6 +35,7 @@ PUBLISHER_HELP_LINKS = {
     'country': 'Country',
     'url': 'URL',
     'notes': 'Notes_%28on_Publisher_Screen%29',
+    'keywords': 'Keywords',
     'comments': 'Comments '
 }
 
@@ -46,6 +47,7 @@ BRAND_HELP_LINKS = {
     'year_ended_uncertain': 'Years_of_Use_%28Brand%29',
     'url': 'URL_%28Brand%29',
     'notes': 'Notes_%28Brand%29',
+    'keywords': 'Keywords',
     'comments': 'Comments '
 }
 
@@ -59,6 +61,7 @@ INDICIA_PUBLISHER_HELP_LINKS = {
     'country': 'Country_%28Indicia_publisher%29',
     'url': 'URL_%28Indicia_publisher%29',
     'notes': 'Notes_%28Indicia_publisher%29',
+    'keywords': 'Keywords',
     'comments': 'Comments '
 }
 
@@ -92,6 +95,7 @@ ISSUE_HELP_LINKS = {
     'barcode': 'Barcode',
     'no_barcode': 'Barcode',
     'notes': 'Notes_%28issue%29',
+    'keywords': 'Keywords',
     'comments': 'Comments'
 }
 
@@ -120,6 +124,7 @@ SEQUENCE_HELP_LINKS = {
     'job_number': 'Job_Number',
     'reprint_notes': 'Reprints',
     'notes': 'Notes',
+    'keywords': 'Keywords',
     'comments': 'Comments'
 }
 
@@ -135,6 +140,7 @@ SERIES_HELP_LINKS = {
     'language': 'Language',
     'tracking_notes': 'Tracking',
     'notes': 'Series_Notes',
+    'keywords': 'Keywords',
     'format': 'Format',
     'is_comics_publication': 'Comics_Publication',
     'comments': 'Comments'
@@ -191,6 +197,21 @@ def _get_comments_form_field():
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
+def _clean_keywords(cleaned_data):
+    keywords = cleaned_data['keywords']
+    if keywords != None:
+        not_allowed = False
+        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']:
+            if c in keywords:
+                not_allowed = True
+                break
+        if not_allowed:
+            raise forms.ValidationError('The following characters are '
+            'not allowed in a keyword: < > { } : / \ | @ ,')
+
+    return keywords
+
+                
 class PageCountInput(TextInput):
     def render(self, name, value, attrs=None):
         value = format_page_count(value)
@@ -289,7 +310,7 @@ def get_publisher_revision_form(source=None, user=None):
 def _get_publisher_fields(middle=None):
     first = ['name', 'year_began', 'year_began_uncertain',
                      'year_ended', 'year_ended_uncertain']
-    last = ['url', 'notes']
+    last = ['url', 'notes', 'keywords']
     if middle is not None:
         first.extend(middle)
     first.extend(last)
@@ -308,8 +329,13 @@ class PublisherRevisionForm(forms.ModelForm):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
+    def clean_keywords(self):
+        return _clean_keywords(self.cleaned_data)
+
     def clean(self):
         cd = self.cleaned_data
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         if 'name' in cd:
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
@@ -344,8 +370,13 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
                 'for the master publisher, rather than a company belonging to the '
                 'master publisher.')
 
+    def clean_keywords(self):
+        return _clean_keywords(self.cleaned_data)
+
     def clean(self):
         cd = self.cleaned_data
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         if 'name' in cd:
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
@@ -363,8 +394,7 @@ def get_brand_revision_form(source=None, user=None):
 class BrandRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandRevision
-        fields = ['name', 'year_began', 'year_began_uncertain',
-                  'year_ended', 'year_ended_uncertain', 'url', 'notes']
+        fields = _get_publisher_fields()
 
     name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
       max_length=255,
@@ -394,9 +424,14 @@ class BrandRevisionForm(forms.ModelForm):
       help_text='Comments between the Indexer and Editor about the change. '
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
+                
+    def clean_keywords(self):
+        return _clean_keywords(self.cleaned_data)
 
     def clean(self):
         cd = self.cleaned_data
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         if 'name' in cd:
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
@@ -490,8 +525,13 @@ class SeriesRevisionForm(forms.ModelForm):
 
     comments = _get_comments_form_field()
 
+    def clean_keywords(self):
+        return _clean_keywords(self.cleaned_data)
+
     def clean(self):
         cd = self.cleaned_data
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         if 'name' in cd:
             cd['name'] = cd['name'].strip()
             if (cd['leading_article'] and
@@ -586,6 +626,9 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 key_date = key_date.replace('.', '-')
             return key_date
 
+        def clean_keywords(self):
+            return _clean_keywords(self.cleaned_data)
+            
         def clean(self):
             cd = self.cleaned_data
 
@@ -1189,8 +1232,14 @@ class StoryRevisionForm(forms.ModelForm):
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
 
+    def clean_keywords(self):
+        return _clean_keywords(self.cleaned_data)
+
     def clean(self):
         cd = self.cleaned_data
+
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
         cd['title'] = cd['title'].strip()
         cd['feature'] = cd['feature'].strip()

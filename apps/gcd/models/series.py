@@ -2,6 +2,8 @@
 from django.db import models
 from django.core import urlresolvers
 
+from taggit.managers import TaggableManager
+
 from apps.gcd.models.country import Country
 from apps.gcd.models.language import Language
 from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
@@ -48,6 +50,7 @@ class Series(models.Model):
     classification = models.ForeignKey(Classification, null=True, blank=True)
     format = models.CharField(max_length=255)
     notes = models.TextField()
+    keywords = TaggableManager()
 
     year_began = models.IntegerField(db_index=True)
     year_ended = models.IntegerField(null=True)

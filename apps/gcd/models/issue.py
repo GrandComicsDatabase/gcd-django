@@ -5,6 +5,8 @@ from django.db import models
 from django.core import urlresolvers
 from django.db.models import Sum, Count
 
+from taggit.managers import TaggableManager
+
 from publisher import IndiciaPublisher, Brand
 from series import Series
 
@@ -58,7 +60,8 @@ class Issue(models.Model):
     no_editing = models.BooleanField(default=False, db_index=True)
     notes = models.TextField()
 
-
+    keywords = TaggableManager()
+    
     # Series and publisher links
     series = models.ForeignKey(Series)
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)

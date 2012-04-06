@@ -56,6 +56,7 @@ This issue has variants.
     {% endif %}
   {% endif %}
             {{ issue.notes|urlizetrunc:75|linebreaksbr }}
+            {{ issue|show_credit:'keywords' }}
   {% if issue.has_reprints %}
             <dl class="contents">
             {{ issue|show_reprints_for_issue }}

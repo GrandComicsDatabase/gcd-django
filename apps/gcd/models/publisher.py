@@ -2,6 +2,9 @@ from django.db import models
 from django.core import urlresolvers
 from country import Country
 from django.core.exceptions import ObjectDoesNotExist
+
+from taggit.managers import TaggableManager
+
 from apps.oi import states
 
 class BasePublisher(models.Model):
@@ -15,6 +18,7 @@ class BasePublisher(models.Model):
     year_began_uncertain = models.BooleanField(blank=True)
     year_ended_uncertain = models.BooleanField(blank=True)
     notes = models.TextField()
+    keywords = TaggableManager()
     url = models.URLField()
 
     # Fields related to change management.

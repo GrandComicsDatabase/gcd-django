@@ -65,6 +65,8 @@ class AdvancedSearch(forms.Form):
                               label='Behavior',
                               help_text=logic_help)
 
+    keywords = forms.CharField(required=False)
+                              
     order1 = forms.ChoiceField(choices=ORDERINGS,
                                required=False,
                                initial='series',
@@ -216,6 +218,20 @@ class AdvancedSearch(forms.Form):
                           "range reparated by a hyphen (e.g. 100-200, "
                           "100-, -200).")
         return issue_count_data
+        
+    def clean_keywords(self):
+        keywords = self.cleaned_data['keywords']
+        if keywords != None:
+            not_allowed = False
+            for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']:
+                if c in keywords:
+                    not_allowed = True
+                    break
+            if not_allowed:
+                raise forms.ValidationError('The following characters are '
+                'not allowed in a keyword: < > { } : / \ | @ ,')
+
+        return keywords
 
     def clean(self):
         cleaned_data = self.cleaned_data
