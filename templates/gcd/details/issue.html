@@ -131,6 +131,10 @@ This issue has variants.
         <div class="edit_header">Editing
 {% if request.user.is_authenticated and not preview %}
           <div class="right">
+            <a class="link_info_left" href="{% url export_issue_csv issue.id %}"><span>download issue data (CSV)</span>
+            <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-spreadsheet.png" alt="download issue data" style="border:0;">
+            </a>
+
             <a class="link_info_left" href="{% url export_issue issue.id %}"><span>download issue data</span>
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-save.png" alt="download issue data" style="border:0;">
             </a>
