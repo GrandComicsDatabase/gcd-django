@@ -324,9 +324,60 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True):
         return link
 
 # stuff to consider in the display
-# - sort the reprints according to keydate
 # - sort domestic/foreign reprints
 
+def follow_reprint_link(reprint, direction, level=0):
+    reprint_note = 'which is reprinted<ul>'
+    text = False
+    if direction == 'from':
+        further_reprints = list(reprint.origin.from_reprints.select_related().all())
+        further_reprints.extend(list(reprint.origin.from_issue_reprints.select_related().all()))
+        further_reprints = sorted(further_reprints, key=lambda a: a.origin_sort)
+        if reprint.origin.reprint_notes:
+            for string in split_reprint_string(reprint.origin.reprint_notes):
+                string = string.strip()
+                if string.lower().startswith('from '):
+                    text = True
+                    reprint_note += '<li> ' + esc(string) + ' </li>'
+    else:
+        further_reprints = list(reprint.target.to_reprints.select_related().all())
+        further_reprints.extend(list(reprint.target.to_issue_reprints.select_related().all()))
+        further_reprints = sorted(further_reprints, key=lambda a: a.origin_sort)        
+        if reprint.target.reprint_notes:
+            for string in split_reprint_string(reprint.target.reprint_notes):
+                string = string.strip()
+                if string.lower().startswith('in '):
+                    text = True
+                    reprint_note += '<li> ' + esc(string) + ' </li>'
+    if further_reprints:
+        for further_reprint in further_reprints:
+            if hasattr(further_reprint, 'origin_issue') and further_reprint.origin_issue:
+                reprint_note += generate_reprint_link(further_reprint.origin_issue,
+                                                direction,
+                                                notes = further_reprint.notes)
+            elif hasattr(further_reprint, 'target_issue') and further_reprint.target_issue:
+                reprint_note += generate_reprint_link(further_reprint.target_issue,
+                                                direction,
+                                                notes = further_reprint.notes)
+            else:
+                if direction == 'from':                    
+                    reprint_note += generate_reprint_link_sequence(further_reprint.origin,
+                                                            direction,
+                                                            notes = further_reprint.notes)
+                else:
+                    reprint_note += generate_reprint_link_sequence(further_reprint.target,
+                                                            direction,
+                                                            notes = further_reprint.notes)
+                if level < 10: # max level to avoid loops
+                    follow_reprint_link(further_reprint, direction, level=level+1)
+        reprint_note += '</ul>'
+        return reprint_note
+    else:
+        if text:
+            return reprint_note + '</ul>'
+        else:
+            return ''
+        
 def show_reprints(story, original = False):
     """ Filter for our reprint line on the story level."""
 
@@ -344,7 +395,8 @@ def show_reprints(story, original = False):
             reprint += generate_reprint_link_sequence(from_reprint.origin,
                                                     "from ",
                                                     notes = from_reprint.notes)
-
+            reprint += follow_reprint_link(from_reprint, 'from')
+                
     to_reprints = list(story.to_reprints.select_related().all())
     to_reprints.extend(list(story.to_issue_reprints.select_related().all()))
     to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
@@ -357,6 +409,7 @@ def show_reprints(story, original = False):
             reprint += generate_reprint_link_sequence(to_reprint.target,
                                                     "in ",
                                                     notes = to_reprint.notes)
+            reprint += follow_reprint_link(to_reprint, 'in')
     
     if story.reprint_notes:
         for string in split_reprint_string(story.reprint_notes):
@@ -405,6 +458,7 @@ def show_reprints_for_issue(issue):
             reprint += generate_reprint_link_sequence(from_reprint.origin,
                                                     "from ",
                                                     notes = from_reprint.notes)
+            reprint += follow_reprint_link(from_reprint, 'from')
 
     to_reprints = list(issue.to_reprints.select_related().all())
     to_reprints.extend(list(issue.to_issue_reprints.select_related().all()))
@@ -418,6 +472,7 @@ def show_reprints_for_issue(issue):
             reprint += generate_reprint_link_sequence(to_reprint.target,
                                                     "in ",
                                                     notes = to_reprint.notes)
+            reprint += follow_reprint_link(to_reprint, 'in')
                                                     
     if reprint != '':
         label = _('Parts of this issue are reprinted') + ': '
