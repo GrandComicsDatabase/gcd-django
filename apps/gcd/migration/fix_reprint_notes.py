@@ -11,7 +11,7 @@ from apps.gcd.migration import migrate_reserve, do_auto_approve
 
 anon = User.objects.get(username=settings.ANON_USER_NAME)
 
-@transaction.commit_on_success
+#@transaction.commit_on_success
 def fix_reprint_notes(issues, old_reprint_note, new_reprint_note, check_double_semi=False, exact=False):
     changes = []
     for i in issues:
@@ -60,8 +60,8 @@ def fix_reprint_notes_series(series_id, old_reprint_note, new_reprint_note, chec
     print smart_str("cnt %d: %s" % (issues.count(), old_reprint_note.encode("utf-8")))
     fix_reprint_notes(issues, old_reprint_note, new_reprint_note, check_double_semi)
 
-@transaction.commit_on_success
-def main():
+#@transaction.commit_on_success
+def fix_all_reprint_notes():
     reprint_notes = [
     ['Marvel Masterworks: Golden Age USA Comics (Marvel, 2007 series)','Marvel Masterworks: Golden Age U.S.A. Comics (Marvel, 2007 series)'],
     ['(Editorial Planeta DeAgostini S.A.','(Planeta DeAgostini'],
@@ -193,8 +193,8 @@ def main():
     ['; o; ', '; '],
     ['(Oog & Blick, ', '(Oog & Blik, '],
     [uni('from (À Suivre) (Casterman'), uni('from À Suivre (Casterman')],
-    ['(I.W. Publishing;Super Comics'), 'I. W. Publishing; Super Comics'],
-    ['(I.W. Publishing; Super Comics'), 'I. W. Publishing; Super Comics'],
+    ['I.W. Publishing;Super Comics', 'I. W. Publishing; Super Comics'],
+    ['I.W. Publishing; Super Comics', 'I. W. Publishing; Super Comics'],
     ]
     for [old, new] in reprint_notes:
         fix_reprint_notes_global(old, new)
@@ -350,5 +350,5 @@ def main():
         fix_reprint_notes_series(series, old, new, check_double_semi=True)
 
 if __name__ == '__main__':
-    main()
+    fix_all_reprint_notes()
 
