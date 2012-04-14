@@ -3,6 +3,7 @@
 import re
 from urllib import urlopen
 import codecs
+import sys
 
 from django.db.models import Q
 from django.conf import settings
@@ -32,8 +33,11 @@ def migrate_reprints_lars():
     # 36949  Batman Sonderausgabe
     # 36975  Superman Superband
     # 36964  Roter Blitz
-    issues = Issue.objects.exclude(deleted=True).filter(series__id__in = [18732,26245,31648,36955,36980,36973,36949,36975,36964], reserved=False)
-    #issues = Issue.objects.filter(series__id__in = [36975,36964], reserved=False)
+    # 36953  Gerechtigkeitsliga
+    # 36967  Superfreunde
+    # 39648  Atom
+    issues = Issue.objects.exclude(deleted=True).filter(series__id__in = [18732,26245,31648,36955,36980,36973,36949,36975,36964, 36953, 36967, 39648], reserved=False)
+    #issues = Issue.objects.filter(series__id__in = [36953], reserved=False)
     migrated = []
     for migrate_issue in issues:
         changeset = migrate_reserve(migrate_issue, 'issue', 'to migrate reprint notes into links')
@@ -209,7 +213,6 @@ def find_migration_candidates(story, string, standard = True):
                         if len(a) == 1:
                             reprint = reprint.filter(id =
                                                     reprint[a[0]].id)
-
         if reprint.count() == 1:
             nr = find_reprint_sequence_in_issue(story,
                                                     reprint[0].id)
@@ -225,30 +228,30 @@ def find_migration_candidates(story, string, standard = True):
             else:
                 origin = True
             if notes:
-                if notes.find('originaltitel'):
+                if notes.find('originaltitel') >= 0:
                     pos = notes.find('originaltitel')
-                    notes.replace(notes[pos:pos+len('originaltitel')], 'original title')
-                if notes.find('Originaltitel'):
+                    notes = notes.replace('originaltitel', 'original title')
+                if notes.find('Originaltitel') >= 0:
                     pos = notes.find('Originaltitel')
-                    notes.replace(notes[pos:pos+len('Originaltitel')], 'original title')
-                if notes.lower().find(uni('história original')):
+                    notes = notes.replace('Originaltitel', 'original title')
+                if notes.lower().find(uni('história original')) >= 0:
                     pos = notes.lower().find(uni('história original'))
-                    notes.replace(notes[pos:pos+len(uni('história original'))], 'original title')
-                if notes.lower().find(uni('História original')):
+                    notes = notes.replace(uni('história original'), 'original title')
+                if notes.lower().find(uni('História original')) >= 0:
                     pos = notes.lower().find(uni('História original'))
-                    notes.replace(notes[pos:pos+len(uni('História original'))], 'original title')
-                if notes.lower().find('titolo originale'):
+                    notes = notes.replace(uni('História original'), 'original title')
+                if notes.lower().find('titolo originale') >= 0:
                     pos = notes.lower().find('titolo originale')
-                    notes.replace(notes[pos:pos+len('titolo originale')], 'original title')
-                if notes.find('titre original'):
+                    notes = notes.replace('titolo originale', 'original title')
+                if notes.find('titre original') >= 0:
                     pos = notes.find('titre original')
-                    notes.replace(notes[pos:pos+len('titre original')], 'original title')
-                if notes.find('Titre original'):
+                    notes = notes.replace('titre original', 'original title')
+                if notes.find('Titre original') >= 0:
                     pos = notes.find('Titre original')
-                    notes.replace(notes[pos:pos+len('Titre original')], 'original title')
-                if notes.lower().find('originally titled'):
+                    notes = notes.replace('Titre original', 'original title')
+                if notes.lower().find('originally titled') >= 0:
                     pos = notes.lower().find('originally titled')
-                    notes.replace(notes[pos:pos+len('originally titled')], 'original title')
+                    notes = notes.replace('originally titled', 'original title')
             if nr >= 0:
                 other_story = Story.objects.exclude(deleted=True).filter(issue = reprint[0])
                 other_story = other_story.filter(sequence_number = nr)
@@ -283,8 +286,12 @@ def find_migration_candidates(story, string, standard = True):
                 if results.count() == 1:
                     notes = notes[:pos] + notes[end_title:]
                     return reprint[0],notes,results[0].sequence_number,results[0],origin
-                else:
-                    return reprint[0],notes,-1,False,origin
+                elif results.count() > 1:
+                    results = results.filter(type=story.type)
+                    if results.count() == 1:
+                        notes = notes[:pos] + notes[end_title:]
+                        return reprint[0],notes,results[0].sequence_number,results[0],origin
+                return reprint[0],notes,-1,False,origin
             else:
                 return reprint[0],notes,-1,False,origin
     return False,'',-1,False,False
@@ -895,19 +902,24 @@ def check_return_links_story():
                 #i.delete()
                 #reprint.delete()
 
-#migrate_reprints_lars()
-#migrate_reprints_standard()
-#migrate_reprints_other()
-
-#check_double_links()
-#merge_return_links_cover()
-merge_links_story()
-
-#migrate_reprints_series(28131)
-#migrate_reprints_series(38517)
-#migrate_reprints_series(44227)
-#migrate_reprints_series(32067)
-#migrate_reprints_series(33759)
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        raise ValueError
+    run = int(sys.argv[1])
+    if run == 1:
+        migrate_reprints_lars()
+    elif run == 2:
+        migrate_reprints_standard()
+    elif run == 3:
+        migrate_reprints_other()
+    elif run == 4:
+        check_double_links()
+    elif run == 5:
+        merge_return_links_cover()
+    elif run == 6:
+        merge_links_story()
+    else:
+        raise ValueError
 #consistency_check_double_links()
 #for i in range(468,1001):
     #migrate_reprints_series(i)
