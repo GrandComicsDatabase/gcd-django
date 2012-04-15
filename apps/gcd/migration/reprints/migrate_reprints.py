@@ -198,7 +198,7 @@ def find_migration_candidates(story, string, standard = True):
                     reprint = reprint.filter(id =
                                             reprint[a[0]].id)
             # one other routine for a few specials
-            if reprint.count() == 0 or reprint.count() > 5:
+            if reprint.count() != 1 :#== 0 or reprint.count() > 5:
                 if other_fr: # need marker to only do once
                     other_fr = False
                     reprint = parse_reprint_fr(string)
@@ -213,6 +213,9 @@ def find_migration_candidates(story, string, standard = True):
                         if len(a) == 1:
                             reprint = reprint.filter(id =
                                                     reprint[a[0]].id)
+                    if reprint.count() == 1:
+                        reprint_direction = "from "
+
         if reprint.count() == 1:
             nr = find_reprint_sequence_in_issue(story,
                                                     reprint[0].id)
@@ -438,7 +441,7 @@ def migrate_reprints_series(number, standard = True, do_save = True):
             things = things.exclude(reprint_notes=None).exclude(reprint_notes='').exclude(reprint_notes='from ?').exclude(reprint_notes=u'fr\xe5n ?').exclude(reprint_notes='uit ?').exclude(reprint_notes='da ?')
             is_changed = False
             if not standard:
-                things = things.exclude(reprint_notes__icontains=' syndicate)').exclude(reprint_notes__icontains=' egmont ()')
+                things = things.exclude(reprint_notes__icontains=' syndicate)').exclude(reprint_notes__icontains=' egmont (').exclude(reprint_notes__icontains=' egmont [')
             for i in things:
                 if i.reprint_notes:
                     #print i.reprint_notes
@@ -464,7 +467,7 @@ def migrate_reprints(request, select = 1):
 def migrate_reprints_standard(select = -1):
     series = Series.objects.exclude(deleted=True).order_by("id")
     # exclude Lars
-    series = series.exclude(id__in = [18732,26245,31648,36955,36980,36973,36949,36964])
+    series = series.exclude(id__in = [18732,26245,31648,36955,36980,36973,36949,36975,36964, 36953, 36967, 39648])
     if type(select) != int:
         select = int(select)
     if select > 0:
@@ -485,7 +488,7 @@ def migrate_reprints_other(select = -1):
         series = series.filter(id__gt = str((select-1)*1000))
         series = series.filter(id__lte = str(select*1000))
     # exclude Lars
-    series = series.exclude(id__in = [18732,26245,31648,36955,36980,36973,36949,36964])
+    series = series.exclude(id__in = [18732,26245,31648,36955,36980,36973,36949,36975,36964, 36953, 36967, 39648])
 
     series = series.exclude(id=153)# Walt Disney's Comics and Stories
     #series = series.exclude(id=687)# Topolino

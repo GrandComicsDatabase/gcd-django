@@ -162,15 +162,18 @@ def parse_reprint_fr(reprints):
     Don't trust this parsing too much."""
 
     try:# for format: fr. seriesp #nr (issue date) date unused for parsing
-        position = reprints.find(' #')
-        series = reprints[3:position].strip()
-        position += 2
-        string = reprints[position:]
-        position = string.find('(')
-        number = string[:position].strip()
-        results = Issue.objects.exclude(deleted=True).filter(variant_of=None)
-        results = results.filter(series__name__icontains = series)
-        results = results.filter(number__exact = number)
+        if reprints.lower().startswith('fr.'):
+            position = reprints.find(' #')
+            series = reprints[3:position].strip()
+            position += 2
+            string = reprints[position:]
+            position = string.find('(')
+            number = string[:position].strip()
+            results = Issue.objects.exclude(deleted=True).filter(variant_of=None)
+            results = results.filter(series__name__icontains = series)
+            results = results.filter(number__exact = number)
+        else:
+            results = Issue.objects.none()
     except:
         pass
 
@@ -484,8 +487,7 @@ def parse_reprint(reprints, from_to):
             if number == 'nn':
                 number = '[nn]'
             # TODO change series name for trailing articles
-            # print publisher, series, number, year
-            if series[series.rfind(', ')+2:].lower() in leading_articles:
+            if series.rfind(', ') > 0 and series[series.rfind(', ')+2:].lower() in leading_articles:
                 #print "A", series
                 series = series[series.rfind(', ')+2:] + " " + series[:series.rfind(', ')]
                 #print series
