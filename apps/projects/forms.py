@@ -73,3 +73,21 @@ class IssueCoverNotesForm(forms.Form):
     language = forms.ChoiceField(required=False,
                                 choices=languages,
                                 initial='')
+
+class ReprintInspectionForm(forms.Form):
+    """
+    Form for filtering the listing of issues with identical issue and cover notes.
+    """
+    choices = [['', '--']]
+    choices.extend(PUBLISHERS)
+    languages = [['', '--']]
+    languages.extend([l.id, l.name] for l in Language.objects.order_by('name'))
+    publisher = forms.ChoiceField(required=False,
+                                  choices=choices)
+    country = forms.ChoiceField(required=False,
+                                choices=IMPRINTS_IN_USE_COUNTRIES,
+                                initial='')
+    language = forms.ChoiceField(required=False,
+                                choices=languages,
+                                initial='')
+                                

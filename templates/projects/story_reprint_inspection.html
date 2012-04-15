@@ -1,0 +1,79 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}Issues with identical issue and cover notes{% endblock %}
+
+{% block css %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/projects/default.css"/>
+{% endblock %}
+
+{% block body %}
+
+{% include "gcd/bits/search_bar.html" %}
+<div>
+<h1 class="item_id search_id">
+<div class="left">
+  {{ heading }}: {{ search_item }}
+</div>
+</h1>
+
+<!-- this section ripped off from search/list_header.html -->
+<div class="item_id">
+  <div class="left" class="item_data">
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }} with identical issue and cover notes.
+  </div>
+  {% with query_string as extra_string %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endwith %}
+</div>
+</div>
+<!-- end stuff ripped off from search/list_header.html -->
+
+<p class="imp_in_use">
+</p>
+<p class="imp_in_use">
+</p>
+
+<form id="imp_in_use_form" action={% url story_reprint_inspection %} method="GET">
+  <table>
+    {{ form.as_table }}
+  </table>
+  <input type="submit" value="Submit">
+</form>
+
+<table id="imp_in_use_results" class="listing">
+  <tr>
+    <th> Publisher </th>
+    <th> Issue </th>
+  </tr>
+{% for story in items %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' as row_classes %}">
+    <td class="listing_publisher first_row last_row">
+      {{ story.issue.series.publisher|absolute_url }}
+    </td>
+    <td class="listing_publisher first_row last_row">
+      {{ story.issue|absolute_url }}
+    </td>
+  </tr>
+  <tr class="{{ row_classes }}">
+    <td colspan="3" class="listing_publisher first_row last_row">
+      {{ story.migration_status|show_credit:"reprint_original_notes" }}
+    </td>
+  </tr>
+  <tr class="{{ row_classes }}">
+    <td colspan="3" class="listing_publisher first_row last_row">
+      {{ story|show_reprints }}
+    </td>
+  </tr>
+{% endfor %}
+</table>
+
+{% include "gcd/bits/search_bar.html" %}
+
+{% endblock %}
+

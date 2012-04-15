@@ -10,6 +10,8 @@ urlpatterns = patterns('',
         name='issues_with_several_covers'),
     url(r'^issue_cover_notes/$', 'apps.projects.views.issue_cover_notes',
         name='issue_cover_notes'),
+    url(r'^story_reprint_inspection/$', 'apps.projects.views.story_reprint_inspection',
+        name='story_reprint_inspection'),
     url('$',  direct_to_template,
         { 'template': 'projects/index.html' }, name='projects_toc'),
 )
