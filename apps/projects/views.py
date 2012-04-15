@@ -119,9 +119,9 @@ def story_reprint_inspection(request):
     qorder = ['issue__series__sort_name', 'issue__series__year_began', 'issue__sort_code', 'issue__number', 'sequence_number']
 
     vars = {
-        'heading': 'Issues',
-        'search_item': 'with identical notes and cover notes',
-        'item_name': 'issue',
+        'heading': 'Sequences',
+        'search_item': 'whose migrated reprint notes need inspection',
+        'item_name': 'sequence',
         'plural_suffix': 's',
     }
 

@@ -4,7 +4,7 @@
 {% load display %}
 {% load credits %}
 
-{% block title %}Issues with identical issue and cover notes{% endblock %}
+{% block title %}Sequences whose migrated reprint notes need inspection{% endblock %}
 
 {% block css %}
 {{ block.super }}
@@ -25,7 +25,7 @@
 <!-- this section ripped off from search/list_header.html -->
 <div class="item_id">
   <div class="left" class="item_data">
-  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }} with identical issue and cover notes.
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }} {{ search_item }}.
   </div>
   {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
