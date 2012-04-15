@@ -34,7 +34,7 @@ def main():
     backup.close()
 
     logging.info("Running syncdb... this may prompt!")
-    subprocess.check_call(('python', 'manage.py', 'syncdb'))
+    subprocess.check_call(('python26', 'manage.py', 'syncdb'))
 
     # 20 gives us room to squeeze in one more script without having to update this.
     for n in range(1, 20):
@@ -51,6 +51,31 @@ def main():
     pre_changeset.close()
 
     logging.info("Done with basic schema migration!")
+    logging.info("Website can be activated in READONLY mode!")
+
+    logging.info("Now fixing known problems in reprint notes!")
+    # calling these inside this script doesn't seem to save the changes for some reason
+    subprocess.check_call(('python26', 'apps/gcd/migration/fix_reprint_notes.py'))
+    subprocess.check_call(('python26', 'apps/gcd/migration/fix_italian_reprint_notes.py'))
+    logging.info("Done with fixing reprint notes for preparation of reprint migration !")
+    subprocess.check_call(('python26', 'apps/gcd/migration/reprints/migrate_reprints.py', '1'))
+    logging.info("Migrated Lars!")
+    subprocess.check_call(('python26', 'apps/gcd/migration/reprints/migrate_reprints.py', '2'))
+    logging.info("Standard Migration Done!")
+    subprocess.check_call(('python26', 'apps/gcd/migration/reprints/migrate_reprints.py', '3'))
+    logging.info("Greedy Migration Done! ")
+    subprocess.check_call(('python26', 'apps/gcd/migration/reprints/migrate_reprints.py', '4'))
+    logging.info("Check Double Links Done!")
+    subprocess.check_call(('python26', 'apps/gcd/migration/reprints/migrate_reprints.py', '5'))
+    logging.info("Merge Cover Return Links Done!")
+    subprocess.check_call(('python26', 'apps/gcd/migration/reprints/migrate_reprints.py', '6'))
+    logging.info("Merge Links Story Done!")
+    script = os.path.join(sdir, 'post-reprint-migrate-1.sql')
+    open_script = open(script)
+    logging.info("Running '%s'..." % script)
+    subprocess.check_call(mysql, stdin=open_script)
+    open_script.close()
+    logging.info("Done with reprint migration!")
 
 main()
 
