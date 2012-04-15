@@ -1294,10 +1294,10 @@ class PublisherRevision(PublisherRevisionBase):
             pub.delete()
             return
 
-        self._assign_base_fields(pub)
         pub.country = self.country
         pub.is_master = self.is_master
         pub.parent = self.parent
+        self._assign_base_fields(pub)
 
         if clear_reservation:
             pub.reserved = False
