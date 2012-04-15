@@ -24,7 +24,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             Country, Language, Indexer, Brand, IndiciaPublisher
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import ViewTerminationError, paginate_response, \
-                           ORDER_ALPHA, ORDER_CHRONO
+                           ORDER_ALPHA, ORDER_CHRONO, render_error
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
                                   COUNT_RANGE_REGEXP
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, IS_NONE
@@ -189,6 +189,10 @@ def character_by_name(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
     is named are often not also listed under character appearances, this
     search looks at both the feature and characters fields."""
+
+    if len(character_name) < 4:
+        return render_error(request,
+          'A search for characters must use more than 3 letters.', redirect=False)
 
     q_obj = Q(characters__icontains=character_name) | \
             Q(feature__icontains=character_name)
