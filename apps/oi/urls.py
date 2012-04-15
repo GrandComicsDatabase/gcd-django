@@ -201,6 +201,9 @@ urlpatterns = patterns('',
     url(r'^reprint/revision/(?P<id>\d+)/select_internal/story/(?P<story_id>\d+)/changeset/(?P<changeset_id>\d+)/side/(?P<which_side>.+)/$',
       oi_views.select_internal_object, name='select_internal_story'),
 
+    url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
+      oi_views.create_matching_sequence, name='create_matching_sequence'),
+      
     url(r'^select_object/(?P<select_key>.+)/search/$',
       oi_views.process_select_search, name='select_object_search'),
     url(r'^select_object/(?P<select_key>.+)/$', oi_views.select_object,

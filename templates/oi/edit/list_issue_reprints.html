@@ -28,10 +28,12 @@
 <h3>parts of this issue are reprinted <i>from</i> the sequence</h3>
 <table class="story_list">
     {% with 0 as is_source %}
+    {% with 1 as create_sequence %}
     {% with 'reprint_to_issue' as reprint_type %}
       {% for reprint in issue.from_reprints_oi.all %}
         {% include 'oi/bits/reprint_type_list.html' %}
       {% endfor %}
+    {% endwith %}
     {% endwith %}
     {% endwith %}
 </table>
@@ -54,10 +56,12 @@
 <h3>parts of this issue are reprinted <i>in</i> the sequence</h3>
 <table class="story_list">
     {% with 1 as is_source %}
+    {% with 1 as create_sequence %}
     {% with 'reprint_from_issue' as reprint_type %}
       {% for reprint in issue.to_reprints_oi.all %}
         {% include 'oi/bits/reprint_type_list.html' %}
       {% endfor %}
+    {% endwith %}
     {% endwith %}
     {% endwith %}
 </table>

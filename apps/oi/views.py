@@ -2270,6 +2270,8 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
         which_side = 'flip_direction'
     elif 'delete' in request.POST:
         which_side = 'delete'
+    elif 'matching_sequence' in request.POST:
+        which_side = 'matching_sequence'
     else:
         return _cant_get(request)
     display_obj = get_object_or_404(DISPLAY_CLASSES[reprint_type],
@@ -2309,6 +2311,8 @@ def edit_reprint(request, id, which_side=None):
             which_side = 'restore'
         elif 'remove' in request.POST:
             which_side = 'remove'
+        elif 'matching_sequence' in request.POST:
+            which_side = 'matching_sequence'
         else:
             return _cant_get(request)
 
@@ -2380,6 +2384,18 @@ def edit_reprint(request, id, which_side=None):
     elif which_side == 'remove':
         return HttpResponseRedirect(urlresolvers.reverse('remove_reprint_revision',
             kwargs={ 'id': id }))
+    elif which_side == 'matching_sequence':
+        if reprint_revision.origin_story:
+            story = reprint_revision.origin_story
+            issue = reprint_revision.target_issue
+        else:
+            story = reprint_revision.target_story
+            issue = reprint_revision.origin_issue
+        if issue != changeset_issue.issue:
+            return _cant_get(request)
+        return HttpResponseRedirect(urlresolvers.reverse('create_matching_sequence',
+            kwargs={ 'reprint_revision_id': id, 'story_id': story.id, 'issue_id': issue.id }))
+        raise ValueError
     else:
         raise NotImplementedError
 
@@ -2511,6 +2527,43 @@ def select_internal_object(request, id, changeset_id, which_side,
           'which_side': which_side },
         context_instance=RequestContext(request))
           
+@permission_required('gcd.can_reserve')
+def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
+    story = get_object_or_404(Story, id=story_id)
+    issue = get_object_or_404(Issue, id=issue_id)
+    reprint_revision = get_object_or_404(ReprintRevision, id=reprint_revision_id)
+    changeset = reprint_revision.changeset
+    changeset_issue = changeset.issuerevisions.get()
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may access this page.')
+    if issue != changeset_issue.issue:
+        return _cant_get(request)
+    if request.method != 'POST':
+        if story == reprint_revision.origin_story:
+            direction = 'from'
+        else:
+            direction = 'in'
+        return render_to_response('oi/edit/create_matching_sequence.html',
+            { 'issue': issue, 'story': story, 'reprint_revision': reprint_revision, 'direction': direction },
+            context_instance=RequestContext(request))
+    else:
+        story_revision = StoryRevision.objects.clone_revision(story=story,
+                                               changeset=changeset)
+        story_revision.story = None
+        story_revision.issue = changeset_issue.issue
+        story_revision.sequence_number = changeset_issue.next_sequence_number()
+        story_revision.save()
+        if reprint_revision.origin_story:
+            reprint_revision.target_revision = story_revision
+            reprint_revision.target_issue = None
+        else:
+            reprint_revision.origin_revision = story_revision
+            reprint_revision.origin_issue = None
+        reprint_revision.save()
+        return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
+              kwargs={ 'model_name': 'story', 'id': story_revision.id }))
+              
 @permission_required('gcd.can_reserve')
 def confirm_reprint(request, data, object_type, selected_id):
     if request.method != 'POST':

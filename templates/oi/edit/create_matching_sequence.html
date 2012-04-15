@@ -1,0 +1,48 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}/issue.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:"default" }}/single_story.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Create Matching Sequence</h1>
+<h2>
+Do you want to create a new sequence in {{ issue }} which is reprinted {{ direction }} {{ story.issue }} ?
+</h2>
+
+<h3>The new sequence will have a copy of the following sequence data:</h3>
+
+{% with 1 as no_navigation %}
+{% with 1 as preview %}
+  <div id="story_data">
+  {% include "gcd/details/single_story.html" %}
+  </div>
+  <hr class="divider">
+{% endwith %}
+{% endwith %}
+<hr class="divider">
+<form style="display:inline;" method="POST"
+    action="{% url create_matching_sequence issue_id=issue.id,story_id=story.id,reprint_revision_id=reprint_revision.id %}">
+<input type="submit" name="create" value="Yes">
+</input>
+</form>
+<form style="display:inline;" method="GET"
+    action="{% url list_issue_reprints id=reprint_revision.changeset.issuerevisions.all.0.id %}">
+<input type="submit" value="No">
+</input>
+</form>
+
+<hr class="divider">
+
+{% endblock %}
