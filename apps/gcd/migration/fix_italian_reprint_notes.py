@@ -50,10 +50,13 @@ def find_italian_disney(string, own_name, own_number):
         else:
             direction = 'from '
     if series.find('Topolino (Libretto)') >= 0 or series.find('Topolino') == 0:
-        if int(d[-1]) < 1702:
+        try:
+            if int(d[-1]) < 1702:
+                return direction + 'Topolino (Arnoldo Mondadori, 1949 series) #' + d[-1]
+            else:
+                return direction + 'Topolino (Walt Disney Company Italia, 1988 series) #' + d[-1]
+        except:
             return direction + 'Topolino (Arnoldo Mondadori, 1949 series) #' + d[-1]
-        else:
-            return direction + 'Topolino (Walt Disney Company Italia, 1988 series) #' + d[-1]
     elif series.find('I Classici di Walt Disney') >= 0:
         if series.find('prima') >= 0:
             return direction + 'I Classici di Walt Disney (Arnoldo Mondadori, 1957 series) #[' + d[-1] +']'
