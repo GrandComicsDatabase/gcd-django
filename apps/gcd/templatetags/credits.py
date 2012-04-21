@@ -391,10 +391,16 @@ def show_reprints(story, original = False):
             reprint += generate_reprint_link(from_reprint.origin_issue,
                                             "from ",
                                             notes = from_reprint.notes)
+            if original == 'With_Story':
+                reprint += 'points to issue'
         else:
             reprint += generate_reprint_link_sequence(from_reprint.origin,
                                                     "from ",
                                                     notes = from_reprint.notes)
+            if original == 'With_Story':
+                from apps.gcd.templatetags.display import show_story_short
+                reprint += 'points to sequence: %s' % \
+                  show_story_short(from_reprint.origin)
             reprint += follow_reprint_link(from_reprint, 'from')
                 
     to_reprints = list(story.to_reprints.select_related().all())
@@ -405,10 +411,16 @@ def show_reprints(story, original = False):
             reprint += generate_reprint_link(to_reprint.target_issue,
                                             "in ",
                                             notes = to_reprint.notes)
+            if original == 'With_Story':
+                reprint += 'points to issue'
         else:
             reprint += generate_reprint_link_sequence(to_reprint.target,
                                                     "in ",
                                                     notes = to_reprint.notes)
+            if original == 'With_Story':
+                from apps.gcd.templatetags.display import show_story_short
+                reprint += 'points to sequence: %s' % \
+                  show_story_short(to_reprint.target)
             reprint += follow_reprint_link(to_reprint, 'in')
     
     if story.reprint_notes:
