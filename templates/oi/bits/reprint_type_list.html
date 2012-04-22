@@ -63,11 +63,11 @@
     <input type="submit" name="flip_direction" value="Flip2 reprint direction">
         {% if reprint.source %}
     <input type="submit" name="delete" value="Mark to Delete">
-          {% if create_sequence %}
-    <input type="submit" name="matching_sequence" value="Create Corresponding Sequence">
-          {% endif %}
         {% else %}
     <input type="submit" name="remove" value="Remove">
+        {% endif %}
+        {% if create_sequence %}
+    <input type="submit" name="matching_sequence" value="Create Corresponding Sequence">
         {% endif %}
       {% endif %}
 </form>
