@@ -3895,7 +3895,7 @@ class StoryRevision(Revision):
         if self.story:
             return self.story.reprint_confirmed
         else:
-            return False
+            return True
     reprint_confirmed = property(_reprint_confirmed)
 
     def has_data(self):

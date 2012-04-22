@@ -2046,8 +2046,12 @@ def add_story(request, issue_revision_id, changeset_id):
             else:
                 initial = _get_initial_add_story_data(request, issue_revision,
                                                       seq)
+                if issue:
+                    is_comics_publication = issue.series.is_comics_publication
+                else: # for variants added with base issue the issue is not set
+                    is_comics_publication = True
                 form = get_story_revision_form(user=request.user,
-                  is_comics_publication=issue.series.is_comics_publication)\
+                  is_comics_publication=is_comics_publication)\
                   (initial=initial)
             return _display_add_story_form(request, issue_revision, form,
                                            changeset_id)
@@ -2524,7 +2528,7 @@ def select_internal_object(request, id, changeset_id, which_side,
         { 'this_issue': this_issue, 'this_story': this_story,
           'other_issue': other_issue, 'other_story': other_story,
           'changeset': changeset, 'reprint_revision_id': reprint_revision.id,
-          'which_side': which_side },
+          'reprint_revision': reprint_revision, 'which_side': which_side },
         context_instance=RequestContext(request))
           
 @permission_required('gcd.can_reserve')
@@ -2610,8 +2614,11 @@ def confirm_reprint(request, data, object_type, selected_id):
         
     if 'reprint_revision_id' in data:
         reprint_revision_id = data['reprint_revision_id']
+        reprint_revision = get_object_or_404(ReprintRevision, 
+                                             id=data['reprint_revision_id'])
     else:
         reprint_revision_id = None
+        reprint_revision = None
 
     if 'which_side' in data:
         which_side = data['which_side']
@@ -2626,6 +2633,7 @@ def confirm_reprint(request, data, object_type, selected_id):
         'selected_story': selected_story,
         'selected_issue': selected_issue,
         'reprint_revision_id': reprint_revision_id,
+        'reprint_revision': reprint_revision,
         'changeset': changeset,
         'which_side': which_side
         },

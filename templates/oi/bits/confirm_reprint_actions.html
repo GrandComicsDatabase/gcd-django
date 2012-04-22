@@ -1,7 +1,7 @@
 <table class="editing">
   <tr>
     <th><label for="reprint_notes">Notes for this reprint link:</label> </th>
-    <td><textarea id="reprint_notes" name="reprint_link_notes"></textarea></td>
+    <td><textarea id="reprint_notes" name="reprint_link_notes">{{ reprint_revision.notes }}</textarea></td>
   </tr>
 {% if story_revision and story_revision.reprint_notes %}
   <tr>
