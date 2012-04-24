@@ -2252,9 +2252,11 @@ def list_issue_reprints(request, id):
     if request.user != changeset.indexer:
         return render_error(request,
           'Only the reservation holder may access this page.')
-    return render_to_response('oi/edit/list_issue_reprints.html',
+    response = render_to_response('oi/edit/list_issue_reprints.html',
       { 'issue_revision': issue_revision, 'changeset': changeset },
       context_instance=RequestContext(request))
+    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    return response
 
 @permission_required('gcd.can_reserve')
 def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
