@@ -3901,6 +3901,11 @@ class StoryRevision(Revision):
     def has_data(self):
         return self.has_credits() or self.has_content() or self.notes
 
+    def get_absolute_url(self):
+        if self.story is None:
+            return "/issue/revision/%i/preview/#%i" % (self.my_issue_revision.id, self.id)
+        return self.story.get_absolute_url()
+
     def __unicode__(self):
         """
         Re-implement locally instead of using self.story because it may change.
