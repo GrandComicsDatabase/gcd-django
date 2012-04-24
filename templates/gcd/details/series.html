@@ -62,9 +62,11 @@
 {% endif %}
 {{ series|show_credit:'keywords' }}
           </dl>
-{% if not series.is_comics.publication %}
+{% if not series.is_comics_publication %}
+<p>
 The individual issues of this series are each less than 50% comics.  Only
 comics sequences are indexed and cover scans are not currently accepted.
+</p>
 {% endif %}
 
 {% if series.active_issues.count %}

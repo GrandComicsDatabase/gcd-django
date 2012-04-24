@@ -30,7 +30,7 @@
     <div id="control_center">
 {% include "gcd/bits/issue_data.html" %}
 
-{% if not issue.series.is_comics.publication %}
+{% if not issue.series.is_comics_publication %}
 The individual issues of this series are each less than 50% comics.  Only
 comics sequences are indexed and cover scans are not currently accepted.
 {% endif %} 
@@ -96,7 +96,7 @@ This issue has variants.
     {% if issue.series.is_comics_publication %}
             <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
     {% else %}
-      {{ image_tag }}
+            <a href="http://docs.comics.org/wiki/Comics_Publication"> {{ image_tag }}</a>
     {% endif %}
   {% endif %}
 {% endif %}
