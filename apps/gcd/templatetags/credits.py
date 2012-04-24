@@ -299,10 +299,10 @@ def generate_reprint_link(issue, from_to, notes=None, li=True):
     link = u'%s <a href="%s">%s</a>' % (from_to, issue.get_absolute_url(),
                                         esc(issue.full_name()) )
 
-    if notes:
-        link = '%s [%s]' % (link, esc(notes))
     if issue.publication_date:
         link += " (" + esc(issue.publication_date) + ")"
+    if notes:
+        link = '%s [%s]' % (link, esc(notes))
     if li:
         return '<li> ' + link + ' </li>'
     else:

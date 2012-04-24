@@ -30,6 +30,11 @@
     <div id="control_center">
 {% include "gcd/bits/issue_data.html" %}
 
+{% if not issue.series.is_comics.publication %}
+The individual issues of this series are each less than 50% comics.  Only
+comics sequences are indexed and cover scans are not currently accepted.
+{% endif %} 
+
 {% if issue.notes or issue.variant_of or issue.variant_set.count or issue.has_reprints %}
       <div class="issue_notes">
         <div class="issue_notes_border">
