@@ -436,8 +436,12 @@ def show_reprints(story, original = False):
                 reprint += '</ul></span></dd>' + \
                   '<dt class="credit_tag">' + '<span class="credit_label">' + \
                   'Reprint Note before Migration: </span></dt>' + \
-                  '<dd class="credit_def"><span class="credit_value">' + \
-                  story.migration_status.reprint_original_notes + '</dd></span>'
+                  '<dd class="credit_def"><span class="credit_value"><ul>'
+                for string in split_reprint_string(story.migration_status.
+                                                   reprint_original_notes):
+                    string = string.strip()
+                    reprint += '<li> ' + esc(string) + ' </li>'
+                  #story.migration_status.reprint_original_notes + '</dd></span>'
         else:
             if not story.reprint_confirmed:
                 label += '<span class="linkify">' + \
