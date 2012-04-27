@@ -39,7 +39,7 @@
         {% endif %}
         {{ cover.created }}<br>
         {{ cover.changeset.indexer.indexer|absolute_url }}<br>
-        {% ifequal cover.changeset.state states.REVIEWING %}
+        {% if cover.changeset.state = states.REVIEWING or cover.changeset.state = states.DISCUSSED %}
           reviewed by {{ cover.changeset.approver.indexer|absolute_url }}
         {% else %}
             {% if perms.gcd.can_approve %}
@@ -54,7 +54,7 @@
             {% else %}
                 No actions available
             {% endif %}
-        {% endifequal %}
+        {% endif %}
       </div>
     </td>
     {% if forloop.counter|divisibleby:table_width %}

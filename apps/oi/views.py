@@ -3504,7 +3504,7 @@ def show_approved(request):
 @login_required
 def show_cover_queue(request):
     covers = Changeset.objects.filter(
-      state__in=(states.PENDING, states.REVIEWING),
+      state__in=(states.PENDING, states.DISCUSSED, states.REVIEWING),
       change_type=CTYPES['cover']).select_related('indexer__indexer',
                                                   'approver__indexer')
 
