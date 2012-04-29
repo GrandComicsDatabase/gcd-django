@@ -81,7 +81,7 @@ def cover_image_tag(cover, size_alt_text):
     size, alt_text = size_alt_text.split(',')
     return get_image_tag(cover, alt_text, int(size))
 
-def show_story_short(story, no_number=False):
+def show_story_short(story, no_number=False, markup=True):
     if no_number:
         story_line = u''
     else:
@@ -93,27 +93,36 @@ def show_story_short(story, no_number=False):
         else:
             title = esc(story.title)
     else:
-        title = '<span class="no_data">no title</span>'
+        if markup:
+            title = '<span class="no_data">no title</span>'
+        else:
+            title = 'no title'
     if story.feature:
         story_line = u'%s %s (%s)' % (esc(story_line), title,
                                       esc(story.feature))
     else:
-        story_line = u'%s %s (%s)' % (esc(story_line), title,
-                                     '<span class="no_data">no feature</span>')
+        if markup:
+            story_line = u'%s %s (%s)' % (esc(story_line), title,
+                                    '<span class="no_data">no feature</span>')
+        else:
+            story_line = u'%s %s (no feature)' % (esc(story_line), title)
+            
     story_line = u'%s %s' % (story_line, story.type)
     page_count = show_page_count(story)
     if page_count:
         story_line += ', %sp' % page_count
     else:
-        story_line += '<span class="no_data"> no page count</span>'
-
+        if markup:
+            story_line += '<span class="no_data"> no page count</span>'
+        else:
+            story_line += 'no page count'
     return mark_safe(story_line)
 
-def show_revision_short(revision):
+def show_revision_short(revision, markup=True):
     if revision is None:
         return u''
     if isinstance(revision, StoryRevision):
-        return show_story_short(revision)
+        return show_story_short(revision, markup=markup)
     return unicode(revision)
 
 def show_volume(issue):

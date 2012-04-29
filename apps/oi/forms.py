@@ -1430,8 +1430,8 @@ def get_select_cache_form(cached_issue=None, cached_story=None,
                            'issue: %s' % cached_issue))
         if cached_story:
             fields.append(('story_%d' % cached_story.id,
-                           'story: %s in %s' % (show_story_short(cached_story),
-                                                cached_story.issue)))
+              mark_safe('story: %s in %s' % (show_story_short(cached_story),
+                                                esc(cached_story.issue)))))
         if cached_cover:
             fields.append(('cover_%d' % cached_cover.id,
                            'cover of issue: %s' % cached_cover.issue))

@@ -2788,7 +2788,7 @@ def remove_reprint_revision(request, id):
     if reprint.comments.count():
         comment = reprint.comments.latest('created')
         comment.text += '\nThe ReprintRevision "%s" for which this comment was'\
-                        ' entered was removed.' % esc(reprint)
+                        ' entered was removed.' % reprint
         comment.revision_id = None
         comment.save()
     elif reprint.changeset.approver:
@@ -2796,7 +2796,7 @@ def remove_reprint_revision(request, id):
         # TODO not quite sure if we actually should add this comment
         reprint.changeset.comments.create(commenter=reprint.changeset.indexer,
                           text='The ReprintRevision "%s" was removed.'\
-                            % esc(reprint),
+                            % reprint,
                           old_state=reprint.changeset.state,
                           new_state=reprint.changeset.state)
     reprint.delete()
@@ -3084,7 +3084,8 @@ def remove_story_revision(request, id):
         if not story.page_count:
             story.page_count_uncertain = True
         comment.text += '\nThe StoryRevision "%s" for which this comment was'\
-                        ' entered was removed.' % show_revision_short(story)
+                        ' entered was removed.' % show_revision_short(story, 
+                                                                markup=False)
         comment.revision_id = None
         comment.save()
     elif story.changeset.approver:
@@ -3092,7 +3093,7 @@ def remove_story_revision(request, id):
         # TODO not quite sure if we actually should add this comment
         story.changeset.comments.create(commenter=story.changeset.indexer,
                           text='The StoryRevision "%s" was removed.'\
-                            % show_revision_short(story),
+                            % show_revision_short(story, markup=False),
                           old_state=story.changeset.state,
                           new_state=story.changeset.state)
     story.delete()
