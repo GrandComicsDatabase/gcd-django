@@ -945,6 +945,20 @@ thanks,
 
     for issue_revision in \
         changeset.issuerevisions.filter(deleted=False,
+                                        reservation_requested=True,
+                                        issue__created__gt=F('created'),
+                                        series__ongoing_reservation__isnull=False,
+                                        issue__variant_of__isnull=False):
+        new_change = _do_reserve(changeset.indexer, issue_revision.issue, 'issue')
+        if new_change is None:
+            _send_declined_reservation_email(changeset.indexer,
+                                             issue_revision.issue)
+        else:
+            issue_revision.issue.reserved = True
+            issue_revision.issue.save()
+            
+    for issue_revision in \
+        changeset.issuerevisions.filter(deleted=False,
                                         issue__created__gt=F('created'),
                                         series__ongoing_reservation__isnull=False,
                                         issue__variant_of=None):
