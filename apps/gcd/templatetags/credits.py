@@ -342,7 +342,7 @@ def follow_reprint_link(reprint, direction, level=0):
     else:
         further_reprints = list(reprint.target.to_reprints.select_related().all())
         further_reprints.extend(list(reprint.target.to_issue_reprints.select_related().all()))
-        further_reprints = sorted(further_reprints, key=lambda a: a.origin_sort)        
+        further_reprints = sorted(further_reprints, key=lambda a: a.target_sort)        
         if reprint.target.reprint_notes:
             for string in split_reprint_string(reprint.target.reprint_notes):
                 string = string.strip()
