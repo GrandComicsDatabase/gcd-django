@@ -117,7 +117,11 @@
         {% else %}
         The migration of the following original reprint notes was confirmed in this change:
         {% endif %}
-      <br>{{ revision.migration_status.reprint_original_notes }}
+      <ul>
+        {% for reprint in revision.migration_status.reprint_original_notes|split_reprint_string %}
+        <li>{{ reprint }}</li>
+        {% endfor %}
+      </ul>
     </td>
   </tr>
       {% endif %}
