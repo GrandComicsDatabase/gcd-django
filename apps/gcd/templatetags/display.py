@@ -563,7 +563,7 @@ def compare_current_reprints(object_type, changeset):
                   reprint.next_revision.changeset.modified <= changeset.modified)):
                 kept_string = '%s<li>%s' % (kept_string,
                   reprint.get_compare_string(object_type.issue))
-                if reprint.source.reserved:
+                if reprint.source and reprint.source.reserved:
                     kept_string += ' (reserved in a different changeset)'
                 kept_string += '</li>'
         if kept_string != '':
