@@ -369,7 +369,8 @@ def follow_reprint_link(reprint, direction, level=0):
                                                             direction,
                                                             notes = further_reprint.notes)
                 if level < 10: # max level to avoid loops
-                    follow_reprint_link(further_reprint, direction, level=level+1)
+                    reprint_note += follow_reprint_link(further_reprint, 
+                                      direction, level=level+1)
         reprint_note += '</ul>'
         return reprint_note
     else:
