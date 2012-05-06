@@ -720,7 +720,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 # can add after one of the variants
                 # TODO where to put later printings which come out later
                 if 'after' in self.fields:
-                    self.fields['after'].queryset = variant_of.variant_set.all() \
+                    self.fields['after'].queryset = variant_of.variant_set.filter(deleted=False) \
                       | Issue.objects.filter(id=variant_of.id)
                     self.fields['after'].empty_label = None
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
