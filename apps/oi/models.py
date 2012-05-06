@@ -4252,12 +4252,28 @@ class ReprintRevision(Revision):
       
         self.save()
 
-    def get_compare_string(self, base_issue):
+    def get_compare_string(self, base_issue, do_compare=False):
         from apps.gcd.templatetags.credits import show_title
+        moved = False
+        if do_compare:
+            self.compare_changes()
         if (self.origin_story and self.origin_story.issue == base_issue) \
           or (self.origin_revision and self.origin_revision.issue == base_issue) \
           or self.origin_issue == base_issue:
             direction = 'in'
+            if do_compare and self.previous_revision:
+                if 'origin_issue' in self.changed and self.changed['origin_issue']:
+                    if self.origin_issue and self.origin_issue == \
+                                        self.previous_revision.target_issue:
+                        moved = False
+                    else:
+                        moved = True
+                elif 'origin_story' in self.changed and self.changed['origin_story']:
+                    if self.origin_story and self.origin_story == \
+                                        self.previous_revision.target_story:
+                        moved = False
+                    else:
+                        moved = True
             if self.target_issue:
                 story = None
                 issue = self.target_issue
@@ -4268,6 +4284,19 @@ class ReprintRevision(Revision):
                     story = self.target_revision
         else:
             direction = 'from'
+            if do_compare and self.previous_revision:
+                if 'target_issue' in self.changed and self.changed['target_issue']:
+                    if self.target_issue and self.target_issue == \
+                                            self.previous_revision.origin_issue:
+                        moved = False
+                    else:
+                        moved = True
+                elif 'target_story' in self.changed and self.changed['target_story']:
+                    if self.target_story and self.target_story == \
+                                            self.previous_revision.origin_story:
+                        moved = False
+                    else:
+                        moved = True
             if self.origin_issue:
                 story = None
                 issue = self.origin_issue
@@ -4286,6 +4315,17 @@ class ReprintRevision(Revision):
                         (direction, issue.get_absolute_url(), esc(issue))
         if self.notes:
             reprint = '%s [%s]' % (reprint, esc(self.notes))
+        if moved:
+            from apps.gcd.templatetags.display import show_story_short
+            if self.previous_revision.target_issue == base_issue or \
+              self.previous_revision.origin_issue == base_issue:
+                reprint += '<br>reprint link was moved from issue'
+            elif self.previous_revision.target_story.issue == base_issue:
+                reprint += '<br>reprint link was moved from %s]' % \
+                  show_story_short(self.previous_revision.target_story)
+            else:
+                reprint += '<br>reprint link was moved from %s]' % \
+                  show_story_short(self.previous_revision.origin_story)
         return mark_safe(reprint)
 
     def __unicode__(self):

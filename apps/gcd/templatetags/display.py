@@ -537,8 +537,10 @@ def compare_current_reprints(object_type, changeset):
             
         for reprint in (active_origin | active_target):
             if object_type.changeset != changeset:
+                do_compare = False
                 action = ''
             else:
+                do_compare = True
                 if reprint.in_type == None:
                     action = " <span class='added'>[ADDED]</span>"
                 elif reprint.deleted:
@@ -546,7 +548,7 @@ def compare_current_reprints(object_type, changeset):
                 else:
                     action = ""
             reprint_string = '%s<li>%s%s</li>' % (reprint_string,
-            reprint.get_compare_string(object_type.issue), action)
+            reprint.get_compare_string(object_type.issue, do_compare=do_compare), action)
         reprint_string += '</ul>'
     else:
         reprint_string = ''
@@ -564,7 +566,7 @@ def compare_current_reprints(object_type, changeset):
                 kept_string = '%s<li>%s' % (kept_string,
                   reprint.get_compare_string(object_type.issue))
                 if reprint.source and reprint.source.reserved:
-                    kept_string += ' (reserved in a different changeset)'
+                    kept_string += '<br>reserved in a different changeset'
                 kept_string += '</li>'
         if kept_string != '':
             reprint_string += '</ul>The following reprint links are not ' \
