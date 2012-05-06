@@ -1654,6 +1654,8 @@ def init_added_variant(form_class, initial, issue):
     if issue.indicia_publisher:
         initial['indicia_publisher'] = issue.indicia_publisher.id
     initial['variant_name'] = u''
+    if issue.variant_set.count():
+        initial['after'] = issue.variant_set.latest('sort_code')
     form = form_class(initial=initial)
     return form
 
