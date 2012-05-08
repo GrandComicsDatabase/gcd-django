@@ -19,7 +19,7 @@
 <h1>Confirm reprint note migration </h1>
 <h2>{{ story }} / {{ story.title }}  of {{ story.issue }}</h2>
 <div class="edit">
-<form id="confirm" action="{% url confirm_reprint_migration id=story.id,changeset_id=changeset.id %}" method="POST">
+<form id="confirm" action="{% url confirm_reprint_migration id=story.story.id,changeset_id=changeset.id %}" method="POST">
 
 {% with 1 as no_navigation %}
 {% with 1 as show_original %}
