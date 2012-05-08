@@ -2173,9 +2173,10 @@ def confirm_reprint_migration(request, id, changeset_id):
           'Only the reservation holder may confirm the reprint migration.')
     migration_status = get_object_or_404(MigrationStoryStatus, story__id=id)
     if request.method == 'GET':
+        story = changeset.storyrevisions.get(story__id=id)
         return render_to_response('oi/edit/confirm_reprint_migration.html',
           {
-              'story': migration_status.story,
+              'story': story,
               'changeset': changeset,
           },
           context_instance=RequestContext(request))
