@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.core import urlresolvers
+from django.db.models import Count
 
 from taggit.managers import TaggableManager
 
@@ -123,6 +124,11 @@ class Series(models.Model):
 
     def active_base_issues(self):
         return self.active_issues().exclude(variant_of__series=self)
+        
+    def active_base_issues_variant_count(self):
+        issues = self.active_base_issues()
+        issues = issues.annotate(variant_count=Count('variant_set'))
+        return issues
         
     def ordered_brands(self):
         """
