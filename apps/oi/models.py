@@ -1073,7 +1073,7 @@ class PublisherRevisionManagerBase(RevisionManager):
           'year_began_uncertain': instance.year_began_uncertain,
           'year_ended_uncertain': instance.year_ended_uncertain,
           'notes': instance.notes,
-          'keywords': '; '.join(str(i) for i in instance.keywords.all()),
+          'keywords': '; '.join(str(i) for i in instance.keywords.all().order_by('name')),
           'url': instance.url,
         }
 
@@ -1871,7 +1871,7 @@ class SeriesRevisionManager(RevisionManager):
           classification=series.classification,
           format=series.format,
           notes=series.notes,
-          keywords='; '.join(str(i) for i in series.keywords.all()),
+          keywords='; '.join(str(i) for i in series.keywords.all().order_by('name')),
           year_began=series.year_began,
           year_ended=series.year_ended,
           year_began_uncertain=series.year_began_uncertain,
@@ -2332,7 +2332,7 @@ class IssueRevisionManager(RevisionManager):
           variant_of=issue.variant_of,
           variant_name=issue.variant_name,
           notes=issue.notes,
-          keywords='; '.join(str(i) for i in issue.keywords.all()))
+          keywords='; '.join(str(i) for i in issue.keywords.all().order_by('name')))
 
         if issue.on_sale_date:
             revision.year_on_sale, revision.month_on_sale, \
@@ -3358,7 +3358,7 @@ class StoryRevisionManager(RevisionManager):
           no_editing=story.no_editing,
 
           notes=story.notes,
-          keywords='; '.join(str(i) for i in story.keywords.all()),
+          keywords='; '.join(str(i) for i in story.keywords.all().order_by('name')),
           synopsis=story.synopsis,
           characters=story.characters,
           reprint_notes=story.reprint_notes,
@@ -4320,7 +4320,8 @@ class ReprintRevision(Revision):
             if self.previous_revision.target_issue == base_issue or \
               self.previous_revision.origin_issue == base_issue:
                 reprint += '<br>reprint link was moved from issue'
-            elif self.previous_revision.target_story.issue == base_issue:
+            elif self.previous_revision.target_story and \
+              self.previous_revision.target_story.issue == base_issue:
                 reprint += '<br>reprint link was moved from %s]' % \
                   show_story_short(self.previous_revision.target_story)
             else:
