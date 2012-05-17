@@ -18,28 +18,29 @@
 {% block view_body %}
 <h1>Edit Reprint information</h1>
 {% if story %}
-<h2>{{ story }} / {{ story.title }}  of {{ story.issue }}</h2>
+<h2>{{ story }} / {{ story.title }}  of {{ story.issue }} {% if story.issue.publication_date %}({{ story.issue.publication_date }}){% endif %}
+</h2>
 {% endif %}
 <div class="edit">
 {% if selected_story %}
   {% if story_story %}
-  <form id="confirm" action="{% url save_story_story_reprint story_one_id=story.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url save_story_story_reprint story_one_id=story.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision.id %}" method="POST">
   {% endif %}
   {% if story_revision %}
-  <form id="confirm" action="{% url save_revision_story_reprint story_revision_id=story.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url save_revision_story_reprint story_revision_id=story.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision.id %}" method="POST">
   {% endif %}
   {% if issue %}
-  <form id="confirm" action="{% url save_issue_story_reprint issue_one_id=issue.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url save_issue_story_reprint issue_one_id=issue.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision.id %}" method="POST">
   {% endif %}
 {% else %}
   {% if story_story %}
-  <form id="confirm" action="{% url save_story_issue_reprint story_one_id=story.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url save_story_issue_reprint story_one_id=story.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision.id %}" method="POST">
   {% endif %}
   {% if story_revision %}
-  <form id="confirm" action="{% url save_revision_issue_reprint story_revision_id=story.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url save_revision_issue_reprint story_revision_id=story.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision.id %}" method="POST">
   {% endif %}
   {% if issue %}
-  <form id="confirm" action="{% url save_issue_issue_reprint issue_one_id=issue.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url save_issue_issue_reprint issue_one_id=issue.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision.id %}" method="POST">
   {% endif %}
 {% endif %}
 
@@ -53,7 +54,7 @@
   {% endwith %}
   {% endwith %}
 {% else %}
-  <h2>Part of {{ issue.full_name }}</h2>
+  <h2>Part of {{ issue.full_name }} {% if issue.publication_date %}({{ issue.publication_date }}){% endif %}</h2>
 {% endif %}
   <hr class="divider">
 
@@ -66,7 +67,8 @@ is
 <hr class="divider">
 
 {% if selected_story %}
-  <h2>{{ selected_story }} / {{ selected_story.title }}  of {{ selected_story.issue }}</h2>
+  <h2>{{ selected_story }} / {{ selected_story.title }}  of {{ selected_story.issue }} {% if selected_story.issue.publication_date %}({{ selected_story.issue.publication_date }}){% endif %}
+  </h2>
   {% with 1 as no_navigation %}
   {% with selected_story as story %}
 <div id="story_data">
@@ -75,7 +77,7 @@ is
   {% endwith %}
   {% endwith %}
 {% else %}
-<h2>{{ selected_issue.full_name }}</h2>
+<h2>{{ selected_issue.full_name }} {% if selected_issue.publication_date %}({{ selected_issue.publication_date }}){% endif %}</h2>
 {% endif %}
 
 

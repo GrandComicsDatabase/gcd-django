@@ -2295,6 +2295,10 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
         which_side = 'delete'
     elif 'matching_sequence' in request.POST:
         which_side = 'matching_sequence'
+    elif 'edit_note_origin' in request.POST:
+        which_side = 'edit_note_origin'
+    elif 'edit_note_target' in request.POST:
+        which_side = 'edit_note_target'
     else:
         return _cant_get(request)
     display_obj = get_object_or_404(DISPLAY_CLASSES[reprint_type],
@@ -2336,6 +2340,10 @@ def edit_reprint(request, id, which_side=None):
             which_side = 'remove'
         elif 'matching_sequence' in request.POST:
             which_side = 'matching_sequence'
+        elif 'edit_note_origin' in request.POST:
+            which_side = 'edit_note_origin'
+        elif 'edit_note_target' in request.POST:
+            which_side = 'edit_note_target'
         else:
             return _cant_get(request)
 
@@ -2419,6 +2427,68 @@ def edit_reprint(request, id, which_side=None):
         return HttpResponseRedirect(urlresolvers.reverse('create_matching_sequence',
             kwargs={ 'reprint_revision_id': id, 'story_id': story.id, 'issue_id': issue.id }))
         raise ValueError
+    elif which_side.startswith('edit_note'):
+        if which_side == 'edit_note_origin':
+            which_side = 'target'
+            if reprint_revision.origin_story:
+                story = reprint_revision.origin_story
+                story_story = True
+                story_revision = False
+                issue = None
+            elif reprint_revision.origin_revision:
+                story = reprint_revision.origin_revision
+                story_story = False
+                story_revision = True
+                issue = None
+            else:
+                story = None 
+                story_story = False
+                story_revision = False
+                issue = reprint_revision.origin_issue
+            if reprint_revision.target_story:
+                selected_story = reprint_revision.target_story
+                selected_issue = None
+            else:
+                selected_story = None
+                selected_issue = reprint_revision.target_issue
+        else:
+            which_side = 'origin'
+            if reprint_revision.target_story:
+                story = reprint_revision.target_story
+                story_story = True
+                story_revision = False
+                issue = None
+            elif reprint_revision.target_revision:
+                story = reprint_revision.target_revision
+                story_story = False
+                story_revision = True
+                issue = None
+            else:
+                story = None 
+                story_story = False
+                story_revision = False
+                issue = reprint_revision.target_issue
+            if reprint_revision.origin_story:
+                selected_story = reprint_revision.origin_story
+                selected_issue = None
+            else:
+                selected_story = None
+                selected_issue = reprint_revision.origin_issue
+            
+        return render_to_response('oi/edit/confirm_reprint.html',
+            {
+            'story': story,
+            'issue': issue,
+            'story_story': story_story,
+            'story_revision': story_revision,
+            'selected_story': selected_story,
+            'selected_issue': selected_issue,
+            'reprint_revision': reprint_revision,
+            'changeset': changeset,
+            'which_side': which_side
+            },
+            context_instance=RequestContext(request))
+                
     else:
         raise NotImplementedError
 
@@ -2632,11 +2702,9 @@ def confirm_reprint(request, data, object_type, selected_id):
         selected_issue = get_object_or_404(Issue, id=selected_id)
         
     if 'reprint_revision_id' in data:
-        reprint_revision_id = data['reprint_revision_id']
         reprint_revision = get_object_or_404(ReprintRevision, 
                                              id=data['reprint_revision_id'])
     else:
-        reprint_revision_id = None
         reprint_revision = None
 
     if 'which_side' in data:
@@ -2651,7 +2719,6 @@ def confirm_reprint(request, data, object_type, selected_id):
         'story_revision': current_story_revision,
         'selected_story': selected_story,
         'selected_issue': selected_issue,
-        'reprint_revision_id': reprint_revision_id,
         'reprint_revision': reprint_revision,
         'changeset': changeset,
         'which_side': which_side

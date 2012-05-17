@@ -11,9 +11,11 @@
   {% if not is_source %}
     <input type="submit" name="edit_target_internal" value="Change target">
     <input type="submit" name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_note_target" value="Edit note">
   {% else %}
     <input type="submit" name="edit_origin_internal" value="Change origin">
     <input type="submit" name="edit_target" value="Change target">
+    <input type="submit" name="edit_note_origin" value="Edit note">
   {% endif %}
   {% comment %}
   keep this as an alternativ, with this we could make a reprint point out of the current issue
@@ -43,9 +45,11 @@
         {% if not is_source %}
     <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target_internal" value="Change target">
     <input type="submit" name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_note_target" value="Edit note">
         {% else %}
     <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin_internal" value="Change origin">
     <input type="submit" name="edit_target" value="Change target">
+    <input type="submit" name="edit_note_origin" value="Edit note">
         {% endif %}
         {% comment %}
         keep this as an alternativ, with this we could make a reprint point out of the current issue
@@ -77,9 +81,11 @@
         {% if not is_source %}
     <input type="submit" name="edit_target_internal" value="Change target">
     <input type="submit" name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_note_target" value="Edit note">
         {% else %}
     <input type="submit" name="edit_origin_internal" value="Change origin">
     <input type="submit" name="edit_target" value="Change target">
+    <input type="submit" name="edit_note_origin" value="Edit note">
         {% endif %}
         {% comment %}
         keep this as an alternativ, with this we could make a reprint point out of the current issue
