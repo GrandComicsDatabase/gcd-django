@@ -24,23 +24,23 @@
 <div class="edit">
 {% if selected_story %}
   {% if story_story %}
-  <form id="confirm" action="{% url save_story_story_reprint story_one_id=story.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision.id %}" method="POST">
+  <form id="confirm" action="{% url save_story_story_reprint story_one_id=story.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
   {% endif %}
   {% if story_revision %}
-  <form id="confirm" action="{% url save_revision_story_reprint story_revision_id=story.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision.id %}" method="POST">
+  <form id="confirm" action="{% url save_revision_story_reprint story_revision_id=story.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
   {% endif %}
   {% if issue %}
-  <form id="confirm" action="{% url save_issue_story_reprint issue_one_id=issue.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision.id %}" method="POST">
+  <form id="confirm" action="{% url save_issue_story_reprint issue_one_id=issue.id,changeset_id=changeset.id,story_two_id=selected_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
   {% endif %}
 {% else %}
   {% if story_story %}
-  <form id="confirm" action="{% url save_story_issue_reprint story_one_id=story.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision.id %}" method="POST">
+  <form id="confirm" action="{% url save_story_issue_reprint story_one_id=story.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
   {% endif %}
   {% if story_revision %}
-  <form id="confirm" action="{% url save_revision_issue_reprint story_revision_id=story.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision.id %}" method="POST">
+  <form id="confirm" action="{% url save_revision_issue_reprint story_revision_id=story.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
   {% endif %}
   {% if issue %}
-  <form id="confirm" action="{% url save_issue_issue_reprint issue_one_id=issue.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision.id %}" method="POST">
+  <form id="confirm" action="{% url save_issue_issue_reprint issue_one_id=issue.id,changeset_id=changeset.id,issue_two_id=selected_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
   {% endif %}
 {% endif %}
 

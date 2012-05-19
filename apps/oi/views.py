@@ -2484,6 +2484,7 @@ def edit_reprint(request, id, which_side=None):
             'selected_story': selected_story,
             'selected_issue': selected_issue,
             'reprint_revision': reprint_revision,
+            'reprint_revision_id': reprint_revision.id,
             'changeset': changeset,
             'which_side': which_side
             },
@@ -2704,7 +2705,9 @@ def confirm_reprint(request, data, object_type, selected_id):
     if 'reprint_revision_id' in data:
         reprint_revision = get_object_or_404(ReprintRevision, 
                                              id=data['reprint_revision_id'])
+        reprint_revision_id = data['reprint_revision_id']
     else:
+        reprint_revision_id = None
         reprint_revision = None
 
     if 'which_side' in data:
@@ -2720,6 +2723,7 @@ def confirm_reprint(request, data, object_type, selected_id):
         'selected_story': selected_story,
         'selected_issue': selected_issue,
         'reprint_revision': reprint_revision,
+        'reprint_revision_id': reprint_revision_id,
         'changeset': changeset,
         'which_side': which_side
         },
@@ -3905,7 +3909,7 @@ def process_select_search(request, select_key):
     cd = search_form.cleaned_data
 
     if 'search_story' in request.GET or 'search_cover' in request.GET:
-        search = Story.objects.filter(issue__number=cd['number'],
+        search = Story.objects.filter(issue__number=cd['number'], deleted=False,
                     issue__series__name__icontains=cd['series'],
                     issue__series__publisher__name__icontains=cd['publisher'])
         publisher = cd['publisher'] if cd['publisher'] else '?'
@@ -3936,7 +3940,7 @@ def process_select_search(request, select_key):
                                  "issue__key_date",
                                  "sequence_number")
     elif 'search_issue' in request.GET:
-        search = Issue.objects.filter(number=cd['number'],
+        search = Issue.objects.filter(number=cd['number'], deleted=False,
                     series__name__icontains=cd['series'],
                     series__publisher__name__icontains=cd['publisher'])
         publisher = cd['publisher'] if cd['publisher'] else '?'
