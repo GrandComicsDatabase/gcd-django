@@ -447,6 +447,10 @@ def _get_scan_table(series):
     if series is None:
         return None, None
 
+    if not series.is_comics_publication:
+        return Cover.objects.none(), get_image_tag(cover=None, 
+          zoom_level=ZOOM_MEDIUM, alt_text='First Issue Cover', 
+          is_comics_publication=series.is_comics_publication)
     # all a series' covers + all issues with no covers
     covers = Cover.objects.filter(issue__series=series, deleted=False) \
                           .select_related()
@@ -969,7 +973,7 @@ def agenda(request, language):
           "dp79hbjt4du2unqmks%40group.calendar.google.com&showTitle=0&showNav=0&"
           "showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA"
           "&height=600&wkst=1&bgcolor=%23FFFFFF&color=%238C500B"
-          "&ctz=America%2FLos_Angeles&hl=de")
+          "&ctz=GMT&hl=de")
     except HTTPError:
         raise Http404
 

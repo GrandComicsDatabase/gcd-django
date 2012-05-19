@@ -130,7 +130,8 @@ class Issue(models.Model):
         return self.active_covers(), self.variant_covers()
 
     def has_covers(self):
-        return self.active_covers().count() > 0
+        return self.series.is_comics_publication and \
+               self.active_covers().count() > 0
 
     def other_variants(self):
         if self.variant_of:
@@ -224,10 +225,9 @@ class Issue(models.Model):
             return False
         if self.has_reprints():
             return False
-        if self.active_stories().count():
-            for story in self.active_stories():
-                if story.has_reprints(notes=False):
-                    return False
+        for story in self.active_stories():
+            if story.has_reprints(notes=False):
+                return False
         return True
 
     def can_upload_variants(self):

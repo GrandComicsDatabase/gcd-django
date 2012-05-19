@@ -25,15 +25,15 @@ def get_image_tag(cover, alt_text, zoom_level, is_comics_publication=True):
         width = 400
         size = 'large'
 
+    if not is_comics_publication: 
+        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+            'img/noupload_' + size +'.png" alt="No image"' + \
+            'class="cover_img">')
+            
     if cover is None:
-        if is_comics_publication:
-            return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
-                'img/nocover_' + size +'.png" alt="No image yet"' + \
-                'class="cover_img">')
-        else:
-            return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
-                'img/noupload_' + size +'.png" alt="No image"' + \
-                'class="cover_img">')
+        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+            'img/nocover_' + size +'.png" alt="No image yet"' + \
+            'class="cover_img">')
             
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here

@@ -2239,6 +2239,8 @@ class SeriesRevision(Revision):
         series.language = self.language
         series.publisher = self.publisher
         series.imprint = self.imprint
+        if series.is_comics_publication != self.is_comics_publication:
+            series.has_gallery = self.is_comics_publication and series.scan_count() 
         series.is_comics_publication = self.is_comics_publication
 
         if clear_reservation:
