@@ -18,7 +18,7 @@
 {% block view_body %}
 <h1>Edit Reprint information</h1>
 {% if this_story %}
-<h2>{{ this_story }} / {{ this_story.title }}  of {{ this_story.issue }}</h2>
+<h2>{{ this_story }} / {{ this_story.title }}  of {{ this_story.issue }}  {% if this_story.issue.publication_date %}({{ this_story.issue.publication_date }}){% endif %}</h2>
 {% endif %}
 <div class="edit">
 {% if other_story %}
@@ -60,7 +60,7 @@ is
 <hr class="divider">
 
 {% if other_story %}
-  <h2>{{ other_story }} / {{ other_story.title }}  of {{ other_story.issue }}</h2>
+  <h2>{{ other_story }} / {{ other_story.title }}  of {{ other_story.issue }}  {% if other_story.issue.publication_date %}({{ other_story.issue.publication_date }}){% endif %}</h2>
   {% with 1 as no_navigation %}
   {% with other_story as story %}
 <div id="story_data">
