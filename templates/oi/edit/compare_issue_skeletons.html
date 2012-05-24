@@ -27,7 +27,8 @@ This change adds to {{ revision.series|absolute_url:'target="_blank"' }}
 published by {{ revision.series.publisher|absolute_url:'target="_blank"' }}
 after issue
 <span class="comparison_highlight">{{ changeset.ordered_issue_revisions.0.after }}</span>
-the following issue{% if changeset.issuerevisions.count > 1 %}s (links open in new windows):
+{% if changeset.issuerevisions.count > 1 %}
+the following issues (links open in new windows):
 <table class="comparison added">
 <tr>
   <th> Volume </th>
@@ -56,12 +57,17 @@ the following issue{% if changeset.issuerevisions.count > 1 %}s (links open in n
 The following fields are set for all issues in the issue range.  Keep in mind
 that publication date, key date and notes will always be blank.
 </p>
-{% else %}:
+{% else %}
+the following issue:
 <a class="new_window" href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview</a>
 {% endif %}
+{% if revision.variant_of %}
+  {% include 'oi/bits/compare_variant_issue.html' %}
+{% else %}
 <p>
 Highlighted fields represent <span class="added_highlight">added</span> data.
 </p>
+{% endif %}
 
 {% with 1 as no_prev_link %}
 {% include 'oi/bits/compare.html' %}

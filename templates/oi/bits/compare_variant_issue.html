@@ -1,0 +1,16 @@
+{% load display %}
+<p>
+  {% if not revision.issue %} {% comment %} only relevant for variant adds, i.e. issue is not set {% endcomment %}
+<ul>
+    {% for cover_revision in revision.variant_of.cover_revisions.all %}
+      {% if cover_revision.changeset != revision.changeset %}
+        {% if cover_revision.changeset.state == states.PENDING or cover_revision.changeset.state == states.REVIEWING %}
+  <li>Current <a href="{% url compare id=cover_revision.changeset.id %}">cover upload</a> for the base issue.
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+</ul>
+<p>The compare of the following issue record for the <span class="added_highlight">new variant</span> is against the <span class="comparison_highlight">current issue data of the base issue</span>.</p>
+  {% endif %}
+This is a <span class="comparison_highlight">variant of {{ revision.variant_of|absolute_url }}</span>.
+</p>
