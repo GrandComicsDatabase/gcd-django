@@ -574,6 +574,17 @@ def compare_current_reprints(object_type, changeset):
             
     return mark_safe(reprint_string)
     
+def key(d, key_name):
+    try:
+        value = d[key_name]
+    except KeyError:
+        from django.conf import settings
+
+        value = settings.TEMPLATE_STRING_IF_INVALID
+
+    return value
+
+register.filter(key)
 register.filter(absolute_url)
 register.filter(cover_image_tag)
 register.filter(show_story_short)

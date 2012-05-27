@@ -3521,53 +3521,63 @@ def show_queue(request, queue_name, state):
                                              CTYPES['two_issues']])
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])
-
+    countries=dict(Country.objects.values_list('id','code'))
+    
     response = render_to_response(
       'oi/queues/%s.html' % queue_name,
       {
         'queue_name': queue_name,
         'indexer': request.user,
         'states': states,
+        'countries': countries,
         'data': [
           {
             'object_name': 'Publishers',
             'object_type': 'publisher',
-            'changesets': publishers.order_by('modified', 'id'),
+            'changesets': publishers.order_by('modified', 'id')\
+              .annotate(country=Max('publisherrevisions__country__id')),
           },
           {
             'object_name': 'Indicia Publishers',
             'object_type': 'indicia_publisher',
-            'changesets': indicia_publishers.order_by('modified', 'id'),
+            'changesets': indicia_publishers.order_by('modified', 'id')\
+              .annotate(country=Max('indiciapublisherrevisions__country__id')),
           },
           {
             'object_name': 'Brands',
             'object_type': 'brands',
-            'changesets': brands.order_by('modified', 'id'),
+            'changesets': brands.order_by('modified', 'id')\
+              .annotate(country=Max('brandrevisions__parent__country__id')),
           },
           {
             'object_name': 'Series',
             'object_type': 'series',
-            'changesets': series.order_by('modified', 'id'),
+            'changesets': series.order_by('modified', 'id')\
+              .annotate(country=Max('seriesrevisions__country__id')),
           },
           {
             'object_name': 'Issue Skeletons',
             'object_type': 'issue',
-            'changesets': issue_adds.order_by('modified', 'id'),
+            'changesets': issue_adds.order_by('modified', 'id')\
+              .annotate(country=Max('issuerevisions__series__country__id')),
           },
           {
             'object_name': 'Issue Bulk Changes',
             'object_type': 'issue',
-            'changesets': issue_bulks.order_by('state', 'modified', 'id'),
+            'changesets': issue_bulks.order_by('state', 'modified', 'id')\
+              .annotate(country=Max('issuerevisions__series__country__id')),
           },
           {
             'object_name': 'Issues',
             'object_type': 'issue',
-            'changesets': issues.order_by('state', 'modified', 'id'),
+            'changesets': issues.order_by('state', 'modified', 'id')\
+              .annotate(country=Max('issuerevisions__series__country__id')),
           },
           {
             'object_name': 'Covers',
             'object_type': 'cover',
-            'changesets': covers.order_by('state', 'modified', 'id'),
+            'changesets': covers.order_by('state', 'modified', 'id')\
+              .annotate(country=Max('coverrevisions__issue__series__country__id')),
           },
         ],
       },

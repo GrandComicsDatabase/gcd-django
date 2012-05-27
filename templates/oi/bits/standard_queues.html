@@ -31,6 +31,9 @@
     </td>
         {% endif %}
     <td>
+        {% if changeset.country %}
+      <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ countries|key:changeset.country }}.png" alt="{{ changeset.country.code }}" class="embedded_flag">
+        {% endif %}
         {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
       <a href="{% url compare id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">{{ changeset.queue_name }}</a>
         {% else %}
