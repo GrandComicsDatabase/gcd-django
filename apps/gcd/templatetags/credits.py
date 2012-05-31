@@ -4,6 +4,7 @@ try:
    import icu
 except:
    import PyICU as icu
+from decimal import Decimal, InvalidOperation
 
 from django import template
 from django.utils.translation import ugettext as _
@@ -277,7 +278,11 @@ def show_page_count(story, show_page=False):
 
 def format_page_count(page_count):
     if page_count is not None:
-        return re.sub(r'\.?0+$', '', unicode(page_count))
+        try:
+            return re.sub(r'\.?0+$', '', 
+              unicode(Decimal(page_count).quantize(Decimal(10)**-3)))
+        except InvalidOperation:
+            return page_count
     else:
         return u''
 
