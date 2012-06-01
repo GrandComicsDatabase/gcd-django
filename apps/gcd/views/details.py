@@ -745,7 +745,8 @@ def cover(request, issue_id, size):
 
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
-    cover_tag = get_image_tags_per_issue(issue, "Cover Image", size, variants=True)
+    cover_tag = get_image_tags_per_issue(issue, "Cover for %s" % unicode(issue), 
+                                         size, variants=True)
 
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
@@ -836,7 +837,7 @@ def show_issue(request, issue, preview=False):
     """
     Handle the main work of displaying an issue.  Also used by OI previews.
     """
-    alt_text = 'Cover Thumbnail'
+    alt_text = u'Cover Thumbnail for %s' % unicode(issue)
     zoom_level = ZOOM_MEDIUM
     if preview:
         # excludes are currently only relevant for variant_add, maybe later
@@ -880,9 +881,8 @@ def show_issue(request, issue, preview=False):
     variant_image_tags = []
     for variant_cover in issue.variant_covers():
         variant_image_tags.append([variant_cover.issue,
-                                   get_image_tag(variant_cover,
-                                                 zoom_level=ZOOM_SMALL,
-                                                 alt_text='Cover Thumbnail')])
+          get_image_tag(variant_cover, zoom_level=ZOOM_SMALL,
+          alt_text=u'Cover Thumbnail for %s' % unicode(variant_cover.issue))])
 
     series = issue.series
     [prev_issue, next_issue] = issue.get_prev_next_issue()
