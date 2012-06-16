@@ -3019,8 +3019,10 @@ class IssueRevision(Revision):
 
     def _story_revisions(self):
         if self.source is None:
-            return self.changeset.storyrevisions.filter(issue__isnull=True)
-        return self.changeset.storyrevisions.filter(issue=self.source)
+            return self.changeset.storyrevisions.filter(issue__isnull=True)\
+                                 .select_related('changeset', 'type')
+        return self.changeset.storyrevisions.filter(issue=self.source)\
+                             .select_related('changeset', 'issue', 'type')
 
     def ordered_story_revisions(self):
         return self._story_revisions().order_by('sequence_number')
@@ -3483,7 +3485,7 @@ class StoryRevision(Revision):
 
     def _field_list(self):
         fields = get_story_field_list()
-        if self.previous() and (self.previous().issue != self.issue):
+        if self.previous() and (self.previous().issue_id != self.issue_id):
             fields = ['issue'] + fields
         return fields
 
@@ -4309,12 +4311,15 @@ class ReprintRevision(Revision):
                     story = self.origin_revision
         if story:
             issue = story.issue
-            reprint = u'%s <a target="_blank" href="%s#%d">%s %s</a> of %s' % \
-                        (direction, issue.get_absolute_url(),
-                        story.id, esc(story), show_title(story), esc(issue))
+            reprint = u'%s %s <br><i>sequence</i> ' \
+                       '<a target="_blank" href="%s#%d">%s %s</a>' % \
+                        (direction, esc(issue.full_name()), 
+                         issue.get_absolute_url(), story.id, esc(story), 
+                         show_title(story))
         else:
             reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
-                        (direction, issue.get_absolute_url(), esc(issue))
+                        (direction, issue.get_absolute_url(), 
+                         esc(issue.full_name()))
         if self.notes:
             reprint = '%s [%s]' % (reprint, esc(self.notes))
         if moved:

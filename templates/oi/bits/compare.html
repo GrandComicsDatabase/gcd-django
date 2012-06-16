@@ -32,25 +32,25 @@
 {% comment %} this if statement was a huge pain to get right. if only we had 1.2... {% endcomment %}
   <h4> No changes to this sequence
   {% if prev_rev %}
-    / <a href="{% url compare id=prev_rev.changeset.id %}?collapse=1"> Previous </a>
+    / <a href="{% url compare id=prev_rev.changeset_id %}?collapse=1"> Previous </a>
   {% endif %}
   {% if post_rev %}
-    / <a href="{% url compare id=post_rev.changeset.id %}?collapse=1"> Next </a>
+    / <a href="{% url compare id=post_rev.changeset_id %}?collapse=1"> Next </a>
   {% endif %}
   </h4>
   <tr>
     <td>{{ revision|show_story_short }}</td>
     <td>{{ revision|show_credit_status }}</td>
-    <td><a href="{% url compare id=revision.changeset.id %}">Expand compare view</a></td>
+    <td><a href="{% url compare id=revision.changeset_id %}">Expand compare view</a></td>
   </tr>
 {% else %}
   {% if request.GET.collapse and revision.issue and not revision.is_changed %}
   <h4> No changes to the issue information
     {% if prev_rev %}
-    / <a href="{% url compare id=prev_rev.changeset.id %}?collapse=1"> Previous </a>
+    / <a href="{% url compare id=prev_rev.changeset_id %}?collapse=1"> Previous </a>
     {% endif %}
     {% if post_rev %}
-    / <a href="{% url compare id=post_rev.changeset.id %}?collapse=1"> Next </a>
+    / <a href="{% url compare id=post_rev.changeset_id %}?collapse=1"> Next </a>
     {% endif %}
   </h4>
     {% with revision as issue %}
@@ -74,17 +74,17 @@
         {% if no_prev_link %}
     <th> Current </th>
         {% else %}
-    <th><a href="{% url compare id=prev_rev.changeset.id %}?collapse=1"> Previous </a></th>
+    <th><a href="{% url compare id=prev_rev.changeset_id %}?collapse=1"> Previous </a></th>
         {% endif %}
     <th> Change
         {% if post_rev %}
-        / <a href="{% url compare id=post_rev.changeset.id %}?collapse=1"> Next </a>
+        / <a href="{% url compare id=post_rev.changeset_id %}?collapse=1"> Next </a>
         {% endif %}
     </th>
       {% else %}
     <th> Added
         {% if post_rev %}
-        / <a href="{% url compare id=post_rev.changeset.id %}?collapse=1"> Next </a>
+        / <a href="{% url compare id=post_rev.changeset_id %}?collapse=1"> Next </a>
         {% endif %}
     </th>
       {% endif %}

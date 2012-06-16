@@ -12,7 +12,8 @@ from django.template.defaultfilters import yesno, linebreaksbr, title, urlize
 from apps.oi.models import StoryRevision, CTYPES, validated_isbn, \
                            remove_leading_article, ReprintRevision
 from apps.oi import states
-from apps.gcd.templatetags.credits import show_page_count, format_page_count
+from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
+                                          split_reprint_string
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
@@ -357,8 +358,17 @@ def field_value(revision, field):
     elif field in ['publisher', 'indicia_publisher', 'brand', 'series']:
         return absolute_url(value)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
-                   'characters', 'synopsis', 'reprint_notes']:
+                   'characters', 'synopsis']:
         return linebreaksbr(value)
+    elif field == 'reprint_notes':
+        reprint = ''
+        if value.strip() != '':
+            for string in split_reprint_string(value):
+                string = string.strip()
+                reprint += '<li> ' + esc(string) + ' </li>'
+            if reprint != '':
+                reprint = '<ul>' + reprint + '</ul>'
+        return mark_safe(reprint)
     elif field in ['url']:
         return urlize(value)
     elif field in ['indicia_pub_not_printed']:
@@ -481,7 +491,7 @@ def link_other_reprint(reprint, is_source):
     return mark_safe(text)
 
 def compare_current_reprints(object_type, changeset):
-    if object_type.changeset != changeset:
+    if object_type.changeset_id != changeset.id:
         if not object_type.source:
             return ''
         active = ReprintRevision.objects.filter(next_revision__in=changeset.reprintrevisions.all())
@@ -527,16 +537,34 @@ def compare_current_reprints(object_type, changeset):
           .exclude(changeset=changeset).filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True).exclude(next_revision=None)
                 
-    if active_origin.count() or active_target.count():
-        if object_type.changeset != changeset:
+    if (active_origin | active_target).count():
+        if object_type.changeset_id != changeset.id:
             reprint_string = '<ul>The following reprint links are edited in the ' \
             'compared changeset.'
         else:
             reprint_string = '<ul>The following reprint links are edited ' \
             'in this changeset.'
-            
-        for reprint in (active_origin | active_target):
-            if object_type.changeset != changeset:
+
+        active_target = list(active_target.select_related(\
+                             'origin_issue__series__publisher',
+                             'origin_story__issue__series__publisher',
+                             'origin_revision__issue__series__publisher',
+                             'target_issue', 
+                             'target_story__issue',
+                             'target_revision__issue'))
+        active_target = sorted(active_target, key=lambda a: a.origin_sort)
+        
+        active_origin = list(active_origin.select_related(\
+                            'target_issue__series__publisher', 
+                            'target_story__issue__series__publisher',
+                            'target_revision__issue__series__publisher',
+                            'origin_issue',
+                            'origin_story__issue',
+                            'origin_revision__issue'))
+        active_origin = sorted(active_origin, key=lambda a: a.target_sort)
+        
+        for reprint in active_target + active_origin:
+            if object_type.changeset_id != changeset.id:
                 do_compare = False
                 action = ''
             else:
@@ -553,9 +581,27 @@ def compare_current_reprints(object_type, changeset):
     else:
         reprint_string = ''
 
-    if kept_origin.count() or kept_target.count():
+    if (kept_origin | kept_target).count():
         kept_string = ''
-        for reprint in (kept_origin | kept_target):
+        kept_target = list(kept_target.select_related(\
+                           'origin_issue__series__publisher',
+                           'origin_story__issue__series__publisher',
+                           'origin_revision__issue__series__publisher',
+                           'target_issue', 
+                           'target_story__issue',
+                           'target_revision__issue'))
+        kept_target = sorted(kept_target, key=lambda a: a.origin_sort)
+        
+        kept_origin = list(kept_origin.select_related(\
+                           'target_issue__series__publisher', 
+                           'target_story__issue__series__publisher',
+                           'target_revision__issue__series__publisher',
+                           'origin_issue',
+                           'origin_story__issue',
+                           'origin_revision__issue'))
+        kept_origin = sorted(kept_origin, key=lambda a: a.target_sort)
+        
+        for reprint in kept_target + kept_origin:
             # the checks for nex_revision.changeset seemingly cannot be done
             # in the filter/exclude process above. next_revision does not need
             # to exists and makes problems in that.
