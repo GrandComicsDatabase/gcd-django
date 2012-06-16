@@ -1119,18 +1119,23 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
         # make indexers consciously choose a type by allowing an empty
         # initial value.  So only set None if there is an existing story revision.
         extra['empty_label'] = None
+        if revision.issue and revision.issue.series.is_comics_publication == False:
+            is_comics_publication = False
 
-    if not is_comics_publication:
-        queryset = StoryType.objects.filter(name__in=['comic story',
-                                                      'photo story',
-                                                      'cartoon'])
     # for variants we can only have cover sequences (for now)
-    elif revision and (revision.issue == None or revision.issue.variant_of):
+    if revision and (revision.issue == None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
         # TODO prevent adding of non-covers directly in the form cleanup
         if revision.type not in queryset:
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
+    elif not is_comics_publication:
+        queryset = StoryType.objects.filter(name__in=['comic story',
+                                                      'photo story',
+                                                      'cartoon'])
+        if revision and revision.type not in queryset:
+            queryset = queryset | StoryType.objects.filter(id=revision.type.id)
+
     else:
         special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)',
                         'biography (nonfictional)')
