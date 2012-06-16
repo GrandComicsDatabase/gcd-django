@@ -41,9 +41,9 @@ class Reprint(models.Model):
         else:
             direction = 'from'
             story = self.origin
-        reprint = u'%s <a target="_blank" href="%s#%d">%s</a> of %s' % \
-                    (direction, story.issue.get_absolute_url(),
-                    story.id, esc(story), esc(story.issue))
+        reprint = u'%s %s <i>sequence</i> <a target="_blank" href="%s#%d">%s</a>' % \
+                    (direction, story.issue.get_absolute_url(), 
+                    esc(story.issue.full_name()), story.id, esc(story))
         if self.notes:
             reprint = u'%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)

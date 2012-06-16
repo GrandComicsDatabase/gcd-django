@@ -43,7 +43,7 @@ class IssueReprint(models.Model):
             direction = 'from'
             issue = self.origin_issue
         reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
-                    (direction, issue.get_absolute_url(), esc(issue))
+                    (direction, issue.get_absolute_url(), esc(issue.full_name()))
         if self.notes:
             reprint = u'%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
