@@ -3621,7 +3621,8 @@ class StoryRevision(Revision):
             update_count('stories', 1, language=self.issue.series.language)
         elif self.deleted:
             if self.issue.is_indexed != INDEXED['skeleton']:
-                if self.issue.set_indexed_status() == INDEXED['skeleton']:
+                if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
+                  self.issue.series.is_comics_publication:
                     update_count('issue indexes', -1,
                                  language=story.issue.series.language)
             update_count('stories', -1, language=story.issue.series.language)
@@ -3688,11 +3689,13 @@ class StoryRevision(Revision):
             self.save()
 
         if self.issue.is_indexed == INDEXED['skeleton']:
-            if self.issue.set_indexed_status() != INDEXED['skeleton']:
+            if self.issue.set_indexed_status() != INDEXED['skeleton'] and \
+              self.issue.series.is_comics_publication:
                 update_count('issue indexes', 1,
                              language=self.issue.series.language)
         else:
-            if self.issue.set_indexed_status() == INDEXED['skeleton']:
+            if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
+              self.issue.series.is_comics_publication:
                 update_count('issue indexes', -1,
                              language=self.issue.series.language)
 

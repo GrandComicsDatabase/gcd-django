@@ -22,14 +22,19 @@ class CountStatsManager(models.Manager):
               count=IndiciaPublisher.objects.filter(deleted=False).count())
 
             self.create(name='series', language=language,
-              count=Series.objects.filter(deleted=False).count())
+              count=Series.objects.filter(deleted=False,
+                                          is_comics_publication=True).count())
             self.create(name='issues', language=language,
-              count=Issue.objects.filter(deleted=False).count())
+              count=Issue.objects.filter(deleted=False,
+                                         series__is_comics_publication=True,
+                                         variant_of=None).count())
             self.create(name='variant issues', language=language,
-              count=Issue.objects.filter(deleted=False)\
-              .exclude(variant_of=None).count())
+              count=Issue.objects.filter(deleted=False,
+                                         series__is_comics_publication=True)\
+                                         .exclude(variant_of=None).count())
             self.create(name='issue indexes', language=language,
-              count=Issue.objects.filter(deleted=False)\
+              count=Issue.objects.filter(deleted=False,
+                                         series__is_comics_publication=True)\
                          .exclude(is_indexed=INDEXED['skeleton']).count())
             self.create(name='covers', language=language,
               count=Cover.objects.filter(deleted=False).count())
@@ -39,19 +44,23 @@ class CountStatsManager(models.Manager):
             return
 
         self.create(name='series', language=language,
-          count=Series.objects.filter(language=language, deleted=False).count())
+          count=Series.objects.filter(language=language, deleted=False,
+                                      is_comics_publication=True).count())
 
         self.create(name='issues', language=language,
-          count=Issue.objects.filter(series__language=language,
-                                     deleted=False).count())
+          count=Issue.objects.filter(series__language=language, deleted=False,
+                                     series__is_comics_publication=True,
+                                     variant_of=None).count())
                                      
         self.create(name='variant issues', language=language,
-          count=Issue.objects.filter(series__language=language, \
-              deleted=False).exclude(variant_of=None).count())
+          count=Issue.objects.filter(series__language=language, deleted=False,
+                                     series__is_comics_publication=True)\
+                                     .exclude(variant_of=None).count())
 
         self.create(name='issue indexes', language=language,
           count=Issue.objects.filter(series__language=language,
-                                     deleted=False)\
+                                     deleted=False,
+                                     series__is_comics_publication=True)\
                      .exclude(is_indexed=INDEXED['skeleton']).count())
 
         self.create(name='covers', language=language,
