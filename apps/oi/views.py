@@ -2647,6 +2647,11 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
         story_revision.story = None
         story_revision.issue = changeset_issue.issue
         story_revision.sequence_number = changeset_issue.next_sequence_number()
+        if story_revision.issue.series.language != story.issue.series.language:
+            if story_revision.letters:
+                story_revision.letters = u'?'
+            story_revision.title = u''
+            story_revision.title_inferred = False
         story_revision.save()
         if reprint_revision.origin_story:
             reprint_revision.target_revision = story_revision
@@ -3765,8 +3770,8 @@ def cover_compare(request, changeset, revision):
                       changeset__state=states.APPROVED).order_by('-created')[0]
 
     if revision.changeset.state in states.ACTIVE:
-        if revision.issue.has_covers() or (revision.issue.variant_of and \
-                                           revision.issue.variant_of.has_covers()):
+        if revision.issue.has_covers() or revision.issue.variant_covers() or \
+          (revision.issue.variant_of and revision.issue.variant_of.has_covers()):
             # no issuesrevision, so no variant upload, but covers exist for issue
             if revision.issue.has_covers() and not \
               revision.changeset.issuerevisions.count():
