@@ -324,10 +324,15 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
     if only_number:
         link = u', <a href="%s#%d">#%s</a>' % (story.issue.get_absolute_url(),
                                     story.id, esc(story.issue.display_number) )
-    else:
+    elif story.sequence_number == 0:
         link = u'%s <a href="%s#%d">%s</a>' % (from_to,
                                     story.issue.get_absolute_url(),
                                     story.id, esc(story.issue.full_name()) )
+    else:
+        link = u'%s <a href="%s#%d">%s</a>' % (from_to,
+                                    story.issue.get_absolute_url(),
+                                    story.id,
+                                    esc(story.issue.full_name(variant_name=False)) )
     if story.issue.publication_date:
         link = "%s (%s)" % (link, esc(story.issue.publication_date))
     if notes:

@@ -242,8 +242,8 @@ class Issue(models.Model):
             'show_issue',
             kwargs={'issue_id': self.id } )
 
-    def full_name(self):
-        if self.variant_name:
+    def full_name(self, variant_name=True):
+        if variant_name and self.variant_name:
             return u'%s #%s [%s]' % (self.series.full_name(),
                                      self.display_number,
                                      self.variant_name)
