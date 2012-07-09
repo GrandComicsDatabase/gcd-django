@@ -1173,6 +1173,9 @@ thanks,
               settings.EMAIL_INDEXING)
               
         send_comment_observer(request, changeset, comment_text)
+        
+    if 'HTTP_REFERER' in request.META:
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
     return HttpResponseRedirect(urlresolvers.reverse(compare,
                                                      kwargs={ 'id': id }))
