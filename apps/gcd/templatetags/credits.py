@@ -14,6 +14,7 @@ from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue, Country, Language, Reprint
 from apps.oi.models import ReprintRevision
+from apps.gcd.models import StoryType, STORY_TYPES
 
 register = template.Library()
 
@@ -500,7 +501,11 @@ def show_reprints(story, original = False):
     from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
     reprint = generate_reprint_notes(from_reprints=from_reprints, original=original)
 
-    to_reprints = list(story.to_reprints.select_related().all())
+    if story.type.id != STORY_TYPES['promo']:
+        to_reprints = list(story.to_reprints.select_related()\
+                                .exclude(target__type__id=STORY_TYPES['promo']))
+    else:
+        to_reprints = list(story.to_reprints.select_related().all())
     to_reprints.extend(list(story.to_issue_reprints.select_related().all()))
     to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
     reprint += generate_reprint_notes(to_reprints=to_reprints, original=original)

@@ -6,6 +6,10 @@ from taggit.managers import TaggableManager
 from series import Series
 from issue import Issue
 
+STORY_TYPES = {
+    'promo': 16,
+}
+
 class StoryTypeManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)

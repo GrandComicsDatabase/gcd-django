@@ -5,7 +5,7 @@ from language import Language
 from publisher import Publisher, IndiciaPublisher, Brand
 from series import Classification, Series
 from issue import Issue
-from story import StoryType, Story
+from story import StoryType, Story, STORY_TYPES
 from cover import Cover
 from indexer import Indexer, ImpGrant
 from indexcredit import IndexCredit
