@@ -347,7 +347,7 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
 # - sort domestic/foreign reprints
 
 def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
-                           level=0):
+                           level=0, no_promo=False):
     reprint = ""
     last_series = None
     last_follow = None
@@ -428,28 +428,31 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
                     reprint += '<br>points to issue'
                 last_follow = follow_info
         else:
-            follow_info = follow_reprint_link(to_reprint, 'in', level=level+1)
-            if last_series == to_reprint.target.issue.series and \
-              last_follow == follow_info and original != 'With_Story':
-                reprint += generate_reprint_link_sequence(to_reprint.target,
-                            "in ", notes=to_reprint.notes, only_number=True)
-                same_issue_cnt += 1
+            if no_promo and to_reprint.target.type.id == STORY_TYPES['promo']:
+                pass
             else:
-                if last_follow:
-                    if same_issue_cnt > 0:
-                        last_follow = last_follow.replace('which is',
-                                                          'which are', 1)
-                    reprint += '</li>' + last_follow
-                same_issue_cnt = 0
-                last_series = to_reprint.target.issue.series
+                follow_info = follow_reprint_link(to_reprint, 'in', level=level+1)
+                if last_series == to_reprint.target.issue.series and \
+                last_follow == follow_info and original != 'With_Story':
+                    reprint += generate_reprint_link_sequence(to_reprint.target,
+                                "in ", notes=to_reprint.notes, only_number=True)
+                    same_issue_cnt += 1
+                else:
+                    if last_follow:
+                        if same_issue_cnt > 0:
+                            last_follow = last_follow.replace('which is',
+                                                            'which are', 1)
+                        reprint += '</li>' + last_follow
+                    same_issue_cnt = 0
+                    last_series = to_reprint.target.issue.series
 
-                reprint += generate_reprint_link_sequence(to_reprint.target,
-                            "in ", notes=to_reprint.notes)
-            if original == 'With_Story':
-                from apps.gcd.templatetags.display import show_story_short
-                reprint += '<br>points to sequence: %s' % \
-                  show_story_short(to_reprint.origin)
-            last_follow = follow_info
+                    reprint += generate_reprint_link_sequence(to_reprint.target,
+                                "in ", notes=to_reprint.notes)
+                if original == 'With_Story':
+                    from apps.gcd.templatetags.display import show_story_short
+                    reprint += '<br>points to sequence: %s' % \
+                    show_story_short(to_reprint.origin)
+                last_follow = follow_info
     if last_follow:
         if same_issue_cnt > 0:
             last_follow = last_follow.replace('which is', 'which are', 1)
@@ -502,13 +505,14 @@ def show_reprints(story, original = False):
     reprint = generate_reprint_notes(from_reprints=from_reprints, original=original)
 
     if story.type.id != STORY_TYPES['promo']:
-        to_reprints = list(story.to_reprints.select_related()\
-                                .exclude(target__type__id=STORY_TYPES['promo']))
+        no_promo = True
     else:
-        to_reprints = list(story.to_reprints.select_related().all())
+        no_promo = False
+    to_reprints = list(story.to_reprints.select_related().all())
     to_reprints.extend(list(story.to_issue_reprints.select_related().all()))
     to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
-    reprint += generate_reprint_notes(to_reprints=to_reprints, original=original)
+    reprint += generate_reprint_notes(to_reprints=to_reprints, original=original,
+                                      no_promo=no_promo)
 
     if story.reprint_notes:
         for string in split_reprint_string(story.reprint_notes):
@@ -557,7 +561,8 @@ def show_reprints_for_issue(issue):
     to_reprints = list(issue.to_reprints.select_related().all())
     to_reprints.extend(list(issue.to_issue_reprints.select_related().all()))
     to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
-    reprint += generate_reprint_notes(to_reprints=to_reprints)
+    reprint += generate_reprint_notes(to_reprints=to_reprints,
+                                      no_promo=True)
 
     if reprint != '':
         label = _('Parts of this issue are reprinted') + ': '
