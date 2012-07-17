@@ -293,7 +293,8 @@ def changed_fields(changeset, object):
 
 # get a bulleted list of changes at the sequence level
 def changed_story_list(changeset):
-    if changeset.issuerevisions.count() == 1:
+    if changeset.issuerevisions.count() and \
+      changeset.change_type != CTYPES['issue_bulk']:
         # only relevant for single issue changesets
         story_revisions = changeset.storyrevisions.all().order_by('sequence_number')
     else:
