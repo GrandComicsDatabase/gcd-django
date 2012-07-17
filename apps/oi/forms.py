@@ -606,14 +606,14 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     self.fields['indicia_publisher'].queryset = \
                       self.fields['indicia_publisher'].queryset\
                       .exclude(year_began__gt=revision.year_on_sale)
-            if revision.brand not in self.fields['brand'].queryset:
-                self.fields['brand'].queryset = self.fields['brand'].queryset \
-                  | Brand.objects.filter(id=revision.brand.id)
-            if revision.indicia_publisher not in \
-              self.fields['indicia_publisher'].queryset:
-                self.fields['indicia_publisher'].queryset = \
-                  self.fields['indicia_publisher'].queryset \
-                  | IndiciaPublisher.objects.filter(id=revision.indicia_publisher.id)
+                if revision.brand and revision.brand not in self.fields['brand'].queryset:
+                    self.fields['brand'].queryset = self.fields['brand'].queryset \
+                      | Brand.objects.filter(id=revision.brand.id)
+                if revision.indicia_publisher and revision.indicia_publisher not in \
+                  self.fields['indicia_publisher'].queryset:
+                    self.fields['indicia_publisher'].queryset = \
+                      self.fields['indicia_publisher'].queryset \
+                      | IndiciaPublisher.objects.filter(id=revision.indicia_publisher.id)
 
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
