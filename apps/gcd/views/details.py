@@ -316,6 +316,8 @@ def series_details(request, series_id, by_date=False):
       series.active_issues().filter(no_brand=True, variant_of=None).count() - num_issues
     frequency_present = series.has_indicia_frequency and \
       series.active_issues().filter(no_indicia_frequency=True, variant_of=None).count() - num_issues
+    isbn_present = series.has_isbn and \
+      series.active_issues().filter(no_isbn=True, variant_of=None).count() - num_issues
     barcode_present = series.has_barcode and \
       series.active_issues().filter(no_barcode=True, variant_of=None).count() - num_issues
     title_present = series.has_issue_title and \
@@ -331,6 +333,7 @@ def series_details(request, series_id, by_date=False):
         'volume_present': volume_present,
         'brand_present': brand_present,
         'frequency_present': frequency_present,
+        'isbn_present': isbn_present,
         'barcode_present': barcode_present,
         'title_present': title_present,
         'on_sale_date_present': on_sale_date_present,

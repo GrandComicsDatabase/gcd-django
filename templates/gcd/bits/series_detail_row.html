@@ -43,6 +43,13 @@
   <td> {{ issue.indicia_frequency|default:"?" }} </td>
     {% endif %}
   {% endif %}
+  {% if isbn_present %}
+    {% if issue.no_isbn %}
+  <td>&nbsp;</td>
+    {% else %}
+  <td> {{ issue.isbn|default:"?" }} </td>
+    {% endif %}
+  {% endif %}
   {% if barcode_present %}
     {% if issue.no_barcode %}
   <td>&nbsp;</td>

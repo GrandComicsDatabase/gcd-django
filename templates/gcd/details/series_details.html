@@ -91,6 +91,9 @@ The following table is the same as the regular series detail table:
 {% if frequency_present %}
     <th> Frequency </th>
 {% endif %}
+{% if isbn_present %}
+    <th> ISBN </th>
+{% endif %}
 {% if barcode_present %}
     <th> Barcode </th>
 {% endif %}
@@ -131,6 +134,12 @@ divisible filter.
           {% if on_sale_date_present %}
     <td>&nbsp;</td>
           {% endif %}
+          {% if isbn_present %}
+    <td>&nbsp;</td>
+          {% endif %}
+          {% if barcode_present %}
+    <td>&nbsp;</td>
+          {% endif %}
   </tr>
         {% endfor %}
       {% endwith %}
@@ -147,10 +156,13 @@ cannot be placed in a timeline:
   <tr>
     <th> Key Date </th>
     <th> Pub. Date </th>
+    {% if on_sale_date_present %}
+    <th> On-sale date </th>
+    {% endif %}
     {% if volume_present %}
     <th> Volume </th>
     {% endif %}
-    <th> Issue </th>
+    <th> Number </th>
     <th> Indicia Publisher </th>
     {% if brand_present %}
     <th> Brand </th>
@@ -160,8 +172,11 @@ cannot be placed in a timeline:
     {% if frequency_present %}
     <th> Frequency </th>
     {% endif %}
-    {% if on_sale_date_present %}
-    <th> On-sale date </th>
+    {% if isbn_present %}
+    <th> ISBN </th>
+    {% endif %}
+    {% if barcode_present %}
+    <th> Barcode </th>
     {% endif %}
   </tr>
   {% endif %}
