@@ -256,13 +256,13 @@ div.search_id_nav {
 /* for two columns on the pages with control box on the right */
 
 .control_body{
-	padding:0 14em 0 0;
+	padding:0 15.25em 0 0;
 }
 #control_container{
 	float:left;
 	width:100%;
-	border-right:14em; /* The width of the right rail */
-	margin-right:-14em;
+	border-right:15.25em; /* The width of the right rail */
+	margin-right:-15.25em;
 	display:inline; /* So IE plays nice */
 }
 #control_center{
@@ -272,12 +272,12 @@ div.search_id_nav {
 }
 #control_rail{
 	float:right;
-	width:14em;
-	margin-right:-14em;
+	width:15.25em;
+	margin-right:-15.25em;
 	position:relative;
 }
 #control_header, #control_footer{
-	margin-right:-14em;
+	margin-right:-15.25em;
 	clear:both;
 }
 
