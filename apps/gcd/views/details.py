@@ -840,7 +840,7 @@ def show_issue(request, issue, preview=False):
     """
     Handle the main work of displaying an issue.  Also used by OI previews.
     """
-    alt_text = u'Cover Thumbnail for %s' % unicode(issue)
+    alt_text = u'Cover Thumbnail for %s' % issue.full_name()
     zoom_level = ZOOM_MEDIUM
     if preview:
         # excludes are currently only relevant for variant_add, maybe later
