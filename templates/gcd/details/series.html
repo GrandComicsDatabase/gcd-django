@@ -62,12 +62,6 @@
 {% endif %}
 {{ series|show_credit:'keywords' }}
           </dl>
-{% if not series.is_comics_publication %}
-<p>
-The individual issues of this series are each less than 50% comics.  Only
-comics sequences are indexed and cover scans are not currently accepted.
-</p>
-{% endif %}
 
 {% if series.active_issues.count %}
           <div class="series_detail_header">Series Details:</div>
@@ -210,7 +204,12 @@ comics sequences are indexed and cover scans are not currently accepted.
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 
-<hr/>
+<hr>
+{% if not series.is_comics_publication %}
+The individual issues of this series are each less than 50% comics.  Only
+comics sequences are indexed and cover scans are not currently accepted.
+<hr>
+{% endif %}
 
 {% if series.active_issues.count %}
 <h3> Index Status </h3>

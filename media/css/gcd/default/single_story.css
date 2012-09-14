@@ -94,6 +94,22 @@ div.single_story {
     border-top: solid black 1px;
 }
 
+div.non_comics {
+    border: solid black 2px;
+    float: left;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+.non_comics h3 {
+    float: left;
+    background-color: #77E;
+    color: black;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: normal;
+}
+
 .single_story h4 {
     clear: both;
     padding: 0.2em 6px;
@@ -115,7 +131,7 @@ div.single_story {
     margin: 0 0 0.5em 0;
 }
 
-.single_story .left {
+.single_story .left, .non_comics .left {
     padding-left: 6px;
 }
 
