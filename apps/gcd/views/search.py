@@ -850,6 +850,11 @@ def search_series(data, op):
                       Q(**{ '%sis_current' % prefix: True }))
     if data['is_current']:
         q_objs.append(Q(**{ '%sis_current' % prefix: True }))
+    if data['is_comics'] is not None:
+        if data['is_comics'] is True:
+            q_objs.append(Q(**{ '%sis_comics_publication' % prefix: True }))
+        else:
+            q_objs.append(Q(**{ '%sis_comics_publication' % prefix: False }))
 
     try:
         if data['issue_count'] is not None and data['issue_count'] != '':

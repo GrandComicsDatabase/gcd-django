@@ -110,6 +110,11 @@ class AdvancedSearch(forms.Form):
     issue_count = forms.CharField(label='Issue Count',
                                   required=False)
     series_year_began = forms.IntegerField(required=False)
+    is_comics = forms.NullBooleanField(label="More than 50%% comics",
+      required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
 
     issues = forms.CharField(label='Issues', required=False)
     volume = forms.CharField(label='Volume', required=False)
