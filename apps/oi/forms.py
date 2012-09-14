@@ -212,7 +212,7 @@ def _clean_keywords(cleaned_data):
 
     return keywords
 
-                
+
 class PageCountInput(TextInput):
     def render(self, name, value, attrs=None):
         value = format_page_count(value)
@@ -255,7 +255,7 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name == 'reprint':
         return get_reprint_revision_form(revision, **kwargs)
 
-    if model_name == 'cover':
+    if model_name in ['cover', 'image']:
         return get_cover_revision_form(revision, **kwargs)
 
     raise NotImplementedError
@@ -425,7 +425,7 @@ class BrandRevisionForm(forms.ModelForm):
       help_text='Comments between the Indexer and Editor about the change. '
                 'These comments are part of the public change history, but '
                 'are not part of the regular display.')
-                
+
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
 
@@ -680,7 +680,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
         def clean_keywords(self):
             return _clean_keywords(self.cleaned_data)
-            
+
         def clean(self):
             cd = self.cleaned_data
 
@@ -1195,7 +1195,7 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
         if revision is None or (revision is not None and
                                 revision.type.name not in special_types):
             queryset = queryset.exclude(name__in=special_types)
-        
+
     class RuntimeStoryRevisionForm(StoryRevisionForm):
         type = forms.ModelChoiceField(queryset=queryset,
           help_text='Choose the most appropriate available type',
@@ -1477,6 +1477,21 @@ class GatefoldScanForm(forms.Form):
     marked = forms.BooleanField(widget=forms.HiddenInput, required=False)
     comments = forms.CharField(widget=forms.HiddenInput, required=False)
 
+class UploadImageForm(forms.Form):
+    """ Form for image uploads. """
+
+    image = forms.ImageField(widget=forms.FileInput)
+
+    marked = forms.BooleanField(label="Mark image for replacement", required=False,
+      help_text='Uploads of sub-standard images for older and/or rare comics '
+                'are fine, but please mark them for replacement.')
+
+    comments = forms.CharField(widget=forms.Textarea,
+                               required=False,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
+
 def get_select_cache_form(cached_issue=None, cached_story=None,
                           cached_cover=None):
 
@@ -1493,7 +1508,7 @@ def get_select_cache_form(cached_issue=None, cached_story=None,
             fields.append(('cover_%d' % cached_cover.id,
                            'cover of issue: %s' % cached_cover.issue))
         if fields:
-            object_choice = forms.ChoiceField(widget=RadioSelect, 
+            object_choice = forms.ChoiceField(widget=RadioSelect,
                                               choices=fields, label='')
     return SelectCacheForm
 
@@ -1507,7 +1522,7 @@ def get_select_search_form(series=False, issue=False, story=False,
             year = forms.IntegerField(label='Series year', required=False,
                                       min_value=1800, max_value=2020)
         if issue or story:
-            number = forms.CharField(label='Issue Number', 
+            number = forms.CharField(label='Issue Number',
                                      required=True)
         if story:
             sequence_number = forms.IntegerField(label='Sequence Number',
@@ -1515,7 +1530,7 @@ def get_select_search_form(series=False, issue=False, story=False,
         select_key = forms.CharField(widget=HiddenInput)
     return SelectSearchForm
 
-    
+
 class DownloadForm(forms.Form):
     """ Form for downloading data dumps. """
 

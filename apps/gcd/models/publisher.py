@@ -2,10 +2,13 @@ from django.db import models
 from django.core import urlresolvers
 from country import Country
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
 
 from taggit.managers import TaggableManager
 
 from apps.oi import states
+from image import Image
 
 class BasePublisher(models.Model):
     class Meta:
@@ -174,6 +177,15 @@ class Brand(BasePublisher):
 
     issue_count = models.IntegerField(default=0)
 
+    def _emblem(self):
+        img = Image.objects.filter(object_id=self.id, deleted=False,
+          content_type = ContentType.objects.get_for_model(self), type__id=3)
+        if img:
+            return img.get()
+        else:
+            return None
+    emblem = property(_emblem)
+
     def deletable(self):
         return self.issue_count == 0 and \
           self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
@@ -187,6 +199,8 @@ class Brand(BasePublisher):
             'show_brand',
             kwargs={'brand_id': self.id } )
 
+    def full_name(self):
+        return unicode(self)
+
     def __unicode__(self):
         return self.name
-

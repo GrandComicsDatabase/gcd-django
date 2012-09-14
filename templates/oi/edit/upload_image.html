@@ -1,0 +1,76 @@
+{% extends "oi/base_view.html" %}
+
+{% load i18n %}
+{% load credits %}
+{% load display %}
+
+{% block title %}
+GCD :: Image upload for {{ display_obj }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default/cover.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1 class="item_id search_id">
+  <div class="left">
+     {{ header }}
+  </div>
+</h1>
+<div class="item_id">
+  <div class="left">
+{{ display_obj|absolute_url }}
+  </div>
+</div>
+<div>
+  <fieldset class="universal">
+    <ol>
+{% if current_image %}
+      <form action="{% url replace_image model_name=model_name id=display_obj.id image_id=current_image.id %}" method="post" enctype="multipart/form-data">
+{% else %}
+      <form action="{% url upload_image model_name=model_name id=display_obj.id image_type=image_type %}" method="post" enctype="multipart/form-data">
+{% endif %}
+        <table class="editing">
+          <input type="submit" value="Upload">
+    {{ form.as_table }}
+        </table>
+        <input type="submit" value="Upload">
+      </form>
+    </ol>
+  </fieldset>
+  {% if current_image %}
+  <div id="display_cover">
+    {{ current_image_tag }}
+    <div style="text-align:left">
+      <ul>
+        <li>If you are replacing an image, please make sure that the image you upload is better than the one that is
+            already there.
+        <li>Image replacements will usually be rejected unless they are significantly better, so do not expect your replacement image to always be accepted.
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+</div> <!-- main -->
+
+<div style="clear:both">
+</div>
+<p/>
+<div id="guidelines">
+<B>Guidelines:</B>
+<UL>
+  {% for line in guidelines %}
+  <li>{{ line }}</li>
+  {% endfor %}
+</UL>
+</div>
+</p>
+
+<p/>
+{% endblock %}
+

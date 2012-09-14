@@ -25,6 +25,7 @@ from django.utils.datastructures import MultiValueDictKeyError
 
 from django.contrib.auth.views import login
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.contenttypes.models import ContentType
 
 from apps.gcd.models import *
 from apps.gcd.views import ViewTerminationError, render_error, paginate_response
@@ -36,7 +37,7 @@ from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
 from apps.oi.forms import *
-from apps.oi.covers import get_preview_image_tag, \
+from apps.oi.covers import get_preview_image_tag, get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
 
 REVISION_CLASSES = {
@@ -48,6 +49,7 @@ REVISION_CLASSES = {
     'story': StoryRevision,
     'cover': CoverRevision,
     'reprint': ReprintRevision,
+    'image': ImageRevision,
 }
 
 DISPLAY_CLASSES = {
@@ -61,7 +63,8 @@ DISPLAY_CLASSES = {
     'reprint': Reprint,
     'reprint_to_issue': ReprintToIssue,
     'reprint_from_issue': ReprintFromIssue,
-    'issue_reprint': IssueReprint
+    'issue_reprint': IssueReprint,
+    'image': Image
 }
 
 REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
@@ -187,6 +190,8 @@ def reserve(request, id, model_name, delete=False, callback=None, callback_args=
 
         if delete:
             changeset.submit(notes=request.POST['comments'], delete=True)
+            if model_name == 'image':
+                return HttpResponseRedirect(urlresolvers.reverse('editing'))
             if model_name == 'cover':
                 return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                          kwargs={'issue_id' : display_obj.issue.id}))
@@ -274,7 +279,7 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
             imprint_revision.save()
 
     return changeset
-    
+
 @permission_required('gcd.can_reserve')
 def edit_two_issues(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, deleted=False)
@@ -292,7 +297,7 @@ def edit_two_issues(request, issue_id):
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
           kwargs={'select_key': select_key}))
-    
+
 @permission_required('gcd.can_reserve')
 def confirm_two_edits(request, data, object_type, issue_two_id):
     if object_type != 'issue':
@@ -424,7 +429,7 @@ thanks,
 
         changeset.approver.email_user('GCD change to review', email_body,
           settings.EMAIL_INDEXING)
-          
+
     if comment_text:
         send_comment_observer(request, changeset, comment_text)
 
@@ -511,7 +516,7 @@ def retract(request, id):
           context_instance=RequestContext(request))
     comment_text = request.POST['comments'].strip()
     changeset.retract(notes=comment_text)
-    
+
     if comment_text:
         send_comment_observer(request, changeset, comment_text)
 
@@ -728,9 +733,9 @@ thanks,
            settings.SITE_URL)
         changeset.indexer.email_user('GCD comment', email_body,
             settings.EMAIL_INDEXING)
-        
+
         send_comment_observer(request, changeset, comment_text)
-        
+
     if changeset.approver.indexer.collapse_compare_view:
         option = '?collapse=1'
     else:
@@ -752,7 +757,7 @@ def release(request, id):
         return render_to_response('gcd/error.html',
           {'error_text': 'A change may only be released by its approver.'},
           context_instance=RequestContext(request))
-          
+
     comment_text = request.POST['comments'].strip()
     changeset.release(notes=comment_text)
     if comment_text:
@@ -778,7 +783,7 @@ thanks,
            settings.SITE_URL)
         changeset.indexer.email_user('GCD comment', email_body,
             settings.EMAIL_INDEXING)
-            
+
         send_comment_observer(request, changeset, comment_text)
 
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
@@ -811,7 +816,7 @@ def discuss(request, id):
         email_comments = ' with the comment:\n"%s"' % comment_text
     else:
         email_comments = '.'
-        
+
     email_body = u"""
 Hello from the %s!
 
@@ -838,9 +843,9 @@ thanks,
         send_comment_observer(request, changeset, comment_text)
     else:
         subject = 'GCD change put into discussion'
-            
+
     changeset.indexer.email_user(subject, email_body, settings.EMAIL_INDEXING)
-          
+
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
@@ -865,8 +870,13 @@ def approve(request, id):
           'Only REVIEWING changes with an approver can be approved.')
 
     comment_text = request.POST['comments'].strip()
-    changeset.approve(notes=comment_text)
-
+    try:
+        changeset.approve(notes=comment_text)
+    except ValueError as detail:
+        if len(detail.args) > 0:
+            return render_error(request, detail.args[0])
+        else:
+            raise detail
     email_comments = '.'
     postscript = ''
     if comment_text:
@@ -956,7 +966,7 @@ thanks,
         else:
             issue_revision.issue.reserved = True
             issue_revision.issue.save()
-            
+
     for issue_revision in \
         changeset.issuerevisions.filter(deleted=False,
                                         issue__created__gt=F('created'),
@@ -1087,7 +1097,7 @@ thanks,
 
     changeset.indexer.email_user('GCD change sent back', email_body,
       settings.EMAIL_INDEXING)
-      
+
     send_comment_observer(request, changeset, comment_text)
 
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
@@ -1116,7 +1126,7 @@ thanks,
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
            settings.SITE_NAME,
            settings.SITE_URL)
-           
+
     if changeset.approver:
         excluding = [changeset.indexer, changeset.approver, request.user]
     else:
@@ -1171,9 +1181,9 @@ thanks,
         if changeset.approver and request.user != changeset.approver:
             changeset.approver.email_user('GCD comment', email_body,
               settings.EMAIL_INDEXING)
-              
+
         send_comment_observer(request, changeset, comment_text)
-        
+
     if 'HTTP_REFERER' in request.META:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
@@ -2219,7 +2229,7 @@ def parse_reprint(reprints):
             string = string[4:]
             position = string.find(' #')
             if position > 0 and len(string[position+2:]):
-                
+
                 string = string[position + 2:]
                 position = string.find(' [') #check for notes
                 if position > 0:
@@ -2315,7 +2325,7 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
     return HttpResponseRedirect(urlresolvers.reverse('edit_reprint',
         kwargs={'id': revision.id, 'which_side': which_side }))
 
-        
+
 @permission_required('gcd.can_reserve')
 def edit_reprint(request, id, which_side=None):
     reprint_revision = get_object_or_404(ReprintRevision, id=id)
@@ -2414,7 +2424,7 @@ def edit_reprint(request, id, which_side=None):
             return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
                 kwargs={ 'id': changeset_issue.id }))
         else:
-            return _cant_get(request)            
+            return _cant_get(request)
     elif which_side == 'remove':
         return HttpResponseRedirect(urlresolvers.reverse('remove_reprint_revision',
             kwargs={ 'id': id }))
@@ -2444,7 +2454,7 @@ def edit_reprint(request, id, which_side=None):
                 story_revision = True
                 issue = None
             else:
-                story = None 
+                story = None
                 story_story = False
                 story_revision = False
                 issue = reprint_revision.origin_issue
@@ -2467,7 +2477,7 @@ def edit_reprint(request, id, which_side=None):
                 story_revision = True
                 issue = None
             else:
-                story = None 
+                story = None
                 story_story = False
                 story_revision = False
                 issue = reprint_revision.target_issue
@@ -2477,7 +2487,7 @@ def edit_reprint(request, id, which_side=None):
             else:
                 selected_story = None
                 selected_issue = reprint_revision.origin_issue
-            
+
         return render_to_response('oi/edit/confirm_reprint.html',
             {
             'story': story,
@@ -2492,7 +2502,7 @@ def edit_reprint(request, id, which_side=None):
             'which_side': which_side
             },
             context_instance=RequestContext(request))
-                
+
     else:
         raise NotImplementedError
 
@@ -2502,7 +2512,7 @@ def edit_reprint(request, id, which_side=None):
             { 'issue_revision': issue_revision, 'changeset': changeset,
               'reprint_revision': reprint_revision, 'which_side': which_side[:6]},
         context_instance=RequestContext(request))
-        
+
     initial = {'series': select_issue.series.name,
                'publisher': select_issue.series.publisher,
                'year': select_issue.series.year_began,
@@ -2623,7 +2633,7 @@ def select_internal_object(request, id, changeset_id, which_side,
           'changeset': changeset, 'reprint_revision_id': reprint_revision.id,
           'reprint_revision': reprint_revision, 'which_side': which_side },
         context_instance=RequestContext(request))
-          
+
 @permission_required('gcd.can_reserve')
 def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
     story = get_object_or_404(Story, id=story_id)
@@ -2665,7 +2675,7 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
         reprint_revision.save()
         return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
               kwargs={ 'model_name': 'story', 'id': story_revision.id }))
-              
+
 @permission_required('gcd.can_reserve')
 def confirm_reprint(request, data, object_type, selected_id):
     if request.method != 'POST':
@@ -2675,7 +2685,7 @@ def confirm_reprint(request, data, object_type, selected_id):
           kwargs={ 'id': changeset_id }))
 
     if 'story_id' in data and data['story_id']:
-        current_story = get_object_or_404(Story, id=data['story_id'])        
+        current_story = get_object_or_404(Story, id=data['story_id'])
         current_story_revision = None
         story = current_story
         current_issue = None
@@ -2700,18 +2710,18 @@ def confirm_reprint(request, data, object_type, selected_id):
         current_issue = current_issue.issue
     else:
         raise NotImplementedError
-        
+
     changeset = get_object_or_404(Changeset, id=data['changeset_id'])
-    
+
     if object_type == 'story':
         selected_story = get_object_or_404(Story, id=selected_id)
         selected_issue = None
     else:
         selected_story = None
         selected_issue = get_object_or_404(Issue, id=selected_id)
-        
+
     if 'reprint_revision_id' in data:
-        reprint_revision = get_object_or_404(ReprintRevision, 
+        reprint_revision = get_object_or_404(ReprintRevision,
                                              id=data['reprint_revision_id'])
         reprint_revision_id = data['reprint_revision_id']
     else:
@@ -2756,9 +2766,9 @@ def save_reprint(request, reprint_revision_id, changeset_id,
             return _cant_get(request)
     else:
         revision = None
-        
+
     changeset = get_object_or_404(Changeset, id=changeset_id)
-        
+
     origin_story = None
     origin_revision = None
     origin_issue = None
@@ -2779,7 +2789,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         if story_one_id:
             target_story = Story.objects.get(id=story_one_id)
         elif story_revision_id:
-            target_revision = story_revision            
+            target_revision = story_revision
         else:
             target_issue = Issue.objects.get(id=issue_one_id)
         if story_two_id:
@@ -2797,7 +2807,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
             target_story = Story.objects.get(id=story_two_id)
         else:
             target_issue = Issue.objects.get(id=issue_two_id)
-            
+
     notes = request.POST['reprint_link_notes']
     if revision:
         revision.origin_story = origin_story
@@ -2829,7 +2839,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
             kwargs={ 'id': changeset_id }))
-          
+
 
 @permission_required('gcd.can_reserve')
 def remove_reprint_revision(request, id):
@@ -2853,7 +2863,7 @@ def remove_reprint_revision(request, id):
     else:
         target = None
         target_issue = reprint.target_issue
-    
+
     if request.method != 'POST':
         return render_to_response('oi/edit/confirm_remove_reprint.html',
         {
@@ -2884,7 +2894,7 @@ def remove_reprint_revision(request, id):
     reprint.delete()
     return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
         kwargs={ 'id': reprint.changeset.issuerevisions.get().id }))
-    
+
 ##############################################################################
 # Moving Items
 ##############################################################################
@@ -3166,7 +3176,7 @@ def remove_story_revision(request, id):
         if not story.page_count:
             story.page_count_uncertain = True
         comment.text += '\nThe StoryRevision "%s" for which this comment was'\
-                        ' entered was removed.' % show_revision_short(story, 
+                        ' entered was removed.' % show_revision_short(story,
                                                                 markup=False)
         comment.revision_id = None
         comment.save()
@@ -3529,8 +3539,9 @@ def show_queue(request, queue_name, state):
                                              CTYPES['two_issues']])
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])
+    images = changes.filter(change_type=CTYPES['image'])
     countries=dict(Country.objects.values_list('id','code'))
-    
+
     response = render_to_response(
       'oi/queues/%s.html' % queue_name,
       {
@@ -3586,6 +3597,11 @@ def show_queue(request, queue_name, state):
             'object_type': 'cover',
             'changesets': covers.order_by('state', 'modified', 'id')\
               .annotate(country=Max('coverrevisions__issue__series__country__id')),
+          },
+          {
+            'object_name': 'Images',
+            'object_type': 'image',
+            'changesets': images.order_by('state', 'modified', 'id'),
           },
         ],
       },
@@ -3645,6 +3661,8 @@ def compare(request, id):
     model_name = revision.source_name
     if model_name == 'cover':
         return cover_compare(request, changeset, revision)
+    if model_name == 'image':
+        return image_compare(request, changeset, revision)
 
     revision.compare_changes()
 
@@ -3835,6 +3853,44 @@ def cover_compare(request, changeset, revision):
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
+@login_required
+def image_compare(request, changeset, revision):
+    '''
+    Compare page for images.
+    - show uploaded image
+    - for replacement show former image
+    '''
+    image_tag = get_preview_generic_image_tag(revision, "uploaded image")
+    kwargs = {'changeset': changeset,
+            'revision': revision,
+            'image_tag' : image_tag,
+            'states': states,
+            'settings': settings}
+
+    if changeset.state != states.APPROVED and revision.type.unique:
+        if Image.objects.filter(content_type=\
+                ContentType.objects.get_for_model(revision.object),
+            object_id=revision.object.id, type=revision.type, deleted=False).count():
+                kwargs['double_upload'] = '%s has an %s. Additional images ' \
+                'cannot be uploaded, only replacements are possible.' \
+                % (revision.object, revision.type.description)
+
+    if revision.is_replacement:
+        replaced_image = revision.previous()
+        kwargs['replaced_image'] = replaced_image
+        kwargs['replaced_image_tag'] = get_preview_generic_image_tag( \
+                                        replaced_image, "replaced image")
+        if changeset.state != states.APPROVED:
+            kwargs['replaced_image_marked'] = revision.image.marked
+            kwargs['replaced_image_file'] = revision.image.image_file
+        else:
+            kwargs['replaced_image_file'] = replaced_image.image_file
+
+    response = render_to_response('oi/edit/compare_image.html',
+                                  kwargs,
+                                  context_instance=RequestContext(request))
+    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    return response
 
 @login_required
 def preview(request, id, model_name):
@@ -3877,7 +3933,7 @@ def store_select_data(request, select_key, data):
         select_key = hashlib.sha1(salt + unicode(request.user)).hexdigest()
     for item in data:
         request.session['%s_%s' % (select_key, item)] = data[item]
-    request.session['%s_items' % select_key] = data.keys() 
+    request.session['%s_items' % select_key] = data.keys()
     return select_key
 
 def get_select_data(request, select_key):
@@ -3898,7 +3954,7 @@ def get_select_forms(request, initial, data, series=False, issue=False, story=Fa
     else:
         cached_story = None
         cached_cover = None
-    
+
     if data:
         search_form = get_select_search_form(series, issue, story)(data)
     else:
@@ -3917,8 +3973,8 @@ def process_select_search(request, select_key):
         return _cant_get(request)
     series = data.get('series', False)
     issue =  data.get('issue', False)
-    story =  data.get('story', False)    
-    
+    story =  data.get('story', False)
+
     search_form = get_select_search_form(series=series, issue=issue, story=story)(request.GET)
     if not search_form.is_valid():
         return HttpResponseRedirect(urlresolvers.reverse('select_object',
@@ -3938,7 +3994,7 @@ def process_select_search(request, select_key):
                                                   cd['year'],
                                                   cd['number'])
         else:
-            heading = '%s (%s, ? series) #%s' % (cd['series'], publisher, 
+            heading = '%s (%s, ? series) #%s' % (cd['series'], publisher,
                                        cd['number'])
         if cd['sequence_number']:
             search = search.filter(sequence_number=cd['sequence_number'])
@@ -3975,7 +4031,7 @@ def process_select_search(request, select_key):
         plural_suffix = 's'
         search = search.order_by("series__name", "series__year_began",
                                  "key_date")
-        
+
     context = { 'item_name': base_name,
         'plural_suffix': plural_suffix,
         'items' : search,
@@ -4005,8 +4061,8 @@ def select_object(request, select_key):
         series = data.get('series', False)
         issue =  data.get('issue', False)
         story =  data.get('story', False)
-        search_form, cache_form = get_select_forms(request, 
-                                    initial, request_data, 
+        search_form, cache_form = get_select_forms(request,
+                                    initial, request_data,
                                     series=series, issue=issue, story=story)
         return render_to_response('oi/edit/select_object.html',
         {
@@ -4020,8 +4076,8 @@ def select_object(request, select_key):
             'target': data['target']
         },
         context_instance=RequestContext(request))
-    
-    if 'cancel' in request.POST: 
+
+    if 'cancel' in request.POST:
         return data['cancel']
     elif 'select_object' in request.POST:
         try:
@@ -4204,4 +4260,3 @@ def download(request):
         'form': form,
       },
       context_instance=RequestContext(request))
-

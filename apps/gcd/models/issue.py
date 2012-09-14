@@ -4,11 +4,14 @@ from decimal import Decimal
 from django.db import models
 from django.core import urlresolvers
 from django.db.models import Sum, Count
+from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
 
 from taggit.managers import TaggableManager
 
 from publisher import IndiciaPublisher, Brand
 from series import Series
+from image import Image
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -66,8 +69,25 @@ class Issue(models.Model):
     series = models.ForeignKey(Series)
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
+    def _indicia_image(self):
+        img = Image.objects.filter(object_id=self.id, deleted=False,
+          content_type = ContentType.objects.get_for_model(self), type__id=1)
+        if img:
+            return img.get()
+        else:
+            return None
+    indicia_image = property(_indicia_image)
     brand = models.ForeignKey(Brand, null=True)
     no_brand = models.BooleanField(default=False, db_index=True)
+
+    def _soo_image(self):
+        img = Image.objects.filter(object_id=self.id, deleted=False,
+          content_type = ContentType.objects.get_for_model(self), type__id=2)
+        if img:
+            return img.get()
+        else:
+            return None
+    soo_image = property(_soo_image)
 
     is_indexed = models.IntegerField(default=0, db_index=True)
 

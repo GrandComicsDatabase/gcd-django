@@ -10,10 +10,14 @@ from django.db.models import Q, F, Count, Max
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 from django.core.validators import RegexValidator
+
+from imagekit.models import ImageSpecField
+from imagekit.processors import ResizeToFit
 
 from apps.oi import states
 from apps.gcd.models import *
@@ -35,6 +39,7 @@ CTYPES = {
     'variant_add': 9,
     'two_issues': 10,
     'reprint': 11,
+    'image': 12,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -42,7 +47,8 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['indicia_publisher'],
                            CTYPES['series'],
                            CTYPES['cover'],
-                           CTYPES['reprint']))
+                           CTYPES['reprint'],
+                           CTYPES['image'],))
 
 # Change types that *might* be bulk changes.  But might just have one revision.
 CTYPES_BULK = frozenset((CTYPES['issue_bulk'],
@@ -54,6 +60,7 @@ ACTION_MODIFY = 'modify'
 
 IMP_BONUS_ADD = 10
 IMP_COVER_VALUE = 5
+IMP_IMAGE_VALUE = 5
 IMP_APPROVER_VALUE = 3
 IMP_DELETE = 1
 
@@ -258,6 +265,9 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['reprint']:
             return (self.reprintrevisions.all(),)
 
+        if self.change_type == CTYPES['image']:
+            return (self.imagerevisions.all(),)
+
     def _revisions(self):
         """
         Fake up an iterable (not actually a list) of all revisions,
@@ -361,6 +371,8 @@ class Changeset(models.Model):
             return name
         elif self.change_type == CTYPES['variant_add']:
             return self.issuerevisions.get(variant_of__isnull=False).queue_name()
+        elif self.change_type == CTYPES['image']:
+            return self.imagerevisions.get().queue_name()
         else:
             return self.inline_revision(cache_safe=True).queue_name()
 
@@ -565,11 +577,6 @@ class Changeset(models.Model):
             raise ValueError, \
                   "Only REVIEWING changes with an approver can be approved."
 
-        self.comments.create(commenter=self.approver,
-                             text=notes,
-                             old_state=self.state,
-                             new_state=states.APPROVED)
-
         issue_revision_count = self.issuerevisions.count()
         if self.change_type == CTYPES['issue_add'] and issue_revision_count > 1:
             # Bulk add of skeletons is relatively complicated.
@@ -587,6 +594,11 @@ class Changeset(models.Model):
         else:
             for revision in self.revisions:
                 revision.commit_to_display()
+
+        self.comments.create(commenter=self.approver,
+                             text=notes,
+                             old_state=self.state,
+                             new_state=states.APPROVED)
 
         self.state = states.APPROVED
         self.save()
@@ -942,7 +954,7 @@ class Revision(models.Model):
             if self.migration_status and self.migration_status.reprint_confirmed \
               and self.migration_status.modified > self.changeset.created:
                 self.is_changed = True
-        
+
     def _start_imp_sum(self):
         """
         Hook for subclasses to initialize state for an IMP calculation.
@@ -972,7 +984,7 @@ class Revision(models.Model):
         self.compare_changes()
         if self.deleted or not self.is_changed:
             return imps
-            
+
         other_imp = self._start_imp_sum()
         if other_imp:
             imps += other_imp
@@ -1443,7 +1455,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             'is_surrogate': None,
             'url': '',
             'notes': '',
-            'keywords': '',            
+            'keywords': '',
             'parent': None,
         }
 
@@ -1887,7 +1899,7 @@ class SeriesRevisionManager(RevisionManager):
           has_volume=series.has_volume,
           has_issue_title=series.has_issue_title,
           is_comics_publication=series.is_comics_publication,
-        
+
           country=series.country,
           language=series.language,
           publisher=series.publisher,
@@ -2165,7 +2177,7 @@ class SeriesRevision(Revision):
         series.has_isbn = self.has_isbn
         series.has_issue_title = self.has_issue_title
         series.has_volume = self.has_volume
-        
+
         reservation = series.get_ongoing_reservation()
         if not self.is_current and reservation and self.previous() and \
           self.previous().is_current:
@@ -2203,7 +2215,7 @@ class SeriesRevision(Revision):
                                       .count()
                 update_count('issue indexes', count*issue_indexes,
                              language=series.language)
-                
+
             if series.language != self.language and self.is_comics_publication:
                 update_count('series', -1, language=series.language)
                 update_count('series', 1, language=self.language)
@@ -2240,7 +2252,7 @@ class SeriesRevision(Revision):
         series.publisher = self.publisher
         series.imprint = self.imprint
         if series.is_comics_publication != self.is_comics_publication:
-            series.has_gallery = self.is_comics_publication and series.scan_count() 
+            series.has_gallery = self.is_comics_publication and series.scan_count()
         series.is_comics_publication = self.is_comics_publication
 
         if clear_reservation:
@@ -2639,7 +2651,7 @@ class IssueRevision(Revision):
         revs = ReprintRevision.objects.exclude(changeset__id=self.changeset_id)\
                                       .exclude(changeset__state=states.DISCARDED)
         return revs
-    
+
     def from_reprints_oi(self, preview=False):
         if self.issue is None:
             return ReprintToIssue.objects.none()
@@ -2745,7 +2757,7 @@ class IssueRevision(Revision):
     def _to_issue_reprints(self):
         return self.to_issue_reprints_oi(preview=True)
     to_issue_reprints = property(_to_issue_reprints)
-        
+
     def has_reprint_revisions(self):
         if self.issue is None:
             if self.target_reprint_revisions\
@@ -2787,7 +2799,7 @@ class IssueRevision(Revision):
         return ReprintRevision.objects.none()
     origin_reprint_revisions = property(_empty_reprint_revisions)
     target_reprint_revisions = property(_empty_reprint_revisions)
-        
+
     def other_variants(self):
         if self.variant_of:
             variants = self.variant_of.variant_set.all()
@@ -3448,7 +3460,7 @@ class StoryRevision(Revision):
             return False
         else:
             return True
-            
+
     def moveable(self):
         """
         A story revision is moveable
@@ -3532,7 +3544,7 @@ class StoryRevision(Revision):
         if self.migration_status and self.migration_status.reprint_confirmed \
             and self.migration_status.modified > self.changeset.created:
                 return 1
-        
+
     def _imps_for(self, field_name):
         if field_name in ('sequence_number', 'type', 'feature', 'genre',
                           'characters', 'synopsis', 'job_number', 'reprint_notes',
@@ -3702,7 +3714,7 @@ class StoryRevision(Revision):
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue
     #    in the current direction under consideration
-    # 2) existing reprints which are reserved and which link self.story 
+    # 2) existing reprints which are reserved and which link self.story
     #    with a story/issue in the current direction under consideration
     # if this is the case we return reprintrevisions and not reprint links
     # returned reprint links are three cases:
@@ -3714,7 +3726,7 @@ class StoryRevision(Revision):
     # c) for the current corresponding reprint links the latest revisions
     #    which are not in the current changeset, the latest can be fetched
     #    via next_revision=None, that way we get either approved or active ones
-    
+
     # for newly added stories it is easy, just show reprintrevision which
     # point to the new story in the right ways
 
@@ -3722,7 +3734,7 @@ class StoryRevision(Revision):
         revs = ReprintRevision.objects.exclude(changeset__id=self.changeset_id)\
                                       .exclude(changeset__state=states.DISCARDED)
         return revs
-        
+
     def from_reprints_oi(self, preview=False):
         if self.story is None:
             return self.target_reprint_revisions\
@@ -3868,7 +3880,7 @@ class StoryRevision(Revision):
           revisions__changeset=self.changeset).count():
             return True
         return False
-        
+
     def has_credits(self):
         return self.script or \
                self.pencils or \
@@ -3928,7 +3940,7 @@ class ReprintRevisionManager(RevisionManager):
         """
         Given an existing Reprint instance, create a new revision based on it.
 
-        This new revision will be where the replacement is stored.
+        This new revision will be where the edits are made.
         """
         return RevisionManager.clone_revision(self,
                                               instance=reprint,
@@ -4046,9 +4058,9 @@ class ReprintRevision(Revision):
                 sort = '9999-99-99'
             return "%s-%d-%d" % (sort, self.origin.issue.series.year_began,
                                 self.origin.issue.sort_code)
-                                
+
     origin_sort = property(_origin_sort)
-                            
+
     target_story = models.ForeignKey(Story, null=True,
                                      related_name='target_reprint_revisions')
     target_revision = models.ForeignKey(StoryRevision, null=True,
@@ -4061,7 +4073,7 @@ class ReprintRevision(Revision):
         else:
             raise AttributeError
     target = property(_target)
-    
+
     target_issue = models.ForeignKey(Issue, null=True,
                               related_name='target_reprint_revisions')
 
@@ -4081,7 +4093,7 @@ class ReprintRevision(Revision):
             return "%s-%d-%d" % (sort, self.target.issue.series.year_began,
                                 self.target.issue.sort_code)
     target_sort = property(_target_sort)
-    
+
     notes = models.TextField(max_length = 255, default='')
 
     in_type = models.IntegerField(db_index=True, null=True)
@@ -4160,7 +4172,7 @@ class ReprintRevision(Revision):
         if field_name == 'notes':
             return 1
         return 0
-        
+
     def commit_to_display(self, clear_reservation=True):
         if self.deleted:
             deleted_link = self.source
@@ -4190,7 +4202,7 @@ class ReprintRevision(Revision):
             if self.target_story or self.target_revision:
                 if self.target_revision:
                     self.target_story = self.target_revision.story
-                    self.target_revision = None                    
+                    self.target_revision = None
                 out_type = REPRINT_TYPES['issue_to_story']
                 target = self.target_story
             else:
@@ -4256,7 +4268,7 @@ class ReprintRevision(Revision):
             reprint = self.source
             reprint.reserved = False
             reprint.save()
-      
+
         self.save()
 
     def get_compare_string(self, base_issue, do_compare=False):
@@ -4316,12 +4328,12 @@ class ReprintRevision(Revision):
             issue = story.issue
             reprint = u'%s %s <br><i>sequence</i> ' \
                        '<a target="_blank" href="%s#%d">%s %s</a>' % \
-                        (direction, esc(issue.full_name()), 
-                         issue.get_absolute_url(), story.id, esc(story), 
+                        (direction, esc(issue.full_name()),
+                         issue.get_absolute_url(), story.id, esc(story),
                          show_title(story))
         else:
             reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
-                        (direction, issue.get_absolute_url(), 
+                        (direction, issue.get_absolute_url(),
                          esc(issue.full_name()))
         if self.notes:
             reprint = '%s [%s]' % (reprint, esc(self.notes))
@@ -4373,3 +4385,124 @@ class Download(models.Model):
     description = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
+
+class ImageRevisionManager(RevisionManager):
+
+    def clone_revision(self, image, changeset):
+        """
+        Given an existing Image instance, create a new revision based on it.
+
+        This new revision will be where the replacement is stored.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=image,
+                                              instance_class=Image,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, image, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        revision = ImageRevision(
+          # revision-specific fields:
+          image=image,
+          changeset=changeset,
+
+          # copied fields:
+          content_type=image.content_type,
+          object_id=image.object_id,
+          type=image.type
+          )
+
+        revision.save()
+        return revision
+
+class ImageRevision(Revision):
+    class Meta:
+        db_table = 'oi_image_revision'
+        ordering = ['created']
+
+    objects = ImageRevisionManager()
+
+    image = models.ForeignKey(Image, null=True, related_name='revisions')
+
+    content_type = models.ForeignKey(content_models.ContentType, null=True)
+    object_id = models.PositiveIntegerField(db_index=True, null=True)
+    object = generic.GenericForeignKey('content_type', 'object_id')
+
+    type = models.ForeignKey(ImageType)
+
+    image_file = models.ImageField(upload_to='%s/%%m_%%Y' % settings.NEW_GENERIC_IMAGE_DIR)
+    scaled_image = ImageSpecField([ResizeToFit(width=400),], image_field='image_file',
+            format='JPEG', options={'quality': 90})
+
+    marked = models.BooleanField(default=False)
+    is_replacement = models.BooleanField(default=False)
+
+    def description(self):
+        return u'%s for %s' % (self.type.description, unicode(self.object.full_name()))
+
+    def _source(self):
+        return self.image
+
+    def _source_name(self):
+        return 'image'
+
+    def _get_blank_values(self):
+        """
+        Images don't do field comparisons, so just return an empty
+        dictionary so we don't throw an exception if code calls this.
+        """
+        return {}
+
+    def calculate_imps(self, prev_rev=None):
+        return IMP_IMAGE_VALUE
+
+    def _imps_for(self, field_name):
+        """
+        Images are done purely on a flat point model and don't really have fields.
+        We shouldn't get here, but just in case, return 0 to be safe.
+        """
+        return 0
+
+    def commit_to_display(self, clear_reservation=True):
+        image = self.image
+        if self.is_replacement:
+            prev_rev = self.previous()
+            # copy replaced image back to revision
+            prev_rev.image_file.save(str(prev_rev.id) + '.jpg',
+                                     content=image.image_file)
+            image.image_file.delete()
+        elif self.deleted:
+            image.delete()
+            return
+        elif image is None:
+            if self.type.unique and not self.is_replacement:
+                if Image.objects.filter(content_type=\
+                  ContentType.objects.get_for_model(self.object),
+                  object_id=self.object.id, type=self.type, deleted=False).count():
+                    raise ValueError, \
+                      '%s has an %s. Additional images cannot be uploaded, '\
+                      'only replacements are possible.' \
+                      % (self.object, self.type.description)
+
+            # first generate instance
+            image = Image(content_type=self.content_type,
+                          object_id=self.object_id,
+                          type=self.type,
+                          marked=self.marked)
+            image.save()
+
+        # then add the uploaded file
+        image.image_file.save(str(image.id) + '.jpg', content=self.image_file)
+        self.image_file.delete()
+        self.image = image
+        self.save()
+        if clear_reservation:
+            image.reserved = False
+            image.save()
+
+    def __unicode__(self):
+        if self.source is None:
+            return 'Image for %s' % unicode(self.object)
+        return unicode(self.source)

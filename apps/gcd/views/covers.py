@@ -9,6 +9,13 @@ from apps.gcd.models import Issue
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
 
+def get_generic_image_tag(image, alt_text):
+    img_class = 'cover_img'
+    width = min(image.image_file.width, 400)
+    return mark_safe('<img src="' + image.scaled_image.url + '?' + \
+                     str(hash(image.modified)) + '" alt="' + esc(alt_text) \
+                     + '" ' + ' class="' + img_class + '" width="' + str(width) + '"/>')
+
 def get_image_tag(cover, alt_text, zoom_level, is_comics_publication=True):
     img_class = 'cover_img'
     if zoom_level == ZOOM_SMALL:
@@ -25,16 +32,16 @@ def get_image_tag(cover, alt_text, zoom_level, is_comics_publication=True):
         width = 400
         size = 'large'
 
-    if not is_comics_publication: 
+    if not is_comics_publication:
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
             'img/noupload_' + size +'.png" alt="No image"' + \
             'class="cover_img">')
-            
+
     if cover is None:
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
             'img/nocover_' + size +'.png" alt="No image yet"' + \
             'class="cover_img">')
-            
+
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
@@ -48,7 +55,7 @@ def get_image_tag(cover, alt_text, zoom_level, is_comics_publication=True):
 
     suffix = "%d/w%d/%d.jpg" % (int(cover.id/1000), width, cover.id)
 
-    # For replacement and variant cover uploads we should make sure that no 
+    # For replacement and variant cover uploads we should make sure that no
     # cached cover is displayed. Adding a changing query string seems the
     # prefered solution found on the net.
     suffix = suffix + '?' + str(hash(cover.last_upload))
@@ -59,7 +66,7 @@ def get_image_tag(cover, alt_text, zoom_level, is_comics_publication=True):
            '" ' + ' class="' + img_class + '"/>')
 
 
-def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False, 
+def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
                              variants=False, exclude_ids=None):
     if issue.has_covers() or (variants and issue.variant_covers().count()):
         covers = issue.active_covers()
@@ -69,7 +76,7 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
         return mark_safe(get_image_tag(cover=None, zoom_level=zoom_level,
                     alt_text=alt_text,
                     is_comics_publication=issue.series.is_comics_publication))
-                    
+
     if exclude_ids:
         covers = covers.exclude(id__in=exclude_ids)
     if as_list:
@@ -85,7 +92,7 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
                                get_image_tag(cover, alt_string, zoom_level),
                                active.count()])
         else:
-            tag += get_image_tag(cover=cover, zoom_level=zoom_level, 
+            tag += get_image_tag(cover=cover, zoom_level=zoom_level,
                                  alt_text=alt_text)
     if as_list:
         return cover_tags

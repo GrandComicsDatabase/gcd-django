@@ -18,3 +18,4 @@ from reprint import Reprint
 from reprinttoissue import ReprintToIssue
 from reprintfromissue import ReprintFromIssue
 from recent import RecentIndexedIssue
+from image import ImageType, Image

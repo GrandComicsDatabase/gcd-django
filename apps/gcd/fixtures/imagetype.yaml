@@ -1,0 +1,9 @@
+- fields: {description: indicia scan, name: IndiciaScan, unique: true}
+  model: gcd.imagetype
+  pk: 1
+- fields: {description: statement of ownership, name: SoOScan, unique: true}
+  model: gcd.imagetype
+  pk: 2
+- fields: {description: brand emblem, name: BrandScan, unique: true}
+  model: gcd.imagetype
+  pk: 3

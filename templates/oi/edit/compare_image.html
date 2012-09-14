@@ -1,0 +1,110 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block title %}
+Reviewing :: {{ revision }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default/cover.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>
+{{ changeset|header_link }}
+</h1>
+
+<h3 style="text-align:center">{{ revision.description }}</h3>
+
+{% if revision.is_replacement %}
+<table id="covers">
+  <tr>
+    <td class="cover_grid{% if replaced_image_marked %} marked{% endif %}">
+      <h2>image to be replaced</h2>
+      <div class="cover_large">
+
+  {% if replaced_image_file %}
+        <a href="{{ replaced_image_file.url }}">{{ replaced_image_tag }}</a>
+        <div>The image has a size of {{ replaced_image_file.width }} x {{ replaced_image_file.height }} pixels. Click on the image to view it in full.</div>
+  {% else %}
+    {{ image_tag }}
+  {% endif %}
+      </div>
+      <div>
+      Image <a href="{% url compare id=replaced_image.changeset.id %}">
+      uploaded on {{ replaced_image.created }}</a> by <br>
+      {{ replaced_image.changeset.indexer.indexer }}.
+      </div>
+    </td>
+
+    <td class="cover_grid{% if revision.marked %} marked{% endif %}">
+    <h2> uploaded replacement image </h2>
+{% else %}
+  {% if revision.deleted %}
+<h2 class='important' style="text-align:center"> image deletion </h2>
+  {% else %}
+    {% if double_upload %}
+    <h3 class='important' style="text-align:center">{{ double_upload }}</h3>
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+<div class="cover_large">
+  {% if revision.image_file %}
+  <a href="{{ revision.image_file.url }}">{{ image_tag }}</a>
+  <div>The image has a size of {{ revision.image_file.width }} x {{ revision.image_file.height }} pixels. Click on the image to view it in full.</div>
+  {% else %}
+    {{ image_tag }}
+  {% endif %}
+  {% if revision.deleted %}
+  <div>
+    Image <a href="{% url compare id=revision.previous.changeset.id %}">
+    uploaded on {{ revision.previous.created }}</a> by <br>
+    {{ revision.previous.changeset.indexer.indexer }}.
+  </div>
+  {% endif %}
+{% if revision.marked %}
+  <p><span class="comparison_highlight">image is marked for replacement</span></p>
+  {% ifequal changeset.state states.REVIEWING %}
+    {% ifequal user changeset.approver %}
+  <form action="{% url unmark_image_revision revision_id=revision.id %}" method="POST">
+    <input type="submit" value="Remove mark for replacement">
+  </form>
+    {% endifequal %}
+  {% endifequal %}
+{% else %}
+  {% ifequal changeset.state states.REVIEWING %}
+    {% ifequal user changeset.approver %}
+  <form action="{% url mark_image_revision revision_id=revision.id %}" method="POST">
+    <input type="submit" value="Mark for replacement">
+  </form>
+    {% endifequal %}
+  {% endifequal %}
+{% endif %}
+</div>
+
+{% if revision.is_replacement %}
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+{% with changeset.comments as comments %}
+{% include 'oi/bits/comments.html' %}
+{% endwith %}
+
+{% with 1 as is_cover %}
+{% include 'oi/bits/compare_actions.html' %}
+{% endwith %}
+
+{% endblock %}
+

@@ -75,7 +75,8 @@ INSTALLED_APPS = (
     'apps.voting',
     'compressor',
     'templatesadmin',
-    'taggit'
+    'taggit',
+    'imagekit'
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -155,6 +156,8 @@ SITE_NAME = 'Grand Comics Database'
 IMAGE_SERVER_URL = 'http://images.comics.org/'
 COVERS_DIR = '/img/gcd/covers_by_id/'
 NEW_COVERS_DIR = '/img/gcd/new_covers/'
+GENERIC_IMAGE_DIR = 'img/gcd/generic_images/'
+NEW_GENERIC_IMAGE_DIR = 'img/gcd/new_generic_images/'
 
 BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com')
 

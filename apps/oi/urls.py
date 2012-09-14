@@ -116,6 +116,20 @@ urlpatterns = patterns('',
     url(r'^cover/(?P<cover_story_id>\d+)/cache/$', oi_views.cache_content,
         name='cache_cover'),
 
+    # Image URLs
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', oi_covers.upload_image,
+        name='upload_image'),
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$', oi_covers.replace_image,
+        name='replace_image'),
+    url(r'^mark_image_revision/(?P<revision_id>.+)/$', oi_covers.mark_image,
+      {'marked': True}, name='mark_image_revision'),
+    url(r'^unmark_image_revision/(?P<revision_id>.+)/$', oi_covers.mark_image,
+      {'marked': False}, name='unmark_image_revision'),
+    url(r'^mark_image/(?P<image_id>.+)/$', oi_covers.mark_image,
+      {'marked': True}, name='mark_cover'),
+    url(r'^unmark_image/(?P<image_id>.+)/$', oi_covers.mark_image,
+      {'marked': False}, name='unmark_cover'),
+
     # Cover URLs
     url(r'^edit_covers/(?P<issue_id>\d+)/$', oi_covers.edit_covers,
       name='edit_covers'),
