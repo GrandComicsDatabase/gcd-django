@@ -115,6 +115,10 @@ urlpatterns = patterns('',
     url(r'^issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',
      'apps.gcd.views.details.cover', name='issue_cover_view'),
 
+    # Images for Issue
+    url(r'^issue/(?P<issue_id>\d+)/image/$',
+     'apps.gcd.views.details.issue_images', name='issue_images'),
+
     # Attribute searches
     (r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.character_by_name'),

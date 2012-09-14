@@ -1,0 +1,61 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+
+{% block title %}
+  GCD :: Cover :: {{ issue.series.name }} #{{ issue.display_number }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% with issue.series as series %}
+{% with issue.display_number as issue_number %}
+{% with 1 as no_variant_name %}
+  {% include "gcd/bits/series_issue_header.html" %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+
+<p>
+<div style="text-align:center">
+{% if indicia_tag %}
+<h3>{{ indicia_image.description }}</h3>
+<div><a href="{{ indicia_image.image_file.url }}">{{ indicia_tag }}</a></div>
+The image has a size of {{ indicia_image.image_file.width }} x {{ indicia_image.image_file.height }} pixels. Click on the image to view it in full.
+<br><a href="{% url replace_image model_name='issue' id=issue.id image_id=indicia_image.id %}">replace scan of indicia</a>
+/ <a href="{% url delete_revision model_name='image' id=indicia_image.id %}">delete scan of indicia</a>
+{% else %}
+<a href="{% url upload_image model_name='issue' id=issue.id image_type='IndiciaScan' %}">add scan of indicia</a>
+{% endif %}
+</div>
+</p>
+
+<p>
+<div style="text-align:center">
+{% if soo_tag %}
+<h3>{{ soo_image.description }}</h3>
+<div><a href="{{ soo_image.image_file.url }}">{{ soo_tag }}</a></div>
+The image has a size of {{ soo_image.image_file.width }} x {{ soo_image.image_file.height }} pixels. Click on the image to view it in full.
+<br><a href="{% url replace_image model_name='issue' id=issue.id image_id=soo_image.id %}">replace scan of statement of ownership</a>
+/ <a href="{% url delete_revision model_name='image' id=soo_image.id %}">delete scan of statement of ownership</a>
+{% else %}
+<a href="{% url upload_image model_name='issue' id=issue.id image_type='SoOScan' %}">add scan of statement of ownership</a>
+{% endif %}
+</div>
+</p>
+
+{% with 1 as paginate_only %}
+{% with issue.series as series %}
+{% with issue.display_number as issue_number %}
+  {% include "gcd/bits/series_issue_header.html" %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+
+{% endblock %}
+

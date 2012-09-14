@@ -103,5 +103,37 @@ should include a comment explaining the deletion.
 </div>
 {% endif %}
 
+{% if description = "Issue" and object.indicia_image or object.soo_image %}
+<div>
+  {% if object.indicia_image %}
+  <table class="listing">
+    <tr>
+      <td><a href="{% url change_history model_name='image' id=object.indicia_image.id %}?collapse=1"> {{ object.indicia_image }} </a></td>
+      <td>{{ object.indicia_image.modified }}</td>
+    </tr>
+  </table>
+  {% endif %}
+  {% if object.soo_image %}
+  <table class="listing">
+    <tr>
+      <td><a href="{% url change_history model_name='image' id=object.soo_image.id %}?collapse=1"> {{ object.soo_image }} </a></td>
+      <td>{{ object.soo_image.modified }}</td>
+    </tr>
+  </table>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if description = "Brand" and object.emblem %}
+<div>
+  <table class="listing">
+    <tr>
+      <td><a href="{% url change_history model_name='image' id=object.emblem.id %}?collapse=1"> {{ object.emblem }} </a></td>
+      <td>{{ object.emblem.modified }}</td>
+    </tr>
+  </table>
+</div>
+{% endif %}
+
 {% endblock %}
 

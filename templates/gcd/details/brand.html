@@ -43,6 +43,9 @@ GCD :: Brand :: {{ brand.name }}
         <dd> None
 {% endifequal %}
       </dl>
+{% if brand.emblem %}
+<img src="{{ brand.emblem.scaled_image.url }}">
+{% endif %}
     </div> <!-- control_center -->
 
 {% if not preview or brand.source %}
@@ -57,6 +60,27 @@ GCD :: Brand :: {{ brand.name }}
     {% endwith %}
     {% endwith %}
     {% endwith %}
+    {% if brand.emblem %}
+      {% if brand.emblem.reserved %}
+      <div style='padding:.4em' class="index_status_1">
+      Brand emblem changes pending
+      </div>
+      {% else %}
+        <form method="GET"
+          action="{% url replace_image model_name='brand' id=brand.id image_id=brand.emblem.id %}">
+          <input type="submit" value="{% trans 'Replace Brand Image' %}">
+        </form>
+        <form method="GET"
+          action="{% url delete_revision model_name='image' id=brand.emblem.id %}">
+          <input type="submit" value="{% trans 'Delete Brand Image' %}">
+        </form>
+      {% endif %}
+    {% else %}
+        <form method="GET"
+          action="{% url upload_image model_name='brand' id=brand.id image_type='BrandScan' %}">
+          <input type="submit" value="{% trans 'Add Brand Image' %}">
+        </form>
+    {% endif %}
   {% endif %}
       </div>
       <div class="change_history">

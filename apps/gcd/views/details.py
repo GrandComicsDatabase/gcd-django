@@ -17,19 +17,20 @@ from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.template import RequestContext
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 
-from apps.gcd.models import Publisher, Series, Issue, Story, \
+from apps.gcd.models import Publisher, Series, Issue, Story, Image, \
                             IndiciaPublisher, Brand, CountStats, \
                             Country, Language, Indexer, IndexCredit, Cover
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
-from apps.gcd.views.covers import get_image_tag, \
+from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
                                   get_image_tags_per_page
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandRevision, IndiciaPublisherRevision, \
-                           Changeset, CTYPES
+                           ImageRevision, Changeset, CTYPES
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -343,7 +344,7 @@ def series_details(request, series_id, by_date=False):
 
 def change_history(request, model_name, id):
     if model_name not in ['publisher', 'brand', 'indicia_publisher',
-                          'series', 'issue', 'cover']:
+                          'series', 'issue', 'cover', 'image']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {
@@ -700,6 +701,16 @@ def daily_changes(request, show_date=None):
     issues = Issue.objects.filter(id__in=issue_revisions).distinct()\
       .select_related('series__publisher', 'series__country')
 
+    image_revisions = list(ImageRevision.objects.filter(
+      changeset__change_type=CTYPES['image'],
+      changeset__state=states.APPROVED,
+      deleted=False,
+      changeset__modified__range=(
+        datetime.combine(requested_date, time.min),
+        datetime.combine(requested_date, time.max)))\
+      .exclude(changeset__indexer=anon).values_list('image', flat=True))
+    images = Image.objects.filter(id__in=image_revisions).distinct()
+
     return render_to_response('gcd/status/daily_changes.html',
       {
         'date' : show_date,
@@ -709,7 +720,8 @@ def daily_changes(request, show_date=None):
         'brands' : brands,
         'indicia_publishers' : indicia_publishers,
         'series' : series,
-        'issues' : issues
+        'issues' : issues,
+        'images' : images
       },
       context_instance=RequestContext(request)
     )
@@ -801,6 +813,46 @@ def covers(request, series_id):
       callback_key='tags',
       callback=lambda page: get_image_tags_per_page(page, series))
 
+def issue_images(request, issue_id):
+    """
+    Display the images for a single issue on its own page.
+    """
+
+    issue = get_object_or_404(Issue, id = issue_id)
+
+    if issue.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'issue', 'id': issue_id}))
+
+    [prev_issue, next_issue] = issue.get_prev_next_issue()
+
+    indicia_image = issue.indicia_image
+    if indicia_image:
+        indicia_tag = get_generic_image_tag(indicia_image, 'indicia scan')
+    else:
+        indicia_tag = None
+
+    soo_image = issue.soo_image
+    if soo_image:
+        soo_tag = get_generic_image_tag(soo_image, 'statement of ownership scan')
+    else:
+        soo_tag = None
+
+    return render_to_response(
+      'gcd/details/issue_images.html',
+      {
+        'issue': issue,
+        'prev_issue': prev_issue,
+        'next_issue': next_issue,
+        'indicia_tag': indicia_tag,
+        'indicia_image': indicia_image,
+        'soo_tag': soo_tag,
+        'soo_image': soo_image,
+        'extra': 'image/'
+      },
+      context_instance=RequestContext(request)
+    )
+
 def issue_form(request):
     """
     Redirect form-style URL used by the drop-down menu on the series
@@ -876,10 +928,13 @@ def show_issue(request, issue, preview=False):
             image_tag = mark_safe(get_image_tag(cover=None,
                                                 zoom_level=zoom_level,
                                                 alt_text=alt_text))
+        images_count = 0
     else:
         image_tag = get_image_tags_per_issue(issue=issue,
                                              zoom_level=zoom_level,
                                              alt_text=alt_text)
+        images_count = Image.objects.filter(object_id=issue.id, deleted=False,
+          content_type = ContentType.objects.get_for_model(issue)).count()
 
     variant_image_tags = []
     for variant_cover in issue.variant_covers():
@@ -933,6 +988,7 @@ def show_issue(request, issue, preview=False):
         'oi_indexers' : oi_indexers,
         'image_tag': image_tag,
         'variant_image_tags': variant_image_tags,
+        'images_count': images_count,
         'show_original': show_original,
         'error_subject': '%s' % issue,
         'preview': preview,

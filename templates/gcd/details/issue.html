@@ -178,6 +178,9 @@ This issue has variants.
 
 {% if not preview or issue.source %}
       <div class="change_history">
+        <a href="{% url issue_images issue_id=issue.id %}">Resources ({{ images_count }}) </a>
+      </div>
+      <div class="change_history">
   {% if preview %}
         <a href="{% url change_history model_name='issue' id=issue.source.id %}">Change History</a>
   {% else %}

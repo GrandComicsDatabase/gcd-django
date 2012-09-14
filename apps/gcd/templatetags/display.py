@@ -18,6 +18,7 @@ from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
 from apps.gcd.models.cover import Cover
+from apps.gcd.models.image import Image
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
@@ -241,6 +242,8 @@ def header_link(changeset):
             issue_num = u'%s - %s' % (issue_num, last_issue_num)
 
         return mark_safe(u'%s (%s) %s' % (series_url, pub_url, issue_num))
+    elif changeset.change_type == CTYPES['image']:
+        return absolute_url(revision.object)
     else:
         return u''
 
@@ -267,7 +270,7 @@ def changed_fields(changeset, object):
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
-    elif object_class is Cover:
+    elif object_class in [Cover, Image]:
         return ""
 
     prev_rev = revision.previous()
