@@ -186,6 +186,21 @@
 </table>
 {% endif %}
 
+{% if images %}
+<table class="listing">
+  <tr>
+    <th> Image </th>
+    <th> Change History </th>
+  </tr>
+  {% for image in images %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> {{ image }} </td>
+    <td>
+      <a href="{% url change_history model_name='image' id=image.id %}">Change History</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
 {% endblock %}
-
-
