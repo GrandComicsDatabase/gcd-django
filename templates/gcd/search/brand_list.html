@@ -12,7 +12,11 @@
   {% for brand in items %}
     {% if not brand.is_imprint %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-      <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a> 
+      <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a>
+      {% if brand.emblem %}
+      <img src="{{ brand.emblem.thumbnail.url }}">
+      {% endif %}
+      </td>
       <td class="listing_publisher"> <a href="{{ brand.parent.get_absolute_url }}">{{ brand.parent.name }}</a></td>
       <td> {{ brand.year_began|default:'' }} </td>
       <td> {{ brand.year_ended|default:'' }} </td>
