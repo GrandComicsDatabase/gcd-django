@@ -203,8 +203,6 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_reprint'),
     (r'^reprint/name/(?P<reprints>.+)/$',
      'apps.gcd.views.search.story_by_reprint'),
-    (r'^settings/$',
-     'apps.gcd.views.settings.settings'),
 
     # calendar
     (r'^agenda/(?P<language>.+)/$','apps.gcd.views.details.agenda'),
