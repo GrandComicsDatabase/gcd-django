@@ -50,7 +50,8 @@ def index(request):
 
     vars = { 'stats' : stats, 'language' : language,
              'stats_for_language' : stats_for_language, 
-             'front_page_content' : front_page_content }
+             'front_page_content' : front_page_content,
+             'CALENDAR': settings.CALENDAR }
     return render_to_response('gcd/index.html', vars,
                               context_instance=RequestContext(request))
       
