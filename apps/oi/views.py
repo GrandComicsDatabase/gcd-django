@@ -4,7 +4,7 @@ import sys
 import os
 import os.path
 import glob
-import Image
+import Image as pyImage
 import stat
 import errno
 import hashlib
@@ -3730,7 +3730,7 @@ def get_cover_width(name):
             return "'none given'"
         else:
             raise
-    im = Image.open(source_name)
+    im = pyImage.open(source_name)
     cover_width = im.size[0]
     return cover_width
 

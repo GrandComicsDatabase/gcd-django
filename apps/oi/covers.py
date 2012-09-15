@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from urllib import urlopen, urlretrieve, quote
-import Image
+import Image as pyImage
 import os, shutil, glob
 import codecs
 import tempfile
@@ -224,14 +224,14 @@ def generate_sizes(cover, im):
                    int(width / full_cover.size[0] * full_cover.size[1])
             if size[1] < 400:
                 size = int(full_cover.size[0]*400./full_cover.size[1]), 400
-            scaled = full_cover.resize(size, Image.ANTIALIAS)
+            scaled = full_cover.resize(size, pyImage.ANTIALIAS)
         else:
             if width == 400 and im.size[0] > im.size[1]:
                 # for landscape covers use height as base size
                 size = int(float(width)/im.size[1]*im.size[0]), width
             else:
                 size = width, int(float(width)/im.size[0]*im.size[1])
-            scaled = im.resize(size, Image.ANTIALIAS)
+            scaled = im.resize(size, pyImage.ANTIALIAS)
         scaled.save(scaled_name, subsampling='4:4:4')
 
 
@@ -381,7 +381,7 @@ def process_edited_gatefold_cover(request):
 
     shutil.move(tmp_name, destination_name)
 
-    im = Image.open(destination_name)
+    im = pyImage.open(destination_name)
     revision.is_wraparound = True
     # convert from scaled to real values
     width = cd['width']
@@ -423,7 +423,7 @@ def handle_gatefold_cover(request, cover, issue, form):
     for chunk in scan.chunks():
         destination.write(chunk)
     destination.close()
-    im = Image.open(destination.name)
+    im = pyImage.open(destination.name)
     if min(im.size) <= 400:
         os.remove(destination.name)
         info_text = "Image is too small, only " + str(im.size) + \
@@ -546,7 +546,7 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
 
     try:
         # generate different sizes we are using
-        im = Image.open(destination.name)
+        im = pyImage.open(destination.name)
         large_enough = False
         if form.cleaned_data['is_wraparound']:
             # wraparounds need to have twice the width
