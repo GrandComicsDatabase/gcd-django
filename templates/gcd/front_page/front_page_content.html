@@ -1,43 +1,38 @@
 <div id="front_page_content_inner">
 <h2>Welcome to the {{ site_name }}!</h2>
-{% if BETA %}
-<div class="instructions">
-<h3>This is the BETA site.</h3>
-<p>
-If you have no particular reason to visit our BETA site, you probably want to use the <a href="http://www.comics.org">real site.</a>
-</p>
-</div>
-{% else %}
-
-<p>
 We're  a nonprofit, Internet-based organization of international volunteers
 dedicated to building a database covering all printed comics throughout the world,
 and we're glad you're here!  Give our search form a try, or take a look at the
 menu to the left to see how you can help us improve the site.
 <p>
-<h3>New Features for July 2011!</h3>
-Changes visible to all
+<h3>New Features for September 2012!</h3>
 <ul>
-  <li> Added issue variants. This mainly concerns issues with different covers,
-be it with different artwork, price, barcode, brand, etc. Issue variants will fetch
-most story sequences from its 'base' issue, but they can have their own cover sequence
-if the artwork is different from the base issue.
-  <li> Leading articles are now correctly handled for sorting without moving them to the back of the series name. 
-  This also concerns searches, you do not need to put them at the back for search purposes.
-  <li> Issue titles: For European series or TPB series one now can enter an issue title in addition to the issue number.
-  <li> On the series page we now show the used brands and indicia publishers.
-  <li> Barcode support: We added a field to track UPC/EAN numbers.
-  <li> Added an uncertain flag for series years.
+  <li> Scans of the indicia (and corresponding legal-like printed publication data) or the statement of ownership can now be added to our site. Look for the 'Resources' link on the right of an issue page.
+  <li> First step in our restructuring of brands: To identify brands an image can be uploaded. More changes to brands will come in the next two months.
 </ul>
-Changes visible for indexers
+<h3>New Features for April 2012!</h3>
+Major changes
 <ul>
-  <li> New editing functionality for variant issues. There most likely will be questions how the issue variants work in detail, if you are an indexer you might want to join our main mailing list for a while for more information.
-  <li> ISBNs, barcodes, issue titles and indicia frequency can now be turned off for a series.
-  <li> Added corresponding no_fields for ISBN, indicia frequency, barcode, issue title.
-  <li> Added help links to the editing page for all fields, experienced users can turn these off in their profile.
-  <li> Changed order of fields on the editing pages, field orders are now consistent on edit and compare pages.
+  <li> We now use reprint links instead of reprint notes. A reprint link connects two sequences, a sequence and an issue, or two issues, respectively. It can be edited or added from both sides, and then displays the corresponding reprint information at both places. More information and screencasts can be found under <a href="http://docs.comics.org/wiki/Reprints"> reprints in our documentation wiki</a>.
+  <li> We added keywords.
+  <li> Comic sequences in non-comic publications can be added to our database.
 </ul>
-{% endif %}
+Other changes visible to all
+<ul>
+  <li> Issue shows as indexed if more than 40% of total pages are indexed.
+  <li> Added partial indexed status: at least one comic story is indexed.
+  <li> Variants are not used in issue navigation.
+  <li> Number of variants shows as *number in issue navigation dropdown.
+  <li> Show on-sale date and barcode on series detail/timeline pages.
+  <li> Several bug fixes.
+</ul>
+Changes visible for contributors
+<ul>
+  <li> One can remember a story, a cover, or an issue. This is particularly useful for reprint link editing. See the remember-link in the top right of a sequence box.
+  <li> Issue import/export can be done in csv-format in addition to tab-separated.
+  <li> Changeset comments are emailed to all who commented before.
+</ul>
+<p>
 <div class="instructions">
 <h3><a name="help">We Need Volunteer Web Designers and Programmers!</a></h3>
 <p>
@@ -51,5 +46,46 @@ can help with any of these roles:
   <li> Database Performance (MySQL)
 </ul>
 </div>
+<div style="clear: both;">
+</div>
+
+<div class="left" style="margin-bottom: 1.0em; margin-top: 1.0em">
+<a href="/issue/883904/cover/4/"><img src="http://images.comics.org//img/gcd/covers_by_id/853/w200/853296.jpg" alt="Cover Image" width="200" class="cover_img"/><img src="http://images.comics.org//img/gcd/covers_by_id/853/w200/853297.jpg" alt="Cover Image" width="200" class="cover_img"/></a>
+<h3>375,000 covers uploaded!</h3>
+<p>
+<div style="margin-bottom: 0em">
+The 375,000th cover was uploaded recently to the GCD! <p> Check out
+the cover which is part of the flip cover for Comix #10/2011, a monthly German comics anthology.<p>Take a look at our
+<a href="http://www.comics.org/international_stats/">international statistics</a>
+to see what else the GCD's been up to. 
+</div>
+</div>
+<div style="clear: both;">
+</div>
 
 </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
