@@ -159,7 +159,7 @@ NEW_COVERS_DIR = '/img/gcd/new_covers/'
 GENERIC_IMAGE_DIR = 'img/gcd/generic_images/'
 NEW_GENERIC_IMAGE_DIR = 'img/gcd/new_generic_images/'
 
-BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com')
+BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com', 'trash-mail.com')
 
 # site management defaults- change these in settings_local.py as needed.
 SITE_DOWN = False
@@ -187,7 +187,9 @@ DOWNLOAD_DELTA = 5
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
                         'compressor.filters.csstidy.CSSTidyFilter']
 
+# for front page editing
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__), 'templates/gcd/front_page/')),]
+TEMPLATESADMIN_GROUP = 'prteam'
 
 # get local settings, will override settings from here
 try:
