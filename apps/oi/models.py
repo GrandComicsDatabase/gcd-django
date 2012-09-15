@@ -2190,8 +2190,6 @@ class SeriesRevision(Revision):
 
         # a new series has language_id None
         if series.language_id is None:
-            if self.is_comics_publication:
-                update_count('series', 1, language=self.language)
             if series.issue_count:
                 raise NotImplementedError("New series can't have issues!")
 
