@@ -136,7 +136,5 @@ Disallow: /upload_cover/
 Disallow: /edit_covers/
 Disallow: /special/
 Disallow: /data/
-# we do not give access to images.comics.org for crawlers anyway
-Disallow: /issue/*/cover/
 Disallow: /changeset/
 Disallow: /projects/
