@@ -924,11 +924,13 @@ def show_issue(request, issue, preview=False):
             image_tag = get_image_tags_per_issue(issue=issue.issue,
                                                  zoom_level=zoom_level,
                                                  alt_text=alt_text)
+            images_count = Image.objects.filter(object_id=issue.issue.id, 
+              deleted=False, 
+              content_type = ContentType.objects.get_for_model(issue.issue)).count()
         else:
             image_tag = mark_safe(get_image_tag(cover=None,
                                                 zoom_level=zoom_level,
                                                 alt_text=alt_text))
-        images_count = 0
     else:
         image_tag = get_image_tags_per_issue(issue=issue,
                                              zoom_level=zoom_level,

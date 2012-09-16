@@ -182,7 +182,11 @@ comics sequences are indexed and cover scans are not currently accepted.<span>
 
 {% if not preview or issue.source %}
       <div class="change_history">
+  {% if preview %}
+        <a href="{% url issue_images issue_id=issue.source.id %}">Resources ({{ images_count }}) </a>
+  {% else %}
         <a href="{% url issue_images issue_id=issue.id %}">Resources ({{ images_count }}) </a>
+  {% endif %}
       </div>
       <div class="change_history">
   {% if preview %}
