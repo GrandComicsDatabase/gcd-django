@@ -895,6 +895,7 @@ def show_issue(request, issue, preview=False):
     alt_text = u'Cover Thumbnail for %s' % issue.full_name()
     zoom_level = ZOOM_MEDIUM
     if preview:
+        images_count = 0
         # excludes are currently only relevant for variant_add, maybe later
         # other cover moves will be possible
         if issue.changeset.change_type in [CTYPES['variant_add'],
