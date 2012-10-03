@@ -26,7 +26,11 @@
 {% if indicia_tag %}
 <h3>{{ indicia_image.description }}</h3>
 <div><a href="{{ indicia_image.image_file.url }}">{{ indicia_tag }}</a></div>
+{% if width > 0 %}
 The image has a size of {{ indicia_image.image_file.width }} x {{ indicia_image.image_file.height }} pixels. Click on the image to view it in full.
+{% else %}
+We are on a development server with no images.
+{% endif %}
 <br><a href="{% url replace_image model_name='issue' id=issue.id image_id=indicia_image.id %}">replace scan of indicia</a>
 / <a href="{% url delete_revision model_name='image' id=indicia_image.id %}">delete scan of indicia</a>
 {% else %}

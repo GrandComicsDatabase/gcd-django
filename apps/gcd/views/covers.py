@@ -11,7 +11,10 @@ from apps.oi import states
 
 def get_generic_image_tag(image, alt_text):
     img_class = 'cover_img'
-    width = min(image.image_file.width, 400)
+    try:
+        width = min(image.image_file.width, 400)
+    except IOError:
+        width = 0
     return mark_safe('<img src="' + image.scaled_image.url + '?' + \
                      str(hash(image.modified)) + '" alt="' + esc(alt_text) \
                      + '" ' + ' class="' + img_class + '" width="' + str(width) + '"/>')
