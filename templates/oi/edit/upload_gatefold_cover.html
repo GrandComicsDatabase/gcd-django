@@ -14,7 +14,6 @@ Select front cover for {{ issue }}
   {% with "Upload Gatefold Cover" as bar_heading %}
     {% include "gcd/bits/no_links_bar.html" %}
   {% endwith %}
-  {% include 'oi/bits/select_cover_section.html' %}
   <p>Please select the front part of the cover for {{ issue }}. Note that if you leave this page without
      clicking "Submit", your upload will be lost.</p>
   <img src='{{ MEDIA_URL }}img/gcd/new_covers/tmp/{{ scan_name }}' id='cropbox' width='{{ width }}'>
@@ -30,3 +29,8 @@ Select front cover for {{ issue }}
 {% endblock %}
 
 {% block fine_print %}{% endblock %}
+
+{% block footer %}
+  {% include 'oi/bits/select_cover_section.html' %}
+{% endblock %}
+

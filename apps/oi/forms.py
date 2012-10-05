@@ -824,8 +824,7 @@ class IssueRevisionForm(forms.ModelForm):
           'price': forms.TextInput(attrs={'class': 'wide'}),
           'editing': forms.TextInput(attrs={'class': 'wide' }),
           'isbn': forms.TextInput(attrs={'class': 'wide'}),
-          'barcode': forms.TextInput(attrs={'class': 'wide',
-            'onKeyPress': 'return disableEnterKey(event);'}),
+          'barcode': forms.TextInput(attrs={'class': 'wide'}),
           'page_count': PageCountInput,
         }
 
@@ -1365,7 +1364,8 @@ class StoryRevisionForm(forms.ModelForm):
              self.instance.synopsis.strip() != cd['synopsis'])):
 
             raise forms.ValidationError(
-              ['The synopsis field may not be longer than 600 characters.'])
+              ['The synopsis field may not be longer than %d characters.' %
+                  settings.LIMIT_SYNOPSIS_LENGTH])
 
         return cd
 

@@ -380,6 +380,7 @@ def _display_edit_form(request, changeset, form, revision=None):
         'revision': revision,
         'form': form,
         'states': states,
+        'settings': settings,
         'CTYPES': CTYPES
       },
       context_instance=RequestContext(request))
@@ -1859,7 +1860,7 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         'action_label': action_label,
         'form': form,
         'alternative_action': alternative_action,
-        'alternative_label': alternative_label
+        'alternative_label': alternative_label,
       },
       context_instance=RequestContext(request))
 
@@ -2172,6 +2173,7 @@ def _display_add_story_form(request, issue, form, changeset_id):
         'object_url': url,
         'action_label': 'Save',
         'form': form,
+        'settings': settings,
       },
       context_instance=RequestContext(request))
 
