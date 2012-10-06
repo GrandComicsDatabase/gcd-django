@@ -77,23 +77,10 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
         <div class="front_page_left_box">
           {% include "gcd/bits/front_page_menu.html" %}
         </div>
-        <div class="front_page_left_box">
-          <div class="box_header">
-            {% trans 'Login' %}
-          </div>
-          <div class="box_inner">
-            {% include "gcd/bits/front_page_login.html" %}
-          </div>
-        </div>
         <div class="front_page_left_box_social">
           <div class="social_item">
             <a href="http://www.facebook.com/GrandComicsDatabase">
               <img alt="facebook" src="{{ MEDIA_URL }}/img/gcd/social/facebook_32.png">
-            </a>
-          </div>
-          <div class="social_item">
-            <a href="https://plus.google.com/b/114804467432159116851/posts">
-              <img alt="google+" src="{{ MEDIA_URL }}/img/gcd/social/google_plus_32.png">
             </a>
           </div>
           <div class="social_item">
@@ -102,9 +89,22 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             </a>
           </div>
           <div class="social_item">
-            <a href="mailto:{% trans 'contact@comics.org' %}">
-              <img alt="email" src="{{ MEDIA_URL }}/img/gcd/social/email_32.png">
+            <a href="https://plus.google.com/b/114804467432159116851/posts">
+              <img alt="google+" src="{{ MEDIA_URL }}/img/gcd/social/google_plus_32.png">
             </a>
+          </div>
+          <div class="social_item">
+            <a href="http://webchat.freenode.net/?channels=GCD">
+              <img alt="irc" src="{{ MEDIA_URL }}/img/gcd/social/irc_32.png">
+            </a>
+          </div>
+        </div>
+        <div class="front_page_left_box">
+          <div class="box_header">
+            {% trans 'Login' %}
+          </div>
+          <div class="box_inner">
+            {% include "gcd/bits/front_page_login.html" %}
           </div>
         </div>
         <!-- Left Column end -->

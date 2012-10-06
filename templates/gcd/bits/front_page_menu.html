@@ -13,16 +13,8 @@
   <a href="mailto:{% trans 'contact@comics.org' %}">{% trans "Contact Us" %}</a>
   </p>
   <p>
-  <a href="http://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a>
-  </p>
-  <form action="https://www.paypal.com/cgi-bin/webscr" method="post" class="login_form">
-    <input type="hidden" name="cmd" value="_s-xclick">
-    <input type="hidden" name="hosted_button_id" value="8787588">
-    <input style="text-align:center" type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
-    <img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
-  </form>
-   <br>
-  <a href="{% url donate %}">{% trans "About Donations" %}</a>
+  <a href="http://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a> |
+  <a method="post" href="{% url donate %}">{% trans "Donate" %}</a>
   </div>
 </div>
 
