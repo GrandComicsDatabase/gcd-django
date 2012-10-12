@@ -1,0 +1,12 @@
+{% load compress %}
+
+{% include 'oi/bits/jquery.html' %}
+{% compress js %}
+<script type='text/javascript' src='{{ MEDIA_URL }}jquery/js/input-special-event.js'></script>
+<script type='text/javascript' src='{{ MEDIA_URL }}js/oi/revision_form_utils.js'></script>
+{% endcompress %}
+{% if settings %}
+<script type='text/javascript'>
+var limitSynopsisLength = {{ settings.LIMIT_SYNOPSIS_LENGTH }};
+</script>
+{% endif %}

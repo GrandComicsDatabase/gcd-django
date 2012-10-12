@@ -39,3 +39,9 @@
 </div>
 {% endblock %}
 
+{% if revision.source_name in 'issue story' %}
+{% block footer %}
+  {% include 'oi/bits/revision_form_utils.html' %}
+{% endblock %}
+{% endif %}
+
