@@ -105,6 +105,7 @@ body {
     float: left;
     width: 16em;
     margin-bottom: 1em;
+    padding-left: 0.4em;
 }
 
 .front_page_left_box_social img {
@@ -115,7 +116,7 @@ body {
 .social_item {
     width: 3em;
     float: left;
-    padding-left: 1em;
+    padding-left: 0.19em;
 }
 
 #front_page_menu {
