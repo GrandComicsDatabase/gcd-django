@@ -1,5 +1,17 @@
 <div id="front_page_content_inner">
 <h2>Welcome to the {{ site_name }}!</h2>
+{% if BETA %}
+{% load statustags %}
+<div class="instructions">
+<h3>This is the BETA site.</h3>
+<p>
+If you have no particular reason to visit our BETA site, you probably want to use the <a href="http://www.comics.org">real site.</a>
+</p>
+</div>
+{% endif %}
+
+
+<p>
 We're  a nonprofit, Internet-based organization of international volunteers
 dedicated to building a database covering all printed comics throughout the world,
 and we're glad you're here!  Give our search form a try, or take a look at the

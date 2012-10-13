@@ -1045,8 +1045,8 @@ def agenda(request, language):
     js_pos_end = a[js_pos:].find('"></script>') + js_pos
     if language not in ['en', 'de']:
         language = 'en'
-    a = a[:js_pos] + settings.MEDIA_URL + 'calendar/js/d55029fd56f3be5e874d2c'\
-      '1680fee739embedcompiled__%s.js' % str(language) + a[js_pos_end:]
+    a = a[:js_pos] + settings.MEDIA_URL + 'calendar/js/calendar_compiled__%s.js' \
+      % str(language) + a[js_pos_end:]
 
     #js_pos = a.find('<script type="text/javascript" src="') + len('<script type="text/javascript" src="')
     #js_pos_end = a[js_pos:].find('"></script>') + js_pos
@@ -1055,6 +1055,6 @@ def agenda(request, language):
     css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
       len('<link type="text/css" rel="stylesheet" href="')
     css_pos_end = a[css_pos:].find('">') + css_pos
-    a = a[:css_pos]  + settings.MEDIA_URL + 'calendar/css/d55029fd56f3be5e87' \
-      '4d2c1680fee739embedcompiled_fastui.css' + a[css_pos_end:]
+    a = a[:css_pos]  + settings.MEDIA_URL + \
+      'calendar/css/calendar_compiled_fastui.css' + a[css_pos_end:]
     return HttpResponse(a)
