@@ -1,1 +1,7 @@
 *.pyc
+*.py~
+*.html~
+*.css~
+*swp
+*media/cache
+/media/img/gcd/generic_images

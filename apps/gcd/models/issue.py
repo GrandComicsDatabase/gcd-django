@@ -69,6 +69,7 @@ class Issue(models.Model):
     series = models.ForeignKey(Series)
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
+    image_resources = generic.GenericRelation(Image)
     def _indicia_image(self):
         img = Image.objects.filter(object_id=self.id, deleted=False,
           content_type = ContentType.objects.get_for_model(self), type__id=1)

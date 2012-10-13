@@ -8,6 +8,7 @@ from issue import Issue
 
 STORY_TYPES = {
     'promo': 16,
+    'soo': 22,
 }
 
 class StoryTypeManager(models.Manager):

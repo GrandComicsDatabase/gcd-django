@@ -140,6 +140,13 @@ class AdvancedSearch(forms.Form):
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
+    image_resources = forms.MultipleChoiceField(label='Image Resources',
+      widget=forms.SelectMultiple(),
+      choices=(('has_soo', 'Has Statement of Ownership Scan'),
+               ('needs_soo', 'Needs Statement of Ownership Scan'),
+               ('has_indicia', 'Has Indicia Scan'),
+               ('needs_indicia', 'Needs Indicia Scan')),
+      required=False)
     indexer = forms.ModelMultipleChoiceField(required=False,
       queryset=Indexer.objects.filter(imps__gt=0).\
       order_by('user__first_name', 'user__last_name').select_related('user'),

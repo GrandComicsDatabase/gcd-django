@@ -21,7 +21,8 @@ from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            Country, Language, Indexer, Brand, IndiciaPublisher
+                            Country, Language, Indexer, Brand, IndiciaPublisher,\
+                            STORY_TYPES
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO, render_error
@@ -932,6 +933,21 @@ def search_issues(data, op, stories_q=None):
         else:
             q_objs.append(~Q(**{ '%sis_indexed' % prefix: INDEXED['full'] }) &\
                           Q(**{ '%svariant_of' % prefix: None }))
+    if data['image_resources'] is not None:
+        if 'has_soo' in data['image_resources']:
+            q_objs.append(Q(**{ '%simage_resources__type__name' % prefix: 'SoOScan' }))
+        if 'needs_soo' in data['image_resources']:
+            q_objs.append(\
+              ( (~Q(**{ '%simage_resources__type__name' % prefix: 'SoOScan' })) \
+                 & Q(**{ '%sstory__type' % prefix: STORY_TYPES['soo'] })) \
+              | Q(**{ '%simage_resources__marked' % prefix: True }))
+        if 'has_indicia' in data['image_resources']:
+            q_objs.append(\
+              Q(**{ '%simage_resources__type__name' % prefix: 'IndiciaScan' }))
+        if 'needs_indicia' in data['image_resources']:
+            q_objs.append(\
+              (~Q(**{ '%simage_resources__type__name' % prefix: 'IndiciaScan' }))\
+              | Q(**{ '%simage_resources__marked' % prefix: True }))
     if data['indexer']:
         q_objs.append(
           Q(**{ '%srevisions__changeset__indexer__indexer__in' % prefix:
