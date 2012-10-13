@@ -1,0 +1,12 @@
+Zum einen regex-Replacement
+
+$pattern = '/this\.[a-zA-Z]{1,2}\+"calendar/';
+$replacement = '"https://www.google.com/calendar';
+$buffer = preg_replace($pattern, $replacement, $buffer);
+
+
+"imagePath",this.c.d
+"imagePath","http://www.google.com/calendar/images/"
+
+this.c.d+'icon_print.gif"
+"http://www.google.com/calendar/images/icon_print.gif"

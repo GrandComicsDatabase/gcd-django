@@ -1,0 +1,9 @@
+make the when/where stuff display: hidden
+event-details-label{display:none
+
+change the font-size to x-small instead of small
+
+
+remove some margin to move the cotent to the right when an entry is opened
+event-when,.event-where,.event-description,.event-who,.event-going{display:block;margin-left:0em;
+.event-links{margin-left:0em}
