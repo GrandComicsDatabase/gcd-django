@@ -77,19 +77,30 @@ function parsePubDate (pubDate) {
 
 $(function() {
     // Set to true if user edits the key date field
-    var keyDayEdited = false;
+    var keyDateEdited = false;
+    var keyDateField = $('#id_key_date');
+    // Contains message defined in templates/oi/bits/revision_form_utils.html
+    var keyDateIndicator = $('#id_key_date_indicator');
 
-    // Prevent updates to key date field if it's been edited
-    $('#id_key_date').change(function () {
-        keyDayEdited = true;
+    keyDateIndicator.insertAfter(keyDateField).show();
+
+    // Prevent updates to key date field if it's been edited and is not empty
+    keyDateField.change(function () {
+        if (keyDateField.val() == '') {
+            keyDateEdited = false;
+            keyDateIndicator.show();
+        } else {
+            keyDateEdited = true;
+            keyDateIndicator.hide();
+        }
     });
 
     // Auto-update key date field from publication date
     $('#id_publication_date').bind('input', function () {
-        if (!keyDayEdited) {
+        if (!keyDateEdited) {
             var newdate = parsePubDate($(this).val());
             if (newdate) {
-                $('#id_key_date').val(newdate);
+                keyDateField.val(newdate);
             }
         }
     });
@@ -105,8 +116,8 @@ $(function() {
     $('#id_synopsis')
         .after('<br><span id="id_synopsis_length"></span>')
         .bind('input', function () {
-            var len = $(this).val().length,
-                legend = $('#id_synopsis_length');
+            var len = $(this).val().length;
+            var legend = $('#id_synopsis_length');
             legend.text('Characters: ' + len + ' / ' + limitSynopsisLength);
             if (len > limitSynopsisLength) {
                 legend.addClass('errorlist');
@@ -114,4 +125,4 @@ $(function() {
                 legend.removeClass('errorlist');
             }
         }).trigger('input');
-}); 
+});
