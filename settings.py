@@ -30,16 +30,21 @@ MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
 MEDIA_URL = "/site_media/"
 
 # Database settings. Override yours in a settings_local.py
-DATABASE_ENGINE   = 'django.db.backends.mysql'
-DATABASE_NAME     = 'gcdonline'
-DATABASE_USER     = 'gcdonline'
-DATABASE_PASSWORD = ''
-DATABASE_HOST     = ''
-DATABASE_PORT     = ''
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME':  'gcdonline',
+        'USER': 'gcdonline',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    },
+}
 
 # middleware settings, LocalMiddleware is for internationalisation
 MIDDLEWARE_CLASSES = (
-   'django.contrib.csrf.middleware.CsrfMiddleware',
+   'django.middleware.csrf.CsrfViewMiddleware',
+   'django.middleware.clickjacking.XFrameOptionsMiddleware',
    'django.contrib.sessions.middleware.SessionMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.common.CommonMiddleware',

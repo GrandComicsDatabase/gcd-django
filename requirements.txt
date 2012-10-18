@@ -1,0 +1,16 @@
+BeautifulSoup
+Django
+MySQL-python
+PIL
+PyICU
+PyYAML
+Pygments
+RBTools
+South
+django-appconf
+django-compressor
+django-imagekit
+django-taggit
+django-templatesadmin
+python-stdnum
+wsgiref

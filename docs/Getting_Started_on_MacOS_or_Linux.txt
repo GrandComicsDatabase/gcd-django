@@ -1,128 +1,225 @@
-This is a new implementation of the Grand Comics Database in Python
+This is the implementation of the Grand Comics Database in Python
 using the Django framework.
 
 For basic information, see the README file in the project's root directory.
+
 This file explains the specifics of setting up a development environment
 on MacOS X or Linux.  Note that your Linux distribution's package management
 system may be able to handle much of the installation work for you.
 
-This document assumes you want to run the "trunk" version (not that there is a
-directory that's actually called "trunk", it's just the version that's not under
-"branches").  If you want to run the current production branch, please inquire
+This file assumes that you're cloning the "master" branch from github.
+If you want to run the current production branch, please inquire
 as to which branch is current at http://groups.google.com/group/gcd-tech/
 
 To run:
 
 0.  You'll need Python.  We are currently using Python 2.6, so you'll want to make
-sure that's the version you have.  There is currently no supported version of the
-MySQLdb module for Python 2.7.
+sure that's the version you have.  There is now a supported version of the
+MySQLdb module for Python 2.7, but we have not yet tried it out.
 
-1.  Install the most recent point release on the Django 1.2.x line.
-See http://dev.comics.org/bugs/show_bug.cgi?id=469 for the status of moving to 1.3,
-which was not yet out at the time of this writing.
+===============================================================================
+= Git and GitHub
+===============================================================================
 
-2.  Install MySQL (version 5.0.77 is the version currently in production, but
-5.1.x releases work fine in development and we intend to migrate to that release
-line when we get a chance) and load a data dump from http://www.comics.org/download/
+** Set up a github account and install git, both of which can be done from
+http://github.com/
 
-3.  Install various dependent packages:
+** Clone the repository.  The GitHub web page is:
+https://github.com/GrandComicsDatabase/gcd-django
 
-3.1:  Install the MySQLdb Python module from
-http://sourceforge.net/projects/mysql-python
-using easy_install, your favorite package management system, or just downloading the
-tar file.  Be certain that however you get it, you get 1.2.3 or higher for
-Python 2.6 support.
+There are several URLs shown there that can be used for the repository:
+    https://github.com/GrandComicsDatabase/gcd-django.git
+        * Read/Write and recommended by GitHub, but Review Board doesn't like it.
+          The Review Board team has a bug for this and it should get fixed.
 
-RPM: MySQL-python
-Debian package: python-mysqldb
+    git://github.com/GrandComicsDatabase/gcd-django.git
+        * Read-only, but fast.  Good for fetches.  Review Board likes it.
 
-There seems to be a MacOS package at 
-http://mac.softpedia.com/get/Developer-Tools/MySQL-Python.shtml
-but we have not tested it, nor do we know anything about this site.
-Nor have we tested any MacOS package management installation, since the GCD
-developer who works on MacOS tends to just use easy_install.
+    git@github.com:GrandComicsDatabase/gcd-django.git
+        * Read/Write, requires adding an SSH key to your GitHub account
+          (see the GitHub help pages for instructions).  
+          Review Board likes it, but slower than the git:// URL.
+          You can fetch/pull from the git:// URL an push to this URL.
 
-3.2:  Install the Python Imaging Library (PIL), which for some annoying
-reason never works with easy_install.  We are using version 1.1.7 in production,
-although you can get away with 1.1.6 if you're not working with the covers code.
-See either of these sites:
-http://pypi.python.org/pypi/PIL/
-http://www.pythonware.com/products/pil/
-RPM: python-imaging
-Debian package: python-imaging
+Contact the gcd-tech mailing list if this is confusing.
 
-There are probably Linux and other distribution packages out there, but you might
-just have to download and compile it.  Don't worry about getting it to support all
-of the different formats (unless you plan on working on image processing
-specifically, in which case ask which ones are needed at
-http://groups.google.com/group/gcd-tech/).
+===============================================================================
+= Applications and non-Python libraries
+===============================================================================
 
-3.3:  Install django_compressor, which does work with easy_install:
-http://pypi.python.org/pypi/django_compressor
-No known RPM or Debian packages.
+MySQL
+=====
+Install MySQL 5.1.  Put the following lines in your /etc/my.cnf
 
-3.4:  Install BeautifulSoup, which does work with easy_install:
-http://pypi.python.org/pypi/BeautifulSoup
-RPM: python-beautifulsoup
-Debian package: python-beautifulsoup
+default-character-set = utf8
+default-storage-engine = InnoDB
 
-3.5:  Install CSSTidy, which should exist as a package for most Linux distributions
+These settings will save you from accidentally not using foreign keys or
+transactions, or from trying to stuff unicode into an 8-bit character set.
+None of those are fun to debug or recover from.
+
+ICU library
+===========
+Install the ICU library, which is C/C++ and may require compilation.
+You will need this before you install the Python modules, as one of them
+depends on it.  This is specifically icu4c, not the Java icu4j.
+
+libicu builds fine on Mac OS X, and pre-built packages should exist for most
+linux distributions:
+
+http://site.icu-project.org/
+RPM: libicu
+Debian package: libicu40
+
+If you do compile libicu yourself, the instructions on their readme.html
+are absurdly complex.  Just do this (which worked on Mac OS X Snow Leopard):
+
+bash:~$ tar xzvf icu-whatever.tgz # version 49 at the time of writing
+bash:~$ cd icu/source
+bash:~/icu/source$ ./configure
+bash:~/icu/source$ gnumake
+bash:~/icu/source$ sudo gnumake install
+
+CSSTidy
+=======
+Install CSSTidy, which should exist as a package for most Linux distributions
 (and possibly for MacPorts as well):
 http://csstidy.sourceforge.net/
 RPM: csstidy
 Debian package: csstidy
 
-3.6.1:  Install the ICU library, which is C/C++ and may require compilation.
-This builds fine on Mac OS X, and pre-built packages should exist for most
-linux distributions:
-http://site.icu-project.org/
-RPM: libicu
-Debian package: libicu40
+===============================================================================
+= Python and bootstrapping the library install.
+===============================================================================
 
-3.6.2:  After installing the ICU libraries, install PyICU, the Python bindings:
-http://pypi.python.org/pypi/PyICU
-This is installable via easy_install on MacOS X and CentOS.
-RPM: pyicu (but yum doesn't seem to find it?  Possibly due to config weirdness.)
-Debian package: python-pyicu
+Python
+======
+Install Python if it did not come with your system.  Python 2.7 is recommended.
+http://www.python.org/download/releases/2.7/
 
-3.7: Install python-yaml, pre-built packages should exist for most linux distributions:
-http://pyyaml.org/
-If you only want to work in the READ_ONLY mode (see below) you do not need this.
+setuptools
+==========
+Install setuptools to get easy_install, which we primarily use to install
+better installation tools.  
+http://pypi.python.org/pypi/setuptools/0.6c11
+See the web page for installation instructions.
 
-3.8: Install python-stdnum, which does work with easy_install:
-http://pypi.python.org/pypi/python-stdnum
+pip
+===
+Use easy_install to install pip:
 
-3.9: There are further python/django packages to be installed, the full list is kept current here:
-http://docs.comics.org/wiki/Third_Party_Packages
+bash:~$ easy_install pip
 
-4.  If you're reading this from the wiki, you'll now want to check out the code
-(which includes this file).  The sourceforge page is
-http://sourceforge.net/projects/grandcomic-book/ and is linked from
-http://dev.comics.org/
-To check out the entire tree, run:
+If you have problems, see http://www.pip-installer.org/en/latest/
 
-svn co https://grandcomic-book.svn.sourceforge.net/svnroot/grandcomic-book grandcomic-book
+virtualenv
+==========
+We strongly recommend using a virtualenv to isolate the libraries you need for
+the GCD, and not contaminate your system python.
+Use pip to install virtualenv, and then create a virtualenv for use with the
+GCD.  For this example, we will create one called "gcd" in a directory called
+"virtualenvs".  
 
-5.  Put the pydjango/ directory of this project on your Python path.  This is the
-directory containing the development trunk of the active project. See 
-http://docs.comics.org/wiki/Developer%27s_Guide_to_the_Code
-for more information on the other directories and branches.
+bash:~$ pip install virtualenv
+# lots of output
+bash:~$ mkdir virtualenvs
+bash:~$ cd virtualenvs
+bash:~/virtualenvs$ virtualenv gcd
+New python executable in gcd/bin/python
+Installing setuptools............done.
+Installing pip...............done.
+bash:virtualenvs$ ls
+gcd
+bash:virtualenvs$ ls gcd
+bin include lib
+bash:virtualenvs$ source gcd/bin/activate
+(gcd)bash:virtualenvs$
 
-6.  Open up pydjango/settings.py and take a look at it.  If you need to change
-any settings, such as the database settings, create a file called settings_local.py
-in the same directory and put the changed or added settings in that file.  They
-will automatically override the settings in the regular settings.py file.
-Our SVN ignore settings will ignore the settings_local.py file so you won't get
-annoying question mark entries when you run svn status.
+# Note that "(gcd)" at the beginning of the prompt.  Now all Python execution
+and installation will occur inside of the "gcd" virtual env, i.e. ~/virtualenvs/gcd.
 
-For the remainder of this document we expect that you have imported a current 
-public dump. By default, we assume that the database is called gcdonline and it 
-can be accessed by a user called gcdonline with no passwords.  If you set
-your database up differently, look for settings that start with
-DATABASE and override them appropriately.  http://www.djangoproject.com/ has lots
-of excellent documentation of all of the available settings.
+For more on installing and using virtualenv, see
+http://www.virtualenv.org/en/latest/index.html
 
-7.  From the pydjango/ directory, run
+distribute
+==========
+Finally, some of the libraries require "distribute", a replacement for setuptools
+which you installed earlier.  A botched installation of distribute can leave your
+python system unusable, so we strongly recommend only installing this inside of
+the virtualenv.  If it fails, you can just throw away the virtualenv and start
+a new one.  If you break your system python, it's a lot harder.
+
+The main way to break your python setup is to try to install distribute with pip.
+That is supposed to work, but often does not.  Instead, use distribute_setup.py
+
+(gcd)bash:~$ curl -O http://python-distribute.org/distribute_setup.py
+(gcd)bash:~$ python distribute_setup.py
+
+Now, after installing four different package management libraries, you are
+finally ready to actually install the libraries needed for the GCD.
+
+===============================================================================
+= Python libraries
+===============================================================================
+
+Assuming you've already activated the virtualenv (but not installed anything
+further in it), and cloned the git repo to ~/git/gcd-django, use pip and
+our checked-in requirements file ot install all necessary Python libraries.
+Make certain that you have any C/C++ libraries already compiled and installed
+(such as libicu, and optionally some supplemental libraries for PIL depending
+on how much of the image editing you want to be able to do).
+
+You can also just run this pip command without the virtualenv to install
+everything into your system python's site-packages tree.
+
+This file tries to install the latest versions of everything.
+PLEASE NOTE:  If the latest version of PyICU does not match the version of
+libicu that you installed, you may need to try an older version of PyICU,
+which should generally work fine with the GCD.  For instance PyICU 1.0
+was known to work with libicu 4.4 as of October 2012.
+
+(gcd)bash:~/git/gcd-django$ pip install -r requirements.txt
+# A ton of output happens here, especially for PIL compilation.
+# You can also just open up the requirements. text and install each line separately.
+# It is safe to re-run pip, since if everything installed properly, it will just
+# check each library and skip it as already installed.
+
+This should install Django and every other python package you need to
+run the site and post code reviews for the project.
+
+===============================================================================
+= The GCD project and apps
+===============================================================================
+
+settings.py and settings_local.py
+=================================
+In the top level directory of your repository clone, open up settings.py and
+take a look at it.  You should create a settings_local.py file in the same
+directory, and override any values from settings.py that need overriding in
+that settings_local.py.  Do not modify settings.py itself, unless you need
+to push a change out to all other development and production environments.
+
+Our .gitignore settings will prevent git from noticing settings_local.py.
+
+The settings.py file has numerous comments indicating what needs to be overridden.
+The most obvious is the DATABASES group of settings.
+
+Creating your test database
+===========================
+Create your database and set up whatever permissions you want.  Django
+will create the tables for you, but you need to create the database first.
+
+If you want data in your database, and know that the current development master
+matches the production shema, you can load a data dump from
+
+http://www.comics.org/download/
+
+Contact the GCD tech team to find out if the development and production
+schemas currently match, and what to do if they do not.
+
+Populating your database with empty tables
+==========================================
+From the root project directory, run
 
 python manage.py syncdb
 
@@ -138,6 +235,8 @@ in settings_local.py and skip the remainder of this and the next section and
 go to point 9. Essentially you can just try the steps at point 9 now with the 
 mentioned setting, if it fails proceed from here before asking for help :-)
 
+Adding essential data to the tables
+===================================
 Now, instead of creating a local admin in the syncdb step, you should load 
 several additional data fixtures:
 
@@ -166,20 +265,16 @@ python manage.py loaddata vote-types
 The production agendas and mailing lists, while basically stanadard, are not
 treated specially in the code so they are not supplied as fixtures.
 
-8.  Assuming you are running the trunk release (the one in pydjango/ instead of
-in something like branches/something/pydjango/ ) you may need to migrate your
-database dump from the production form to the current trunk form.  See
-http://dev.comics.org/bugs/show_bug.cgi?id=474 to find out if a script
-has been written for this.  If not, please inquire at
-http://groups.google.com/group/gcd-tech/ about what must be done.  Or
-if you're feeling exceptionally brave you can try the next step and attempt
-to debug things by matching up database scripts.  We do not recommend this :-)
+Performing any necessary schema migrations
+==========================================
+Assuming you are running the master branch you may need to migrate your
+database dump from the production form to the current HEAD form.
+We are in the process of making this easier- for now, if it looks like you have
+some sort of database mismatch, please contact the gcd-tech mailing list.
 
-Be aware that the migration script, once it exists, may take quite some time
-to run- possibly longer than the data took to load, depending on what sort
-of table changes are being made.
-
-9.  Finally, run:
+Launching your test web server
+==============================
+Finally, run:
 
 python manage.py runserver
 
@@ -190,9 +285,14 @@ looks like Django isn't configured correctly, or
 http://dev.comics.org/ and/or http://groups.google.com/group/gcd-tech/
 if it appears to be a code problem.
 
-10.  When you start making changes, go to the wiki at http://docs.comics.org/
+Proposing your first change for review
+======================================
+When you start making changes, go to the wiki at http://docs.comics.org/
 for instructions on how to get code reviewed before checkin.  You'll need
-to set up an account with our Review Board instance and get added to the
-SourceForge project with write permissions, as noted on the wiki.  Submissions that
-do not first go through code review will be reverted without notice.
+to set up an account with our Review Board instance so that we can review
+your first pull request before deciding whether to accept it.  If you develop
+a good record of contributions, you will be granted direct access to the project.
+
+Submissions to the project-owned repository that do not first go through
+code review will be reverted without notice.
 
