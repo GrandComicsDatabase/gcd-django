@@ -242,6 +242,8 @@ several additional data fixtures:
 
 python manage.py loaddata support
 python manage.py loaddata users
+python manage.py loaddata imagetype
+python manage.py loaddata countstats
 
 You MUST load the support fixture first, because the data in the users table
 depends on it (specifically, gcd_indexers has a foreign key to gcd_country).
