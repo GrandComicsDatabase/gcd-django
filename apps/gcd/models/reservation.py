@@ -19,5 +19,5 @@ class Reservation(models.Model):
     status = models.IntegerField(null=True, blank=True, db_index=True)
 
     expires = models.DateField(null=True, blank=True)
-    created = models.DateField(auto_now=True, null=True, editable=False)
+    created = models.DateTimeField(auto_now=True, null=True, editable=False)
 

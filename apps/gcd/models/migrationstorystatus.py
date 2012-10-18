@@ -12,8 +12,8 @@ class MigrationStoryStatus(models.Model):
         db_table = 'migration_story_status'
 
     story = models.OneToOneField(Story, related_name='migration_status')
-    reprint_needs_inspection = models.BooleanField(default=0)
-    reprint_confirmed = models.BooleanField(default=0)
+    reprint_needs_inspection = models.BooleanField(default=False)
+    reprint_confirmed = models.BooleanField(default=False)
     reprint_original_notes = models.TextField(null=True)
 
     modified = models.DateTimeField(auto_now=True)

@@ -25,11 +25,11 @@ class BasePublisher(models.Model):
     url = models.URLField()
 
     # Fields related to change management.
-    reserved = models.BooleanField(default=0, db_index=True)
-    created = models.DateField(auto_now_add=True)
-    modified = models.DateField(auto_now=True)
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
-    deleted = models.BooleanField(default=0, db_index=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     def delete(self):
         self.deleted = True

@@ -803,7 +803,7 @@ class Revision(models.Model):
     If changes are present, then they were never actually published and
     should be ignored in terms of history.
     """
-    deleted = models.BooleanField(default=0)
+    deleted = models.BooleanField(default=False)
 
     comments = generic.GenericRelation(ChangesetComment,
                                        content_type_field='content_type',
@@ -1217,7 +1217,7 @@ class PublisherRevision(PublisherRevisionBase):
 
     country = models.ForeignKey('gcd.Country', db_index=True)
 
-    is_master = models.BooleanField(default=0, db_index=True,
+    is_master = models.BooleanField(default=False, db_index=True,
       help_text='Check if this is a top-level publisher that may contain '
                 'imprints.')
     parent = models.ForeignKey('gcd.Publisher',
@@ -1928,7 +1928,7 @@ class SeriesRevision(Revision):
     # When adding a series, this requests the ongoing reservation upon approval of
     # the new series.  The request will be granted unless the indexer has reached
     # their maximum number of ongoing reservations at the time of approval.
-    reservation_requested = models.BooleanField(default=0)
+    reservation_requested = models.BooleanField(default=False)
 
     name = models.CharField(max_length=255,
       help_text='Series name as it appears in the indicia (or cover only '

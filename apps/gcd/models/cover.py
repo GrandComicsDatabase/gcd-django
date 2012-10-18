@@ -38,8 +38,8 @@ class Cover(models.Model):
     modified = models.DateTimeField(auto_now=True, null=True)
     last_upload = models.DateTimeField(null=True)
 
-    reserved = models.BooleanField(default=0, db_index=True)
-    deleted = models.BooleanField(default=0, db_index=True)
+    reserved = models.BooleanField(default=False, db_index=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     def _sort_code(self):
         return self.issue.sort_code

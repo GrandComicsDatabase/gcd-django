@@ -52,8 +52,8 @@ class Image(models.Model):
     created = models.DateTimeField(auto_now_add=True, null=True)
     modified = models.DateTimeField(auto_now=True, null=True)
 
-    reserved = models.BooleanField(default=0, db_index=True)
-    deleted = models.BooleanField(default=0, db_index=True)
+    reserved = models.BooleanField(default=False, db_index=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     def delete(self):
         self.deleted = True
