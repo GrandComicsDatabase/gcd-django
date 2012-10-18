@@ -38,6 +38,7 @@ Zoom:
     {% if cover.deletable %}
 <div>
   <form action="{% url move_cover id=changeset.id, cover_id=cover.id %}" method="POST">
+    {% csrf_token %}
     <input type="submit" value="Move cover">
   </form>
 </div>

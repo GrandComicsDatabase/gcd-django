@@ -1,4 +1,5 @@
 <form id="review" action="{% url process id=changeset.id %}" method="POST">
+  {% csrf_token %}
   <div>
   <label for="comments">Comment:</label> <br>
   <textarea id="comments" name="comments"></textarea>

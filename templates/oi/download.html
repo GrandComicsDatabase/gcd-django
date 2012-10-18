@@ -73,6 +73,7 @@ Data last updated:
 {% endfor %}
 </ul>
 <form method="POST" action="{% url download %}" class="download">
+  {% csrf_token %}
   <p>
     <label for="purpose">{{ form.purpose.label }}</label>
     {{ form.purpose }}

@@ -46,6 +46,7 @@ Search for {{ target }} by entering the relevant information here:
 </form>
 </p>
 <form action="{% url select_object select_key=select_key %}" method="POST">
+{% csrf_token %}
 <p>
 {% if cache_form.visible_fields %}
 or select from the data cache:
@@ -59,6 +60,7 @@ or select from the data cache:
 </form>
   {% if issue %}
 <form action="{% url select_object select_key=select_key %}" method="POST">
+{% csrf_token %}
 <p>
 or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;)
   <br><input type="submit" value="Select issue">
@@ -68,6 +70,7 @@ or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;
   {% endif %}
   {% if story %}
 <form action="{% url select_object select_key=select_key %}" method="POST">
+{% csrf_token %}
 <p>
 or enter the id of a story (from its url in the table contents: www.comics.org/issue/&lt;issue_id&gt;/#&lt;story_id&gt;)
   <br><input type="submit" value="Select story">
@@ -78,6 +81,7 @@ or enter the id of a story (from its url in the table contents: www.comics.org/i
 {% endif %}
 <p>
   <form action="{% url select_object select_key=select_key %}" method="POST">
+  {% csrf_token %}
   <input type="submit" name="cancel" value="Cancel"></input>
   </form>
 </p>

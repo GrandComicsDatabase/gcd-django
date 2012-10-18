@@ -39,6 +39,7 @@
 </p>
 
 <form id="imp_in_use_form" action={% url issue_cover_notes %} method="GET">
+  {% csrf_token %}
   <table>
     {{ form.as_table }}
   </table>

@@ -148,6 +148,7 @@
       {% endif %}
       {% if request.user == series.ongoing_reservation.indexer and not series.pending_deletion %}
         <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
+          {% csrf_token %}
           <input id="delete_ongoing" name="delete_ongoing" type="submit"
                  value="Free ongoing reservation">
           </input>
@@ -165,6 +166,7 @@
       {% if not series.pending_deletion %}
         {% if series.is_current and not series.ongoing_reservation %}
         <form method="POST" action="{% url apps.oi.views.ongoing %}">
+          {% csrf_token %}
           <input id="series" name="series" type="hidden" value="{{ series.id }}">
           </input>
           <input id="reserve" name="reserve" type="submit" value="Reserve all new issues">

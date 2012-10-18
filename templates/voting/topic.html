@@ -97,6 +97,7 @@ Total number of voters: {{ topic.num_voters }}
 </p>
 {% else %}
 <form method=POST action="{% url vote %}">
+  {% csrf_token %}
   {% if topic.token %}
   <p class="instructions">
     This vote requires a token from the mailing list where the discussion took
