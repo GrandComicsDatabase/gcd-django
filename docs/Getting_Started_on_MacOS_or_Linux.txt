@@ -128,7 +128,7 @@ distribute
 Finally, some of the libraries require "distribute", a replacement for setuptools
 which you installed earlier.  A botched installation of distribute can leave your
 python system unusable, so this is where using a virtualenv can be handy, as
-a botched virtualenv can just be thown away.  If you break your system python,
+a botched virtualenv can just be thrown away.  If you break your system python,
 see the distribute package's documentation for repair instructions.
 
 The main way to break your python setup is to try to install distribute with pip.
@@ -158,8 +158,9 @@ Debian packages, RPMs and MacPorts packages are available for many of the
 Python libraries, and if you prefer to use those, please remember to
 make a copy of requirements.txt and remove the libraries that you
 installed through other means.  If the OS packages were of older Python
-library verions, you may need to adjust the versions in your requirements.txt
-to match.  See the pip documentation for the requirements.txt format. 
+library verions, you may need to add versions to your requirements.txt
+or adjust the versions to match.  See the pip documentation for the
+requirements.txt format. 
 
 This file tries to install the latest versions of everything.
 PLEASE NOTE:  If the latest version of PyICU does not match the version of
