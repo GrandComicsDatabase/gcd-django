@@ -13,35 +13,18 @@ as to which branch is current at http://groups.google.com/group/gcd-tech/
 
 To run:
 
-0.  You'll need Python.  We are currently using Python 2.6, so you'll want to make
-sure that's the version you have.  There is now a supported version of the
-MySQLdb module for Python 2.7, but we have not yet tried it out.
+0.  You'll need Python.  We are currently using Python 2.7.
 
 ===============================================================================
 = Git and GitHub
 ===============================================================================
 
-** Set up a github account and install git, both of which can be done from
-http://github.com/
+** Install git, which may be found through http://github.com/
 
 ** Clone the repository.  The GitHub web page is:
 https://github.com/GrandComicsDatabase/gcd-django
-
-There are several URLs shown there that can be used for the repository:
-    https://github.com/GrandComicsDatabase/gcd-django.git
-        * Read/Write and recommended by GitHub, but Review Board doesn't like it.
-          The Review Board team has a bug for this and it should get fixed.
-
-    git://github.com/GrandComicsDatabase/gcd-django.git
-        * Read-only, but fast.  Good for fetches.  Review Board likes it.
-
-    git@github.com:GrandComicsDatabase/gcd-django.git
-        * Read/Write, requires adding an SSH key to your GitHub account
-          (see the GitHub help pages for instructions).  
-          Review Board likes it, but slower than the git:// URL.
-          You can fetch/pull from the git:// URL an push to this URL.
-
-Contact the gcd-tech mailing list if this is confusing.
+See the GitHub help documentation for options, and contact the gcd-tech
+mailing list if you need assistance.
 
 ===============================================================================
 = Applications and non-Python libraries
@@ -114,8 +97,9 @@ If you have problems, see http://www.pip-installer.org/en/latest/
 
 virtualenv
 ==========
-We strongly recommend using a virtualenv to isolate the libraries you need for
-the GCD, and not contaminate your system python.
+Using virtualenv is optional, but it will allow you to isolate the libraries
+you need for the GCD, and not contaminate your system python.
+
 Use pip to install virtualenv, and then create a virtualenv for use with the
 GCD.  For this example, we will create one called "gcd" in a directory called
 "virtualenvs".  
@@ -130,8 +114,6 @@ Installing setuptools............done.
 Installing pip...............done.
 bash:virtualenvs$ ls
 gcd
-bash:virtualenvs$ ls gcd
-bin include lib
 bash:virtualenvs$ source gcd/bin/activate
 (gcd)bash:virtualenvs$
 
@@ -145,9 +127,9 @@ distribute
 ==========
 Finally, some of the libraries require "distribute", a replacement for setuptools
 which you installed earlier.  A botched installation of distribute can leave your
-python system unusable, so we strongly recommend only installing this inside of
-the virtualenv.  If it fails, you can just throw away the virtualenv and start
-a new one.  If you break your system python, it's a lot harder.
+python system unusable, so this is where using a virtualenv can be handy, as
+a botched virtualenv can just be thown away.  If you break your system python,
+see the distribute package's documentation for repair instructions.
 
 The main way to break your python setup is to try to install distribute with pip.
 That is supposed to work, but often does not.  Instead, use distribute_setup.py
@@ -155,7 +137,7 @@ That is supposed to work, but often does not.  Instead, use distribute_setup.py
 (gcd)bash:~$ curl -O http://python-distribute.org/distribute_setup.py
 (gcd)bash:~$ python distribute_setup.py
 
-Now, after installing four different package management libraries, you are
+Now, after installing up to four different package management libraries, you are
 finally ready to actually install the libraries needed for the GCD.
 
 ===============================================================================
@@ -164,13 +146,20 @@ finally ready to actually install the libraries needed for the GCD.
 
 Assuming you've already activated the virtualenv (but not installed anything
 further in it), and cloned the git repo to ~/git/gcd-django, use pip and
-our checked-in requirements file ot install all necessary Python libraries.
+our checked-in requirements file to install all necessary Python libraries.
 Make certain that you have any C/C++ libraries already compiled and installed
 (such as libicu, and optionally some supplemental libraries for PIL depending
 on how much of the image editing you want to be able to do).
 
 You can also just run this pip command without the virtualenv to install
 everything into your system python's site-packages tree.
+
+Debian packages, RPMs and MacPorts packages are available for many of the
+Python libraries, and if you prefer to use those, please remember to
+make a copy of requirements.txt and remove the libraries that you
+installed through other means.  If the OS packages were of older Python
+library verions, you may need to adjust the versions in your requirements.txt
+to match.  See the pip documentation for the requirements.txt format. 
 
 This file tries to install the latest versions of everything.
 PLEASE NOTE:  If the latest version of PyICU does not match the version of
