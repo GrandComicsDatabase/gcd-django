@@ -1032,29 +1032,30 @@ def countries_in_use(request):
 def agenda(request, language):
     try:
         f = urlopen("https://www.google.com/calendar/embed?src=comics.org_v62prlv9"
-          "dp79hbjt4du2unqmks%40group.calendar.google.com&showTitle=0&showNav=0&"
+          "dp79hbjt4du2unqmks%%40group.calendar.google.com&showTitle=0&showNav=0&"
           "showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA"
-          "&height=600&wkst=1&bgcolor=%23FFFFFF&color=%238C500B"
-          "&ctz=GMT&hl=de")
+          "&height=600&wkst=1&bgcolor=%%23FFFFFF&color=%%238C500B"
+          "&ctz=GMT&hl=%s" % language)
     except HTTPError:
         raise Http404
 
     a = f.read()
+    # two possibilites here
+    # a) use an absolute url to the calendar, but than not all works,
+    #    i.e. images don't show
+    # b) replace by our own copy of the javascript with some edits,
+    #    used to work, but not currently. If we want to use that again,
+    #    need to replace the google link between js_pos and js_pos_end
+    #    with one pointing to our own edited version, one per language
     js_pos = a.find('<script type="text/javascript" src="') + \
-      len('<script type="text/javascript" src="')
-    js_pos_end = a[js_pos:].find('"></script>') + js_pos
-    if language not in ['en', 'de']:
-        language = 'en'
-    a = a[:js_pos] + settings.MEDIA_URL + 'calendar/js/calendar_compiled__%s.js' \
-      % str(language) + a[js_pos_end:]
-
-    #js_pos = a.find('<script type="text/javascript" src="') + len('<script type="text/javascript" src="')
-    #js_pos_end = a[js_pos:].find('"></script>') + js_pos
-    #a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
+             len('<script type="text/javascript" src="')
+    # js_pos_end = a[js_pos:].find('"></script>') + js_pos
+    a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
 
     css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
       len('<link type="text/css" rel="stylesheet" href="')
     css_pos_end = a[css_pos:].find('">') + css_pos
     a = a[:css_pos]  + settings.MEDIA_URL + \
-      'calendar/css/calendar_compiled_fastui.css' + a[css_pos_end:]
+      'calendar/css/c9ff6efaf72bf95e3e2b53938d3fbacaembedcompiled_fastui.css' \
+      + a[css_pos_end:]
     return HttpResponse(a)
