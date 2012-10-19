@@ -5,7 +5,7 @@ var monthRegExp = [
     /^(m[aä]r|márc|μ[αά]ρ|maaliskuu|njukča)/,
     /^(a[pvb]r|ápr|απρ|nisan|huhtikuu|kwiecień|cuoŋo|spring|vår|påsk)/,
     /^(ma[yigj]|máj|μάι|μαΐ|toukokuu|miesse)/,
-    /^(j[uún]|giu|juin|ιο[υύ]ν|haziran|kesäkuu|czerwiec|geasse)/,
+    /^(j[uú]n|giu|juin|ιο[υύ]ν|haziran|kesäkuu|czerwiec|geasse)/,
     /^(j[uú]l|lug|juil|ιο[υύ]λ|heinäkuu|temmuz|lipiec|suoidne|summer|sommar)/,
     /^(aug|ago|aoû|α[υύ]γ|ağustos|elokuu|sierpień|borge)/,
     /^(se[pt]|szept|σεπ|eylül)|syyskuu|wrzesień|čakča/,
