@@ -16,8 +16,8 @@ class Reservation(models.Model):
 
     indexer = models.ForeignKey(Indexer, related_name='reservation_set')
     issue = models.ForeignKey(Issue, related_name='reservation_set')
-    status = models.IntegerField(null=True, blank=True, db_index=True)
+    status = models.IntegerField(db_index=True)
 
     expires = models.DateField(null=True, blank=True)
-    created = models.DateField(auto_now=True, null=True, editable=False)
+    created = models.DateTimeField(auto_now=True, editable=False)
 

@@ -29,7 +29,7 @@ class Series(models.Model):
     year_ended = models.IntegerField(null=True)
     year_began_uncertain = models.BooleanField(blank=True)
     year_ended_uncertain = models.BooleanField(blank=True)
-    is_current = models.BooleanField()
+    is_current = models.BooleanField(blank=True, db_index=True)
     publication_dates = models.CharField(max_length=255)
 
     first_issue = models.ForeignKey('Issue', null=True,

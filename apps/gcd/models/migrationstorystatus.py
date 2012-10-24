@@ -9,11 +9,17 @@ class MigrationStoryStatus(models.Model):
 
     class Meta:
         app_label = 'gcd'
-        db_table = 'migration_story_status'
+        db_table = 'gcd_migration_story_status'
 
     story = models.OneToOneField(Story, related_name='migration_status')
-    reprint_needs_inspection = models.BooleanField(default=0)
-    reprint_confirmed = models.BooleanField(default=0)
+    reprint_needs_inspection = models.BooleanField(blank=True, default=False,
+                                                   db_index=True)
+    reprint_confirmed = models.BooleanField(blank=True, default=False,
+                                            db_index=True)
+
+    # In production, this field is indexed for the first 255 characters,
+    # but Django cannot produce a length-limited index and MySQL
+    # cannot fully index a longtext, so it does not appear here.
     reprint_original_notes = models.TextField(null=True)
 
     modified = models.DateTimeField(auto_now=True)

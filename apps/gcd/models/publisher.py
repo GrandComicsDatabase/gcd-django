@@ -18,11 +18,11 @@ class BasePublisher(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
-    year_began_uncertain = models.BooleanField(blank=True)
-    year_ended_uncertain = models.BooleanField(blank=True)
+    year_began_uncertain = models.BooleanField(blank=True, db_index=True)
+    year_ended_uncertain = models.BooleanField(blank=True, db_index=True)
     notes = models.TextField()
     keywords = TaggableManager()
-    url = models.URLField()
+    url = models.URLField(max_length=255, blank=True, default=u'')
 
     # Fields related to change management.
     reserved = models.BooleanField(default=0, db_index=True)
@@ -48,8 +48,8 @@ class Publisher(BasePublisher):
 
     # Cached counts.
     imprint_count = models.IntegerField(default=0)
-    brand_count = models.IntegerField(default=0)
-    indicia_publisher_count = models.IntegerField(default=0)
+    brand_count = models.IntegerField(default=0, db_index=True)
+    indicia_publisher_count = models.IntegerField(default=0, db_index=True)
     series_count = models.IntegerField(default=0)
     issue_count = models.IntegerField(default=0)
 

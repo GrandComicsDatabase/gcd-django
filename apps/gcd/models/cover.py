@@ -28,15 +28,15 @@ class Cover(models.Model):
     marked = models.BooleanField(default=False)
     limit_display = models.BooleanField(default=False)
     is_wraparound = models.BooleanField(default=False)
-    front_left = models.IntegerField(default=0)
-    front_right = models.IntegerField(default=0)
-    front_bottom = models.IntegerField(default=0)
-    front_top = models.IntegerField(default=0)
+    front_left = models.IntegerField(null=True, blank=True, default=0)
+    front_right = models.IntegerField(null=True, blank=True, default=0)
+    front_bottom = models.IntegerField(null=True, blank=True, default=0)
+    front_top = models.IntegerField(null=True, blank=True, default=0)
 
     # Fields related to change management.
-    created = models.DateTimeField(auto_now_add=True, null=True)
-    modified = models.DateTimeField(auto_now=True, null=True)
-    last_upload = models.DateTimeField(null=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True, db_index=True)
+    last_upload = models.DateTimeField(null=True, db_index=True)
 
     reserved = models.BooleanField(default=0, db_index=True)
     deleted = models.BooleanField(default=0, db_index=True)

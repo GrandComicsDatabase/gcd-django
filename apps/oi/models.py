@@ -220,6 +220,7 @@ class Changeset(models.Model):
     approver = models.ForeignKey('auth.User',  db_index=True,
                                  related_name='approved_%(class)s', null=True)
 
+    # In production, change_type is a tinyint(2) due to the small value set.
     change_type = models.IntegerField(db_index=True)
     migrated = models.BooleanField(default=False, db_index=True, blank=True)
     date_inferred = models.BooleanField(default=False, blank=True)
@@ -803,7 +804,7 @@ class Revision(models.Model):
     If changes are present, then they were never actually published and
     should be ignored in terms of history.
     """
-    deleted = models.BooleanField(default=0)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     comments = generic.GenericRelation(ChangesetComment,
                                        content_type_field='content_type',
@@ -1702,12 +1703,12 @@ class CoverRevision(Revision):
     marked = models.BooleanField(default=False)
     is_replacement = models.BooleanField(default=False)
     is_wraparound = models.BooleanField(default=False)
-    front_left = models.IntegerField(default=0)
-    front_right = models.IntegerField(default=0)
-    front_bottom = models.IntegerField(default=0)
-    front_top = models.IntegerField(default=0)
+    front_left = models.IntegerField(default=0, null=True)
+    front_right = models.IntegerField(default=0, null=True)
+    front_bottom = models.IntegerField(default=0, null=True)
+    front_top = models.IntegerField(default=0, null=True)
 
-    file_source = models.CharField(max_length=255)
+    file_source = models.CharField(max_length=255, null=True)
 
     def _source(self):
         return self.cover
