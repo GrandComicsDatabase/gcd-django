@@ -41,6 +41,10 @@ These settings will save you from accidentally not using foreign keys or
 transactions, or from trying to stuff unicode into an 8-bit character set.
 None of those are fun to debug or recover from.
 
+If installing using Linux packages of some sort, you will also need
+RPM: mysqlclient-devel
+Debian package: libmysqlclient-dev
+
 ICU library
 ===========
 Install the ICU library, which is C/C++ and may require compilation.
@@ -51,8 +55,8 @@ libicu builds fine on Mac OS X, and pre-built packages should exist for most
 linux distributions:
 
 http://site.icu-project.org/
-RPM: libicu
-Debian package: libicu40
+RPM: libicu and icu-devel
+Debian packages: libicu48 and libicu48-dev
 
 If you do compile libicu yourself, the instructions on their readme.html
 are absurdly complex.  Just do this (which worked on Mac OS X Snow Leopard):
@@ -62,6 +66,16 @@ bash:~$ cd icu/source
 bash:~/icu/source$ ./configure
 bash:~/icu/source$ gnumake
 bash:~/icu/source$ sudo gnumake install
+
+Image libraries
+===============
+You will need some additional libraries for PIL to be able to support some
+of the common image formats.  If you are not doing any image editing, this
+is not required.
+
+See http://www.pythonware.com/products/pil/ for further information.
+
+TODO: Document specifics.
 
 CSSTidy
 =======
@@ -218,55 +232,29 @@ load data in tables that need them. DO NOT create a local admin user when
 syncdb prompts you to do so.  Creating such a user will produce a user without
 a profile (gcd_indexer row) which will cause problems.  
 
-At this time you may be able to test your installation and data import using a 
-read-only mode. This is possible if no migration scripts as mentioned in section
-8 are needed. If this is the case, you can set READ_ONLY = True or NO_OI = True 
-in settings_local.py and skip the remainder of this and the next section and 
-go to point 9. Essentially you can just try the steps at point 9 now with the 
-mentioned setting, if it fails proceed from here before asking for help :-)
+You will notice that syncdb says that it cannot sync some apps because they
+are controlled by South migrations.  To run the migrations, run:
 
-Adding essential data to the tables
-===================================
-Now, instead of creating a local admin in the syncdb step, you should load 
-several additional data fixtures:
+python manage.py migrate
 
-python manage.py loaddata support
-python manage.py loaddata users
-python manage.py loaddata imagetype
-python manage.py loaddata countstats
+This will create the remainder of the tables, populate them with the required
+initial data (and if DEBUG=True in your settings, this will include an admin
+user, an approver, and a basic indexer), and update your schema if any updates
+beyond the initial state are required.  See
 
-You MUST load the support fixture first, because the data in the users table
-depends on it (specifically, gcd_indexers has a foreign key to gcd_country).
+http://south.aeracode.org/
 
-This will give you an admin user (who has all priviliges but has index reservation
-limits set to zero), at least one editor and one indexer, and an anonymous user.
-The usernames, email addresses and passwords can be seen in the fixture file,
-which is located at apps/gcd/fixtures/users.yaml
-
-There is also a "site" fixture just sets up your site URL (used by Django's
-admin UI in the "see on site" links) for localhost:8000.  You may prefer to
-just set this manually in the admin UI if you are using a different test URL.
-If you want to use it, it loads like the others:
-
-python manage.py loaddata site
-
-Finally, the standard vote types for the voting appliacation can be laoded:
-
-python manage.py loaddata vote-types
-
-The production agendas and mailing lists, while basically stanadard, are not
-treated specially in the code so they are not supplied as fixtures.
-
-Performing any necessary schema migrations
-==========================================
-Assuming you are running the master branch you may need to migrate your
-database dump from the production form to the current HEAD form.
-We are in the process of making this easier- for now, if it looks like you have
-some sort of database mismatch, please contact the gcd-tech mailing list.
+for help with any difficulties with South.
 
 Launching your test web server
 ==============================
-Finally, run:
+At this time you should be able to test your installation and data import using a 
+read-only mode, or try out editing with read-write mode.
+
+Read-write mode is the default.
+For read-only mode, set READ_ONLY = True or NO_OI = True in settings_local.py
+
+Once your settings are chosen, run
 
 python manage.py runserver
 
