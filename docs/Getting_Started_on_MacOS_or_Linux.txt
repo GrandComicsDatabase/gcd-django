@@ -41,7 +41,8 @@ These settings will save you from accidentally not using foreign keys or
 transactions, or from trying to stuff unicode into an 8-bit character set.
 None of those are fun to debug or recover from.
 
-If installing using Linux packages of some sort, you will also need
+If installing using Linux packages of some sort and also using pip/virtualenv
+for Python libraries as described below, you will also need
 RPM: mysqlclient-devel
 Debian package: libmysqlclient-dev
 
@@ -55,8 +56,11 @@ libicu builds fine on Mac OS X, and pre-built packages should exist for most
 linux distributions:
 
 http://site.icu-project.org/
-RPM: libicu and icu-devel
-Debian packages: libicu48 and libicu48-dev
+RPM: libicu
+Debian package: libicu48
+
+If using pip/virtualenv to build Python libraries, you will also need
+the icu-devel RPM or the libicu48-dev Debian package.
 
 If you do compile libicu yourself, the instructions on their readme.html
 are absurdly complex.  Just do this (which worked on Mac OS X Snow Leopard):
@@ -238,9 +242,10 @@ are controlled by South migrations.  To run the migrations, run:
 python manage.py migrate
 
 This will create the remainder of the tables, populate them with the required
-initial data (and if DEBUG=True in your settings, this will include an admin
-user, an approver, and a basic indexer), and update your schema if any updates
-beyond the initial state are required.  See
+initial data (and if DEBUG=True in your settings, which it is by default,
+this will include an admin user, an approver, and a basic indexer),
+and update your schema if any updates beyond the initial state are required.
+See
 
 http://south.aeracode.org/
 
@@ -252,7 +257,7 @@ At this time you should be able to test your installation and data import using 
 read-only mode, or try out editing with read-write mode.
 
 Read-write mode is the default.
-For read-only mode, set READ_ONLY = True or NO_OI = True in settings_local.py
+For read-only mode, set READ_ONLY = True and NO_OI = True in settings_local.py
 
 Once your settings are chosen, run
 
