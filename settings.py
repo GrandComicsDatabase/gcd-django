@@ -82,7 +82,8 @@ INSTALLED_APPS = (
     'compressor',
     'templatesadmin',
     'taggit',
-    'imagekit'
+    'imagekit',
+    'south',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
