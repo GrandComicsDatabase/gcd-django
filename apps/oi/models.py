@@ -1880,7 +1880,6 @@ class SeriesRevisionManager(RevisionManager):
           # copied fields:
           name=series.name,
           leading_article=series.name != series.sort_name,
-          classification=series.classification,
           format=series.format,
           notes=series.notes,
           keywords='; '.join(str(i) for i in series.keywords.all().order_by('name')),
@@ -1935,7 +1934,6 @@ class SeriesRevision(Revision):
                 'if there is no indicia).')
     leading_article = models.BooleanField(default=False, blank=True,
       help_text='Check if the name starts with an article.')
-    classification = models.ForeignKey(Classification, null=True, blank=True)
     format = models.CharField(max_length=255, blank=True,
       help_text='This is a compound field that holds size, binding, '
                 'paper stock and other information, separated by '
@@ -2072,7 +2070,6 @@ class SeriesRevision(Revision):
         return {
             'name': '',
             'leading_article': False,
-            'classification': None,
             'format': '',
             'notes': '',
             'keywords': '',
@@ -2163,7 +2160,6 @@ class SeriesRevision(Revision):
             series.sort_name = remove_leading_article(self.name)
         else:
             series.sort_name = self.name
-        series.classification = self.classification
         series.format = self.format
         series.notes = self.notes
 
