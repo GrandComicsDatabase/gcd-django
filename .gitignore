@@ -4,5 +4,11 @@
 *.css~
 *swp
 *media/cache
+/media/img/gcd/covers_by_id
+/media/img/gcd/covers_old_id_scheme
+/media/img/gcd/new_covers
+/media/img/gcd/new_generic_images
 /media/img/gcd/generic_images
+/media/local_img
+/media/admin
 settings_local.py

@@ -27,7 +27,11 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
-MEDIA_URL = "/site_media/"
+MEDIA_URL = '/site_media/'
+
+# We're not using django.contrib.staticfiles yet, but the admin site
+# is happier with a STATIC_URL.
+STATIC_URL = MEDIA_URL
 
 # Database settings. Override yours in a settings_local.py
 DATABASES = {
@@ -140,7 +144,8 @@ COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
                         'compressor.filters.csstidy.CSSTidyFilter']
 
 # for front page editing
-TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__), 'templates/gcd/front_page/')),]
+TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
+                                'templates/gcd/front_page/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
 
 #################################################################################
