@@ -4,7 +4,7 @@
     username: editor
     first_name: Ed
     last_name: Tor
-    email: gcd-main@googlegroups.com
+    email: nobody@comics.org
     password: 'sha1$66b61$8dafc5b8b3470a1e6f849f2c380a4b0959447508' # editme
     is_active: True
     is_staff: False
