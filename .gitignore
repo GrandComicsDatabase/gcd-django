@@ -6,3 +6,7 @@
 *media/cache
 /media/img/gcd/generic_images
 settings_local.py
+.project
+.pydevproject
+.settings
+*.nja
