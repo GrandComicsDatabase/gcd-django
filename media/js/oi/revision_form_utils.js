@@ -82,7 +82,7 @@ $(function() {
     // Contains message defined in templates/oi/bits/revision_form_utils.html
     var keyDateIndicator = $('#id_key_date_indicator');
 
-    keyDateIndicator.insertAfter(keyDateField).show();
+    keyDateIndicator.insertAfter(keyDateField);
 
     // Prevent updates to key date field if it's been edited and is not empty
     keyDateField.change(function () {
@@ -101,6 +101,7 @@ $(function() {
             var newdate = parsePubDate($(this).val());
             if (newdate) {
                 keyDateField.val(newdate);
+                keyDateIndicator.show();
             }
         }
     });
