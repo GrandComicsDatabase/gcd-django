@@ -1235,7 +1235,7 @@ class PublisherRevision(PublisherRevisionBase):
     # Fake an imprint set for the preview page.
     def _imprint_set(self):
         if self.publisher is None:
-            return Publisher.object.filter(pk__isnull=True)
+            return Publisher.objects.filter(pk__isnull=True)
         return self.publisher.imprint_set
     imprint_set = property(_imprint_set)
 
