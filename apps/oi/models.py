@@ -3892,6 +3892,7 @@ class StoryRevision(Revision):
         return self.genre or \
                self.characters or \
                self.synopsis or \
+               self.keywords or \
                self.has_reprints()
 
     def has_reprints(self, notes=True):
