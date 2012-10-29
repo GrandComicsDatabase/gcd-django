@@ -3,9 +3,11 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db.models import F
 
-from apps.gcd.models import Publisher, Country, Language, Issue, StoryType, Series, Story
+from apps.gcd.models import Publisher, Country, Language, Issue, StoryType, \
+                            Series, Story
 from apps.gcd.views import paginate_response
-from apps.projects.forms import ImprintsInUseForm, IssuesWithCoversForm, IssueCoverNotesForm, ReprintInspectionForm
+from apps.projects.forms import ImprintsInUseForm, IssuesWithCoversForm, \
+                                ReprintInspectionForm
 
 
 def imprints_in_use(request):
@@ -151,75 +153,3 @@ def story_reprint_inspection(request):
 
     return paginate_response(request, stories,
                              'projects/story_reprint_inspection.html', vars, page_size=50)
-    
-def issue_cover_notes(request):
-    """
-    This project is geared towards cleaning up identical cover and issue notes.
-    For this we need a list of such issues that can be filtered and sorted
-    by a few basic attributes.
-    """
-    cover = StoryType.objects.get(name='cover')
-    issues = Issue.objects.exclude(notes__exact='').\
-             filter(story__type=cover, story__notes=F('notes'),
-                    story__deleted=False, deleted=False).all()
-
-    qargs = {'deleted': False}
-    qorder = ['series__sort_name', 'series__year_began', 'sort_code', 'number']
-
-    vars = {
-        'heading': 'Issues',
-        'search_item': 'with identical notes and cover notes',
-        'item_name': 'issue',
-        'plural_suffix': 's',
-    }
-
-    if (request.GET):
-        form = IssueCoverNotesForm(request.GET)
-        form.is_valid()
-        if form.is_valid():
-            data = form.cleaned_data
-
-            # Extra filters
-            if data['publisher']:
-                qargs['series__publisher__id'] = data['publisher']
-            if data['country']:
-                qargs['series__country'] = data['country']
-            if data['language']:
-                qargs['series__language'] = data['language']
-
-        get_copy = request.GET.copy()
-        get_copy.pop('page', None)
-        vars['query_string'] = get_copy.urlencode()
-    else:
-        form = IssueCoverNotesForm()
-    issues = issues.filter(**qargs).order_by(*qorder)
-    vars['form'] = form
-    vars['advanced_search'] = True
-
-    return paginate_response(request, issues,
-                             'projects/issue_cover_notes.html', vars, page_size=50)
-
-def series_with_isbn(request):
-    series = Series.objects.filter(notes__icontains='ISBN',deleted=False).\
-             exclude(notes__icontains='ISBN 91-88334-36-8')
-
-    qargs = {'deleted': False}
-    qorder = ['sort_name', 'year_began']
-
-    vars = {
-        'heading': 'Series',
-        'search_item': 'with ISBN in notes',
-        'item_name': 'series',
-        'plural_suffix': '',
-    }
-
-    if (request.GET):
-        get_copy = request.GET.copy()
-        get_copy.pop('page', None)
-        vars['query_string'] = get_copy.urlencode()
-    series = series.filter(**qargs).order_by(*qorder)
-    vars['advanced_search'] = True
-
-    return paginate_response(request, series,
-                             'projects/series_with_isbn.html', vars, page_size=50)
-
