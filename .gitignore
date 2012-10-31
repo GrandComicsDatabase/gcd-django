@@ -12,3 +12,7 @@
 /media/local_img
 /media/admin
 settings_local.py
+.project
+.pydevproject
+.settings
+*.nja
