@@ -136,6 +136,9 @@ SITE_ID = 1
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 TIME_ZONE = 'UTC'
 
+# International DateTime string format
+DATETIME_FORMAT = 'Y-m-d h:m:s'
+
 #################################################################################
 # 3rd-party app settings
 #################################################################################
