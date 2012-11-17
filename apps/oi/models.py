@@ -335,6 +335,8 @@ class Changeset(models.Model):
         well as deletes cannot be edited after submission.
         """
         return (self.inline() or self.change_type == CTYPES['issue'] or \
+          (self.change_type == CTYPES['issue_add'] \
+            and self.issuerevisions.count() == 1) or \
           self.change_type in [CTYPES['variant_add'], CTYPES['two_issues']]) \
           and not self.deleted()
 
