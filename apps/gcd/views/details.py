@@ -239,7 +239,9 @@ def show_series(request, series, preview=False):
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
-
+    if series.has_issue_title:
+        table_width = 2
+        
     return render_to_response(
       'gcd/details/series.html',
       {
