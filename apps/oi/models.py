@@ -687,7 +687,8 @@ class Changeset(models.Model):
         """
         calculated = self.imps
         if self.change_type != CTYPES['cover'] and \
-           self.changeset_action() == ACTION_ADD:
+          self.change_type != CTYPES['image'] and \
+          self.changeset_action() == ACTION_ADD:
             return calculated + IMP_BONUS_ADD
         return calculated
 
