@@ -21,6 +21,7 @@
   <form action="{% url login %}" method="GET">
     <input type="submit" name="login" value="Log In" />
     <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-  </form>
+  </form> |
+  <a method="post" href="{% url donate %}">Donate</a>
 {% endif %}
 </div>
