@@ -109,7 +109,8 @@ class AdvancedSearch(forms.Form):
                                     required=False)
     issue_count = forms.CharField(label='Issue Count',
                                   required=False)
-    series_year_began = forms.IntegerField(required=False)
+    series_year_began = forms.IntegerField(required=False, 
+                                           label='Series Year Began')
     is_comics = forms.NullBooleanField(label="More than 50% comics",
       required=False,
       widget=forms.Select(choices=((None, ""),
