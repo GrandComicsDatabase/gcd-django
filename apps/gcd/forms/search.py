@@ -264,4 +264,9 @@ class AdvancedSearch(forms.Form):
                     raise forms.ValidationError(
                       "The on-sale date can only be used in issue or story "
                       "searches.")
+            if cleaned_data['keywords']:
+                if cleaned_data['target'] in ['cover','issue_cover']:
+                    raise forms.ValidationError(
+                      "For technical reasons keywords cannot be used for "
+                      "searches for covers and covers for issues.")
         return cleaned_data
