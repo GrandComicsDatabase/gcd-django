@@ -108,7 +108,7 @@ class Migration(DataMigration):
         },
         'gcd.error': {
             'Meta': {'object_name': 'Error'},
-            'error_key': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'primary_key': 'True'}),
+            'error_key': ('django.db.models.fields.CharField', [], {'max_length': '40', 'primary_key': 'True'}),
             'error_text': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'is_safe': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
@@ -246,8 +246,8 @@ class Migration(DataMigration):
             'Meta': {'object_name': 'MigrationStoryStatus', 'db_table': "'gcd_migration_story_status'"},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'reprint_confirmed': ('django.db.models.fields.NullBooleanField', [], {'default': 'False', 'null': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'reprint_needs_inspection': ('django.db.models.fields.NullBooleanField', [], {'default': 'False', 'null': 'True', 'db_index': 'True', 'blank': 'True'}),
+            'reprint_confirmed': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'reprint_needs_inspection': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'reprint_original_notes': ('django.db.models.fields.TextField', [], {'null': 'True'}),
             'story': ('django.db.models.fields.related.OneToOneField', [], {'related_name': "'migration_status'", 'unique': 'True', 'to': "orm['gcd.Story']"})
         },

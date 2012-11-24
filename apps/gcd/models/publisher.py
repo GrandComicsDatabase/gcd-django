@@ -26,8 +26,8 @@ class BasePublisher(models.Model):
 
     # Fields related to change management.
     reserved = models.BooleanField(default=0, db_index=True)
-    created = models.DateField(auto_now_add=True)
-    modified = models.DateField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=0, db_index=True)
 
