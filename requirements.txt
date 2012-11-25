@@ -10,7 +10,7 @@ South
 django-appconf
 django-compressor
 django-imagekit
-django-taggit
+git+git://github.com/GrandComicsDatabase/django-taggit.git
 django-templatesadmin
 python-stdnum
 wsgiref
