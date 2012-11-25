@@ -39,14 +39,14 @@ class Story(models.Model):
 
     # Core story fields.
     title = models.CharField(max_length=255)
-    title_inferred = models.BooleanField(default=0, db_index=True)
+    title_inferred = models.BooleanField(default=False, db_index=True)
     feature = models.CharField(max_length=255)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
 
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
                                      null=True, db_index=True)
-    page_count_uncertain = models.BooleanField(default=0, db_index=True)
+    page_count_uncertain = models.BooleanField(default=False, db_index=True)
 
     script = models.TextField()
     pencils = models.TextField()
@@ -55,12 +55,12 @@ class Story(models.Model):
     letters = models.TextField()
     editing = models.TextField()
 
-    no_script = models.BooleanField(default=0, db_index=True)
-    no_pencils = models.BooleanField(default=0, db_index=True)
-    no_inks = models.BooleanField(default=0, db_index=True)
-    no_colors = models.BooleanField(default=0, db_index=True)
-    no_letters = models.BooleanField(default=0, db_index=True)
-    no_editing = models.BooleanField(default=0, db_index=True)
+    no_script = models.BooleanField(default=False, db_index=True)
+    no_pencils = models.BooleanField(default=False, db_index=True)
+    no_inks = models.BooleanField(default=False, db_index=True)
+    no_colors = models.BooleanField(default=False, db_index=True)
+    no_letters = models.BooleanField(default=False, db_index=True)
+    no_editing = models.BooleanField(default=False, db_index=True)
 
     job_number = models.CharField(max_length=25)
     genre = models.CharField(max_length=255)
@@ -74,11 +74,11 @@ class Story(models.Model):
     issue = models.ForeignKey(Issue)
 
     # Fields related to change management.
-    reserved = models.BooleanField(default=0, db_index=True)
+    reserved = models.BooleanField(default=False, db_index=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
 
-    deleted = models.BooleanField(default=0, db_index=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     def delete(self):
         self.deleted = True

@@ -60,7 +60,7 @@ class Series(models.Model):
     # Fields related to indexing activities.
     # Only "reserved" is in active use.  "open_reserve" is a legacy field
     # used only by migration scripts.
-    reserved = models.BooleanField(default=0, db_index=True)
+    reserved = models.BooleanField(default=False, db_index=True)
     open_reserve = models.IntegerField(null=True)
 
     # Country and Language info.
@@ -76,7 +76,7 @@ class Series(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
-    deleted = models.BooleanField(default=0, db_index=True)
+    deleted = models.BooleanField(default=False, db_index=True)
 
     def delete(self):
         self.deleted = True
