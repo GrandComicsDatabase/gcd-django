@@ -1882,8 +1882,14 @@ class SeriesRevisionManager(RevisionManager):
           name=series.name,
           leading_article=series.name != series.sort_name,
           format=series.format,
+          color=series.color,
+          dimensions=series.dimensions,
+          paper_stock=series.paper_stock,
+          binding=series.binding,
+          publishing_format=series.publishing_format,
           notes=series.notes,
-          keywords='; '.join(str(i) for i in series.keywords.all().order_by('name')),
+          keywords='; '.join(str(i) for i in
+                             series.keywords.all().order_by('name')),
           year_began=series.year_began,
           year_ended=series.year_ended,
           year_began_uncertain=series.year_began_uncertain,
@@ -1909,7 +1915,8 @@ class SeriesRevisionManager(RevisionManager):
         return revision
 
 def get_series_field_list():
-    return ['name', 'leading_article', 'imprint', 'format', 'year_began',
+    return ['name', 'leading_article', 'imprint', 'format', 'color', 'dimensions',
+            'paper_stock', 'binding', 'publishing_format', 'year_began',
             'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
             'is_current', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
@@ -1925,9 +1932,10 @@ class SeriesRevision(Revision):
 
     series = models.ForeignKey(Series, null=True, related_name='revisions')
 
-    # When adding a series, this requests the ongoing reservation upon approval of
-    # the new series.  The request will be granted unless the indexer has reached
-    # their maximum number of ongoing reservations at the time of approval.
+    # When adding a series, this requests the ongoing reservation upon 
+    # approval of the new series.  The request will be granted unless the 
+    # indexer has reached their maximum number of ongoing reservations 
+    # at the time of approval.
     reservation_requested = models.BooleanField(default=False)
 
     name = models.CharField(max_length=255,
@@ -1935,10 +1943,37 @@ class SeriesRevision(Revision):
                 'if there is no indicia).')
     leading_article = models.BooleanField(default=False, blank=True,
       help_text='Check if the name starts with an article.')
-    format = models.CharField(max_length=255, blank=True,
-      help_text='This is a compound field that holds size, binding, '
-                'paper stock and other information, separated by '
-                'semi-colons.  Consult the wiki for specifics.')
+
+    # The "format" field is a legacy field that is being split into
+    # color, dimensions, paper_stock, binding, and publishing_format
+    format = models.CharField(max_length=255, blank=True)
+    color = models.CharField(max_length=255, blank=True,
+      help_text='What sort of color is used on the interior pages.  Common '
+                'values include "Color", "Four Color", "Painted", '
+                '"Two Color", "Duotone" and "Black and White".  This may '
+                'change over the life of the series.')
+    dimensions = models.CharField(max_length=255, blank=True,
+      help_text='The size of the comic, such as Standard Golden Age U.S.'
+                '(or Silver or Modern), A4, A5, Tabloid, Digest, 8.5" x 11", '
+                '21cm x 28cm.  This may change over the life of the series.')
+    paper_stock = models.CharField(max_length=255, blank=True,
+      help_text='Type of paper used for the interior pages, such as '
+                'Newsprint, Glossy, Bond, Mando, Baxter, etc.  Information '
+                'about cover paper stock may also be noted. This may change '
+                'over the life of the series.')
+    binding = models.CharField(max_length=255, blank=True,
+      help_text='Binding type, such as Saddle-stitched (stapled in the spine, '
+                'like most U.S. monthly comics), stapled (from font cover '
+                'through to back cover, near the spine), Bound, Squarebound, '
+                'Perfect Bound, Hardcover, Trade Paperback, Mass Market '
+                'Paperback. This may change over the life of the series.')
+    publishing_format = models.CharField(max_length=255, blank=True,
+      help_text='Indicates the nature of this publication as a series (or '
+                'non-series), such as Ongoing Series, Limited Series, '
+                'Miniseries, Maxiseries, One-Shot, Graphic Novel.  '
+                '"Was Ongoing Series" may be used if it has ceased '
+                'publication.')
+
     year_began = models.IntegerField(help_text='Year first issue published.')
     year_ended = models.IntegerField(null=True, blank=True,
       help_text='Leave blank if the series is still producing new issues.')
@@ -2072,6 +2107,11 @@ class SeriesRevision(Revision):
             'name': '',
             'leading_article': False,
             'format': '',
+            'color': '',
+            'dimensions': '',
+            'paper_stock': '',
+            'binding': '',
+            'publishing_format': '',
             'notes': '',
             'keywords': '',
             'year_began': None,
@@ -2162,6 +2202,11 @@ class SeriesRevision(Revision):
         else:
             series.sort_name = self.name
         series.format = self.format
+        series.color = self.color
+        series.dimensions = self.dimensions
+        series.paper_stock = self.paper_stock
+        series.binding = self.binding
+        series.publishing_format = self.publishing_format
         series.notes = self.notes
 
         series.year_began = self.year_began
@@ -4427,15 +4472,18 @@ class ImageRevision(Revision):
 
     type = models.ForeignKey(ImageType)
 
-    image_file = models.ImageField(upload_to='%s/%%m_%%Y' % settings.NEW_GENERIC_IMAGE_DIR)
-    scaled_image = ImageSpecField([ResizeToFit(width=400),], image_field='image_file',
-            format='JPEG', options={'quality': 90})
+    image_file = models.ImageField(upload_to='%s/%%m_%%Y' %
+                                             settings.NEW_GENERIC_IMAGE_DIR)
+    scaled_image = ImageSpecField([ResizeToFit(width=400),],
+                                  image_field='image_file',
+                                  format='JPEG', options={'quality': 90})
 
     marked = models.BooleanField(default=False)
     is_replacement = models.BooleanField(default=False)
 
     def description(self):
-        return u'%s for %s' % (self.type.description, unicode(self.object.full_name()))
+        return u'%s for %s' % (self.type.description,
+                               unicode(self.object.full_name()))
 
     def _source(self):
         return self.image

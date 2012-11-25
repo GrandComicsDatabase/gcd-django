@@ -21,7 +21,16 @@ class Series(models.Model):
     # Core series fields.
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
-    format = models.CharField(max_length=255)
+
+    # The "format" field is a legacy field that is being split into
+    # color, dimensions, paper_stock, binding, and publishing_format
+    format = models.CharField(max_length=255, default=u'')
+    color = models.CharField(max_length=255, default=u'')
+    dimensions = models.CharField(max_length=255, default=u'')
+    paper_stock = models.CharField(max_length=255, default=u'')
+    binding = models.CharField(max_length=255, default=u'')
+    publishing_format = models.CharField(max_length=255, default=u'')
+
     notes = models.TextField()
     keywords = TaggableManager()
 
