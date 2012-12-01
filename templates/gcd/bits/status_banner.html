@@ -35,6 +35,7 @@
   {% if user.is_authenticated %}
 <form method="POST"
       action="{% url reserve_revision model_name=object_class,id=object.id %}">
+  {% csrf_token %}
   <input id="edit" name="edit" type="submit" value="Edit"></input>
 </form>
     {% if object.deletable %}

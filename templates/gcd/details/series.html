@@ -60,6 +60,27 @@
             <dt class="long"> Format:
             <dd id="series_format"> {{ series.format }}
 {% endif %}
+{% if series.color %}
+            <dt class="long"> Color:
+            <dd id="series_format"> {{ series.color }}
+{% endif %}
+{% if series.dimensions %}
+            <dt class="long"> Dimensions:
+            <dd id="series_format"> {{ series.dimensions }}
+{% endif %}
+{% if series.paper_stock %}
+            <dt class="long"> Paper Stock:
+            <dd id="series_format"> {{ series.paper_stock }}
+{% endif %}
+{% if series.binding %}
+            <dt class="long"> Binding:
+            <dd id="series_format"> {{ series.binding }}
+{% endif %}
+{% if series.publishing_format %}
+            <dt class="long"> Publishing Format:
+            <dd id="series_format"> {{ series.publishing_format }}
+{% endif %}
+
 {{ series|show_credit:'keywords' }}
           </dl>
 
@@ -148,6 +169,7 @@
       {% endif %}
       {% if request.user == series.ongoing_reservation.indexer and not series.pending_deletion %}
         <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
+          {% csrf_token %}
           <input id="delete_ongoing" name="delete_ongoing" type="submit"
                  value="Free ongoing reservation">
           </input>
@@ -165,6 +187,7 @@
       {% if not series.pending_deletion %}
         {% if series.is_current and not series.ongoing_reservation %}
         <form method="POST" action="{% url apps.oi.views.ongoing %}">
+          {% csrf_token %}
           <input id="series" name="series" type="hidden" value="{{ series.id }}">
           </input>
           <input id="reserve" name="reserve" type="submit" value="Reserve all new issues">

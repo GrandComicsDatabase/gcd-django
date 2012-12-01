@@ -1,0 +1,16 @@
+BeautifulSoup
+Django
+MySQL-python
+PIL
+PyICU
+PyYAML
+Pygments
+RBTools
+South
+django-appconf
+django-compressor
+django-imagekit
+git+git://github.com/GrandComicsDatabase/django-taggit.git
+django-templatesadmin
+python-stdnum
+wsgiref

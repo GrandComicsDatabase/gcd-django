@@ -45,6 +45,7 @@
             {% if perms.gcd.can_approve %}
               {% ifnotequal cover.changeset.indexer user %}
 <form action="{% url process id=cover.changeset.id %}" method="POST">
+  {% csrf_token %}
   <input type="submit" name="assign" value="Assign"></input>
   <input type="hidden" name="comments" value=""></input>
 </form>

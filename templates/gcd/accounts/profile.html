@@ -36,6 +36,7 @@ to have a limited lifespan anyway.
 <form action="/accounts/profile/{{ profile_user.id|default:user.id }}/"
       method="POST"
       class="profile_form">
+  {% csrf_token %}
   {% if form.non_field_errors %}
   <div class="error_message">
     {{ form.non_field_errors }}

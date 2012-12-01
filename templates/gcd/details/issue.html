@@ -169,6 +169,7 @@ comics sequences are indexed and cover scans are not currently accepted.<span>
     {% if issue.variant_of and not issue.variant_of.reserved %}
   <form method="POST"
         action="{% url reserve_two_issues issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
+    {% csrf_token %}
     <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
   </form>
     {% endif %}

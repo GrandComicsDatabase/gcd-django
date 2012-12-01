@@ -28,6 +28,7 @@
 {% else %}
   {% if indexer.is_new %}
     <form action="{% url mentor indexer_id=indexer.id %}" method="POST">
+      {% csrf_token %}
       <input type="submit" value="Mentor this Indexer">
     </form>
   {% else %}

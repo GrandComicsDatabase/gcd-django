@@ -7,6 +7,7 @@
     <tr class="advanced-search">
         <!-- TODO: Look into the Django forms package -->
         <form action="/gcd/settings/" method="post">
+        {% csrf_token %}
         <td>
             <table border="0" cellpadding="4" cellspacing="0">
                 <tr class="advanced-search">

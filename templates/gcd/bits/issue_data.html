@@ -46,9 +46,33 @@
 <dl>
 {{ issue|show_credit:"editing" }}
 </dl>
-{% if issue.series.format %}
+{% with issue.series as s %}
+  {% if s.format or s.color or s.dimensions or s.paper_stock or s.binding or s.publishing_format %}
       <dl>
+    {% if s.format %}
         <dt>Format:
-        <dd id="format_data" style="float:none">{{ issue.series.format }}
+        <dd id="format_data" style="float:none">{{ s.format }}
+    {% endif %}
+    {% if s.color %}
+        <dt> Color:
+        <dd id="format_color">{{ s.color }}
+    {% endif %}
+    {% if s.dimensions %}
+        <dt> Dimensions:
+        <dd id="format_dimensions">{{ s.dimensions }}
+    {% endif %}
+    {% if s.paper_stock %}
+        <dt> Paper Stock:
+        <dd id="format_paper_stock">{{ s.paper_stock }}
+    {% endif %}
+    {% if s.binding %}
+        <dt> Binding:
+        <dd id="format_binding">{{ s.binding }}
+    {% endif %}
+    {% if s.publishing_format %}
+        <dt> Publishing Format:
+        <dd id="format_publishing_format">{{ s.publishing_format }}
+    {% endif %}
       </dl>
-{% endif %}
+  {% endif %}
+{% endwith %}
