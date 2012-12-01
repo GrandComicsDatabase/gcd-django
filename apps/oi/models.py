@@ -1948,10 +1948,10 @@ class SeriesRevision(Revision):
     # color, dimensions, paper_stock, binding, and publishing_format
     format = models.CharField(max_length=255, blank=True)
     color = models.CharField(max_length=255, blank=True,
-      help_text='What sort of color is used on the interior pages.  Common '
-                'values include "Color", "Four Color", "Painted", '
-                '"Two Color", "Duotone" and "Black and White".  This may '
-                'change over the life of the series.')
+      help_text='What sort of color is used in the printing.  Common '
+                'values include Color, Four Color, Painted, '
+                'Two Color, Duotone, and Black and White. '
+                'This may change over the life of the series.')
     dimensions = models.CharField(max_length=255, blank=True,
       help_text='The size of the comic, such as Standard Golden Age U.S.'
                 '(or Silver or Modern), A4, A5, Tabloid, Digest, 8.5" x 11", '

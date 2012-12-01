@@ -512,7 +512,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                   widget=forms.TextInput(attrs={'class': 'wide'}),
                   help_text='This field is DEPRECATED.  Please move the '
                             'contents to the appropriate more specific fields '
-                            '(color, dimensions, paper stock binding or '
+                            '(color, dimensions, paper stock, binding, or '
                             'publishing format) or into the notes field if the '
                             'information does not fit anywhere else.')
             def as_table(self):
