@@ -60,6 +60,27 @@
             <dt class="long"> Format:
             <dd id="series_format"> {{ series.format }}
 {% endif %}
+{% if series.color %}
+            <dt class="long"> Color:
+            <dd id="series_format"> {{ series.color }}
+{% endif %}
+{% if series.dimensions %}
+            <dt class="long"> Dimensions:
+            <dd id="series_format"> {{ series.dimensions }}
+{% endif %}
+{% if series.paper_stock %}
+            <dt class="long"> Paper Stock:
+            <dd id="series_format"> {{ series.paper_stock }}
+{% endif %}
+{% if series.binding %}
+            <dt class="long"> Binding:
+            <dd id="series_format"> {{ series.binding }}
+{% endif %}
+{% if series.publishing_format %}
+            <dt class="long"> Publishing Format:
+            <dd id="series_format"> {{ series.publishing_format }}
+{% endif %}
+
 {{ series|show_credit:'keywords' }}
           </dl>
 
