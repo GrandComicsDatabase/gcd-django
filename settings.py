@@ -121,9 +121,19 @@ ABSOLUTE_URL_OVERRIDES = {
 }
 
 # for local installations, who don't have memcached, put this:
-# CACHE_BACKEND = 'locmem://'
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#        'LOCATION': 'unique-snowflake'
+#    }
+#}
 # in your settings_local.py as an override.
-CACHE_BACKEND = 'memcached://127.0.0.1:11211/'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
 
 # have two choices for caches, this one has persistent, cached session data
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
@@ -137,7 +147,7 @@ SITE_ID = 1
 TIME_ZONE = 'UTC'
 
 # International DateTime string format
-DATETIME_FORMAT = 'Y-m-d h:m:s'
+DATETIME_FORMAT = 'Y-m-d H:i:s'
 
 #################################################################################
 # 3rd-party app settings
