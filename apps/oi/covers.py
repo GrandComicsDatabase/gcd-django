@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from urllib import urlopen, urlretrieve, quote
-import Image as pyImage
+import PIL.Image as pyImage
 import os, shutil, glob
 import codecs
 import tempfile

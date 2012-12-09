@@ -4,7 +4,7 @@ import sys
 import os
 import os.path
 import glob
-import Image as pyImage
+import PIL.Image as pyImage
 import stat
 import errno
 import hashlib
