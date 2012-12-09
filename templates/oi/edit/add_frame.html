@@ -19,6 +19,7 @@ Adding {{ object_name }}
 
 <div class="edit">
 <form action="{{ object_url }}" method="POST">
+  {% csrf_token %}
   <table class="editing">
   {{ form.as_table }}
   </table>

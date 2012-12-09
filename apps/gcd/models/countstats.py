@@ -84,7 +84,7 @@ class CountStats(models.Model):
 
     objects = CountStatsManager()
 
-    name = models.CharField(max_length=40, null=True)
+    name = models.CharField(max_length=40, db_index=True)
     count = models.IntegerField()
     language = models.ForeignKey(Language, null=True)
 

@@ -13,33 +13,6 @@ from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
 # the other way around.  Probably.
 from apps.oi import states
 
-class ClassificationManager(models.Manager):
-    def get_by_natural_key(self, name):
-        return self.get(name=name)
-
-class Classification(models.Model):
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('sort_code',)
-
-    objects = ClassificationManager()
-
-    name = models.CharField(max_length=255, unique=True)
-    is_singular = models.BooleanField(default=False,
-      help_text='True if a series in this category may only ever consist of a '
-                'single item')
-    is_book_like = models.BooleanField(default=False,
-      help_text='True if a series in this category is more like a book than like '
-                'a magazine, newspaper insert or other form of publication. ')
-    notes = models.TextField(blank=True)
-    sort_code = models.IntegerField(unique=True)
-
-    def natural_key(self):
-        return (self.name,)
-
-    def __unicode__(self):
-        return self.name
-
 class Series(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -48,8 +21,16 @@ class Series(models.Model):
     # Core series fields.
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
-    classification = models.ForeignKey(Classification, null=True, blank=True)
-    format = models.CharField(max_length=255)
+
+    # The "format" field is a legacy field that is being split into
+    # color, dimensions, paper_stock, binding, and publishing_format
+    format = models.CharField(max_length=255, default=u'')
+    color = models.CharField(max_length=255, default=u'')
+    dimensions = models.CharField(max_length=255, default=u'')
+    paper_stock = models.CharField(max_length=255, default=u'')
+    binding = models.CharField(max_length=255, default=u'')
+    publishing_format = models.CharField(max_length=255, default=u'')
+
     notes = models.TextField()
     keywords = TaggableManager()
 
@@ -57,7 +38,7 @@ class Series(models.Model):
     year_ended = models.IntegerField(null=True)
     year_began_uncertain = models.BooleanField(blank=True)
     year_ended_uncertain = models.BooleanField(blank=True)
-    is_current = models.BooleanField()
+    is_current = models.BooleanField(blank=True, db_index=True)
     publication_dates = models.CharField(max_length=255)
 
     first_issue = models.ForeignKey('Issue', null=True,

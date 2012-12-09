@@ -20,6 +20,7 @@ Select front cover for {{ issue }}
   <div id='preview_box'>
   </div>
   <form method='post' action='{% url gatefold_cover %}'>
+  {% csrf_token %}
   <ul id='coords'>
     {{ form.as_ul }}
     <li><input type='submit' name='submit' value='Submit'></li>

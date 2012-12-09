@@ -30,6 +30,7 @@ or even previewing a second time.
 </p>
 <hr>
 <form method="POST" action="{% url reorder_series_key_date series_id=series.id %}">
+  {% csrf_token %}
   <input type="submit" name="submit" value="Preview reorder by key_date">
 <p>
 Reordering by key date when there are duplicate key dates will produce
@@ -39,6 +40,7 @@ times.
 <hr>
 <form method="POST"
       action="{% url reorder_series_issue_number series_id=series.id %}">
+  {% csrf_token %}
   <input type="submit" name="submit" value="Preview reorder by issue number">
 </form>
 <p>
@@ -60,6 +62,7 @@ will not work.
 </ul>
 
 <form method="POST" action="{% url reorder_series series_id=series.id %}">
+{% csrf_token %}
 <table>
   <tr>
     <th> Sort Code </th>

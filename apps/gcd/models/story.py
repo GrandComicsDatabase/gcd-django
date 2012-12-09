@@ -76,7 +76,7 @@ class Story(models.Model):
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
     created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
+    modified = models.DateTimeField(auto_now=True, db_index=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
 

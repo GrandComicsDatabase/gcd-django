@@ -28,10 +28,12 @@ GCD :: Mentoring New Indexers
     <td>{{ indexer.indexer.country }}</td>
     <td> 
       <form method="POST" action="{% url mentor_not_new indexer_id=indexer.indexer.id %}">
+        {% csrf_token %}
         <input type="submit" name="mentor_not_new"
                value="Understands indexing- release as full indexer"></input>
       </form>
       <form action="{% url unmentor indexer_id=indexer.indexer.id %}" method="POST">
+        {% csrf_token %}
         <input type="submit" value="Indexer inactive- return to unmentored list">
       </form>
     </td>
@@ -53,6 +55,7 @@ GCD :: Mentoring New Indexers
     <td width="45%">{{ indexer.indexer.interests }}</td>
     <td>
       <form action="{% url mentor indexer_id=indexer.indexer.id %}" method="POST">
+        {% csrf_token %}
         <input type="submit" value="Mentor this Indexer">
       </form>
     </td>

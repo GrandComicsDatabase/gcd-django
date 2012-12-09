@@ -11,6 +11,7 @@
       {% if revision.deleted %}
   <form class="story_button" method="POST"
         action="{% url toggle_delete_story_revision id=revision.id %}">
+    {% csrf_token %}
     <input type="submit" value="Restore"></input>
   </form>
       {% else %}

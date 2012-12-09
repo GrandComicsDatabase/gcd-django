@@ -9,10 +9,9 @@ class ReprintToIssue(models.Model):
         app_label = 'gcd'
         db_table = 'gcd_reprint_to_issue'
 
-    id = models.AutoField(primary_key = True)
-    origin = models.ForeignKey(Story, related_name = 'to_issue_reprints')
-    target_issue = models.ForeignKey(Issue, related_name = 'from_reprints')
-    notes = models.TextField(max_length = 255)
+    origin = models.ForeignKey(Story, related_name='to_issue_reprints')
+    target_issue = models.ForeignKey(Issue, related_name='from_reprints')
+    notes = models.TextField(max_length=255)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -39,7 +38,8 @@ class ReprintToIssue(models.Model):
         if self.target_issue == base_issue:
             reprint = u'from %s <i>sequence</i> <a target="_blank" href="%s#%d">%s</a>' % \
                         (self.origin.issue.get_absolute_url(), 
-                        esc(self.origin.issue.full_name()), self.origin.id, esc(self.origin))
+                         esc(self.origin.issue.full_name()),
+                         self.origin.id, esc(self.origin))
         else:
             reprint = u'in <a target="_blank" href="%s">%s</a>' % \
                         (self.target_issue.get_absolute_url(),
@@ -50,4 +50,4 @@ class ReprintToIssue(models.Model):
 
     def __unicode__(self):
         return u'%s of %s reprinted in %s' % (self.origin, self.origin.issue,
-                                             self.target_issue)
+                                              self.target_issue)

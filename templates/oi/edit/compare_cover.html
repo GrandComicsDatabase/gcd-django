@@ -95,6 +95,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   {% ifequal changeset.state states.REVIEWING %}
     {% ifequal user changeset.approver %}
     <form action="{% url unmark_cover_revision revision_id=revision.id %}" method="POST">
+      {% csrf_token %}
       <input type="submit" value="Remove mark for replacement">
     </form>
     {% endifequal %}
@@ -103,6 +104,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   {% ifequal changeset.state states.REVIEWING %}
     {% ifequal user changeset.approver %}
     <form action="{% url mark_cover_revision revision_id=revision.id %}" method="POST">
+      {% csrf_token %}
       <input type="submit" value="Mark for replacement">
     </form>
     {% endifequal %}
@@ -119,6 +121,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   {% if changeset.state = states.REVIEWING %}
     {% if user = changeset.approver %}
       <form action="{% url flip_artwork_flag revision_id=revision.id %}" method="POST">
+        {% csrf_token %}
         <input type="submit" name="flip_artwork_flag" value="Flip the variant artwork flag" />
       </form>
     {% endif %}
