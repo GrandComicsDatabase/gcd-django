@@ -95,10 +95,18 @@ account_patterns = patterns('',
 )
 
 read_only_patterns = patterns('',
+    url(r'^queues/editing/$', read_only.dummy,
+        name='editing'),
     url(r'^upload_cover/(?P<issue_id>\d+)/$', read_only.dummy,
         name='upload_cover'),
     url(r'^edit_covers/(?P<issue_id>\d+)/$', read_only.dummy,
         name='edit_covers'),
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', 
+        read_only.dummy, name='upload_image'),
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$', 
+        read_only.dummy, name='replace_image'),
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/delete/$', read_only.dummy,
+        name='delete_revision'),
     url(r'^changeset/(?P<id>\d+)/compare/$', read_only.dummy, name='compare'),
 )
 
