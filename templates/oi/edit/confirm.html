@@ -15,6 +15,7 @@ GCD :: Confirm {{ type }}
 
 <h2>{{ header_text }}</h2>
 <form method="POST" action="{{ url }}">
+{% csrf_token %}
 <p>
 <input type="hidden" name="comments">
 </p>

@@ -143,6 +143,11 @@ SERIES_HELP_LINKS = {
     'notes': 'Series_Notes',
     'keywords': 'Keywords',
     'format': 'Format',
+    'color': 'Format',
+    'dimensions': 'Format',
+    'paper_stock': 'Format',
+    'binding': 'Format',
+    'publishing_format': 'Format',
     'is_comics_publication': 'Comics_Publication',
     'comments': 'Comments'
 }
@@ -155,7 +160,8 @@ def _set_help_labels(self, help_links):
             else:
                 label = self.fields[field].label
             self.fields[field].label = mark_safe(label + \
-              u' <a href="%s%s" target=_blank>[?]</a>' % (DOC_URL, help_links[field]))
+              u' <a href="%s%s" target=_blank>[?]</a>' %
+              (DOC_URL, help_links[field]))
 
 def _init_no_isbn(series, revision):
     """
@@ -450,7 +456,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
             class Meta:
                 model = SeriesRevisionForm.Meta.model
                 fields = SeriesRevisionForm.Meta.fields
-                exclude = SeriesRevisionForm.Meta.exclude + ['imprint']
+                exclude = SeriesRevisionForm.Meta.exclude + ['imprint', 'format']
                 widgets = SeriesRevisionForm.Meta.widgets
                 if can_request:
                     fields = ['reservation_requested'] + fields
@@ -478,6 +484,8 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                 exclude = SeriesRevisionForm.Meta.exclude
                 if not source.imprint:
                     exclude = exclude + ['imprint']
+                if not source.format:
+                    exclude = exclude + ['format']
                 widgets = SeriesRevisionForm.Meta.widgets
 
             def __init__(self, *args, **kwargs):
@@ -499,6 +507,14 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                   queryset=Publisher.objects.filter(is_master=False,
                                                     deleted=False,
                                                     parent=publisher))
+            if source.format:
+                format = forms.CharField(required=False,
+                  widget=forms.TextInput(attrs={'class': 'wide'}),
+                  help_text='This field is DEPRECATED.  Please move the '
+                            'contents to the appropriate more specific fields '
+                            '(color, dimensions, paper stock, binding, or '
+                            'publishing format) or into the notes field if the '
+                            'information does not fit anywhere else.')
             def as_table(self):
                 if not user or user.indexer.show_wiki_links:
                     _set_help_labels(self, SERIES_HELP_LINKS)
@@ -516,7 +532,11 @@ class SeriesRevisionForm(forms.ModelForm):
           'name': forms.TextInput(attrs={'class': 'wide', 'autofocus':''}),
           'year_began': forms.TextInput(attrs={'class': 'year'}),
           'year_ended': forms.TextInput(attrs={'class': 'year'}),
-          'format': forms.TextInput(attrs={'class': 'wide'})
+          'color': forms.TextInput(attrs={'class': 'wide'}),
+          'dimensions': forms.TextInput(attrs={'class': 'wide'}),
+          'paper_stock': forms.TextInput(attrs={'class': 'wide'}),
+          'binding': forms.TextInput(attrs={'class': 'wide'}),
+          'publishing_format': forms.TextInput(attrs={'class': 'wide'})
         }
 
     def __init__(self, *args, **kwargs):
@@ -539,7 +559,14 @@ class SeriesRevisionForm(forms.ModelForm):
                 cd['name'] == remove_leading_article(cd['name'])):
                 raise forms.ValidationError('The series name is only one word,'
                     ' you cannot specify a leading article in this case.')
-        cd['format'] = cd['format'].strip()
+
+        if 'format' in cd:
+            cd['format'] = cd['format'].strip()
+        cd['color'] = cd['color'].strip()
+        cd['dimensions'] = cd['dimensions'].strip()
+        cd['paper_stock'] = cd['paper_stock'].strip()
+        cd['binding'] = cd['binding'].strip()
+        cd['publishing_format'] = cd['publishing_format'].strip()
         cd['tracking_notes'] = cd['tracking_notes'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()

@@ -37,7 +37,8 @@ from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
 from apps.oi.models import *
 from apps.oi.forms import *
-from apps.oi.covers import get_preview_image_tag, get_preview_generic_image_tag, \
+from apps.oi.covers import get_preview_image_tag, \
+                           get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
 
 REVISION_CLASSES = {
@@ -148,7 +149,8 @@ def _unreserve(display_obj):
     display_obj.save()
 
 @permission_required('gcd.can_reserve')
-def reserve(request, id, model_name, delete=False, callback=None, callback_args=None):
+def reserve(request, id, model_name, delete=False,
+            callback=None, callback_args=None):
     if request.method != 'POST':
         return _cant_get(request)
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
@@ -234,8 +236,8 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
         changeset.save()
 
         if not delete:
-            # Deletions are immediately submitted, which will add the appropriate
-            # initial comment- no need to add two.
+            # Deletions are immediately submitted, which will add the
+            # appropriate initial comment- no need to add two.
             changeset.comments.create(commenter=indexer,
                                     text=comment,
                                     old_state=states.UNRESERVED,
@@ -362,7 +364,8 @@ def edit(request, id):
         form_class = get_revision_form(revision, user=request.user)
         form = form_class(instance=revision)
 
-    # Note that for non-inline changesets, no form is expected so it may be None.
+    # Note that for non-inline changesets, no form is expected so
+    # it may be None.
     return _display_edit_form(request, changeset, form, revision)
 
 def _display_edit_form(request, changeset, form, revision=None):
@@ -472,9 +475,10 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                   'pending deletion' % unicode(publisher), changeset)
             if revision.changeset.issuerevisions.count() == 0:
                 if revision.series.active_issues().filter(reserved=True):
-                    return show_error_with_return(request, 'Some issues for series'
-                    ' %s are reserved. No move possible.' % revision.series,
-                    changeset)
+                    return show_error_with_return(request,
+                      ('Some issues for series %s are reserved. '
+                       'No move possible.') % revision.series,
+                      changeset)
             return HttpResponseRedirect(urlresolvers.reverse('move_series',
                 kwargs={'series_revision_id': revision.id,
                         'publisher_id': publisher_id}))
@@ -491,12 +495,14 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
         if 'save_return' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': revision.changeset.id }))
-        return render_error(request, 'Revision saved but cannot determine which '
+        return render_error(request,
+          'Revision saved but cannot determine which '
           'page to load now.  Contact an editor if this error persists.')
 
     revision = None
     if revision_id is not None:
-        revision = get_object_or_404(REVISION_CLASSES[model_name], id=revision_id)
+        revision = get_object_or_404(REVISION_CLASSES[model_name],
+                                     id=revision_id)
         changeset = revision.changeset
     else:
         changeset = get_object_or_404(Changeset, id=changeset_id)
@@ -521,8 +527,8 @@ def retract(request, id):
     if comment_text:
         send_comment_observer(request, changeset, comment_text)
 
-    return HttpResponseRedirect(urlresolvers.reverse('edit',
-                                                     kwargs={'id': changeset.id }))
+    return HttpResponseRedirect(
+      urlresolvers.reverse('edit', kwargs={'id': changeset.id }))
 
 @permission_required('gcd.can_reserve')
 def confirm_discard(request, id, has_comment=0):
@@ -655,11 +661,13 @@ thanks,
           settings.EMAIL_INDEXING)
         if comment_text:
             send_comment_observer(request, changeset, comment_text)
-        if request.user.approved_changeset.filter(state=states.REVIEWING).count():
+        if request.user.approved_changeset.filter(state=states.REVIEWING)\
+                                          .count():
             return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
         else:
             if changeset.change_type is CTYPES['cover']:
-                return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+                return HttpResponseRedirect(
+                  urlresolvers.reverse('pending_covers'))
             else:
                 return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
@@ -686,12 +694,14 @@ def assign(request, id):
             return render_error(request,
               'This change has been retracted by the indexer after you loaded '
               'the previous page. This results in you seeing an "Assign" '
-              'button. Please use the back button to return to the Pending queue.',
+              'button. Please use the back button to return to the '
+              'Pending queue.',
               redirect=False)
         else:
             return render_error(request,
-              ('This change is already being reviewed by %s who may have assigned it '
-               'after you loaded the previous page.  This results in you seeing an '
+              ('This change is already being reviewed by %s who may have '
+               'assigned it after you loaded the previous page.  '
+               'This results in you seeing an '
                '"Assign" button even though the change is under review. '
                'Please use the back button to return to the Pending queue.') %
               changeset.approver.indexer,
@@ -704,11 +714,13 @@ def assign(request, id):
         changeset.indexer.indexer.mentor = request.user
         changeset.indexer.indexer.save()
 
-        for pending in changeset.indexer.changesets.filter(state=states.PENDING):
+        for pending in changeset.indexer.changesets\
+                                        .filter(state=states.PENDING):
             try:
               pending.assign(approver=request.user, notes='')
             except ValueError:
-                # Someone is already reviewing this.  Unlikely, and just let it go.
+                # Someone is already reviewing this.
+                # Unlikely, and just let it go.
                 pass
 
     if comment_text:
@@ -935,7 +947,8 @@ thanks,
                                          series__ongoing_reservation=None):
         if (changeset.indexer.ongoing_reservations.count() >=
             changeset.indexer.indexer.max_ongoing):
-            _send_declined_ongoing_email(changeset.indexer, series_revision.series)
+            _send_declined_ongoing_email(changeset.indexer,
+                                         series_revision.series)
 
         ongoing = OngoingReservation(indexer=changeset.indexer,
                                      series=series_revision.series)
@@ -946,7 +959,8 @@ thanks,
                                         reservation_requested=True,
                                         issue__created__gt=F('created'),
                                         series__ongoing_reservation=None):
-        new_change = _do_reserve(changeset.indexer, issue_revision.issue, 'issue')
+        new_change = _do_reserve(changeset.indexer,
+                                 issue_revision.issue, 'issue')
         if new_change is None:
             _send_declined_reservation_email(changeset.indexer,
                                              issue_revision.issue)
@@ -960,7 +974,8 @@ thanks,
                                         issue__created__gt=F('created'),
                                         series__ongoing_reservation__isnull=False,
                                         issue__variant_of__isnull=False):
-        new_change = _do_reserve(changeset.indexer, issue_revision.issue, 'issue')
+        new_change = _do_reserve(changeset.indexer,
+                                 issue_revision.issue, 'issue')
         if new_change is None:
             _send_declined_reservation_email(changeset.indexer,
                                              issue_revision.issue)
@@ -973,8 +988,9 @@ thanks,
                                         issue__created__gt=F('created'),
                                         series__ongoing_reservation__isnull=False,
                                         issue__variant_of=None):
-        new_change = _do_reserve(issue_revision.series.ongoing_reservation.indexer,
-                                 issue_revision.issue, 'issue')
+        new_change = _do_reserve(
+          issue_revision.series.ongoing_reservation.indexer,
+          issue_revision.issue, 'issue')
         if new_change is None:
             _send_declined_reservation_email(issue_revision.series.\
                                              ongoing_reservation.indexer,
@@ -985,7 +1001,8 @@ thanks,
 
     # Move brand new indexers to probationary status on first approval.
     if changeset.change_type is not CTYPES['cover'] and \
-      changeset.indexer.indexer.max_reservations == settings.RESERVE_MAX_INITIAL:
+       changeset.indexer.indexer.max_reservations == \
+       settings.RESERVE_MAX_INITIAL:
         i = changeset.indexer.indexer
         i.max_reservations = settings.RESERVE_MAX_PROBATION
         i.max_ongoing = settings.RESERVE_MAX_ONGOING_PROBATION
@@ -1038,8 +1055,8 @@ def _send_declined_ongoing_email(indexer, series):
 Hello from the %s!
 
 
-  Your requested ongoing reservation of series "%s" was declined because you have
-reached your maximum number of ongoing reservations.  %s
+  Your requested ongoing reservation of series "%s" was declined because
+you have reached your maximum number of ongoing reservations.  %s
 
 thanks,
 -the %s team
@@ -1421,7 +1438,8 @@ def edit_issues_in_bulk(request):
             revision = IssueRevision.objects.clone_revision(issue,
                                                             changeset=changeset)
             for field in initial:
-                if field in ['brand', 'indicia_publisher'] and cd[field] is not None:
+                if field in ['brand', 'indicia_publisher'] and \
+                   cd[field] is not None:
                     setattr(revision, field + '_id', cd[field].id)
                 else:
                     setattr(revision, field, cd[field])
@@ -1511,7 +1529,8 @@ def add_indicia_publisher(request, parent_id):
               'apps.gcd.views.details.publisher',
               kwargs={ 'publisher_id': parent_id }))
 
-        form = get_indicia_publisher_revision_form(user=request.user)(request.POST)
+        form = \
+          get_indicia_publisher_revision_form(user=request.user)(request.POST)
         if not form.is_valid():
             return _display_add_indicia_publisher_form(request, parent, form)
 
@@ -1669,7 +1688,8 @@ def init_added_variant(form_class, initial, issue):
         initial['indicia_publisher'] = issue.indicia_publisher.id
     initial['variant_name'] = u''
     if issue.variant_set.filter(deleted=False).count():
-        initial['after'] = issue.variant_set.filter(deleted=False).latest('sort_code').id
+        initial['after'] = issue.variant_set.filter(deleted=False)\
+                                            .latest('sort_code').id
     form = form_class(initial=initial)
     return form
 
@@ -1788,7 +1808,8 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
             return False
 
         # create issue revision for the issue of the cover
-        if not _do_reserve(changeset.indexer, issue, 'issue', changeset=changeset):
+        if not _do_reserve(changeset.indexer, issue, 'issue',
+                           changeset=changeset):
             _unreserve(issue)
             return False
     changeset.change_type=CTYPES['variant_add']
@@ -1844,7 +1865,8 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
             'changeset_id': issue_revision.changeset.id,
         }
         action_label = 'Save new'
-        url = urlresolvers.reverse('add_variant_to_issue_revision', kwargs=kwargs)
+        url = urlresolvers.reverse('add_variant_to_issue_revision',
+                                   kwargs=kwargs)
         object_name = 'Variant Issue for %s' % issue_revision
     else:
         kwargs = {
@@ -2224,7 +2246,9 @@ def parse_reprint(reprints):
             position += 2
             string = string[position:]
             year = string[:4]
-            if from_to in ['da ', 'in ', 'de ', 'en ']: #italian and spanish from/in
+
+            # italian and spanish from/in
+            if from_to in ['da ', 'in ', 'de ', 'en ']:
                 if year.isdigit() != True:
                     position = string.find(')')
                     year = string[position-4:position]
@@ -2258,7 +2282,8 @@ def parse_reprint(reprints):
                 else:
                     hyphen = string.find(' -')
                     # following issue title after number
-                    if hyphen > 0 and string[:hyphen].isdigit() and not string[hyphen+2:].strip()[0].isdigit():
+                    if hyphen > 0 and string[:hyphen].isdigit() and \
+                       not string[hyphen+2:].strip()[0].isdigit():
                         number = string[:hyphen]
                     else:
                         if position > 0:
@@ -2423,13 +2448,14 @@ def edit_reprint(request, id, which_side=None):
         if reprint_revision.deleted:
             reprint_revision.deleted = False
             reprint_revision.save()
-            return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
-                kwargs={ 'id': changeset_issue.id }))
+            return HttpResponseRedirect(
+                urlresolvers.reverse('list_issue_reprints',
+                                     kwargs={ 'id': changeset_issue.id }))
         else:
             return _cant_get(request)
     elif which_side == 'remove':
-        return HttpResponseRedirect(urlresolvers.reverse('remove_reprint_revision',
-            kwargs={ 'id': id }))
+        return HttpResponseRedirect(
+          urlresolvers.reverse('remove_reprint_revision', kwargs={ 'id': id }))
     elif which_side == 'matching_sequence':
         if reprint_revision.origin_story:
             story = reprint_revision.origin_story
@@ -2439,8 +2465,11 @@ def edit_reprint(request, id, which_side=None):
             issue = reprint_revision.origin_issue
         if issue != changeset_issue.issue:
             return _cant_get(request)
-        return HttpResponseRedirect(urlresolvers.reverse('create_matching_sequence',
-            kwargs={ 'reprint_revision_id': id, 'story_id': story.id, 'issue_id': issue.id }))
+        return HttpResponseRedirect(
+          urlresolvers.reverse('create_matching_sequence',
+                               kwargs={ 'reprint_revision_id': id,
+                                        'story_id': story.id,
+                                        'issue_id': issue.id }))
         raise ValueError
     elif which_side.startswith('edit_note'):
         if which_side == 'edit_note_origin':
@@ -2512,8 +2541,9 @@ def edit_reprint(request, id, which_side=None):
         issue_revision  = select_issue.revisions.get(changeset=changeset)
         return render_to_response('oi/edit/select_internal_object.html',
             { 'issue_revision': issue_revision, 'changeset': changeset,
-              'reprint_revision': reprint_revision, 'which_side': which_side[:6]},
-        context_instance=RequestContext(request))
+              'reprint_revision': reprint_revision,
+              'which_side': which_side[:6] },
+            context_instance=RequestContext(request))
 
     initial = {'series': select_issue.series.name,
                'publisher': select_issue.series.publisher,
@@ -2556,7 +2586,8 @@ def edit_reprint(request, id, which_side=None):
         kwargs={'select_key': select_key}))
 
 @permission_required('gcd.can_reserve')
-def add_reprint(request, changeset_id, story_id=None, issue_id=None, reprint_note=''):
+def add_reprint(request, changeset_id,
+                story_id=None, issue_id=None, reprint_note=''):
     if story_id:
         story = get_object_or_404(StoryRevision, id=story_id,
                                     changeset__id=changeset_id)
@@ -2640,7 +2671,8 @@ def select_internal_object(request, id, changeset_id, which_side,
 def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
     story = get_object_or_404(Story, id=story_id)
     issue = get_object_or_404(Issue, id=issue_id)
-    reprint_revision = get_object_or_404(ReprintRevision, id=reprint_revision_id)
+    reprint_revision = get_object_or_404(ReprintRevision,
+                                         id=reprint_revision_id)
     changeset = reprint_revision.changeset
     changeset_issue = changeset.issuerevisions.get()
     if request.user != changeset.indexer:
@@ -2654,7 +2686,8 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
         else:
             direction = 'in'
         return render_to_response('oi/edit/create_matching_sequence.html',
-            { 'issue': issue, 'story': story, 'reprint_revision': reprint_revision, 'direction': direction },
+            { 'issue': issue, 'story': story,
+              'reprint_revision': reprint_revision, 'direction': direction },
             context_instance=RequestContext(request))
     else:
         story_revision = StoryRevision.objects.clone_revision(story=story,
@@ -2918,7 +2951,8 @@ def move_series(request, series_revision_id, publisher_id):
 
     if request.method != 'POST':
         header_text = 'Do you want to move %s to <a href="%s">%s</a> ?' % \
-          (esc(series_revision.series.full_name()), publisher.get_absolute_url(),
+          (esc(series_revision.series.full_name()),
+           publisher.get_absolute_url(),
            esc(publisher))
         url = urlresolvers.reverse('move_series',
           kwargs={'series_revision_id': series_revision_id,
@@ -3683,6 +3717,9 @@ def compare(request, id):
         if not revision.imprint and \
           (prev_rev is None or prev_rev.imprint is None):
             field_list.remove('imprint')
+        if not revision.format and \
+          (prev_rev is None or not prev_rev.format):
+            field_list.remove('format')
         if not (revision.publication_notes or prev_rev and \
           prev_rev.publication_notes):
             field_list.remove('publication_notes')

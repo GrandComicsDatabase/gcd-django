@@ -34,6 +34,7 @@ Do you want to create a new sequence in {{ issue }} which is reprinted {{ direct
 <hr class="divider">
 <form style="display:inline;" method="POST"
     action="{% url create_matching_sequence issue_id=issue.id,story_id=story.id,reprint_revision_id=reprint_revision.id %}">
+{% csrf_token %}
 <input type="submit" name="create" value="Yes">
 </input>
 </form>

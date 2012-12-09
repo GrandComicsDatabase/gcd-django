@@ -40,6 +40,7 @@ form.  They only need to be in the correct order.
 <form class="reorder_stories"
       method="POST"
       action="{% url reorder_stories issue_id=issue.source.id,changeset_id=changeset.id %}">
+{% csrf_token %}
 <table class="reorder_stories">
   <tr>
     <th class="sequence_number_col"> Sequence Number </th>

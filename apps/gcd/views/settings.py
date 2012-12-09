@@ -1,5 +1,6 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponse
+from django.template import RequestContext
 
 def settings(request):
     if request.method == 'POST':
@@ -17,4 +18,6 @@ def settings(request):
 
     if len(request.session.keys()) == 0:
         request.session.set_test_cookie()
-    return render_to_response('settings.html')
+    return render_to_response('settings.html',
+                              {},
+                              context_instance=RequestContext(request))

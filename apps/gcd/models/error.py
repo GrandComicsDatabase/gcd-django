@@ -11,8 +11,7 @@ class Error(models.Model):
     class Admin:
         pass
 
-    error_key = models.CharField(primary_key=True, max_length=40, null=True,
-                                 editable=False)
+    error_key = models.CharField(primary_key=True, max_length=40, editable=False)
     error_text = models.TextField(null=True, blank=True)
 
     is_safe = models.BooleanField()

@@ -24,14 +24,18 @@
 {% if other_story %}
   {% if this_story %}
   <form id="confirm" action="{% url save_revision_story_reprint story_revision_id=this_story.id,changeset_id=changeset.id,story_two_id=other_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  {% csrf_token %}
   {% else %}
   <form id="confirm" action="{% url save_issue_story_reprint issue_one_id=this_issue.issue.id,changeset_id=changeset.id,story_two_id=other_story.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  {% csrf_token %}
   {% endif %}
 {% else %}
   {% if this_story %}
   <form id="confirm" action="{% url save_revision_issue_reprint story_revision_id=this_story.id,changeset_id=changeset.id,issue_two_id=other_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  {% csrf_token %}
   {% else %}
   <form id="confirm" action="{% url save_issue_issue_reprint issue_one_id=this_issue.issue.id,changeset_id=changeset.id,issue_two_id=other_issue.id,reprint_revision_id=reprint_revision_id %}" method="POST">
+  {% csrf_token %}
   {% endif %}
 {% endif %}
 

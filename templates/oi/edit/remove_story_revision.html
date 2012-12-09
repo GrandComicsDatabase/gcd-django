@@ -27,6 +27,7 @@ Are you sure you want to remove the following story (sequence number: {{ story.s
 </h3>
 <form style="display:inline;" method="POST"
     action="{% url remove_story_revision id=story.id %}">
+{% csrf_token %}
 <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
        value="Yes">
 </input>

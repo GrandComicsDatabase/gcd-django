@@ -18,6 +18,7 @@ Confirm discard of {{ changeset }}
 
 <div class="edit">
   <form action="{{ object_url }}" method="POST">
+    {% csrf_token %}
     <input type="submit" name="discard" value="Confirm"></input>
     <input type="submit" name="cancel" value="Cancel"></input>
   </form>

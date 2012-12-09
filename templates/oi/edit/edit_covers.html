@@ -45,10 +45,12 @@ Edit Covers :: {{ issue }}
   {% if perms.gcd.can_approve and not pending %}
     {% if not cover.marked %}
 <form action="{% url mark_cover cover_id=cover.id %}" method="POST">
+  {% csrf_token %}
   <input type="submit" value="Mark for replacement">
 </form>
     {% else %}
 <form action="{% url unmark_cover cover_id=cover.id %}" method="POST">
+  {% csrf_token %}
   <input type="submit" value="Remove mark for replacement">
 </form>
     {% endif %}

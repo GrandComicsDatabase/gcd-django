@@ -33,6 +33,7 @@
   {% ifequal changeset.indexer user %}
     {% if changeset.editable %}
   <form action="{% url process id=changeset.id %}" method="POST">
+    {% csrf_token %}
     <input type="submit" name="retract" value="Retract change and edit further" />
     <label for="comments">Comments</label>
     <input type="textarea" name="comments">
@@ -200,6 +201,7 @@
 {{ cover.cover|cover_image_tag:'1, moved_cover' }}
 <br>Cover is moved from {{ cover.issue }}.
   <form action="{% url undo_move_cover id=changeset.id, cover_id=cover.id %}" method="POST">
+    {% csrf_token %}
     <input type="submit" value="Undo move cover">
   </form>
   <br>
@@ -258,6 +260,7 @@
                   {% if story.deletable %}
       <form class="story_button" method="POST"
             action="{% url toggle_delete_story_revision id=story.id %}">
+        {% csrf_token %}
         <input type="submit" value="Mark to Delete">
       </form>
                   {% endif %}
@@ -266,6 +269,7 @@
               {% if story.moveable %}
       <form class="story_button" method="POST"
             action="{% url move_story_revision id=story.id %}">
+        {% csrf_token %}
         <input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
                value="Move To Other Issue">
       </form>
@@ -279,6 +283,7 @@
             {% else %}
       <form class="story_button" method="POST"
             action="{% url toggle_delete_story_revision id=story.id %}">
+        {% csrf_token %}
         <input type="submit" value="Restore">
       </form>            
             {% endif %}
@@ -297,6 +302,7 @@
   <tr colspan="2" align="left">
   <form class="changeset" method="POST" enctype="multipart/form-data"
                 action="{% url import_issue issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+    {% csrf_token %}
     <td>
       Select file: <input type="file" name="flatfile">
     </td>
@@ -310,6 +316,7 @@
   <tr colspan="2" align="left">
   <form class="changeset" method="POST" enctype="multipart/form-data"
             action="{% url import_stories issue_id=issue_revision.source.id,changeset_id=changeset.id %}">
+    {% csrf_token %}
     <td>
       Select file: <input type="file" name="flatfile">
     </td>
@@ -345,6 +352,7 @@
 </p>
       {% endif %}
 <form method="POST" action="{% url process id=changeset.id %}">
+  {% csrf_token %}
   <table class="editing">
     <tr>
       <th> <label for="comments"> Comments:</label> </th>

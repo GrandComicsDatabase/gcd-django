@@ -28,6 +28,7 @@ class Issue(models.Model):
     class Meta:
         app_label = 'gcd'
         ordering = ['series', 'sort_code']
+        unique_together = ('series', 'sort_code')
 
     # Issue identification
     number = models.CharField(max_length=50, db_index=True)
@@ -42,13 +43,13 @@ class Issue(models.Model):
     variant_of = models.ForeignKey('self', null=True,
                                    related_name='variant_set')
     variant_name = models.CharField(max_length=255)
-    barcode = models.CharField(max_length=38)
+    barcode = models.CharField(max_length=38, db_index=True)
     no_barcode = models.BooleanField(default=False)
 
     # Dates and sorting
     publication_date = models.CharField(max_length=255)
-    key_date = models.CharField(max_length=10)
-    on_sale_date = models.CharField(max_length=10)
+    key_date = models.CharField(max_length=10, db_index=True)
+    on_sale_date = models.CharField(max_length=10, db_index=True)
     on_sale_date_uncertain = models.BooleanField(blank=True)
     sort_code = models.IntegerField(db_index=True)
     indicia_frequency = models.CharField(max_length=255)
@@ -90,6 +91,8 @@ class Issue(models.Model):
             return None
     soo_image = property(_soo_image)
 
+    # In production, this is a tinyint(1) because the set of numbers
+    # is very small.  But syncdb produces an int(11).
     is_indexed = models.IntegerField(default=0, db_index=True)
 
     # Fields related to change management.

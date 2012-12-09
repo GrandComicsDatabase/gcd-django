@@ -8,6 +8,7 @@
   <td>
 {% if not reprint.reserved and not reprint.changeset %}
 <form action="{% url reserve_reprint reprint_id=reprint.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+  {% csrf_token %}
   {% if not is_source %}
     <input type="submit" name="edit_target_internal" value="Change target">
     <input type="submit" name="edit_origin" value="Change origin">
@@ -39,6 +40,7 @@
 {% else %}
     {% if reprint.changeset_id = changeset.id %}
 <form action="{% url edit_reprint id=reprint.id %}" method="POST">
+      {% csrf_token %}
       {% if reprint.deleted %}
     <input type="submit" name="restore" value="Restore">
       {% else %}
@@ -78,6 +80,7 @@
     {% else %}
       {% if reprint.changeset.state = states.APPROVED %}
 <form action="{% url reserve_reprint reprint_id=reprint.source.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+        {% csrf_token %}
         {% if not is_source %}
     <input type="submit" name="edit_target_internal" value="Change target">
     <input type="submit" name="edit_origin" value="Change origin">

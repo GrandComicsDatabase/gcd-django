@@ -27,20 +27,30 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
-MEDIA_URL = "/site_media/"
+MEDIA_URL = '/site_media/'
+
+# We're not using django.contrib.staticfiles yet, but the admin site
+# is happier with a STATIC_URL.
+STATIC_URL = MEDIA_URL
 
 # Database settings. Override yours in a settings_local.py
-DATABASE_ENGINE   = 'django.db.backends.mysql'
-DATABASE_NAME     = 'gcdonline'
-DATABASE_USER     = 'gcdonline'
-DATABASE_PASSWORD = ''
-DATABASE_HOST     = ''
-DATABASE_PORT     = ''
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME':  'gcdonline',
+        'USER': 'gcdonline',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    },
+}
 
 # middleware settings, LocalMiddleware is for internationalisation
 MIDDLEWARE_CLASSES = (
-   'django.contrib.csrf.middleware.CsrfMiddleware',
+   'django.middleware.csrf.CsrfViewMiddleware',
+   'django.middleware.clickjacking.XFrameOptionsMiddleware',
    'django.contrib.sessions.middleware.SessionMiddleware',
+   'django.contrib.messages.middleware.MessageMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.common.CommonMiddleware',
    'django.middleware.transaction.TransactionMiddleware',
@@ -69,13 +79,15 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.humanize',
     'django.contrib.sites',
+    'django.contrib.messages',
     'apps.gcd',
     'apps.oi',
     'apps.voting',
     'compressor',
     'templatesadmin',
     'taggit',
-    'imagekit'
+    'imagekit',
+    'south',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -84,12 +96,13 @@ SECRET_KEY = 'th0lnu%wjs_8=r4u_km3shvogzd%1n)t-5eosi964g0ek+a4p+'
 
 # Callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.load_template_source',
-    'django.template.loaders.app_directories.load_template_source',
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.core.context_processors.auth',
+    'django.contrib.auth.context_processors.auth',
+    'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.debug',
     'django.core.context_processors.i18n',
     'django.core.context_processors.media',
@@ -123,6 +136,9 @@ SITE_ID = 1
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
 TIME_ZONE = 'UTC'
 
+# International DateTime string format
+DATETIME_FORMAT = 'Y-m-d h:m:s'
+
 #################################################################################
 # 3rd-party app settings
 #################################################################################
@@ -131,7 +147,8 @@ COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
                         'compressor.filters.csstidy.CSSTidyFilter']
 
 # for front page editing
-TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__), 'templates/gcd/front_page/')),]
+TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
+                                'templates/gcd/front_page/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
 
 #################################################################################
