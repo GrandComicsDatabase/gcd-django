@@ -1385,8 +1385,10 @@ def edit_issues_in_bulk(request):
                         remove_fields.append('page_count_uncertain')
                     elif i == 'page_count_uncertain':
                         remove_fields.append('page_count')
-            elif i not in remove_fields:
-                initial[i] = values_list[0]
+    for i in fields:
+        if i not in remove_fields:
+            values_list = list(set(items.values_list(i, flat=True)))
+            initial[i] = values_list[0]
 
     if request.method != 'POST':
         form = _clean_bulk_issue_change_form(form_class(initial=initial),
