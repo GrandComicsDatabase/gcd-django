@@ -193,6 +193,21 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
   </ol>
 </fieldset>
 
+<fieldset class="format" id="format_fieldset">
+  <legend>
+    Format Fields
+  </legend>
+  <ol>
+    {{ form.format|show_form }}
+    {{ form.has_format|show_form }}
+    {{ form.color|show_form }}
+    {{ form.dimensions|show_form }}
+    {{ form.paper_stock|show_form }}
+    {{ form.binding|show_form }}
+    {{ form.publishing_format|show_form }}
+  </ol>
+</fieldset>
+
 <fieldset class="issue" id="issue_fieldset">
   <legend>
     Issue Fields
@@ -206,7 +221,6 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
     {{ form.indicia_frequency|show_form }}
     {{ form.price|show_form }}
     {{ form.issue_pages|show_form }}
-    {{ form.format|show_form }}
     {{ form.issue_editing|show_form }}
     {{ form.isbn|show_form }}
     {{ form.barcode|show_form }}
