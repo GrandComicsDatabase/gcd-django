@@ -100,7 +100,6 @@ class AdvancedSearch(forms.Form):
                                    (False, "no"))))
 
     series = forms.CharField(label='Name', required=False)
-    format = forms.CharField(label='Format', required=False)
     series_notes = forms.CharField(label='Series Notes', required=False)
     tracking_notes = forms.CharField(label='Tracking Notes', required=False)
     not_reserved = forms.BooleanField(label="Not Reserved",
@@ -116,6 +115,14 @@ class AdvancedSearch(forms.Form):
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
+
+    format = forms.CharField(label='Format', required=False)
+    has_format = forms.BooleanField(label='Has Format', required=False)
+    color = forms.CharField(label='Color', required=False)
+    dimensions = forms.CharField(label='Dimensions', required=False)
+    paper_stock = forms.CharField(label='Paper Stock', required=False)
+    binding = forms.CharField(label='Binding', required=False)
+    publishing_format = forms.CharField('Publishing Format', required=False)
 
     issues = forms.CharField(label='Issues', required=False)
     volume = forms.CharField(label='Volume', required=False)

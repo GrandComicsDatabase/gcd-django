@@ -837,8 +837,6 @@ def search_series(data, op):
         q_objs.append(Q(**{ '%sname__%s' % (prefix, op): data['series'] }))
     if 'series_year_began' in data and data['series_year_began']:
         q_and_only.append(Q(**{ '%syear_began' % prefix: int(data['series_year_began']) }))
-    if data['format']:
-        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op):  data['format'] }))
     if data['series_notes']:
         q_objs.append(Q(**{ '%snotes__%s' % (prefix, op):
                             data['series_notes'] }))
@@ -855,6 +853,26 @@ def search_series(data, op):
             q_objs.append(Q(**{ '%sis_comics_publication' % prefix: True }))
         else:
             q_objs.append(Q(**{ '%sis_comics_publication' % prefix: False }))
+
+    # Format fields
+    if data['format']:
+        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op):  data['format'] }))
+    if data['has_format']:
+        # Note the ~ for negation
+        q_objs.append(~Q(**{ '%sformat' % prefix: u'' }))
+    if data['color']:
+        q_objs.append(Q(**{ '%scolor__%s' % (prefix, op): data['color'] }))
+    if data['dimensions']:
+        q_objs.append(Q(**{ '%sdimensions__%s' % (prefix, op):
+                            data['dimensions'] }))
+    if data['paper_stock']:
+        q_objs.append(Q(**{ '%spaper_stock__%s' % (prefix, op):
+                            data['paper_stock'] }))
+    if data['binding']:
+        q_objs.append(Q(**{ '%sbinding__%s' % (prefix, op): data['binding'] } ))
+    if data['publishing_format']:
+        q_objs.append(Q(**{ '%spublishing_format__%s' % (prefix, op):
+                            data['publishing_format'] }))
 
     try:
         if data['issue_count'] is not None and data['issue_count'] != '':

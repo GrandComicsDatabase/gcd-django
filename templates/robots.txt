@@ -131,6 +131,7 @@ Disallow: /coverview.lasso
 Disallow: /covers.lasso
 Disallow: /details.lasso
 Disallow: /series.lasso
+## editing pages
 Disallow: /accounts/
 Disallow: /upload_cover/
 Disallow: /edit_covers/
@@ -138,3 +139,8 @@ Disallow: /special/
 Disallow: /data/
 Disallow: /changeset/
 Disallow: /projects/
+## expensive searches
+Disallow: /character/name/
+Disallow: /credit/name/
+Disallow: /search/advanced/process/
+
