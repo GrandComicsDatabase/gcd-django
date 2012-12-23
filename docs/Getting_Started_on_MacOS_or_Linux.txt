@@ -3,6 +3,9 @@ using the Django framework.
 
 For basic information, see the README file in the project's root directory.
 
+After following the steps here go to Getting_Started.txt for information on
+how to setup the environment using a dump from GCD project.
+
 This file explains the specifics of setting up a development environment
 on MacOS X or Linux.  Note that your Linux distribution's package management
 system may be able to handle much of the installation work for you.
@@ -115,8 +118,8 @@ If you have problems, see http://www.pip-installer.org/en/latest/
 
 virtualenv
 ==========
-Using virtualenv is optional, but it will allow you to isolate the libraries
-you need for the GCD, and not contaminate your system python.
+We recommend using virtualenv, but it is optional.  It will allow you to isolate
+the libraries you need for the GCD, and not contaminate your system python.
 
 Use pip to install virtualenv, and then create a virtualenv for use with the
 GCD.  For this example, we will create one called "gcd" in a directory called
@@ -143,14 +146,26 @@ http://www.virtualenv.org/en/latest/index.html
 
 distribute
 ==========
-Finally, some of the libraries require "distribute", a replacement for setuptools
-which you installed earlier.  A botched installation of distribute can leave your
-python system unusable, so this is where using a virtualenv can be handy, as
-a botched virtualenv can just be thrown away.  If you break your system python,
-see the distribute package's documentation for repair instructions.
+Finally, some of the libraries require "distribute", a replacement for
+setuptools which you installed earlier. If it is globally installed the setup
+of virtualenv will use that one, you can observe this in its output.  The
+libraries we use may require a newer version than already installed.  A botched
+installation of distribute can leave your python system unusable, so this is
+where using a virtualenv can be handy, as a botched virtualenv can just be
+thrown away.  If you break your system python, see the distribute package's
+documentation for repair instructions.
 
 The main way to break your python setup is to try to install distribute with pip.
-That is supposed to work, but often does not.  Instead, use distribute_setup.py
+That is supposed to work, but often does not.  Instead, one can use
+distribute_setup.py
+
+So, if you are in a virtualenv one of the following can be safely attempted:
+(gcd)bash:~$ pip install -U distribute
+or
+(gcd)bash:~$ easy_install -U distribute
+
+If that does not work, or you are installing globally, as of this writing, it
+is safer to do
 
 (gcd)bash:~$ curl -O http://python-distribute.org/distribute_setup.py
 (gcd)bash:~$ python distribute_setup.py
@@ -199,85 +214,5 @@ run the site and post code reviews for the project.
 = The GCD project and apps
 ===============================================================================
 
-settings.py and settings_local.py
-=================================
-In the top level directory of your repository clone, open up settings.py and
-take a look at it.  You should create a settings_local.py file in the same
-directory, and override any values from settings.py that need overriding in
-that settings_local.py.  Do not modify settings.py itself, unless you need
-to push a change out to all other development and production environments.
-
-Our .gitignore settings will prevent git from noticing settings_local.py.
-
-The settings.py file has numerous comments indicating what needs to be overridden.
-The most obvious is the DATABASES group of settings.
-
-Creating your test database
-===========================
-Create your database and set up whatever permissions you want.  Django
-will create the tables for you, but you need to create the database first.
-
-If you want data in your database, and know that the current development master
-matches the production shema, you can load a data dump from
-
-http://www.comics.org/download/
-
-Contact the GCD tech team to find out if the development and production
-schemas currently match, and what to do if they do not.
-
-Populating your database with empty tables
-==========================================
-From the root project directory, run
-
-python manage.py syncdb
-
-which will create the various tables that are not present in the data dump and
-load data in tables that need them. DO NOT create a local admin user when
-syncdb prompts you to do so.  Creating such a user will produce a user without
-a profile (gcd_indexer row) which will cause problems.  
-
-You will notice that syncdb says that it cannot sync some apps because they
-are controlled by South migrations.  To run the migrations, run:
-
-python manage.py migrate
-
-This will create the remainder of the tables, populate them with the required
-initial data (and if DEBUG=True in your settings, which it is by default,
-this will include an admin user, an approver, and a basic indexer),
-and update your schema if any updates beyond the initial state are required.
-See
-
-http://south.aeracode.org/
-
-for help with any difficulties with South.
-
-Launching your test web server
-==============================
-At this time you should be able to test your installation and data import using a 
-read-only mode, or try out editing with read-write mode.
-
-Read-write mode is the default.
-For read-only mode, set READ_ONLY = True and NO_OI = True in settings_local.py
-
-Once your settings are chosen, run
-
-python manage.py runserver
-
-and take a look at http://127.0.0.1:8000/
-
-If you don't get any page at all, check http://www.djangoproject.com/ if it
-looks like Django isn't configured correctly, or
-http://dev.comics.org/ and/or http://groups.google.com/group/gcd-tech/
-if it appears to be a code problem.
-
-Proposing your first change for review
-======================================
-When you start making changes, go to the wiki at http://docs.comics.org/
-for instructions on how to get code reviewed before checkin.  You'll need
-to set up an account with our Review Board instance so that we can review
-your first pull request before deciding whether to accept it.  If you develop
-a good record of contributions, you will be granted direct access to the project.
-
-Submissions to the project-owned repository that do not first go through
-code review will be reverted without notice.
-
+Now go to Getting_Started.txt for information on how to setup the environment
+using a dump from GCD project.
