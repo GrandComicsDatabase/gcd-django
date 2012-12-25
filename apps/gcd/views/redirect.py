@@ -1,3 +1,7 @@
+"""
+This module implements views which issue permanent redirects for URLs
+that were used with the old, Lasso-based site.
+"""
 import re
 from urllib import quote
 from django.http import HttpResponsePermanentRedirect

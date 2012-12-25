@@ -131,7 +131,7 @@ def imprint(request, imprint_id):
 
 def brands(request, publisher_id):
     """
-    Finds brands of a publisher.
+    Finds brands of a publisher and presents them as a paginated list.
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
@@ -157,7 +157,8 @@ def brands(request, publisher_id):
 
 def indicia_publishers(request, publisher_id):
     """
-    Finds indicia publishers of a publisher.
+    Finds indicia publishers of a publisher and presents them as
+    a paginated list.
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
@@ -185,8 +186,9 @@ def indicia_publishers(request, publisher_id):
 
 def imprints(request, publisher_id):
     """
-    Finds imprints of a publisher.  Imprints are defined as those
-    publishers whose parent_id matches the given publisher.
+    Finds imprints of a publisher and presents them as a paginated list.
+    Imprints are defined as those publishers whose parent_id matches
+    the given publisher.
     """
 
     publisher = get_object_or_404(Publisher, id = publisher_id)
@@ -224,7 +226,8 @@ def series(request, series_id):
 
 def show_series(request, series, preview=False):
     """
-    Handle the main work of displaying a series.  Also used by OI previews.
+    Helper function to handle the main work of displaying a series.
+    Also used by OI previews.
     """
     covers = []
 
@@ -259,6 +262,14 @@ def show_series(request, series, preview=False):
       context_instance=RequestContext(request))
 
 def series_details(request, series_id, by_date=False):
+    """
+    Displays a non-paginated list of all issues in a series along with
+    certain issue-level data fields.
+
+    Works in two forms- one which is a straight ordered listing, and the
+    other which attempts to graphically represent the issues in a timeline,
+    with special handling for issues whose date cannot be resolved.
+    """
     series = get_object_or_404(Series, id=series_id)
     if series.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
@@ -314,18 +325,25 @@ def series_details(request, series_id, by_date=False):
     # in the template.
     num_issues = series.issue_count
     volume_present = series.has_volume and \
-      series.active_issues().filter(no_volume=True, variant_of=None).count() - num_issues
+      series.active_issues().filter(no_volume=True, variant_of=None)\
+                            .count() - num_issues
     brand_present = \
-      series.active_issues().filter(no_brand=True, variant_of=None).count() - num_issues
+      series.active_issues().filter(no_brand=True, variant_of=None)\
+                            .count() - num_issues
     frequency_present = series.has_indicia_frequency and \
-      series.active_issues().filter(no_indicia_frequency=True, variant_of=None).count() - num_issues
+      series.active_issues().filter(no_indicia_frequency=True, variant_of=None)\
+                            .count() - num_issues
     isbn_present = series.has_isbn and \
-      series.active_issues().filter(no_isbn=True, variant_of=None).count() - num_issues
+      series.active_issues().filter(no_isbn=True, variant_of=None)\
+                            .count() - num_issues
     barcode_present = series.has_barcode and \
-      series.active_issues().filter(no_barcode=True, variant_of=None).count() - num_issues
+      series.active_issues().filter(no_barcode=True, variant_of=None)\
+                            .count() - num_issues
     title_present = series.has_issue_title and \
-      series.active_issues().filter(no_title=True, variant_of=None).count() - num_issues
-    on_sale_date_present = series.active_issues().exclude(on_sale_date='').count()
+      series.active_issues().filter(no_title=True, variant_of=None)\
+                            .count() - num_issues
+    on_sale_date_present = series.active_issues().exclude(on_sale_date='')\
+                                                 .count()
     
     return render_to_response('gcd/details/series_details.html',
       {
@@ -345,16 +363,20 @@ def series_details(request, series_id, by_date=False):
       context_instance=RequestContext(request))
 
 def change_history(request, model_name, id):
+    """
+    Displays the change history of the given object of the type
+    specified by model_name.
+    """
     if model_name not in ['publisher', 'brand', 'indicia_publisher',
                           'series', 'issue', 'cover', 'image']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {
-              'error_text' : 'There is no change history for this type of object.'},
+              'error_text': 'There is no change history for this type of object.'},
               context_instance=RequestContext(request))
     if model_name == 'cover' and not request.user.has_perm('gcd.can_approve'):
         return render_to_response('gcd/error.html', {
-          'error_text' : 'Only editors can access the change history for covers.'},
+          'error_text': 'Only editors can access the change history for covers.'},
           context_instance=RequestContext(request))
 
     template = 'gcd/details/change_history.html'
@@ -389,6 +411,9 @@ def change_history(request, model_name, id):
       context_instance=RequestContext(request))
 
 def _handle_key_date(issue, grid_date, prev_year, prev_month, issues_by_date):
+    """
+    Helper function for building timelines of issues by key_date.
+    """
     if prev_year == None:
         issues_by_date.append({'date': grid_date, 'issues': [issue] })
 
@@ -892,7 +917,8 @@ def issue(request, issue_id):
 
 def show_issue(request, issue, preview=False):
     """
-    Handle the main work of displaying an issue.  Also used by OI previews.
+    Helper function to handle the main work of displaying an issue.
+    Also used by OI previews.
     """
     alt_text = u'Cover Thumbnail for %s' % issue.full_name()
     zoom_level = ZOOM_MEDIUM
@@ -929,7 +955,8 @@ def show_issue(request, issue, preview=False):
                                                  alt_text=alt_text)
             images_count = Image.objects.filter(object_id=issue.issue.id, 
               deleted=False, 
-              content_type = ContentType.objects.get_for_model(issue.issue)).count()
+              content_type = ContentType.objects.get_for_model(issue.issue))\
+                                        .count()
         else:
             image_tag = mark_safe(get_image_tag(cover=None,
                                                 zoom_level=zoom_level,
@@ -1032,6 +1059,9 @@ def countries_in_use(request):
           context_instance=RequestContext(request))
 
 def agenda(request, language):
+    """
+    TODO: Why is this called agenda?  It sounds like a voting app thing but isn't.
+    """
     try:
         f = urlopen("https://www.google.com/calendar/embed?src=comics.org_v62prlv9"
           "dp79hbjt4du2unqmks%%40group.calendar.google.com&showTitle=0&showNav=0&"
