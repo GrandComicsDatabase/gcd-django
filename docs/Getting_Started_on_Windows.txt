@@ -68,7 +68,7 @@ the appropriate .egg file and install it for you.
 Currently, the provided .exe installer does not support 64-bit versions of
 Python for Windows, due to a distutils installer compatibility issue
 
-VIRTUALENV / PIP
+Virtualenv / Pip
 ================
 We recommend using virtualenv, but it is optional.  It will allow you to isolate
 the libraries you need for the GCD, and not contaminate your system python.
@@ -118,7 +118,7 @@ on how much of the image editing you want to be able to do).
 You could also just run pip without the virtualenv to install everything into
 your system python's site-packages tree, but we recommend to use virtualenv.
 
-COMPILING PACKAGES
+Compiling Packages
 ==================
 Three of the python packages need compiling. This typically additional installs
 and on x64 does not work out of the box. The easy way is to use the
@@ -143,7 +143,7 @@ the global site-packages directory to the one from the virtualenv.
 
 Or go to Note 2 for information on compiling these.
 
-INSTALLING PACKAGES
+Installing Packages
 ===================
 
 The normal setup using pip tries to install the latest versions of everything.
@@ -167,65 +167,8 @@ run the site and post code reviews for the project.
 Now go to Getting_Started.txt for information on how to setup the environment
 using a dump from the GCD project.
 
-
-7.  Go in gcd-django, open settings.py and take a look at it.
-If you need to change any settings, such as the database settings, create there a file called settings_local.py.
-Put the changed or added settings in that file.  
-They will automatically override the settings in the regular settings.py file.
-Our Git ignore settings will ignore the settings_local.py file.
-So you won't get annoying question mark entries when you check status.
-By default, we assume that the database is called “gcdonline”.
-It can be accessed by a user called “gcdonline” with no password.
-If you set your database up differently, look for settings that start with DATABASE.
-Override them appropriately.  
-http://www.djangoproject.com/ has lots of excellent documentation of all of the available settings.
-
-8. Download a data dump from http://www.comics.org/download/
-(You need to log into GCD to perform this task)
-I’m actually using “gcd” for database and log as root.
-From MySQL Command Line Client: (mysql.exe -uroot –p***) 
-create schema gcd;
-From command:
-mysql.exe –v -uroot –p*** gcd < dump.sql
-(You’ll WANT –v! That’s poor man’s Matrix!)
-(Actually, otherwise you’ll be under the impression that nothing happens)
-
-9. From the gcd-django/ directory, run:
-manage.py syncdb
-This will create the various tables that are not present in the data dump and load data in tables that need them. 
-Now, instead of creating a local admin in the syncdb step, you should load several additional data fixtures:
-manage.py loaddata support
-manage.py loaddata users
-You MUST load the support fixture first, because the data in the users table depends on it.
-(Specifically, gcd_indexers has a foreign key to gcd_country).
-This will give you an admin user (who has all privileges but has index reservation
-limits set to zero), at least one editor and one indexer, and an anonymous user.
-The usernames, email addresses and passwords can be seen in the fixture file,
-which is located at apps/gcd/fixtures/users.yaml
-There is also a "site" fixture just sets up your site URL (used by Django's
-admin UI in the "see on site" links) for localhost:8000.  You may prefer to
-just set this manually in the admin UI if you are using a different test URL.
-If you want to use it, it loads like the others:
-manage.py loaddata site
-Finally, the standard vote types for the voting application can be loaded:
-manage.py loaddata vote-types
-The production agendas and mailing lists, while basically standard, are not treated specially in the code so they are not supplied as fixtures.
-Please inquire at http://groups.google.com/group/gcd-tech/ about what must be done.
-Or if you're feeling exceptionally brave you can try the next step and attempt to debug things by matching up database scripts.  
-We do not recommend this :-)
-Be aware that the migration script, once it exists, may take quite some time to run
-Possibly longer than the data took to load, depending on what sort of table changes are being made.
-Note: MySQL runs in safe updates mode on Windows by default
-Before running migration scripts one needs to set “safe updates” to 0:
-        set sql_safe_updates=0;
-You can verify using:
-        show variables like'%sql_safe%';
-10.  Finally, run:
-manage.py runserver (lightweight web server for Django testing)
-Take a look at http://127.0.0.1:8000/
-11.  When you start making changes, go to the wiki at http://docs.comics.org/ for instructions on how to get code reviewed before checking.  
-You'll need to set up an account with our Review Board instance and get added to the SourceForge project with write permissions, as noted on the wiki.  
-Submissions that do not first go through code review will be reverted without notice.
+Additional Notes
+================
 
 Note 1 ActivePython
 ===================
