@@ -14,9 +14,14 @@ class Migration(DataMigration):
         call_command('loaddata', 'imagetype')
         call_command('loaddata', 'countstats')
 
-        if settings.DEBUG:
+        # TODO fix, not correctly working, loaddata afterwards works fine
+        # due to a dependency, users need country from support, seemingly
+        # it doesn't see that data imported here ?
+        # Since we intend to split country into a support app and indexer/users
+        # into a user app we can make dependencies via South then
+        # if settings.DEBUG:
             # Assume this is a development environment, load test users.
-            call_command('loaddata', 'users')
+            # call_command('loaddata', 'users')
 
     def backwards(self, orm):
         # Not really reversable.

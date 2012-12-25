@@ -185,7 +185,8 @@ Make certain that you have any C/C++ libraries already compiled and installed
 on how much of the image editing you want to be able to do).
 
 You can also just run this pip command without the virtualenv to install
-everything into your system python's site-packages tree.
+everything into your system python's site-packages tree, but we recommend to
+use virtualenv.
 
 Debian packages, RPMs and MacPorts packages are available for many of the
 Python libraries, and if you prefer to use those, please remember to
@@ -215,4 +216,4 @@ run the site and post code reviews for the project.
 ===============================================================================
 
 Now go to Getting_Started.txt for information on how to setup the environment
-using a dump from GCD project.
+using a dump from the GCD project.

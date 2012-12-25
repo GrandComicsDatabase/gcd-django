@@ -30,20 +30,20 @@ to push a change out to all other development and production environments.
 Our .gitignore settings will prevent git from noticing settings_local.py.
 
 The settings.py file has numerous comments indicating what needs to be overridden.
-The most obvious is the DATABASES group of settings.
+The most obvious are the DATABASES and CACHES group of settings.
+
+By default, we assume that the database is called 'gcdonline'. It can be
+accessed by a user called 'gcdonline' with no password. If you set your
+database up differently, look for settings that start with DATABASE. Override
+them appropriately.
 
 Creating your test database
 ===========================
 Create your database and set up whatever permissions you want.  Django
 will create the tables for you, but you need to create the database first.
 
-If you want data in your database, and know that the current development master
-matches the production shema, you can load a data dump from
-
-http://www.comics.org/download/
-
-Contact the GCD tech team to find out if the development and production
-schemas currently match, and what to do if they do not.
+E.g. from MySQL command line client do:
+create schema gcd;
 
 Populating your database with empty tables
 ==========================================
@@ -62,14 +62,37 @@ are controlled by South migrations.  To run the migrations, run:
 python manage.py migrate
 
 This will create the remainder of the tables, populate them with the required
-initial data (and if DEBUG=True in your settings, which it is by default,
-this will include an admin user, an approver, and a basic indexer),
-and update your schema if any updates beyond the initial state are required.
-See
+initial data, and update your schema if any updates beyond the initial state
+are required. See
 
 http://south.aeracode.org/
 
 for help with any difficulties with South.
+
+Finally run 
+
+python manage.py loaddata users
+
+this will add an admin user, an approver, and a basic indexer. The usernames,
+email addresses and passwords can be seen in the fixture file, which is
+located at apps/gcd/fixtures/users.yaml.
+
+Populating your database with the GCD data
+==========================================
+If you want data in your database, and know that the current development master
+matches the production schema, you can load a data dump from
+
+http://www.comics.org/download/
+
+Contact the GCD tech team to find out if the development and production
+schemas currently match, and what to do if they do not.
+
+With the default user and database-name you need to do
+mysql -ugcdonline gcdonline < dump.sql
+(You might want to do -v to see something is happening)
+
+Note that we do not distribute the images for covers and other user contributed
+uploads of scans.
 
 Launching your test web server
 ==============================
@@ -100,4 +123,3 @@ a good record of contributions, you will be granted direct access to the project
 
 Submissions to the project-owned repository that do not first go through
 code review will be reverted without notice.
-

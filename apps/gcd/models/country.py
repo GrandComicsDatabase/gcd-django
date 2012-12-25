@@ -21,7 +21,7 @@ class Country(models.Model):
         However, it probably is and our use of the natural key concept is
         sufficiently limited that this is acceptable.
         """
-        return self.get(code=code)
+        return (self.code,)
 
     def __unicode__(self):
         return self.name
