@@ -167,8 +167,9 @@ run the site and post code reviews for the project.
 Now go to Getting_Started.txt for information on how to setup the environment
 using a dump from the GCD project.
 
-Additional Notes
-================
+===============================================================================
+= Additional Notes
+===============================================================================
 
 Note 1 ActivePython
 ===================
