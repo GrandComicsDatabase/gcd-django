@@ -22,7 +22,8 @@ DEBUG          = True
 TEMPLATE_DEBUG = DEBUG
 
 # absolute path to the directory that holds templates.
-TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')), )
+TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
+                  abspath(join(dirname(__file__), 'apps', 'voting', 'templates')),)
 
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
