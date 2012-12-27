@@ -1,3 +1,9 @@
+"""
+Due to uncertainty about how to best structure things and the size of the app,
+the models and views were split into multiple individual files instead of
+the traditional models.py and views.py files.
+"""
+
 # Make imports work as if we just had a single "models.py" file.
 
 from country import Country
