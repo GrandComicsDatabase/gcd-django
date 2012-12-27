@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+Forms related to account and profile management.  As with the other account
+pieces, this should probably be moved out of the gcd app.
+"""
+
 import re
 from datetime import date, timedelta
 
@@ -14,12 +19,23 @@ MIN_PASSWORD_LENGTH = 6
 MAX_PASSWORD_LENGTH = 20
 
 class LongUsernameAuthenticationForm(AuthenticationForm):
+    """
+    Exists purely to make the username input field wider since we
+    support email addresses up to 75 characters rather than the traditional
+    auth app's 30 character usernames.
+    """
     username = forms.CharField(max_length=75, label='Username or email address',
       widget=forms.TextInput(attrs={'class': 'medium'}))
 
 class AccountForm(forms.Form):
+    """
+    Base class for account creation and editing forms.
+    Works with fields from both the stock auth object and our profile
+    object (currently apps.gcd.models.Indexer).
+    """
     # For some reason, importing urlresolvers in this module causes an error
-    # where django thinks our urls conf is empty.  TODO: Figure that out.
+    # where django thinks our urls conf is empty.
+    # TODO: use reverse_lazy() now that we're on Django 1.4.
     email = forms.EmailField(max_length=75, help_text=(
       u'Your email address is your login name.  It will not be '
       u'publicly displayed on the site.  Please see our '
@@ -128,6 +144,9 @@ class AccountForm(forms.Form):
         return cd
 
 class RegistrationForm(AccountForm):
+    """
+    Form for creating an account.  Adds password creation/confirmation fields.
+    """
     password = forms.CharField(widget=forms.PasswordInput,
                                min_length=MIN_PASSWORD_LENGTH,
                                max_length=MAX_PASSWORD_LENGTH)
@@ -152,6 +171,8 @@ class RegistrationForm(AccountForm):
 
 class ProfileForm(AccountForm):
     """
+    Profile (auth + apps.gcd.models.Indexer) editing form.
+
     Add password reset handling to the regular account form.
     Do not try to clean these fields as it depends on the request's user
     and is therefore done in the view function.
@@ -171,9 +192,10 @@ class ProfileForm(AccountForm):
                                            max_length=MAX_PASSWORD_LENGTH,
                                            required=False)
 
-# TODO: This does not seem to be used, but perhaps we should be using it to
-#       leverage standard Django auth code?
 class PasswordResetForm(SetPasswordForm):
+    """
+    Passed to auth.views.password_reset_confirm() in the top-level urls.py
+    """
     def clean(self):
         cleaned_data = SetPasswordForm.clean(self)
         if 'new_password1' in cleaned_data:
