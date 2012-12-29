@@ -469,7 +469,8 @@ def do_advanced_search(request):
           },
           context_instance=RequestContext(request))
 
-    if (not query) and terms:
+    if (not query) and terms \
+      and (not data['keywords'] or data['target'] in ['cover', 'issue_cover']):
         raise ViewTerminationError, render_to_response(
           'gcd/search/advanced.html',
           {

@@ -205,6 +205,19 @@ def on_sale_date_fields(on_sale_date):
             day = int(on_sale_date[8:10].strip('?'))
     return year, month, day
 
+def get_keywords(source):
+    return u'; '.join(unicode(i) for i in source.keywords.all()\
+                                                .order_by('name'))
+
+def save_keywords(revision, source):
+    if revision.keywords:
+        source.keywords.set(*[x.strip() for x in revision.keywords.split(';')])
+        revision.keywords=u'; '.join(unicode(i) for i in \
+                                        source.keywords.all().order_by('name'))
+        revision.save()
+    else:
+        source.keywords.set()
+
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
@@ -1089,7 +1102,7 @@ class PublisherRevisionManagerBase(RevisionManager):
           'year_began_uncertain': instance.year_began_uncertain,
           'year_ended_uncertain': instance.year_ended_uncertain,
           'notes': instance.notes,
-          'keywords': '; '.join(str(i) for i in instance.keywords.all().order_by('name')),
+          'keywords': get_keywords(instance),
           'url': instance.url,
         }
 
@@ -1140,12 +1153,7 @@ class PublisherRevisionBase(Revision):
         target.year_ended_uncertain = self.year_ended_uncertain
         target.notes = self.notes
         target.save()
-        if self.keywords:
-            target.keywords.set(*[x.strip() for x in self.keywords.split(';')])
-            self.keywords='; '.join(str(i) for i in target.keywords.all().order_by('name'))
-            self.save()
-        else:
-            target.keywords.set()
+        save_keywords(self, target)
         target.url = self.url
 
     def _field_list(self):
@@ -1891,8 +1899,7 @@ class SeriesRevisionManager(RevisionManager):
           binding=series.binding,
           publishing_format=series.publishing_format,
           notes=series.notes,
-          keywords='; '.join(str(i) for i in
-                             series.keywords.all().order_by('name')),
+          keywords=get_keywords(series),
           year_began=series.year_began,
           year_ended=series.year_ended,
           year_began_uncertain=series.year_began_uncertain,
@@ -2302,12 +2309,7 @@ class SeriesRevision(Revision):
             series.reserved = False
 
         series.save()
-        if self.keywords:
-            series.keywords.set(*[x.strip() for x in self.keywords.split(';')])
-            self.keywords='; '.join(str(i) for i in series.keywords.all().order_by('name'))
-            self.save()
-        else:
-            series.keywords.set()
+        save_keywords(self, series)
         series.save()
         if self.series is None:
             self.series = series
@@ -2389,7 +2391,7 @@ class IssueRevisionManager(RevisionManager):
           variant_of=issue.variant_of,
           variant_name=issue.variant_name,
           notes=issue.notes,
-          keywords='; '.join(str(i) for i in issue.keywords.all().order_by('name')))
+          keywords=get_keywords(issue))
 
         if issue.on_sale_date:
             revision.year_on_sale, revision.month_on_sale, \
@@ -3308,12 +3310,7 @@ class IssueRevision(Revision):
             issue.reserved = False
 
         issue.save()
-        if self.keywords:
-            issue.keywords.set(*[x.strip() for x in self.keywords.split(';')])
-            self.keywords='; '.join(str(i) for i in issue.keywords.all().order_by('name'))
-            self.save()
-        else:
-            issue.keywords.set()
+        save_keywords(self, issue)
         issue.save()
         if self.issue is None:
             self.issue = issue
@@ -3417,7 +3414,7 @@ class StoryRevisionManager(RevisionManager):
           no_editing=story.no_editing,
 
           notes=story.notes,
-          keywords='; '.join(str(i) for i in story.keywords.all().order_by('name')),
+          keywords=get_keywords(story),
           synopsis=story.synopsis,
           characters=story.characters,
           reprint_notes=story.reprint_notes,
@@ -3731,12 +3728,7 @@ class StoryRevision(Revision):
             story.reserved = False
 
         story.save()
-        if self.keywords:
-            story.keywords.set(*[x.strip() for x in self.keywords.split(';')])
-            self.keywords='; '.join(str(i) for i in story.keywords.all().order_by('name'))
-            self.save()
-        else:
-            story.keywords.set()
+        save_keywords(self, story)
         story.save()
 
         if self.story is None:

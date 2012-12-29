@@ -3984,7 +3984,8 @@ def get_select_data(request, select_key):
         data[item] = request.session['%s_%s' % (select_key, item)]
     return data
 
-def get_select_forms(request, initial, data, series=False, issue=False, story=False):
+def get_select_forms(request, initial, data, series=False, issue=False,
+                     story=False):
     if issue or story:
         cached_issue = get_cached_issue(request)
     else:
@@ -3999,7 +4000,8 @@ def get_select_forms(request, initial, data, series=False, issue=False, story=Fa
     if data:
         search_form = get_select_search_form(series, issue, story)(data)
     else:
-        search_form = get_select_search_form(series, issue, story)(initial=initial)
+        search_form = get_select_search_form(series, issue, story)\
+                                            (initial=initial)
 
     cache_form = get_select_cache_form(cached_issue=cached_issue,
         cached_story=cached_story, cached_cover=cached_cover)()
@@ -4016,7 +4018,8 @@ def process_select_search(request, select_key):
     issue =  data.get('issue', False)
     story =  data.get('story', False)
 
-    search_form = get_select_search_form(series=series, issue=issue, story=story)(request.GET)
+    search_form = get_select_search_form(series=series, issue=issue,
+                                         story=story)(request.GET)
     if not search_form.is_valid():
         return HttpResponseRedirect(urlresolvers.reverse('select_object',
                                       kwargs={'select_key': select_key}) \
@@ -4024,9 +4027,10 @@ def process_select_search(request, select_key):
     cd = search_form.cleaned_data
 
     if 'search_story' in request.GET or 'search_cover' in request.GET:
-        search = Story.objects.filter(issue__number=cd['number'], deleted=False,
-                    issue__series__name__icontains=cd['series'],
-                    issue__series__publisher__name__icontains=cd['publisher'])
+        search = Story.objects.filter(issue__number=cd['number'],
+                   deleted=False,
+                   issue__series__name__icontains=cd['series'],
+                   issue__series__publisher__name__icontains=cd['publisher'])
         publisher = cd['publisher'] if cd['publisher'] else '?'
         if cd['year']:
             search = search.filter(issue__series__year_began=cd['year'])
