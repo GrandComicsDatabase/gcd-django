@@ -1,4 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+Contains views related to account management, login and logout.
+Should probably be refactored into a separate app rather than the gcd app.
+
+The urls for these views are in the top-level urls.py file instead of
+the gcd app's urls.py, which was the start of an effort to split this
+out of the gcd app.
+"""
+
 import re
 import hashlib
 from random import random
@@ -216,6 +225,20 @@ thanks,
     return HttpResponseRedirect(urlresolvers.reverse('confirm_instructions'))
 
 def confirm_account(request, key):
+    """
+    The registration process involves emailing prospective users a link
+    with a key, which they must use to confirm their account before they
+    can log in.
+
+    This view function handles the confirmation step, which is expected
+    to be a GET.
+
+    TODO: Should we check the HTTP method here?  Technically, this does
+    something other than retrieve data, and therefore should not be a GET,
+    but it is idempotent and we want to keep the number of clicks required
+    to activate an account to a minimum.  This sort of confirmation by GET
+    is common.
+    """
     try:
         indexer = Indexer.objects.get(registration_key=key)
         if indexer.registration_expires is None:
@@ -293,6 +316,10 @@ Mentor this indexer: %s
            'for assistance.') % settings.EMAIL_CONTACT)
 
 def handle_existing_account(request, users):
+    """
+    Helper function to handle people trying to open multiple accounts.
+    Called from view functions, but not directly used as a view.
+    """
     if users.count() > 1:
         # There are only a few people in this situation, all of whom are
         # either editors themselves or definitely know how to easily get
@@ -365,6 +392,10 @@ thanks,
           'this was done in error.')
 
 def profile(request, user_id=None, edit=False):
+    """
+    View method to display (with this method) or edit (using the
+    update_profile method) the user's profile data.
+    """
     if request.method == 'POST':
         return update_profile(request, user_id)
 
@@ -403,6 +434,10 @@ def profile(request, user_id=None, edit=False):
                               context_instance=RequestContext(request))
 
 def update_profile(request, user_id=None):
+    """
+    Helper method to perform the update if the main profile view
+    detects a POST request.
+    """
     if request.user.id != int(user_id):
         return render_error(request, 'You may only edit your own profile.')
 
@@ -456,6 +491,11 @@ def update_profile(request, user_id=None):
 
 @login_required
 def mentor(request, indexer_id):
+    """
+    View for an approver to use to mentor a new user.
+    GET: Displays whether the user needs a mentor or not, or who it is.
+    POST: Takes on the user as a mentee.
+    """
     if not request.user.has_perm('gcd.can_mentor'):
         return render_error(request,
           'You are not allowed to mentor new Indexers', redirect=False)
@@ -485,6 +525,11 @@ def mentor(request, indexer_id):
 
 @login_required
 def unmentor(request, indexer_id):
+    """
+    Releases a user from being mentored.  POST only.
+    This is NOT for "graduating" a user into not needing a mentor.
+    It is for releasing the new user to find another mentor.
+    """
     indexer = get_object_or_404(Indexer, id=indexer_id)
     if indexer.mentor is None:
         return render_error(request, "This indexer does not have a mentor.")
@@ -500,6 +545,11 @@ def unmentor(request, indexer_id):
 
 @login_required
 def mentor_not_new(request, indexer_id):
+    """
+    Marks a user as no longer needing a mentor and adjusts their limits
+    accordingly.
+    POST only, although a GET will redirect to the basic mentoring view.
+    """
     if not request.user.has_perm('gcd.can_mentor'):
         return render_error(request,
           'You are not allowed to mentor new Indexers', redirect=False)

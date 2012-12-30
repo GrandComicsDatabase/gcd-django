@@ -1,7 +1,7 @@
 BeautifulSoup
 Django
 MySQL-python
-PIL
+Pillow
 PyICU
 PyYAML
 Pygments
@@ -11,6 +11,6 @@ django-appconf
 django-compressor
 django-imagekit
 git+git://github.com/GrandComicsDatabase/django-taggit.git
-django-templatesadmin
+git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
 python-stdnum
 wsgiref

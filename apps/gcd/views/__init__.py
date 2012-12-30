@@ -1,3 +1,12 @@
+"""
+Due to uncertainty about how to best structure things and the size of the app,
+the models and views were split into multiple individual files instead of
+the traditional models.py and views.py files.
+
+This file contains the front page view, plus utilities for working with requests,
+responses and errors. 
+"""
+
 import hashlib
 from random import random
 
@@ -42,7 +51,8 @@ def index(request):
 
 
     if language:
-        front_page_content = "gcd/front_page/front_page_content_%s.html" % language.code
+        front_page_content = ("gcd/front_page/front_page_content_%s.html" %
+                              language.code)
         stats_for_language = CountStats.objects.filter(language=language)
     else:
         front_page_content = "gcd/front_page/front_page_content.html"
@@ -99,6 +109,14 @@ def paginate_response(request, queryset, template, vars, page_size=100,
 
 
 def render_error(request, error_text, redirect=True, is_safe = False):
+    """
+    Utility function to render an error page as a response.  Can be
+    called to return the page directly as a response or used to
+    set up a redirect for which the error message is stored in our
+    custom errors table.
+
+    See apps.gcd.models.Error for more details.
+    """
     if redirect:
         if error_text != '':
             salt = hashlib.sha1(str(random())).hexdigest()[:5]
@@ -118,6 +136,13 @@ def render_error(request, error_text, redirect=True, is_safe = False):
 
 
 def error_view(request, error_text = ''):
+    """
+    Looks up a specified error in the GCD's custom errors table,
+    and renders a generic error page using that error's text.
+    Can be used through a redirect or can be called directly from another view.
+
+    See apps.gcd.models.Error for more details.
+    """
     if error_text == '':
         if 'error_key' not in request.GET:
             error_text = 'Unknown error.'
