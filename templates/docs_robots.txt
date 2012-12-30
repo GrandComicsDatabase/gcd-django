@@ -1,0 +1,13 @@
+#
+# robots.txt for http://docs.comics.org/ 
+# 
+# setup in the apache config of docs.comics.org:
+# Alias /robots.txt /var/www/gcd-django/templates/docs_robots.txt
+#
+# we don't want the internal wiki parts of docs.comics.org being indexed
+# 
+User-agent: *
+Disallow: /wiki/Special:
+Disallow: /index.php/Special:
+Disallow: /index.php?
+
