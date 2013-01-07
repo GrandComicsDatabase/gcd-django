@@ -2085,6 +2085,9 @@ class SeriesRevision(Revision):
     def _source_name(self):
         return 'series'
 
+    def active_base_issues(self):
+        return self.active_issues().exclude(variant_of__series=self)
+
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
 
