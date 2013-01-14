@@ -1515,9 +1515,10 @@ class UploadImageForm(forms.Form):
 
     comments = forms.CharField(widget=forms.Textarea,
                                required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+                               label='Source / Comments',
+      help_text='Please credit the source of this image if scanned or '
+                'otherwise provided by another site or person, along with '
+                'any additional comments to the upload approver.')
 
 def get_select_cache_form(cached_issue=None, cached_story=None,
                           cached_cover=None):
