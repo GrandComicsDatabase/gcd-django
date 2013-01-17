@@ -2,6 +2,7 @@
 *.py~
 *.html~
 *.css~
+*.json~
 *swp
 *media/cache
 /media/img/gcd/covers_by_id
