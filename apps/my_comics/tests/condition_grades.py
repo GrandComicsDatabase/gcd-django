@@ -1,4 +1,4 @@
-from apps.my_comics.statics import condition_grade_scales
+from apps.mycomics.statics import condition_grade_scales
 
 import unittest
 

@@ -1,1 +1,1 @@
-"""Migrations for my_comics app."""
+"""Migrations for mycomics app."""
