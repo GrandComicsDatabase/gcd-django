@@ -55,6 +55,6 @@ condition_grade_scales = \
              'cz3':ConditionGrade('Zustand 3','noch sammelwürdig',4),
              'cz34':ConditionGrade('Zustand 3-4','schlecht',3),
              'cz4':ConditionGrade('Zustand 4','zum Wegwerfen zu schade',2),
-             'ce':ConditionGrade('Ergänzung','Ergänzung',1),
+             'ce':ConditionGrade('Zustand 5','unvollständig',1),
             }),
   }
