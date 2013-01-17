@@ -72,8 +72,8 @@ class CollectionItem(models.Model):
     condition_grade_code = models.CharField(blank=True, max_length=10)
 
     #TODO add removing these dates together with CollectionItem
-    acquisition_date = models.ForeignKey(Date)
-    sell_date = models.ForeignKey(Date)
+    acquisition_date = models.ForeignKey(Date, related_name='+')
+    sell_date = models.ForeignKey(Date, related_name='+')
 
     was_read = models.NullBooleanField(default=None)
     for_sale = models.BooleanField(default=False)
