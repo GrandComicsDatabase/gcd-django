@@ -12,7 +12,7 @@ class Migration(SchemaMigration):
         db.create_table('stddata_currency', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('code', self.gf('django.db.models.fields.CharField')(unique=True, max_length=3)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=40, db_index=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=100, db_index=True)),
             ('is_decimal', self.gf('django.db.models.fields.BooleanField')(default=True)),
         ))
         db.send_create_signal('stddata', ['Currency'])
@@ -20,10 +20,12 @@ class Migration(SchemaMigration):
         # Adding model 'Date'
         db.create_table('stddata_date', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('date', self.gf('django.db.models.fields.CharField')(max_length=10, db_index=True)),
-            ('is_year_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('is_month_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('is_day_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('year', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=4, blank=True)),
+            ('month', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=2, blank=True)),
+            ('day', self.gf('django.db.models.fields.CharField')(db_index=True, max_length=2, blank=True)),
+            ('year_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('month_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('day_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
         ))
         db.send_create_signal('stddata', ['Date'])
 
@@ -42,15 +44,17 @@ class Migration(SchemaMigration):
             'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '3'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'is_decimal': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '40', 'db_index': 'True'})
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'db_index': 'True'})
         },
         'stddata.date': {
-            'Meta': {'object_name': 'Date'},
-            'date': ('django.db.models.fields.CharField', [], {'max_length': '10', 'db_index': 'True'}),
+            'Meta': {'ordering': "('year', 'month', 'day')", 'object_name': 'Date'},
+            'day': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '2', 'blank': 'True'}),
+            'day_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_day_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_month_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
+            'month': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '2', 'blank': 'True'}),
+            'month_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'year': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '4', 'blank': 'True'}),
+            'year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         }
     }
 
