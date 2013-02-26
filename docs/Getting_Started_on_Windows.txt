@@ -32,7 +32,8 @@ MySQL
 Install MySQL (version 5.5.x is currently in production)
 http://dev.mysql.com/downloads/
 
-Put the following lines in your configuration (my.cnf) if not already there.
+Put the following lines in your configuration (my.cnf) if not already there,
+these are nowadays the default on Windows installations.
 
 default-character-set = utf8
 default-storage-engine = InnoDB
@@ -40,6 +41,8 @@ default-storage-engine = InnoDB
 These settings will save you from accidentally not using foreign keys or
 transactions, or from trying to stuff unicode into an 8-bit character set.
 None of those are fun to debug or recover from.
+
+It can be useful to install the GUI MySQL Workbench.
 
 CSSTidy
 =======
