@@ -409,7 +409,7 @@ def advanced_search(request):
 
     if ('target' not in request.GET):
         return render_to_response('gcd/search/advanced.html',
-          { 'form': AdvancedSearch(auto_id=True) },
+          { 'form': AdvancedSearch() },
           context_instance=RequestContext(request))
     else:
         search_values = request.GET.copy()

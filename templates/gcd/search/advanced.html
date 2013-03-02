@@ -1,14 +1,15 @@
 {% extends "gcd/base.html" %}
 
 {% load forms %}
+{% load compress %}
 
 {% block title %} GCD :: Advanced Search {% endblock %}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{{ MEDIA_URL }}css/gcd/default.css">
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default/advanced_search.css"/>
+      href="{{ MEDIA_URL }}css/gcd/default/advanced_search.css">
 {% endblock %}
 
 {% block body %}
@@ -16,6 +17,25 @@
 {% with "Advanced Search" as bar_heading %}
 {% include "gcd/bits/plain_bar.html" %}
 {% endwith %}
+
+{% include "oi/bits/multi_selector.html" %}
+{% comment %}
+TODO for some reason without this second time of jquery.min.js the
+overrtide of SelectFilter does not seem to work
+{% endcomment %}
+{% compress js %}
+<script type='text/javascript'
+        src='{{ MEDIA_URL }}admin/js/jquery.min.js'></script>
+{% endcompress %}
+<script type='text/javascript'>
+<!--- overriding SelectFilter function for small windows --->
+if ($(window).width() < 1240) {
+    (function() {
+        SelectFilter = function() {
+        };
+    })();
+}
+</script>
 
 <div id="blithering">
 Advanced Search is somewhat experimental and has some known bugs and limitations:
@@ -107,8 +127,8 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
     {{ form.title|show_form }}
     {{ form.feature|show_form }}
     {{ form.job_number|show_form }}
-    {{ form.type|show_form }}
     {{ form.pages|show_form }}
+    {{ form.type|show_form }}
   </ol>
 
   <fieldset class="credits">
@@ -188,8 +208,8 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
     {{ form.issue_count|show_form }}
     {{ form.not_reserved|show_form }}
     {{ form.is_current|show_form }}
-    {{ form.language|show_form }}
     {{ form.is_comics|show_form }}
+    {{ form.language|show_form }}
   </ol>
 </fieldset>
 
@@ -227,8 +247,8 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
     {{ form.issue_notes|show_form }}
     {{ form.issue_reprinted|show_form }}
     {{ form.cover_needed|show_form }}
-    {{ form.image_resources|show_form }}
     {{ form.is_indexed|show_form }}
+    {{ form.image_resources|show_form }}
     {{ form.indexer|show_form }}
   </ol>
 </fieldset>
@@ -243,7 +263,9 @@ Advanced Search is somewhat experimental and has some known bugs and limitations
 </div>
 </form>
 <hr style="border-bottom:0; height:1px">
+
 {% endblock %}
+
 
 {% include "gcd/fine_print.html" %}
 
