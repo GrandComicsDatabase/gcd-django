@@ -30,10 +30,7 @@ overrtide of SelectFilter does not seem to work
 <script type='text/javascript'>
 <!--- overriding SelectFilter function for small windows --->
 if ($(window).width() < 1240) {
-    (function() {
-        SelectFilter = function() {
-        };
-    })();
+    SelectFilter = function() {};
 }
 </script>
 
