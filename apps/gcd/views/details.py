@@ -728,15 +728,30 @@ def daily_changes(request, show_date=None):
     issues = Issue.objects.filter(id__in=issue_revisions).distinct()\
       .select_related('series__publisher', 'series__country')
 
-    image_revisions = list(ImageRevision.objects.filter(
+    images = []
+    image_revisions = ImageRevision.objects.filter(
       changeset__change_type=CTYPES['image'],
       changeset__state=states.APPROVED,
       deleted=False,
       changeset__modified__range=(
         datetime.combine(requested_date, time.min),
         datetime.combine(requested_date, time.max)))\
-      .exclude(changeset__indexer=anon).values_list('image', flat=True))
-    images = Image.objects.filter(id__in=image_revisions).distinct()
+      .exclude(changeset__indexer=anon).values_list('image', flat=True)
+
+    brand_revisions = list(image_revisions.filter(type__name='BrandScan'))
+    brands = Brand.objects.filter(image_resources__id__in=brand_revisions).distinct()
+    if brands:
+      images.append((brands, '', 'Brand emblem', 'brand'))
+
+    indicia_revisions = list(image_revisions.filter(type__name='IndiciaScan'))
+    indicia_issues = Issue.objects.filter(image_resources__id__in=indicia_revisions)
+    if indicia_issues:
+      images.append((indicia_issues, 'image/', 'Indicia Scan', 'issue'))
+    
+    soo_revisions = list(image_revisions.filter(type__name='SoOScan'))
+    soo_issues = Issue.objects.filter(image_resources__id__in=soo_revisions)
+    if soo_issues:
+      images.append((soo_issues, 'image/', 'Statement of ownership', 'issue'))
 
     return render_to_response('gcd/status/daily_changes.html',
       {
@@ -748,7 +763,7 @@ def daily_changes(request, show_date=None):
         'indicia_publishers' : indicia_publishers,
         'series' : series,
         'issues' : issues,
-        'images' : images
+        'all_images' : images
       },
       context_instance=RequestContext(request)
     )
