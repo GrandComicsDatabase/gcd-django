@@ -177,6 +177,8 @@ class Brand(BasePublisher):
 
     issue_count = models.IntegerField(default=0)
 
+    image_resources = generic.GenericRelation(Image)
+
     def _emblem(self):
         img = Image.objects.filter(object_id=self.id, deleted=False,
           content_type = ContentType.objects.get_for_model(self), type__id=3)
