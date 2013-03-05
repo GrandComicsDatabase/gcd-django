@@ -11,7 +11,8 @@ select.filtered {
     clear: left;
 }
 
-a:link, a:visited {
+a.selector-chooseall:link, a.selector-clearall:link,
+a.selector-chooseall:visited, a.selector-clearall:visited {
     text-decoration: none;
 }
 
