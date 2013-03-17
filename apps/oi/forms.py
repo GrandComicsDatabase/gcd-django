@@ -679,7 +679,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def clean_year_on_sale(self):
             year_on_sale = self.cleaned_data['year_on_sale']
             year_string = str(year_on_sale)[:2]
-            if year_on_sale != None and (year_string <= '18' or year_string > '20'):
+            if year_on_sale != None and (year_string < '18' or year_string > '20'):
                 raise forms.ValidationError('Unreasonable year entered.')
             return year_on_sale
 
