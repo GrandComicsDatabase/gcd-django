@@ -11,7 +11,6 @@ class Collector(models.Model):
     """Class representing a collector side of the user."""
     user = models.OneToOneField(User)
 
-    #grade_system = models.CharField(blank=True, max_length=3)
     grade_system = models.ForeignKey('ConditionGradeScale', related_name='+')
 
     #defaults
@@ -75,7 +74,6 @@ class CollectionItem(models.Model):
     notes = models.TextField(blank=True)
     keywords = TaggableManager()
 
-    #grade = models.CharField(blank=True, max_length=10)
     grade = models.ForeignKey('ConditionGrade', related_name='+')
 
     #TODO add removing these dates together with CollectionItem
