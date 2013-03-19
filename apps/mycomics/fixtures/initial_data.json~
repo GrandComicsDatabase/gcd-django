@@ -1,0 +1,93 @@
+[
+{"model":"mycomics.conditiongradescale","pk":1,"fields":{
+"name":"US basic grading scale","description":""}},
+{"model":"mycomics.conditiongradescale","pk":2,"fields":{
+"name":"US ten-point grading scale","description":""}},
+{"model":"mycomics.conditiongradescale","pk":3,"fields":{
+"name":"German grading scale","description":""}},
+{"model":"mycomics.conditiongrade","pk":1,"fields":{
+"scale":1,"code":"NM","name":"Near Mint","value":8}},
+{"model":"mycomics.conditiongrade","pk":2,"fields":{
+"scale":1,"code":"VF","name":"Very Fine","value":7}},
+{"model":"mycomics.conditiongrade","pk":3,"fields":{
+"scale":1,"code":"FN","name":"Fine","value":6}},
+{"model":"mycomics.conditiongrade","pk":4,"fields":{
+"scale":1,"code":"FG","name":"Very Good","value":5}},
+{"model":"mycomics.conditiongrade","pk":5,"fields":{
+"scale":1,"code":"GD","name":"Good","value":4}},
+{"model":"mycomics.conditiongrade","pk":6,"fields":{
+"scale":1,"code":"FR","name":"Fair","value":3}},
+{"model":"mycomics.conditiongrade","pk":7,"fields":{
+"scale":1,"code":"PR","name":"Poor","value":2}},
+{"model":"mycomics.conditiongrade","pk":8,"fields":{
+"scale":2,"code":"GM","name":"Gem Mint","value":10}},
+{"model":"mycomics.conditiongrade","pk":9,"fields":{
+"scale":2,"code":"M","name":"Mint","value":9.9}},
+{"model":"mycomics.conditiongrade","pk":10,"fields":{
+"scale":2,"code":"NM/M","name":"Near Mint/Mint","value":9.8}},
+{"model":"mycomics.conditiongrade","pk":11,"fields":{
+"scale":2,"code":"NM+","name":"Near Mint+","value":9.6}},
+{"model":"mycomics.conditiongrade","pk":12,"fields":{
+"scale":2,"code":"NM","name":"Near Mint","value":9.4}},
+{"model":"mycomics.conditiongrade","pk":13,"fields":{
+"scale":2,"code":"NM-","name":"Near Mint-","value":9.2}},
+{"model":"mycomics.conditiongrade","pk":14,"fields":{
+"scale":2,"code":"VF/NM","name":"Very Fine/Near Mint","value":9.0}},
+{"model":"mycomics.conditiongrade","pk":15,"fields":{
+"scale":2,"code":"VF+","name":"Very Fine+","value":8.5}},
+{"model":"mycomics.conditiongrade","pk":16,"fields":{
+"scale":2,"code":"VF","name":"Very Fine","value":8.0}},
+{"model":"mycomics.conditiongrade","pk":17,"fields":{
+"scale":2,"code":"VF-vVery Fine-","value":7.5}},
+{"model":"mycomics.conditiongrade","pk":18,"fields":{
+"scale":2,"code":"FN/VF","name":"Fine/Very Fine","value":7.0}},
+{"model":"mycomics.conditiongrade","pk":19,"fields":{
+"scale":2,"code":"FN+","name":"Fine+","value":6.5}},
+{"model":"mycomics.conditiongrade","pk":20,"fields":{
+"scale":2,"code":"FN","name":"Fine","value":6.0}},
+{"model":"mycomics.conditiongrade","pk":21,"fields":{
+"scale":2,"code":"FN-","name":"Fine-","value":5.5}},
+{"model":"mycomics.conditiongrade","pk":22,"fields":{
+"scale":2,"code":"VG/FN","name":"Very Good/Fine","value":5.0}},
+{"model":"mycomics.conditiongrade","pk":23,"fields":{
+"scale":2,"code":"VG+","name":"Very Good+","value":4.5}},
+{"model":"mycomics.conditiongrade","pk":24,"fields":{
+"scale":2,"code":"VG","name":"Very Good","value":4.0}},
+{"model":"mycomics.conditiongrade","pk":25,"fields":{
+"scale":2,"code":"VG-","name":"Very Good-","value":3.5}},
+{"model":"mycomics.conditiongrade","pk":26,"fields":{
+"scale":2,"code":"GD/VG","name":"Good/Very Good","value":3.0}},
+{"model":"mycomics.conditiongrade","pk":27,"fields":{
+"scale":2,"code":"GD+vGood+","value":2.5}},
+{"model":"mycomics.conditiongrade","pk":28,"fields":{
+"scale":2,"code":"GD","name":"Good","value":2.0}},
+{"model":"mycomics.conditiongrade","pk":29,"fields":{
+"scale":2,"code":"GD-","name":"Good-","value":1.8}},
+{"model":"mycomics.conditiongrade","pk":30,"fields":{
+"scale":2,"code":"FR/GD","name":"Fair/Good","value":1.5}},
+{"model":"mycomics.conditiongrade","pk":31,"fields":{
+"scale":2,"code":"FR","name":"Fair","value":1.0}},
+{"model":"mycomics.conditiongrade","pk":32,"fields":{
+"scale":2,"code":"PR","name":"Poor","value":0.5}},
+{"model":"mycomics.conditiongrade","pk":33,"fields":{
+"scale":3,"code":"Zustand 0","name":"perfekt","value":10}},
+{"model":"mycomics.conditiongrade","pk":34,"fields":{
+"scale":3,"code":"Zustand 0-1","name":"fast perfekt","value":9}},
+{"model":"mycomics.conditiongrade","pk":35,"fields":{
+"scale":3,"code":"Zustand 1","name":"sehr gut","value":8}},
+{"model":"mycomics.conditiongrade","pk":36,"fields":{
+"scale":3,"code":"Zustand 1-2","name":"fast sehr gut","value":7}},
+{"model":"mycomics.conditiongrade","pk":37,"fields":{
+"scale":3,"code":"Zustand 2","name":"gut","value":6}},
+{"model":"mycomics.conditiongrade","pk":38,"fields":{
+"scale":3,"code":"Zustand 2-3","name":"noch recht gut","value":5}},
+{"model":"mycomics.conditiongrade","pk":39,"fields":{
+"scale":3,"code":"Zustand 3","name":"noch sammelwürdig","value":4}},
+{"model":"mycomics.conditiongrade","pk":40,"fields":{
+"scale":3,"code":"Zustand 3-4","name":"schlecht","value":3}},
+{"model":"mycomics.conditiongrade","pk":41,"fields":{
+"scale":3,"code":"Zustand 4","name":"zum Wegwerfen zu schade","value":2}},
+{"model":"mycomics.conditiongrade","pk":42,"fields":{
+"scale":3,"code":"Zustand 5","name":"unvollständig","value":1}}
+
+]

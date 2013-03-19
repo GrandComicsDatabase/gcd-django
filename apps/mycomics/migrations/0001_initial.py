@@ -12,7 +12,7 @@ class Migration(SchemaMigration):
         db.create_table('mycomics_collector', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('user', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['auth.User'], unique=True)),
-            ('condition_grade_system_code', self.gf('django.db.models.fields.CharField')(max_length=3, blank=True)),
+            ('grade_system', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['mycomics.ConditionGradeScale'])),
             ('default_have_collection', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['mycomics.Collection'])),
             ('default_want_collection', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['mycomics.Collection'])),
             ('default_language', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['gcd.Language'])),
@@ -50,7 +50,7 @@ class Migration(SchemaMigration):
         db.send_create_signal('mycomics', ['Location'])
 
         # Adding model 'PurchaseLocation'
-        db.create_table('mycomics_purchaselocation', (
+        db.create_table('mycomics_purchase_location', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['mycomics.Collector'])),
             ('name', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
@@ -59,13 +59,13 @@ class Migration(SchemaMigration):
         db.send_create_signal('mycomics', ['PurchaseLocation'])
 
         # Adding model 'CollectionItem'
-        db.create_table('mycomics_collectionitem', (
+        db.create_table('mycomics_collection_item', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('issue', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['gcd.Issue'])),
             ('location', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['mycomics.Location'])),
             ('purchase_location', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['mycomics.PurchaseLocation'])),
             ('notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('condition_grade_code', self.gf('django.db.models.fields.CharField')(max_length=10, blank=True)),
+            ('grade', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['mycomics.ConditionGrade'])),
             ('acquisition_date', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['stddata.Date'])),
             ('sell_date', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['stddata.Date'])),
             ('was_read', self.gf('django.db.models.fields.NullBooleanField')(default=None, null=True, blank=True)),
@@ -81,12 +81,30 @@ class Migration(SchemaMigration):
         db.send_create_signal('mycomics', ['CollectionItem'])
 
         # Adding M2M table for field collections on 'CollectionItem'
-        db.create_table('mycomics_collectionitem_collections', (
+        db.create_table('mycomics_collection_item_collections', (
             ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
             ('collectionitem', models.ForeignKey(orm['mycomics.collectionitem'], null=False)),
             ('collection', models.ForeignKey(orm['mycomics.collection'], null=False))
         ))
-        db.create_unique('mycomics_collectionitem_collections', ['collectionitem_id', 'collection_id'])
+        db.create_unique('mycomics_collection_item_collections', ['collectionitem_id', 'collection_id'])
+
+        # Adding model 'ConditionGradeScale'
+        db.create_table('mycomics_condition_grade_scale', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('description', self.gf('django.db.models.fields.CharField')(max_length=2000, blank=True)),
+        ))
+        db.send_create_signal('mycomics', ['ConditionGradeScale'])
+
+        # Adding model 'ConditionGrade'
+        db.create_table('mycomics_condition_grade', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('scale', self.gf('django.db.models.fields.related.ForeignKey')(related_name='grades', to=orm['mycomics.ConditionGradeScale'])),
+            ('code', self.gf('django.db.models.fields.CharField')(max_length=20)),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('value', self.gf('django.db.models.fields.FloatField')()),
+        ))
+        db.send_create_signal('mycomics', ['ConditionGrade'])
 
 
     def backwards(self, orm):
@@ -100,13 +118,19 @@ class Migration(SchemaMigration):
         db.delete_table('mycomics_location')
 
         # Deleting model 'PurchaseLocation'
-        db.delete_table('mycomics_purchaselocation')
+        db.delete_table('mycomics_purchase_location')
 
         # Deleting model 'CollectionItem'
-        db.delete_table('mycomics_collectionitem')
+        db.delete_table('mycomics_collection_item')
 
         # Removing M2M table for field collections on 'CollectionItem'
-        db.delete_table('mycomics_collectionitem_collections')
+        db.delete_table('mycomics_collection_item_collections')
+
+        # Deleting model 'ConditionGradeScale'
+        db.delete_table('mycomics_condition_grade_scale')
+
+        # Deleting model 'ConditionGrade'
+        db.delete_table('mycomics_condition_grade')
 
 
     models = {
@@ -337,11 +361,11 @@ class Migration(SchemaMigration):
             'was_read_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
         'mycomics.collectionitem': {
-            'Meta': {'object_name': 'CollectionItem'},
+            'Meta': {'object_name': 'CollectionItem', 'db_table': "'mycomics_collection_item'"},
             'acquisition_date': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['stddata.Date']"}),
-            'collections': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'items'", 'symmetrical': 'False', 'to': "orm['mycomics.Collection']"}),
-            'condition_grade_code': ('django.db.models.fields.CharField', [], {'max_length': '10', 'blank': 'True'}),
+            'collections': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'items'", 'symmetrical': 'False', 'db_table': "'mycomics_collection_item_collections'", 'to': "orm['mycomics.Collection']"}),
             'for_sale': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'grade': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['mycomics.ConditionGrade']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'issue': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Issue']"}),
             'location': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['mycomics.Location']"}),
@@ -359,12 +383,26 @@ class Migration(SchemaMigration):
         },
         'mycomics.collector': {
             'Meta': {'object_name': 'Collector'},
-            'condition_grade_system_code': ('django.db.models.fields.CharField', [], {'max_length': '3', 'blank': 'True'}),
             'default_have_collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['mycomics.Collection']"}),
             'default_language': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['gcd.Language']"}),
             'default_want_collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['mycomics.Collection']"}),
+            'grade_system': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['mycomics.ConditionGradeScale']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True'})
+        },
+        'mycomics.conditiongrade': {
+            'Meta': {'object_name': 'ConditionGrade', 'db_table': "'mycomics_condition_grade'"},
+            'code': ('django.db.models.fields.CharField', [], {'max_length': '20'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'scale': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'grades'", 'to': "orm['mycomics.ConditionGradeScale']"}),
+            'value': ('django.db.models.fields.FloatField', [], {})
+        },
+        'mycomics.conditiongradescale': {
+            'Meta': {'object_name': 'ConditionGradeScale', 'db_table': "'mycomics_condition_grade_scale'"},
+            'description': ('django.db.models.fields.CharField', [], {'max_length': '2000', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'})
         },
         'mycomics.location': {
             'Meta': {'object_name': 'Location'},
@@ -374,7 +412,7 @@ class Migration(SchemaMigration):
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['mycomics.Collector']"})
         },
         'mycomics.purchaselocation': {
-            'Meta': {'object_name': 'PurchaseLocation'},
+            'Meta': {'object_name': 'PurchaseLocation', 'db_table': "'mycomics_purchase_location'"},
             'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
