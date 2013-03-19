@@ -1,0 +1,34 @@
+select.filtered {
+    border: 1px solid rgb(204, 204, 204);
+}
+
+.selector-available h2, .selector-chosen h2 {
+    font-size: 0.9em;
+    margin: 0px;
+    padding: 2px 5px 1px;
+    background: url("../../../admin/img/default-bg.gif") repeat-x scroll left top rgb(124, 160, 199);
+    color: white;
+    clear: left;
+}
+
+a.selector-chooseall:link, a.selector-clearall:link,
+a.selector-chooseall:visited, a.selector-clearall:visited {
+    text-decoration: none;
+}
+
+.selector-filter label
+{
+    margin-right: 2px;
+}
+
+label {
+    font-size: 1em;
+    margin-right: 1em;
+    text-align: right;
+    color: black;
+}
+
+.selector select.filtered
+{
+    height: 15em;
+}

@@ -18,6 +18,10 @@ admin.autodiscover()
 # would use the basic_patterns variable and include the gcd app, but not
 # use the account_patterns or include the other apps.
 
+js_info_dict = {
+    'packages': ('apps.gcd',),
+}
+
 basic_patterns = patterns('',
     # Read-only URLS: basic messages and the gcd display pages.
     url(r'^privacy/$', direct_to_template,
@@ -29,6 +33,7 @@ basic_patterns = patterns('',
         { 'template': 'gcd/donate/donate.html' }, name='donate'),
     url(r'^donate/thanks/$', direct_to_template,
         { 'template': 'gcd/donate/thanks.html' }, name='donate_thanks'),
+    url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
 )
 
 account_patterns = patterns('',
@@ -141,4 +146,3 @@ if settings.DEBUG:
     urlpatterns += patterns('',
         (r'site_media/(?P<path>.*)$', 'django.views.static.serve',
          { 'document_root' : settings.MEDIA_ROOT }))
-

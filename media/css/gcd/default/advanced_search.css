@@ -32,20 +32,20 @@ fieldset ol {
 
 fieldset li {
     /* padding-bottom: 1em;
-    float: left;
-    clear: left; */
+    float: left; */
+    clear: left;
     margin-bottom: 0.5em;
 }
 
 label {
-    width: 10.5em;
+    width: 9.5em;
     margin-right: 1em;
     text-align: right;
     float: left;
 }
 
 fieldset.control label {
-    width: 10em;
+    width: 9.5em;
 }
 
 div.search_left {
@@ -273,3 +273,7 @@ fieldset.control .errorlist {
     clear: both;
 }
 
+.selector select#id_image_resources_from.filtered
+{
+    height: 7em;
+}

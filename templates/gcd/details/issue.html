@@ -202,6 +202,14 @@ comics sequences are indexed and cover scans are not currently accepted.<span>
         <a name="toc"></a>
         <h2 id="toc_header">Table of Contents</h2>
         <ol>
+{% if cover_story %}
+          <li class="even">
+          0. <span class="toc_story_title">
+          <a href="#{{ cover_story.id }}">{{ cover_story|show_title }}</a></span><br/>
+  {% if cover_story.feature %}
+          <span class="toc_story_feature">{{ cover_story.feature}}</span>
+  {% endif %}
+{% endif %}
 {% for story in stories %}
           <li class="{% cycle 'odd' 'even' %}">
           {{ forloop.counter }}.

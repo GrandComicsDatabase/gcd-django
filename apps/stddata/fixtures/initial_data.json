@@ -1,0 +1,350 @@
+[
+{"model":"stddata.currency","pk":1,"fields":{
+"code":"DZD","name":"Algerian Dinar","is_decimal":true}},
+{"model":"stddata.currency","pk":2,"fields":{
+"code":"NAD","name":"Namibian Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":3,"fields":{
+"code":"GHS","name":"Ghana Cedi","is_decimal":true}},
+{"model":"stddata.currency","pk":4,"fields":{
+"code":"EGP","name":"Egyptian Pound","is_decimal":true}},
+{"model":"stddata.currency","pk":5,"fields":{
+"code":"BGN","name":"Bulgarian Lev","is_decimal":true}},
+{"model":"stddata.currency","pk":6,"fields":{
+"code":"XBD","name":"European Unit of Account 17(E.U.A.-17)","is_decimal":true}},
+{"model":"stddata.currency","pk":7,"fields":{
+"code":"XAG","name":"Silver","is_decimal":true}},
+{"model":"stddata.currency","pk":8,"fields":{
+"code":"XBA","name":"Bond Markets Units European Composite Unit (EURCO)","is_decimal":true}},
+{"model":"stddata.currency","pk":9,"fields":{
+"code":"DKK","name":"Danish Krone","is_decimal":true}},
+{"model":"stddata.currency","pk":10,"fields":{
+"code":"XBC","name":"European Unit of Account 9(E.U.A.-9)","is_decimal":true}},
+{"model":"stddata.currency","pk":11,"fields":{
+"code":"XBB","name":"European Monetary Unit (E.M.U.-6)","is_decimal":true}},
+{"model":"stddata.currency","pk":12,"fields":{
+"code":"BWP","name":"Pula","is_decimal":true}},
+{"model":"stddata.currency","pk":13,"fields":{
+"code":"LBP","name":"Lebanese Pound","is_decimal":true}},
+{"model":"stddata.currency","pk":14,"fields":{
+"code":"TZS","name":"Tanzanian Shilling","is_decimal":true}},
+{"model":"stddata.currency","pk":15,"fields":{
+"code":"VND","name":"Dong","is_decimal":true}},
+{"model":"stddata.currency","pk":16,"fields":{
+"code":"AOA","name":"Kwanza","is_decimal":true}},
+{"model":"stddata.currency","pk":17,"fields":{
+"code":"KHR","name":"Riel","is_decimal":true}},
+{"model":"stddata.currency","pk":18,"fields":{
+"code":"MYR","name":"Malaysian Ringgit","is_decimal":true}},
+{"model":"stddata.currency","pk":19,"fields":{
+"code":"KYD","name":"Cayman Islands Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":20,"fields":{
+"code":"LYD","name":"Libyan Dinar","is_decimal":true}},
+{"model":"stddata.currency","pk":21,"fields":{
+"code":"UAH","name":"Hryvnia","is_decimal":true}},
+{"model":"stddata.currency","pk":22,"fields":{
+"code":"JOD","name":"Jordanian Dinar","is_decimal":true}},
+{"model":"stddata.currency","pk":23,"fields":{
+"code":"AWG","name":"Aruban Guilder","is_decimal":true}},
+{"model":"stddata.currency","pk":24,"fields":{
+"code":"SAR","name":"Saudi Riyal","is_decimal":true}},
+{"model":"stddata.currency","pk":25,"fields":{
+"code":"EUR","name":"Euro","is_decimal":true}},
+{"model":"stddata.currency","pk":26,"fields":{
+"code":"HKD","name":"Hong Kong Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":27,"fields":{
+"code":"CHF","name":"Swiss Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":28,"fields":{
+"code":"GIP","name":"Gibraltar Pound","is_decimal":true}},
+{"model":"stddata.currency","pk":29,"fields":{
+"code":"BYR","name":"Belarussian Ruble","is_decimal":true}},
+{"model":"stddata.currency","pk":30,"fields":{
+"code":"ALL","name":"Lek","is_decimal":true}},
+{"model":"stddata.currency","pk":31,"fields":{
+"code":"XPD","name":"Palladium","is_decimal":true}},
+{"model":"stddata.currency","pk":32,"fields":{
+"code":"MRO","name":"Ouguiya","is_decimal":true}},
+{"model":"stddata.currency","pk":33,"fields":{
+"code":"HRK","name":"Croatian Kuna","is_decimal":true}},
+{"model":"stddata.currency","pk":34,"fields":{
+"code":"DJF","name":"Djibouti Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":35,"fields":{
+"code":"SZL","name":"Lilangeni","is_decimal":true}},
+{"model":"stddata.currency","pk":36,"fields":{
+"code":"THB","name":"Baht","is_decimal":true}},
+{"model":"stddata.currency","pk":37,"fields":{
+"code":"XAF","name":"CFA franc BEAC","is_decimal":true}},
+{"model":"stddata.currency","pk":38,"fields":{
+"code":"BND","name":"Brunei Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":39,"fields":{
+"code":"ISK","name":"Iceland Krona","is_decimal":true}},
+{"model":"stddata.currency","pk":40,"fields":{
+"code":"UYU","name":"Uruguayan peso","is_decimal":true}},
+{"model":"stddata.currency","pk":41,"fields":{
+"code":"NIO","name":"Cordoba Oro","is_decimal":true}},
+{"model":"stddata.currency","pk":42,"fields":{
+"code":"LAK","name":"Kip","is_decimal":true}},
+{"model":"stddata.currency","pk":43,"fields":{
+"code":"XYZ","name":"Default currency.","is_decimal":true}},
+{"model":"stddata.currency","pk":44,"fields":{
+"code":"SYP","name":"Syrian Pound","is_decimal":true}},
+{"model":"stddata.currency","pk":45,"fields":{
+"code":"MAD","name":"Moroccan Dirham","is_decimal":true}},
+{"model":"stddata.currency","pk":46,"fields":{
+"code":"MZN","name":"Metical","is_decimal":true}},
+{"model":"stddata.currency","pk":47,"fields":{
+"code":"PHP","name":"Philippine Peso","is_decimal":true}},
+{"model":"stddata.currency","pk":48,"fields":{
+"code":"ZAR","name":"Rand","is_decimal":true}},
+{"model":"stddata.currency","pk":49,"fields":{
+"code":"NPR","name":"Nepalese Rupee","is_decimal":true}},
+{"model":"stddata.currency","pk":50,"fields":{
+"code":"ZWL","name":"Zimbabwe dollar A/09","is_decimal":true}},
+{"model":"stddata.currency","pk":51,"fields":{
+"code":"ZWN","name":"Zimbabwe dollar A/08","is_decimal":true}},
+{"model":"stddata.currency","pk":52,"fields":{
+"code":"NGN","name":"Naira","is_decimal":true}},
+{"model":"stddata.currency","pk":53,"fields":{
+"code":"ZWD","name":"Zimbabwe Dollar A/06","is_decimal":true}},
+{"model":"stddata.currency","pk":54,"fields":{
+"code":"CRC","name":"Costa Rican Colon","is_decimal":true}},
+{"model":"stddata.currency","pk":55,"fields":{
+"code":"AED","name":"UAE Dirham","is_decimal":true}},
+{"model":"stddata.currency","pk":56,"fields":{
+"code":"EEK","name":"Kroon","is_decimal":true}},
+{"model":"stddata.currency","pk":57,"fields":{
+"code":"MWK","name":"Kwacha","is_decimal":true}},
+{"model":"stddata.currency","pk":58,"fields":{
+"code":"LKR","name":"Sri Lanka Rupee","is_decimal":true}},
+{"model":"stddata.currency","pk":59,"fields":{
+"code":"SKK","name":"Slovak Koruna","is_decimal":true}},
+{"model":"stddata.currency","pk":60,"fields":{
+"code":"PKR","name":"Pakistan Rupee","is_decimal":true}},
+{"model":"stddata.currency","pk":61,"fields":{
+"code":"HUF","name":"Forint","is_decimal":true}},
+{"model":"stddata.currency","pk":62,"fields":{
+"code":"BMD","name":"Bermudian Dollar (customarily known as Bermuda Dollar)","is_decimal":true}},
+{"model":"stddata.currency","pk":63,"fields":{
+"code":"LSL","name":"Lesotho loti","is_decimal":true}},
+{"model":"stddata.currency","pk":64,"fields":{
+"code":"MNT","name":"Tugrik","is_decimal":true}},
+{"model":"stddata.currency","pk":65,"fields":{
+"code":"AMD","name":"Armenian Dram","is_decimal":true}},
+{"model":"stddata.currency","pk":66,"fields":{
+"code":"UGX","name":"Uganda Shilling","is_decimal":true}},
+{"model":"stddata.currency","pk":67,"fields":{
+"code":"QAR","name":"Qatari Rial","is_decimal":true}},
+{"model":"stddata.currency","pk":68,"fields":{
+"code":"XDR","name":"SDR","is_decimal":true}},
+{"model":"stddata.currency","pk":69,"fields":{
+"code":"JMD","name":"Jamaican Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":70,"fields":{
+"code":"GEL","name":"Lari","is_decimal":true}},
+{"model":"stddata.currency","pk":71,"fields":{
+"code":"SHP","name":"Saint Helena Pound","is_decimal":true}},
+{"model":"stddata.currency","pk":72,"fields":{
+"code":"AFN","name":"Afghani","is_decimal":true}},
+{"model":"stddata.currency","pk":73,"fields":{
+"code":"SBD","name":"Solomon Islands Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":74,"fields":{
+"code":"KPW","name":"North Korean Won","is_decimal":true}},
+{"model":"stddata.currency","pk":75,"fields":{
+"code":"TRY","name":"Turkish Lira","is_decimal":true}},
+{"model":"stddata.currency","pk":76,"fields":{
+"code":"BDT","name":"Taka","is_decimal":true}},
+{"model":"stddata.currency","pk":77,"fields":{
+"code":"YER","name":"Yemeni Rial","is_decimal":true}},
+{"model":"stddata.currency","pk":78,"fields":{
+"code":"HTG","name":"Haitian gourde","is_decimal":true}},
+{"model":"stddata.currency","pk":79,"fields":{
+"code":"XOF","name":"CFA Franc BCEAO","is_decimal":true}},
+{"model":"stddata.currency","pk":80,"fields":{
+"code":"MGA","name":"Malagasy Ariary","is_decimal":true}},
+{"model":"stddata.currency","pk":81,"fields":{
+"code":"ANG","name":"Netherlands Antillian Guilder","is_decimal":true}},
+{"model":"stddata.currency","pk":82,"fields":{
+"code":"LRD","name":"Liberian Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":83,"fields":{
+"code":"RWF","name":"Rwanda Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":84,"fields":{
+"code":"NOK","name":"Norwegian Krone","is_decimal":true}},
+{"model":"stddata.currency","pk":85,"fields":{
+"code":"MOP","name":"Pataca","is_decimal":true}},
+{"model":"stddata.currency","pk":86,"fields":{
+"code":"INR","name":"Indian Rupee","is_decimal":true}},
+{"model":"stddata.currency","pk":87,"fields":{
+"code":"MXN","name":"Mexixan peso","is_decimal":true}},
+{"model":"stddata.currency","pk":88,"fields":{
+"code":"CZK","name":"Czech Koruna","is_decimal":true}},
+{"model":"stddata.currency","pk":89,"fields":{
+"code":"TJS","name":"Somoni","is_decimal":true}},
+{"model":"stddata.currency","pk":90,"fields":{
+"code":"BTN","name":"Bhutanese ngultrum","is_decimal":true}},
+{"model":"stddata.currency","pk":91,"fields":{
+"code":"COP","name":"Colombian peso","is_decimal":true}},
+{"model":"stddata.currency","pk":92,"fields":{
+"code":"MUR","name":"Mauritius Rupee","is_decimal":true}},
+{"model":"stddata.currency","pk":93,"fields":{
+"code":"IDR","name":"Rupiah","is_decimal":true}},
+{"model":"stddata.currency","pk":94,"fields":{
+"code":"HNL","name":"Lempira","is_decimal":true}},
+{"model":"stddata.currency","pk":95,"fields":{
+"code":"XPF","name":"CFP Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":96,"fields":{
+"code":"FJD","name":"Fiji Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":97,"fields":{
+"code":"ETB","name":"Ethiopian Birr","is_decimal":true}},
+{"model":"stddata.currency","pk":98,"fields":{
+"code":"PEN","name":"Nuevo Sol","is_decimal":true}},
+{"model":"stddata.currency","pk":99,"fields":{
+"code":"BZD","name":"Belize Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":100,"fields":{
+"code":"ILS","name":"New Israeli Sheqel","is_decimal":true}},
+{"model":"stddata.currency","pk":101,"fields":{
+"code":"DOP","name":"Dominican Peso","is_decimal":true}},
+{"model":"stddata.currency","pk":102,"fields":{
+"code":"TMM","name":"Manat","is_decimal":true}},
+{"model":"stddata.currency","pk":103,"fields":{
+"code":"TWD","name":"New Taiwan Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":104,"fields":{
+"code":"MDL","name":"Moldovan Leu","is_decimal":true}},
+{"model":"stddata.currency","pk":105,"fields":{
+"code":"XPT","name":"Platinum","is_decimal":true}},
+{"model":"stddata.currency","pk":106,"fields":{
+"code":"BSD","name":"Bahamian Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":107,"fields":{
+"code":"TVD","name":"Tuvalu dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":108,"fields":{
+"code":"SEK","name":"Swedish Krona","is_decimal":true}},
+{"model":"stddata.currency","pk":109,"fields":{
+"code":"ZMK","name":"Kwacha","is_decimal":true}},
+{"model":"stddata.currency","pk":110,"fields":{
+"code":"MVR","name":"Rufiyaa","is_decimal":true}},
+{"model":"stddata.currency","pk":111,"fields":{
+"code":"XTS","name":"Codes specifically reserved for testing purposes","is_decimal":true}},
+{"model":"stddata.currency","pk":112,"fields":{
+"code":"AUD","name":"Australian Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":113,"fields":{
+"code":"SRD","name":"Surinam Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":114,"fields":{
+"code":"CUP","name":"Cuban Peso","is_decimal":true}},
+{"model":"stddata.currency","pk":115,"fields":{
+"code":"BBD","name":"Barbados Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":116,"fields":{
+"code":"KMF","name":"Comoro Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":117,"fields":{
+"code":"KRW","name":"Won","is_decimal":true}},
+{"model":"stddata.currency","pk":118,"fields":{
+"code":"GMD","name":"Dalasi","is_decimal":true}},
+{"model":"stddata.currency","pk":119,"fields":{
+"code":"VEF","name":"Bolivar Fuerte","is_decimal":true}},
+{"model":"stddata.currency","pk":120,"fields":{
+"code":"IMP","name":"Isle of Man pount","is_decimal":true}},
+{"model":"stddata.currency","pk":121,"fields":{
+"code":"CUC","name":"Cuban convertible peso","is_decimal":true}},
+{"model":"stddata.currency","pk":122,"fields":{
+"code":"CLP","name":"Chilean peso","is_decimal":true}},
+{"model":"stddata.currency","pk":123,"fields":{
+"code":"LTL","name":"Lithuanian Litas","is_decimal":true}},
+{"model":"stddata.currency","pk":124,"fields":{
+"code":"CDF","name":"Congolese franc","is_decimal":true}},
+{"model":"stddata.currency","pk":125,"fields":{
+"code":"XCD","name":"East Caribbean Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":126,"fields":{
+"code":"KZT","name":"Tenge","is_decimal":true}},
+{"model":"stddata.currency","pk":127,"fields":{
+"code":"RUB","name":"Russian Ruble","is_decimal":true}},
+{"model":"stddata.currency","pk":128,"fields":{
+"code":"XFU","name":"UIC-Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":129,"fields":{
+"code":"TTD","name":"Trinidad and Tobago Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":130,"fields":{
+"code":"OMR","name":"Rial Omani","is_decimal":true}},
+{"model":"stddata.currency","pk":131,"fields":{
+"code":"BRL","name":"Brazilian Real","is_decimal":true}},
+{"model":"stddata.currency","pk":132,"fields":{
+"code":"MMK","name":"Kyat","is_decimal":true}},
+{"model":"stddata.currency","pk":133,"fields":{
+"code":"PLN","name":"Zloty","is_decimal":true}},
+{"model":"stddata.currency","pk":134,"fields":{
+"code":"PYG","name":"Guarani","is_decimal":true}},
+{"model":"stddata.currency","pk":135,"fields":{
+"code":"KES","name":"Kenyan Shilling","is_decimal":true}},
+{"model":"stddata.currency","pk":136,"fields":{
+"code":"MKD","name":"Denar","is_decimal":true}},
+{"model":"stddata.currency","pk":137,"fields":{
+"code":"GBP","name":"Pound Sterling","is_decimal":true}},
+{"model":"stddata.currency","pk":138,"fields":{
+"code":"AZN","name":"Azerbaijanian Manat","is_decimal":true}},
+{"model":"stddata.currency","pk":139,"fields":{
+"code":"TOP","name":"Paanga","is_decimal":true}},
+{"model":"stddata.currency","pk":140,"fields":{
+"code":"VUV","name":"Vatu","is_decimal":true}},
+{"model":"stddata.currency","pk":141,"fields":{
+"code":"GNF","name":"Guinea Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":142,"fields":{
+"code":"WST","name":"Tala","is_decimal":true}},
+{"model":"stddata.currency","pk":143,"fields":{
+"code":"IQD","name":"Iraqi Dinar","is_decimal":true}},
+{"model":"stddata.currency","pk":144,"fields":{
+"code":"ERN","name":"Nakfa","is_decimal":true}},
+{"model":"stddata.currency","pk":145,"fields":{
+"code":"BAM","name":"Convertible Marks","is_decimal":true}},
+{"model":"stddata.currency","pk":146,"fields":{
+"code":"SCR","name":"Seychelles Rupee","is_decimal":true}},
+{"model":"stddata.currency","pk":147,"fields":{
+"code":"CAD","name":"Canadian Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":148,"fields":{
+"code":"CVE","name":"Cape Verde Escudo","is_decimal":true}},
+{"model":"stddata.currency","pk":149,"fields":{
+"code":"KWD","name":"Kuwaiti Dinar","is_decimal":true}},
+{"model":"stddata.currency","pk":150,"fields":{
+"code":"BIF","name":"Burundi Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":151,"fields":{
+"code":"PGK","name":"Kina","is_decimal":true}},
+{"model":"stddata.currency","pk":152,"fields":{
+"code":"SOS","name":"Somali Shilling","is_decimal":true}},
+{"model":"stddata.currency","pk":153,"fields":{
+"code":"SGD","name":"Singapore Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":154,"fields":{
+"code":"UZS","name":"Uzbekistan Sum","is_decimal":true}},
+{"model":"stddata.currency","pk":155,"fields":{
+"code":"STD","name":"Dobra","is_decimal":true}},
+{"model":"stddata.currency","pk":156,"fields":{
+"code":"XFO","name":"Gold-Franc","is_decimal":true}},
+{"model":"stddata.currency","pk":157,"fields":{
+"code":"IRR","name":"Iranian Rial","is_decimal":true}},
+{"model":"stddata.currency","pk":158,"fields":{
+"code":"CNY","name":"Yuan Renminbi","is_decimal":true}},
+{"model":"stddata.currency","pk":159,"fields":{
+"code":"SLL","name":"Leone","is_decimal":true}},
+{"model":"stddata.currency","pk":160,"fields":{
+"code":"TND","name":"Tunisian Dinar","is_decimal":true}},
+{"model":"stddata.currency","pk":161,"fields":{
+"code":"GYD","name":"Guyana Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":162,"fields":{
+"code":"NZD","name":"New Zealand Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":163,"fields":{
+"code":"FKP","name":"Falkland Islands Pound","is_decimal":true}},
+{"model":"stddata.currency","pk":164,"fields":{
+"code":"LVL","name":"Latvian Lats","is_decimal":true}},
+{"model":"stddata.currency","pk":165,"fields":{
+"code":"USD","name":"US Dollar","is_decimal":true}},
+{"model":"stddata.currency","pk":166,"fields":{
+"code":"KGS","name":"Som","is_decimal":true}},
+{"model":"stddata.currency","pk":167,"fields":{
+"code":"ARS","name":"Argentine Peso","is_decimal":true}},
+{"model":"stddata.currency","pk":168,"fields":{
+"code":"RON","name":"New Leu","is_decimal":true}},
+{"model":"stddata.currency","pk":169,"fields":{
+"code":"GTQ","name":"Quetzal","is_decimal":true}},
+{"model":"stddata.currency","pk":170,"fields":{
+"code":"RSD","name":"Serbian Dinar","is_decimal":true}},
+{"model":"stddata.currency","pk":171,"fields":{
+"code":"BHD","name":"Bahraini Dinar","is_decimal":true}},
+{"model":"stddata.currency","pk":172,"fields":{
+"code":"JPY","name":"Yen","is_decimal":true}},
+{"model":"stddata.currency","pk":173,"fields":{
+"code":"SDG","name":"Sudanese Pound","is_decimal":true}},
+{"model":"stddata.currency","pk":174,"fields":{
+"code":"XAU","name":"Gold","is_decimal":true}}
+]

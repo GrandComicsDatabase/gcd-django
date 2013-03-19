@@ -2,6 +2,7 @@
 from re import match
 from decimal import Decimal, InvalidOperation
 from django import forms
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from apps.gcd.models import Country, Language, Indexer, StoryType
 
 ORDERINGS = [['', '--'],
@@ -149,7 +150,7 @@ class AdvancedSearch(forms.Form):
                                    (True, "yes"),
                                    (False, "no"))))
     image_resources = forms.MultipleChoiceField(label='Image Resources',
-      widget=forms.SelectMultiple(),
+      widget=FilteredSelectMultiple('Image Resources', False),
       choices=(('has_soo', 'Has Statement of Ownership Scan'),
                ('needs_soo', 'Needs Statement of Ownership Scan'),
                ('has_indicia', 'Has Indicia Scan'),
@@ -158,11 +159,11 @@ class AdvancedSearch(forms.Form):
     indexer = forms.ModelMultipleChoiceField(required=False,
       queryset=Indexer.objects.filter(imps__gt=0).\
       order_by('user__first_name', 'user__last_name').select_related('user'),
-      widget=forms.SelectMultiple(attrs={'size' : '6'}))
+      widget=FilteredSelectMultiple('Indexers', False, attrs={'size': '6'}))
 
     feature = forms.CharField(required=False)
     type = forms.ModelMultipleChoiceField(queryset=StoryType.objects.all(),
-      widget=forms.SelectMultiple(attrs={'size' : '6'}),
+      widget=FilteredSelectMultiple('Story Types', False, attrs={'size' : '6'}),
       required=False)
 
     title = forms.CharField(required=False)
@@ -187,15 +188,15 @@ class AdvancedSearch(forms.Form):
 
     notes = forms.CharField(label='Notes', required=False)
 
-    country = forms.MultipleChoiceField(required=False,
+    country = forms.MultipleChoiceField(required=False, 
+      widget=FilteredSelectMultiple('Countries', False),
       choices=([c.code, c.name.title()]
-               for c in Country.objects.order_by('name')),
-      widget=forms.SelectMultiple(attrs={'size' : '4'}))
+               for c in Country.objects.order_by('name')))
     alt_country = forms.CharField(label='', required=False, max_length=3)
 
     language = forms.MultipleChoiceField(required=False,
       choices=([l.code, l.name] for l in Language.objects.order_by('name')),
-      widget=forms.SelectMultiple(attrs={'size' : '4'}))
+      widget=FilteredSelectMultiple('Languages', False))
     alt_language = forms.CharField(label='', required=False, max_length=3)
 
     def clean_pages(self):

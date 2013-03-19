@@ -7,6 +7,7 @@ except:
 from decimal import Decimal, InvalidOperation
 
 from django import template
+from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
 from django.utils.safestring import mark_safe
@@ -236,6 +237,11 @@ def show_cover_contributor(cover_revision):
 
 # these next three might better fit into a different file
 
+def get_country_flag(country):
+    return u'<img src="%s/img/gcd/flags/%s.png" alt="%s" '\
+           'class="embedded_flag">' \
+           % (settings.MEDIA_URL, country.code.lower(), esc(country))
+
 def show_country(series):
     """
     Translate country code into country name.
@@ -307,8 +313,10 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
         link = u', <a href="%s">#%s</a>' % (issue.get_absolute_url(),
                                            esc(issue.display_number) )
     else:
-        link = u'%s <a href="%s">%s</a>' % (from_to, issue.get_absolute_url(),
-                                            esc(issue.full_name()) )
+        link = u'%s %s <a href="%s">%s</a>' % \
+          (get_country_flag(issue.series.country), from_to,
+           issue.get_absolute_url(), esc(issue.full_name()))
+
     if issue.publication_date:
         link += " (" + esc(issue.publication_date) + ")"
     if notes:
@@ -326,14 +334,15 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
         link = u', <a href="%s#%d">#%s</a>' % (story.issue.get_absolute_url(),
                                     story.id, esc(story.issue.display_number) )
     elif story.sequence_number == 0:
-        link = u'%s <a href="%s#%d">%s</a>' % (from_to,
-                                    story.issue.get_absolute_url(),
-                                    story.id, esc(story.issue.full_name()) )
+        link = u'%s %s <a href="%s#%d">%s</a>' % \
+          (get_country_flag(story.issue.series.country), from_to,
+           story.issue.get_absolute_url(), story.id,
+           esc(story.issue.full_name()) )
     else:
-        link = u'%s <a href="%s#%d">%s</a>' % (from_to,
-                                    story.issue.get_absolute_url(),
-                                    story.id,
-                                    esc(story.issue.full_name(variant_name=False)) )
+        link = u'%s %s <a href="%s#%d">%s</a>' % \
+          (get_country_flag(story.issue.series.country), from_to,
+           story.issue.get_absolute_url(), story.id,
+           esc(story.issue.full_name(variant_name=False)) )
     if story.issue.publication_date:
         link = "%s (%s)" % (link, esc(story.issue.publication_date))
     if notes:
@@ -577,6 +586,7 @@ def show_reprints_for_issue(issue):
 register.filter(show_credit)
 register.filter(show_credit_status)
 register.filter(show_country)
+register.filter(get_country_flag)
 register.filter(show_language)
 register.filter(show_issue_number)
 register.filter(show_page_count)

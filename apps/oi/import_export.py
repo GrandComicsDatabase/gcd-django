@@ -21,9 +21,9 @@ from apps.oi.forms import *
 MIN_ISSUE_FIELDS = 10
 # MAX_ISSUE_FIELDS is set to 16 to allow import of export issue lines, but
 # the final reprint notes are ignored on import
-MAX_ISSUE_FIELDS = 16
+MAX_ISSUE_FIELDS = 17
 MIN_SEQUENCE_FIELDS = 10
-MAX_SEQUENCE_FIELDS = 16
+MAX_SEQUENCE_FIELDS = 17
 
 NUMBER = 0
 VOLUME = 1
@@ -40,6 +40,7 @@ ISSUE_NOTES = 11
 BARCODE = 12
 ON_SALE_DATE = 13
 ISSUE_TITLE = 14
+ISSUE_KEYWORDS = 16
 
 ISSUE_FIELDS = ['number', 'volume', 'indicia_publisher', 'brand',
                 'publication_date', 'key_date', 'indicia_frequency', 'price',
@@ -62,11 +63,12 @@ JOB_NUMBER = 12
 REPRINT_NOTES = 13
 SYNOPSIS = 14
 STORY_NOTES = 15
+STORY_KEYWORDS = 16
 
 SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
                    'pencils', 'inks', 'colors', 'letters', 'editing',
                    'genre', 'characters', 'job_number', 'reprint_notes',
-                   'synopsis', 'notes']
+                   'synopsis', 'notes', 'keywords']
 
 # from http://docs.python.org/library/csv.html
 class UTF8Recoder:
@@ -393,6 +395,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         reprint_notes = fields[REPRINT_NOTES].strip()
         synopsis = fields[SYNOPSIS].strip()
         notes = fields[STORY_NOTES].strip()
+        keywords = fields[STORY_KEYWORDS].strip()
 
         story_revision = StoryRevision(changeset=changeset,
                                        title=title,
@@ -420,6 +423,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
                                        synopsis = synopsis,
                                        reprint_notes = reprint_notes,
                                        notes = notes,
+                                       keywords = keywords,
                                        issue = Issue.objects.get(id=issue_id)
                                        )
         story_revision.save()
@@ -537,6 +541,7 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
             if issue_revision.series.has_issue_title:
                 issue_revision.title, issue_revision.no_title = \
                 _check_for_none(issue_fields[ISSUE_TITLE])
+            issue_revision.keywords = issue_fields[ISSUE_KEYWORDS].strip()
             issue_revision.save()
             running_number = 0
             return _import_sequences(request, issue_id, changeset,
@@ -647,6 +652,10 @@ def export_issue_to_file(request, issue_id, use_csv=False):
     if reprint != '':
         reprint = reprint[:-2]
     export_data.append(unicode(reprint))
+    # keywords were added after reprint_links on issue level, so they come
+    # later in the export
+    export_data.append(get_keywords(issue))
+    
     if use_csv:
         writer.writerow(export_data)
     else:
@@ -683,6 +692,8 @@ def export_issue_to_file(request, issue_id, use_csv=False):
                 else:
                     reprint = sequence.reprint_notes
                 export_data.append(unicode(reprint))
+            elif field_name == 'keywords':
+                export_data.append(get_keywords(sequence))
             else:
                 export_data.append(unicode(getattr(sequence, field_name)))
         if use_csv:

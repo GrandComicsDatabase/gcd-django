@@ -409,7 +409,7 @@ def advanced_search(request):
 
     if ('target' not in request.GET):
         return render_to_response('gcd/search/advanced.html',
-          { 'form': AdvancedSearch(auto_id=True) },
+          { 'form': AdvancedSearch() },
           context_instance=RequestContext(request))
     else:
         search_values = request.GET.copy()
@@ -469,7 +469,7 @@ def do_advanced_search(request):
           },
           context_instance=RequestContext(request))
 
-    if (not query) and terms:
+    if (not query) and terms and (not data['keywords']):
         raise ViewTerminationError, render_to_response(
           'gcd/search/advanced.html',
           {

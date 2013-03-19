@@ -1,0 +1,30 @@
+{% load compress %}
+
+{% compress css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}admin/css/widgets.css">
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}admin/css/forms.css">
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/default/widgets.css">
+{% endcompress %}
+
+{% compress js %}
+<script type='text/javascript'
+        src='{{ MEDIA_URL }}admin/js/jquery.min.js'></script>
+<script type='text/javascript'
+        src='{{ MEDIA_URL }}admin/js/jquery.init.js'></script>
+<script type="text/javascript"
+        src="{{ MEDIA_URL }}admin/js/core.js"></script>
+<script type="text/javascript"
+        src="{{ MEDIA_URL }}admin/js/SelectBox.js"></script>
+{% endcompress %}
+{% comment %}
+core.js, SelectBox.js and SelectFilter2.js would come over form.media, but
+than compress over form.media doesn't work.
+SelectFilter2.js doesn't work in the compress tags in any case
+{% endcomment %}
+<script type="text/javascript"
+        src="{{ MEDIA_URL }}admin/js/SelectFilter2.js"></script>
+<script type="text/javascript"
+        src="{% url django.views.i18n.javascript_catalog %}"></script>
