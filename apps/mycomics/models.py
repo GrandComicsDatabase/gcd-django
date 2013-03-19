@@ -65,7 +65,8 @@ class CollectionItem(models.Model):
     """Class for keeping record of particular item in user's collection."""
     class Meta:
         db_table='mycomics_collection_item'
-    collections = models.ManyToManyField(Collection, related_name="items", db_table="mycomics_collection_item_collections")
+    collections = models.ManyToManyField(Collection, related_name="items",
+                    db_table="mycomics_collection_item_collections")
     issue = models.ForeignKey(Issue)
 
     location = models.ForeignKey(Location)
@@ -106,7 +107,8 @@ class ConditionGrade(models.Model):
     class Meta:
         db_table='mycomics_condition_grade'
 
-    scale=models.ForeignKey(ConditionGradeScale, related_name='grades', null=False)
+    scale=models.ForeignKey(ConditionGradeScale, related_name='grades',
+                            null=False)
     code=models.CharField(blank=False, max_length=20)
     name=models.CharField(blank=False, max_length=255)
     value=models.FloatField(blank=False)
