@@ -8,6 +8,7 @@ from django.db.models import Count, F
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.forms.widgets import TextInput, HiddenInput, RadioSelect
 from django.utils.safestring import mark_safe
+from django.contrib.admin.widgets import FilteredSelectMultiple
 
 from apps.oi.models import *
 from apps.gcd.models import *
@@ -1190,8 +1191,11 @@ class ReprintRevisionForm(forms.ModelForm):
         fields = get_reprint_field_list()
 
 
-def get_story_revision_form(revision=None, user=None, is_comics_publication=True):
+def get_story_revision_form(revision=None, user=None, is_comics_publication=True,
+                            language=None):
     extra = {}
+    additional_genres = []
+    selected_genres = []
     if revision is not None:
         # Don't allow blanking out the type field.  However, when its a new store
         # make indexers consciously choose a type by allowing an empty
@@ -1199,7 +1203,15 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
         extra['empty_label'] = None
         if revision.issue and revision.issue.series.is_comics_publication == False:
             is_comics_publication = False
-
+        if revision.genre:
+            genres = revision.genre.split(';')
+            for genre in genres:
+                genre = genre.strip()
+                if genre not in GENRES['en']:
+                    additional_genres.append(genre)
+                selected_genres.append(genre)
+            revision.genre = selected_genres
+        language = revision.issue.series.language
     # for variants we can only have cover sequences (for now)
     if revision and (revision.issue == None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
@@ -1226,6 +1238,19 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
         type = forms.ModelChoiceField(queryset=queryset,
           help_text='Choose the most appropriate available type',
           **extra)
+
+        if language.code != 'en' and language.code in GENRES:
+            choices = [[g, g + ' / ' + h] for g,h in zip(GENRES['en'],
+                                                    GENRES[language.code])]
+        else:
+            choices = [[g, g] for g in GENRES['en']]
+        if additional_genres:
+            additional_genres.reverse()
+            for genre in additional_genres:
+                choices.insert(0, [genre, genre + ' (deprecated)'])
+        genre = forms.MultipleChoiceField(required=False,
+            widget=FilteredSelectMultiple('Genres', False),
+            choices=choices)
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -1332,13 +1357,29 @@ class StoryRevisionForm(forms.ModelForm):
         cd['colors'] = cd['colors'].strip()
         cd['letters'] = cd['letters'].strip()
         cd['editing'] = cd['editing'].strip()
-        cd['genre'] = cd['genre'].strip()
         cd['characters'] = cd['characters'].strip()
         cd['job_number'] = cd['job_number'].strip()
         cd['reprint_notes'] = cd['reprint_notes'].strip()
         cd['synopsis'] = cd['synopsis'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+
+        if cd['genre']:
+            if len(cd['genre']) == 1:
+                genres = cd['genre'][0]
+            else:
+                genre_dict = {}
+                for genre in cd['genre']:
+                    genre = genre.strip()
+                    if genre in GENRES['en']:
+                        genre_dict[GENRES['en'].index(genre)] = genre
+                    else:
+                        genre_dict[-1] = genre
+                genres = ''
+                for order in sorted(genre_dict):
+                    genres += genre_dict[order] + '; '
+                genres = genres[:-2]
+            cd['genre'] = genres
 
         if cd['title_inferred'] and cd['title'] == "":
             raise forms.ValidationError(

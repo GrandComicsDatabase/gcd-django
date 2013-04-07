@@ -2105,7 +2105,8 @@ def add_story(request, issue_revision_id, changeset_id):
                 else: # for variants added with base issue the issue is not set
                     is_comics_publication = True
                 form = get_story_revision_form(user=request.user,
-                  is_comics_publication=is_comics_publication)\
+                  is_comics_publication=is_comics_publication,
+                  language=issue_revision.series.language)\
                   (initial=initial)
             return _display_add_story_form(request, issue_revision, form,
                                            changeset_id)
@@ -2114,7 +2115,8 @@ def add_story(request, issue_revision_id, changeset_id):
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': changeset_id }))
 
-        form = get_story_revision_form(user=request.user)(request.POST)
+        form = get_story_revision_form(user=request.user,
+                 language=issue_revision.series.language)(request.POST)
         if not form.is_valid():
             return _display_add_story_form(request, issue_revision, form,
                                            changeset_id)
