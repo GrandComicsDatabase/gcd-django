@@ -14,7 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue, Country, Language, Reprint
-from apps.oi.models import ReprintRevision
+from apps.oi.models import ReprintRevision, GENRES
 from apps.gcd.models import StoryType, STORY_TYPES
 
 register = template.Library()
@@ -123,7 +123,31 @@ def show_credit(story, credit):
             if search.first() != -1:
                 formatted_credit += __format_credit(story, 'feature')
         return formatted_credit
-
+    elif credit == 'genre' and getattr(story, credit) and \
+      (story.issue.series.language.code != 'en' or \
+        (story.issue.series.language.code == 'en' and \
+           story.issue.series.country.code != 'us')) and \
+         story.issue.series.language.code in GENRES:
+        genres = story.genre
+        language = story.issue.series.language.code 
+        if language == 'en' and \
+           story.issue.series.country.code != 'us':
+            if genres.find('humor') > -1:
+                story.genre = genres.replace('humor', 'humour')
+        else:
+            display_genre = u''
+            for genre in genres.split(';'):
+                genre = genre.strip()
+                if genre in GENRES['en']:
+                    translation = GENRES[language][GENRES['en'].index(genre)]
+                else:
+                    translation = ''
+                if translation:
+                    display_genre += u'%s (%s); ' % (translation, genre)
+                else:
+                    display_genre += genre + '; '
+            story.genre = display_genre[:-2]
+        return __format_credit(story, credit)
     elif hasattr(story, credit):
         return __format_credit(story, credit)
 

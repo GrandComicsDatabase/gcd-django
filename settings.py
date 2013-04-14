@@ -55,6 +55,8 @@ MIDDLEWARE_CLASSES = (
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.common.CommonMiddleware',
    'django.middleware.transaction.TransactionMiddleware',
+   'django_mobile.middleware.MobileDetectionMiddleware',
+   'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware'
 )
 
@@ -81,6 +83,7 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.sites',
     'django.contrib.messages',
+    'django_mobile',
     'apps.gcd',
     'apps.oi',
     'apps.voting',
@@ -97,6 +100,7 @@ SECRET_KEY = 'th0lnu%wjs_8=r4u_km3shvogzd%1n)t-5eosi964g0ek+a4p+'
 
 # Callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
+    'django_mobile.loader.Loader',
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
 )
@@ -109,6 +113,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.media',
     'django.core.context_processors.request',
     'django.core.context_processors.static',
+    'django_mobile.context_processors.flavour',
     'apps.gcd.context_processors.gcd',
 )
 
