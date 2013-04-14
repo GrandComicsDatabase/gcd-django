@@ -13,8 +13,8 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('user', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['auth.User'], unique=True)),
             ('grade_system', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['mycomics.ConditionGradeScale'])),
-            ('default_have_collection', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['mycomics.Collection'])),
-            ('default_want_collection', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['mycomics.Collection'])),
+            ('default_have_collection', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', null=True, to=orm['mycomics.Collection'])),
+            ('default_want_collection', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', null=True, to=orm['mycomics.Collection'])),
             ('default_language', self.gf('django.db.models.fields.related.ForeignKey')(related_name='+', to=orm['gcd.Language'])),
         ))
         db.send_create_signal('mycomics', ['Collector'])
@@ -383,9 +383,9 @@ class Migration(SchemaMigration):
         },
         'mycomics.collector': {
             'Meta': {'object_name': 'Collector'},
-            'default_have_collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['mycomics.Collection']"}),
+            'default_have_collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'null': 'True', 'to': "orm['mycomics.Collection']"}),
             'default_language': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['gcd.Language']"}),
-            'default_want_collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['mycomics.Collection']"}),
+            'default_want_collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'null': 'True', 'to': "orm['mycomics.Collection']"}),
             'grade_system': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['mycomics.ConditionGradeScale']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True'})

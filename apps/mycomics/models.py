@@ -7,6 +7,31 @@ from taggit.managers import TaggableManager
 
 # Create your models here.
 
+class CollectorManager(models.Manager):
+    def create_collector(self, user, grade_system=None, default_language=None):
+        """Creates and saves Collector instances."""
+        if not user:
+            raise ValueError('User must be given.')
+        collector = self.model(user=user)
+        if grade_system is None:
+            collector.grade_system = ConditionGradeScale.objects.get(pk=1)
+        else:
+            collector.grade_system = grade_system
+        if default_language is None:
+            collector.default_language = Language.objects.get(code='en')
+        else:
+            collector.default_language = default_language
+        collector.save()
+        default_have_collection = Collection(collector=collector,
+                                             name='Default have collection')
+        default_have_collection.save()
+        default_want_collection = Collection(collector=collector,
+                                             name='Default want collection')
+        default_want_collection.save()
+        collector.default_have_collection = default_have_collection
+        collector.default_want_collection = default_want_collection
+        collector.save()
+
 class Collector(models.Model):
     """Class representing a collector side of the user."""
     user = models.OneToOneField(User)
@@ -14,15 +39,18 @@ class Collector(models.Model):
     grade_system = models.ForeignKey('ConditionGradeScale', related_name='+')
 
     #defaults
-    default_have_collection = models.ForeignKey('Collection', related_name='+')
-    default_want_collection = models.ForeignKey('Collection', related_name='+')
+    default_have_collection = models.ForeignKey('Collection', related_name='+',
+                                                null=True)
+    default_want_collection = models.ForeignKey('Collection', related_name='+',
+                                                null=True)
     default_language = models.ForeignKey(Language, related_name='+')
+
+    objects = CollectorManager()
 
 class Collection(models.Model):
     """Class for keeping info about particular collections together with
     configuration of item fields used in each collection."""
-    collector = models.ForeignKey(Collector, related_name='collections',
-                                  null=False)
+    collector = models.ForeignKey(Collector, related_name='collections')
 
     name = models.CharField(blank=False, max_length=255, db_index=True)
     description = models.TextField(blank=True)
