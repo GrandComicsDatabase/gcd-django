@@ -12,5 +12,6 @@ django-compressor
 django-imagekit
 git+git://github.com/GrandComicsDatabase/django-taggit.git
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
+git+git://github.com/GrandComicsDatabase/django-mobile.git
 python-stdnum
 wsgiref
