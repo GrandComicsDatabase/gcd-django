@@ -1343,6 +1343,12 @@ class StoryRevisionForm(forms.ModelForm):
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
 
+    def clean_genre(self):
+        genre = self.cleaned_data['genre']
+        if len(genre) > 10:
+            raise forms.ValidationError(['Up to 10 genres can be selected.'])
+        return genre 
+
     def clean(self):
         cd = self.cleaned_data
 
@@ -1380,6 +1386,8 @@ class StoryRevisionForm(forms.ModelForm):
                     genres += genre_dict[order] + '; '
                 genres = genres[:-2]
             cd['genre'] = genres
+        else:
+            cd['genre'] = u''
 
         if cd['title_inferred'] and cd['title'] == "":
             raise forms.ValidationError(
