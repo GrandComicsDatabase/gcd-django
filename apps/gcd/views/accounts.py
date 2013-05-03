@@ -34,6 +34,7 @@ from apps.gcd.forms.accounts import ProfileForm, RegistrationForm, \
                                     LongUsernameAuthenticationForm
 
 from apps.oi import states
+from apps.mycomics.models import Collector
 
 def login(request, template_name):
     """
@@ -268,6 +269,7 @@ def confirm_account(request, key):
         # a friendly message if the user tries to confirm a second time.
         indexer.registration_expires = None
         indexer.save()
+        Collector.objects.create_collector(indexer.user)
 
         email_body = u"""
 We have a new Indexer!

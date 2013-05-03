@@ -23,10 +23,19 @@ class CollectorManager(models.Manager):
             collector.default_language = default_language
         collector.save()
         default_have_collection = Collection(collector=collector,
-                                             name='Default have collection')
+                                             name='Default have collection',
+                                             condition_used=True,
+                                             acquisition_date_used=True,
+                                             location_used=True,
+                                             purchase_location_used=True,
+                                             was_read_used=True,
+                                             for_sale_used=True,
+                                             signed_used=True,
+                                             price_paid_used=True)
         default_have_collection.save()
         default_want_collection = Collection(collector=collector,
-                                             name='Default want collection')
+                                             name='Default want collection',
+                                             market_value_used=True)
         default_want_collection.save()
         collector.default_have_collection = default_have_collection
         collector.default_want_collection = default_want_collection
