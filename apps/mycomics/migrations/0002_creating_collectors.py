@@ -10,7 +10,7 @@ class Migration(DataMigration):
         "Write your forwards methods here."
         #from django.contrib.auth.models import User
         from django.db.utils import IntegrityError
-        for user in orm['auth.User'].objects.all():
+        for user in orm['auth.User'].objects.filter(is_active=True):
             try:
                 self.create_collector(user, orm)
             except IntegrityError:

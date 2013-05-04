@@ -87,6 +87,8 @@ INSTALLED_APPS = (
     'apps.gcd',
     'apps.oi',
     'apps.voting',
+    'apps.stddata',
+    'apps.mycomics',
     'compressor',
     'templatesadmin',
     'taggit',
