@@ -11,8 +11,8 @@ from apps.oi.models import GENRES
 
 anon = User.objects.get(username=settings.ANON_USER_NAME)
 
-GENRE_CONVERSIONS = {#u'funny animal': u'anthropomorphic-funny animals',
-                    #u'funny animals': u'anthropomorphic-funny animals',
+GENRE_CONVERSIONS = {u'funny animal': u'anthropomorphic-funny animals',
+                    u'funny animals': u'anthropomorphic-funny animals',
                     u'western': u'western-frontier',
                     u'horror': u'horror-suspense',
                     u'fact': u'non-fiction',
