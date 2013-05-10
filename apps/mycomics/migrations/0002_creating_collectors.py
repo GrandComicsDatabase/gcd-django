@@ -7,8 +7,6 @@ from django.db import models
 class Migration(DataMigration):
 
     def forwards(self, orm):
-        "Write your forwards methods here."
-        #from django.contrib.auth.models import User
         from django.db.utils import IntegrityError
         for user in orm['auth.User'].objects.filter(is_active=True):
             try:
