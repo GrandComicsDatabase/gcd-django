@@ -134,6 +134,10 @@ def show_credit(story, credit):
            story.issue.series.country.code != 'us':
             if genres.find('humor') > -1:
                 story.genre = genres.replace('humor', 'humour')
+            if genres.find('sports') > -1:
+                story.genre = genres.replace('sports', 'sport')
+            if genres.find('math & science') > -1:
+                story.genre = genres.replace('math & science', 'maths & science')
         else:
             display_genre = u''
             for genre in genres.split(';'):
