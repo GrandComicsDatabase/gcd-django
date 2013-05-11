@@ -1211,7 +1211,10 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
                     additional_genres.append(genre)
                 selected_genres.append(genre)
             revision.genre = selected_genres
-        language = revision.issue.series.language
+        if revision.issue:
+            language = revision.issue.series.language
+        else:
+            language = None
     # for variants we can only have cover sequences (for now)
     if revision and (revision.issue == None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
@@ -1239,7 +1242,7 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
           help_text='Choose the most appropriate available type',
           **extra)
 
-        if language.code != 'en' and language.code in GENRES:
+        if language and language.code != 'en' and language.code in GENRES:
             choices = [[g, g + ' / ' + h] for g,h in zip(GENRES['en'],
                                                     GENRES[language.code])]
         else:
