@@ -1206,7 +1206,7 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
         if revision.genre:
             genres = revision.genre.split(';')
             for genre in genres:
-                genre = genre.strip()
+                genre = genre.strip().lower()
                 if genre not in GENRES['en']:
                     additional_genres.append(genre)
                 selected_genres.append(genre)

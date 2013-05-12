@@ -129,7 +129,7 @@ def show_credit(story, credit):
         (story.issue.series.language.code == 'en' and \
            story.issue.series.country.code != 'us')) and \
          story.issue.series.language.code in GENRES:
-        genres = story.genre
+        genres = story.genre.lower()
         language = story.issue.series.language.code 
         if language == 'en' and \
            story.issue.series.country.code != 'us':
