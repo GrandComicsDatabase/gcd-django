@@ -1,7 +1,7 @@
 BeautifulSoup
 Django<1.5
 MySQL-python
-Pillow
+Pillow < 2.0
 PyICU
 PyYAML
 Pygments

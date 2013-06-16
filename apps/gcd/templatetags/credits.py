@@ -124,11 +124,12 @@ def show_credit(story, credit):
                 formatted_credit += __format_credit(story, 'feature')
         return formatted_credit
     elif credit == 'genre' and getattr(story, credit) and \
+      story.issue and \
       (story.issue.series.language.code != 'en' or \
         (story.issue.series.language.code == 'en' and \
            story.issue.series.country.code != 'us')) and \
          story.issue.series.language.code in GENRES:
-        genres = story.genre
+        genres = story.genre.lower()
         language = story.issue.series.language.code 
         if language == 'en' and \
            story.issue.series.country.code != 'us':

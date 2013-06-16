@@ -782,7 +782,7 @@ def search_brands(data, op):
           Q(**{ '%sname__%s' % (prefix, op): data['brand'] }))
     if data['brand_notes']:
         q_objs.append(
-          Q(**{ '%notes__%s' % (prefix, op): data['brand_notes'] }))
+          Q(**{ '%snotes__%s' % (prefix, op): data['brand_notes'] }))
 
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
