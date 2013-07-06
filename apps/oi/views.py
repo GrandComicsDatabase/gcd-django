@@ -3554,17 +3554,19 @@ def show_queue(request, queue_name, state):
     if 'editing' == queue_name:
         kwargs['indexer'] = request.user
         kwargs['state__in'] = states.ACTIVE
-    if 'pending' == queue_name:
+    elif 'pending' == queue_name:
         kwargs['state__in'] = (states.PENDING, states.DISCUSSED,
                                states.REVIEWING)
-    if 'reviews' == queue_name:
+    elif 'reviews' == queue_name:
         kwargs['approver'] = request.user
         kwargs['state__in'] = (states.OPEN, states.DISCUSSED,
                                states.REVIEWING)
-    if 'covers' == queue_name:
+    elif 'covers' == queue_name:
         return show_cover_queue(request)
-    if 'approved' == queue_name:
+    elif 'approved' == queue_name:
         return show_approved(request)
+    elif 'editor_log' == queue_name:
+        return show_editor_log(request)
 
     changes = Changeset.objects.filter(**kwargs).select_related(
       'indexer__indexer', 'approver__indexer')
@@ -3663,6 +3665,18 @@ def show_approved(request):
       {'CTYPES': CTYPES},
       page_size=50)
 
+@login_required
+def show_editor_log(request):
+    changes = Changeset.objects.order_by('-modified')\
+                .filter(comments__new_state=states.REVIEWING,
+                        comments__old_state=states.PENDING,
+                        comments__commenter=request.user).distinct()
+    return paginate_response(
+      request,
+      changes,
+      'oi/queues/editor_log.html',
+      {'CTYPES': CTYPES},
+      page_size=50)
 
 @login_required
 def show_cover_queue(request):
