@@ -1,0 +1,13 @@
+{{ object.title }}
+{{ object.feature }}
+{{ object.script }}
+{{ object.pencils }}
+{{ object.inks }}
+{{ object.colors }}
+{{ object.letters }}
+{{ object.editing }}
+{{ object.genre }}
+{{ object.characters }}
+{{ object.synopsis }}
+{{ object.notes }}
+{{ object.keywords }}

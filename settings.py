@@ -38,9 +38,9 @@ STATIC_URL = MEDIA_URL
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME':  'gcdonline',
-        'USER': 'gcdonline',
-        'PASSWORD': '',
+        'NAME':  'gcdtest',
+        'USER': 'gcd',
+        'PASSWORD': 'gcd',
         'HOST': '',
         'PORT': '',
     },
@@ -92,6 +92,7 @@ INSTALLED_APPS = (
     'taggit',
     'imagekit',
     'south',
+    'haystack',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -168,6 +169,13 @@ TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                 'templates/gcd/front_page/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
 
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
+        'URL': 'http://127.0.0.1:9200/',
+        'INDEX_NAME': 'haystack',
+    },
+}
 #################################################################################
 # GCD site settings
 #################################################################################

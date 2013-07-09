@@ -15,3 +15,5 @@ git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
 git+git://github.com/GrandComicsDatabase/django-mobile.git
 python-stdnum
 wsgiref
+pyelasticsearch
+django-haystack

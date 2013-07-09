@@ -213,6 +213,9 @@ urlpatterns = patterns('',
     # admin tools
     (r'^countries/$','apps.gcd.views.details.countries_in_use'),
 
+    # haystack search
+    (r'^searchNew/', include('haystack.urls')),
+
     # redirects of old lasso pages
     (r'^publisher_details.lasso/$', 'apps.gcd.views.redirect.publisher'),
     (r'^series.lasso/$', 'apps.gcd.views.redirect.series'),

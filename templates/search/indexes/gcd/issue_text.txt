@@ -1,0 +1,9 @@
+{{ object.title }}
+{{ object.number }}
+{{ object.volume }}
+{{ object.isbn }}
+{{ object.barcode }}
+{{ object.variant_name }}
+{{ object.indicia_frequency }}
+{{ object.editing }}
+{{ object.notes }}
