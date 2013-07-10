@@ -592,48 +592,49 @@ def get_issue_revision_form(publisher, series=None, revision=None,
               series.publisher.active_brands_no_pending()
             self.fields['indicia_publisher'].queryset = \
               series.publisher.active_indicia_publishers_no_pending()
-            if series.year_began:
+            if revision and revision.key_date:
                 self.fields['brand'].queryset = \
-                  self.fields['brand'].queryset\
-                  .exclude(year_ended__lt=series.year_began)
+                    self.fields['brand'].queryset\
+                    .exclude(year_ended__lt=int(revision.key_date[:4]))
                 self.fields['indicia_publisher'].queryset = \
-                  self.fields['indicia_publisher'].queryset\
-                  .exclude(year_ended__lt=series.year_began)
-            if series.year_ended:
+                    self.fields['indicia_publisher'].queryset.\
+                    exclude(year_ended__lt=int(revision.key_date[:4]))
                 self.fields['brand'].queryset = \
-                  self.fields['brand'].queryset\
-                  .exclude(year_began__gt=series.year_ended)
+                    self.fields['brand'].queryset\
+                    .exclude(year_began__gt=int(revision.key_date[:4]))
                 self.fields['indicia_publisher'].queryset = \
-                  self.fields['indicia_publisher'].queryset\
-                  .exclude(year_began__gt=series.year_ended)
-            if revision is not None:
-                if revision.key_date:
+                    self.fields['indicia_publisher'].queryset\
+                    .exclude(year_began__gt=int(revision.key_date[:4]))
+            elif revision and revision.year_on_sale and \
+                int(log10(revision.year_on_sale))+1 == 4:
+                self.fields['brand'].queryset = \
+                    self.fields['brand'].queryset\
+                    .exclude(year_ended__lt=revision.year_on_sale)
+                self.fields['indicia_publisher'].queryset = \
+                    self.fields['indicia_publisher'].queryset\
+                    .exclude(year_ended__lt=revision.year_on_sale)
+                self.fields['brand'].queryset = \
+                    self.fields['brand'].queryset\
+                    .exclude(year_began__gt=revision.year_on_sale)
+                self.fields['indicia_publisher'].queryset = \
+                    self.fields['indicia_publisher'].queryset\
+                    .exclude(year_began__gt=revision.year_on_sale)
+            else:
+                if series.year_began:
                     self.fields['brand'].queryset = \
-                      self.fields['brand'].queryset\
-                      .exclude(year_ended__lt=int(revision.key_date[:4]))
+                    self.fields['brand'].queryset\
+                    .exclude(year_ended__lt=series.year_began)
                     self.fields['indicia_publisher'].queryset = \
-                      self.fields['indicia_publisher'].queryset.\
-                      exclude(year_ended__lt=int(revision.key_date[:4]))
+                    self.fields['indicia_publisher'].queryset\
+                    .exclude(year_ended__lt=series.year_began)
+                if series.year_ended:
                     self.fields['brand'].queryset = \
-                      self.fields['brand'].queryset\
-                      .exclude(year_began__gt=int(revision.key_date[:4]))
+                    self.fields['brand'].queryset\
+                    .exclude(year_began__gt=series.year_ended)
                     self.fields['indicia_publisher'].queryset = \
-                      self.fields['indicia_publisher'].queryset\
-                      .exclude(year_began__gt=int(revision.key_date[:4]))
-                if revision.year_on_sale and \
-                  int(log10(revision.year_on_sale))+1 == 4:
-                    self.fields['brand'].queryset = \
-                      self.fields['brand'].queryset\
-                      .exclude(year_ended__lt=revision.year_on_sale)
-                    self.fields['indicia_publisher'].queryset = \
-                      self.fields['indicia_publisher'].queryset\
-                      .exclude(year_ended__lt=revision.year_on_sale)
-                    self.fields['brand'].queryset = \
-                      self.fields['brand'].queryset\
-                      .exclude(year_began__gt=revision.year_on_sale)
-                    self.fields['indicia_publisher'].queryset = \
-                      self.fields['indicia_publisher'].queryset\
-                      .exclude(year_began__gt=revision.year_on_sale)
+                    self.fields['indicia_publisher'].queryset\
+                    .exclude(year_began__gt=series.year_ended)
+            if revision:
                 if revision.brand and revision.brand not in self.fields['brand'].queryset:
                     self.fields['brand'].queryset = self.fields['brand'].queryset \
                       | Brand.objects.filter(id=revision.brand.id)
@@ -1206,12 +1207,15 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
         if revision.genre:
             genres = revision.genre.split(';')
             for genre in genres:
-                genre = genre.strip()
+                genre = genre.strip().lower()
                 if genre not in GENRES['en']:
                     additional_genres.append(genre)
                 selected_genres.append(genre)
             revision.genre = selected_genres
-        language = revision.issue.series.language
+        if revision.issue:
+            language = revision.issue.series.language
+        else:
+            language = None
     # for variants we can only have cover sequences (for now)
     if revision and (revision.issue == None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
@@ -1239,7 +1243,7 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
           help_text='Choose the most appropriate available type',
           **extra)
 
-        if language.code != 'en' and language.code in GENRES:
+        if language and language.code != 'en' and language.code in GENRES:
             choices = [[g, g + ' / ' + h] for g,h in zip(GENRES['en'],
                                                     GENRES[language.code])]
         else:
