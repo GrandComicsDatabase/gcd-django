@@ -1,3 +1,4 @@
+{% load credits %}
 {{ object.title }}
 {{ object.number }}
 {{ object.volume }}
@@ -7,3 +8,4 @@
 {{ object.indicia_frequency }}
 {{ object.editing }}
 {{ object.notes }}
+{{ object|show_keywords }}

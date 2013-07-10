@@ -1,3 +1,4 @@
+{% load credits %}
 {{ object.name }}
 {{ object.format }}
 {{ object.color }}
@@ -5,4 +6,4 @@
 {{ object.binding }}
 {{ object.publishing_format }}
 {{ object.notes }}
-{{ object.keywords }}
+{{ object|show_keywords }}
