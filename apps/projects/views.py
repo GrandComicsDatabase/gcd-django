@@ -6,8 +6,7 @@ from django.db.models import F
 from apps.gcd.models import Publisher, Country, Language, Issue, StoryType, \
                             Series, Story
 from apps.gcd.views import paginate_response
-from apps.projects.forms import ImprintsInUseForm, IssuesWithCoversForm, \
-                                ReprintInspectionForm
+from apps.projects.forms import IssuesWithCoversForm, ReprintInspectionForm
 
 
 def issues_with_several_covers(request):
