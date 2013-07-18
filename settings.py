@@ -38,9 +38,9 @@ STATIC_URL = MEDIA_URL
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME':  'gcdtest',
-        'USER': 'gcd',
-        'PASSWORD': 'gcd',
+        'NAME':  'gcdonline',
+        'USER': 'gcdonline',
+        'PASSWORD': '',
         'HOST': '',
         'PORT': '',
     },
