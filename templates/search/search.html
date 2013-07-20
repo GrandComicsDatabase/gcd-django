@@ -24,12 +24,12 @@
       {% for result in page.object_list %}
         <p>
           {% if result.model_name == 'series' %}
-            [S]
+            [SERIES]
             <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}
               ({{ result.object.year_began }})</a>
           {% endif %}
           {% if result.model_name == 'issue' %}
-            [I] <a href="{{ result.object.get_absolute_url }}">
+            [ISSUE] <a href="{{ result.object.get_absolute_url }}">
             {{ result.object.series.name }} #{{ result.object.number }}
             {% if result.object.title %}
               - {{ result.object.title }}
@@ -37,24 +37,24 @@
           </a>
           {% endif %}
           {% if result.model_name == 'story' %}
-            [ST]
+            [STORY]
             <a href="{{ result.object.get_absolute_url }}">{{ result.object.title }}</a>
             (from
             <a href="{{ result.object.issue.get_absolute_url }}">{{ result.object.issue.title }} {{ result.object.issue.series.name }} {{ result.object.issue.number }}</a>
             )
           {% endif %}
           {% if result.model_name == 'publisher' %}
-            [P]
+            [PUBLISHER]
             <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a>
           {% endif %}
           {% if result.model_name == 'indiciapublisher' %}
-            [IP]
+            [INDICIA PUBLISHER]
             <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
             :
             <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a>
           {% endif %}
           {% if result.model_name == 'brand' %}
-            [B]
+            [BRAND]
             <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
             :
             <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a>
