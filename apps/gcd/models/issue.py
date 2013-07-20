@@ -157,6 +157,9 @@ class Issue(models.Model):
         return self.series.is_comics_publication and \
                self.active_covers().count() > 0
 
+    def has_keywords(self):
+        return self.keywords.exists()
+
     def other_variants(self):
         if self.variant_of:
             variants = self.variant_of.variant_set.exclude(id=self.id)

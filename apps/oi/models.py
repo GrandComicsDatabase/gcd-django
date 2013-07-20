@@ -1363,6 +1363,9 @@ class Revision(models.Model):
         """
         pass
 
+    def has_keywords(self):
+        return self.keywords
+
     def _post_commit_to_display(self):
         """
         Hook for individual revisions to perform additional processing
@@ -1666,9 +1669,6 @@ class PublisherRevision(PublisherRevisionBase):
 
     def has_imprints(self):
         return self.imprint_set.count() > 0
-
-    def is_imprint(self):
-        return self.parent_id is not None and self.parent_id != 0
 
     def get_absolute_url(self):
         if self.publisher is None:
