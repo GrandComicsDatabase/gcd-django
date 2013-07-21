@@ -56,7 +56,8 @@ class Publisher(BasePublisher):
     series_count = models.IntegerField(default=0)
     issue_count = models.IntegerField(default=0)
 
-    # Fields about relating publishers/imprints to each other.
+    # Deprecated fields about relating publishers/imprints to each other
+    # Probably can be removed from model definition
     is_master = models.BooleanField(db_index=True)
     parent = models.ForeignKey('self', null=True,
                                related_name='imprint_set')

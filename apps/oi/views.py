@@ -1489,8 +1489,7 @@ def add_publisher(request):
                           change_type=CTYPES['publisher'])
     changeset.save()
     revision = form.save(commit=False)
-    revision.save_added_revision(changeset=changeset,
-                                 parent=None)
+    revision.save_added_revision(changeset=changeset)
     return submit(request, changeset.id)
 
 def _display_add_publisher_form(request, form):
@@ -1640,15 +1639,14 @@ def add_series(request, publisher_id):
         form = get_series_revision_form(publisher,
                                         user=request.user)(request.POST)
         if not form.is_valid():
-            return _display_add_series_form(request, publisher, imprint, form)
+            return _display_add_series_form(request, publisher, form)
 
         changeset = Changeset(indexer=request.user, state=states.OPEN,
                               change_type=CTYPES['series'])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
-                                     publisher=publisher,
-                                     imprint=imprint)
+                                     publisher=publisher)
         return submit(request, changeset.id)
 
     except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):

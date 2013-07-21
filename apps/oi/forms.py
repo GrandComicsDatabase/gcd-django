@@ -483,8 +483,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                 model = SeriesRevisionForm.Meta.model
                 fields = SeriesRevisionForm.Meta.fields
                 exclude = SeriesRevisionForm.Meta.exclude
-                if not source.imprint:
-                    exclude = exclude + ['imprint']
+                exclude = exclude + ['imprint']
                 if not source.format:
                     exclude = exclude + ['format']
                 widgets = SeriesRevisionForm.Meta.widgets
@@ -503,11 +502,6 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                     "reserved. Brand and indicia publisher entries of the "
                     "issues will be reset. ")
 
-            if source.imprint is not None:
-                imprint = forms.ModelChoiceField(required=False,
-                  queryset=Publisher.objects.filter(is_master=False,
-                                                    deleted=False,
-                                                    parent=publisher))
             if source.format:
                 format = forms.CharField(required=False,
                   widget=forms.TextInput(attrs={'class': 'wide'}),
