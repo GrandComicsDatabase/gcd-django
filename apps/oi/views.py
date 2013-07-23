@@ -3654,10 +3654,13 @@ def show_approved(request):
 
 @login_required
 def show_editor_log(request):
+    changed_states = set(states.CLOSED+states.ACTIVE)
+    changed_states.remove(states.REVIEWING)
     changes = Changeset.objects.order_by('-modified')\
-                .filter(comments__new_state=states.REVIEWING,
-                        comments__old_state=states.PENDING,
-                        comments__commenter=request.user).distinct()
+                .filter(comments__old_state=states.REVIEWING,
+                        comments__new_state__in=changed_states,
+                        comments__commenter=request.user)\
+                .exclude(indexer=request.user).distinct()
     return paginate_response(
       request,
       changes,
