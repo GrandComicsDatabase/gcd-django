@@ -78,14 +78,15 @@ class Series(models.Model):
 
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher)
-    imprint = models.ForeignKey(Publisher, null=True,
-                                related_name='imprint_series_set')
 
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    def has_keywords(self):
+        return self.keywords.exists()
 
     def delete(self):
         self.deleted = True

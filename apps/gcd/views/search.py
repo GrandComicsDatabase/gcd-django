@@ -155,7 +155,7 @@ def generic_by_name(request, name, q_obj, sort,
     return paginate_response(request, things, template, vars)
 
 def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
-    #Finds publishers and imprints
+    #Finds publishers
 
     pubs = Publisher.objects.exclude(deleted=True).filter(
       name__icontains = publisher_name)
@@ -741,24 +741,12 @@ def search_publishers(data, op):
     q_objs = []
     if data['pub_name']:
         pub_name_q = Q(**{ '%sname__%s' % (prefix, op): data['pub_name'] })
-        if target == 'publisher':
-            q_objs.append(pub_name_q)
-        else:
-            imprint_prefix = compute_prefix(target, 'series')
-            imprint_q = Q(**{ '%simprint__name__%s' % (imprint_prefix, op):
-                              data['pub_name'] })
-            q_objs.append(pub_name_q | imprint_q)
+        q_objs.append(pub_name_q)
     # one more like this and we should refactor the code :-)
     if data['pub_notes']:
         pub_notes_q = Q(**{ '%snotes__%s' % (prefix, op):
                             data['pub_notes'] })
-        if target == 'publisher':
-            q_objs.append(pub_notes_q)
-        else:
-            imprint_prefix = compute_prefix(target, 'series')
-            imprint_q = Q(**{ '%simprint__notes__%s' % (imprint_prefix, op):
-                              data['pub_notes'] })
-            q_objs.append(pub_notes_q | imprint_q)
+        q_objs.append(pub_notes_q)
 
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))

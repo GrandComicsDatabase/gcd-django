@@ -10,7 +10,6 @@
     <th> #&nbsp;Issues </th>
   </tr>
   {% for brand in items %}
-    {% if not brand.is_imprint %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
       <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a>
       {% if brand.emblem %}
@@ -22,7 +21,6 @@
       <td> {{ brand.year_ended|default:'' }} </td>
       <td> {{ brand.issue_count }} </td>
     </tr>
-    {% endif %}
   {% endfor %}
 </table>
 {% endblock %}

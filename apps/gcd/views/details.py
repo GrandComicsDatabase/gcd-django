@@ -47,17 +47,24 @@ def publisher(request, publisher_id):
     """
     Display the details page for a Publisher.
     """
-    pub = get_object_or_404(Publisher, id = publisher_id)
-    if pub.deleted:
+    publisher = get_object_or_404(Publisher, id = publisher_id)
+    if publisher.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'publisher', 'id': publisher_id}))
 
-    vars = { 'publisher': pub,
-             'current': pub.series_set.filter(deleted=False, is_current=True),
-             'error_subject': pub }
-    return paginate_response(request, pub.active_series().order_by('sort_name'),
-                             'gcd/details/publisher.html', vars)
+    return show_publisher(request, publisher)
 
+def show_publisher(request, publisher, preview=False):
+    publisher_series = publisher.active_series().order_by('sort_name')
+    vars = { 'publisher': publisher,
+             'current': publisher.series_set.filter(deleted=False,
+                                                    is_current=True),
+             'error_subject': publisher,
+             'preview': preview}
+    
+    return paginate_response(request, publisher_series,
+                             'gcd/details/publisher.html', vars)
+    
 def indicia_publisher(request, indicia_publisher_id):
     """
     Display the details page for an Indicia Publisher.
@@ -182,34 +189,6 @@ def indicia_publishers(request, publisher_id):
       {
         'publisher' : publisher,
         'error_subject' : '%s indicia publishers' % publisher,
-      })
-
-def imprints(request, publisher_id):
-    """
-    Finds imprints of a publisher and presents them as a paginated list.
-    Imprints are defined as those publishers whose parent_id matches
-    the given publisher.
-    """
-
-    publisher = get_object_or_404(Publisher, id = publisher_id)
-    if publisher.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'publisher', 'id': publisher_id}))
-
-    imps = publisher.active_imprints()
-
-    sort = ORDER_ALPHA
-    if 'sort' in request.GET:
-        sort = request.GET['sort']
-
-    if (sort == ORDER_CHRONO):
-        imps = imps.order_by('year_began', 'name')
-    else:
-        imps = imps.order_by('name', 'year_began')
-
-    return paginate_response(request, imps, 'gcd/details/imprints.html', {
-      'publisher' : publisher,
-      'error_subject' : '%s imprints' % publisher,
       })
 
 def series(request, series_id):

@@ -31,6 +31,9 @@ class BasePublisher(models.Model):
 
     deleted = models.BooleanField(default=False, db_index=True)
 
+    def has_keywords(self):
+        return self.keywords.exists()
+
     def delete(self):
         self.deleted = True
         self.reserved = False
@@ -53,13 +56,11 @@ class Publisher(BasePublisher):
     series_count = models.IntegerField(default=0)
     issue_count = models.IntegerField(default=0)
 
-    # Fields about relating publishers/imprints to each other.
+    # Deprecated fields about relating publishers/imprints to each other
+    # Probably can be removed from model definition
     is_master = models.BooleanField(db_index=True)
     parent = models.ForeignKey('self', null=True,
                                related_name='imprint_set')
-
-    def active_imprints(self):
-        return self.imprint_set.exclude(deleted=True)
 
     def active_brands(self):
         return self.brand_set.exclude(deleted=True)
@@ -88,9 +89,6 @@ class Publisher(BasePublisher):
     def active_series(self):
         return self.series_set.exclude(deleted=True)
 
-    def active_imprint_series(self):
-        return self.imprint_series_set.exclude(deleted=True)
-
     def deletable(self):
         # TODO: check for issue_count instead of series_count. Check for added
         # issue skeletons. Also delete series and not just brands, ind pubs,
@@ -108,21 +106,10 @@ class Publisher(BasePublisher):
     def __unicode__(self):
         return self.name
 
-    def has_imprints(self):
-        return self.active_imprints().count() > 0
-
-    def is_imprint(self):
-        return self.parent_id is not None and self.parent_id != 0
-
     def get_absolute_url(self):
-        if self.is_imprint():
-            return urlresolvers.reverse(
-                'show_imprint',
-                kwargs={'imprint_id': self.id } )
-        else:
-            return urlresolvers.reverse(
-                'show_publisher',
-                kwargs={'publisher_id': self.id } )
+        return urlresolvers.reverse(
+            'show_publisher',
+            kwargs={'publisher_id': self.id } )
 
     def get_official_url(self):
         """
@@ -135,10 +122,6 @@ class Publisher(BasePublisher):
         return self.url
 
     def get_full_name(self):
-        if self.is_imprint():
-            if self.parent_id:
-                return '%s: %s' % (self.parent.name, self.name)
-            return '*GCD ORPHAN IMPRINT: %s' % (self.name)
         return self.name
 
 class IndiciaPublisher(BasePublisher):

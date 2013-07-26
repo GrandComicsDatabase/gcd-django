@@ -30,7 +30,7 @@
     <div id="control_center">
 {% include "gcd/bits/issue_data.html" %}
 
-{% if issue.notes or issue.variant_of or issue.variant_set.count or issue.keywords.exists or issue.has_reprints %}
+{% if issue.notes or issue.variant_of or issue.variant_set.count or issue.has_keywords or issue.has_reprints %}
       <div class="issue_notes">
         <div class="issue_notes_border">
           <h3 class="notes_header"> Issue Notes </h3>

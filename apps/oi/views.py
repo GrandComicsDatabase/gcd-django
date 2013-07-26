@@ -29,8 +29,8 @@ from django.contrib.contenttypes.models import ContentType
 
 from apps.gcd.models import *
 from apps.gcd.views import ViewTerminationError, render_error, paginate_response
-from apps.gcd.views.details import show_indicia_publisher, show_brand, \
-                                   show_series, show_issue
+from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
+                                   show_brand, show_series, show_issue
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
@@ -274,11 +274,6 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
                 indicia_publisher=indicia_publisher, changeset=changeset)
             indicia_publisher_revision.deleted = True
             indicia_publisher_revision.save()
-        for imprint in revision.publisher.active_imprints().all():
-            imprint_revision = PublisherRevision.objects.clone_revision(
-              publisher=imprint, changeset=changeset)
-            imprint_revision.deleted = True
-            imprint_revision.save()
 
     return changeset
 
@@ -1494,8 +1489,7 @@ def add_publisher(request):
                           change_type=CTYPES['publisher'])
     changeset.save()
     revision = form.save(commit=False)
-    revision.save_added_revision(changeset=changeset,
-                                 parent=None)
+    revision.save_added_revision(changeset=changeset)
     return submit(request, changeset.id)
 
 def _display_add_publisher_form(request, form):
@@ -1624,12 +1618,6 @@ def add_series(request, publisher_id):
             return render_error(request, u'Cannot add series '
               u'since "%s" is deleted or pending deletion.' % publisher)
 
-        imprint = None
-        if publisher.parent is not None:
-            return render_error(request, 'Series may no longer be added to '
-              'imprints.  Add the series to the master publisher, and then set '
-              'the indicia publisher(s) and/or brand(s) at the issue level.')
-
         if request.method != 'POST':
             initial = {}
             initial['country'] = publisher.country.id
@@ -1641,7 +1629,7 @@ def add_series(request, publisher_id):
             initial['is_comics_publication'] = True
             form = get_series_revision_form(publisher,
                                             user=request.user)(initial=initial)
-            return _display_add_series_form(request, publisher, imprint, form)
+            return _display_add_series_form(request, publisher, form)
 
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
@@ -1651,22 +1639,21 @@ def add_series(request, publisher_id):
         form = get_series_revision_form(publisher,
                                         user=request.user)(request.POST)
         if not form.is_valid():
-            return _display_add_series_form(request, publisher, imprint, form)
+            return _display_add_series_form(request, publisher, form)
 
         changeset = Changeset(indexer=request.user, state=states.OPEN,
                               change_type=CTYPES['series'])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
-                                     publisher=publisher,
-                                     imprint=imprint)
+                                     publisher=publisher)
         return submit(request, changeset.id)
 
     except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
         return render_error(request,
-          'Could not find publisher or imprint for id ' + publisher_id)
+          'Could not find publisher for id ' + publisher_id)
 
-def _display_add_series_form(request, publisher, imprint, form):
+def _display_add_series_form(request, publisher, form):
     kwargs = {
         'publisher_id': publisher.id,
     }
@@ -3955,20 +3942,7 @@ def preview(request, id, model_name):
     template = 'gcd/details/%s.html' % model_name
 
     if 'publisher' == model_name:
-        if revision.parent is None:
-            queryset = revision.active_series().order_by('name')
-        else:
-            queryset = revision.imprint_series_set.exclude(deleted=True) \
-              .order_by('name')
-        return paginate_response(request,
-          queryset,
-          template,
-          {
-            model_name: revision,
-            'error_subject': revision,
-            'preview': True,
-          },
-        )
+        return show_publisher(request, revision, True)
     if 'indicia_publisher' == model_name:
         return show_indicia_publisher(request, revision, True)
     if 'brand' == model_name:
