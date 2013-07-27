@@ -106,6 +106,9 @@ class Issue(models.Model):
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
+    def active_variants(self):
+        return self.variant_set.exclude(deleted=True)
+
     def shown_stories(self):
         """ returns cover sequence and story sequences """
         if self.variant_of:
@@ -180,19 +183,25 @@ class Issue(models.Model):
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
         from story import StoryType
-        is_indexed = INDEXED['skeleton']
-        if self.page_count > 0:
-            total_count = self.active_stories()\
+        if not self.variant_of:
+            is_indexed = INDEXED['skeleton']
+            if self.page_count > 0:
+                total_count = self.active_stories()\
                               .aggregate(Sum('page_count'))['page_count__sum']
-            if total_count > 0 and total_count >= Decimal('0.4') * self.page_count:
-                is_indexed = INDEXED['full']
-        if is_indexed != INDEXED['full'] and self.active_stories()\
-          .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
-            is_indexed = INDEXED['partial']
-            
-        if self.is_indexed != is_indexed:
-            self.is_indexed = is_indexed
-            self.save()
+                if total_count > 0 and \
+                   total_count >= Decimal('0.4') * self.page_count:
+                    is_indexed = INDEXED['full']
+            if is_indexed != INDEXED['full'] and self.active_stories()\
+            .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
+                is_indexed = INDEXED['partial']
+
+            if self.is_indexed != is_indexed:
+                self.is_indexed = is_indexed
+                self.save()
+                if self.active_variants():
+                    for variant in self.active_variants():
+                        variant.is_indexed = is_indexed
+                        variant.save()
         return self.is_indexed
 
     def index_status_name(self):
