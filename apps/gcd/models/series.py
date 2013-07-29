@@ -194,7 +194,8 @@ class Series(models.Model):
 
     def issue_indexed_count(self):
         from apps.gcd.models.issue import INDEXED
-        return self.active_issues().exclude(is_indexed=INDEXED['skeleton']).count()
+        return self.active_base_issues()\
+                   .exclude(is_indexed=INDEXED['skeleton']).count()
 
     def _date_uncertain(self, flag):
         return u' ?' if flag else u''
