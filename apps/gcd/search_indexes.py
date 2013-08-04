@@ -14,7 +14,7 @@ class IssueIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.filter(deleted=False)
 
     def get_updated_field(self):
-        return "modified";
+        return "modified"
 
 
 class SeriesIndex(indexes.SearchIndex, indexes.Indexable):
@@ -28,7 +28,7 @@ class SeriesIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.filter(deleted=False)
 
     def get_updated_field(self):
-        return "modified";
+        return "modified"
 
 
 class StoryIndex(indexes.SearchIndex, indexes.Indexable):
@@ -42,7 +42,7 @@ class StoryIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.filter(deleted=False)
 
     def get_updated_field(self):
-        return "modified";
+        return "modified"
 
 
 class PublisherIndex(indexes.SearchIndex, indexes.Indexable):
@@ -59,7 +59,7 @@ class PublisherIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.filter(deleted=False)
 
     def get_updated_field(self):
-        return "modified";
+        return "modified"
 
 
 class IndiciaPublisherIndex(indexes.SearchIndex, indexes.Indexable):
@@ -76,7 +76,7 @@ class IndiciaPublisherIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.filter(deleted=False)
 
     def get_updated_field(self):
-        return "modified";
+        return "modified"
 
 
 class BrandIndex(indexes.SearchIndex, indexes.Indexable):
@@ -93,4 +93,4 @@ class BrandIndex(indexes.SearchIndex, indexes.Indexable):
         return self.get_model().objects.filter(deleted=False)
 
     def get_updated_field(self):
-        return "modified";
+        return "modified"
