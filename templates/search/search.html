@@ -38,7 +38,11 @@
           {% endif %}
           {% if result.model_name == 'story' %}
             [STORY]
-            <a href="{{ result.object.get_absolute_url }}">{{ result.object.title }}</a>
+            <a href="{{ result.object.get_absolute_url }}">{% if result.object.title %}
+            {{ result.object.title }}
+            {% else %}
+            [untitled]
+            {% endif %}</a>
             (from
             <a href="{{ result.object.issue.get_absolute_url }}">{{ result.object.issue.title }} {{ result.object.issue.series.name }} {{ result.object.issue.number }}</a>
             )
@@ -67,11 +71,11 @@
       {% if page.has_previous or page.has_next %}
         <div>
           {% if page.has_previous %}
-            <a href="?q={{ query }}&amp;page={{ page.previous_page_number }}">{% endif %}&laquo;
+            <a href="?q={{ query }}&amp;page={{ page.previous_page_number }}{% if request.GET.models %}&amp;models={{ request.GET.models }}{% endif %}">{% endif %}&laquo;
           Previous{% if page.has_previous %}</a>{% endif %}
           |
           {% if page.has_next %}
-            <a href="?q={{ query }}&amp;page={{ page.next_page_number }}">{% endif %}
+            <a href="?q={{ query }}&amp;page={{ page.next_page_number }}{% if request.GET.models %}&amp;models={{ request.GET.models }}{% endif %}">{% endif %}
           Next &raquo;{% if page.has_next %}</a>{% endif %}
         </div>
       {% endif %}
