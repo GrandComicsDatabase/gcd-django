@@ -10,6 +10,12 @@ from taggit.managers import TaggableManager
 from apps.oi import states
 from image import Image
 
+def _display_year(year, flag):
+    if year:
+        return str(year) + (u' ?' if flag else u'')
+    else:
+        return '?'
+
 class BasePublisher(models.Model):
     class Meta:
         abstract = True
@@ -62,8 +68,12 @@ class Publisher(BasePublisher):
     parent = models.ForeignKey('self', null=True,
                                related_name='imprint_set')
 
+    def active_brand_groups(self):
+        return self.brandgroup_set.exclude(deleted=True)
+
+    # BrandGroups are used like Brands used to be in the display
     def active_brands(self):
-        return self.brand_set.exclude(deleted=True)
+        return self.active_brand_groups()
 
     def active_brands_no_pending(self):
         """
@@ -71,6 +81,7 @@ class Publisher(BasePublisher):
         Used in some cases where we don't want someone to add to a brand that is
         in the process of being deleted.
         """
+        # TODO: check for pending brand_use deletes
         return self.active_brands().exclude(revisions__deleted=True,
           revisions__changeset__state__in=states.ACTIVE)
 
@@ -151,13 +162,56 @@ class IndiciaPublisher(BasePublisher):
     def __unicode__(self):
         return self.name
 
-class Brand(BasePublisher):
+class BrandGroup(BasePublisher):
     class Meta:
+        db_table = 'gcd_brand_group'
         ordering = ['name']
         app_label = 'gcd'
 
     parent = models.ForeignKey(Publisher)
 
+    issue_count = models.IntegerField(default=0)
+
+    def deletable(self):
+        return self.brand_set.count() == 0 and \
+            self.brand_revisions.filter(changeset__state__in=states.ACTIVE)\
+                                .count() == 0
+
+
+    def active_emblems(self):
+        return self.brand_set.exclude(deleted=True)
+
+    def active_issues(self):
+        from apps.gcd.models.issue import Issue
+        emblems_id = self.active_emblems().values_list('id', flat=True)
+        return Issue.objects.filter(brand__in=emblems_id,
+                                    deleted=False)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_brand_group',
+            kwargs={'brand_group_id': self.id } )
+
+    def pending_deletion(self):
+        return self.revisions.filter(changeset__state__in=states.ACTIVE,
+                                     deleted=True).count() == 1
+
+    def full_name(self):
+        return unicode(self)
+
+    def __unicode__(self):
+        return self.name
+
+
+class Brand(BasePublisher):
+    class Meta:
+        ordering = ['name']
+        app_label = 'gcd'
+
+    # TODO parent will be removed after the introduction of two layer scheme
+    parent = models.ForeignKey(Publisher, blank=True)
+    group = models.ManyToManyField(BrandGroup, blank=True,
+                                   db_table='gcd_brand_emblem_group')
     issue_count = models.IntegerField(default=0)
 
     image_resources = generic.GenericRelation(Image)
@@ -184,8 +238,46 @@ class Brand(BasePublisher):
             'show_brand',
             kwargs={'brand_id': self.id } )
 
-    def full_name(self):
-        return unicode(self)
-
     def __unicode__(self):
         return self.name
+
+class BrandUse(models.Model):
+    class Meta:
+        db_table = 'gcd_brand_use'
+        app_label = 'gcd'
+
+    publisher = models.ForeignKey(Publisher)
+    emblem = models.ForeignKey(Brand, related_name='in_use')
+    issue_count = models.IntegerField(default=0)
+
+    year_began = models.IntegerField(db_index=True, null=True)
+    year_ended = models.IntegerField(null=True)
+    year_began_uncertain = models.BooleanField(blank=True, db_index=True)
+    year_ended_uncertain = models.BooleanField(blank=True, db_index=True)
+
+    notes = models.TextField()
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=0, db_index=True)
+    created = models.DateField(auto_now_add=True)
+    modified = models.DateField(auto_now=True)
+
+    @property
+    def deleted(self):
+        return False
+
+    def deletable(self):
+        return self.issue_count == 0 #and \
+          #self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
+                              #.count() == 0
+        # TODO: hmm, need to check for revisions ?
+
+    def active_issues(self):
+        return self.emblem.issue_set.exclude(deleted=True)\
+          .filter(issue__series__publisher=publisher)
+
+    def __unicode__(self):
+        return u'emblem %s was used from %s to %s by %s.' % (self.emblem,
+          _display_year(self.year_began, self.year_began_uncertain),
+          _display_year(self.year_ended, self.year_ended_uncertain),
+          self.publisher)
