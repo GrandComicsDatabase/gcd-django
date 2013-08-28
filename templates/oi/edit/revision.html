@@ -23,7 +23,6 @@
 </h1>
 
 <div class="edit">
-
 <form action="{% url process_revision model_name=revision.source_name,id=revision.id %}" method="POST">
   {% csrf_token %}
   <table class="editing">
