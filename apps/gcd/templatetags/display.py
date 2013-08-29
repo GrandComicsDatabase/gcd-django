@@ -35,8 +35,8 @@ def valid_barcode(barcode):
     '''
 
     # remove space and hyphens
-    barcode = str(barcode).replace('-', '').replace(' ', '')
     try:
+        barcode = str(barcode).replace('-', '').replace(' ', '')
         int(barcode)
     except ValueError:
         return False
