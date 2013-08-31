@@ -183,7 +183,7 @@ class BrandGroup(BasePublisher):
 
     def active_issues(self):
         from apps.gcd.models.issue import Issue
-        emblems_id = self.active_emblems().values_list('id', flat=True)
+        emblems_id = list(self.active_emblems().values_list('id', flat=True))
         return Issue.objects.filter(brand__in=emblems_id,
                                     deleted=False)
 
