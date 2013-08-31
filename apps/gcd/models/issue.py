@@ -192,8 +192,13 @@ class Issue(models.Model):
                    total_count >= Decimal('0.4') * self.page_count:
                     is_indexed = INDEXED['full']
             if is_indexed != INDEXED['full'] and self.active_stories()\
-            .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
+              .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
                 is_indexed = INDEXED['partial']
+
+            if is_indexed == INDEXED['full']:
+                if self.page_count_uncertain or self.active_stories()\
+                  .filter(page_count_uncertain=True).count() > 0:
+                    is_indexed = INDEXED['partial']
 
             if self.is_indexed != is_indexed:
                 self.is_indexed = is_indexed
