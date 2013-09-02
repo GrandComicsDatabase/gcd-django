@@ -82,7 +82,11 @@
           <input id="add" name="add" type="submit" value="Add indicia publisher" />
         </form>
         <form method="GET"
-              action="{% url add_brand parent_id=publisher.id %}">
+              action="{% url add_brand_group parent_id=publisher.id %}">
+          <input id="add" name="add" type="submit" value="Add brand group" />
+        </form>
+        <form method="GET"
+              action="{% url add_brand_via_publisher publisher_id=publisher.id %}">
           <input id="add" name="add" type="submit" value="Add brand" />
         </form>
         <form method="GET"

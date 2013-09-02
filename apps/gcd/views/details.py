@@ -20,7 +20,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
 from apps.gcd.models import Publisher, Series, Issue, Story, Image, \
-                            IndiciaPublisher, Brand, CountStats, \
+                            IndiciaPublisher, Brand, BrandGroup, CountStats, \
                             Country, Language, Indexer, IndexCredit, Cover
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -29,8 +29,9 @@ from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
-                           BrandRevision, IndiciaPublisherRevision, \
-                           ImageRevision, Changeset, CTYPES
+                           BrandGroupRevision, BrandRevision, \
+                           IndiciaPublisherRevision, ImageRevision, Changeset, \
+                           CTYPES
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -89,6 +90,33 @@ def show_indicia_publisher(request, indicia_publisher, preview=False):
                              'gcd/details/indicia_publisher.html',
                              vars)
 
+def brand_group(request, brand_group_id):
+    """
+    Display the details page for a BrandGroup.
+    """
+    brand_group = get_object_or_404(BrandGroup, id = brand_group_id)
+    if brand_group.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'brand_group', 'id': brand_group_id}))
+
+    return show_brand_group(request, brand_group)
+
+def show_brand_group(request, brand_group, preview=False):
+    brand_issues = brand_group.active_issues().order_by('series__sort_name',
+                                                        'sort_code')
+    brand_emblems = brand_group.active_emblems()
+
+    vars = {
+        'brand' : brand_group,
+        'brand_emblems': brand_emblems,
+        'error_subject': '%s' % brand_group,
+        'preview': preview
+    }
+    return paginate_response(request,
+                             brand_issues,
+                             'gcd/details/brand_group.html',
+                             vars)
+
 def brand(request, brand_id):
     """
     Display the details page for a Brand.
@@ -103,9 +131,10 @@ def brand(request, brand_id):
 def show_brand(request, brand, preview=False):
     brand_issues = brand.active_issues().order_by('series__sort_name',
                                                   'sort_code')
-
+    uses = brand.in_use.all()
     vars = {
         'brand' : brand,
+        'uses' : uses,
         'error_subject': '%s' % brand,
         'preview': preview
     }
@@ -346,8 +375,9 @@ def change_history(request, model_name, id):
     Displays the change history of the given object of the type
     specified by model_name.
     """
-    if model_name not in ['publisher', 'brand', 'indicia_publisher',
-                          'series', 'issue', 'cover', 'image']:
+    if model_name not in ['publisher', 'brand_group', 'brand',
+                          'indicia_publisher', 'series', 'issue', 'cover',
+                          'image']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {
@@ -647,37 +677,35 @@ def daily_changes(request, show_date=None):
         date_after = None
 
     anon = User.objects.get(username=settings.ANON_USER_NAME)
+    
+    args = {'changeset__modified__range' : \
+                (datetime.combine(requested_date, time.min),
+                 datetime.combine(requested_date, time.max)),
+            'deleted':False,
+            'changeset__state': states.APPROVED }
 
     publisher_revisions = list(PublisherRevision.objects.filter(
-      changeset__change_type=CTYPES['publisher'],
-      changeset__state=states.APPROVED,
-      deleted=False,
-      changeset__modified__range=(
-        datetime.combine(requested_date, time.min),
-        datetime.combine(requested_date, time.max)))\
+      changeset__change_type=CTYPES['publisher'], **args)\
       .exclude(changeset__indexer=anon).values_list('publisher', flat=True))
     publishers = Publisher.objects.filter(is_master=1,
       id__in=publisher_revisions).distinct().select_related('country')
 
+    brand_group_revisions = list(BrandGroupRevision.objects.filter(
+      changeset__change_type=CTYPES['brand_group'], **args)\
+        .exclude(changeset__indexer=anon)\
+        .values_list('brand_group', flat=True))
+    brand_groups = BrandGroup.objects.filter(id__in=brand_group_revisions)\
+      .distinct().select_related('parent__country')
+
     brand_revisions = list(BrandRevision.objects.filter(
-      changeset__change_type=CTYPES['brand'],
-      changeset__state=states.APPROVED,
-      deleted=False,
-      changeset__modified__range=(
-        datetime.combine(requested_date, time.min),
-        datetime.combine(requested_date, time.max)))\
+      changeset__change_type=CTYPES['brand'], **args)\
         .exclude(changeset__indexer=anon)\
         .values_list('brand', flat=True))
     brands = Brand.objects.filter(id__in=brand_revisions).distinct()\
       .select_related('parent__country')
 
     indicia_publisher_revisions = list(IndiciaPublisherRevision.objects.filter(
-      changeset__change_type=CTYPES['indicia_publisher'],
-      changeset__state=states.APPROVED,
-      deleted=False,
-      changeset__modified__range=(
-        datetime.combine(requested_date, time.min),
-        datetime.combine(requested_date, time.max)))\
+      changeset__change_type=CTYPES['indicia_publisher'], **args)\
       .exclude(changeset__indexer=anon)\
       .values_list('indicia_publisher', flat=True))
     indicia_publishers = IndiciaPublisher.objects.filter(
@@ -685,36 +713,21 @@ def daily_changes(request, show_date=None):
       .select_related('parent__country')
 
     series_revisions = list(SeriesRevision.objects.filter(
-      changeset__change_type=CTYPES['series'],
-      changeset__state=states.APPROVED,
-      deleted=False,
-      changeset__modified__range=(
-        datetime.combine(requested_date, time.min),
-        datetime.combine(requested_date, time.max)))\
+      changeset__change_type=CTYPES['series'], **args)\
       .exclude(changeset__indexer=anon).values_list('series', flat=True))
     series = Series.objects.filter(id__in=series_revisions).distinct()\
       .select_related('publisher','country', 'first_issue','last_issue')
 
     issues_change_types = [CTYPES['issue'], CTYPES['variant_add']]
     issue_revisions = list(IssueRevision.objects.filter(\
-      changeset__change_type__in=issues_change_types,
-      changeset__state=states.APPROVED,
-      deleted=False,
-      changeset__modified__range=(
-        datetime.combine(requested_date, time.min),
-        datetime.combine(requested_date, time.max)))\
+      changeset__change_type__in=issues_change_types, **args)\
       .exclude(changeset__indexer=anon).values_list('issue', flat=True))
     issues = Issue.objects.filter(id__in=issue_revisions).distinct()\
       .select_related('series__publisher', 'series__country')
 
     images = []
     image_revisions = ImageRevision.objects.filter(
-      changeset__change_type=CTYPES['image'],
-      changeset__state=states.APPROVED,
-      deleted=False,
-      changeset__modified__range=(
-        datetime.combine(requested_date, time.min),
-        datetime.combine(requested_date, time.max)))\
+      changeset__change_type=CTYPES['image'], **args)\
       .exclude(changeset__indexer=anon).values_list('image', flat=True)
 
     brand_revisions = list(image_revisions.filter(type__name='BrandScan'))
@@ -738,6 +751,7 @@ def daily_changes(request, show_date=None):
         'date_after' : date_after,
         'date_before' : date_before,
         'publishers' : publishers,
+        'brand_groups' : brand_groups,
         'brands' : brands,
         'indicia_publishers' : indicia_publishers,
         'series' : series,
