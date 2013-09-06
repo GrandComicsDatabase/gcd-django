@@ -131,7 +131,6 @@ GCD :: Brand :: {{ brand.name }}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Publisher </th>
-    <th> Issues </th>
     <th> Year Began </th>
     <th> Year Ended </th>
     <th> Notes </th>
@@ -142,7 +141,6 @@ GCD :: Brand :: {{ brand.name }}
   {% for use in uses %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ use.publisher.get_absolute_url }}">{{ use.publisher }}</a> </td>
-    <td> {{ use.issue_count }} </td>
     <td> {{ use.year_began|default:"" }} </td>
     <td> {{ use.year_ended|default:"" }} </td>
     <td> {{ use.notes }} </td>

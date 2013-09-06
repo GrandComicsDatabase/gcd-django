@@ -13,7 +13,6 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('publisher', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['gcd.Publisher'])),
             ('emblem', self.gf('django.db.models.fields.related.ForeignKey')(related_name='in_use', to=orm['gcd.Brand'])),
-            ('issue_count', self.gf('django.db.models.fields.IntegerField')(default=0)),
             ('year_began', self.gf('django.db.models.fields.IntegerField')(null=True, db_index=True)),
             ('year_ended', self.gf('django.db.models.fields.IntegerField')(null=True)),
             ('year_began_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),

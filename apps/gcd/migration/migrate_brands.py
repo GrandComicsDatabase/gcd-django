@@ -90,7 +90,6 @@ def main():
         use.save()
         changeset.approve(notes='Automatically approved.')
         in_use = changeset.branduserevisions.get().brand_use
-        in_use.issue_count = brand.issue_count
         in_use.save()
 
 main()

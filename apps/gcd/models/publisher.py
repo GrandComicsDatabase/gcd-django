@@ -248,7 +248,6 @@ class BrandUse(models.Model):
 
     publisher = models.ForeignKey(Publisher)
     emblem = models.ForeignKey(Brand, related_name='in_use')
-    issue_count = models.IntegerField(default=0)
 
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)

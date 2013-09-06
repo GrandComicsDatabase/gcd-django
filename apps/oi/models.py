@@ -2019,7 +2019,7 @@ class BrandRevision(PublisherRevisionBase):
 
     def _queue_name(self):
         return u'%s: %s (%s)' % (self.group.all()[0].name, self.name,
-                                 self.year_began)
+                                self.year_began)
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -3716,6 +3716,9 @@ class IssueRevision(Revision):
                     if self.brand:
                         self.brand.issue_count = F('issue_count') + 1
                         self.brand.save()
+                        for group in self.brand.group.all():
+                            group.issue_count = F('issue_count') + 1
+                            group.save()
                     if self.indicia_publisher:
                         self.indicia_publisher.issue_count = F('issue_count') + 1
                         self.indicia_publisher.save()
@@ -3736,6 +3739,9 @@ class IssueRevision(Revision):
                     if self.brand:
                         self.brand.issue_count = F('issue_count') - 1
                         self.brand.save()
+                        for group in self.brand.group.all():
+                            group.issue_count = F('issue_count') - 1
+                            group.save()
                     if self.indicia_publisher:
                         self.indicia_publisher.issue_count = F('issue_count') - 1
                         self.indicia_publisher.save()
@@ -3750,9 +3756,15 @@ class IssueRevision(Revision):
                     if self.brand:
                         self.brand.issue_count = F('issue_count') + 1
                         self.brand.save()
+                        for group in self.brand.group.all():
+                            group.issue_count = F('issue_count') + 1
+                            group.save()
                     if issue.brand:
                         issue.brand.issue_count = F('issue_count') - 1
                         issue.brand.save()
+                        for group in issue.brand.group.all():
+                            group.issue_count = F('issue_count') - 1
+                            group.save()
                 if self.indicia_publisher != issue.indicia_publisher:
                     if self.indicia_publisher:
                         self.indicia_publisher.issue_count = F('issue_count') + 1

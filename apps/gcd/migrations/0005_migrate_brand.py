@@ -97,7 +97,6 @@ class Migration(DataMigration):
             'created': ('django.db.models.fields.DateField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'emblem': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'in_use'", 'to': "orm['gcd.Brand']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'issue_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'modified': ('django.db.models.fields.DateField', [], {'auto_now': 'True', 'blank': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
             'publisher': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']"}),
