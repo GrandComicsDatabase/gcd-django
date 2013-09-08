@@ -2513,6 +2513,7 @@ class SeriesRevisionManager(RevisionManager):
           has_isbn=series.has_isbn,
           has_volume=series.has_volume,
           has_issue_title=series.has_issue_title,
+          has_rating=series.has_rating,
           is_comics_publication=series.is_comics_publication,
 
           country=series.country,
@@ -2528,8 +2529,8 @@ def get_series_field_list():
             'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
             'is_current', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'has_volume', 'is_comics_publication', 'tracking_notes', 'notes',
-            'keywords']
+            'has_volume', 'has_rating', 'is_comics_publication',
+            'tracking_notes', 'notes', 'keywords']
 
 class SeriesRevision(Revision):
     class Meta:
@@ -2612,6 +2613,10 @@ class SeriesRevision(Revision):
       help_text="Titles are present for issues of this series.")
     has_volume = models.BooleanField(
       help_text="Volume numbers are present for issues of this series.")
+    has_rating = models.BooleanField(
+      verbose_name="Has Publisher's age guidelines ",
+      help_text="Publisher's age guidelines are present for issues of this "
+                "series.")
     is_comics_publication = models.BooleanField(
       help_text="Publications in this series are mostly comics publications.")
 
@@ -2741,6 +2746,7 @@ class SeriesRevision(Revision):
             'has_isbn': True,
             'has_issue_title': False,
             'has_volume': True,
+            'has_rating': False,
             'is_comics_publication': True,
         }
 
@@ -2813,6 +2819,7 @@ class SeriesRevision(Revision):
         series.has_isbn = self.has_isbn
         series.has_issue_title = self.has_issue_title
         series.has_volume = self.has_volume
+        series.has_rating = self.has_rating
 
         reservation = series.get_ongoing_reservation()
         if not self.is_current and reservation and self.previous() and \
@@ -2917,7 +2924,8 @@ def get_issue_field_list():
             'year_on_sale', 'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
             'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-            'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes', 'keywords']
+            'isbn', 'no_isbn', 'barcode', 'no_barcode', 'rating', 'no_rating',
+            'notes', 'keywords']
 
 class IssueRevisionManager(RevisionManager):
 
@@ -2973,6 +2981,8 @@ class IssueRevisionManager(RevisionManager):
           no_isbn=issue.no_isbn,
           variant_of=issue.variant_of,
           variant_name=issue.variant_name,
+          rating=issue.rating,
+          no_rating=issue.no_rating,
           notes=issue.notes,
           keywords=get_keywords(issue))
 
@@ -3145,6 +3155,13 @@ class IssueRevision(Revision):
                 'two barcodes are present, separate them with a semi-colon.')
     no_barcode = models.BooleanField(default=False,
       help_text='Check this box if there is no barcode.')
+
+    rating = models.CharField(max_length=255, blank=True, default='',
+      verbose_name="Publisher's age guidelines",
+      help_text="The publisher's age guidelines as printed on the item.")
+    no_rating= models.BooleanField(default=False,
+      verbose_name="No publisher's age guidelines",
+      help_text="Check this box if there are no publisher's age guidelines.")
 
     date_inferred = models.BooleanField(default=False, blank=True)
 
@@ -3565,6 +3582,8 @@ class IssueRevision(Revision):
             'no_isbn': False,
             'barcode': '',
             'no_barcode': False,
+            'rating': '',
+            'no_rating': False,
             'notes': '',
             'sort_code': None,
             'after': None,
@@ -3582,6 +3601,7 @@ class IssueRevision(Revision):
         self._seen_editing = False
         self._seen_isbn = False
         self._seen_barcode = False
+        self._seen_rating = False
         self._seen_on_sale_date = False
 
     def _imps_for(self, field_name):
@@ -3624,6 +3644,9 @@ class IssueRevision(Revision):
             return 1
         if not self._seen_barcode and field_name in ('barcode', 'no_barcode'):
             self._seen_barcode = True
+            return 1
+        if not self._seen_rating and field_name in ('rating', 'no_rating'):
+            self._seen_rating = True
             return 1
         if not self._seen_on_sale_date and field_name in ('year_on_sale',
           'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain'):
@@ -3893,6 +3916,14 @@ class IssueRevision(Revision):
         else:
             self.barcode = issue.barcode
             self.no_barcode = issue.no_barcode
+            self.save()
+
+        if self.series.has_rating:
+            issue.rating = self.rating
+            issue.no_rating = self.no_rating
+        else:
+            self.rating = issue.rating
+            self.no_rating = issue.no_rating
             self.save()
 
         if clear_reservation:

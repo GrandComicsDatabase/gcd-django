@@ -453,7 +453,7 @@ def field_value(revision, field):
         else:
             return u'No'
     elif field in ['has_barcode', 'has_isbn', 'has_issue_title',
-                   'has_indicia_frequency', 'has_volume']:
+                   'has_indicia_frequency', 'has_volume', 'has_rating']:
         if hasattr(revision, 'changed'):
             if revision.changed[field] and value == False:
                 kwargs = {field[4:]: ''}

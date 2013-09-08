@@ -75,14 +75,17 @@ class Publisher(BasePublisher):
     def active_brands(self):
         return self.active_brand_groups()
 
-    def active_brands_no_pending(self):
+    def active_brand_emblems(self):
+        return Brand.objects.filter(in_use__publisher=self, deleted=False)
+
+    def active_brand_emblems_no_pending(self):
         """
         Active brands, not including those with pending deletes.
         Used in some cases where we don't want someone to add to a brand that is
         in the process of being deleted.
         """
         # TODO: check for pending brand_use deletes
-        return self.active_brands().exclude(revisions__deleted=True,
+        return self.active_brand_emblems().exclude(revisions__deleted=True,
           revisions__changeset__state__in=states.ACTIVE)
 
     def active_indicia_publishers(self):

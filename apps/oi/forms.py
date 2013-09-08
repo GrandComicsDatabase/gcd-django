@@ -96,6 +96,8 @@ ISSUE_HELP_LINKS = {
     'no_isbn': 'ISBN',
     'barcode': 'Barcode',
     'no_barcode': 'Barcode',
+    'rating': "Publisher's_Age_Guidelines",
+    'no_rating': "Publisher's_Age_Guidelines",
     'notes': 'Notes_%28issue%29',
     'keywords': 'Keywords',
     'comments': 'Comments'
@@ -713,7 +715,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def __init__(self, *args, **kwargs):
             super(RuntimeIssueRevisionForm, self).__init__(*args, **kwargs)
             self.fields['brand'].queryset = \
-              series.publisher.active_brands_no_pending()
+              series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
               series.publisher.active_indicia_publishers_no_pending()
             if revision and revision.key_date:
@@ -794,13 +796,20 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         if not series.has_isbn:
             help_text, no_isbn = _get_series_has_fields_off_note(series, 'ISBN')
             isbn = forms.CharField(widget=HiddenInputWithHelp, required=False,
-              help_text=help_text)
+              help_text=help_text, label='ISBN')
 
         if not series.has_barcode:
             help_text, no_barcode = \
               _get_series_has_fields_off_note(series, 'barcode')
             barcode = forms.CharField(widget=HiddenInputWithHelp,
               required=False, help_text=help_text)
+
+        if not series.has_rating:
+            help_text, no_rating = \
+              _get_series_has_fields_off_note(series, "publisher's age guidelines")
+            rating = forms.CharField(widget=HiddenInputWithHelp,
+              required=False, help_text=help_text,
+              label="Publisher's age guidelines")
 
         def clean_year_on_sale(self):
             year_on_sale = self.cleaned_data['year_on_sale']
@@ -902,6 +911,12 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             if cd['barcode']:
                 cd['barcode'] = cd['barcode'].replace('-', '').replace(' ', '')
                 cd['barcode'] = cd['barcode'].replace(';', '; ')
+
+            if cd['no_rating'] and cd['rating']:
+                raise forms.ValidationError(
+                  "You cannot specify a publisher's age guideline and check "
+                  " no publisher's age guideline at the same time.")
+
             return cd
 
         def as_table(self):

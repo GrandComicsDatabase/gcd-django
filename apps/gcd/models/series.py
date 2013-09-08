@@ -60,6 +60,7 @@ class Series(models.Model):
     has_isbn = models.BooleanField()
     has_issue_title = models.BooleanField()
     has_volume = models.BooleanField()
+    has_rating = models.BooleanField()
 
     is_comics_publication = models.BooleanField()
 

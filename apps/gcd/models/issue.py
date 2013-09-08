@@ -45,6 +45,8 @@ class Issue(models.Model):
     variant_name = models.CharField(max_length=255)
     barcode = models.CharField(max_length=38, db_index=True)
     no_barcode = models.BooleanField(default=False)
+    rating = models.CharField(max_length=255, default='', db_index=True)
+    no_rating = models.BooleanField(default=False, db_index=True)
 
     # Dates and sorting
     publication_date = models.CharField(max_length=255)
