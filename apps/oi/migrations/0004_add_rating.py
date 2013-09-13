@@ -9,16 +9,13 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         
         # Adding field 'IssueRevision.rating'
-        db.add_column('oi_issue_revision', 'rating', self.gf('django.db.models.fields.CharField')(default='', max_length=38, blank=True), keep_default=False)
+        db.add_column('oi_issue_revision', 'rating', self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True), keep_default=False)
 
         # Adding field 'IssueRevision.no_rating'
         db.add_column('oi_issue_revision', 'no_rating', self.gf('django.db.models.fields.BooleanField')(default=False), keep_default=False)
 
         # Adding field 'SeriesRevision.has_rating'
         db.add_column('oi_series_revision', 'has_rating', self.gf('django.db.models.fields.BooleanField')(default=False), keep_default=False)
-
-        # Changing field 'BrandUseRevision.notes'
-        db.alter_column('oi_brand_use_revision', 'notes', self.gf('django.db.models.fields.TextField')(max_length=255))
 
 
     def backwards(self, orm):
@@ -31,9 +28,6 @@ class Migration(SchemaMigration):
 
         # Deleting field 'SeriesRevision.has_rating'
         db.delete_column('oi_series_revision', 'has_rating')
-
-        # Changing field 'BrandUseRevision.notes'
-        db.alter_column('oi_brand_use_revision', 'notes', self.gf('django.db.models.fields.TextField')())
 
 
     models = {
@@ -52,7 +46,7 @@ class Migration(SchemaMigration):
         },
         'auth.user': {
             'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 9, 6, 20, 16, 55, 131233)'}),
+            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 9, 13, 19, 23, 0, 580281)'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
@@ -60,7 +54,7 @@ class Migration(SchemaMigration):
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 9, 6, 20, 16, 55, 131163)'}),
+            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 9, 13, 19, 23, 0, 580168)'}),
             'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
             'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
@@ -83,7 +77,7 @@ class Migration(SchemaMigration):
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']", 'blank': 'True'}),
+            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']", 'null': 'True', 'blank': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '255', 'blank': 'True'}),
             'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
@@ -205,7 +199,7 @@ class Migration(SchemaMigration):
             'no_editing': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_rating': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'no_rating': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_title': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
@@ -216,7 +210,7 @@ class Migration(SchemaMigration):
             'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'price': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'publication_date': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'rating': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255'}),
+            'rating': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'db_index': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'series': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Series']"}),
             'sort_code': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
@@ -544,7 +538,7 @@ class Migration(SchemaMigration):
             'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'price': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'}),
             'publication_date': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'}),
-            'rating': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '38', 'blank': 'True'}),
+            'rating': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'}),
             'reservation_requested': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'revision_sort_code': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
             'series': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'issue_revisions'", 'to': "orm['gcd.Series']"}),

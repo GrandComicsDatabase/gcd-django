@@ -396,10 +396,10 @@ def field_value(revision, field):
     elif field == 'group':
         brand_groups = ''
         for brand in value.all():
-            brand_groups += str(brand) + '; '
+            brand_groups += absolute_url(brand) + '; '
         if brand_groups:
             brand_groups = brand_groups[:-2]
-        return brand_groups
+        return mark_safe(brand_groups)
     elif field in ['no_editing', 'no_script', 'no_pencils', 'no_inks',
                    'no_colors', 'no_letters']:
         return yesno(value, 'X, ')

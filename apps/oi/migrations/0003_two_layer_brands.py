@@ -42,7 +42,7 @@ class Migration(SchemaMigration):
             ('year_ended', self.gf('django.db.models.fields.IntegerField')(null=True)),
             ('year_began_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
             ('year_ended_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('notes', self.gf('django.db.models.fields.TextField')(max_length=255)),
+            ('notes', self.gf('django.db.models.fields.TextField')(max_length=255, blank=True)),
         ))
         db.send_create_signal('oi', ['BrandUseRevision'])
 
@@ -83,7 +83,7 @@ class Migration(SchemaMigration):
         },
         'auth.user': {
             'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 8, 18, 7, 19, 8, 824367)'}),
+            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 9, 13, 19, 2, 18, 195147)'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
@@ -91,7 +91,7 @@ class Migration(SchemaMigration):
             'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 8, 18, 7, 19, 8, 824268)'}),
+            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2013, 9, 13, 19, 2, 18, 195053)'}),
             'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
             'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
             'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
@@ -114,7 +114,7 @@ class Migration(SchemaMigration):
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']", 'blank': 'True'}),
+            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']", 'null': 'True', 'blank': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '255', 'blank': 'True'}),
             'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
@@ -419,7 +419,7 @@ class Migration(SchemaMigration):
             'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'brandrevisions'", 'to': "orm['oi.Changeset']"}),
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'group': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "'brand_revisions'", 'blank': 'True', 'to': "orm['gcd.BrandGroup']"}),
+            'group': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'brand_revisions'", 'symmetrical': 'False', 'to': "orm['gcd.BrandGroup']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'keywords': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
@@ -441,7 +441,7 @@ class Migration(SchemaMigration):
             'emblem': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'use_revisions'", 'null': 'True', 'to': "orm['gcd.Brand']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {}),
+            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255', 'blank': 'True'}),
             'publisher': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'brand_use_revisions'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
             'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
             'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),

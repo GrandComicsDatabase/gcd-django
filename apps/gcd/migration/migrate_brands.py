@@ -56,8 +56,6 @@ def main():
         revision.save()
         changeset.approve(notes='Automatically approved.')
         brand_group = changeset.brandgrouprevisions.get().brand_group
-        brand_group.issue_count = brand.issue_count
-        brand_group.save()
 
         # assign BrandGroup to Brand
         changeset = Changeset(indexer=ANON_USER,

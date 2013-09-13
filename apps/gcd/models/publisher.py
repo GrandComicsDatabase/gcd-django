@@ -212,7 +212,7 @@ class Brand(BasePublisher):
         app_label = 'gcd'
 
     # TODO parent will be removed after the introduction of two layer scheme
-    parent = models.ForeignKey(Publisher, blank=True)
+    parent = models.ForeignKey(Publisher, blank=True, null=True)
     group = models.ManyToManyField(BrandGroup, blank=True,
                                    db_table='gcd_brand_emblem_group')
     issue_count = models.IntegerField(default=0)
@@ -233,6 +233,10 @@ class Brand(BasePublisher):
           self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
                               .count() == 0
 
+    def pending_deletion(self):
+        return self.revisions.filter(changeset__state__in=states.ACTIVE,
+                                     deleted=True).count() == 1
+
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
 
@@ -240,6 +244,9 @@ class Brand(BasePublisher):
         return urlresolvers.reverse(
             'show_brand',
             kwargs={'brand_id': self.id } )
+
+    def full_name(self):
+        return unicode(self)
 
     def __unicode__(self):
         return self.name
