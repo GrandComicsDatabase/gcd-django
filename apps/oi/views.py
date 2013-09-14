@@ -4080,7 +4080,7 @@ def image_compare(request, changeset, revision):
         if Image.objects.filter(content_type=\
                 ContentType.objects.get_for_model(revision.object),
             object_id=revision.object.id, type=revision.type, deleted=False).count():
-                kwargs['double_upload'] = '%s has an %s. Additional images ' \
+                kwargs['double_upload'] = u'%s has an %s. Additional images ' \
                 'cannot be uploaded, only replacements are possible.' \
                 % (revision.object, revision.type.description)
 

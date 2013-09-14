@@ -5,7 +5,7 @@
 {% load credits %}
 
 {% block title %}
-GCD :: Brand :: {{ brand.name }}
+GCD :: Brand Emblem :: {{ brand.name }}
 {% endblock %}
 
 {% block css %}
@@ -16,7 +16,7 @@ GCD :: Brand :: {{ brand.name }}
 {% block view_body %}
 
 {% with brand as publisher %}
-{% with "Brand" as description %}
+{% with "Brand Emblem" as description %}
 {% with "brands" as url_suffix %}
   {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}

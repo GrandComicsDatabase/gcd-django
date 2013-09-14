@@ -178,7 +178,7 @@ def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
 def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains=brand_group_name)
     return generic_by_name(request, brand_group_name, q_obj, sort,
-                           BrandGroup, 'gcd/search/brand_list.html')
+                           BrandGroup, 'gcd/search/brand_group_list.html')
 
 def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains=brand_name)
@@ -375,6 +375,8 @@ def search(request):
     if view_type == 'publisher':
         view_type += 's'
         param_type = 'publisher_name'
+    elif view_type == 'brand_group':
+        param_type = 'brand_group_name'
     elif view_type == 'brand':
         param_type = 'brand_name'
     elif view_type == 'indicia_publisher':

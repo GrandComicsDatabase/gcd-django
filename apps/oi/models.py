@@ -1934,7 +1934,7 @@ class BrandGroupRevision(PublisherRevisionBase):
 
     def get_absolute_url(self):
         if self.brand_group is None:
-            return "/brandgroup/revision/%i/preview" % self.id
+            return "/brand_group/revision/%i/preview" % self.id
         return self.brand_group.get_absolute_url()
 
 class BrandRevisionManager(PublisherRevisionManagerBase):
