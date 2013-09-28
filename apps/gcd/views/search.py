@@ -666,6 +666,7 @@ def process_advanced(request):
 
     if item_name in ['cover', 'issue_cover']:
         context['table_width'] = COVER_TABLE_WIDTH
+        context['NO_ADS'] = True
         return paginate_response(request, items, template, context,
                              page_size=50, callback_key='tags',
                              callback=get_image_tags_per_page)
