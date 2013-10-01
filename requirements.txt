@@ -9,7 +9,7 @@ RBTools
 South
 django-appconf
 django-compressor
-django-imagekit
+django-imagekit<3.0
 git+git://github.com/GrandComicsDatabase/django-taggit.git
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
 git+git://github.com/GrandComicsDatabase/django-mobile.git
@@ -18,3 +18,4 @@ wsgiref
 pyelasticsearch
 django-haystack
 python-dateutil
+git+git://github.com/wkarpeta/elasticstack.git
