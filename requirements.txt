@@ -18,4 +18,4 @@ wsgiref
 pyelasticsearch
 django-haystack
 python-dateutil
-git+git://github.com/wkarpeta/elasticstack.git
+git+git://github.com/bennylope/elasticstack.git
