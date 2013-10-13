@@ -3255,7 +3255,8 @@ class IssueRevision(Revision):
         if not self._seen_brand and field_name in ('brand', 'no_brand'):
             self._seen_brand = True
             return 1
-        if not self._seen_page_count:
+        if not self._seen_page_count and \
+          field_name in ('page_count', 'page_count_uncertain'):
             self._seen_page_count = True
             if field_name == 'page_count':
                 return 1
