@@ -41,6 +41,13 @@ urlpatterns = patterns('',
     (r'^publisher/(?P<publisher_id>\d+)/brands/$',
      'apps.gcd.views.details.brands'),
 
+    url(r'^brand_group/(?P<brand_group_id>\d+)/$',
+     'apps.gcd.views.details.brand_group', name='show_brand_group'),
+    (r'^brand_group/name/(?P<brand_group_name>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.brand_group_by_name'),
+    (r'^brand_group/name/(?P<brand_group_name>.+)/$',
+     'apps.gcd.views.search.brand_group_by_name'),
+     
     url(r'^brand/(?P<brand_id>\d+)/$',
      'apps.gcd.views.details.brand', name='show_brand'),
     (r'^brand/name/(?P<brand_name>.+)/sort/(?P<sort>.+)/$',

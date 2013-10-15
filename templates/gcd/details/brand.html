@@ -5,7 +5,7 @@
 {% load credits %}
 
 {% block title %}
-GCD :: Brand :: {{ brand.name }}
+GCD :: Brand Emblem :: {{ brand.name }}
 {% endblock %}
 
 {% block css %}
@@ -16,7 +16,7 @@ GCD :: Brand :: {{ brand.name }}
 {% block view_body %}
 
 {% with brand as publisher %}
-{% with "Brand" as description %}
+{% with "Brand Emblem" as description %}
 {% with "brands" as url_suffix %}
   {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
@@ -81,6 +81,11 @@ GCD :: Brand :: {{ brand.name }}
           <input type="submit" value="{% trans 'Add Brand Image' %}">
         </form>
     {% endif %}
+      <form method="POST"
+        action="{% url add_brand_use brand_id=brand.id %}">
+    {% csrf_token %}
+        <input id="add_use" name="add_use" type="submit" value="Add Brand Use"></input>
+      </form>
   {% endif %}
       </div>
       <div class="change_history">
@@ -94,6 +99,68 @@ GCD :: Brand :: {{ brand.name }}
 {% endif %}
   </div> <!-- control_container -->
 </div> <!-- control_body -->
+
+{% if brand.group.count %}
+<hr>
+<h3>Brand emblem belongs to the brand group{{ brand.group.count|pluralize }}:</h3>
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Brand Group </th>
+    <th> Publisher </th>
+    <th> Issues </th>
+    <th> Year Began </th>
+    <th> Year Ended </th>
+    <th> Notes </th>
+  </tr>
+  {% for group in brand.group.all %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ group.get_absolute_url }}">{{ group.name }}</a> </td>
+    <td> <a href="{{ group.parent.get_absolute_url }}">{{ group.parent }}</a> </td>
+    <td> {{ group.issue_count }} </td>
+    <td> {{ group.year_began|default:"" }} </td>
+    <td> {{ group.year_ended|default:"" }} </td>
+    <td> {{ group.notes }} </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if uses.count %}
+<hr>
+<h3>Brand emblem is in use at the following publishers:</h3>
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Publisher </th>
+    <th> Year Began </th>
+    <th> Year Ended </th>
+    <th> Notes </th>
+  {% if user.is_authenticated %}
+    <th> Action </th>
+  {% endif %}
+  </tr>
+  {% for use in uses %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ use.publisher.get_absolute_url }}">{{ use.publisher }}</a> </td>
+    <td> {{ use.year_began|default:"" }} </td>
+    <td> {{ use.year_ended|default:"" }} </td>
+    <td> {{ use.notes }} </td>
+  {% if user.is_authenticated %}
+    <td>
+    {% if use.reserved %}
+    is reserved
+    {% else %}
+      <form method="POST"
+        action="{% url reserve_revision model_name='brand_use',id=use.id %}">
+    {% csrf_token %}
+        <input id="edit" name="edit" type="submit" value="Edit"></input>
+      </form>
+    {% endif %}
+    </td>
+  {% endif %}
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
 
 {% if page.object_list.count %}
 <table id="publisher_detail_listing" class="listing">
