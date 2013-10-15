@@ -1,0 +1,7 @@
+{% for post in posts %}
+<div class="feed-post">
+{{ post.content|safe }}
+<a href="{{ post.url }}" title="{{ post.title|escape }}"><img alt="comment on facebook" src="{{ MEDIA_URL }}/img/gcd/social/facebook_32.png"></a>
+</div>
+<hr>
+{% endfor %}
