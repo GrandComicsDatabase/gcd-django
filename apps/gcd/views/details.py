@@ -237,6 +237,7 @@ def show_series(request, series, preview=False):
         'preview': preview,
         'is_empty': IS_EMPTY,
         'is_none': IS_NONE,
+        'NO_ADS': True
       },
       context_instance=RequestContext(request))
 
@@ -520,7 +521,8 @@ def covers_to_replace(request, starts_with=None):
       'gcd/status/covers_to_replace.html',
       {
         'table_width' : table_width,
-        'starts_with' : starts_with
+        'starts_with' : starts_with,
+        'NO_ADS': True,
       },
       page_size=50,
       callback_key='tags',
@@ -595,6 +597,7 @@ def daily_covers(request, show_date=None):
         'date_after' : date_after,
         'date_before' : date_before,
         'table_width' : table_width,
+        'NO_ADS': True
       },
       page_size=50,
       callback_key='tags',
@@ -795,6 +798,7 @@ def cover(request, issue_id, size):
         'cover_tag': cover_tag,
         'extra': extra,
         'error_subject': '%s cover' % issue,
+        'NO_ADS': True
       },
       context_instance=RequestContext(request)
     )
@@ -826,7 +830,8 @@ def covers(request, series_id):
       'series': series,
       'error_subject': '%s covers' % series,
       'table_width': table_width,
-      'can_mark': can_mark
+      'can_mark': can_mark,
+      'NO_ADS': True
     }
 
     return paginate_response(request, covers, 'gcd/details/covers.html', vars,
@@ -1018,6 +1023,7 @@ def show_issue(request, issue, preview=False):
         'show_original': show_original,
         'error_subject': '%s' % issue,
         'preview': preview,
+        'NO_ADS': True
       },
       context_instance=RequestContext(request))
 
