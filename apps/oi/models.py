@@ -1907,17 +1907,15 @@ class BrandGroupRevision(PublisherRevisionBase):
 
     def commit_to_display(self, clear_reservation=True):
         brand_group = self.brand_group
-        # TODO stats for brands
+        # TODO global stats for brand groups ?
         if brand_group is None:
             brand_group = BrandGroup()
             self.parent.brand_count += 1
             self.parent.save()
-            #update_count('brands', 1)
 
         elif self.deleted:
             self.parent.brand_count -= 1
             self.parent.save()
-            #update_count('brands', -1)
             brand_group.delete()
             return
 
@@ -2048,20 +2046,9 @@ class BrandRevision(PublisherRevisionBase):
         brand = self.brand
         if brand is None:
             brand = Brand()
-            # TODO Check, remove after full migration
-            if self.parent:
-                self.parent.brand_count += 1
-                self.parent.save()
-            # TODO remove after correct South migration
-            else:
-                self.parent = Publisher.objects.get(id=122)
-
             update_count('brands', 1)
 
         elif self.deleted:
-            # TODO Check
-            self.parent.brand_count -= 1
-            self.parent.save()
             update_count('brands', -1)
             brand.delete()
             return
