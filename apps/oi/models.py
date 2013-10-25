@@ -2161,11 +2161,6 @@ class BrandUseRevision(Revision):
     year_ended_uncertain = models.BooleanField(blank=True)
     notes = models.TextField(max_length = 255, blank=True)
 
-    # TODO we might need this, not all functionality for editing BrandUse is
-    # there at this stage
-    #previous_revision = models.OneToOneField('self', null=True,
-                                             #related_name='next_revision')
-
     def _source(self):
         return self.brand_use
 
@@ -2207,6 +2202,18 @@ class BrandUseRevision(Revision):
         return u'%s at %s (%s)' % (self.emblem.name, self.publisher.name,
                                    self.year_began)
 
+    def previous(self):
+        if self.source:
+            return super(BrandUseRevision, self).previous()
+        else: # BrandUse is deleted, show content of this revision as deleted
+            return self
+
+    def posterior(self):
+        if self.source:
+            return super(BrandUseRevision, self).posterior()
+        else:
+            return None
+
     def active_issues(self):
         return self.emblem.issue_set.exclude(deleted=True)\
           .filter(issue__series__publisher=self.publisher)
@@ -2232,10 +2239,8 @@ class BrandUseRevision(Revision):
             brand_use.emblem = self.emblem
         elif self.deleted:
             brand_use = self.brand_use
-            brand_use.delete()
-            deleted_link = self.source
             for revision in brand_use.revisions.all():
-                setattr(revision, brand_use, None)
+                setattr(revision, 'brand_use', None)
                 revision.save()
             brand_use.delete()
             return

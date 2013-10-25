@@ -150,9 +150,14 @@ GCD :: Brand Emblem :: {{ brand.name }}
     is reserved
     {% else %}
       <form method="POST"
-        action="{% url reserve_revision model_name='brand_use',id=use.id %}">
+        action="{% url reserve_revision model_name='brand_use',id=use.id %}" style="display:inline">
     {% csrf_token %}
         <input id="edit" name="edit" type="submit" value="Edit"></input>
+      </form>
+      <form method="POST"
+        action="{% url delete_revision model_name='brand_use',id=use.id %}" style="display:inline">
+    {% csrf_token %}
+        <input type="submit" value="Delete"></input>
       </form>
     {% endif %}
     </td>

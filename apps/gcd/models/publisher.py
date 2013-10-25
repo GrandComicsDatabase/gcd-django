@@ -176,10 +176,9 @@ class BrandGroup(BasePublisher):
     issue_count = models.IntegerField(default=0)
 
     def deletable(self):
-        return self.brand_set.count() == 0 and \
+        return self.active_emblems().count() == 0 and \
             self.brand_revisions.filter(changeset__state__in=states.ACTIVE)\
                                 .count() == 0
-
 
     def active_emblems(self):
         return self.brand_set.exclude(deleted=True)
@@ -276,10 +275,7 @@ class BrandUse(models.Model):
         return False
 
     def deletable(self):
-        return self.issue_count == 0 #and \
-          #self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
-                              #.count() == 0
-        # TODO: hmm, need to check for revisions ?
+        return True
 
     def active_issues(self):
         return self.emblem.issue_set.exclude(deleted=True)\

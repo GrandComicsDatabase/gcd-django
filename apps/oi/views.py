@@ -202,6 +202,10 @@ def reserve(request, id, model_name, delete=False,
             if model_name == 'cover':
                 return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                          kwargs={'issue_id' : display_obj.issue.id}))
+            if model_name == 'brand_use':
+                return HttpResponseRedirect(urlresolvers.reverse(
+                     'show_brand',
+                     kwargs={str('brand_id'): display_obj.emblem.id}))
             return HttpResponseRedirect(urlresolvers.reverse(
                      'show_%s' % model_name,
                      kwargs={str('%s_id' % model_name): id}))
