@@ -1024,7 +1024,7 @@ def get_bulk_issue_revision_form(series, method, user=None):
         def __init__(self, *args, **kwargs):
             super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
             self.fields['brand'].queryset = \
-              series.publisher.active_brands_no_pending()
+              series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
               series.publisher.active_indicia_publishers_no_pending()
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
