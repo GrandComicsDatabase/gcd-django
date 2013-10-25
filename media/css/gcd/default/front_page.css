@@ -294,3 +294,10 @@ div.feed-post {
     float: left;
     margin-bottom: 1em;
 }
+
+hr.feed-post {
+    height: 4px;
+    background-color: #77E;
+    border: none;
+}
+
