@@ -1034,10 +1034,25 @@ def get_bulk_issue_revision_form(series, method, user=None):
             if not series.has_indicia_frequency:
                 indicia_frequency = forms.CharField(widget=forms.HiddenInput,
                                                     required=False)
+                no_indicia_frequency = forms.CharField(widget=forms.HiddenInput,
+                                                    required=False)
             if not series.has_volume:
                 volume = forms.CharField(widget=forms.HiddenInput,
-                                                required=False)
+                                         required=False)
+                no_volume = forms.CharField(widget=forms.HiddenInput,
+                                            required=False)
                 display_volume_with_number = \
+                  forms.CharField(widget=forms.HiddenInput, required=False)
+            if not series.has_isbn:
+                no_isbn = \
+                  forms.CharField(widget=forms.HiddenInput, required=False)
+            if not series.has_barcode:
+                no_barcode = \
+                  forms.CharField(widget=forms.HiddenInput, required=False)
+            if not series.has_rating:
+                rating = forms.CharField(widget=forms.HiddenInput,
+                                         required=False)
+                no_rating = \
                   forms.CharField(widget=forms.HiddenInput, required=False)
 
         after = forms.ModelChoiceField(required=False,
@@ -1078,7 +1093,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
         return ['indicia_publisher', 'indicia_pub_not_printed', 'brand',
                 'no_brand', 'indicia_frequency', 'no_indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
-                'editing', 'no_editing', 'no_isbn', 'no_barcode', 'comments']
+                'editing', 'no_editing', 'no_isbn', 'no_barcode', 'rating',
+                'no_rating', 'comments']
 
     def clean(self):
         cd = self.cleaned_data
@@ -1109,6 +1125,13 @@ class BulkIssueRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Indicica Frequency field and No Indicia Frequency checkbox '
                'cannot both be filled in.'])
+
+        if 'rating' in cd:
+            cd['rating'] = cd['rating'].strip()
+
+            if cd['rating'] != "" and cd['no_rating']:
+                raise forms.ValidationError('You cannot specify a rating and '
+                    'check "no rating" at the same time')
 
         return cd
 
