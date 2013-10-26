@@ -33,7 +33,7 @@ class CountStatsManager(models.Manager):
                                          series__is_comics_publication=True)\
                                          .exclude(variant_of=None).count())
             self.create(name='issue indexes', language=language,
-              count=Issue.objects.filter(deleted=False,
+              count=Issue.objects.filter(deleted=False, variant_of=None, 
                                          series__is_comics_publication=True)\
                          .exclude(is_indexed=INDEXED['skeleton']).count())
             self.create(name='covers', language=language,
@@ -59,7 +59,7 @@ class CountStatsManager(models.Manager):
 
         self.create(name='issue indexes', language=language,
           count=Issue.objects.filter(series__language=language,
-                                     deleted=False,
+                                     deleted=False, variant_of=None, 
                                      series__is_comics_publication=True)\
                      .exclude(is_indexed=INDEXED['skeleton']).count())
 

@@ -86,6 +86,7 @@ GCD :: Brand :: {{ brand.name }}
     <th> Issues </th>
     <th> Year Began</th>
     <th> Year Ended</th>
+    <th> Notes </th>
   </tr>
 {% for brand in brand_emblems %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
@@ -94,6 +95,7 @@ GCD :: Brand :: {{ brand.name }}
     <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }} </td>
     <td> {{ brand.year_ended|default:"" }} </td>
+    <td> {{ brand.notes }} </td>
   </tr>
 {% endfor %}
 </table>
