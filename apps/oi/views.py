@@ -806,7 +806,10 @@ thanks,
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
-        return HttpResponseRedirect(urlresolvers.reverse('pending'))
+        if changeset.change_type is CTYPES['cover']:
+            return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 @permission_required('gcd.can_approve')
 def discuss(request, id):
@@ -866,7 +869,10 @@ thanks,
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
-        return HttpResponseRedirect(urlresolvers.reverse('pending'))
+        if changeset.change_type is CTYPES['cover']:
+            return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 @permission_required('gcd.can_approve')
 def approve(request, id):
@@ -1125,7 +1131,11 @@ thanks,
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
-        return HttpResponseRedirect(urlresolvers.reverse('pending'))
+        if changeset.change_type is CTYPES['cover']:
+            return HttpResponseRedirect(
+                urlresolvers.reverse('pending_covers'))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 def send_comment_observer(request, changeset, comments):
     email_body = u"""
