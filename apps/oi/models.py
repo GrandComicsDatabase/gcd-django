@@ -2013,6 +2013,8 @@ class BrandRevision(PublisherRevisionBase):
     def _imps_for(self, field_name):
         if field_name == 'parent':
             return 1
+        if field_name == 'group':
+            return 1
         return PublisherRevisionBase._imps_for(self, field_name)
 
     def _queue_name(self):
