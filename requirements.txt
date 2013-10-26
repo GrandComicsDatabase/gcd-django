@@ -10,7 +10,7 @@ RBTools
 South
 django-appconf
 django-compressor
-django-imagekit>=3.0
+django-imagekit<3.0
 git+git://github.com/GrandComicsDatabase/django-taggit.git
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
 git+git://github.com/GrandComicsDatabase/django-mobile.git
