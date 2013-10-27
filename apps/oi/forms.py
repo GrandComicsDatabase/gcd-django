@@ -463,9 +463,9 @@ def get_brand_revision_form(source=None, user=None, revision=None,
     if revision and revision.source:
         publishers = revision.source.in_use.all().values_list('publisher_id',
                                                               flat=True)
-        groups = BrandGroup.objects.filter(parent__in=publishers)
+        groups = BrandGroup.objects.filter(parent__in=publishers, deleted=False)
     elif publisher:
-        groups = BrandGroup.objects.filter(parent=publisher.id)
+        groups = BrandGroup.objects.filter(parent=publisher.id, deleted=False)
 
     if groups:
         choices = [[g.id, g] for g in groups]
