@@ -734,9 +734,9 @@ def daily_changes(request, show_date=None):
       .exclude(changeset__indexer=anon).values_list('image', flat=True)
 
     brand_revisions = list(image_revisions.filter(type__name='BrandScan'))
-    brands = Brand.objects.filter(image_resources__id__in=brand_revisions).distinct()
-    if brands:
-      images.append((brands, '', 'Brand emblem', 'brand'))
+    brand_images = Brand.objects.filter(image_resources__id__in=brand_revisions).distinct()
+    if brand_images:
+      images.append((brand_images, '', 'Brand emblem', 'brand'))
 
     indicia_revisions = list(image_revisions.filter(type__name='IndiciaScan'))
     indicia_issues = Issue.objects.filter(image_resources__id__in=indicia_revisions)
