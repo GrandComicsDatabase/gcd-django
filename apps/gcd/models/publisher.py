@@ -86,7 +86,7 @@ class Publisher(BasePublisher):
         """
         # TODO: check for pending brand_use deletes
         return self.active_brand_emblems().exclude(revisions__deleted=True,
-          revisions__changeset__state__in=states.ACTIVE)
+          revisions__changeset__state__in=states.ACTIVE).distinct()
 
     def active_indicia_publishers(self):
         return self.indiciapublisher_set.exclude(deleted=True)
