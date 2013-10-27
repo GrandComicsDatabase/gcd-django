@@ -763,7 +763,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             if revision:
                 if revision.brand and revision.brand not in self.fields['brand'].queryset:
                     self.fields['brand'].queryset = self.fields['brand'].queryset \
-                      | Brand.objects.filter(id=revision.brand.id)
+                      | Brand.objects.filter(id=revision.brand.id).distinct()
                 if revision.indicia_publisher and revision.indicia_publisher not in \
                   self.fields['indicia_publisher'].queryset:
                     self.fields['indicia_publisher'].queryset = \
