@@ -2207,8 +2207,11 @@ class BrandUseRevision(Revision):
     def previous(self):
         if self.source:
             return super(BrandUseRevision, self).previous()
-        else: # BrandUse is deleted, show content of this revision as deleted
+        elif self.deleted:
+            # BrandUse is deleted, show content of this revision as deleted
             return self
+        else:
+            return None
 
     def posterior(self):
         if self.source:
