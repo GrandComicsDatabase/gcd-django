@@ -99,7 +99,7 @@
 <table class="listing">
   <tr>
     <th> Brand </th>
-    <th colspan="2"> Parent </th>
+    <th> Group </th>
     <th> #&nbsp;Issues </th>
     <th> Year Began</th>
     <th> Year Ended</th>
@@ -108,8 +108,12 @@
   {% for brand in brands %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
-    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ brand.parent.country.code|lower }}.png" alt="{{ brand.parent.country.code|upper }}"></td>
-    <td class="listing_publisher"> <a href="{{ brand.parent.get_absolute_url }}">{{ brand.parent.name }}</a></td>
+    <td class="listing_country"> 
+    {% for group in brand.group.all %}
+    <img align="top" src="{{ MEDIA_URL }}/img/gcd/flags/{{ group.parent.country.code|lower }}.png" alt="{{ group.parent.country.code|upper }}">
+    <a href="{{ group.get_absolute_url }}">{{ group.name }}</a>
+    {% endfor %}
+    </td>
     <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }}</td>
     <td> {{ brand.year_ended|default:"" }}</td>
