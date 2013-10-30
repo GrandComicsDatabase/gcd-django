@@ -488,7 +488,15 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                         'publisher_id': publisher_id}))
 
         if hasattr(form, 'save_m2m'):
-            form.save_m2m()
+            # TODO
+            # I don't quite understand what is going on here, but for image
+            # and cover revision form.save_m2m() fails with a comment.
+            # But we don't need form.save_m2m() for these anyway. I suspect
+            # problems since relation to ChangesetComment is called 'comments'
+            # and the text 'field' is called that as well.
+            if not (len(form.cleaned_data) == 1 and \
+              'comments' in form.cleaned_data):
+                form.save_m2m()
         if 'submit' in request.POST:
             return submit(request, revision.changeset.id)
         if 'queue' in request.POST:
