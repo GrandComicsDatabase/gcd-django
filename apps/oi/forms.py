@@ -463,9 +463,9 @@ def get_brand_revision_form(source=None, user=None, revision=None,
     if revision and revision.source:
         publishers = revision.source.in_use.all().values_list('publisher_id',
                                                               flat=True)
-        groups = BrandGroup.objects.filter(parent__in=publishers)
+        groups = BrandGroup.objects.filter(parent__in=publishers, deleted=False)
     elif publisher:
-        groups = BrandGroup.objects.filter(parent=publisher.id)
+        groups = BrandGroup.objects.filter(parent=publisher.id, deleted=False)
 
     if groups:
         choices = [[g.id, g] for g in groups]
@@ -763,7 +763,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             if revision:
                 if revision.brand and revision.brand not in self.fields['brand'].queryset:
                     self.fields['brand'].queryset = self.fields['brand'].queryset \
-                      | Brand.objects.filter(id=revision.brand.id)
+                      | Brand.objects.filter(id=revision.brand.id).distinct()
                 if revision.indicia_publisher and revision.indicia_publisher not in \
                   self.fields['indicia_publisher'].queryset:
                     self.fields['indicia_publisher'].queryset = \
