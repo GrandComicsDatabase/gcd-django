@@ -230,7 +230,8 @@ class Brand(BasePublisher):
     def deletable(self):
         return self.issue_count == 0 and \
           self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
-                              .count() == 0
+                              .count() == 0 and \
+          self.in_use.filter(reserved=True).count() == 0
 
     def pending_deletion(self):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,

@@ -271,6 +271,22 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
                                                issue=cover.issue,
                                                cover=cover, deleted=True)
                 cover_revision.save()
+    elif model_name == 'brand' and delete:
+        for brand_use in revision.brand.in_use.all():
+            # TODO I think we get into trouble if we use _is_reservable here,
+            # so we do it by hand, but we will change is_reservable anyway
+            if brand_use.reserved:
+                # catched by try in reserve, transaction.rollback there
+                # should take care of the changes here
+                raise ValueError
+            else:
+                use_revision = BrandUseRevision.objects.clone_revision(\
+                                                changeset=changeset,
+                                                brand_use=brand_use)
+                use_revision.deleted = True
+                use_revision.save()
+                brand_use.reserved = True
+                brand_use.save()
     elif model_name == 'publisher' and delete:
         for brand in revision.publisher.active_brands():
             brand_revision = BrandRevision.objects.clone_revision(brand=brand,
