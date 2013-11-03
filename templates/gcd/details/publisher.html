@@ -39,6 +39,14 @@
           <dd> <a href="{{ publisher.get_absolute_url }}brands/">{{ publisher.brand_count }}</a>
   {% endif %}
 {% endif %}
+{% if publisher.branduse_set.count %}
+          <dt> Brand Emblems in Use:
+  {% if preview %}
+          <dd> {{ publisher.branduse_set.count }}
+  {% else %}
+          <dd> <a href="{{ publisher.get_absolute_url }}brand_uses/">{{ publisher.branduse_set.count }}</a>
+  {% endif %}
+{% endif %}
           <p>
           <dt> Total Number of Series:
           <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode }}">{{ publisher.series_count }}</a>

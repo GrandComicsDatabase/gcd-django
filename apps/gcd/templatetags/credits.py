@@ -267,9 +267,9 @@ def show_cover_contributor(cover_revision):
 # these next three might better fit into a different file
 
 def get_country_flag(country):
-    return u'<img src="%s/img/gcd/flags/%s.png" alt="%s" '\
+    return mark_safe(u'<img src="%s/img/gcd/flags/%s.png" alt="%s" '\
            'class="embedded_flag">' \
-           % (settings.MEDIA_URL, country.code.lower(), esc(country))
+           % (settings.MEDIA_URL, country.code.lower(), esc(country)))
 
 def show_country(series):
     """

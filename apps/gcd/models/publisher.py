@@ -240,6 +240,9 @@ class Brand(BasePublisher):
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
 
+    def group_parents(self):
+        return self.group.values_list('parent', flat=True)
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_brand',

@@ -40,6 +40,8 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.indicia_publishers'),
     (r'^publisher/(?P<publisher_id>\d+)/brands/$',
      'apps.gcd.views.details.brands'),
+    (r'^publisher/(?P<publisher_id>\d+)/brand_uses/$',
+     'apps.gcd.views.details.brand_uses'),
 
     url(r'^brand_group/(?P<brand_group_id>\d+)/$',
      'apps.gcd.views.details.brand_group', name='show_brand_group'),

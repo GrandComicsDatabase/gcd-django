@@ -191,6 +191,33 @@ def brands(request, publisher_id):
       'error_subject' : '%s brands' % publisher,
     })
 
+def brand_uses(request, publisher_id):
+    """
+    Finds brand emblems used at a publisher and presents them as a paginated list.
+    """
+
+    publisher = get_object_or_404(Publisher, id = publisher_id)
+    if publisher.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'publisher', 'id': publisher_id}))
+
+    brand_uses = publisher.branduse_set.all()
+
+    sort = ORDER_ALPHA
+    if 'sort' in request.GET:
+        sort = request.GET['sort']
+
+    if (sort == ORDER_CHRONO):
+        brand_uses = brand_uses.order_by('year_began', 'emblem__name')
+    else:
+        brand_uses = brand_uses.order_by('emblem__name', 'year_began')
+
+    return paginate_response(request, brand_uses,
+      'gcd/details/brand_uses.html', {
+        'publisher' : publisher,
+        'error_subject' : '%s brands' % publisher,
+      })
+
 def indicia_publishers(request, publisher_id):
     """
     Finds indicia publishers of a publisher and presents them as

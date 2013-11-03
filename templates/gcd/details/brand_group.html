@@ -111,7 +111,11 @@ GCD :: Brand :: {{ brand.name }}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date }} </td>
-    <td> {{ issue|show_indicia_pub }} </td>
+    <td> {{ issue|show_indicia_pub }}
+    {% if issue.series.publisher != brand.parent %}
+    ({{ issue.series.publisher.country|get_country_flag }}<a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher }}</a>)
+    {% endif %}
+    </td>
   </tr>
   {% endfor %}
 </table>
