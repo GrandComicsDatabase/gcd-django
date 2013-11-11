@@ -507,6 +507,7 @@ dl.pub_data dd {
 
 .embedded_flag {
     height: 1em;
+    vertical-align: middle;
 }
 
 #index_status {
