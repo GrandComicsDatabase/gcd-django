@@ -2380,6 +2380,7 @@ def _display_add_story_form(request, issue, form, changeset_id):
 # Reprint Link Editing
 ##############################################################################
 
+@permission_required('gcd.can_reserve')
 def confirm_reprint_migration(request, id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
