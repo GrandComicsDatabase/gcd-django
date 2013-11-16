@@ -19,7 +19,7 @@ def get_generic_image_tag(image, alt_text):
                      str(hash(image.modified)) + '" alt="' + esc(alt_text) \
                      + '" ' + ' class="' + img_class + '" width="' + str(width) + '"/>')
 
-def get_image_tag(cover, alt_text, zoom_level, is_comics_publication=True):
+def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     img_class = 'cover_img'
     if zoom_level == ZOOM_SMALL:
         width = 100
@@ -35,7 +35,7 @@ def get_image_tag(cover, alt_text, zoom_level, is_comics_publication=True):
         width = 400
         size = 'large'
 
-    if not is_comics_publication:
+    if not can_have_cover:
         return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
             'img/noupload_' + size +'.png" alt="No image"' + \
             'class="cover_img">')
@@ -78,7 +78,7 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
     else:
         return mark_safe(get_image_tag(cover=None, zoom_level=zoom_level,
                     alt_text=alt_text,
-                    is_comics_publication=issue.series.is_comics_publication))
+                    can_have_cover=issue.can_have_cover()))
 
     if exclude_ids:
         covers = covers.exclude(id__in=exclude_ids)

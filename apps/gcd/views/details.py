@@ -518,7 +518,7 @@ def _get_scan_table(series):
     if not series.is_comics_publication:
         return Cover.objects.none(), get_image_tag(cover=None, 
           zoom_level=ZOOM_MEDIUM, alt_text='First Issue Cover', 
-          is_comics_publication=series.is_comics_publication)
+          can_have_cover=series.is_comics_publication)
     # all a series' covers + all issues with no covers
     covers = Cover.objects.filter(issue__series=series, deleted=False) \
                           .select_related()
