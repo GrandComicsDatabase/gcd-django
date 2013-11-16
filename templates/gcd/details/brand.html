@@ -186,7 +186,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
     <td> {{ issue.publication_date }} </td>
     <td> {{ issue|show_indicia_pub }}
       {% if issue.series.publisher.id not in brand.group_parents %}
-    ({{ issue.series.publisher.country|get_country_flag }}<a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher }}</a>)
+    ({{ issue.series.publisher.country|get_country_flag }} <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher }}</a>)
       {% endif %}
     </td>
   </tr>

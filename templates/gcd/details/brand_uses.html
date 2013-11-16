@@ -37,7 +37,7 @@
     {% for group in brand.group.all %}
     <a href="{{ group.get_absolute_url }}">{{ group.name }}</a>
       {% if group.parent != brand_use.publisher %}
-    ({{ group.parent.country|get_country_flag }}<a href="{{ group.parent.get_absolute_url }}">{{ group.parent }}</a>)
+    ({{ group.parent.country|get_country_flag }} <a href="{{ group.parent.get_absolute_url }}">{{ group.parent }}</a>)
       {% endif %}
     {% endfor %}
     </td>
