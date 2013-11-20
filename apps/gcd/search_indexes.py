@@ -5,6 +5,7 @@ from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
 
 class IssueIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
         return Issue
@@ -16,9 +17,13 @@ class IssueIndex(indexes.SearchIndex, indexes.Indexable):
     def get_updated_field(self):
         return "modified"
 
+    def prepare_facet_model_name(self, obj):
+        return "issue"
+
 
 class SeriesIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
         return Series
@@ -30,9 +35,13 @@ class SeriesIndex(indexes.SearchIndex, indexes.Indexable):
     def get_updated_field(self):
         return "modified"
 
+    def prepare_facet_model_name(self, obj):
+        return "series"
+
 
 class StoryIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
         return Story
@@ -44,12 +53,16 @@ class StoryIndex(indexes.SearchIndex, indexes.Indexable):
     def get_updated_field(self):
         return "modified"
 
+    def prepare_facet_model_name(self, obj):
+        return "story"
+
 
 class PublisherIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
                                'search/indexes/gcd/publisher_text.txt')
+    facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
         return Publisher
@@ -61,12 +74,16 @@ class PublisherIndex(indexes.SearchIndex, indexes.Indexable):
     def get_updated_field(self):
         return "modified"
 
+    def prepare_facet_model_name(self, obj):
+        return "publisher"
+
 
 class IndiciaPublisherIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
                                'search/indexes/gcd/publisher_text.txt')
+    facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
         return IndiciaPublisher
@@ -78,12 +95,16 @@ class IndiciaPublisherIndex(indexes.SearchIndex, indexes.Indexable):
     def get_updated_field(self):
         return "modified"
 
+    def prepare_facet_model_name(self, obj):
+        return "indicia_publisher"
+
 
 class BrandIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
                                'search/indexes/gcd/publisher_text.txt')
+    facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
         return Brand
@@ -94,3 +115,7 @@ class BrandIndex(indexes.SearchIndex, indexes.Indexable):
 
     def get_updated_field(self):
         return "modified"
+
+    def prepare_facet_model_name(self, obj):
+        return "brand"
+
