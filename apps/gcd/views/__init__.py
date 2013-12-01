@@ -77,6 +77,8 @@ class ResponsePaginator(object):
         """
         Either template or view should be set
         """
+        if template is None and view is None:
+            raise ValueError
         self.template = template
         self.vars = vars and vars or {}
         self.callback_key = callback_key
@@ -122,8 +124,10 @@ class ResponsePaginator(object):
 
 def paginate_response(request, queryset, template, vars, page_size=100,
                       callback_key=None, callback=None):
-    return ResponsePaginator(queryset, vars, template, page_size,
-                             callback_key, callback).paginate(request)
+    return ResponsePaginator(queryset, vars=vars, template=template,
+                             page_size=page_size,
+                             callback_key=callback_key,
+                             callback=callback).paginate(request)
 
 
 def render_error(request, error_text, redirect=True, is_safe = False):

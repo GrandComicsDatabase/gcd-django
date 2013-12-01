@@ -15,17 +15,10 @@
       </p>
 
     {% if query and paginator.count > 0 %}
-      <h1 class="item_id search_id">
-      <div class="left">
-        Results found: {{ paginator.count }}
-      </div></h1>
+      <h1 class="item_id search_id">Search Results:</h1>
       <div class="item_id">
-        {% if facets.fields.facet_model_name %}
-          <ul>
-          {% for model in facets.fields.facet_model_name %}
-            <li><a href="?q={{ query }}{% if request.GET.models %}&amp;models={{ request.GET.models }}{% endif %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}">{{ model.0 }}</a> ({{ model.1 }})</li>
-          {% endfor %}
-          </ul>
+        {% if request.GET.q %}
+          Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} results matching your search for '{{ request.GET.q }}'.
         {% endif %}
 
         {% with extra_string="q="|add:query %}
@@ -33,6 +26,13 @@
         {% endwith %}
       </div>
       <div style="clear: both;"></div>
+      {% if facets.fields.facet_model_name %}
+        <ul>
+          {% for model in facets.fields.facet_model_name %}
+            <li><a href="?q={{ query }}{% if request.GET.models %}&amp;models={{ request.GET.models }}{% endif %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}">{{ model.0 }}</a> ({{ model.1 }})</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
       <table class="listing left">
         <tr>
           <th style="width: 70px;">Type</th>
@@ -42,16 +42,12 @@
           <tr class="{% cycle 'listing_even' 'listing_odd' %}">
             {% if result.model_name == 'series' %}
               <td>[SERIES]</td>
-              <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}
-                ({{ result.object.year_began }})</a></td>
+              <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.full_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'issue' %}
               <td>[ISSUE]</td>
               <td><a href="{{ result.object.get_absolute_url }}">
-              {{ result.object.series.name }} #{{ result.object.number }}
-              {% if result.object.title %}
-                - {{ result.object.title }}
-              {% endif %}</a></td>
+              {{ result.object.full_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'story' %}
               <td>[STORY]</td>
@@ -62,9 +58,7 @@
               {% endif %}</a>
               (from
               <a href="{{ result.object.issue.get_absolute_url }}">
-              {{ result.object.issue.series.name }} #{{ result.object.issue.number }}
-              {% if result.object.issue.title %}
-                  - {{ result.object.issue.title }}{% endif %}</a>)</td>
+              {{ result.object.issue.full_name }}</a>)</td>
             {% endif %}
             {% if result.model_name == 'publisher' %}
               <td>[PUBLISHER]</td>
@@ -87,10 +81,7 @@
       </table>
       <div style="clear: both;"></div>
 
-      <h1 class="item_id search_id">
-        <div class="left">
-          Results found: {{ paginator.count }}
-      </div></h1>
+      <h1 class="item_id search_id">&nbsp;  </h1>
       <div class="item_id">
         {% with extra_string="q="|add:query %}
           {% include "gcd/bits/pagination_bar.html" %}
