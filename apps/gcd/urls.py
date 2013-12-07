@@ -5,7 +5,7 @@ from django.views.generic.simple import direct_to_template
 from haystack.forms import FacetedSearchForm
 from haystack.query import SearchQuerySet
 from haystack.views import FacetedSearchView, search_view_factory
-from apps.gcd.views.search_new import PaginatedFacetedSearchView
+from apps.gcd.views.search_haystack import PaginatedFacetedSearchView
 
 
 urlpatterns = patterns('',
