@@ -3,7 +3,7 @@
   <form action="{% url apps.gcd.views.search.search %}" method="get">
     <div class="first_line">
         {% trans 'Search' %} {% include "gcd/bits/search_for.html" %}
-        <input type="text" name="query" id="query" size="15" autofocus>
+        <input type="text" name="query" id="query" size="15" {% if flavour != 'mobile' %}autofocus{% endif %}>
 {% if flavour != 'mobile' %}
         <script type="text/javascript">
         if (!("autofocus" in document.createElement("input"))) {

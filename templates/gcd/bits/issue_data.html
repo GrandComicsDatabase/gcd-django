@@ -20,6 +20,11 @@
         <dd id="on_sale_date">
         {{ issue.on_sale_date }}{% if issue.on_sale_date_uncertain %} ? {% endif %}
 {% endif %}
+{% if issue.rating and issue.series.has_rating %}
+        <dt> {% trans "Publisher's Age Guidelines" %}:
+        <dd id="rating">
+        {{ issue.rating }}
+{% endif %}
         <dt> {% trans "Indicia Publisher" %}:
         <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}
 {% if not issue.no_brand %}

@@ -7,7 +7,15 @@
 <h1 class="item_id">
   <div class="left">
   {% if preview %}
-    {% if publisher.parent %}{{ publisher.parent }} :{% endif %} {{ publisher }}
+    {% if publisher.group.count %}
+      {% for group in publisher.group.all %}
+        {{ group }}
+      {% endfor %}
+    <!-- TODO how to show for more than one group ? -->
+      : {{ publisher }}
+    {% else %}
+      {% if publisher.parent %}{{ publisher.parent }} :{% endif %} {{ publisher }}
+    {% endif %}
   {% else %}
     {% if publisher.parent %}
       <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
@@ -18,7 +26,11 @@
     {% endif %}
     {% if description %}
       {% ifnotequal description 'Publisher' %}
+        {% if description = 'Brand Emblem' %}
+      ({{ description }})
+        {% else %}
       (<a href="{{ publisher.parent.get_absolute_url }}{{ url_suffix }}/">{{ description }}</a>)
+        {% endif %}
       {% endifnotequal %}
     {% endif %}
   {% endif %}

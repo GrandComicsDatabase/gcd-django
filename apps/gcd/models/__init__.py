@@ -8,7 +8,7 @@ the traditional models.py and views.py files.
 
 from country import Country
 from language import Language
-from publisher import Publisher, IndiciaPublisher, Brand
+from publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, BrandUse
 from series import Series
 from issue import Issue
 from story import StoryType, Story, STORY_TYPES

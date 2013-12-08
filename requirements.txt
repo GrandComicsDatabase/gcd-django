@@ -1,5 +1,6 @@
 BeautifulSoup
 Django<1.5
+feedparser
 MySQL-python
 Pillow < 2.0
 PyICU

@@ -1,3 +1,4 @@
+{% load feedutil %}
 <div id="front_page_content_inner">
 <h2>Welcome to the {{ site_name }}!</h2>
 {% if BETA %}
@@ -17,6 +18,8 @@ dedicated to building a database covering all printed comics throughout the worl
 and we're glad you're here!  Give our search form a try, or take a look at the
 menu to the left to see how you can help us improve the site.
 <p>
+<h2>GCD Comics Timeline</h2>
+{% feed "http://www.facebook.com/feeds/page.php?format=rss20&id=136512123051365" 10 %}
 <h3>New Features for September 2012!</h3>
 <ul>
   <li> Scans of the indicia (and corresponding legal-like printed publication data) or the statement of ownership can now be added to our site. Look for the 'Resources' link on the right of an issue page.

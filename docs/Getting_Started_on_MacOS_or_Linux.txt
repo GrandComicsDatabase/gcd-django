@@ -63,7 +63,8 @@ RPM: libicu
 Debian package: libicu48
 
 If using pip/virtualenv to build Python libraries, you will also need
-the icu-devel RPM or the libicu48-dev Debian package.
+the icu-devel RPM or the libicu48-dev Debian package (libicu-dev on newest
+Ubuntu).
 
 If you do compile libicu yourself, the instructions on their readme.html
 are absurdly complex.  Just do this (which worked on Mac OS X Snow Leopard):
@@ -100,6 +101,9 @@ Python
 ======
 Install Python if it did not come with your system.  Python 2.7 is recommended.
 http://www.python.org/download/releases/2.7/
+
+If installing from packages you'll also need development package for python
+(if it's separated, like python-dev on Ubuntu).
 
 setuptools
 ==========

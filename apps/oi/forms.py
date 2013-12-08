@@ -96,6 +96,8 @@ ISSUE_HELP_LINKS = {
     'no_isbn': 'ISBN',
     'barcode': 'Barcode',
     'no_barcode': 'Barcode',
+    'rating': "Publisher's_Age_Guidelines",
+    'no_rating': "Publisher's_Age_Guidelines",
     'notes': 'Notes_%28issue%29',
     'keywords': 'Keywords',
     'comments': 'Comments'
@@ -241,8 +243,14 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
             source = revision.source
         return get_indicia_publisher_revision_form(source=source, **kwargs)
 
+    if model_name == 'brand_group':
+        return get_brand_group_revision_form(**kwargs)
+
     if model_name == 'brand':
-        return get_brand_revision_form(**kwargs)
+        return get_brand_revision_form(revision=revision, **kwargs)
+
+    if model_name == 'brand_use':
+        return get_brand_use_revision_form(**kwargs)
 
     if model_name == 'series':
         if revision is None:
@@ -391,8 +399,92 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
         cd['comments'] = cd['comments'].strip()
         return cd
 
-def get_brand_revision_form(source=None, user=None):
+def get_brand_group_revision_form(source=None, user=None):
+    class RuntimeBrandGroupRevisionForm(BrandGroupRevisionForm):
+        if source is None:
+            name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
+              max_length=255, help_text='The name of the new brand group.')
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, BRAND_HELP_LINKS)
+            return super(RuntimeBrandGroupRevisionForm, self).as_table()
+    return RuntimeBrandGroupRevisionForm
+
+class BrandGroupRevisionForm(forms.ModelForm):
+    class Meta:
+        model = BrandGroupRevision
+        fields = _get_publisher_fields()
+
+    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
+      max_length=255, help_text='The name of the brand group.')
+
+    year_began = forms.IntegerField(required=False,
+      help_text='The first year the brand was used.')
+    year_began_uncertain = forms.BooleanField(required=False,
+      help_text='Check if you are not certain of the first year the brand '
+                'was used.')
+
+    year_ended = forms.IntegerField(required=False,
+      help_text='The last year the brand was used.  Leave blank if currently '
+                'in use.')
+    year_ended_uncertain = forms.BooleanField(required=False,
+      help_text='Check if you are not certain of the last year the brand '
+                'was used, or if you are not certain whether it is still in use.')
+
+    url = forms.URLField(required=False,
+      help_text='The official web site of the brand.  Leave blank if the '
+                'publisher does not have a specific web site for the brand.')
+
+    comments = forms.CharField(widget=forms.Textarea,
+                               required=False,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
+
+    def clean_keywords(self):
+        return _clean_keywords(self.cleaned_data)
+
+    def clean(self):
+        cd = self.cleaned_data
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
+        if 'name' in cd:
+            cd['name'] = cd['name'].strip()
+        cd['notes'] = cd['notes'].strip()
+        cd['comments'] = cd['comments'].strip()
+        return cd
+
+def get_brand_revision_form(source=None, user=None, revision=None,
+                            brand_group=None, publisher=None):
+    initial = []
+    groups = None
+
+    if revision and revision.source:
+        publishers = revision.source.in_use.all().values_list('publisher_id',
+                                                              flat=True)
+        groups = BrandGroup.objects.filter(parent__in=publishers, deleted=False)
+    elif publisher:
+        groups = BrandGroup.objects.filter(parent=publisher.id, deleted=False)
+
+    if groups:
+        choices = [[g.id, g] for g in groups]
+    elif brand_group:
+        initial = [brand_group.id]
+        choices = [[brand_group.id, brand_group]]
+    else:
+        choices = []
+
+    if revision and revision.group.count():
+        for group in revision.group.all():
+            if [group.id, group] not in choices:
+                choices.append([group.id, group])
+
     class RuntimeBrandRevisionForm(BrandRevisionForm):
+        group = forms.MultipleChoiceField(required=True,
+            widget=FilteredSelectMultiple('Brand Groups', False),
+            choices=choices, initial=initial)
+
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
                 _set_help_labels(self, BRAND_HELP_LINKS)
@@ -402,7 +494,7 @@ def get_brand_revision_form(source=None, user=None):
 class BrandRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandRevision
-        fields = _get_publisher_fields()
+        fields = _get_publisher_fields(middle=('group',))
 
     name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
       max_length=255,
@@ -442,6 +534,46 @@ class BrandRevisionForm(forms.ModelForm):
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         if 'name' in cd:
             cd['name'] = cd['name'].strip()
+        cd['notes'] = cd['notes'].strip()
+        cd['comments'] = cd['comments'].strip()
+        return cd
+
+def get_brand_use_revision_form(source=None, user=None):
+    class RuntimeBrandUseRevisionForm(BrandUseRevisionForm):
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, BRAND_HELP_LINKS)
+            return super(RuntimeBrandUseRevisionForm, self).as_table()
+    return RuntimeBrandUseRevisionForm
+
+class BrandUseRevisionForm(forms.ModelForm):
+    class Meta:
+        model = BrandUseRevision
+        fields = get_brand_use_field_list()
+
+    year_began = forms.IntegerField(required=False,
+      help_text='The first year the brand was at the publisher.')
+    year_began_uncertain = forms.BooleanField(required=False,
+      help_text='Check if you are not certain of the first year the brand '
+                'was used.')
+
+    year_ended = forms.IntegerField(required=False,
+      help_text='The last year the brand was used at the publisher. '
+                ' Leave blank if currently in use.')
+    year_ended_uncertain = forms.BooleanField(required=False,
+      help_text='Check if you are not certain of the last year the brand '
+                'was used, or if you are not certain whether it is still in use.')
+
+    comments = forms.CharField(widget=forms.Textarea,
+                               required=False,
+      help_text='Comments between the Indexer and Editor about the change. '
+                'These comments are part of the public change history, but '
+                'are not part of the regular display.')
+
+    def clean(self):
+        cd = self.cleaned_data
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
         return cd
@@ -583,7 +715,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def __init__(self, *args, **kwargs):
             super(RuntimeIssueRevisionForm, self).__init__(*args, **kwargs)
             self.fields['brand'].queryset = \
-              series.publisher.active_brands_no_pending()
+              series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
               series.publisher.active_indicia_publishers_no_pending()
             if revision and revision.key_date:
@@ -664,13 +796,20 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         if not series.has_isbn:
             help_text, no_isbn = _get_series_has_fields_off_note(series, 'ISBN')
             isbn = forms.CharField(widget=HiddenInputWithHelp, required=False,
-              help_text=help_text)
+              help_text=help_text, label='ISBN')
 
         if not series.has_barcode:
             help_text, no_barcode = \
               _get_series_has_fields_off_note(series, 'barcode')
             barcode = forms.CharField(widget=HiddenInputWithHelp,
               required=False, help_text=help_text)
+
+        if not series.has_rating:
+            help_text, no_rating = \
+              _get_series_has_fields_off_note(series, "publisher's age guidelines")
+            rating = forms.CharField(widget=HiddenInputWithHelp,
+              required=False, help_text=help_text,
+              label="Publisher's age guidelines")
 
         def clean_year_on_sale(self):
             year_on_sale = self.cleaned_data['year_on_sale']
@@ -772,6 +911,12 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             if cd['barcode']:
                 cd['barcode'] = cd['barcode'].replace('-', '').replace(' ', '')
                 cd['barcode'] = cd['barcode'].replace(';', '; ')
+
+            if cd['no_rating'] and cd['rating']:
+                raise forms.ValidationError(
+                  "You cannot specify a publisher's age guideline and check "
+                  " no publisher's age guideline at the same time.")
+
             return cd
 
         def as_table(self):
@@ -879,7 +1024,7 @@ def get_bulk_issue_revision_form(series, method, user=None):
         def __init__(self, *args, **kwargs):
             super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
             self.fields['brand'].queryset = \
-              series.publisher.active_brands_no_pending()
+              series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
               series.publisher.active_indicia_publishers_no_pending()
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
@@ -1587,19 +1732,23 @@ def get_select_cache_form(cached_issue=None, cached_story=None,
                                               choices=fields, label='')
     return SelectCacheForm
 
-def get_select_search_form(series=False, issue=False, story=False,
-                    changeset_id=None, story_id=None, issue_id=None,
-                    revision_id=None, return_type_='reprint'):
+def get_select_search_form(search_publisher=False, search_series=False,
+                           search_issue=False, search_story=False,
+                           changeset_id=None, story_id=None, issue_id=None,
+                           revision_id=None, return_type_='reprint'):
     class SelectSearchForm(forms.Form):
-        publisher = forms.CharField(label='Publisher', required=False)
-        if series or issue or story:
+        if search_publisher:
+            publisher = forms.CharField(label='Publisher', required=True)
+        else:
+            publisher = forms.CharField(label='Publisher', required=False)
+        if search_series or search_issue or search_story:
             series = forms.CharField(label='Series', required=False)
             year = forms.IntegerField(label='Series year', required=False,
                                       min_value=1800, max_value=2020)
-        if issue or story:
+        if search_issue or search_story:
             number = forms.CharField(label='Issue Number',
                                      required=True)
-        if story:
+        if search_story:
             sequence_number = forms.IntegerField(label='Sequence Number',
                                                  required=False, min_value=0)
         select_key = forms.CharField(widget=HiddenInput)

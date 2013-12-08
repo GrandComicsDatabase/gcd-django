@@ -60,6 +60,7 @@ class Series(models.Model):
     has_isbn = models.BooleanField()
     has_issue_title = models.BooleanField()
     has_volume = models.BooleanField()
+    has_rating = models.BooleanField(default=False)
 
     is_comics_publication = models.BooleanField()
 
@@ -194,7 +195,8 @@ class Series(models.Model):
 
     def issue_indexed_count(self):
         from apps.gcd.models.issue import INDEXED
-        return self.active_issues().exclude(is_indexed=INDEXED['skeleton']).count()
+        return self.active_base_issues()\
+                   .exclude(is_indexed=INDEXED['skeleton']).count()
 
     def _date_uncertain(self, flag):
         return u' ?' if flag else u''

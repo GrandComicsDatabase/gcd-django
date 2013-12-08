@@ -21,8 +21,8 @@ from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            Country, Language, Indexer, Brand, IndiciaPublisher,\
-                            STORY_TYPES
+                            Country, Language, Indexer, BrandGroup, Brand, \
+                            IndiciaPublisher, STORY_TYPES
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO, render_error
@@ -51,7 +51,7 @@ def generic_by_name(request, name, q_obj, sort,
     plural_suffix = 's'
     query_val = {'method': 'icontains'}
 
-    if (class_ in (Series, Brand, IndiciaPublisher)):
+    if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher)):
         if class_ is IndiciaPublisher:
             base_name = 'indicia_publisher'
             display_name = 'Indicia Publisher'
@@ -174,6 +174,11 @@ def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
           'heading': 'Publisher Search Results',
           'query_string': get_copy.urlencode(),
         })
+
+def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
+    q_obj = Q(name__icontains=brand_group_name)
+    return generic_by_name(request, brand_group_name, q_obj, sort,
+                           BrandGroup, 'gcd/search/brand_group_list.html')
 
 def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains=brand_name)
@@ -370,6 +375,8 @@ def search(request):
     if view_type == 'publisher':
         view_type += 's'
         param_type = 'publisher_name'
+    elif view_type == 'brand_group':
+        param_type = 'brand_group_name'
     elif view_type == 'brand':
         param_type = 'brand_name'
     elif view_type == 'indicia_publisher':
@@ -666,6 +673,7 @@ def process_advanced(request):
 
     if item_name in ['cover', 'issue_cover']:
         context['table_width'] = COVER_TABLE_WIDTH
+        context['NO_ADS'] = True
         return paginate_response(request, items, template, context,
                              page_size=50, callback_key='tags',
                              callback=get_image_tags_per_page)
