@@ -72,9 +72,13 @@
             {% endif %}
             {% if result.model_name == 'brand' %}
               <td>[BRAND]</td>
+              <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'brandgroup' %}
+              <td>[BRAND GROUP]</td>
               <td><a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
-              :
-              <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+                :
+                <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
           </tr>
         {% endfor %}

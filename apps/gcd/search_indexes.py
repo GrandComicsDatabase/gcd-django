@@ -1,6 +1,6 @@
 from haystack import indexes
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
-    Brand
+    Brand, BrandGroup
 
 
 class ObjectIndex(object):
@@ -87,3 +87,16 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_facet_model_name(self, obj):
         return "brand"
 
+
+class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/publisher_text.txt')
+    facet_model_name = indexes.CharField(faceted=True)
+
+    def get_model(self):
+        return BrandGroup
+
+    def prepare_facet_model_name(self, obj):
+        return "brand group"
