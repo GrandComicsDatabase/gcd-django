@@ -12,6 +12,11 @@ Changing {{ object_name }}
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
 {% endblock %}
+{% block css_raw %}
+{% comment %} this css doesn't like compressing {% endcomment %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}jquery/css/msdropdown/dd.css"/>
+{% endblock %}
 
 {% block view_body %}
 <h1>Changing Issues</h1>
@@ -41,4 +46,8 @@ Changing {{ object_name }}
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block footer %}
+  {% include 'oi/bits/revision_form_utils.html' %}
 {% endblock %}

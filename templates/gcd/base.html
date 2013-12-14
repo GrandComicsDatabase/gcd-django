@@ -12,7 +12,7 @@ For now, just a simple single block for all CSS, despite redundancy.
 {% compress css %}
 {% block css %}{% endblock %}
 {% endcompress %}
-</head>
+{% block css_raw %}{% endblock %}
 
 <body>
 <div id="sizing_base" {% if preview %} class="preview" {% endif %}>

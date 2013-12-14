@@ -8,7 +8,7 @@ from django.contrib.contenttypes import generic
 from django.core import urlresolvers
 
 from imagekit.models import ImageSpecField
-from imagekit.processors import ResizeToFit
+from imagekit.processors import ResizeToFit, Resize
 
 from apps.oi import states
 
@@ -44,6 +44,8 @@ class Image(models.Model):
     scaled_image = ImageSpecField([ResizeToFit(width=400),], image_field='image_file',
             format='JPEG', options={'quality': 90})
     thumbnail = ImageSpecField([ResizeToFit(height=50),], image_field='image_file',
+            format='JPEG', options={'quality': 90})
+    icon = ImageSpecField([Resize(30, 30),], image_field='image_file',
             format='JPEG', options={'quality': 90})
 
     marked = models.BooleanField(default=False)

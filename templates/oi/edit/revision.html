@@ -15,6 +15,13 @@
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
 {% endblock %}
+{% block css_raw %}
+{% comment %} this css doesn't like compressing {% endcomment %}
+{% if revision.source_name == 'issue' %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}jquery/css/msdropdown/dd.css"/>
+{% endif %}
+{% endblock %}
 
 {% block view_body %}
 {% include "oi/bits/multi_selector.html" %}
@@ -40,9 +47,9 @@
 </div>
 {% endblock %}
 
-{% if revision.source_name in 'issue story' %}
 {% block footer %}
-  {% include 'oi/bits/revision_form_utils.html' %}
+  {% if revision.source_name in 'issue story' %}
+    {% include 'oi/bits/revision_form_utils.html' %}
+  {% endif %}
 {% endblock %}
-{% endif %}
 
