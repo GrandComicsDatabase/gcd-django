@@ -722,8 +722,9 @@ class BrandEmblemSelect(forms.Select):
         else:
             selected_html = ''
         if url:
-            return u'<option value="%s"%s data-image="%s">%s</option>' % (
-              escape(option_value), selected_html, url,
+            return u'<option value="%s"%s data-image="%s" image-width="%d">' \
+              '%s</option>' % (
+              escape(option_value), selected_html, url, brand.emblem.icon.width,
               conditional_escape(force_unicode(option_label)))
         else:
             return u'<option value="%s"%s>%s</option>' % (
