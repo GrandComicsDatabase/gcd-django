@@ -66,46 +66,68 @@ def index(request):
                               context_instance=RequestContext(request))
       
 
-def paginate_response(request, queryset, template, vars, page_size=100,
-                      callback_key=None, callback=None):
+class ResponsePaginator(object):
     """
     Uses DiggPaginator from
     http://bitbucket.org/miracle2k/djutils/src/tip/djutils/pagination.py.
     We could reconsider writing our own code.
     """
+    def __init__(self, queryset, vars=None, template=None, page_size=100,
+                 callback_key=None, callback=None, view=None):
+        """
+        Either template or view should be set
+        """
+        if template is None and view is None:
+            raise ValueError
+        self.template = template
+        self.vars = vars and vars or {}
+        self.callback_key = callback_key
+        self.callback = callback
+        self.view = view
+        self.p = DiggPaginator(queryset, page_size, body=7, padding=2, tail=1)
 
-    p = DiggPaginator(queryset, page_size, body=7, padding=2, tail=1)
-
-    page_num = 1
-    redirect = None
-    if ('page' in request.GET):
-        try:
-            page_num = int(request.GET['page'])
-            if page_num > p.num_pages:
-                redirect = p.num_pages
-            elif page_num < 1:
+    def paginate(self, request):
+        page_num = 1
+        redirect = None
+        if ('page' in request.GET):
+            try:
+                page_num = int(request.GET['page'])
+                if page_num > self.p.num_pages:
+                    redirect = self.p.num_pages
+                elif page_num < 1:
+                    redirect = 1
+            except ValueError:
                 redirect = 1
-        except ValueError:
-            redirect = 1
 
-    if redirect is not None:
-        args = request.GET.copy()
-        args['page'] = redirect
-        return HttpResponseRedirect(quote(request.path.encode('UTF-8')) +
-                                    u'?' + args.urlencode())
+        if redirect is not None:
+            args = request.GET.copy()
+            args['page'] = redirect
+            return HttpResponseRedirect(quote(request.path.encode('UTF-8')) +
+                                        u'?' + args.urlencode())
 
-    page = p.page(page_num)
+        page = self.p.page(page_num)
 
-    vars['items'] = page.object_list
-    vars['paginator'] = p
-    vars['page'] = page
-    vars['page_number'] = page_num
+        self.vars['items'] = page.object_list
+        self.vars['paginator'] = self.p
+        self.vars['page'] = page
+        self.vars['page_number'] = page_num
 
-    if callback_key is not None:
-        vars[callback_key] = callback(page)
+        if self.callback_key is not None:
+            self.vars[self.callback_key] = self.callback(page)
 
-    return render_to_response(template, vars,
-                              context_instance=RequestContext(request))
+        if self.view:
+            return self.view()
+
+        return render_to_response(self.template, self.vars,
+                                  context_instance=RequestContext(request))
+
+
+def paginate_response(request, queryset, template, vars, page_size=100,
+                      callback_key=None, callback=None):
+    return ResponsePaginator(queryset, vars=vars, template=template,
+                             page_size=page_size,
+                             callback_key=callback_key,
+                             callback=callback).paginate(request)
 
 
 def render_error(request, error_text, redirect=True, is_safe = False):

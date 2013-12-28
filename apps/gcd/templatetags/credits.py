@@ -185,10 +185,7 @@ def __format_credit(story, credit):
             credit_value += '<li>' + esc(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
-        if type(story.keywords) == unicode:
-            credit_value = story.keywords
-        else:
-            credit_value = esc('; '.join(str(i) for i in story.keywords.all().order_by('name')))
+        credit_value = __format_keywords(story)
         if credit_value == '':
             return ''
     else: # This takes care of escaping the database entries we display
@@ -204,6 +201,16 @@ def __format_credit(story, credit):
     return mark_safe(
            dt + '<span class="credit_label">' + label + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
+
+def __format_keywords(story):
+    if type(story.keywords) == unicode:
+        credit_value = story.keywords
+    else:
+        credit_value = esc('; '.join(str(i) for i in story.keywords.all().order_by('name')))
+    return credit_value
+
+def show_keywords(story):
+    return __format_keywords(story)
 
 def show_credit_status(story):
     """
@@ -624,4 +631,5 @@ register.filter(show_title)
 register.filter(show_cover_contributor)
 register.filter(show_reprints)
 register.filter(show_reprints_for_issue)
+register.filter(show_keywords)
 register.filter(split_reprint_string)

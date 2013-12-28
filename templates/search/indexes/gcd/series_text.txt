@@ -1,0 +1,9 @@
+{% load credits %}
+{{ object.name }}
+{{ object.format }}
+{{ object.color }}
+{{ object.paper_stock }}
+{{ object.binding }}
+{{ object.publishing_format }}
+{{ object.notes }}
+{{ object|show_keywords }}

@@ -92,6 +92,8 @@ INSTALLED_APPS = (
     'taggit',
     'imagekit',
     'south',
+    'haystack',
+    'elasticstack',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -167,6 +169,34 @@ COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                 'templates/gcd/front_page/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
+
+#################################################################################
+# Haystack and search
+#################################################################################
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'elasticstack.backends.ConfigurableElasticSearchEngine',
+        'URL': 'http://127.0.0.1:9200/',
+        'INDEX_NAME': 'haystack',
+    },
+}
+
+ELASTICSEARCH_INDEX_SETTINGS = {
+    # index settings
+    'settings': {
+        "analysis": {
+            "analyzer": {
+                "default": {
+                    "type": "custom",
+                    "tokenizer": "standard",
+                    "filter": ["standard", "lowercase", "stop", "asciifolding"]
+                }
+            }
+        }
+    }
+}
+
+ELASTICSEARCH_DEFAULT_ANALYZER = 'default'
 
 #################################################################################
 # GCD site settings
