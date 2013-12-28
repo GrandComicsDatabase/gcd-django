@@ -7,7 +7,7 @@
 {% if revision.source_name == 'story' or object_name == 'Story' %}
 <script type='text/javascript' src='{{ MEDIA_URL }}js/oi/storyrevision_form_utils.js'></script>
 {% endif %}
-{% if revision.source_name == 'issue' or object_name in 'Issues' %}
+{% if revision.source_name == 'issue' or object_name in 'Variant Issues' or 'Variant Issue' in object_name %}
 <script type='text/javascript' src='{{ MEDIA_URL }}js/oi/issuerevision_form_utils.js'></script>
 <script type='text/javascript' src='{{ MEDIA_URL }}jquery/js/msdropdown/jquery.dd.min.js'></script>
 {% endif %}
