@@ -94,6 +94,15 @@ mysql -ugcdonline gcdonline < dump.sql
 Note that we do not distribute the images for covers and other user contributed
 uploads of scans.
 
+Run backend search facility
+===========================
+For haystack search to work one needs to run elasticsearch search backend.
+The latest version can be downloaded here: http://www.elasticsearch.org/download/
+
+Unpack it and run 'bin/elasticsearch -f' (on Linux and Mac) or 'bin\elasticsearch.bat' (on Windows).
+
+After that you can run 'python manage.py rebuild_index' in gcd-django directory to populate your search indexes with data.
+
 Launching your test web server
 ==============================
 At this time you should be able to test your installation and data import using a
