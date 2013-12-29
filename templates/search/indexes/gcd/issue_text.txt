@@ -9,3 +9,5 @@
 {{ object.editing }}
 {{ object.notes }}
 {{ object|show_keywords }}
+{{ object.series.name }}
+{{ object.series.publisher.name }}
