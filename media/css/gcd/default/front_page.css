@@ -266,14 +266,10 @@ div.emphasized,
     font-style: italic;
 }
 
-#advanced_link {
+.advanced_link {
     background-color: #FFA500;
     padding: 0.4em;
     border: solid 1px black;
-}
-
-#advanced_link a {
-    color: black;
 }
 
 /*
