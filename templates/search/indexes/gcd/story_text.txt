@@ -12,3 +12,5 @@
 {{ object.synopsis }}
 {{ object.notes }}
 {{ object|show_keywords }}
+{{ object.issue.series.publisher.name }}
+{{ object.issue.series.name }}

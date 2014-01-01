@@ -7,3 +7,4 @@
 {{ object.publishing_format }}
 {{ object.notes }}
 {{ object|show_keywords }}
+{{ object.publisher.name }}
