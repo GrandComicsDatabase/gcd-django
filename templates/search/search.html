@@ -97,7 +97,13 @@
       </div>
       <div style="height:10px; clear: both"></div>
     {% else %}
+      {% if query %}
       <p>No results.</p>
+      {% else %}
+      <p>Please enter the search word(s) in the box.
+      <br>Use '-' in front of a word to filter out results with that word. Use ""-quotes to search for phrases.
+      <br>Special characters, e.g. ,;/, are ignored.</p>
+      {% endif %}
     {% endif %}
   </form>
 {% endblock %}
