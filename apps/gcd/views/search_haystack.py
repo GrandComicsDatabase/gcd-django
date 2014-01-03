@@ -17,4 +17,14 @@ class PaginatedFacetedSearchView(FacetedSearchView):
     def extra_context(self):
         extra = super(PaginatedFacetedSearchView, self).extra_context()
         extra.update(self.paginator.vars)
+
+        suggestion = self.form.get_suggestion()
+        if suggestion == self.query.lower():
+            suggestion = u''
+        facet_page = ''
+        if self.form.selected_facets:
+            for facet in self.form.selected_facets:
+                facet_page += '&selected_facets=%s' % facet
+        extra.update({'suggestion': suggestion,
+                     'facet_page': facet_page})
         return extra
