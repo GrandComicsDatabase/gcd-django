@@ -99,7 +99,7 @@ Run backend search facility
 For haystack search to work one needs to run elasticsearch search backend.
 The latest version can be downloaded here: http://www.elasticsearch.org/download/
 
-Unpack it and run 'bin/elasticsearch -f' (on Linux and Mac) or 'bin\elasticsearch.bat' (on Windows).
+Either use the provided deb/rpm or unpack it and run 'bin/elasticsearch -f' (on Linux and Mac) or 'bin\elasticsearch.bat' (on Windows).
 
 After that you can run 'python manage.py rebuild_index' in gcd-django directory to populate your search indexes with data.
 
