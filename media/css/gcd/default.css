@@ -691,3 +691,13 @@ form#comments textarea {
     display: inline;
 }
 
+#new_search_link {
+    position: relative;
+}
+
+#new_search_link sup {
+    position: absolute;
+    right: 0px;
+    top: -9px;
+}
+
