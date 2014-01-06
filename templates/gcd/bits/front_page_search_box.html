@@ -16,7 +16,8 @@
         {% trans 'Sort by' %}
         {% include "gcd/bits/search_order.html" %}
         <input type="submit" name="submit" id="submit" value="{% trans 'Search' %}">
-        |&nbsp;<span id="advanced_link"><a href="{% url apps.gcd.views.search.advanced_search %}">{% trans 'Advanced&nbsp;Search' %}</a></span>
+        |&nbsp;<span class="advanced_link"><a href="{% url apps.gcd.views.search.advanced_search %}">{% trans 'Advanced&nbsp;Search' %}</a></span>
+        <span class="advanced_link"><a href="{% url haystack_search %}">{% trans 'New&nbsp;Search' %}<sup>beta</sup></a></span>
     </div>
   </form> 
 </div>

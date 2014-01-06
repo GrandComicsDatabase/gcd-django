@@ -1,0 +1,109 @@
+{% extends "gcd/base_view.html" %}
+{% load i18n %}
+{% load display %}
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+{% endblock %}
+{% block view_body %}
+  <h2>Search</h2>
+
+  <form method="get" action=".">
+      <p>
+        <label for="id_q">Search for:</label>
+        {{ form.q }}
+        <input type="submit" value="Search">
+      </p>
+    {% if suggestion %}
+    <p>Did you mean <a href="{% url haystack_search %}?q={{ suggestion }}">{{ suggestion }}</a> ?</p>
+    {% endif %}
+    {% if query and paginator.count > 0 %}
+      <h1 class="item_id search_id">Search Results:</h1>
+      <div class="item_id">
+        {% if request.GET.q %}
+          Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} results matching your search for '{{ request.GET.q }}'.
+        {% endif %}
+
+        {% with extra_string="q="|add:query|add:facet_page %}
+          {% include "gcd/bits/pagination_bar.html" %}
+        {% endwith %}
+      </div>
+      <div style="clear: both;"></div>
+      {% if facets.fields.facet_model_name %}
+        <ul>
+          {% for model in facets.fields.facet_model_name %}
+            <li><a href="?q={{ query }}{% if request.GET.models %}&amp;models={{ request.GET.models }}{% endif %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}">{{ model.0 }}</a> ({{ model.1 }})</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <table class="listing left">
+        <tr>
+          <th style="width: 70px;">Type</th>
+          <th>Name</th>
+        </tr>
+        {% for result in page.object_list %}
+          <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+            {% if result.model_name == 'series' %}
+              <td>[SERIES]</td>
+              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.country.code|lower }}.png" alt="{{ result.object.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.full_name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'issue' %}
+              <td>[ISSUE]</td>
+              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.series.country.code|lower }}.png" alt="{{ result.object.series.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
+                {{ result.object.publication_date|str_encl:'(' }}</td>
+            {% endif %}
+            {% if result.model_name == 'story' %}
+              <td>[STORY]</td>
+              <td><a href="{{ result.object.get_absolute_url }}">{% if result.object.title %}
+                {{ result.object.title }}</a>
+              {% else %}
+                [ no title ]</a>
+              {% endif %}
+              (from
+              <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.issue.series.country.code|lower }}.png" alt="{{ result.object.issue.series.country.code|upper }}" class="embedded_flag">
+              <a href="{{ result.object.issue.get_absolute_url }}">
+              {{ result.object.issue.full_name }}</a> {{ result.object.issue.publication_date|str_encl:'(' }})</td>
+            {% endif %}
+            {% if result.model_name == 'publisher' %}
+              <td>[PUBLISHER]</td>
+              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.country.code|lower }}.png" alt="{{ result.object.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'indiciapublisher' %}
+              <td>[INDICIA PUBLISHER]</td>
+              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.country.code|lower }}.png" alt="{{ result.object.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
+              :
+              <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'brand' %}
+              <td>[BRAND]</td>
+              <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'brandgroup' %}
+              <td>[BRAND GROUP]</td>
+              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.parent.country.code|lower }}.png" alt="{{ result.object.parent.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
+                :
+                <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </table>
+      <div style="clear: both;"></div>
+
+      <h1 class="item_id search_id">&nbsp;  </h1>
+      <div class="item_id">
+        {% with extra_string="q="|add:query|add:facet_page %}
+          {% include "gcd/bits/pagination_bar.html" %}
+        {% endwith %}
+      </div>
+      <div style="height:10px; clear: both"></div>
+    {% else %}
+      {% if query %}
+      <p>No results.</p>
+      {% else %}
+      <p>Please enter the search word(s) in the box.
+      <br>Use '-' in front of a word to filter out results with that word. Use ""-quotes to search for phrases.
+      <br>Special characters, e.g. ,;/, are ignored.</p>
+      {% endif %}
+    {% endif %}
+  </form>
+{% endblock %}

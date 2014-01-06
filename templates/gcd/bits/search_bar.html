@@ -11,6 +11,7 @@
     <input type="submit" name="submit" value="Go">
   </form>
   | <a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a> |
+  <a href="{% url haystack_search %}" id="new_search_link">New Search<sup>beta</sup></a> |
 {% if user.is_authenticated %}
   <a href="{% url editing %}">Editing</a> |
   <form action="{% url logout %}" method="POST">

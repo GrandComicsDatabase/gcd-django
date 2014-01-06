@@ -2,6 +2,11 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
 from django.views.generic.simple import direct_to_template
+from haystack.forms import FacetedSearchForm
+from haystack.query import SearchQuerySet
+from haystack.views import FacetedSearchView, search_view_factory
+from apps.gcd.views.search_haystack import PaginatedFacetedSearchView
+
 
 urlpatterns = patterns('',
     ###########################################################################
@@ -232,6 +237,15 @@ urlpatterns = patterns('',
     (r'^search.lasso/$','apps.gcd.views.redirect.search'),
 )
 
+# haystack search
+sqs = SearchQuerySet().facet('facet_model_name')
+
+urlpatterns += patterns('haystack.views',
+                        url(r'^searchNew/', search_view_factory(
+                            view_class=PaginatedFacetedSearchView,
+                            form_class=FacetedSearchForm, searchqueryset=sqs),
+                            name='haystack_search'),
+)
 
 urlpatterns += patterns('django.views.generic.simple',
     ('^covers_for_replacement.lasso/$', 'redirect_to',

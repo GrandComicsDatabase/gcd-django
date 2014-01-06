@@ -657,6 +657,17 @@ def key(d, key_name):
 
     return value
 
+def str_encl(string, bracket):
+    if string:
+        if bracket == '(':
+            return '(' + string + ')'
+        elif bracket == '[':
+            return '[' + string + ']'
+        elif bracket == '{':
+            return '{' + string + '}'
+    return string
+
+register.filter(str_encl)
 register.filter(key)
 register.filter(absolute_url)
 register.filter(cover_image_tag)
