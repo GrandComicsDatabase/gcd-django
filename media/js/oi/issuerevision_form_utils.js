@@ -18,7 +18,7 @@ $.fn.addToOptionWidth = function(){
     $('option', $(this)).each(function(){
         max_length = Math.max(max_length, $(this).optionAndImageWidth());
     });
-    return max_length - $(this).outerWidth();
+    return Math.max(max_length - $(this).outerWidth(), 30);
 }
 
 var monthRegExp = [
