@@ -285,6 +285,11 @@ class BrandUse(models.Model):
         return self.emblem.issue_set.exclude(deleted=True)\
           .filter(issue__series__publisher=publisher)
 
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_brand',
+            kwargs={'brand_id': self.emblem.id } )
+
     def __unicode__(self):
         return u'emblem %s was used from %s to %s by %s.' % (self.emblem,
           _display_year(self.year_began, self.year_began_uncertain),

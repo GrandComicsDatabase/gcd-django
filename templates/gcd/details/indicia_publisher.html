@@ -5,7 +5,7 @@
 {% load credits %}
 
 {% block title %}
-GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
+GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 {% endblock %}
 
 {% block css %}
@@ -16,7 +16,7 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
 {% block view_body %}
 
 {% with indicia_publisher as publisher %}
-{% with "Indicia Publisher" as description %}
+{% with "Indicia / Colophon Publisher" as description %}
 {% with "indicia_publishers" as url_suffix %}
   {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
@@ -61,7 +61,7 @@ GCD :: Indicia Publisher :: {{ indicia_publisher.name }}
   {% if not preview %}
     {% with indicia_publisher as object %}
     {% with 'indicia_publisher' as object_class %}
-    {% with 'Indicia Publisher' as object_name %}
+    {% with 'Indicia / Colophon Publisher' as object_name %}
       {% include "gcd/bits/status_banner.html" %}
     {% endwith %}
     {% endwith %}

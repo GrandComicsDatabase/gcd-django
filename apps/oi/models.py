@@ -2265,6 +2265,9 @@ class BrandUseRevision(Revision):
             self.brand_use = brand_use
             self.save()
 
+    def __unicode__(self):
+        return u'brand emblem %s used by %s.' % (self.emblem, self.publisher)
+
 class CoverRevisionManager(RevisionManager):
     """
     Custom manager allowing the cloning of revisions from existing rows.
@@ -3123,19 +3126,20 @@ class IssueRevision(Revision):
 
     series = models.ForeignKey(Series, related_name='issue_revisions')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True, blank=True,
-      default=None, related_name='issue_revisions',
+      default=None, related_name='issue_revisions', verbose_name='indicia/colophon publisher',
       help_text='The exact corporation listed as the publisher in the '
-                'indicia, if any.  If there is none, the copyright holder '
-                '(if any) may be used, with a comment in the notes field'                                          )
+                'indicia or colophon, if any.  If there is none, the copyright '
+                'holder (if any) may be used, with a comment in the notes field')
     indicia_pub_not_printed = models.BooleanField(default=False,
-      help_text="Check this box if no indicia publisher name is "
-                "listed in the indicia.")
+      verbose_name='indicia/colophon pub. not printed',
+      help_text="Check this box if no publisher name is listed "
+                "in the indicia or colophon.")
     brand = models.ForeignKey(Brand, null=True, default=None, blank=True,
-      related_name='issue_revisions',
+      related_name='issue_revisions', verbose_name='brand emblem',
       help_text="The publisher's logo or tagline on the cover of the comic, "
                 "if any. Some U.S. golden age publishers did not put any "
                 "identifiable brand marks on their comics."                )
-    no_brand = models.BooleanField(default=False,
+    no_brand = models.BooleanField(default=False, verbose_name='no brand emblem',
       help_text="Check this box if there is no publisher's logo or tagline.")
 
     isbn = models.CharField(max_length=32, blank=True, default='',

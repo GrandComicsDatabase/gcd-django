@@ -1556,8 +1556,8 @@ def add_indicia_publisher(request, parent_id):
     try:
         parent = Publisher.objects.get(id=parent_id, is_master=True)
         if parent.deleted or parent.pending_deletion():
-            return render_error(request, u'Cannot add indicia publishers '
-              u'since "%s" is deleted or pending deletion.' % parent)
+            return render_error(request, u'Cannot add indicia / colophon '
+              u'publishers since "%s" is deleted or pending deletion.' % parent)
 
         if request.method != 'POST':
             form = get_indicia_publisher_revision_form(user=request.user)()
@@ -1586,7 +1586,7 @@ def add_indicia_publisher(request, parent_id):
           'Could not find publisher for id ' + publisher_id)
 
 def _display_add_indicia_publisher_form(request, parent, form):
-    object_name = 'Indicia Publisher'
+    object_name = 'Indicia / Colophon Publisher'
     object_url = urlresolvers.reverse('add_indicia_publisher',
                                           kwargs={ 'parent_id': parent.id })
 
@@ -1705,7 +1705,7 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
 
 
 def _display_add_brand_form(request, form, brand_group=None, publisher=None):
-    object_name = 'Brand'
+    object_name = 'Brand Emblem'
     if brand_group:
         object_url = urlresolvers.reverse('add_brand_via_group',
                                         kwargs={ 'brand_group_id': brand_group.id })
@@ -3775,7 +3775,7 @@ def show_queue(request, queue_name, state):
               .annotate(country=Max('publisherrevisions__country__id')),
           },
           {
-            'object_name': 'Indicia Publishers',
+            'object_name': 'Indicia / Colophon Publishers',
             'object_type': 'indicia_publisher',
             'changesets': indicia_publishers.order_by('modified', 'id')\
               .annotate(country=Max('indiciapublisherrevisions__country__id')),
