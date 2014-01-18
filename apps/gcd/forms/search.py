@@ -35,8 +35,9 @@ COUNT_RANGE_REGEXP = r'(?P<min>\d+)?\s*-\s*(?P<max>\d+)?$'
 
 class AdvancedSearch(forms.Form):
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
-                                        ['brand', 'Publisher Brand'],
-                                        ['indicia_publisher', 'Indicia Publisher'],
+                                        ['brand_group', 'Publisher Brand Group'],
+                                        ['brand_emblem', 'Publisher Brand Emblem'],
+                                        ['indicia_publisher', 'Indicia / Colophon Publisher'],
                                         ['series', 'Series'],
                                         ['issue', 'Issues'],
                                         ['issue_cover', 'Covers for Issues'],
@@ -90,10 +91,12 @@ class AdvancedSearch(forms.Form):
     pub_name = forms.CharField(label='Publisher', required=False)
     pub_notes = forms.CharField(label='Notes', required=False)
 
-    brand = forms.CharField(required=False)
+    brand_group = forms.CharField(required=False)
+    brand_emblem = forms.CharField(required=False)
     brand_notes = forms.CharField(label='Notes', required=False)
 
-    indicia_publisher = forms.CharField(label='Indicia Publisher', required=False)
+    indicia_publisher = forms.CharField(label='Indicia / Colophon Publisher',
+                                        required=False)
     ind_pub_notes = forms.CharField(label='Notes', required=False)
     is_surrogate = forms.NullBooleanField(label='Is Surrogate?', required=False,
       widget=forms.Select(choices=((None, ""),
@@ -136,6 +139,8 @@ class AdvancedSearch(forms.Form):
     issue_date = forms.CharField(label='Cover Date', required=False)
     isbn = forms.CharField(label='ISBN', required=False)
     barcode = forms.CharField(required=False)
+    rating = forms.CharField(label="Publisher's Age Guidelines",
+                             required=False)
     indicia_frequency = forms.CharField(label='Indicia Frequency',
                                         required=False)
     issue_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
