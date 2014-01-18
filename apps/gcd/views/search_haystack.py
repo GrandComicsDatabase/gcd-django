@@ -9,6 +9,42 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.form = self.build_form()
         self.query = self.get_query()
         self.results = self.get_results()
+        self.sort = ''
+        if len(self.form.selected_facets) == 1:
+            if 'sort' in request.GET:
+                self.sort = request.GET['sort']
+                if self.form.selected_facets[0] in \
+                  [u'facet_model_name_exact:publisher',
+                   u'facet_model_name_exact:indicia publisher',
+                   u'facet_model_name_exact:brand group',
+                   u'facet_model_name_exact:brand',
+                   u'facet_model_name_exact:series']:
+                    if request.GET['sort'] == 'alpha':
+                        self.results = self.results.order_by('sort_name',
+                                                             'year_began')
+                    elif request.GET['sort'] == 'chrono':
+                        self.results = self.results.order_by('year_began',
+                                                             'sort_name')
+                elif u'facet_model_name_exact:issue' in self.form.selected_facets:
+                    if request.GET['sort'] == 'alpha':
+                        self.results = self.results.order_by('sort_name',
+                                                             'key_date',
+                                                             'sort_code')
+                    elif request.GET['sort'] == 'chrono':
+                        self.results = self.results.order_by('key_date',
+                                                             'sort_name',
+                                                             'sort_code')
+                elif u'facet_model_name_exact:story' in self.form.selected_facets:
+                    if request.GET['sort'] == 'alpha':
+                        self.results = self.results.order_by('sort_name',
+                                                             'key_date',
+                                                             'sort_code',
+                                                             'sequence_number')
+                    elif request.GET['sort'] == 'chrono':
+                        self.results = self.results.order_by('key_date',
+                                                             'sort_name',
+                                                             'sort_code',
+                                                             'sequence_number')
 
         self.paginator = ResponsePaginator(self.results,
                                            view=self.create_response)
@@ -27,4 +63,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                 facet_page += '&selected_facets=%s' % facet
         extra.update({'suggestion': suggestion,
                      'facet_page': facet_page})
+        if self.sort:
+            extra.update({'sort': '&sort=%s' % self.sort})
+        else:
+            extra.update({'sort': ''})
         return extra

@@ -18,13 +18,27 @@
     <p>Did you mean <a href="{% url haystack_search %}?q={{ suggestion }}">{{ suggestion }}</a> ?</p>
     {% endif %}
     {% if query and paginator.count > 0 %}
-      <h1 class="item_id search_id">Search Results:</h1>
+      <h1 class="item_id search_id">Search Results:
+        <div class="right">Order:
+        {% if form.selected_facets|length == 1 %}
+          {% if sort %}
+          <a href="?q={{ query }}{{ facet_page }}">Relevance</a> |
+            {% if 'alpha' not in sort %}<a href="?q={{ query }}{{ facet_page }}&sort=alpha">Alpha<a>{% else %}Alpha{%endif %} |
+            {% if 'chrono' not in sort %}<a href="?q={{ query }}{{ facet_page }}&sort=chrono">Chrono<a>{% else %}Chrono{%endif %}
+          {% else %}
+        Relevance | <a href="?q={{ query }}{{ facet_page }}&sort=alpha">Alpha<a> | <a href="?q={{ query }}{{ facet_page }}&sort=chrono">Chrono</a>
+          {% endif %}
+        {% else %}
+        Relevance
+        {% endif %}
+        </div>
+      </h1>
       <div class="item_id">
         {% if request.GET.q %}
           Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} results matching your search for '{{ request.GET.q }}'.
         {% endif %}
 
-        {% with extra_string="q="|add:query|add:facet_page %}
+        {% with extra_string="q="|add:query|add:facet_page|add:sort %}
           {% include "gcd/bits/pagination_bar.html" %}
         {% endwith %}
       </div>
@@ -91,7 +105,7 @@
 
       <h1 class="item_id search_id">&nbsp;  </h1>
       <div class="item_id">
-        {% with extra_string="q="|add:query|add:facet_page %}
+        {% with extra_string="q="|add:query|add:facet_page|add:sort  %}
           {% include "gcd/bits/pagination_bar.html" %}
         {% endwith %}
       </div>

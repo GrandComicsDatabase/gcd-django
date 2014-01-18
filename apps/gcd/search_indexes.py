@@ -16,6 +16,10 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     facet_model_name = indexes.CharField(faceted=True)
 
+    sort_name = indexes.CharField(model_attr='series__sort_name', indexed=False)
+    key_date = indexes.CharField(model_attr='key_date', indexed=False)
+    sort_code = indexes.IntegerField(model_attr='sort_code', indexed=False)
+
     def get_model(self):
         return Issue
 
@@ -27,6 +31,9 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     facet_model_name = indexes.CharField(faceted=True)
 
+    sort_name = indexes.CharField(model_attr='sort_name', indexed=False)
+    year_began = indexes.IntegerField(model_attr='year_began')
+
     def get_model(self):
         return Series
 
@@ -37,6 +44,11 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr='issue__series__sort_name', indexed=False)
+    key_date = indexes.CharField(model_attr='issue__key_date', indexed=False)
+    sort_code = indexes.IntegerField(model_attr='issue__sort_code', indexed=False)
+    sequence_number = indexes.IntegerField(model_attr='sequence_number', indexed=False)
 
     def get_model(self):
         return Story
@@ -51,6 +63,9 @@ class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
     facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr='name', indexed=False)
+    year_began = indexes.IntegerField(model_attr='year_began', default=0)
 
     def get_model(self):
         return Publisher
@@ -67,6 +82,9 @@ class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
                              'search/indexes/gcd/publisher_text.txt')
     facet_model_name = indexes.CharField(faceted=True)
 
+    sort_name = indexes.CharField(model_attr='name', indexed=False)
+    year_began = indexes.IntegerField(model_attr='year_began', default=0)
+
     def get_model(self):
         return IndiciaPublisher
 
@@ -81,6 +99,9 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              'search/indexes/gcd/publisher_text.txt')
     facet_model_name = indexes.CharField(faceted=True)
 
+    sort_name = indexes.CharField(model_attr='name', indexed=False)
+    year_began = indexes.IntegerField(model_attr='year_began', default=0)
+
     def get_model(self):
         return Brand
 
@@ -94,6 +115,9 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
     facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr='name', indexed=False)
+    year_began = indexes.IntegerField(model_attr='year_began', default=0)
 
     def get_model(self):
         return BrandGroup
