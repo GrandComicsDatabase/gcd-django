@@ -118,7 +118,7 @@ function isvalidISBN10(a){
   if (a[9] === 'X'){
       check = 10;
   }
-  sum += check;
+  sum += parseInt(check);
   return ((sum % 11) == 0);
 }
 
