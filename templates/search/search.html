@@ -14,6 +14,7 @@
         {{ form.q }}
         <input type="submit" value="Search">
       </p>
+  </form>
     {% if suggestion %}
     <p>Did you mean <a href="{% url haystack_search %}?q={{ suggestion }}">{{ suggestion }}</a> ?</p>
     {% endif %}
@@ -23,10 +24,10 @@
         {% if form.selected_facets|length == 1 %}
           {% if sort %}
           <a href="?q={{ query }}{{ facet_page }}">Relevance</a> |
-            {% if 'alpha' not in sort %}<a href="?q={{ query }}{{ facet_page }}&sort=alpha">Alpha<a>{% else %}Alpha{%endif %} |
-            {% if 'chrono' not in sort %}<a href="?q={{ query }}{{ facet_page }}&sort=chrono">Chrono<a>{% else %}Chrono{%endif %}
+            {% if 'alpha' not in sort %}<a href="?q={{ query }}{{ facet_page }}&sort=alpha">Alpha</a>{% else %}Alpha{%endif %} |
+            {% if 'chrono' not in sort %}<a href="?q={{ query }}{{ facet_page }}&sort=chrono">Chrono</a>{% else %}Chrono{%endif %}
           {% else %}
-        Relevance | <a href="?q={{ query }}{{ facet_page }}&sort=alpha">Alpha<a> | <a href="?q={{ query }}{{ facet_page }}&sort=chrono">Chrono</a>
+        Relevance | <a href="?q={{ query }}{{ facet_page }}&sort=alpha">Alpha</a> | <a href="?q={{ query }}{{ facet_page }}&sort=chrono">Chrono</a>
           {% endif %}
         {% else %}
         Relevance
@@ -39,7 +40,9 @@
         {% endif %}
 
         {% with extra_string="q="|add:query|add:facet_page|add:sort %}
-          {% include "gcd/bits/pagination_bar.html" %}
+          {% with advanced_search=1 %}
+            {% include "gcd/bits/pagination_bar.html" %}
+          {% endwith %}
         {% endwith %}
       </div>
       <div style="clear: both;"></div>
@@ -106,7 +109,9 @@
       <h1 class="item_id search_id">&nbsp;  </h1>
       <div class="item_id">
         {% with extra_string="q="|add:query|add:facet_page|add:sort  %}
-          {% include "gcd/bits/pagination_bar.html" %}
+          {% with advanced_search=1 %}
+            {% include "gcd/bits/pagination_bar.html" %}
+          {% endwith %}
         {% endwith %}
       </div>
       <div style="height:10px; clear: both"></div>
@@ -119,5 +124,4 @@
       <br>Special characters, e.g. ,;/, are ignored.</p>
       {% endif %}
     {% endif %}
-  </form>
 {% endblock %}
