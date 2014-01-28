@@ -1,6 +1,10 @@
 from haystack.views import FacetedSearchView
 from apps.gcd.views import ResponsePaginator
+from haystack.query import SearchQuerySet
 
+class GcdSearchQuerySet(SearchQuerySet):
+    def auto_query(self, query_string, fieldname='content'):
+        return self
 
 class PaginatedFacetedSearchView(FacetedSearchView):
     def __call__(self, request):
@@ -8,6 +12,9 @@ class PaginatedFacetedSearchView(FacetedSearchView):
 
         self.form = self.build_form()
         self.query = self.get_query()
+        #TODO List of fields to add in filter_or should be gathered automatically from our SearchIndex classes
+        self.form.searchqueryset = self.form.searchqueryset.filter_or(content=self.query).filter_or(name=self.query).filter_or(title=self.query)
+
         self.results = self.get_results()
 
         self.paginator = ResponsePaginator(self.results,

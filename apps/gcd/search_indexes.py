@@ -14,6 +14,7 @@ class ObjectIndex(object):
 
 class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    title = indexes.CharField(model_attr="title", boost=15.0)
     facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
@@ -25,6 +26,7 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
 class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    name = indexes.CharField(model_attr="name", boost=15.0)
     facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
@@ -36,6 +38,7 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
 class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    title = indexes.CharField(model_attr="title", boost=15.0)
     facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
@@ -50,6 +53,7 @@ class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=15.0)
     facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
@@ -65,6 +69,7 @@ class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=15.0)
     facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
@@ -79,6 +84,7 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=15.0)
     facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
@@ -93,6 +99,7 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=15.0)
     facet_model_name = indexes.CharField(faceted=True)
 
     def get_model(self):
