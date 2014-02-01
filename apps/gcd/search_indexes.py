@@ -106,7 +106,7 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return Brand
 
     def prepare_facet_model_name(self, obj):
-        return "brand"
+        return "brand emblem"
 
 
 class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):

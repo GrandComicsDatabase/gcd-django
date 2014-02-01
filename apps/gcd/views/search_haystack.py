@@ -7,6 +7,10 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.request = request
 
         self.form = self.build_form()
+        if 'search_object' in request.GET:
+            if request.GET['search_object'] != "all":
+                self.form.selected_facets = [u'facet_model_name_exact:%s' % \
+                                              request.GET['search_object']]
         self.query = self.get_query()
         self.results = self.get_results()
         self.sort = ''
@@ -17,7 +21,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                   [u'facet_model_name_exact:publisher',
                    u'facet_model_name_exact:indicia publisher',
                    u'facet_model_name_exact:brand group',
-                   u'facet_model_name_exact:brand',
+                   u'facet_model_name_exact:brand emblem',
                    u'facet_model_name_exact:series']:
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',

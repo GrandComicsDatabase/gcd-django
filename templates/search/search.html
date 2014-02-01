@@ -12,6 +12,16 @@
       <p>
         <label for="id_q">Search for:</label>
         {{ form.q }}
+        <select name="search_object" size="1">
+            <option value="all"> All </option>
+            <option value="story" {% if 'facet_model_name_exact:story' in form.selected_facets %}selected{% endif %}> Story </option>
+            <option value="issue" {% if 'facet_model_name_exact:issue' in form.selected_facets %}selected{% endif %}> Issue </option>
+            <option value="series" {% if 'facet_model_name_exact:series' in form.selected_facets %}selected{% endif %}> Series </option>
+            <option value="publisher" {% if 'facet_model_name_exact:publisher' in form.selected_facets %}selected{% endif %}> Publisher </option>
+            <option value="brand group" {% if 'facet_model_name_exact:brand group' in form.selected_facets %}selected{% endif %}> Publisher Brand Group </option>
+            <option value="brand emblem" {% if 'facet_model_name_exact:brand emblem' in form.selected_facets %}selected{% endif %}> Publisher Brand Emblem </option>
+            <option value="indicia publisher" {% if 'facet_model_name_exact:indicia publisher' in form.selected_facets %}selected{% endif %}> Indicia Publisher </option>
+        </select>
         <input type="submit" value="Search">
       </p>
   </form>
@@ -55,7 +65,7 @@
       {% endif %}
       <table class="listing left">
         <tr>
-          <th style="width: 70px;">Type</th>
+          <th>Type</th>
           <th>Name</th>
         </tr>
         {% for result in page.object_list %}
@@ -92,7 +102,7 @@
               <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'brand' %}
-              <td>[BRAND]</td>
+              <td>[BRAND EMBLEM]</td>
               <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'brandgroup' %}
