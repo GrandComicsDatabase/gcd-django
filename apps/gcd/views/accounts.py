@@ -184,6 +184,7 @@ def register(request):
                       max_ongoing=settings.RESERVE_MAX_ONGOING_INITIAL,
                       country=cd['country'],
                       interests=cd['interests'],
+                      from_where=cd['from_where'],
                       registration_key=key,
                       registration_expires=expires,
                       user=new_user)
@@ -279,12 +280,14 @@ Languages: %s
 Interests:
    %s
 
+Where heard from us: %s
 Mentor this indexer: %s
         """ % (indexer,
                indexer.user.email,
                indexer.country.name,
                ', '.join([lang.name for lang in indexer.languages.all()]),
                indexer.interests,
+               indexer.from_where,
                'http://' + request.get_host() +
                urlresolvers.reverse('mentor',
                                     kwargs={ 'indexer_id': indexer.id }))
@@ -420,6 +423,7 @@ def profile(request, user_id=None, edit=False):
               'languages':
                 [ lang.id for lang in profile_user.indexer.languages.all() ],
               'interests': profile_user.indexer.interests,
+              'from_where': profile_user.indexer.from_where,
               'notify_on_approve': profile_user.indexer.notify_on_approve,
               'collapse_compare_view': profile_user.indexer.collapse_compare_view,
               'show_wiki_links': profile_user.indexer.show_wiki_links,
@@ -483,6 +487,7 @@ def update_profile(request, user_id=None):
     indexer.country = form.cleaned_data['country']
     indexer.languages = form.cleaned_data['languages']
     indexer.interests = form.cleaned_data['interests']
+    indexer.from_where = form.cleaned_data['from_where']
     indexer.save()
 
     return HttpResponseRedirect(
