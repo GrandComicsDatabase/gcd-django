@@ -434,12 +434,12 @@ GENRES = {
            u'velho oeste'],
 }
 
-def update_count(field, delta, language=None):
+def update_count(field, delta, language=None, country=None):
     '''
-    updates statistics, for all and per language
+    updates statistics, for all, per language, and per country
     CountStats with language=None is for all languages
     '''
-    stat = CountStats.objects.get(name=field, language=None)
+    stat = CountStats.objects.get(name=field, language=None, country=None)
     stat.count = F('count') + delta
     stat.save()
 
@@ -450,7 +450,16 @@ def update_count(field, delta, language=None):
             stat.count = F('count') + delta
             stat.save()
         else:
-            CountStats.objects.init_stats(language)
+            CountStats.objects.init_stats(language=language)
+            
+    if country:
+        stat = CountStats.objects.filter(name=field, country=country)
+        if stat.count():
+            stat = stat[0]
+            stat.count = F('count') + delta
+            stat.save()
+        else:
+            CountStats.objects.init_stats(country=country)
 
 def set_series_first_last(series):
     '''
@@ -1627,9 +1636,9 @@ class PublisherRevision(PublisherRevisionBase):
             pub = Publisher(imprint_count=0,
                             series_count=0,
                             issue_count=0)
-            update_count('publishers', 1)
+            update_count('publishers', 1, country=self.country)
         elif self.deleted:
-            update_count('publishers', -1)
+            update_count('publishers', -1, country=pub.country)
             pub.delete()
             return
 
@@ -1809,14 +1818,14 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         ipub = self.indicia_publisher
         if ipub is None:
             ipub = IndiciaPublisher()
-            self.parent.indicia_publisher_count += 1
+            self.parent.indicia_publisher_count = F('indicia_publisher_count') + 1
             self.parent.save()
-            update_count('indicia publishers', 1)
+            update_count('indicia publishers', 1, country=self.country)
 
         elif self.deleted:
-            self.parent.indicia_publisher_count -= 1
+            self.parent.indicia_publisher_count = F('indicia_publisher_count') - 1
             self.parent.save()
-            update_count('indicia publishers', -1)
+            update_count('indicia publishers', -1, country=ipub.country)
             ipub.delete()
             return
 
@@ -1947,11 +1956,11 @@ class BrandGroupRevision(PublisherRevisionBase):
         # TODO global stats for brand groups ?
         if brand_group is None:
             brand_group = BrandGroup()
-            self.parent.brand_count += 1
+            self.parent.brand_count = F('brand_count') + 1
             self.parent.save()
 
         elif self.deleted:
-            self.parent.brand_count -= 1
+            self.parent.brand_count = F('brand_count') - 1
             self.parent.save()
             brand_group.delete()
             return
@@ -2402,7 +2411,8 @@ class CoverRevision(Revision):
         elif self.deleted:
             cover.delete()
             cover.save()
-            update_count('covers', -1, language=cover.issue.series.language)
+            update_count('covers', -1, language=cover.issue.series.language,
+                                       country=cover.issue.series.country)
             if cover.issue.series.scan_count() == 0:
                 series = cover.issue.series
                 series.has_gallery = False
@@ -2422,11 +2432,14 @@ class CoverRevision(Revision):
                 cover.issue = issue_rev.issue
                 cover.save()
                 if issue_rev.series != old_issue.series:
-                    if issue_rev.series.language != old_issue.series.language:
+                    if issue_rev.series.language != old_issue.series.language \
+                      or issue_rev.series.country != old_issue.series.country:
                         update_count('covers', -1,
-                                     language=old_issue.series.language)
+                                     language=old_issue.series.language,
+                                     country=old_issue.series.country)
                         update_count('covers', 1,
-                                     language=issue_rev.series.language)
+                                     language=issue_rev.series.language,
+                                     country=issue_rev.series.country)
                     if not issue_rev.series.has_gallery:
                         issue_rev.series.has_gallery = True
                         issue_rev.series.save()
@@ -2441,7 +2454,8 @@ class CoverRevision(Revision):
             if self.cover is None:
                 self.cover = cover
                 self.save()
-                update_count('covers', 1, language=cover.issue.series.language)
+                update_count('covers', 1, language=cover.issue.series.language,
+                  country=cover.issue.series.country)
                 if not cover.issue.series.has_gallery:
                     series = cover.issue.series
                     series.has_gallery = True
@@ -2807,7 +2821,8 @@ class SeriesRevision(Revision):
             if self.is_comics_publication:
                 self.publisher.series_count = F('series_count') + 1
                 self.publisher.save()
-                update_count('series', 1, language=self.language)
+                update_count('series', 1, language=self.language,
+                             country=self.country)
         elif self.deleted:
             if series.is_comics_publication:
                 self.publisher.series_count = F('series_count') - 1
@@ -2817,7 +2832,8 @@ class SeriesRevision(Revision):
                 self.publisher.save()
             series.delete()
             if series.is_comics_publication:
-                update_count('series', -1, language=series.language)
+                update_count('series', -1, language=series.language,
+                             country=series.country)
             reservation = self.source.get_ongoing_reservation()
             if reservation:
                 reservation.delete()
@@ -2866,8 +2882,6 @@ class SeriesRevision(Revision):
         series.publication_notes = self.publication_notes
         series.tracking_notes = self.tracking_notes
 
-        series.country = self.country
-
         # a new series has language_id None
         if series.language_id is None:
             if series.issue_count:
@@ -2879,53 +2893,57 @@ class SeriesRevision(Revision):
                     count = -1
                 else:
                     count = +1
-                update_count('series', count, language=series.language)
+                update_count('series', count, language=series.language,
+                             country=series.country)
                 if series.issue_count:
                     update_count('issues', count*series.issue_count,
-                                 language=series.language)
+                                 language=series.language,
+                                 country=series.country)
                 variant_issues = Issue.objects.filter(series=series,
                   deleted=False).exclude(variant_of=None).count()
                 update_count('variant issues', count*variant_issues,
-                             language=series.language)
+                             language=series.language, country=series.country)
                 issue_indexes = Issue.objects.filter(series=series,
                                                      deleted=False)\
                                       .exclude(is_indexed=INDEXED['skeleton'])\
                                       .count()
                 update_count('issue indexes', count*issue_indexes,
-                             language=series.language)
+                             language=series.language, country=series.country)
 
-            if series.language != self.language and self.is_comics_publication:
-                update_count('series', -1, language=series.language)
-                update_count('series', 1, language=self.language)
+            if (series.language != self.language or \
+                series.country != self.country) and self.is_comics_publication:
+                update_count('series', -1, language=series.language, country=series.country)
+                update_count('series', 1, language=self.language, country=self.country)
                 if series.issue_count:
                     update_count('issues', -series.issue_count,
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('issues', series.issue_count,
-                                language=self.language)
+                                language=self.language, country=self.country)
                     variant_issues = Issue.objects.filter(series=series,
                     deleted=False).exclude(variant_of=None).count()
                     update_count('variant issues', -variant_issues,
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('variant issues', variant_issues,
-                                language=self.language)
+                                language=self.language, country=self.country)
                     issue_indexes = Issue.objects.filter(series=series,
                                                         deleted=False)\
                                         .exclude(is_indexed=INDEXED['skeleton'])\
                                         .count()
                     update_count('issue indexes', -issue_indexes,
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('issue indexes', issue_indexes,
-                                language=self.language)
+                                language=self.language, country=self.country)
                     story_count = Story.objects.filter(issue__series=series,
                                                     deleted=False).count()
                     update_count('stories', -story_count,
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('stories', story_count,
-                                language=self.language)
+                                language=self.language, country=self.country)
                     update_count('covers', -series.scan_count(),
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('covers', series.scan_count(),
-                                language=self.language)
+                                language=self.language, country=self.country)
+        series.country = self.country
         series.language = self.language
         series.publisher = self.publisher
         if series.is_comics_publication != self.is_comics_publication:
@@ -3766,7 +3784,8 @@ class IssueRevision(Revision):
             issue = Issue(sort_code=after_code + 1)
             if self.variant_of:
                 if self.series.is_comics_publication:
-                    update_count('variant issues', 1, language=self.series.language)
+                    update_count('variant issues', 1, language=self.series.language,
+                                 country=self.series.country)
             else:
                 self.series.issue_count = F('issue_count') + 1
                 # do NOT save the series here, it gets saved later in
@@ -3784,12 +3803,14 @@ class IssueRevision(Revision):
                     if self.indicia_publisher:
                         self.indicia_publisher.issue_count = F('issue_count') + 1
                         self.indicia_publisher.save()
-                    update_count('issues', 1, language=self.series.language)
+                    update_count('issues', 1, language=self.series.language,
+                                 country=self.series.country)
 
         elif self.deleted:
             if self.variant_of:
                 if self.series.is_comics_publication:
-                    update_count('variant issues', -1, language=self.series.language)
+                    update_count('variant issues', -1, language=self.series.language,
+                                 country=self.series.country)
             else:
                 self.series.issue_count = F('issue_count') - 1
                 # do NOT save the series here, it gets saved later in
@@ -3807,7 +3828,8 @@ class IssueRevision(Revision):
                     if self.indicia_publisher:
                         self.indicia_publisher.issue_count = F('issue_count') - 1
                         self.indicia_publisher.save()
-                    update_count('issues', -1, language=issue.series.language)
+                    update_count('issues', -1, language=issue.series.language,
+                                 country=issue.series.country)
             issue.delete()
             self._check_first_last()
             return
@@ -3843,13 +3865,16 @@ class IssueRevision(Revision):
                     issue.sort_code = 0
                 # update counts
                 if self.variant_of:
-                    if self.series.language != issue.series.language:
+                    if self.series.language != issue.series.language or \
+                      self.series.country != issue.series.country:
                         if self.series.is_comics_publication:
                             update_count('variant_issues', 1,
-                                        language=self.series.language)
+                                        language=self.series.language,
+                                        country=self.series.country)
                         if issue.series.is_comics_publication:
                             update_count('variant_issues', -1,
-                                        language=issue.series.language)
+                                        language=issue.series.language,
+                                        country=issue.series.country)
                 else:
                     self.series.issue_count = F('issue_count') + 1
                     issue.series.issue_count = F('issue_count') - 1
@@ -3862,21 +3887,28 @@ class IssueRevision(Revision):
                             if issue.series.publisher:
                                 issue.series.publisher.issue_count = F('issue_count') - 1
                                 issue.series.publisher.save()
-                    if self.series.language != issue.series.language:
+                    if self.series.language != issue.series.language or \
+                      self.series.country != issue.series.country:
                         if self.series.is_comics_publication:
-                            update_count('issues', 1, language=self.series.language)
+                            update_count('issues', 1, language=self.series.language,
+                                         country=self.series.country)
                         if issue.series.is_comics_publication:
-                            update_count('issues', -1, language=issue.series.language)
+                            update_count('issues', -1, language=issue.series.language,
+                                         country=issue.series.country)
                         story_count = self.issue.active_stories().count()
                         update_count('stories', story_count,
-                                    language=self.series.language)
+                                    language=self.series.language,
+                                    country=self.series.country)
                         update_count('stories', -story_count,
-                                    language=issue.series.language)
+                                    language=issue.series.language,
+                                    country=issue.series.country)
                         cover_count = self.issue.active_covers().count()
                         update_count('covers', cover_count,
-                                    language=self.series.language)
+                                    language=self.series.language,
+                                    country=self.series.country)
                         update_count('covers', -cover_count,
-                                    language=issue.series.language)
+                                    language=issue.series.language,
+                                    country=issue.series.country)
 
                 check_series_order = issue.series
                 # new series might have gallery after move
@@ -4329,14 +4361,17 @@ class StoryRevision(Revision):
         story = self.story
         if story is None:
             story = Story()
-            update_count('stories', 1, language=self.issue.series.language)
+            update_count('stories', 1, language=self.issue.series.language,
+                         country=self.issue.series.country)
         elif self.deleted:
             if self.issue.is_indexed != INDEXED['skeleton']:
                 if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
                   self.issue.series.is_comics_publication:
                     update_count('issue indexes', -1,
-                                 language=story.issue.series.language)
-            update_count('stories', -1, language=story.issue.series.language)
+                                 language=story.issue.series.language,
+                                 country=story.issue.series.country)
+            update_count('stories', -1, language=story.issue.series.language,
+                         country=story.issue.series.country)
             self._reset_values()
             story.delete()
             return
@@ -4345,16 +4380,20 @@ class StoryRevision(Revision):
         story.title_inferred = self.title_inferred
         story.feature = self.feature
         if hasattr(story, 'issue') and (story.issue != self.issue):
-            if story.issue.series.language != self.issue.series.language:
+            if story.issue.series.language != self.issue.series.language or \
+              story.issue.series.country != self.issue.series.country:
                 update_count('stories', 1,
-                            language=self.issue.series.language)
+                            language=self.issue.series.language,
+                            country=self.issue.series.country)
                 update_count('stories', -1,
-                            language=story.issue.series.language)
+                            language=story.issue.series.language,
+                            country=story.issue.series.country)
             old_issue = story.issue
             story.issue = self.issue
             if old_issue.set_indexed_status() == False:
                 update_count('issue indexes', -1,
-                             language=old_issue.series.language)
+                             language=old_issue.series.language,
+                             country=old_issue.series.country)
         else:
             story.issue = self.issue
         story.page_count = self.page_count
@@ -4398,12 +4437,14 @@ class StoryRevision(Revision):
             if self.issue.set_indexed_status() != INDEXED['skeleton'] and \
               self.issue.series.is_comics_publication:
                 update_count('issue indexes', 1,
-                             language=self.issue.series.language)
+                             language=self.issue.series.language,
+                             country=self.issue.series.country)
         else:
             if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
               self.issue.series.is_comics_publication:
                 update_count('issue indexes', -1,
-                             language=self.issue.series.language)
+                             language=self.issue.series.language,
+                             country=self.issue.series.country)
 
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue

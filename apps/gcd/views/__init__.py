@@ -40,7 +40,8 @@ class ViewTerminationError(Exception):
 def index(request):
     """Generates the front index page."""
 
-    stats = CountStats.objects.filter(language__isnull=True)
+    stats = CountStats.objects.filter(language__isnull=True,
+                                      country__isnull=True)
     language = None
     # TODO: we want to check here if we actively support the language
     if request.LANGUAGE_CODE != 'en':

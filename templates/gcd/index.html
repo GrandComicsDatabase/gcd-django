@@ -131,7 +131,11 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
               <li><a href="{% url covers_today %}">{% trans "Today's covers" %}</a>
               <li><a href="{% url changes_today %}">{% trans "Today's changes" %}</a>
               <li><a href="{% url apps.gcd.views.details.covers_to_replace %}">{% trans "Covers to replace" %}</a>
-              <li><a href="{% url international_stats %}">{% trans "International statistics" %}</a>
+              <li>{% trans "International statistics" %}
+              <ul style="margin-left:1em">
+              <li>by <a href="{% url international_stats_language %}">{% trans "Language" %}</a>
+              <li>by <a href="{% url international_stats_country %}">{% trans "Country" %}</a>
+              </ul>
               {% if language %}
               <li><a href="{% url apps.gcd.views.index %}">English start page</a></li>
               {% endif %}
