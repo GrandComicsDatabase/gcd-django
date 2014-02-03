@@ -3,6 +3,7 @@ from django.db import models
 
 from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
 from apps.gcd.models.language import Language
+from apps.gcd.models.country import Country
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue, INDEXED
 from apps.gcd.models.story import Story
@@ -10,66 +11,61 @@ from apps.gcd.models.cover import Cover
 
 class CountStatsManager(models.Manager):
 
-    def init_stats(self, language):
-        self.filter(language=language).delete()
+    def init_stats(self, language=None, country=None):
+        if language and country:
+            raise ValueError('either country or language stats')
+        self.filter(language=language, country=country).delete()
+        if country:
+            kwargs = { 'country': country, 'deleted': False }
+        else:
+            kwargs = { 'deleted': False }
 
         if language is None:
-            self.create(name='publishers', language=language,
-              count=Publisher.objects.filter(deleted=False).count())
-            self.create(name='brands', language=language,
-              count=Brand.objects.filter(deleted=False).count())
-            self.create(name='indicia publishers', language=language,
-              count=IndiciaPublisher.objects.filter(deleted=False).count())
+            self.create(name='publishers', country=country,
+              count=Publisher.objects.filter(**kwargs).count())
+            if not country:
+                self.create(name='brands', 
+                  count=Brand.objects.filter(**kwargs).count())
+            self.create(name='indicia publishers', country=country,
+              count=IndiciaPublisher.objects.filter(**kwargs).count())
+        else:
+            kwargs['language'] = language
 
-            self.create(name='series', language=language,
-              count=Series.objects.filter(deleted=False,
-                                          is_comics_publication=True).count())
-            self.create(name='issues', language=language,
-              count=Issue.objects.filter(deleted=False,
-                                         series__is_comics_publication=True,
-                                         variant_of=None).count())
-            self.create(name='variant issues', language=language,
-              count=Issue.objects.filter(deleted=False,
-                                         series__is_comics_publication=True)\
-                                         .exclude(variant_of=None).count())
-            self.create(name='issue indexes', language=language,
-              count=Issue.objects.filter(deleted=False, variant_of=None, 
-                                         series__is_comics_publication=True)\
-                         .exclude(is_indexed=INDEXED['skeleton']).count())
-            self.create(name='covers', language=language,
-              count=Cover.objects.filter(deleted=False).count())
-            self.create(name='stories', language=language,
-              count=Story.objects.filter(deleted=False).count())
+        self.create(name='series', language=language, country=country,
+          count=Series.objects.filter(is_comics_publication=True,
+                                      **kwargs).count())
+        if 'language' in kwargs:
+            kwargs['series__language'] = kwargs['language']
+            kwargs.pop('language')
+        if 'country' in kwargs:
+            kwargs['series__country'] = kwargs['country']
+            kwargs.pop('country')
+        kwargs['series__is_comics_publication'] = True
 
-            return
+        self.create(name='issues', language=language, country=country,
+          count=Issue.objects.filter(variant_of=None, **kwargs).count())
 
-        self.create(name='series', language=language,
-          count=Series.objects.filter(language=language, deleted=False,
-                                      is_comics_publication=True).count())
-
-        self.create(name='issues', language=language,
-          count=Issue.objects.filter(series__language=language, deleted=False,
-                                     series__is_comics_publication=True,
-                                     variant_of=None).count())
-                                     
-        self.create(name='variant issues', language=language,
-          count=Issue.objects.filter(series__language=language, deleted=False,
-                                     series__is_comics_publication=True)\
+        self.create(name='variant issues', language=language, country=country,
+          count=Issue.objects.filter(**kwargs)\
                                      .exclude(variant_of=None).count())
 
-        self.create(name='issue indexes', language=language,
-          count=Issue.objects.filter(series__language=language,
-                                     deleted=False, variant_of=None, 
-                                     series__is_comics_publication=True)\
+        self.create(name='issue indexes', language=language, country=country,
+          count=Issue.objects.filter(variant_of=None, **kwargs)\
                      .exclude(is_indexed=INDEXED['skeleton']).count())
 
-        self.create(name='covers', language=language,
-          count=Cover.objects.filter(issue__series__language=language,
-                                     deleted=False).count())
+        if 'series__language' in kwargs:
+            kwargs['issue__series__language'] = kwargs['series__language']
+            kwargs.pop('series__language')
+        if 'series__country' in kwargs:
+            kwargs['issue__series__country'] = kwargs['series__country']
+            kwargs.pop('series__country')
+        kwargs.pop('series__is_comics_publication')
+            
+        self.create(name='covers', language=language, country=country,
+          count=Cover.objects.filter(**kwargs).count())
 
-        self.create(name='stories', language=language,
-          count=Story.objects.filter(issue__series__language=language,
-                                     deleted=False).count())
+        self.create(name='stories', language=language, country=country,
+          count=Story.objects.filter(**kwargs).count())
 
 class CountStats(models.Model):
     """
@@ -87,6 +83,7 @@ class CountStats(models.Model):
     name = models.CharField(max_length=40, db_index=True)
     count = models.IntegerField()
     language = models.ForeignKey(Language, null=True)
+    country = models.ForeignKey(Country, null=True)
 
     def __unicode__(self):
         return self.name + ": " + str(self.count)

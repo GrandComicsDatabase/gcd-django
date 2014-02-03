@@ -7,6 +7,7 @@ from urllib2 import urlopen, HTTPError
 from datetime import date, datetime, time, timedelta
 from operator import attrgetter
 
+from django import forms
 from django.db.models import Q
 from django.conf import settings
 from django.core import urlresolvers
@@ -27,6 +28,7 @@ from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
                                   get_image_tags_per_page
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
+from apps.gcd.forms import get_generic_select_form
 from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, \
@@ -791,23 +793,62 @@ def daily_changes(request, show_date=None):
       context_instance=RequestContext(request)
     )
 
-def int_stats(request):
+def int_stats_language(request):
     """
     Display the international stats by language
     """
-    languages = Language.objects.filter(countstats__name='issue indexes') \
-                                .order_by('-countstats__count', 'name')
+    choices = [("series", "series"),
+               ("issues", "issues"),
+               ("variant issues", "variant issues"),
+               ("issue indexes", "issues indexed"),
+               ("covers", "covers"),
+               ("stories", "stories")]
+    return int_stats(request, Language, choices)
+
+def int_stats_country(request):
+    """
+    Display the international stats by country
+    """
+    choices = [("publishers", "publishers"),
+               ("indicia publishers", "indicia publishers"),
+               ("series", "series"),
+               ("issues", "issues"),
+               ("variant issues", "variant issues"),
+               ("issue indexes", "issues indexed"),
+               ("covers", "covers"),
+               ("stories", "stories")]
+    return int_stats(request, Country, choices)
+
+def int_stats(request, object_type, choices):
+    """
+    Display the international stats
+    """
+    f = get_generic_select_form(choices)
+    if 'submit' in request.GET:
+        form = f(request.GET)
+        order_by = form.data['object_choice']
+    else:
+        form = f(initial={'object_choice': 'issue indexes'})
+        order_by = 'issue indexes'
+
+    objects = object_type.objects.filter(countstats__name=order_by) \
+                            .order_by('-countstats__count', 'name')
+    object_name = (object_type.__name__).lower()
     stats=[]
-    for lang in languages:
-        stats.append((lang, CountStats.objects.filter(language=lang)))
+    for obj in objects:
+        kwargs = {object_name: obj}
+        stats.append((obj, CountStats.objects.filter(**kwargs)))
+
     return render_to_response(
       'gcd/status/international_stats.html',
       {
-        'stats' : stats
+        'stats' : stats,
+        'type' : object_name,
+        'form': form
       },
       context_instance=RequestContext(request)
     )
-
+ 
 def cover(request, issue_id, size):
     """
     Display the cover for a single issue on its own page.
