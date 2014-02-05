@@ -3,9 +3,9 @@ from django.conf.urls.defaults import *
 from django.conf import settings
 from django.views.generic.simple import direct_to_template
 from haystack.forms import FacetedSearchForm
-from haystack.query import SearchQuerySet
-from haystack.views import FacetedSearchView, search_view_factory
-from apps.gcd.views.search_haystack import PaginatedFacetedSearchView
+from haystack.views import search_view_factory
+from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
+    GcdSearchQuerySet
 
 
 urlpatterns = patterns('',
@@ -238,7 +238,7 @@ urlpatterns = patterns('',
 )
 
 # haystack search
-sqs = SearchQuerySet().facet('facet_model_name')
+sqs = GcdSearchQuerySet().facet('facet_model_name')
 
 urlpatterns += patterns('haystack.views',
                         url(r'^searchNew/', search_view_factory(

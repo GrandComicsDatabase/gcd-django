@@ -2,6 +2,7 @@ from haystack import indexes
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup
 
+DEFAULT_BOOST = 15.0
 
 class ObjectIndex(object):
     def index_queryset(self, using=None):
@@ -14,6 +15,7 @@ class ObjectIndex(object):
 
 class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='series__sort_name', indexed=False)
@@ -29,6 +31,7 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
 class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='sort_name', indexed=False)
@@ -43,6 +46,7 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
 class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
+    title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='issue__series__sort_name', indexed=False)
@@ -62,6 +66,7 @@ class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -80,6 +85,7 @@ class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -97,6 +103,7 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -114,6 +121,7 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)

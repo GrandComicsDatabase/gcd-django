@@ -1,6 +1,18 @@
 from haystack.views import FacetedSearchView
 from apps.gcd.views import ResponsePaginator
+from haystack.query import SearchQuerySet
 
+class GcdSearchQuerySet(SearchQuerySet):
+    # SearchQuerySet class by default adds 'AND (query)' condition to the
+    # request sent to search engine (to be exact it uses default operator that's
+    # set, but we want AND as default operator) which results in not finding
+    # objects where some searched terms are only present in fields that are not
+    # added to template of 'text' field for such object. So instead we want to
+    # control creating such conditions by adding appropriate filter_or() below
+    # in __call__() method of PaginatedFacetedSearchView class.
+
+    def auto_query(self, query_string, fieldname='content'):
+        return self
 
 class PaginatedFacetedSearchView(FacetedSearchView):
     def __call__(self, request):
@@ -12,6 +24,13 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                 self.form.selected_facets = [u'facet_model_name_exact:%s' % \
                                               request.GET['search_object']]
         self.query = self.get_query()
+        #TODO List of fields to add in filter_or should be gathered
+        # automatically from our SearchIndex classes
+        self.form.searchqueryset = self.form.searchqueryset.filter_or(
+            content=self.query).filter_or(
+            name=self.query).filter_or(
+            title=self.query)
+
         self.results = self.get_results()
         self.sort = ''
         if len(self.form.selected_facets) == 1:
