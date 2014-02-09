@@ -18,7 +18,7 @@ $.fn.addToOptionWidth = function(){
     $('option', $(this)).each(function(){
         max_length = Math.max(max_length, $(this).optionAndImageWidth());
     });
-    return max_length - $(this).outerWidth();
+    return Math.max(max_length - $(this).outerWidth(), 30);
 }
 
 var monthRegExp = [
@@ -111,9 +111,14 @@ function isvalidISBN13(a, len){
 }
 
 function isvalidISBN10(a){
-  for (var b=/\d/g,i=0, sum=0; i < 10; i++) {
+  for (var b=/\d/g,i=0, sum=0; i < 9; i++) {
     sum += ((10-i) * b.exec(a));
   };
+  var check = a[9];
+  if (a[9] === 'X'){
+      check = 10;
+  }
+  sum += parseInt(check);
   return ((sum % 11) == 0);
 }
 

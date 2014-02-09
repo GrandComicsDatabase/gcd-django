@@ -70,6 +70,11 @@ class AccountForm(forms.Form):
                  u'This helps us connect you with an Editor knowledgeable in '
                  u'your area to help you learn our indexing system.'))
 
+    from_where = forms.CharField(widget=forms.Textarea, required=False,
+      label='Where did you hear about us',
+      help_text=(u'Please tell us where you heard about the GCD. For example '
+                 u'a website, a blog, a search, a convention,...'))
+
     notify_on_approve = forms.BooleanField(label="Approval emails",
                                            initial=True,
                                            required=False,

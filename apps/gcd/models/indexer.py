@@ -34,6 +34,7 @@ class Indexer(models.Model):
     languages = models.ManyToManyField(Language, related_name='indexers',
                                        db_table='gcd_indexer_languages')
     interests = models.TextField(null=True, blank=True)
+    from_where = models.TextField(blank=True)
 
     max_reservations = models.IntegerField(default=1)
     max_ongoing = models.IntegerField(default=0)

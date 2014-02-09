@@ -182,6 +182,14 @@ urlpatterns = patterns('',
     (r'^credit/name/(?P<name>.+)/$',
      'apps.gcd.views.search.story_by_credit'),
 
+    # Special display pages
+    url(r'^creator_checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
+     'apps.gcd.views.search.creator_checklist', name='creator_checklist'),
+    url(r'^creator_checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
+     'apps.gcd.views.search.creator_checklist', name='creator_checklist'),
+    url(r'^creator_checklist/name/(?P<creator>.+)/$',
+     'apps.gcd.views.search.creator_checklist', name='creator_checklist'),
+    
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.
     (r'^job_number/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_job_number_name'),
@@ -201,8 +209,12 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.daily_changes', name='changes_today'),
     url(r'^daily_changes/(?P<show_date>.+)/$',
      'apps.gcd.views.details.daily_changes', name='changes_by_date'),
-    url(r'^international_stats/$',
-      'apps.gcd.views.details.int_stats', name='international_stats'),
+    url(r'^international_stats_language/$',
+      'apps.gcd.views.details.int_stats_language',
+      name='international_stats_language'),
+    url(r'^international_stats_country/$',
+      'apps.gcd.views.details.int_stats_country',
+      name='international_stats_country'),
 
     # list covers marked for replacement
     (r'^covers_to_replace/$',
@@ -248,8 +260,10 @@ urlpatterns += patterns('haystack.views',
 )
 
 urlpatterns += patterns('django.views.generic.simple',
+    (r'^international_stats/$', 'redirect_to',
+      {'url' : '/international_stats_language/' }),
     ('^covers_for_replacement.lasso/$', 'redirect_to',
-     {'url' : '/covers_to_replace/' }),
+      {'url' : '/covers_to_replace/' }),
     ('^index.lasso/$', 'redirect_to', {'url' : '/' }),
     ('^donate.lasso/$', 'redirect_to', {'url' : '/donate/' }),
     (r'^graphics/covers/', 'redirect_to', {'url' : None}),

@@ -24,7 +24,7 @@
           <dt> Country:
           <dd> {{ publisher.country.name }}
 {% if publisher.indicia_publisher_count %}
-          <dt> Indicia Publishers:
+          <dt> Indicia / Colophon Publishers:
   {% if preview %}
           <dd> {{ publisher.indicia_publisher_count }}
   {% else %}
@@ -32,7 +32,7 @@
   {% endif %}
 {% endif %}
 {% if publisher.brand_count %}
-          <dt> Brands:
+          <dt> Brand Groups:
   {% if preview %}
           <dd> {{ publisher.brand_count }}
   {% else %}
@@ -87,7 +87,7 @@
     {% if user.is_authenticated and not publisher.pending_deletion %}
         <form method="GET"
               action="{% url add_indicia_publisher parent_id=publisher.id %}">
-          <input id="add" name="add" type="submit" value="Add indicia publisher" />
+          <input id="add" name="add" type="submit" value="Add indicia / colophon pub." />
         </form>
         <form method="GET"
               action="{% url add_brand_group parent_id=publisher.id %}">
@@ -95,7 +95,7 @@
         </form>
         <form method="GET"
               action="{% url add_brand_via_publisher publisher_id=publisher.id %}">
-          <input id="add" name="add" type="submit" value="Add brand" />
+          <input id="add" name="add" type="submit" value="Add brand emblem" />
         </form>
         <form method="GET"
               action="{% url add_series publisher_id=publisher.id %}">

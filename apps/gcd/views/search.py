@@ -411,6 +411,48 @@ def search(request):
                                       'sort': sort }))
 
 
+def creator_checklist(request, creator, country=None, language=None):
+    get = request.GET.copy()
+    get[u'target'] = u'issue'
+    get[u'script'] = creator
+    get[u'pencils'] = creator
+    get[u'inks'] = creator
+    get[u'colors'] = creator
+    get[u'letters'] = creator
+    get[u'story_editing'] = creator
+    get[u'logic'] = u'True'
+    get[u'order1'] = u'series'
+    get[u'order2'] = u'date'
+    get[u'method'] = u'icontains'
+    if country and Country.objects.filter(code=country).count() == 1:
+        get[u'country'] = country
+    if language and Language.objects.filter(code=language).count() == 1:
+        get[u'language'] = language
+    request.GET = get.copy()
+    get.pop('page', None)
+
+    try:
+        items, target = do_advanced_search(request)
+    except ViewTerminationError, response:
+        return response.response
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue Checklist for Creator ' + creator,
+        'query_string': get.urlencode(),
+    }
+
+    template = 'gcd/search/issue_list.html'
+
+    target, method, logic, used_search_terms = used_search(get)
+    context['target'] = target
+    context['method'] = method
+    context['logic'] = logic
+    context['used_search_terms'] = used_search_terms
+
+    return paginate_response(request, items, template, context)
+        
 def advanced_search(request):
     """Displays the advanced search page."""
 
@@ -448,14 +490,9 @@ def do_advanced_search(request):
         stq_obj = search_stories(data, op)
         iq_obj = search_issues(data, op)
         sq_obj = search_series(data, op)
-        if data['target'] != 'brand':
-            ipq_obj = search_indicia_publishers(data, op)
-        else:
-            ipq_obj = None
-        if data['target'] != 'indicia_publisher':
-            bq_obj = search_brands(data, op)
-        else:
-            bq_obj = None
+        ipq_obj = search_indicia_publishers(data, op)
+        bq_obj = search_brands(data, op)
+        bgq_obj = search_brand_groups(data, op)
         pq_obj = search_publishers(data, op)
 
         # if there are sequence searches limit to type cover
@@ -465,7 +502,7 @@ def do_advanced_search(request):
         else:
             cq_obj = None
         query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj,
-                                bq_obj, ipq_obj, cq_obj)
+                                bq_obj, bgq_obj, ipq_obj, cq_obj)
         terms = compute_order(data)
     except SearchError, se:
         raise ViewTerminationError, render_to_response(
@@ -494,11 +531,17 @@ def do_advanced_search(request):
             filter = filter.filter(query)
         items = filter.order_by(*terms).select_related('country').distinct()
 
-    elif data['target'] == 'brand':
-        filter = Brand.objects.exclude(deleted=True)
+    elif data['target'] == 'brand_group':
+        filter = BrandGroup.objects.exclude(deleted=True)
         if query:
             filter = filter.filter(query)
         items = filter.order_by(*terms).select_related('parent').distinct()
+
+    elif data['target'] == 'brand_emblem':
+        filter = Brand.objects.exclude(deleted=True)
+        if query:
+            filter = filter.filter(query)
+        items = filter.order_by(*terms).select_related('group__parent').distinct()
 
     elif data['target'] == 'indicia_publisher':
         filter = IndiciaPublisher.objects.exclude(deleted=True)
@@ -760,22 +803,56 @@ def search_publishers(data, op):
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
 
-def search_brands(data, op):
+def search_brand_groups(data, op):
     """
-    Handle brand fields.
+    Handle brand group fields.
     """
     target = data['target']
-    prefix = compute_prefix(target, 'brand')
+    if data['brand_group'] or data['brand_notes'] or target == 'brand_group':
+        prefix = compute_prefix(target, 'brand_group')
+    else:
+        return None
 
     q_and_only = []
     q_objs = []
-    if data['brand']:
-        if data['brand'] == IS_EMPTY and target == 'issue':
+    if target == 'brand_group':
+        q_and_only.extend(search_dates(data,
+                                       start_name='%syear_began' % prefix,
+                                       end_name='%syear_ended' % prefix))
+    if data['brand_group']:
+        q_objs.append(
+          Q(**{ '%sname__%s' % (prefix, op): data['brand_group'] }))
+    if data['brand_notes']:
+        q_objs.append(
+          Q(**{ '%snotes__%s' % (prefix, op): data['brand_notes'] }))
+
+    if q_and_only or q_objs:
+        q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
+    return compute_qobj(data, q_and_only, q_objs)
+
+def search_brands(data, op):
+    """
+    Handle brand emblem fields.
+    """
+    target = data['target']
+    if data['brand_emblem'] or data['brand_notes'] or target == 'brand_emblem':
+        prefix = compute_prefix(target, 'brand_emblem')
+    else:
+        return None
+
+    q_and_only = []
+    q_objs = []
+    if target == 'brand_emblem':
+        q_and_only.extend(search_dates(data,
+                                       start_name='%syear_began' % prefix,
+                                       end_name='%syear_ended' % prefix))
+    if data['brand_emblem']:
+        if data['brand_emblem'] == IS_EMPTY and target == 'issue':
             return Q(**{ '%sisnull' % prefix: True }) & Q(**{ 'no_brand': False })
-        if data['brand'] == IS_NONE and target == 'issue':
+        if data['brand_emblem'] == IS_NONE and target == 'issue':
             return Q(**{ 'no_brand': True })
         q_objs.append(
-          Q(**{ '%sname__%s' % (prefix, op): data['brand'] }))
+          Q(**{ '%sname__%s' % (prefix, op): data['brand_emblem'] }))
     if data['brand_notes']:
         q_objs.append(
           Q(**{ '%snotes__%s' % (prefix, op): data['brand_notes'] }))
@@ -789,10 +866,18 @@ def search_indicia_publishers(data, op):
     Handle indicia_publisher fields.
     """
     target = data['target']
-    prefix = compute_prefix(target, 'indicia_publisher')
+    if data['indicia_publisher'] or data['ind_pub_notes'] or \
+      data['is_surrogate'] or target == 'indicia_publisher':
+        prefix = compute_prefix(target, 'indicia_publisher')
+    else:
+        return None
 
     q_and_only = []
     q_objs = []
+    if target == 'indicia_publisher':
+        q_and_only.extend(search_dates(data,
+                                       start_name='%syear_began' % prefix,
+                                       end_name='%syear_ended' % prefix))
     if data['indicia_publisher']:
         if data['indicia_publisher'] == IS_EMPTY and target == 'issue':
             return Q(**{ '%sisnull' % prefix: True })
@@ -976,6 +1061,9 @@ def search_issues(data, op, stories_q=None):
         q_objs.append(Q(**{ '%sindicia_frequency__%s' % (prefix, op): \
                              data['indicia_frequency'] }) &\
                       Q(**{ '%sseries__has_indicia_frequency' % prefix: True }))
+    if data['rating']:
+        q_objs.append(Q(**{ '%srating__%s' % (prefix, op): data['rating'] }) &\
+                             Q(**{ '%sseries__has_rating' % prefix: True }))
     if data['issue_notes']:
         q_objs.append(Q(**{ '%snotes__%s' % (prefix, op): data['issue_notes'] }))
 
@@ -1131,22 +1219,36 @@ def compute_prefix(target, current):
     if current == 'publisher':
         if target == 'series':
             return 'publisher__'
-        if target in ('brand', 'indicia_publisher'):
+        if target in ('brand_group', 'indicia_publisher'):
             return 'parent__'
+        if target in ('brand_emblem'):
+            return 'group__parent__'
         if target == 'issue':
             return 'series__publisher__'
         if target in ('sequence', 'feature', 'cover', 'issue_cover'):
             return 'issue__series__publisher__'
-    elif current == 'brand':
+    elif current == 'brand_group':
         if target == 'indicia_publisher':
             raise SearchError, ('Cannot search for Indicia Publishers by '
               'Publisher Brand attributes, as they are not directly related')
-        if target in ('publisher', 'issue'):
+        if target == 'publisher':
+            return 'brandgroup__'
+        if target == 'issue':
+            return 'brand__group__'
+        if target in ('series', 'sequence', 'feature', 'cover', 'issue_cover'):
+            return 'issue__brand__group__'
+    elif current == 'brand_emblem':
+        if target == 'indicia_publisher':
+            raise SearchError, ('Cannot search for Indicia Publishers by '
+              'Publisher Brand attributes, as they are not directly related')
+        if target == 'publisher':
+            return 'brandgroup__brand__'
+        if target == 'issue':
             return 'brand__'
         if target in ('series', 'sequence', 'feature', 'cover', 'issue_cover'):
             return 'issue__brand__'
     elif current == 'indicia_publisher':
-        if target == 'brand':
+        if target in ('brand_group', 'brand_emblem'):
             raise SearchError, ('Cannot search for Publisher Brands by '
               'Indicia Publisher attributes, as they are not directly related')
         if target == 'publisher':
@@ -1159,22 +1261,28 @@ def compute_prefix(target, current):
         if target in ('issue', 'publisher'):
             return 'series__'
         if target in ('sequence', 'feature', 'cover', 'issue_cover',
-                      'brand', 'indicia_publisher'):
+                      'brand_emblem', 'indicia_publisher'):
             return 'issue__series__'
+        if target == 'brand_group':
+            return 'brand__issue__series__'
     elif current == 'issue':
         if target in ('sequence', 'feature', 'cover', 'issue_cover', 'series',
-                      'brand', 'indicia_publisher'):
+                      'brand_emblem', 'indicia_publisher'):
             return 'issue__'
         if target == 'publisher':
             return 'series__issue__'
+        if target == 'brand_group':
+            return 'brand__issue__'
     elif current == 'sequence':
         if target == 'issue':
             return 'story__'
-        if target in ('series', 'cover', 'issue_cover', 'brand',
+        if target in ('series', 'cover', 'issue_cover', 'brand_emblem',
                       'indicia_publisher'):
             return 'issue__story__'
         if target == 'publisher':
             return 'series__issue__story__'
+        if target == 'brand_group':
+            return 'brand__issue__story__'
     return ''
 
 
@@ -1225,13 +1333,17 @@ def compute_order(data):
             elif order == 'country':
                 terms.append('country__name')
 
-        elif target == 'brand':
+        elif target == 'brand_group':
             if order == 'date':
                 terms.append('year_began')
             elif order == 'publisher':
                 terms.append('parent')
             elif order == 'country':
                 terms.append('parent__country__name')
+
+        elif target == 'brand_emblem':
+            if order == 'date':
+                terms.append('year_began')
 
         elif target == 'indicia_publisher':
             if order == 'date':
