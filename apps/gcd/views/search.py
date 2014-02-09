@@ -411,6 +411,48 @@ def search(request):
                                       'sort': sort }))
 
 
+def creator_checklist(request, creator, country=None, language=None):
+    get = request.GET.copy()
+    get[u'target'] = u'issue'
+    get[u'script'] = creator
+    get[u'pencils'] = creator
+    get[u'inks'] = creator
+    get[u'colors'] = creator
+    get[u'letters'] = creator
+    get[u'story_editing'] = creator
+    get[u'logic'] = u'True'
+    get[u'order1'] = u'series'
+    get[u'order2'] = u'date'
+    get[u'method'] = u'icontains'
+    if country and Country.objects.filter(code=country).count() == 1:
+        get[u'country'] = country
+    if language and Language.objects.filter(code=language).count() == 1:
+        get[u'language'] = language
+    request.GET = get.copy()
+    get.pop('page', None)
+
+    try:
+        items, target = do_advanced_search(request)
+    except ViewTerminationError, response:
+        return response.response
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue Checklist for Creator ' + creator,
+        'query_string': get.urlencode(),
+    }
+
+    template = 'gcd/search/issue_list.html'
+
+    target, method, logic, used_search_terms = used_search(get)
+    context['target'] = target
+    context['method'] = method
+    context['logic'] = logic
+    context['used_search_terms'] = used_search_terms
+
+    return paginate_response(request, items, template, context)
+        
 def advanced_search(request):
     """Displays the advanced search page."""
 
