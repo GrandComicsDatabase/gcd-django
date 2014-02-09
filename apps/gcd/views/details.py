@@ -803,7 +803,7 @@ def int_stats_language(request):
                ("issue indexes", "issues indexed"),
                ("covers", "covers"),
                ("stories", "stories")]
-    return int_stats(request, 'language', choices)
+    return int_stats(request, Language, choices)
 
 def int_stats_country(request):
     """
@@ -817,7 +817,7 @@ def int_stats_country(request):
                ("issue indexes", "issues indexed"),
                ("covers", "covers"),
                ("stories", "stories")]
-    return int_stats(request, 'country', choices)
+    return int_stats(request, Country, choices)
 
 def int_stats(request, object_type, choices):
     """
@@ -831,22 +831,19 @@ def int_stats(request, object_type, choices):
         form = f(initial={'object_choice': 'issue indexes'})
         order_by = 'issue indexes'
 
-    if object_type == 'country':
-        objects = Country.objects.filter(countstats__name=order_by) \
-                                .order_by('-countstats__count', 'name')
-    else:
-        objects = Language.objects.filter(countstats__name=order_by) \
-                                .order_by('-countstats__count', 'name')
+    objects = object_type.objects.filter(countstats__name=order_by) \
+                            .order_by('-countstats__count', 'name')
+    object_name = (object_type.__name__).lower()
     stats=[]
     for obj in objects:
-        kwargs = {object_type: obj}
+        kwargs = {object_name: obj}
         stats.append((obj, CountStats.objects.filter(**kwargs)))
 
     return render_to_response(
       'gcd/status/international_stats.html',
       {
         'stats' : stats,
-        'type' : object_type,
+        'type' : object_name,
         'form': form
       },
       context_instance=RequestContext(request)
