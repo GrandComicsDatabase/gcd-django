@@ -108,6 +108,14 @@ msgstr "Titelbilder zu ersetzen"
 msgid "International statistics"
 msgstr "Internationale Statistiken"
 
+#: templates/gcd/index.html:136
+msgid "by Language"
+msgstr "je Sprache"
+
+#: templates/gcd/index.html:137
+msgid "by Country"
+msgstr "je Land"
+
 #: templates/gcd/index.html:117
 msgid "Last Updated Language Issues"
 msgstr "Zuletzt geänderte deutsche Comics"

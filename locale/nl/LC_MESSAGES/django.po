@@ -71,6 +71,14 @@ msgstr "Omslagen ter vervanging"
 msgid "International statistics"
 msgstr "Internationale statistieken"
 
+#: templates/gcd/index.html:136
+msgid "by Language"
+msgstr "per taal"
+
+#: templates/gcd/index.html:137
+msgid "by Country"
+msgstr "per land"
+
 #: templates/gcd/index.html:117
 msgid "Last Updated Language Issues"
 msgstr "Nieuwste Nederlandse bijdrages"
