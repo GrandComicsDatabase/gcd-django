@@ -1,6 +1,6 @@
 from haystack import indexes
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
-    Brand, BrandGroup
+    Brand, BrandGroup, STORY_TYPES
 
 DEFAULT_BOOST = 15.0
 
@@ -66,7 +66,7 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
         return super(ObjectIndex, self).index_queryset(using).exclude(
-            type__name='blank page(s)')
+            type=STORY_TYPES['blank'])
 
 
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
