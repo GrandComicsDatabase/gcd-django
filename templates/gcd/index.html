@@ -94,8 +94,8 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             </a>
           </div>
           <div class="social_item">
-            <a href="http://webchat.freenode.net/?channels=GCD">
-              <img alt="irc" src="{{ MEDIA_URL }}/img/gcd/social/irc_32.png">
+            <a href="http://www.pinterest.com/gcdcomics/">
+              <img alt="pinterest" src="{{ MEDIA_URL }}/img/gcd/social/pinterest_32.png">
             </a>
           </div>
           <div class="social_item">
@@ -117,6 +117,12 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
         <span id="calendarTitle" style="font-size:medium"><a href="/calendar/">Comics Calendar</a></span>
         <iframe src="/agenda/{{ language.code }}/" style=" border-width:0 " width="100%" height="400" frameborder="0" scrolling="no"></iframe>
 {% endif %}
+{% if ADVERTISING and not BETA %}
+        <div style="clear: both;">
+        </div>
+        <script id="mNCC" language="javascript">  medianet_width='160';  medianet_height= '600';  medianet_crid='247738828';  </script>
+        <script id="mNSC" src="http://contextual.media.net/nmedianet.js?cid=8CU73W537" language="javascript"></script>
+{% endif %}
       </div>
 
       <div id="right_column">
@@ -133,8 +139,8 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
               <li><a href="{% url apps.gcd.views.details.covers_to_replace %}">{% trans "Covers to replace" %}</a>
               <li>{% trans "International statistics" %}
               <ul style="margin-left:1em">
-              <li>by <a href="{% url international_stats_language %}">{% trans "Language" %}</a>
-              <li>by <a href="{% url international_stats_country %}">{% trans "Country" %}</a>
+              <li><a href="{% url international_stats_language %}">{% trans "by Language" %}</a>
+              <li><a href="{% url international_stats_country %}">{% trans "by Country" %}</a>
               </ul>
               {% if language %}
               <li><a href="{% url apps.gcd.views.index %}">English start page</a></li>
@@ -193,6 +199,32 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             {% endfor %}
           </div>
         </div>
+{% if ADVERTISING and not BETA %}
+<!-- Project Wonderful Ad Box Loader -->
+        <script type="text/javascript">
+        (function(){function pw_load(){
+            if(arguments.callee.z)return;else arguments.callee.z=true;
+            var d=document;var s=d.createElement('script');
+            var x=d.getElementsByTagName('script')[0];
+            s.type='text/javascript';s.async=true;
+            s.src='//www.projectwonderful.com/pwa.js';
+            x.parentNode.insertBefore(s,x);}
+        if (window.attachEvent){
+            window.attachEvent('DOMContentLoaded',pw_load);
+            window.attachEvent('onload',pw_load);}
+        else{
+            window.addEventListener('DOMContentLoaded',pw_load,false);
+            window.addEventListener('load',pw_load,false);}})();
+        </script>
+<!-- End Project Wonderful Ad Box Loader -->
+<!-- Project Wonderful Ad Box Code -->
+        <div id="pw_adbox_70843_3_0"></div>
+        <script type="text/javascript"></script>
+        <noscript><map name="admap70843" id="admap70843"><area href="http://www.projectwonderful.com/out_nojs.php?r=0&c=0&id=70843&type=3" shape="rect" coords="0,0,160,600" title="" alt="" target="_blank" /></map>
+        <table cellpadding="0" cellspacing="0" style="width:160px;border-style:none;background-color:#ffffff;"><tr><td><img src="http://www.projectwonderful.com/nojs.php?id=70843&type=3" style="width:160px;height:600px;border-style:none;" usemap="#admap70843" alt="" /></td></tr><tr><td style="background-color:#ffffff;" colspan="1"><center><a style="font-size:10px;color:#0000ff;text-decoration:none;line-height:1.2;font-weight:bold;font-family:Tahoma, verdana,arial,helvetica,sans-serif;text-transform: none;letter-spacing:normal;text-shadow:none;white-space:normal;word-spacing:normal;" href="http://www.projectwonderful.com/advertisehere.php?id=70843&type=3" target="_blank">Ads by Project Wonderful!  Your ad here, right now: $0</a></center></td></tr></table>
+        </noscript>
+<!-- End Project Wonderful Ad Box Code -->
+{% endif %}
         <!-- Right Column end -->
       </div>
     </div> <!-- id="colleft"-->
@@ -209,16 +241,9 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
       {% endblocktrans %}
     </div>
     <div class="footer_item">
-      {% trans 'The GCD Web Site code is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>' %}
-    </div>
-  <div class="footer_item">
-    <a href="{% url privacy %}">{% trans 'Privacy Policy' %}</a>
+    The GCD <a href="{% url privacy %}">{% trans 'Privacy Policy' %}</a>.
+    {% trans 'The GCD Web Site code is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>' %}.
   </div>
-    <div class="footer_item">
-      <a href="http://creativecommons.org/licenses/by-sa/3.0/">
-        <img alt="Creative Commons License" src="{{ MEDIA_URL }}/img/cc_sa_license80x15.png"></a>
-      Social networking and email icons by: <a href="http://komodomedia.com">Komodo Media</a>
-    </div>
     <div class="footer_item">
       {% include "gcd/bits/google.html" %}
     </div>
