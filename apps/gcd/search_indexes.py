@@ -1,6 +1,6 @@
 from haystack import indexes
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
-    Brand, BrandGroup
+    Brand, BrandGroup, STORY_TYPES
 
 DEFAULT_BOOST = 15.0
 
@@ -49,16 +49,24 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    sort_name = indexes.CharField(model_attr='issue__series__sort_name', indexed=False)
+    sort_name = indexes.CharField(model_attr='issue__series__sort_name',
+                                  indexed=False)
     key_date = indexes.CharField(model_attr='issue__key_date', indexed=False)
-    sort_code = indexes.IntegerField(model_attr='issue__sort_code', indexed=False)
-    sequence_number = indexes.IntegerField(model_attr='sequence_number', indexed=False)
+    sort_code = indexes.IntegerField(model_attr='issue__sort_code',
+                                     indexed=False)
+    sequence_number = indexes.IntegerField(model_attr='sequence_number',
+                                           indexed=False)
 
     def get_model(self):
         return Story
 
     def prepare_facet_model_name(self, obj):
         return "story"
+
+    def index_queryset(self, using=None):
+        """Used when the entire index for model is updated."""
+        return super(ObjectIndex, self).index_queryset(using).exclude(
+            type=STORY_TYPES['blank'])
 
 
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
