@@ -3,21 +3,20 @@
 }
 
 .queues table {
-    border: double black 2px;
     border-collapse: collapse;
 }
 
 .queues th {
-    border: solid black 1px;
-    border-collapse: collapse;
     padding: 0.4em;
     background-color: #DDD;
+    border-style: hidden;
+    border-left: solid #DDD 1px;
+    border-right: solid #DDD 1px;
 }
 
 .queues td {
-    border: solid black 1px;
-    border-collapse: collapse;
     padding: 0.4em;
+    border: solid silver 1px;
 }
 
 .queues span.add {

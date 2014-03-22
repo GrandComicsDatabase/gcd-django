@@ -110,6 +110,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% endfor %}
 {% endif %}
             <div class="issue_cover_links">
+<div class="left">
 {% if issue.has_covers %}
               View: <a href="{{ issue.get_absolute_url }}cover/4">Large</a>
               <br>
@@ -118,19 +119,20 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
               <br>
   {% endif %}
 {% endif %}
+</div>
+<div class="right">
 {% if issue.series.has_gallery %}
               <a href="{{ issue.series.get_absolute_url }}covers">Cover gallery</a>
 {% endif %}
+</div>
             </div>
           </div>
         </div> <!-- coverContainer -->
       </div> <!-- cover -->
       <div id="story_data">
 {% for story in stories %}
-        <hr class="divider">
   {% include "gcd/details/single_story.html" %}
 {% endfor %}
-        <hr class="divider">
       </div>
     </div> <!-- control_center -->
 

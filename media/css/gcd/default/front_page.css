@@ -13,7 +13,7 @@ body {
 }
 
 #main_body {
-    margin-top: 2em;
+    margin-top: 1em;
     margin-bottom: 2em;
     position:relative;      /* This fixes the IE7 overflow hidden bug and stops the layout jumping out of place */
     clear:both;
@@ -83,7 +83,6 @@ body {
 /* start of css that is not from the other site*/
 
 .front_page_left_box {
-    border: solid 1px;
     width: 16em;
     margin-bottom: 1em;
     float: left;
@@ -98,7 +97,6 @@ body {
 
 .box_inner {
     padding: 0.4em;
-    background-color: white;
 }
 
 .front_page_left_box_social {
@@ -120,7 +118,7 @@ body {
 }
 
 #front_page_menu {
-    background-color: #77E;
+    background-color: #66E;
     font-weight: bold;
     padding: 0.4em;
 }
@@ -157,11 +155,10 @@ body {
 }
 
 .front_page_central_box {
-    border: solid 1px;
 }
 
 #search_box {
-    background-color: #77E;
+    background-color: #66E;
     color: white;
     padding: 0.4em;
     font-weight: bold;
@@ -211,15 +208,14 @@ body {
 
 .front_page_right_box {
     clear: right;
-    border: solid 1px;
     width: 13em;
     margin-bottom: 1em;
 }
 
 .front_page_right_box_notice {
     clear: right;
-    border: solid 1px #ffA500;
-    width: 13em;
+    border: solid 0.25em #ffA500;
+    width: 12.5em;
     margin-bottom: 1em;
 }
 
@@ -257,7 +253,7 @@ div.box_inner li {
 
 div.emphasized,
 .instructions {
-    border: solid 4px #77E;
+    border: solid 4px #66E;
     padding: 0.5em;
 }
 
@@ -269,7 +265,6 @@ div.emphasized,
 .advanced_link {
     background-color: #FFA500;
     padding: 0.4em;
-    border: solid 1px black;
 }
 
 /*
@@ -293,7 +288,7 @@ div.feed-post {
 
 hr.feed-post {
     height: 4px;
-    background-color: #77E;
+    background-color: #66E;
     border: none;
 }
 
