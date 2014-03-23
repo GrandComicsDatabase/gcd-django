@@ -500,21 +500,21 @@ def link_other_reprint(reprint, is_source):
             text = '<a href="%s">%s</a> <br> of %s' % \
                      (reprint.target.get_absolute_url(),
                       show_story_short(reprint.target),
-                      reprint.target.issue)
+                      reprint.target.issue.full_name())
         else:
             text = '<a href="%s">%s</a>' % \
                      (reprint.target_issue.get_absolute_url(),
-                      reprint.target_issue)
-    else:    
+                      reprint.target_issue.full_name())
+    else:
         if hasattr(reprint, 'origin'):
             text = '<a href="%s">%s</a> <br> of %s' % \
                      (reprint.origin.get_absolute_url(),
                       show_story_short(reprint.origin),
-                      reprint.origin.issue)
+                      reprint.origin.issue.full_name())
         else:
             text = '<a href="%s">%s</a>' % \
                      (reprint.origin_issue.get_absolute_url(),
-                      reprint.origin_issue)
+                      reprint.origin_issue.full_name())
     return mark_safe(text)
 
 def compare_current_reprints(object_type, changeset):
