@@ -844,14 +844,20 @@ def discuss(request, id):
         return _cant_get(request)
 
     changeset = get_object_or_404(Changeset, id=id)
-    if request.user != changeset.approver:
+    if request.user != changeset.approver and \
+      request.user != changeset.indexer:
         return render_to_response('gcd/error.html',
           {'error_text': 'A change may only be put into discussion by its ' \
-                         'approver.'},
+                         'indexer or approver.'},
           context_instance=RequestContext(request))
-    if changeset.state != states.REVIEWING:
+    if request.user == changeset.approver and \
+      changeset.state != states.REVIEWING:
         return render_error(request,
           'Only REVIEWING changes can be put into discussion.')
+    if request.user == changeset.indexer and \
+      changeset.state not in [states.OPEN, states.REVIEWING]:
+        return render_error(request,
+          'Only EDITING OR REVIEWING changes can be put into discussion.')
 
     comment_text = request.POST['comments'].strip()
     changeset.discuss(notes=comment_text)
@@ -861,11 +867,18 @@ def discuss(request, id):
     else:
         email_comments = '.'
 
+    if request.user == changeset.indexer:
+        action_by = 'indexer %s' % unicode(changeset.indexer.indexer)
+        start_comment = 'The reviewed'
+    else:
+        action_by = 'editor %s' % unicode(changeset.approver.indexer)
+        start_comment = 'Your'
+
     email_body = u"""
 Hello from the %s!
 
 
-  Your change for "%s" was put into the discussion state by GCD editor %s%s
+  %s change for "%s" was put into the discussion state by GCD %s%s
 
 You can view the full change at %s.
 
@@ -874,8 +887,9 @@ thanks,
 
 %s
 """ % (settings.SITE_NAME,
+       start_comment,
        unicode(changeset),
-       unicode(changeset.approver.indexer),
+       action_by,
        email_comments,
        settings.SITE_URL.rstrip('/') +
          urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
@@ -888,15 +902,19 @@ thanks,
     else:
         subject = 'GCD change put into discussion'
 
-    changeset.indexer.email_user(subject, email_body, settings.EMAIL_INDEXING)
-
-    if request.user.approved_changeset.filter(state=states.REVIEWING).count():
-        return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    if request.user == changeset.indexer:
+        changeset.approver.email_user(subject, email_body, settings.EMAIL_INDEXING)
+        return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
-        if changeset.change_type is CTYPES['cover']:
-            return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+        changeset.indexer.email_user(subject, email_body, settings.EMAIL_INDEXING)
+
+        if request.user.approved_changeset.filter(state=states.REVIEWING).count():
+            return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
         else:
-            return HttpResponseRedirect(urlresolvers.reverse('pending'))
+            if changeset.change_type is CTYPES['cover']:
+                return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+            else:
+                return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 @permission_required('gcd.can_approve')
 def approve(request, id):
