@@ -1588,6 +1588,11 @@ class StoryRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Empty titles cannot be unofficial.'])
 
+        if cd['title'].startswith('[') and cd['title'].endswith(']'):
+            raise forms.ValidationError(
+              ['Do not use [] around unofficial story titles, check the '
+               'unofficial checkbox instead.'])
+
         if not cd['no_script'] and cd['script'] == "":
             raise forms.ValidationError(
               ['Script field or No Script checkbox must be filled in.'])
