@@ -235,4 +235,14 @@
 </table>
 {% endif %}
 
+<h1 class="item_id search_id">
+<div class="left">
+  {% trans "Changes for "%}{{ date }}
+</div>
+{% url apps.gcd.views.details.daily_changes as choose_url%}
+{% url apps.gcd.views.details.daily_changes show_date=date_before as choose_url_before %}
+{% url apps.gcd.views.details.daily_changes show_date=date_after as choose_url_after %}
+{% include "gcd/bits/choose_date.html" %}
+</h1>
+<hr>
 {% endblock %}
