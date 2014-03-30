@@ -15,7 +15,7 @@
 {% block body %}
 
 {% with "Advanced Search" as bar_heading %}
-{% include "gcd/bits/plain_bar.html" %}
+{% include "gcd/bits/search_bar.html" %}
 {% endwith %}
 
 {% include "oi/bits/multi_selector.html" %}
@@ -35,7 +35,7 @@ if ($(window).width() < 1240) {
 </script>
 
 <div id="blithering">
-Advanced Search is somewhat experimental and has some known bugs and limitations:
+<b>Advanced Search</b> is somewhat experimental and has some known bugs and limitations:
 <ul>
   <li> The default ordering of the search results sorts according to series
        name and issue date.
