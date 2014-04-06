@@ -1,6 +1,7 @@
 from haystack.views import FacetedSearchView
 from apps.gcd.views import ResponsePaginator
 from haystack.query import SearchQuerySet
+from haystack.inputs import AutoQuery
 
 class GcdSearchQuerySet(SearchQuerySet):
     # SearchQuerySet class by default adds 'AND (query)' condition to the
@@ -27,9 +28,9 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         #TODO List of fields to add in filter_or should be gathered
         # automatically from our SearchIndex classes
         self.form.searchqueryset = self.form.searchqueryset.filter_or(
-            content=self.query).filter_or(
-            name=self.query).filter_or(
-            title=self.query)
+            content=AutoQuery(self.query)).filter_or(
+            name=AutoQuery(self.query)).filter_or(
+            title=AutoQuery(self.query))
 
         self.results = self.get_results()
         self.sort = ''
