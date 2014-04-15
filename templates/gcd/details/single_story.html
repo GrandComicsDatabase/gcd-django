@@ -82,5 +82,8 @@
       {% endifequal %}
       {% endif %}
 
+      {% if not story.has_credits and not story.has_content and not story.notes %}
+        <dl class="contents"></dl>
+      {% endif %}
     </div>
 
