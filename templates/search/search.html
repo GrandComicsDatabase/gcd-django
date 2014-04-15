@@ -33,11 +33,11 @@
         <div class="right">Order:
         {% if form.selected_facets|length == 1 %}
           {% if sort %}
-          <a href="?q={{ query }}{{ facet_page }}">Relevance</a> |
-            {% if 'alpha' not in sort %}<a href="?q={{ query }}{{ facet_page }}&sort=alpha">Alpha</a>{% else %}Alpha{%endif %} |
-            {% if 'chrono' not in sort %}<a href="?q={{ query }}{{ facet_page }}&sort=chrono">Chrono</a>{% else %}Chrono{%endif %}
+          <a href="?{{ query }}{{ facet_page }}">Relevance</a> |
+            {% if 'alpha' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=alpha">Alpha</a>{% else %}Alpha{%endif %} |
+            {% if 'chrono' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=chrono">Chrono</a>{% else %}Chrono{%endif %}
           {% else %}
-        Relevance | <a href="?q={{ query }}{{ facet_page }}&sort=alpha">Alpha</a> | <a href="?q={{ query }}{{ facet_page }}&sort=chrono">Chrono</a>
+        Relevance | <a href="?{{ query }}{{ facet_page }}&sort=alpha">Alpha</a> | <a href="?{{ query }}{{ facet_page }}&sort=chrono">Chrono</a>
           {% endif %}
         {% else %}
         Relevance
@@ -49,7 +49,7 @@
           Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} results matching your search for '{{ request.GET.q }}'.
         {% endif %}
 
-        {% with extra_string="q="|add:query|add:facet_page|add:sort %}
+        {% with extra_string=query|add:facet_page|add:sort %}
           {% with advanced_search=1 %}
             {% include "gcd/bits/pagination_bar.html" %}
           {% endwith %}
@@ -59,7 +59,7 @@
       {% if facets.fields.facet_model_name %}
         <ul>
           {% for model in facets.fields.facet_model_name %}
-            <li><a href="?q={{ query }}{% if request.GET.models %}&amp;models={{ request.GET.models }}{% endif %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}">{{ model.0 }}</a> ({{ model.1 }})</li>
+            <li><a href="?{{ query }}{% if request.GET.models %}&amp;models={{ request.GET.models }}{% endif %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}">{{ model.0 }}</a> ({{ model.1 }})</li>
           {% endfor %}
         </ul>
       {% endif %}
@@ -118,7 +118,7 @@
 
       <h1 class="item_id search_id">&nbsp;  </h1>
       <div class="item_id">
-        {% with extra_string="q="|add:query|add:facet_page|add:sort  %}
+        {% with extra_string=query|add:facet_page|add:sort  %}
           {% with advanced_search=1 %}
             {% include "gcd/bits/pagination_bar.html" %}
           {% endwith %}
