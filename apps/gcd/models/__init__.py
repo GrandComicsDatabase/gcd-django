@@ -11,7 +11,7 @@ from language import Language
 from publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, BrandUse
 from series import Series
 from issue import Issue
-from story import StoryType, Story, STORY_TYPES
+from story import StoryType, Story, STORY_TYPES, OLD_TYPES
 from cover import Cover
 from indexer import Indexer, ImpGrant
 from indexcredit import IndexCredit

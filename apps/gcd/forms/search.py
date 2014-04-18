@@ -3,7 +3,7 @@ from re import match
 from decimal import Decimal, InvalidOperation
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from apps.gcd.models import Country, Language, Indexer, StoryType
+from apps.gcd.models import Country, Language, Indexer, StoryType, OLD_TYPES
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],
@@ -167,7 +167,8 @@ class AdvancedSearch(forms.Form):
       widget=FilteredSelectMultiple('Indexers', False, attrs={'size': '6'}))
 
     feature = forms.CharField(required=False)
-    type = forms.ModelMultipleChoiceField(queryset=StoryType.objects.all(),
+    type = forms.ModelMultipleChoiceField(queryset=StoryType.objects\
+      .exclude(name__in=[i for i in OLD_TYPES]),
       widget=FilteredSelectMultiple('Story Types', False, attrs={'size' : '6'}),
       required=False)
 
