@@ -9,6 +9,7 @@ from issue import Issue
 STORY_TYPES = {
     'promo': 16,
     'soo': 22,
+    'blank': 24,
 }
 
 class StoryTypeManager(models.Manager):
@@ -96,12 +97,15 @@ class Story(models.Model):
                self.editing or \
                self.job_number
 
+    def has_keywords(self):
+        return self.keywords.exists()
+
     def has_content(self):
         """Simplifies UI checks for conditionals.  Content fields"""
         return self.genre or \
                self.characters or \
                self.synopsis or \
-               self.keywords.count() or \
+               self.keywords.exists() or \
                self.has_reprints()
                
     def has_reprints(self, notes=True):

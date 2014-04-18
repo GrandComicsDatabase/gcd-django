@@ -9,6 +9,7 @@
   <a href="{% url pending_covers %}">Covers</a> |
   {% if perms.gcd.can_approve %}
   <a href="{% url reviewing %}">Reviewing</a> |
+  <a href="{% url editor_log %}">Editor Log</a> |
   {% endif %}
   <a href="{% url approved %}">Approved</a> |
   <a href="{% url add %}">Add New</a> |

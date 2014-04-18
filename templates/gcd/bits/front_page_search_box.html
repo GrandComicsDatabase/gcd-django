@@ -3,18 +3,21 @@
   <form action="{% url apps.gcd.views.search.search %}" method="get">
     <div class="first_line">
         {% trans 'Search' %} {% include "gcd/bits/search_for.html" %}
-        <input type="text" name="query" id="query" size="15" autofocus>
+        <input type="text" name="query" id="query" size="15" {% if flavour != 'mobile' %}autofocus{% endif %}>
+{% if flavour != 'mobile' %}
         <script type="text/javascript">
         if (!("autofocus" in document.createElement("input"))) {
             document.getElementById("query").focus();
         }
         </script>
+{% endif %}
     </div>
     <div class="second_line">
         {% trans 'Sort by' %}
         {% include "gcd/bits/search_order.html" %}
         <input type="submit" name="submit" id="submit" value="{% trans 'Search' %}">
-        |&nbsp;<span id="advanced_link"><a href="{% url apps.gcd.views.search.advanced_search %}">{% trans 'Advanced&nbsp;Search' %}</a></span>
+        |&nbsp;<span class="advanced_link"><a href="{% url apps.gcd.views.search.advanced_search %}">{% trans 'Advanced&nbsp;Search' %}</a></span>
+        <span class="advanced_link"><a href="{% url haystack_search %}">{% trans 'New&nbsp;Search' %}<sup>beta</sup></a></span>
     </div>
   </form> 
 </div>

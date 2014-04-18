@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block title %}
-  GCD :: Publisher :: {{ publisher.name }} :: Brands
+  GCD :: Publisher :: {{ publisher.name }} :: Brand Groups
 {% endblock %}
 
 {% block css %}
@@ -13,14 +13,14 @@
 
 {% block view_body %}
 
-{% with "Brands" as extra %}
+{% with "Brand Groups" as extra %}
 {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
 <div class="publisher_list_control_panel">
 {% if user.is_authenticated and not publisher.pending_deletion %}
   <form method="GET"
-        action="{% url add_brand parent_id=publisher.id %}">
-    <input id="add" name="add" type="submit" value="Add another brand" />
+        action="{% url add_brand_group parent_id=publisher.id %}">
+    <input id="add" name="add" type="submit" value="Add another brand group" />
   </form>
 {% endif %}
 {% if not user.is_authenticated %}  
@@ -33,7 +33,7 @@
 {% if publisher.brand_count %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
-    <th> Brand </th>
+    <th> Brand Group </th>
     <th> Issues </th>
     <th> Year Began</th>
     <th> Year Ended</th>

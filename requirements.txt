@@ -1,7 +1,8 @@
 BeautifulSoup
 Django<1.5
+feedparser
 MySQL-python
-Pillow
+Pillow < 2.0
 PyICU
 PyYAML
 Pygments
@@ -9,9 +10,13 @@ RBTools
 South
 django-appconf
 django-compressor
-django-imagekit
+django-imagekit<3.0
 git+git://github.com/GrandComicsDatabase/django-taggit.git
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
 git+git://github.com/GrandComicsDatabase/django-mobile.git
 python-stdnum
 wsgiref
+pyelasticsearch
+django-haystack<2.1.0
+python-dateutil
+git+git://github.com/bennylope/elasticstack.git

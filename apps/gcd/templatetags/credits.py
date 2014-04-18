@@ -124,11 +124,12 @@ def show_credit(story, credit):
                 formatted_credit += __format_credit(story, 'feature')
         return formatted_credit
     elif credit == 'genre' and getattr(story, credit) and \
+      story.issue and \
       (story.issue.series.language.code != 'en' or \
         (story.issue.series.language.code == 'en' and \
            story.issue.series.country.code != 'us')) and \
          story.issue.series.language.code in GENRES:
-        genres = story.genre
+        genres = story.genre.lower()
         language = story.issue.series.language.code 
         if language == 'en' and \
            story.issue.series.country.code != 'us':
@@ -184,10 +185,7 @@ def __format_credit(story, credit):
             credit_value += '<li>' + esc(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
-        if type(story.keywords) == unicode:
-            credit_value = story.keywords
-        else:
-            credit_value = esc('; '.join(str(i) for i in story.keywords.all().order_by('name')))
+        credit_value = __format_keywords(story)
         if credit_value == '':
             return ''
     else: # This takes care of escaping the database entries we display
@@ -203,6 +201,16 @@ def __format_credit(story, credit):
     return mark_safe(
            dt + '<span class="credit_label">' + label + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
+
+def __format_keywords(story):
+    if type(story.keywords) == unicode:
+        credit_value = story.keywords
+    else:
+        credit_value = esc('; '.join(str(i) for i in story.keywords.all().order_by('name')))
+    return credit_value
+
+def show_keywords(story):
+    return __format_keywords(story)
 
 def show_credit_status(story):
     """
@@ -266,9 +274,9 @@ def show_cover_contributor(cover_revision):
 # these next three might better fit into a different file
 
 def get_country_flag(country):
-    return u'<img src="%s/img/gcd/flags/%s.png" alt="%s" '\
+    return mark_safe(u'<img src="%s/img/gcd/flags/%s.png" alt="%s" '\
            'class="embedded_flag">' \
-           % (settings.MEDIA_URL, country.code.lower(), esc(country))
+           % (settings.MEDIA_URL, country.code.lower(), esc(country)))
 
 def show_country(series):
     """
@@ -623,4 +631,5 @@ register.filter(show_title)
 register.filter(show_cover_contributor)
 register.filter(show_reprints)
 register.filter(show_reprints_for_issue)
+register.filter(show_keywords)
 register.filter(split_reprint_string)

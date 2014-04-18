@@ -20,7 +20,8 @@ from apps.oi import states
 INDEXED = {
     'skeleton': 0,
     'full': 1,
-    'partial': 2
+    'partial': 2,
+    'ten_percent': 3,
 }
 
 
@@ -45,6 +46,8 @@ class Issue(models.Model):
     variant_name = models.CharField(max_length=255)
     barcode = models.CharField(max_length=38, db_index=True)
     no_barcode = models.BooleanField(default=False)
+    rating = models.CharField(max_length=255, default='', db_index=True)
+    no_rating = models.BooleanField(default=False, db_index=True)
 
     # Dates and sorting
     publication_date = models.CharField(max_length=255)
@@ -106,6 +109,9 @@ class Issue(models.Model):
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
+    def active_variants(self):
+        return self.variant_set.exclude(deleted=True)
+
     def shown_stories(self):
         """ returns cover sequence and story sequences """
         if self.variant_of:
@@ -154,8 +160,18 @@ class Issue(models.Model):
         return self.active_covers(), self.variant_covers()
 
     def has_covers(self):
-        return self.series.is_comics_publication and \
-               self.active_covers().count() > 0
+        return self.can_have_cover() and self.active_covers().count() > 0
+
+    def can_have_cover(self):
+        if self.series.is_comics_publication:
+            return True
+        if self.is_indexed in [INDEXED['full'], INDEXED['ten_percent']]:
+            return True
+        else:
+            return False
+        
+    def has_keywords(self):
+        return self.keywords.exists()
 
     def other_variants(self):
         if self.variant_of:
@@ -177,19 +193,34 @@ class Issue(models.Model):
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
         from story import StoryType
-        is_indexed = INDEXED['skeleton']
-        if self.page_count > 0:
-            total_count = self.active_stories()\
+        if not self.variant_of:
+            is_indexed = INDEXED['skeleton']
+            if self.page_count > 0:
+                total_count = self.active_stories()\
                               .aggregate(Sum('page_count'))['page_count__sum']
-            if total_count > 0 and total_count >= Decimal('0.4') * self.page_count:
-                is_indexed = INDEXED['full']
-        if is_indexed != INDEXED['full'] and self.active_stories()\
-          .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
-            is_indexed = INDEXED['partial']
-            
-        if self.is_indexed != is_indexed:
-            self.is_indexed = is_indexed
-            self.save()
+                if total_count > 0 and \
+                   total_count >= Decimal('0.4') * self.page_count:
+                    is_indexed = INDEXED['full']
+                elif total_count > 0 and \
+                   total_count >= Decimal('0.1') * self.page_count:
+                    is_indexed = INDEXED['ten_percent']
+            if is_indexed not in [INDEXED['full'], INDEXED['ten_percent']] and \
+              self.active_stories()\
+              .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
+                is_indexed = INDEXED['partial']
+
+            if is_indexed == INDEXED['full']:
+                if self.page_count_uncertain or self.active_stories()\
+                  .filter(page_count_uncertain=True).count() > 0:
+                    is_indexed = INDEXED['partial']
+
+            if self.is_indexed != is_indexed:
+                self.is_indexed = is_indexed
+                self.save()
+                if self.active_variants():
+                    for variant in self.active_variants():
+                        variant.is_indexed = is_indexed
+                        variant.save()
         return self.is_indexed
 
     def index_status_name(self):
@@ -202,7 +233,7 @@ class Issue(models.Model):
             return states.CSS_NAME[active.changeset.state]
         elif self.is_indexed == INDEXED['full']:
             return 'approved'
-        elif self.is_indexed == INDEXED['partial']:
+        elif self.is_indexed in [INDEXED['partial'], INDEXED['ten_percent']]:
             return 'partial'
         else:
             return 'available'

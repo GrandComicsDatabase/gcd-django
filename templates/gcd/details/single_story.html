@@ -40,7 +40,6 @@
       </h3>
 
       {% if story.has_credits %}
-      <h3 class="credit_header"> Credits </h3>
       <dl class="credits">
         {{ story|show_credit:"script" }}
         {{ story|show_credit:"pencils" }}
@@ -53,7 +52,7 @@
       {% endif %}
 
       {% if story.has_content %}
-        <h3 class="content_header"> Content Information </h3>
+        <hr class="content_header"></hr>
         <dl class="contents">
           {{ story|show_credit:"genre" }}
           {{ story|show_credit:"characters"|linebreaksbr }}

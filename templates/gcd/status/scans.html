@@ -22,6 +22,12 @@
   <a href="{{ series.get_absolute_url }}status">Index Status</a>
 </div>
 
+{% if series.is_comics_publication %}
 {% include "gcd/bits/scan_tables.html" %}
+{% else %}
+<div class="error_message">
+No cover status for non-comics publications.
+</div>
+{% endif %}
 
 {% endblock %}

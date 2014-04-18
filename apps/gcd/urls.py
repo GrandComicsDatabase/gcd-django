@@ -2,6 +2,11 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
 from django.views.generic.simple import direct_to_template
+from haystack.forms import FacetedSearchForm
+from haystack.views import search_view_factory
+from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
+    GcdSearchQuerySet
+
 
 urlpatterns = patterns('',
     ###########################################################################
@@ -40,9 +45,16 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.indicia_publishers'),
     (r'^publisher/(?P<publisher_id>\d+)/brands/$',
      'apps.gcd.views.details.brands'),
-    (r'^publisher/(?P<publisher_id>\d+)/imprints/$',
-     'apps.gcd.views.details.imprints'),
+    (r'^publisher/(?P<publisher_id>\d+)/brand_uses/$',
+     'apps.gcd.views.details.brand_uses'),
 
+    url(r'^brand_group/(?P<brand_group_id>\d+)/$',
+     'apps.gcd.views.details.brand_group', name='show_brand_group'),
+    (r'^brand_group/name/(?P<brand_group_name>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.brand_group_by_name'),
+    (r'^brand_group/name/(?P<brand_group_name>.+)/$',
+     'apps.gcd.views.search.brand_group_by_name'),
+     
     url(r'^brand/(?P<brand_id>\d+)/$',
      'apps.gcd.views.details.brand', name='show_brand'),
     (r'^brand/name/(?P<brand_name>.+)/sort/(?P<sort>.+)/$',
@@ -170,6 +182,14 @@ urlpatterns = patterns('',
     (r'^credit/name/(?P<name>.+)/$',
      'apps.gcd.views.search.story_by_credit'),
 
+    # Special display pages
+    url(r'^creator_checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
+     'apps.gcd.views.search.creator_checklist', name='creator_checklist'),
+    url(r'^creator_checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
+     'apps.gcd.views.search.creator_checklist', name='creator_checklist'),
+    url(r'^creator_checklist/name/(?P<creator>.+)/$',
+     'apps.gcd.views.search.creator_checklist', name='creator_checklist'),
+    
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.
     (r'^job_number/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_job_number_name'),
@@ -189,8 +209,12 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.daily_changes', name='changes_today'),
     url(r'^daily_changes/(?P<show_date>.+)/$',
      'apps.gcd.views.details.daily_changes', name='changes_by_date'),
-    url(r'^international_stats/$',
-      'apps.gcd.views.details.int_stats', name='international_stats'),
+    url(r'^international_stats_language/$',
+      'apps.gcd.views.details.int_stats_language',
+      name='international_stats_language'),
+    url(r'^international_stats_country/$',
+      'apps.gcd.views.details.int_stats_country',
+      name='international_stats_country'),
 
     # list covers marked for replacement
     (r'^covers_to_replace/$',
@@ -225,10 +249,21 @@ urlpatterns = patterns('',
     (r'^search.lasso/$','apps.gcd.views.redirect.search'),
 )
 
+# haystack search
+sqs = GcdSearchQuerySet().facet('facet_model_name')
+
+urlpatterns += patterns('haystack.views',
+                        url(r'^searchNew/', search_view_factory(
+                            view_class=PaginatedFacetedSearchView,
+                            form_class=FacetedSearchForm, searchqueryset=sqs),
+                            name='haystack_search'),
+)
 
 urlpatterns += patterns('django.views.generic.simple',
+    (r'^international_stats/$', 'redirect_to',
+      {'url' : '/international_stats_language/' }),
     ('^covers_for_replacement.lasso/$', 'redirect_to',
-     {'url' : '/covers_to_replace/' }),
+      {'url' : '/covers_to_replace/' }),
     ('^index.lasso/$', 'redirect_to', {'url' : '/' }),
     ('^donate.lasso/$', 'redirect_to', {'url' : '/donate/' }),
     (r'^graphics/covers/', 'redirect_to', {'url' : None}),

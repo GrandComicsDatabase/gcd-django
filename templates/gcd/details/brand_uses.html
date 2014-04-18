@@ -1,0 +1,62 @@
+{% extends "gcd/base_view.html" %}
+
+{% load credits %}
+{% load i18n %}
+
+{% block title %}
+  GCD :: Publisher :: {{ publisher.name }} :: Used Brand Emblems
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% with "Brand Emblems Used" as extra %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+{% if items.count %}
+<h3>Used brand emblems:</h3>
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Brand Emblem</th>
+    <th> Name </th>
+    <th> Brand Group </th>
+    <th> Year Began</th>
+    <th> Year Ended</th>
+    <th> Notes </th>
+  </tr>
+{% for brand_use in items %}
+  {% with brand_use.emblem as brand %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> {% if brand.emblem %} <a href="{{ brand.get_absolute_url }}"> <img src="{{ brand.emblem.thumbnail.url }}"> {% endif %} </a> </td>
+    <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a> </td>
+    <td class="listing_country">
+    {% for group in brand.group.all %}
+    <a href="{{ group.get_absolute_url }}">{{ group.name }}</a>
+      {% if group.parent != brand_use.publisher %}
+    ({{ group.parent.country|get_country_flag }} <a href="{{ group.parent.get_absolute_url }}">{{ group.parent }}</a>)
+      {% endif %}
+    {% endfor %}
+    </td>
+  {% endwith %}
+    <td> {{ brand_use.year_began|default:"" }} </td>
+    <td> {{ brand_use.year_ended|default:"" }} </td>
+    <td> {{ brand_use.notes }} </td>
+  </tr>
+{% endfor %}
+</table>
+{% else %}
+<dl>
+  <dt> Brand Emblem in use:
+  <dd> None
+</dl>
+{% endif %}
+
+{% with 1 as paginate_only %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+
+{% endblock %}

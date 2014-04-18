@@ -6,7 +6,7 @@ import os, glob
 from stdnum import isbn
 
 from django.db import models, settings
-from django.db.models import Q, F, Count, Max
+from django.db.models import Q, F, Count, Max, Manager
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
@@ -40,10 +40,14 @@ CTYPES = {
     'two_issues': 10,
     'reprint': 11,
     'image': 12,
+    'brand_group': 13,
+    'brand_use': 14,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['brand'],
+                           CTYPES['brand_group'],
+                           CTYPES['brand_use'],
                            CTYPES['indicia_publisher'],
                            CTYPES['series'],
                            CTYPES['cover'],
@@ -241,6 +245,43 @@ GENRES = {
            u'juvenil',
            u'guerra',
            u'oeste'],
+    'fr': [u'aventure',
+           u'drame',
+           u'humour',
+           u'non fictif',
+           u'juridique',
+           u'animaux',
+           u'animaux anthropomorphes drôles',
+           u'aviation',
+           u'biographique',
+           u'automobile',
+           u'enfants',
+           u'criminel',
+           u'polar; policier',
+           u'domestique',
+           u'érotique',
+           u'fantasy',
+           u'mode',
+           u'historique',
+           u'histoire',
+           u'horreur-suspense',
+           u'jungle',
+           u'arts martiaux',
+           u'mathématiques et sciences',
+           u'médical',
+           u'militaire',
+           u'nature',
+           u'religieux',
+           u'roman d\'amour',
+           u'satire/parodie',
+           u'science-fiction',
+           u'sport',
+           u'espionnage',
+           u'super-héros',
+           u'heroic fantasy',
+           u'adolescents',
+           u'guerre',
+           u'western'],
     'it': [u'avventura',
            u'',
            u'umoristico',
@@ -393,37 +434,12 @@ GENRES = {
            u'velho oeste'],
 }
 
-def check_delete_imprint(imprint):
+def update_count(field, delta, language=None, country=None):
     '''
-    Check an imprints for deletion and delete if possible.
-    Note that imprints cannot be reserved by users.
-    Need to re-fetch the imprint from the db since we did an F()-update before
-    '''
-    imprint = Publisher.objects.get(id=imprint.id)
-    if imprint.deletable():
-        from apps.oi.views import _do_reserve
-        anon = User.objects.get(username=settings.ANON_USER_NAME)
-        changeset=_do_reserve(anon, imprint, 'publisher', delete=True)
-        if changeset == None: # something is wrong
-            raise ValueError
-        changeset.state=states.REVIEWING
-        changeset.approver = anon
-        changeset.save()
-        comment = changeset.comments.create(commenter=anon,
-          text='Automatically generated changeset for the deletion of an imprint.',
-          old_state=states.UNRESERVED, new_state=states.PENDING)
-        changeset.approve(notes='Automatically approved deletion.')
-        return True
-    else:
-        return False
-
-
-def update_count(field, delta, language=None):
-    '''
-    updates statistics, for all and per language
+    updates statistics, for all, per language, and per country
     CountStats with language=None is for all languages
     '''
-    stat = CountStats.objects.get(name=field, language=None)
+    stat = CountStats.objects.get(name=field, language=None, country=None)
     stat.count = F('count') + delta
     stat.save()
 
@@ -434,7 +450,16 @@ def update_count(field, delta, language=None):
             stat.count = F('count') + delta
             stat.save()
         else:
-            CountStats.objects.init_stats(language)
+            CountStats.objects.init_stats(language=language)
+            
+    if country:
+        stat = CountStats.objects.filter(name=field, country=country)
+        if stat.count():
+            stat = stat[0]
+            stat.count = F('count') + delta
+            stat.save()
+        else:
+            CountStats.objects.init_stats(country=country)
 
 def set_series_first_last(series):
     '''
@@ -574,7 +599,14 @@ class Changeset(models.Model):
                     self.indiciapublisherrevisions.all())
 
         if self.change_type == CTYPES['brand']:
-            return (self.brandrevisions.all(),)
+            return (self.brandrevisions.all(), self.branduserevisions.all())
+
+        if self.change_type == CTYPES['brand_group']:
+            return (self.brandgrouprevisions.all(), self.brandrevisions.all(),
+                    self.branduserevisions.all())
+
+        if self.change_type == CTYPES['brand_use']:
+            return (self.branduserevisions.all(),)
 
         if self.change_type == CTYPES['indicia_publisher']:
             return (self.indiciapublisherrevisions.all(),)
@@ -621,7 +653,8 @@ class Changeset(models.Model):
             if self._inline_revision is None:
                 if self.change_type == CTYPES['publisher']:
                     # to filter out all the imprints in a publisher deletion
-                    # changeset
+                    # changeset, probably still need this for correct handling
+                    # of old revisions in change history, approved, editor_log
                     if self.publisherrevisions.count() > 1:
                         self._inline_revision = \
                           self.publisherrevisions.filter(is_master=True)[0]
@@ -872,7 +905,7 @@ class Changeset(models.Model):
         self.save()
 
     def discuss(self, notes=''):
-        if self.state != states.REVIEWING or \
+        if self.state not in [states.OPEN, states.REVIEWING] or \
            self.approver is None:
             raise ValueError, "Only changes with an approver may be discussed."
 
@@ -1264,6 +1297,10 @@ class Revision(models.Model):
             new = getattr(self, field_name)
             if type(new) == unicode:
                 field_changed = old.strip() != new.strip()
+            elif isinstance(old, Manager):
+                old = old.all().values_list('id', flat=True)
+                new = new.all().values_list('id', flat=True)
+                field_changed = set(old) != set(new)
             else:
                 field_changed = old != new
             self.changed[field_name] = field_changed
@@ -1362,6 +1399,9 @@ class Revision(models.Model):
         free to override this method without calling it on the parent class.
         """
         pass
+
+    def has_keywords(self):
+        return self.keywords
 
     def _post_commit_to_display(self):
         """
@@ -1532,12 +1572,14 @@ class PublisherRevision(PublisherRevisionBase):
 
     country = models.ForeignKey('gcd.Country', db_index=True)
 
-    is_master = models.BooleanField(default=False, db_index=True,
+    # Deprecated fields about relating publishers/imprints to each other
+    is_master = models.BooleanField(default=True, db_index=True,
       help_text='Check if this is a top-level publisher that may contain '
                 'imprints.')
-    parent = models.ForeignKey('gcd.Publisher',
+    parent = models.ForeignKey('gcd.Publisher', default=None,
                                null=True, blank=True, db_index=True,
                                related_name='imprint_revisions')
+
     date_inferred = models.BooleanField(default=False, blank=True)
 
     def _source(self):
@@ -1545,13 +1587,6 @@ class PublisherRevision(PublisherRevisionBase):
 
     def _source_name(self):
         return 'publisher'
-
-    # Fake an imprint set for the preview page.
-    def _imprint_set(self):
-        if self.publisher is None:
-            return Publisher.objects.filter(pk__isnull=True)
-        return self.publisher.imprint_set
-    imprint_set = property(_imprint_set)
 
     def active_series(self):
         return self.series_set.exclude(deleted=True)
@@ -1561,12 +1596,6 @@ class PublisherRevision(PublisherRevisionBase):
             return Series.objects.filter(pk__isnull=True)
         return self.publisher.series_set
     series_set = property(_series_set)
-
-    def _imprint_series_set(self):
-        if self.publisher is None:
-            return Series.objects.filter(pk__isnull=True)
-        return self.publisher.imprint_series_set
-    imprint_series_set = property(_imprint_series_set)
 
     def _queue_name(self):
         return u'%s (%s, %s)' % (self.name, self.year_began,
@@ -1607,17 +1636,9 @@ class PublisherRevision(PublisherRevisionBase):
             pub = Publisher(imprint_count=0,
                             series_count=0,
                             issue_count=0)
-            if self.parent:
-                self.parent.imprint_count += 1
-                self.parent.save()
-            else:
-                update_count('publishers', 1)
+            update_count('publishers', 1, country=self.country)
         elif self.deleted:
-            if self.parent:
-                self.parent.imprint_count -= 1
-                self.parent.save()
-            else:
-                update_count('publishers', -1)
+            update_count('publishers', -1, country=pub.country)
             pub.delete()
             return
 
@@ -1664,12 +1685,6 @@ class PublisherRevision(PublisherRevisionBase):
         return self.source.issue_count
     issue_count = property(_issue_count)
 
-    def has_imprints(self):
-        return self.imprint_set.count() > 0
-
-    def is_imprint(self):
-        return self.parent_id is not None and self.parent_id != 0
-
     def get_absolute_url(self):
         if self.publisher is None:
             return "/publisher/revision/%i/preview" % self.id
@@ -1684,24 +1699,15 @@ class PublisherRevision(PublisherRevisionBase):
             return ''
         return self.url
 
-    def _do_complete_added_revision(self, parent=None):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.parent = parent
-        if self.parent is None:
-            self.is_master = True
-
 class IndiciaPublisherRevisionManager(PublisherRevisionManagerBase):
 
     def clone_revision(self, indicia_publisher, changeset):
         """
-        Given an existing Publisher instance, create a new revision based on it.
+        Given an existing IndiciaPublisher instance, create a new revision based on it.
 
         This new revision will be where the edits are made.
         Entirely new publishers should be started by simply instantiating
-        a new PublisherRevision directly.
+        a new IndiciaPublisherRevision directly.
         """
         return PublisherRevisionManagerBase.clone_revision(self,
                                               instance=indicia_publisher,
@@ -1812,14 +1818,14 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         ipub = self.indicia_publisher
         if ipub is None:
             ipub = IndiciaPublisher()
-            self.parent.indicia_publisher_count += 1
+            self.parent.indicia_publisher_count = F('indicia_publisher_count') + 1
             self.parent.save()
-            update_count('indicia publishers', 1)
+            update_count('indicia publishers', 1, country=self.country)
 
         elif self.deleted:
-            self.parent.indicia_publisher_count -= 1
+            self.parent.indicia_publisher_count = F('indicia_publisher_count') - 1
             self.parent.save()
-            update_count('indicia publishers', -1)
+            update_count('indicia publishers', -1, country=ipub.country)
             ipub.delete()
             return
 
@@ -1841,55 +1847,56 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             return "/indicia_publisher/revision/%i/preview" % self.id
         return self.indicia_publisher.get_absolute_url()
 
-class BrandRevisionManager(PublisherRevisionManagerBase):
+class BrandGroupRevisionManager(PublisherRevisionManagerBase):
 
-    def clone_revision(self, brand, changeset):
+    def clone_revision(self, brand_group, changeset):
         """
-        Given an existing Publisher instance, create a new revision based on it.
+        Given an existing BrandGroup instance, create a new revision based on it.
 
         This new revision will be where the edits are made.
         Entirely new publishers should be started by simply instantiating
-        a new PublisherRevision directly.
+        a new BrandGroupRevision directly.
         """
         return PublisherRevisionManagerBase.clone_revision(self,
-                                                           instance=brand,
-                                                           instance_class=Brand,
-                                                           changeset=changeset)
+                                            instance=brand_group,
+                                            instance_class=BrandGroup,
+                                            changeset=changeset)
 
-    def _do_create_revision(self, brand, changeset, **ignore):
+    def _do_create_revision(self, brand_group, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = self._base_field_kwargs(brand)
+        kwargs = self._base_field_kwargs(brand_group)
 
-        revision = BrandRevision(
-          brand=brand,
+        revision = BrandGroupRevision(
+          brand_group=brand_group,
           changeset=changeset,
 
-          parent=brand.parent,
+          parent=brand_group.parent,
           **kwargs)
 
         revision.save()
         return revision
 
-class BrandRevision(PublisherRevisionBase):
+class BrandGroupRevision(PublisherRevisionBase):
     class Meta:
-        db_table = 'oi_brand_revision'
+        db_table = 'oi_brand_group_revision'
         ordering = ['-created', '-id']
 
-    objects = BrandRevisionManager()
+    objects = BrandGroupRevisionManager()
 
-    brand = models.ForeignKey('gcd.Brand', null=True, related_name='revisions')
+    brand_group = models.ForeignKey('gcd.BrandGroup', null=True,
+                                    related_name='revisions')
 
     parent = models.ForeignKey('gcd.Publisher',
                                null=True, blank=True, db_index=True,
-                               related_name='brand_revisions')
+                               related_name='brand_group_revisions')
 
     def _source(self):
-        return self.brand
+        return self.brand_group
 
     def _source_name(self):
-        return 'brand'
+        return 'brand_group'
 
     def _field_list(self):
         fields = []
@@ -1919,7 +1926,156 @@ class BrandRevision(PublisherRevisionBase):
         return u'%s: %s (%s)' % (self.parent.name, self.name, self.year_began)
 
     def active_issues(self):
+        if self.brand_group is None:
+            return Issue.objects.none()
+        emblems_id = self.brand_group.active_emblems().values_list('id',
+                                                                   flat=True)
+        return Issue.objects.filter(brand__in=emblems_id,
+                                    deleted=False)
+
+    def _issue_count(self):
+        if self.brand_group is None:
+            return 0
+        return self.brand_group.issue_count
+    issue_count = property(_issue_count)
+
+    def active_emblems(self):
+        if self.brand_group is None:
+            return Brand.objects.none()
+        return self.brand_group.active_emblems()
+
+    def _do_complete_added_revision(self, parent):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.parent = parent
+
+    def commit_to_display(self, clear_reservation=True):
+        brand_group = self.brand_group
+        # TODO global stats for brand groups ?
+        if brand_group is None:
+            brand_group = BrandGroup()
+            self.parent.brand_count = F('brand_count') + 1
+            self.parent.save()
+
+        elif self.deleted:
+            self.parent.brand_count = F('brand_count') - 1
+            self.parent.save()
+            brand_group.delete()
+            return
+
+        brand_group.parent = self.parent
+        self._assign_base_fields(brand_group)
+
+        if clear_reservation:
+            brand_group.reserved = False
+
+        brand_group.save()
+        if self.brand_group is None:
+            self.brand_group = brand_group
+            self.save()
+
+    def get_absolute_url(self):
+        if self.brand_group is None:
+            return "/brand_group/revision/%i/preview" % self.id
+        return self.brand_group.get_absolute_url()
+
+class BrandRevisionManager(PublisherRevisionManagerBase):
+
+    def clone_revision(self, brand, changeset):
+        """
+        Given an existing Brand instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        Entirely new brands should be started by simply instantiating
+        a new BrandRevision directly.
+        """
+        return PublisherRevisionManagerBase.clone_revision(self,
+                                            instance=brand,
+                                            instance_class=Brand,
+                                            changeset=changeset)
+
+    def _do_create_revision(self, brand, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        kwargs = self._base_field_kwargs(brand)
+
+        revision = BrandRevision(
+          brand=brand,
+          changeset=changeset,
+
+          **kwargs)
+
+        revision.save()
+        if brand.group.count():
+            revision.group.add(*list(brand.group.all().values_list('id',
+                                                                   flat=True)))
+        return revision
+
+class BrandRevision(PublisherRevisionBase):
+    class Meta:
+        db_table = 'oi_brand_revision'
+        ordering = ['-created', '-id']
+
+    objects = BrandRevisionManager()
+
+    brand = models.ForeignKey('gcd.Brand', null=True, related_name='revisions')
+    # parent needs to be kept for old revisions
+    parent = models.ForeignKey('gcd.Publisher',
+                               null=True, blank=True, db_index=True,
+                               related_name='brand_revisions')
+    group = models.ManyToManyField('gcd.BrandGroup', blank=False,
+                                   related_name='brand_revisions')
+
+    def _source(self):
+        return self.brand
+
+    def _source_name(self):
+        return 'brand'
+
+    def _field_list(self):
+        fields = []
+        fields.extend(PublisherRevisionBase._field_list(self))
+        fields.append('parent')
+        fields.insert(fields.index('url'), 'group')
+        return fields
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'year_began': None,
+            'year_ended': None,
+            'year_began_uncertain': None,
+            'year_ended_uncertain': None,
+            'url': '',
+            'notes': '',
+            'keywords': '',
+            'parent': None,
+            'group': None,
+        }
+
+    def _imps_for(self, field_name):
+        if field_name == 'parent':
+            return 1
+        if field_name == 'group':
+            return 1
+        return PublisherRevisionBase._imps_for(self, field_name)
+
+    def _queue_name(self):
+        return u'%s: %s (%s)' % (self.group.all()[0].name, self.name,
+                                self.year_began)
+
+    def active_issues(self):
         return self.issue_set.exclude(deleted=True)
+
+    # Fake the in_use sets for the preview page.
+    def _in_use(self):
+        if self.brand is None:
+            return BrandUse.objects.none()
+        return self.brand.in_use
+    in_use = property(_in_use)
 
     # Fake the issue sets for the preview page.
     def _issue_set(self):
@@ -1934,24 +2090,13 @@ class BrandRevision(PublisherRevisionBase):
         return self.brand.issue_count
     issue_count = property(_issue_count)
 
-    def _do_complete_added_revision(self, parent):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.parent = parent
-
     def commit_to_display(self, clear_reservation=True):
         brand = self.brand
         if brand is None:
             brand = Brand()
-            self.parent.brand_count += 1
-            self.parent.save()
             update_count('brands', 1)
 
         elif self.deleted:
-            self.parent.brand_count -= 1
-            self.parent.save()
             update_count('brands', -1)
             brand.delete()
             return
@@ -1962,15 +2107,212 @@ class BrandRevision(PublisherRevisionBase):
         if clear_reservation:
             brand.reserved = False
 
+        brand_groups = brand.group.all().values_list('id', flat=True)
+        revision_groups = self.group.all().values_list('id', flat=True)
+        if set(brand_groups) != set(revision_groups):
+            for group in brand.group.all():
+                if group.id not in revision_groups:
+                    group.issue_count = F('issue_count') - self.issue_count
+                group.save()
+            for group in self.group.all():
+                if group.id not in brand_groups:
+                    group.issue_count = F('issue_count') + self.issue_count
+                group.save()
+
         brand.save()
+        brand.group.clear()
+        if self.group.count():
+            brand.group.add(*list(self.group.all().values_list('id',
+                                                               flat=True)))
         if self.brand is None:
             self.brand = brand
             self.save()
+
+            if brand.group.count() != 1:
+                raise NotImplementedError
+
+            group = brand.group.get()
+            use = BrandUseRevision(changeset=self.changeset,
+              emblem=self.brand,
+              publisher=group.parent,
+              year_began=self.year_began,
+              year_began_uncertain=self.year_began_uncertain,
+              year_ended=self.year_ended,
+              year_ended_uncertain=self.year_ended_uncertain)
+            use.save()
+            use.commit_to_display()
 
     def get_absolute_url(self):
         if self.brand is None:
             return "/brand/revision/%i/preview" % self.id
         return self.brand.get_absolute_url()
+
+class BrandUseRevisionManager(RevisionManager):
+
+    def clone_revision(self, brand_use, changeset):
+        """
+        Given an existing BrandUse instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        Entirely new publishers should be started by simply instantiating
+        a new BrandUseRevision directly.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=brand_use,
+                                              instance_class=BrandUse,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, brand_use, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        revision = BrandUseRevision(
+          # revision-specific fields:
+          brand_use=brand_use,
+          changeset=changeset,
+
+          # copied fields:
+          emblem=brand_use.emblem,
+          publisher=brand_use.publisher,
+          year_began=brand_use.year_began,
+          year_ended=brand_use.year_ended,
+          year_began_uncertain=brand_use.year_began_uncertain,
+          year_ended_uncertain=brand_use.year_ended_uncertain,
+          notes=brand_use.notes)
+
+        revision.save()
+        return revision
+
+def get_brand_use_field_list():
+    return ['year_began', 'year_began_uncertain',
+            'year_ended', 'year_ended_uncertain', 'notes']
+
+class BrandUseRevision(Revision):
+    class Meta:
+        db_table = 'oi_brand_use_revision'
+        ordering = ['-created', '-id']
+
+    objects = BrandUseRevisionManager()
+
+    brand_use = models.ForeignKey('gcd.BrandUse', null=True,
+                                  related_name='revisions')
+
+    emblem = models.ForeignKey('gcd.Brand', null=True,
+                               related_name='use_revisions')
+
+    publisher = models.ForeignKey('gcd.Publisher', null=True, db_index=True,
+                                  related_name='brand_use_revisions')
+
+    year_began = models.IntegerField(db_index=True, null=True)
+    year_ended = models.IntegerField(null=True)
+    year_began_uncertain = models.BooleanField(blank=True)
+    year_ended_uncertain = models.BooleanField(blank=True)
+    notes = models.TextField(max_length = 255, blank=True)
+
+    def _source(self):
+        return self.brand_use
+
+    def _source_name(self):
+        return 'brand_use'
+
+    def _field_list(self):
+        fields = get_brand_use_field_list()
+        return fields
+
+    def _get_blank_values(self):
+        return {
+            'publisher': None,
+            'year_began': None,
+            'year_ended': None,
+            'year_began_uncertain': None,
+            'year_ended_uncertain': None,
+            'notes': ''
+        }
+
+    def _start_imp_sum(self):
+        self._seen_year_began = False
+        self._seen_year_ended = False
+
+    def _imps_for(self, field_name):
+        if field_name in ('year_began', 'year_began_uncertain'):
+           if not self._seen_year_began:
+                self._seen_year_began = True
+                return 1
+        elif field_name in ('year_ended', 'year_ended_uncertain'):
+           if not self._seen_year_ended:
+                self._seen_year_ended = True
+                return 1
+        else:
+            return 1
+        return 0
+
+    def _queue_name(self):
+        return u'%s at %s (%s)' % (self.emblem.name, self.publisher.name,
+                                   self.year_began)
+
+    def previous(self):
+        if self.source:
+            return super(BrandUseRevision, self).previous()
+        elif self.deleted:
+            # BrandUse is deleted, show content of this revision as deleted
+            return self
+        else:
+            return None
+
+    def posterior(self):
+        if self.source:
+            return super(BrandUseRevision, self).posterior()
+        else:
+            return None
+
+    def active_issues(self):
+        return self.emblem.issue_set.exclude(deleted=True)\
+          .filter(issue__series__publisher=self.publisher)
+
+    def _issue_count(self):
+        if self.brand is None:
+            return 0
+        return self.brand.issue_count
+    issue_count = property(_issue_count)
+
+    def _do_complete_added_revision(self, emblem, publisher):
+        """
+        Do the necessary processing to complete the fields of a new
+        BrandUse revision for adding a record before it can be saved.
+        """
+        self.publisher = publisher
+        self.emblem = emblem
+
+    def commit_to_display(self, clear_reservation=True):
+        brand_use = self.brand_use
+        if brand_use is None:
+            brand_use = BrandUse()
+            brand_use.emblem = self.emblem
+        elif self.deleted:
+            brand_use = self.brand_use
+            for revision in brand_use.revisions.all():
+                setattr(revision, 'brand_use', None)
+                revision.save()
+            brand_use.delete()
+            return
+
+        brand_use.publisher = self.publisher
+        brand_use.year_began = self.year_began
+        brand_use.year_ended = self.year_ended
+        brand_use.year_began_uncertain = self.year_began_uncertain
+        brand_use.year_ended_uncertain = self.year_ended_uncertain
+        brand_use.notes = self.notes
+
+        if clear_reservation:
+            brand_use.reserved = False
+
+        brand_use.save()
+        if self.brand_use is None:
+            self.brand_use = brand_use
+            self.save()
+
+    def __unicode__(self):
+        return u'brand emblem %s used by %s.' % (self.emblem, self.publisher)
 
 class CoverRevisionManager(RevisionManager):
     """
@@ -2069,7 +2411,8 @@ class CoverRevision(Revision):
         elif self.deleted:
             cover.delete()
             cover.save()
-            update_count('covers', -1, language=cover.issue.series.language)
+            update_count('covers', -1, language=cover.issue.series.language,
+                                       country=cover.issue.series.country)
             if cover.issue.series.scan_count() == 0:
                 series = cover.issue.series
                 series.has_gallery = False
@@ -2089,11 +2432,14 @@ class CoverRevision(Revision):
                 cover.issue = issue_rev.issue
                 cover.save()
                 if issue_rev.series != old_issue.series:
-                    if issue_rev.series.language != old_issue.series.language:
+                    if issue_rev.series.language != old_issue.series.language \
+                      or issue_rev.series.country != old_issue.series.country:
                         update_count('covers', -1,
-                                     language=old_issue.series.language)
+                                     language=old_issue.series.language,
+                                     country=old_issue.series.country)
                         update_count('covers', 1,
-                                     language=issue_rev.series.language)
+                                     language=issue_rev.series.language,
+                                     country=issue_rev.series.country)
                     if not issue_rev.series.has_gallery:
                         issue_rev.series.has_gallery = True
                         issue_rev.series.save()
@@ -2108,7 +2454,8 @@ class CoverRevision(Revision):
             if self.cover is None:
                 self.cover = cover
                 self.save()
-                update_count('covers', 1, language=cover.issue.series.language)
+                update_count('covers', 1, language=cover.issue.series.language,
+                  country=cover.issue.series.country)
                 if not cover.issue.series.has_gallery:
                     series = cover.issue.series
                     series.has_gallery = True
@@ -2217,12 +2564,12 @@ class SeriesRevisionManager(RevisionManager):
           has_isbn=series.has_isbn,
           has_volume=series.has_volume,
           has_issue_title=series.has_issue_title,
+          has_rating=series.has_rating,
           is_comics_publication=series.is_comics_publication,
 
           country=series.country,
           language=series.language,
-          publisher=series.publisher,
-          imprint=series.imprint)
+          publisher=series.publisher)
 
         revision.save()
         return revision
@@ -2233,8 +2580,8 @@ def get_series_field_list():
             'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
             'is_current', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'has_volume', 'is_comics_publication', 'tracking_notes', 'notes',
-            'keywords']
+            'has_volume', 'has_rating', 'is_comics_publication',
+            'tracking_notes', 'notes', 'keywords']
 
 class SeriesRevision(Revision):
     class Meta:
@@ -2317,6 +2664,10 @@ class SeriesRevision(Revision):
       help_text="Titles are present for issues of this series.")
     has_volume = models.BooleanField(
       help_text="Volume numbers are present for issues of this series.")
+    has_rating = models.BooleanField(
+      verbose_name="Has Publisher's age guidelines ",
+      help_text="Publisher's age guidelines are present for issues of this "
+                "series.")
     is_comics_publication = models.BooleanField(
       help_text="Publications in this series are mostly comics publications.")
 
@@ -2334,7 +2685,7 @@ class SeriesRevision(Revision):
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher,
                                   related_name='series_revisions')
-    imprint = models.ForeignKey(Publisher, null=True, blank=True,
+    imprint = models.ForeignKey(Publisher, null=True, blank=True, default=None,
                                 related_name='imprint_series_revisions')
     date_inferred = models.BooleanField(default=False, blank=True)
 
@@ -2446,6 +2797,7 @@ class SeriesRevision(Revision):
             'has_isbn': True,
             'has_issue_title': False,
             'has_volume': True,
+            'has_rating': False,
             'is_comics_publication': True,
         }
 
@@ -2455,13 +2807,12 @@ class SeriesRevision(Revision):
         """
         return 1
 
-    def _do_complete_added_revision(self, publisher, imprint=None):
+    def _do_complete_added_revision(self, publisher):
         """
         Do the necessary processing to complete the fields of a new
         series revision for adding a record before it can be saved.
         """
         self.publisher = publisher
-        self.imprint = imprint
 
     def commit_to_display(self, clear_reservation=True):
         series = self.series
@@ -2470,7 +2821,8 @@ class SeriesRevision(Revision):
             if self.is_comics_publication:
                 self.publisher.series_count = F('series_count') + 1
                 self.publisher.save()
-                update_count('series', 1, language=self.language)
+                update_count('series', 1, language=self.language,
+                             country=self.country)
         elif self.deleted:
             if series.is_comics_publication:
                 self.publisher.series_count = F('series_count') - 1
@@ -2478,30 +2830,15 @@ class SeriesRevision(Revision):
                 # with all their issues
                 #self.publisher.issue_count -= series.issue_count
                 self.publisher.save()
-                if self.imprint:
-                    self.imprint.series_count = F('series_count') - 1
-                    self.imprint.save()
-                    check_delete_imprint(self.imprint)
             series.delete()
             if series.is_comics_publication:
-                update_count('series', -1, language=series.language)
+                update_count('series', -1, language=series.language,
+                             country=series.country)
             reservation = self.source.get_ongoing_reservation()
             if reservation:
                 reservation.delete()
             return
         else:
-            if self.imprint != self.series.imprint:
-                if self.imprint:
-                    self.imprint.issue_count = F('issue_count') + \
-                                                 series.issue_count
-                    self.imprint.series_count = F('series_count') + 1
-                    self.imprint.save()
-                if self.series.imprint:
-                    self.series.imprint.issue_count = F('issue_count') - \
-                                                        series.issue_count
-                    self.series.imprint.series_count = F('series_count') - 1
-                    self.series.imprint.save()
-                    check_delete_imprint(self.series.imprint)
             if self.publisher != self.series.publisher and series.is_comics_publication:
                 self.publisher.issue_count = F('issue_count') + \
                                                 series.issue_count
@@ -2535,6 +2872,7 @@ class SeriesRevision(Revision):
         series.has_isbn = self.has_isbn
         series.has_issue_title = self.has_issue_title
         series.has_volume = self.has_volume
+        series.has_rating = self.has_rating
 
         reservation = series.get_ongoing_reservation()
         if not self.is_current and reservation and self.previous() and \
@@ -2543,8 +2881,6 @@ class SeriesRevision(Revision):
 
         series.publication_notes = self.publication_notes
         series.tracking_notes = self.tracking_notes
-
-        series.country = self.country
 
         # a new series has language_id None
         if series.language_id is None:
@@ -2557,56 +2893,59 @@ class SeriesRevision(Revision):
                     count = -1
                 else:
                     count = +1
-                update_count('series', count, language=series.language)
+                update_count('series', count, language=series.language,
+                             country=series.country)
                 if series.issue_count:
                     update_count('issues', count*series.issue_count,
-                                 language=series.language)
+                                 language=series.language,
+                                 country=series.country)
                 variant_issues = Issue.objects.filter(series=series,
                   deleted=False).exclude(variant_of=None).count()
                 update_count('variant issues', count*variant_issues,
-                             language=series.language)
+                             language=series.language, country=series.country)
                 issue_indexes = Issue.objects.filter(series=series,
                                                      deleted=False)\
                                       .exclude(is_indexed=INDEXED['skeleton'])\
                                       .count()
                 update_count('issue indexes', count*issue_indexes,
-                             language=series.language)
+                             language=series.language, country=series.country)
 
-            if series.language != self.language and self.is_comics_publication:
-                update_count('series', -1, language=series.language)
-                update_count('series', 1, language=self.language)
+            if (series.language != self.language or \
+                series.country != self.country) and self.is_comics_publication:
+                update_count('series', -1, language=series.language, country=series.country)
+                update_count('series', 1, language=self.language, country=self.country)
                 if series.issue_count:
                     update_count('issues', -series.issue_count,
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('issues', series.issue_count,
-                                language=self.language)
+                                language=self.language, country=self.country)
                     variant_issues = Issue.objects.filter(series=series,
                     deleted=False).exclude(variant_of=None).count()
                     update_count('variant issues', -variant_issues,
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('variant issues', variant_issues,
-                                language=self.language)
+                                language=self.language, country=self.country)
                     issue_indexes = Issue.objects.filter(series=series,
                                                         deleted=False)\
                                         .exclude(is_indexed=INDEXED['skeleton'])\
                                         .count()
                     update_count('issue indexes', -issue_indexes,
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('issue indexes', issue_indexes,
-                                language=self.language)
+                                language=self.language, country=self.country)
                     story_count = Story.objects.filter(issue__series=series,
                                                     deleted=False).count()
                     update_count('stories', -story_count,
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('stories', story_count,
-                                language=self.language)
+                                language=self.language, country=self.country)
                     update_count('covers', -series.scan_count(),
-                                language=series.language)
+                                language=series.language, country=series.country)
                     update_count('covers', series.scan_count(),
-                                language=self.language)
+                                language=self.language, country=self.country)
+        series.country = self.country
         series.language = self.language
         series.publisher = self.publisher
-        series.imprint = self.imprint
         if series.is_comics_publication != self.is_comics_publication:
             series.has_gallery = self.is_comics_publication and series.scan_count()
         series.is_comics_publication = self.is_comics_publication
@@ -2640,7 +2979,8 @@ def get_issue_field_list():
             'year_on_sale', 'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
             'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-            'isbn', 'no_isbn', 'barcode', 'no_barcode', 'notes', 'keywords']
+            'isbn', 'no_isbn', 'barcode', 'no_barcode', 'rating', 'no_rating',
+            'notes', 'keywords']
 
 class IssueRevisionManager(RevisionManager):
 
@@ -2696,6 +3036,8 @@ class IssueRevisionManager(RevisionManager):
           no_isbn=issue.no_isbn,
           variant_of=issue.variant_of,
           variant_name=issue.variant_name,
+          rating=issue.rating,
+          no_rating=issue.no_rating,
           notes=issue.notes,
           keywords=get_keywords(issue))
 
@@ -2839,19 +3181,20 @@ class IssueRevision(Revision):
 
     series = models.ForeignKey(Series, related_name='issue_revisions')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True, blank=True,
-      default=None, related_name='issue_revisions',
+      default=None, related_name='issue_revisions', verbose_name='indicia/colophon publisher',
       help_text='The exact corporation listed as the publisher in the '
-                'indicia, if any.  If there is none, the copyright holder '
-                '(if any) may be used, with a comment in the notes field'                                          )
+                'indicia or colophon, if any.  If there is none, the copyright '
+                'holder (if any) may be used, with a comment in the notes field')
     indicia_pub_not_printed = models.BooleanField(default=False,
-      help_text="Check this box if no indicia publisher name is "
-                "listed in the indicia.")
+      verbose_name='indicia/colophon pub. not printed',
+      help_text="Check this box if no publisher name is listed "
+                "in the indicia or colophon.")
     brand = models.ForeignKey(Brand, null=True, default=None, blank=True,
-      related_name='issue_revisions',
+      related_name='issue_revisions', verbose_name='brand emblem',
       help_text="The publisher's logo or tagline on the cover of the comic, "
                 "if any. Some U.S. golden age publishers did not put any "
                 "identifiable brand marks on their comics."                )
-    no_brand = models.BooleanField(default=False,
+    no_brand = models.BooleanField(default=False, verbose_name='no brand emblem',
       help_text="Check this box if there is no publisher's logo or tagline.")
 
     isbn = models.CharField(max_length=32, blank=True, default='',
@@ -2868,6 +3211,13 @@ class IssueRevision(Revision):
                 'two barcodes are present, separate them with a semi-colon.')
     no_barcode = models.BooleanField(default=False,
       help_text='Check this box if there is no barcode.')
+
+    rating = models.CharField(max_length=255, blank=True, default='',
+      verbose_name="Publisher's age guidelines",
+      help_text="The publisher's age guidelines as printed on the item.")
+    no_rating= models.BooleanField(default=False,
+      verbose_name="No publisher's age guidelines",
+      help_text="Check this box if there are no publisher's age guidelines.")
 
     date_inferred = models.BooleanField(default=False, blank=True)
 
@@ -3288,6 +3638,8 @@ class IssueRevision(Revision):
             'no_isbn': False,
             'barcode': '',
             'no_barcode': False,
+            'rating': '',
+            'no_rating': False,
             'notes': '',
             'sort_code': None,
             'after': None,
@@ -3305,6 +3657,7 @@ class IssueRevision(Revision):
         self._seen_editing = False
         self._seen_isbn = False
         self._seen_barcode = False
+        self._seen_rating = False
         self._seen_on_sale_date = False
 
     def _imps_for(self, field_name):
@@ -3329,7 +3682,8 @@ class IssueRevision(Revision):
         if not self._seen_brand and field_name in ('brand', 'no_brand'):
             self._seen_brand = True
             return 1
-        if not self._seen_page_count:
+        if not self._seen_page_count and \
+          field_name in ('page_count', 'page_count_uncertain'):
             self._seen_page_count = True
             if field_name == 'page_count':
                 return 1
@@ -3347,6 +3701,9 @@ class IssueRevision(Revision):
             return 1
         if not self._seen_barcode and field_name in ('barcode', 'no_barcode'):
             self._seen_barcode = True
+            return 1
+        if not self._seen_rating and field_name in ('rating', 'no_rating'):
+            self._seen_rating = True
             return 1
         if not self._seen_on_sale_date and field_name in ('year_on_sale',
           'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain'):
@@ -3427,7 +3784,8 @@ class IssueRevision(Revision):
             issue = Issue(sort_code=after_code + 1)
             if self.variant_of:
                 if self.series.is_comics_publication:
-                    update_count('variant issues', 1, language=self.series.language)
+                    update_count('variant issues', 1, language=self.series.language,
+                                 country=self.series.country)
             else:
                 self.series.issue_count = F('issue_count') + 1
                 # do NOT save the series here, it gets saved later in
@@ -3439,18 +3797,20 @@ class IssueRevision(Revision):
                     if self.brand:
                         self.brand.issue_count = F('issue_count') + 1
                         self.brand.save()
+                        for group in self.brand.group.all():
+                            group.issue_count = F('issue_count') + 1
+                            group.save()
                     if self.indicia_publisher:
                         self.indicia_publisher.issue_count = F('issue_count') + 1
                         self.indicia_publisher.save()
-                    if self.series.imprint:
-                        self.series.imprint.issue_count = F('issue_count') + 1
-                        self.series.imprint.save()
-                    update_count('issues', 1, language=self.series.language)
+                    update_count('issues', 1, language=self.series.language,
+                                 country=self.series.country)
 
         elif self.deleted:
             if self.variant_of:
                 if self.series.is_comics_publication:
-                    update_count('variant issues', -1, language=self.series.language)
+                    update_count('variant issues', -1, language=self.series.language,
+                                 country=self.series.country)
             else:
                 self.series.issue_count = F('issue_count') - 1
                 # do NOT save the series here, it gets saved later in
@@ -3462,13 +3822,14 @@ class IssueRevision(Revision):
                     if self.brand:
                         self.brand.issue_count = F('issue_count') - 1
                         self.brand.save()
+                        for group in self.brand.group.all():
+                            group.issue_count = F('issue_count') - 1
+                            group.save()
                     if self.indicia_publisher:
                         self.indicia_publisher.issue_count = F('issue_count') - 1
                         self.indicia_publisher.save()
-                    if self.series.imprint:
-                        self.series.imprint.issue_count = F('issue_count') - 1
-                        self.series.imprint.save()
-                    update_count('issues', -1, language=issue.series.language)
+                    update_count('issues', -1, language=issue.series.language,
+                                 country=issue.series.country)
             issue.delete()
             self._check_first_last()
             return
@@ -3479,9 +3840,15 @@ class IssueRevision(Revision):
                     if self.brand:
                         self.brand.issue_count = F('issue_count') + 1
                         self.brand.save()
+                        for group in self.brand.group.all():
+                            group.issue_count = F('issue_count') + 1
+                            group.save()
                     if issue.brand:
                         issue.brand.issue_count = F('issue_count') - 1
                         issue.brand.save()
+                        for group in issue.brand.group.all():
+                            group.issue_count = F('issue_count') - 1
+                            group.save()
                 if self.indicia_publisher != issue.indicia_publisher:
                     if self.indicia_publisher:
                         self.indicia_publisher.issue_count = F('issue_count') + 1
@@ -3498,13 +3865,16 @@ class IssueRevision(Revision):
                     issue.sort_code = 0
                 # update counts
                 if self.variant_of:
-                    if self.series.language != issue.series.language:
+                    if self.series.language != issue.series.language or \
+                      self.series.country != issue.series.country:
                         if self.series.is_comics_publication:
                             update_count('variant_issues', 1,
-                                        language=self.series.language)
+                                        language=self.series.language,
+                                        country=self.series.country)
                         if issue.series.is_comics_publication:
                             update_count('variant_issues', -1,
-                                        language=issue.series.language)
+                                        language=issue.series.language,
+                                        country=issue.series.country)
                 else:
                     self.series.issue_count = F('issue_count') + 1
                     issue.series.issue_count = F('issue_count') - 1
@@ -3517,21 +3887,28 @@ class IssueRevision(Revision):
                             if issue.series.publisher:
                                 issue.series.publisher.issue_count = F('issue_count') - 1
                                 issue.series.publisher.save()
-                    if self.series.language != issue.series.language:
+                    if self.series.language != issue.series.language or \
+                      self.series.country != issue.series.country:
                         if self.series.is_comics_publication:
-                            update_count('issues', 1, language=self.series.language)
+                            update_count('issues', 1, language=self.series.language,
+                                         country=self.series.country)
                         if issue.series.is_comics_publication:
-                            update_count('issues', -1, language=issue.series.language)
+                            update_count('issues', -1, language=issue.series.language,
+                                         country=issue.series.country)
                         story_count = self.issue.active_stories().count()
                         update_count('stories', story_count,
-                                    language=self.series.language)
+                                    language=self.series.language,
+                                    country=self.series.country)
                         update_count('stories', -story_count,
-                                    language=issue.series.language)
+                                    language=issue.series.language,
+                                    country=issue.series.country)
                         cover_count = self.issue.active_covers().count()
                         update_count('covers', cover_count,
-                                    language=self.series.language)
+                                    language=self.series.language,
+                                    country=self.series.country)
                         update_count('covers', -cover_count,
-                                    language=issue.series.language)
+                                    language=issue.series.language,
+                                    country=issue.series.country)
 
                 check_series_order = issue.series
                 # new series might have gallery after move
@@ -3610,6 +3987,14 @@ class IssueRevision(Revision):
         else:
             self.barcode = issue.barcode
             self.no_barcode = issue.no_barcode
+            self.save()
+
+        if self.series.has_rating:
+            issue.rating = self.rating
+            issue.no_rating = self.no_rating
+        else:
+            self.rating = issue.rating
+            self.no_rating = issue.no_rating
             self.save()
 
         if clear_reservation:
@@ -3976,14 +4361,17 @@ class StoryRevision(Revision):
         story = self.story
         if story is None:
             story = Story()
-            update_count('stories', 1, language=self.issue.series.language)
+            update_count('stories', 1, language=self.issue.series.language,
+                         country=self.issue.series.country)
         elif self.deleted:
             if self.issue.is_indexed != INDEXED['skeleton']:
                 if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
                   self.issue.series.is_comics_publication:
                     update_count('issue indexes', -1,
-                                 language=story.issue.series.language)
-            update_count('stories', -1, language=story.issue.series.language)
+                                 language=story.issue.series.language,
+                                 country=story.issue.series.country)
+            update_count('stories', -1, language=story.issue.series.language,
+                         country=story.issue.series.country)
             self._reset_values()
             story.delete()
             return
@@ -3992,16 +4380,20 @@ class StoryRevision(Revision):
         story.title_inferred = self.title_inferred
         story.feature = self.feature
         if hasattr(story, 'issue') and (story.issue != self.issue):
-            if story.issue.series.language != self.issue.series.language:
+            if story.issue.series.language != self.issue.series.language or \
+              story.issue.series.country != self.issue.series.country:
                 update_count('stories', 1,
-                            language=self.issue.series.language)
+                            language=self.issue.series.language,
+                            country=self.issue.series.country)
                 update_count('stories', -1,
-                            language=story.issue.series.language)
+                            language=story.issue.series.language,
+                            country=story.issue.series.country)
             old_issue = story.issue
             story.issue = self.issue
             if old_issue.set_indexed_status() == False:
                 update_count('issue indexes', -1,
-                             language=old_issue.series.language)
+                             language=old_issue.series.language,
+                             country=old_issue.series.country)
         else:
             story.issue = self.issue
         story.page_count = self.page_count
@@ -4045,12 +4437,14 @@ class StoryRevision(Revision):
             if self.issue.set_indexed_status() != INDEXED['skeleton'] and \
               self.issue.series.is_comics_publication:
                 update_count('issue indexes', 1,
-                             language=self.issue.series.language)
+                             language=self.issue.series.language,
+                             country=self.issue.series.country)
         else:
             if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
               self.issue.series.is_comics_publication:
                 update_count('issue indexes', -1,
-                             language=self.issue.series.language)
+                             language=self.issue.series.language,
+                             country=self.issue.series.country)
 
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue

@@ -16,6 +16,7 @@
 <p>
 {{ heading }}
 Search for {{ target }} by entering the relevant information here:
+
 <form action="{% url select_object_search select_key=select_key %}" method="GET">
   <table class="editing">
     <tr>
@@ -42,6 +43,9 @@ Search for {{ target }} by entering the relevant information here:
 {% endif %}  
 {% if issue or story %}
   <input type="submit" name="search_issue" value="Search for issues"></input>
+{% endif %}
+{% if publisher %}
+  <input type="submit" name="search_publisher" value="Search for publisher"></input>
 {% endif %}
 </form>
 </p>

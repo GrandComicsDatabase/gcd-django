@@ -14,7 +14,7 @@ from apps.oi.models import StoryRevision, CTYPES, validated_isbn, \
 from apps.oi import states
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
-from apps.gcd.models.publisher import IndiciaPublisher, Brand, Publisher
+from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, Publisher
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
 from apps.gcd.models.cover import Cover
@@ -35,8 +35,8 @@ def valid_barcode(barcode):
     '''
 
     # remove space and hyphens
-    barcode = str(barcode).replace('-', '').replace(' ', '')
     try:
+        barcode = str(barcode).replace('-', '').replace(' ', '')
         int(barcode)
     except ValueError:
         return False
@@ -177,10 +177,24 @@ def header_link(changeset):
 
     if changeset.change_type == CTYPES['publisher']:
         return absolute_url(revision)
-    elif changeset.change_type == CTYPES['brand'] or \
+    elif changeset.change_type == CTYPES['brand_group'] or \
          changeset.change_type == CTYPES['indicia_publisher']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.parent), absolute_url(revision)))
+    elif changeset.change_type == CTYPES['brand']:
+        header_link = u''
+        # TODO add once migration is correctly done, i.e. parent can be Null
+        #if revision.parent:
+            #return mark_safe(u'%s : %s' %
+                            #(absolute_url(revision.parent), absolute_url(revision)))
+        for group in revision.group.all():
+            header_link += absolute_url(group) + '; '
+        header_link = header_link[:-2]
+        return mark_safe(u'%s : %s' % (header_link, absolute_url(revision)))
+    elif changeset.change_type == CTYPES['brand_use']:
+        return mark_safe(u'%s at %s (%s)' % (absolute_url(revision.emblem),
+                                             absolute_url(revision.publisher),
+                                             revision.year_began))
     elif changeset.change_type == CTYPES['series']:
         if revision.previous() and revision.previous().publisher != revision.publisher:
             publisher_string = u'<span class="comparison_highlight">%s</span>'\
@@ -267,6 +281,8 @@ def changed_fields(changeset, object):
         revision = changeset.publisherrevisions.all().get(publisher=object.id)
     elif object_class is Brand:
         revision = changeset.brandrevisions.all().get(brand=object.id)
+    elif object_class is BrandGroup:
+        revision = changeset.brandgrouprevisions.all().get(brand_group=object.id)
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
@@ -377,6 +393,13 @@ def field_value(revision, field):
         return urlize(value)
     elif field in ['indicia_pub_not_printed']:
         return yesno(value, 'Not Printed,Printed')
+    elif field == 'group':
+        brand_groups = ''
+        for brand in value.all():
+            brand_groups += absolute_url(brand) + '; '
+        if brand_groups:
+            brand_groups = brand_groups[:-2]
+        return mark_safe(brand_groups)
     elif field in ['no_editing', 'no_script', 'no_pencils', 'no_inks',
                    'no_colors', 'no_letters']:
         return yesno(value, 'X, ')
@@ -430,7 +453,7 @@ def field_value(revision, field):
         else:
             return u'No'
     elif field in ['has_barcode', 'has_isbn', 'has_issue_title',
-                   'has_indicia_frequency', 'has_volume']:
+                   'has_indicia_frequency', 'has_volume', 'has_rating']:
         if hasattr(revision, 'changed'):
             if revision.changed[field] and value == False:
                 kwargs = {field[4:]: ''}
@@ -477,21 +500,21 @@ def link_other_reprint(reprint, is_source):
             text = '<a href="%s">%s</a> <br> of %s' % \
                      (reprint.target.get_absolute_url(),
                       show_story_short(reprint.target),
-                      reprint.target.issue)
+                      reprint.target.issue.full_name())
         else:
             text = '<a href="%s">%s</a>' % \
                      (reprint.target_issue.get_absolute_url(),
-                      reprint.target_issue)
-    else:    
+                      reprint.target_issue.full_name())
+    else:
         if hasattr(reprint, 'origin'):
             text = '<a href="%s">%s</a> <br> of %s' % \
                      (reprint.origin.get_absolute_url(),
                       show_story_short(reprint.origin),
-                      reprint.origin.issue)
+                      reprint.origin.issue.full_name())
         else:
             text = '<a href="%s">%s</a>' % \
                      (reprint.origin_issue.get_absolute_url(),
-                      reprint.origin_issue)
+                      reprint.origin_issue.full_name())
     return mark_safe(text)
 
 def compare_current_reprints(object_type, changeset):
@@ -634,6 +657,17 @@ def key(d, key_name):
 
     return value
 
+def str_encl(string, bracket):
+    if string:
+        if bracket == '(':
+            return '(' + string + ')'
+        elif bracket == '[':
+            return '[' + string + ']'
+        elif bracket == '{':
+            return '{' + string + '}'
+    return string
+
+register.filter(str_encl)
 register.filter(key)
 register.filter(absolute_url)
 register.filter(cover_image_tag)

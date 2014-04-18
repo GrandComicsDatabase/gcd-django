@@ -3,26 +3,22 @@
 {% block list_contents %}
 <table class="listing">
   <tr>
-    <th> Publisher Brand </th>
-    <th> Parent Publisher </th>
+    <th> Publisher Brand Emblem</th>
+    <th> Name </th>
+    <th> Brand Groups </th>
     <th> Year&nbsp;Began </th>
     <th> Year&nbsp;Ended </th>
     <th> #&nbsp;Issues </th>
   </tr>
   {% for brand in items %}
-    {% if not brand.is_imprint %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-      <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a>
-      {% if brand.emblem %}
-      <img src="{{ brand.emblem.thumbnail.url }}">
-      {% endif %}
-      </td>
-      <td class="listing_publisher"> <a href="{{ brand.parent.get_absolute_url }}">{{ brand.parent.name }}</a></td>
+      <td> {% if brand.emblem %} <a href="{{ brand.get_absolute_url }}"> <img src="{{ brand.emblem.thumbnail.url }}"> {% endif %} </a></td>
+      <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
+      <td class="listing_publisher"> {% for group in brand.group.all %} <a href="{{ group.get_absolute_url }}">{{ group.name }}</a> {% endfor %} </td>
       <td> {{ brand.year_began|default:'' }} </td>
       <td> {{ brand.year_ended|default:'' }} </td>
       <td> {{ brand.issue_count }} </td>
     </tr>
-    {% endif %}
   {% endfor %}
 </table>
 {% endblock %}

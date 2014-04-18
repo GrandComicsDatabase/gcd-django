@@ -29,6 +29,14 @@
   {% endwith %}
 {% endifequal %}
 
+{% ifequal description "Brand Group" %}
+  {% with object as publisher %}
+  {% with "brand_groups" as url_suffix %}
+    {% include "gcd/bits/publisher_header.html" %}
+  {% endwith %}
+  {% endwith %}
+{% endifequal %}
+
 {% ifequal description "Brand" %}
   {% with object as publisher %}
   {% with "brands" as url_suffix %}
@@ -55,7 +63,9 @@
   {% with object as issue %}
   {% with object.series as series %}
   {% with object.display_number as issue_number %}
+  {% with "history" as extra %}
     {% include "gcd/bits/series_issue_header.html" %}
+  {% endwith %}
   {% endwith %}
   {% endwith %}
   {% endwith %}

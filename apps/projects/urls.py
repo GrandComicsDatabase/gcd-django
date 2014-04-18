@@ -4,8 +4,6 @@ from django.conf import settings
 from django.views.generic.simple import direct_to_template
 
 urlpatterns = patterns('',
-    url(r'^imprints_in_use/$', 'apps.projects.views.imprints_in_use',
-        name='imprints_in_use'),
     url(r'^issues_with_several_covers/$', 'apps.projects.views.issues_with_several_covers',
         name='issues_with_several_covers'),
     url(r'^story_reprint_inspection/$', 'apps.projects.views.story_reprint_inspection',

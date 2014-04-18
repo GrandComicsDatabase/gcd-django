@@ -17,6 +17,7 @@
 {% endblock %}
 
 {% block view_body %}
+{% include "oi/bits/multi_selector.html" %}
 <h1>
 {{ changeset|header_link }}
 </h1>
@@ -366,6 +367,9 @@
     </tr>
   </table>
   <input type="submit" name="submit" value="Submit changes for approval">
+      {% if changeset.approver %}
+  <input type="submit" name="discuss" value="Discuss">
+      {% endif %}
   <input type="submit" name="discard" value="Discard all changes">
   <input type="submit" name="add_comment" value="Add Comment">
 </form>

@@ -29,8 +29,9 @@ from django.contrib.contenttypes.models import ContentType
 
 from apps.gcd.models import *
 from apps.gcd.views import ViewTerminationError, render_error, paginate_response
-from apps.gcd.views.details import show_indicia_publisher, show_brand, \
-                                   show_series, show_issue
+from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
+                                   show_brand_group, show_brand, show_series, \
+                                   show_issue
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
@@ -44,7 +45,9 @@ from apps.oi.covers import get_preview_image_tag, \
 REVISION_CLASSES = {
     'publisher': PublisherRevision,
     'indicia_publisher': IndiciaPublisherRevision,
+    'brand_group': BrandGroupRevision,
     'brand': BrandRevision,
+    'brand_use': BrandUseRevision,
     'series': SeriesRevision,
     'issue': IssueRevision,
     'story': StoryRevision,
@@ -56,7 +59,9 @@ REVISION_CLASSES = {
 DISPLAY_CLASSES = {
     'publisher': Publisher,
     'indicia_publisher': IndiciaPublisher,
+    'brand_group': BrandGroup,
     'brand': Brand,
+    'brand_use': BrandUse,
     'series': Series,
     'issue': Issue,
     'story': Story,
@@ -197,6 +202,10 @@ def reserve(request, id, model_name, delete=False,
             if model_name == 'cover':
                 return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                          kwargs={'issue_id' : display_obj.issue.id}))
+            if model_name == 'brand_use':
+                return HttpResponseRedirect(urlresolvers.reverse(
+                     'show_brand',
+                     kwargs={str('brand_id'): display_obj.emblem.id}))
             return HttpResponseRedirect(urlresolvers.reverse(
                      'show_%s' % model_name,
                      kwargs={str('%s_id' % model_name): id}))
@@ -262,6 +271,22 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
                                                issue=cover.issue,
                                                cover=cover, deleted=True)
                 cover_revision.save()
+    elif model_name == 'brand' and delete:
+        for brand_use in revision.brand.in_use.all():
+            # TODO I think we get into trouble if we use _is_reservable here,
+            # so we do it by hand, but we will change is_reservable anyway
+            if brand_use.reserved:
+                # catched by try in reserve, transaction.rollback there
+                # should take care of the changes here
+                raise ValueError
+            else:
+                use_revision = BrandUseRevision.objects.clone_revision(\
+                                                changeset=changeset,
+                                                brand_use=brand_use)
+                use_revision.deleted = True
+                use_revision.save()
+                brand_use.reserved = True
+                brand_use.save()
     elif model_name == 'publisher' and delete:
         for brand in revision.publisher.active_brands():
             brand_revision = BrandRevision.objects.clone_revision(brand=brand,
@@ -274,11 +299,6 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
                 indicia_publisher=indicia_publisher, changeset=changeset)
             indicia_publisher_revision.deleted = True
             indicia_publisher_revision.save()
-        for imprint in revision.publisher.active_imprints().all():
-            imprint_revision = PublisherRevision.objects.clone_revision(
-              publisher=imprint, changeset=changeset)
-            imprint_revision.deleted = True
-            imprint_revision.save()
 
     return changeset
 
@@ -483,8 +503,16 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                 kwargs={'series_revision_id': revision.id,
                         'publisher_id': publisher_id}))
 
-        if hasattr(revision, 'save_m2m'):
-            revision.save_m2m()
+        if hasattr(form, 'save_m2m'):
+            # TODO
+            # I don't quite understand what is going on here, but for image
+            # and cover revision form.save_m2m() fails with a comment.
+            # But we don't need form.save_m2m() for these anyway. I suspect
+            # problems since relation to ChangesetComment is called 'comments'
+            # and the text 'field' is called that as well.
+            if not (len(form.cleaned_data) == 1 and \
+              'comments' in form.cleaned_data):
+                form.save_m2m()
         if 'submit' in request.POST:
             return submit(request, revision.changeset.id)
         if 'queue' in request.POST:
@@ -802,7 +830,10 @@ thanks,
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
-        return HttpResponseRedirect(urlresolvers.reverse('pending'))
+        if changeset.change_type is CTYPES['cover']:
+            return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 @permission_required('gcd.can_approve')
 def discuss(request, id):
@@ -813,14 +844,20 @@ def discuss(request, id):
         return _cant_get(request)
 
     changeset = get_object_or_404(Changeset, id=id)
-    if request.user != changeset.approver:
+    if request.user != changeset.approver and \
+      request.user != changeset.indexer:
         return render_to_response('gcd/error.html',
           {'error_text': 'A change may only be put into discussion by its ' \
-                         'approver.'},
+                         'indexer or approver.'},
           context_instance=RequestContext(request))
-    if changeset.state != states.REVIEWING:
+    if request.user == changeset.approver and \
+      changeset.state != states.REVIEWING:
         return render_error(request,
           'Only REVIEWING changes can be put into discussion.')
+    if request.user == changeset.indexer and \
+      changeset.state not in [states.OPEN, states.REVIEWING]:
+        return render_error(request,
+          'Only EDITING OR REVIEWING changes can be put into discussion.')
 
     comment_text = request.POST['comments'].strip()
     changeset.discuss(notes=comment_text)
@@ -830,11 +867,18 @@ def discuss(request, id):
     else:
         email_comments = '.'
 
+    if request.user == changeset.indexer:
+        action_by = 'indexer %s' % unicode(changeset.indexer.indexer)
+        start_comment = 'The reviewed'
+    else:
+        action_by = 'editor %s' % unicode(changeset.approver.indexer)
+        start_comment = 'Your'
+
     email_body = u"""
 Hello from the %s!
 
 
-  Your change for "%s" was put into the discussion state by GCD editor %s%s
+  %s change for "%s" was put into the discussion state by GCD %s%s
 
 You can view the full change at %s.
 
@@ -843,8 +887,9 @@ thanks,
 
 %s
 """ % (settings.SITE_NAME,
+       start_comment,
        unicode(changeset),
-       unicode(changeset.approver.indexer),
+       action_by,
        email_comments,
        settings.SITE_URL.rstrip('/') +
          urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
@@ -857,12 +902,19 @@ thanks,
     else:
         subject = 'GCD change put into discussion'
 
-    changeset.indexer.email_user(subject, email_body, settings.EMAIL_INDEXING)
-
-    if request.user.approved_changeset.filter(state=states.REVIEWING).count():
-        return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+    if request.user == changeset.indexer:
+        changeset.approver.email_user(subject, email_body, settings.EMAIL_INDEXING)
+        return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
-        return HttpResponseRedirect(urlresolvers.reverse('pending'))
+        changeset.indexer.email_user(subject, email_body, settings.EMAIL_INDEXING)
+
+        if request.user.approved_changeset.filter(state=states.REVIEWING).count():
+            return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
+        else:
+            if changeset.change_type is CTYPES['cover']:
+                return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
+            else:
+                return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 @permission_required('gcd.can_approve')
 def approve(request, id):
@@ -1121,7 +1173,11 @@ thanks,
     if request.user.approved_changeset.filter(state=states.REVIEWING).count():
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))
     else:
-        return HttpResponseRedirect(urlresolvers.reverse('pending'))
+        if changeset.change_type is CTYPES['cover']:
+            return HttpResponseRedirect(
+                urlresolvers.reverse('pending_covers'))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 def send_comment_observer(request, changeset, comments):
     email_body = u"""
@@ -1494,8 +1550,7 @@ def add_publisher(request):
                           change_type=CTYPES['publisher'])
     changeset.save()
     revision = form.save(commit=False)
-    revision.save_added_revision(changeset=changeset,
-                                 parent=None)
+    revision.save_added_revision(changeset=changeset)
     return submit(request, changeset.id)
 
 def _display_add_publisher_form(request, form):
@@ -1519,8 +1574,8 @@ def add_indicia_publisher(request, parent_id):
     try:
         parent = Publisher.objects.get(id=parent_id, is_master=True)
         if parent.deleted or parent.pending_deletion():
-            return render_error(request, u'Cannot add indicia publishers '
-              u'since "%s" is deleted or pending deletion.' % parent)
+            return render_error(request, u'Cannot add indicia / colophon '
+              u'publishers since "%s" is deleted or pending deletion.' % parent)
 
         if request.method != 'POST':
             form = get_indicia_publisher_revision_form(user=request.user)()
@@ -1549,7 +1604,7 @@ def add_indicia_publisher(request, parent_id):
           'Could not find publisher for id ' + publisher_id)
 
 def _display_add_indicia_publisher_form(request, parent, form):
-    object_name = 'Indicia Publisher'
+    object_name = 'Indicia / Colophon Publisher'
     object_url = urlresolvers.reverse('add_indicia_publisher',
                                           kwargs={ 'parent_id': parent.id })
 
@@ -1563,7 +1618,7 @@ def _display_add_indicia_publisher_form(request, parent, form):
       context_instance=RequestContext(request))
 
 @permission_required('gcd.can_reserve')
-def add_brand(request, parent_id):
+def add_brand_group(request, parent_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
@@ -1574,20 +1629,20 @@ def add_brand(request, parent_id):
               u'since "%s" is deleted or pending deletion.' % parent)
 
         if request.method != 'POST':
-            form = get_brand_revision_form(user=request.user)()
-            return _display_add_brand_form(request, parent, form)
+            form = get_brand_group_revision_form(user=request.user)()
+            return _display_add_brand_group_form(request, parent, form)
 
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
               'apps.gcd.views.details.publisher',
               kwargs={ 'publisher_id': parent_id }))
 
-        form = get_brand_revision_form(user=request.user)(request.POST)
+        form = get_brand_group_revision_form(user=request.user)(request.POST)
         if not form.is_valid():
-            return _display_add_brand_form(request, parent, form)
+            return _display_add_brand_group_form(request, parent, form)
 
         changeset = Changeset(indexer=request.user, state=states.OPEN,
-                              change_type=CTYPES['brand'])
+                              change_type=CTYPES['brand_group'])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
@@ -1598,10 +1653,153 @@ def add_brand(request, parent_id):
         return render_error(request,
           'Could not find publisher for id ' + publisher_id)
 
-def _display_add_brand_form(request, parent, form):
-    object_name = 'Brand'
-    object_url = urlresolvers.reverse('add_brand',
+def _display_add_brand_group_form(request, parent, form):
+    object_name = 'BrandGroup'
+    object_url = urlresolvers.reverse('add_brand_group',
                                       kwargs={ 'parent_id': parent.id })
+
+    return render_to_response('oi/edit/add_frame.html',
+      {
+        'object_name': object_name,
+        'object_url': object_url,
+        'action_label': 'Submit new',
+        'form': form,
+      },
+      context_instance=RequestContext(request))
+
+@permission_required('gcd.can_reserve')
+def add_brand(request, brand_group_id=None, publisher_id=None):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    if brand_group_id:
+        try:
+            brand_group = BrandGroup.objects.get(id=brand_group_id)
+            if brand_group.deleted or brand_group.pending_deletion():
+                return render_error(request, u'Cannot add brands '
+                u'since "%s" is deleted or pending deletion.' % brand_group)
+        except (BrandGroup.DoesNotExist, BrandGroup.MultipleObjectsReturned):
+            return render_error(request,
+            'Could not find Brand Group for id ' + brand_group_id)
+        publisher = None
+    else:
+        try:
+            publisher = Publisher.objects.get(id=publisher_id)
+            if publisher.deleted or publisher.pending_deletion():
+                return render_error(request, u'Cannot add brands '
+                u'since "%s" is deleted or pending deletion.' % publisher)
+        except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
+            return render_error(request,
+            'Could not find Publisher for id ' + publisher_id)
+        brand_group = None
+            
+    if request.method != 'POST':
+        form = get_brand_revision_form(user=request.user, publisher=publisher,
+                                       brand_group=brand_group)()
+        return _display_add_brand_form(request, form, brand_group, publisher)
+
+    if 'cancel' in request.POST:
+        if brand_group_id:
+            return HttpResponseRedirect(urlresolvers.reverse(
+                'apps.gcd.views.details.brand_group',
+                kwargs={ 'brand_group_id': brand_group_id }))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse(
+                'apps.gcd.views.details.publisher',
+                kwargs={ 'publisher_id': publisher_id }))
+
+    form = get_brand_revision_form(user=request.user, publisher=publisher,
+                                   brand_group=brand_group)(request.POST)
+    if not form.is_valid():
+        return _display_add_brand_form(request, form, brand_group, publisher)
+    
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                            change_type=CTYPES['brand'])
+    changeset.save()
+    revision = form.save(commit=False)
+    revision.save_added_revision(changeset=changeset)
+    form.save_m2m()
+    return submit(request, changeset.id)
+
+
+def _display_add_brand_form(request, form, brand_group=None, publisher=None):
+    object_name = 'Brand Emblem'
+    if brand_group:
+        object_url = urlresolvers.reverse('add_brand_via_group',
+                                        kwargs={ 'brand_group_id': brand_group.id })
+    else:
+        object_url = urlresolvers.reverse('add_brand_via_publisher',
+                                        kwargs={ 'publisher_id': publisher.id })
+
+    return render_to_response('oi/edit/add_frame.html',
+      {
+        'object_name': object_name,
+        'object_url': object_url,
+        'action_label': 'Submit new',
+        'form': form,
+      },
+      context_instance=RequestContext(request))
+
+@permission_required('gcd.can_reserve')
+def add_brand_use(request, brand_id, publisher_id=None):
+    brand = get_object_or_404(Brand, id=brand_id, deleted=False)
+    if brand.pending_deletion():
+        return render_error(request, u'Cannot add a brand use '
+          u'since "%s" is pending deletion.' % brand)
+    if publisher_id:
+        publisher = get_object_or_404(Publisher, id=publisher_id, deleted=False)
+        if publisher.pending_deletion():
+            return render_error(request, u'Cannot add a brand use '
+              u'since "%s" is pending deletion.' % publisher)
+        if request.method != 'POST':
+            # we should only get here by a POST
+            raise NotImplementedError
+
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+                'apps.gcd.views.details.brand',
+                kwargs={ 'brand_id': brand_id }))
+
+        form = get_brand_use_revision_form(user=request.user)(request.POST)
+        if not form.is_valid:
+            return _display_add_brand_use_form(request, form, brand, publisher)
+
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['brand_use'])
+        changeset.save()
+        revision = form.save(commit=False)
+        revision.save_added_revision(changeset=changeset, emblem=brand,
+                                     publisher=publisher)
+        return submit(request, changeset.id)
+    else:
+        data = {'heading': mark_safe('<h2>Select Publisher where the Brand %s was '
+                                    'in use</h2>' % esc(brand.name)),
+                'target': 'a publisher',
+                'brand_id': brand_id,
+                'publisher': True,
+                'return': process_add_brand_use,
+                'cancel': HttpResponseRedirect(urlresolvers.reverse('show_brand',
+                            kwargs={'brand_id': brand_id}))}
+        select_key = store_select_data(request, None, data)
+        return HttpResponseRedirect(urlresolvers.reverse('select_object',
+            kwargs={'select_key': select_key}))
+
+@permission_required('gcd.can_reserve')
+def process_add_brand_use(request, data, object_type, publisher_id):
+    if object_type != 'publisher':
+        raise ValueError
+    brand = get_object_or_404(Brand, id=data['brand_id'], deleted=False)
+
+    publisher = get_object_or_404(Publisher, id=publisher_id, deleted=False)
+
+    form = get_brand_use_revision_form(user=request.user)
+    return _display_add_brand_use_form(request, form, brand, publisher)
+
+def _display_add_brand_use_form(request, form, brand, publisher):
+    object_name = 'BrandUse for %s at %s' % (brand, publisher)
+    object_url = urlresolvers.reverse('add_brand_use',
+                                      kwargs={ 'brand_id': brand.id,
+                                               'publisher_id': publisher.id})
 
     return render_to_response('oi/edit/add_frame.html',
       {
@@ -1624,12 +1822,6 @@ def add_series(request, publisher_id):
             return render_error(request, u'Cannot add series '
               u'since "%s" is deleted or pending deletion.' % publisher)
 
-        imprint = None
-        if publisher.parent is not None:
-            return render_error(request, 'Series may no longer be added to '
-              'imprints.  Add the series to the master publisher, and then set '
-              'the indicia publisher(s) and/or brand(s) at the issue level.')
-
         if request.method != 'POST':
             initial = {}
             initial['country'] = publisher.country.id
@@ -1641,7 +1833,7 @@ def add_series(request, publisher_id):
             initial['is_comics_publication'] = True
             form = get_series_revision_form(publisher,
                                             user=request.user)(initial=initial)
-            return _display_add_series_form(request, publisher, imprint, form)
+            return _display_add_series_form(request, publisher, form)
 
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
@@ -1651,22 +1843,21 @@ def add_series(request, publisher_id):
         form = get_series_revision_form(publisher,
                                         user=request.user)(request.POST)
         if not form.is_valid():
-            return _display_add_series_form(request, publisher, imprint, form)
+            return _display_add_series_form(request, publisher, form)
 
         changeset = Changeset(indexer=request.user, state=states.OPEN,
                               change_type=CTYPES['series'])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
-                                     publisher=publisher,
-                                     imprint=imprint)
+                                     publisher=publisher)
         return submit(request, changeset.id)
 
     except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
         return render_error(request,
-          'Could not find publisher or imprint for id ' + publisher_id)
+          'Could not find publisher for id ' + publisher_id)
 
-def _display_add_series_form(request, publisher, imprint, form):
+def _display_add_series_form(request, publisher, form):
     kwargs = {
         'publisher_id': publisher.id,
     }
@@ -2207,6 +2398,7 @@ def _display_add_story_form(request, issue, form, changeset_id):
 # Reprint Link Editing
 ##############################################################################
 
+@permission_required('gcd.can_reserve')
 def confirm_reprint_migration(request, id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -3554,24 +3746,28 @@ def show_queue(request, queue_name, state):
     if 'editing' == queue_name:
         kwargs['indexer'] = request.user
         kwargs['state__in'] = states.ACTIVE
-    if 'pending' == queue_name:
+    elif 'pending' == queue_name:
         kwargs['state__in'] = (states.PENDING, states.DISCUSSED,
                                states.REVIEWING)
-    if 'reviews' == queue_name:
+    elif 'reviews' == queue_name:
         kwargs['approver'] = request.user
         kwargs['state__in'] = (states.OPEN, states.DISCUSSED,
                                states.REVIEWING)
-    if 'covers' == queue_name:
+    elif 'covers' == queue_name:
         return show_cover_queue(request)
-    if 'approved' == queue_name:
+    elif 'approved' == queue_name:
         return show_approved(request)
+    elif 'editor_log' == queue_name:
+        return show_editor_log(request)
 
     changes = Changeset.objects.filter(**kwargs).select_related(
       'indexer__indexer', 'approver__indexer')
 
     publishers = changes.filter(change_type=CTYPES['publisher'])
     indicia_publishers = changes.filter(change_type=CTYPES['indicia_publisher'])
+    brand_groups = changes.filter(change_type=CTYPES['brand_group'])
     brands = changes.filter(change_type=CTYPES['brand'])
+    brand_uses = changes.filter(change_type=CTYPES['brand_use'])
     series = changes.filter(change_type=CTYPES['series'])
     issue_adds = changes.filter(change_type=CTYPES['issue_add'])
     issues = changes.filter(change_type__in=[CTYPES['issue'],
@@ -3597,16 +3793,28 @@ def show_queue(request, queue_name, state):
               .annotate(country=Max('publisherrevisions__country__id')),
           },
           {
-            'object_name': 'Indicia Publishers',
+            'object_name': 'Indicia / Colophon Publishers',
             'object_type': 'indicia_publisher',
             'changesets': indicia_publishers.order_by('modified', 'id')\
               .annotate(country=Max('indiciapublisherrevisions__country__id')),
           },
           {
+            'object_name': 'Brand Groups',
+            'object_type': 'brand_groups',
+            'changesets': brand_groups.order_by('modified', 'id')\
+              .annotate(country=Max('brandgrouprevisions__parent__country__id')),
+          },
+          {
             'object_name': 'Brands',
             'object_type': 'brands',
             'changesets': brands.order_by('modified', 'id')\
-              .annotate(country=Max('brandrevisions__parent__country__id')),
+              .annotate(country=Max('brandrevisions__group__parent__country__id')),
+          },
+          {
+            'object_name': 'Brand Uses',
+            'object_type': 'brand_uses',
+            'changesets': brand_uses.order_by('modified', 'id')\
+              .annotate(country=Max('branduserevisions__publisher__country__id')),
           },
           {
             'object_name': 'Series',
@@ -3663,6 +3871,21 @@ def show_approved(request):
       {'CTYPES': CTYPES},
       page_size=50)
 
+@login_required
+def show_editor_log(request):
+    changed_states = set(states.CLOSED+states.ACTIVE)
+    changed_states.remove(states.REVIEWING)
+    changes = Changeset.objects.order_by('-modified')\
+                .filter(comments__old_state=states.REVIEWING,
+                        comments__new_state__in=changed_states,
+                        comments__commenter=request.user)\
+                .exclude(indexer=request.user).distinct()
+    return paginate_response(
+      request,
+      changes,
+      'oi/queues/editor_log.html',
+      {'CTYPES': CTYPES},
+      page_size=50)
 
 @login_required
 def show_cover_queue(request):
@@ -3914,7 +4137,7 @@ def image_compare(request, changeset, revision):
         if Image.objects.filter(content_type=\
                 ContentType.objects.get_for_model(revision.object),
             object_id=revision.object.id, type=revision.type, deleted=False).count():
-                kwargs['double_upload'] = '%s has an %s. Additional images ' \
+                kwargs['double_upload'] = u'%s has an %s. Additional images ' \
                 'cannot be uploaded, only replacements are possible.' \
                 % (revision.object, revision.type.description)
 
@@ -3941,22 +4164,11 @@ def preview(request, id, model_name):
     template = 'gcd/details/%s.html' % model_name
 
     if 'publisher' == model_name:
-        if revision.parent is None:
-            queryset = revision.active_series().order_by('name')
-        else:
-            queryset = revision.imprint_series_set.exclude(deleted=True) \
-              .order_by('name')
-        return paginate_response(request,
-          queryset,
-          template,
-          {
-            model_name: revision,
-            'error_subject': revision,
-            'preview': True,
-          },
-        )
+        return show_publisher(request, revision, True)
     if 'indicia_publisher' == model_name:
         return show_indicia_publisher(request, revision, True)
+    if 'brand_group' == model_name:
+        return show_brand_group(request, revision, True)
     if 'brand' == model_name:
         return show_brand(request, revision, True)
     if 'series' == model_name:
@@ -3986,8 +4198,8 @@ def get_select_data(request, select_key):
         data[item] = request.session['%s_%s' % (select_key, item)]
     return data
 
-def get_select_forms(request, initial, data, series=False, issue=False,
-                     story=False):
+def get_select_forms(request, initial, data, publisher=False,
+                     series=False, issue=False, story=False):
     if issue or story:
         cached_issue = get_cached_issue(request)
     else:
@@ -3998,12 +4210,14 @@ def get_select_forms(request, initial, data, series=False, issue=False,
     else:
         cached_story = None
         cached_cover = None
-
+    search_form = get_select_search_form(search_publisher=publisher,
+                                         search_series=series,
+                                         search_issue=issue,
+                                         search_story=story)
     if data:
-        search_form = get_select_search_form(series, issue, story)(data)
+        search_form = search_form(data)
     else:
-        search_form = get_select_search_form(series, issue, story)\
-                                            (initial=initial)
+        search_form = search_form(initial=initial)
 
     cache_form = get_select_cache_form(cached_issue=cached_issue,
         cached_story=cached_story, cached_cover=cached_cover)()
@@ -4016,12 +4230,15 @@ def process_select_search(request, select_key):
         data = get_select_data(request, select_key)
     except KeyError:
         return _cant_get(request)
+    publisher =  data.get('publisher', False)
     series = data.get('series', False)
     issue =  data.get('issue', False)
     story =  data.get('story', False)
-
-    search_form = get_select_search_form(series=series, issue=issue,
-                                         story=story)(request.GET)
+    
+    search_form = get_select_search_form(search_publisher=publisher,
+                                         search_series=series,
+                                         search_issue=issue,
+                                         search_story=story)(request.GET)
     if not search_form.is_valid():
         return HttpResponseRedirect(urlresolvers.reverse('select_object',
                                       kwargs={'select_key': select_key}) \
@@ -4078,6 +4295,14 @@ def process_select_search(request, select_key):
         plural_suffix = 's'
         search = search.order_by("series__name", "series__year_began",
                                  "key_date")
+    elif 'search_publisher' in request.GET:
+        search = Publisher.objects.filter(deleted=False,
+                                          name__icontains=cd['publisher'])
+        heading = 'Publisher search for: ' + cd['publisher']
+        template='gcd/search/publisher_list.html'
+        base_name = 'publisher'
+        plural_suffix = 's'
+        search = search.order_by("name")
 
     context = { 'item_name': base_name,
         'plural_suffix': plural_suffix,
@@ -4086,9 +4311,9 @@ def process_select_search(request, select_key):
         'select_key': select_key,
         'query_string': request.META['QUERY_STRING'],
         'publisher': cd['publisher'] if cd['publisher'] else '',
-        'series': cd['series'] if cd['series'] else '',
-        'year': cd['year'] if cd['year'] else '',
-        'number': cd['number'] if cd['number'] else ''
+        'series': cd['series'] if 'series' in cd and cd['series'] else '',
+        'year': cd['year'] if 'year' in cd and cd['year'] else '',
+        'number': cd['number'] if 'number' in cd and cd['number'] else ''
     }
     return paginate_response(request, search, template, context)
 
@@ -4105,11 +4330,12 @@ def select_object(request, select_key):
             request_data = None
         initial = data.get('initial', {})
         initial['select_key'] = select_key
+        publisher =  data.get('publisher', False)
         series = data.get('series', False)
         issue =  data.get('issue', False)
         story =  data.get('story', False)
         search_form, cache_form = get_select_forms(request,
-                                    initial, request_data,
+                                    initial, request_data, publisher=publisher,
                                     series=series, issue=issue, story=story)
         return render_to_response('oi/edit/select_object.html',
         {
@@ -4117,6 +4343,7 @@ def select_object(request, select_key):
             'select_key': select_key,
             'cache_form': cache_form,
             'search_form': search_form,
+            'publisher': publisher,
             'series': series,
             'issue': issue,
             'story': story,

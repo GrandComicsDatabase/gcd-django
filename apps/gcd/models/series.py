@@ -60,6 +60,7 @@ class Series(models.Model):
     has_isbn = models.BooleanField()
     has_issue_title = models.BooleanField()
     has_volume = models.BooleanField()
+    has_rating = models.BooleanField(default=False)
 
     is_comics_publication = models.BooleanField()
 
@@ -78,14 +79,15 @@ class Series(models.Model):
 
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher)
-    imprint = models.ForeignKey(Publisher, null=True,
-                                related_name='imprint_series_set')
 
     # Fields related to change management.
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    def has_keywords(self):
+        return self.keywords.exists()
 
     def delete(self):
         self.deleted = True
@@ -193,7 +195,8 @@ class Series(models.Model):
 
     def issue_indexed_count(self):
         from apps.gcd.models.issue import INDEXED
-        return self.active_issues().exclude(is_indexed=INDEXED['skeleton']).count()
+        return self.active_base_issues()\
+                   .exclude(is_indexed=INDEXED['skeleton']).count()
 
     def _date_uncertain(self, flag):
         return u' ?' if flag else u''

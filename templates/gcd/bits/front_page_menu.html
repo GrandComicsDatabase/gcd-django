@@ -2,7 +2,9 @@
 
 <div id="front_page_menu">
   <div id="front_page_menu_header">
-    <img src="{{ MEDIA_URL }}/img/logo.png" alt="GCD">
+    <img src="{{ MEDIA_URL }}/img/logo_new.png" alt="GCD">
+  <br>
+  <a href="http://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a>
   <p>
   <a href="http://docs.comics.org/wiki/How_To_Contribute_FAQ">{% trans "How To Help" %}</a> |
   <a href="http://docs.comics.org/wiki/OI_Tutorial"> Tutorial</a><br>
@@ -12,9 +14,7 @@
   <a href="http://docs.comics.org/wiki/Email_Lists_FAQ">{% trans "Mailing Lists" %}</a> |
   <a href="mailto:{% trans 'contact@comics.org' %}">{% trans "Contact Us" %}</a>
   </p>
-  <p>
-  <a href="http://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a> |
-  <a method="post" href="{% url donate %}">{% trans "Donate" %}</a>
+  <span class="advanced_link"><a method="post" href="{% url donate %}">{% trans "Donate" %}</a></span>
   </div>
 </div>
 

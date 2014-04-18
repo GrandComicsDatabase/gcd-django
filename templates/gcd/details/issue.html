@@ -30,7 +30,7 @@
     <div id="control_center">
 {% include "gcd/bits/issue_data.html" %}
 
-{% if issue.notes or issue.variant_of or issue.variant_set.count or issue.keywords.exists or issue.has_reprints %}
+{% if issue.notes or issue.variant_of or issue.variant_set.count or issue.has_keywords or issue.has_reprints %}
       <div class="issue_notes">
         <div class="issue_notes_border">
           <h3 class="notes_header"> Issue Notes </h3>
@@ -80,7 +80,7 @@ This issue has variants.
 <div class="non_comics">
 <h3>
 <span class="left">The individual issues of this series are each less than 50% comics.  Only
-comics sequences are indexed and cover scans are not currently accepted.<span>
+comics sequences are indexed and cover scans are accepted only if the issue has 10% indexed comics content.<span>
 </h3>
 </div>
 {% endif %}
@@ -97,7 +97,7 @@ comics sequences are indexed and cover scans are not currently accepted.<span>
             {{ image_tag }}
     {% endif %}
   {% else %}
-    {% if issue.series.is_comics_publication %}
+    {% if issue.series.is_comics_publication or issue.can_have_cover %}
             <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
     {% else %}
             <a href="http://docs.comics.org/wiki/Comics_Publication"> {{ image_tag }}</a>
@@ -110,28 +110,29 @@ comics sequences are indexed and cover scans are not currently accepted.<span>
   {% endfor %}
 {% endif %}
             <div class="issue_cover_links">
+<div class="left">
 {% if issue.has_covers %}
-              View: <a href="{{ issue.get_absolute_url }}cover/2">Medium</a>
-              <a href="{{ issue.get_absolute_url }}cover/4">Large</a>
+              View: <a href="{{ issue.get_absolute_url }}cover/4">Large</a>
               <br>
   {% if not preview %}
               <a href="{% url edit_covers issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a>
               <br>
   {% endif %}
 {% endif %}
+</div>
+<div class="right">
 {% if issue.series.has_gallery %}
               <a href="{{ issue.series.get_absolute_url }}covers">Cover gallery</a>
 {% endif %}
+</div>
             </div>
           </div>
         </div> <!-- coverContainer -->
       </div> <!-- cover -->
       <div id="story_data">
 {% for story in stories %}
-        <hr class="divider">
   {% include "gcd/details/single_story.html" %}
 {% endfor %}
-        <hr class="divider">
       </div>
     </div> <!-- control_center -->
 
@@ -242,7 +243,7 @@ comics sequences are indexed and cover scans are not currently accepted.<span>
   {% endif %}
       </div> <!-- index_credits -->
 {% endif %}
-{% if ADVERTISING %}
+{% if ADVERTISING and not NO_ADS %}
 <script type="text/javascript"><!--
 google_ad_client = "ca-pub-9033390275710305";
 /* right skyscraper */

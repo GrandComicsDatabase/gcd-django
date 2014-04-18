@@ -19,7 +19,7 @@ table.comparison,
 table.comments,
 table.reorder_stories,
 table.story_list {
-    border: double black 2px;
+    border: double silver 2px;
     border-collapse: collapse;
     margin-bottom: 1em;
 }
@@ -28,7 +28,7 @@ table.add_issues th,
 table.reorder_stories th,
 table.comparison th,
 table.comments th {
-    border: solid black 1px;
+    border: solid silver 1px;
     border-collapse: collapse;
     padding: 0.4em;
     background-color: #DDD;
@@ -50,7 +50,7 @@ table.add_issues td,
 table.reorder_stories td,
 table.comparison td,
 table.comments td {
-    border: solid black 1px;
+    border: solid silver 1px;
     border-collapse: collapse;
     padding: 0.4em;
 }
@@ -91,7 +91,7 @@ table.added tr.True, tr.added, span.added {
 }
 
 table.story_list td {
-    border-bottom: solid 1px;
+    border-bottom: solid 1px silver;
     padding-left: 0.5em;
 }
 

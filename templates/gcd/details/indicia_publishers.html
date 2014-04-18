@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block title %}
-  GCD :: Publisher :: {{ publisher.name }} :: Indicia Publishers
+  GCD :: Publisher :: {{ publisher.name }} :: Indicia / Colophon Publishers
 {% endblock %}
 
 {% block css %}
@@ -13,14 +13,14 @@
 
 {% block view_body %}
 
-{% with "Indicia Publishers" as extra %}
+{% with "Indicia / Colophon Publishers" as extra %}
 {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
 <div class="publisher_list_control_panel">
 {% if user.is_authenticated and not publisher.pending_deletion %}
   <form method="GET"
         action="{% url add_indicia_publisher parent_id=publisher.id %}">
-    <input id="add" name="add" type="submit" value="Add another indicia publisher" />
+    <input id="add" name="add" type="submit" value="Add another indicia / colophon publisher" />
   </form>
 {% endif %}
 {% if not user.is_authenticated %}  
@@ -34,7 +34,7 @@
 {% if publisher.indicia_publisher_count %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
-    <th> Indicia Publisher </th>
+    <th> Indicia / Colophon Publisher </th>
     <th> Issues </th>
     <th> Year Began </th>
     <th> Year Ended </th>

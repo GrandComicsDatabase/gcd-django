@@ -41,10 +41,14 @@ class Image(models.Model):
     type = models.ForeignKey(ImageType)
 
     image_file = models.ImageField(upload_to=get_generic_image_path)
-    scaled_image = ImageSpecField([ResizeToFit(width=400),], image_field='image_file',
-            format='JPEG', options={'quality': 90})
-    thumbnail = ImageSpecField([ResizeToFit(height=50),], image_field='image_file',
-            format='JPEG', options={'quality': 90})
+    scaled_image = ImageSpecField([ResizeToFit(width=400),],
+                                  image_field='image_file',format='JPEG',
+                                  options={'quality': 90})
+    thumbnail = ImageSpecField([ResizeToFit(height=50),],
+                               image_field='image_file', format='JPEG',
+                               options={'quality': 90})
+    icon = ImageSpecField([ResizeToFit(height=30),], image_field='image_file',
+                          format='JPEG', options={'quality': 90})
 
     marked = models.BooleanField(default=False)
 

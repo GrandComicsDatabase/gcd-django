@@ -29,8 +29,11 @@ dl.credits dd {
     padding: 0;
 }
 
-.content_header {
+hr.content_header {
     clear: both;
+    height: 4px;
+    background-color: rgb(221, 221, 221);
+    border: none;
 }
 
 .single_story dl.contents {
@@ -72,10 +75,8 @@ dl.contents dd.short {
 }
 
 div.single_story {
-    border: solid black 1px;
     float: left;
     width: 100%;
-    margin-bottom: 1em;
 }
 
 
@@ -91,7 +92,6 @@ div.single_story {
     padding: 0.2em 6px;
     margin-top: 0;
     margin-bottom: 0.15em;
-    border-top: solid black 1px;
 }
 
 div.non_comics {
@@ -103,7 +103,7 @@ div.non_comics {
 
 .non_comics h3 {
     float: left;
-    background-color: #77E;
+    background-color: #66E;
     color: black;
     margin-top: 0;
     margin-bottom: 0;

@@ -46,12 +46,10 @@
         <input type="submit" value="{% trans 'Go' %}"></input>
     {% if advanced_search %}
       {% for field, value in request.GET.items %}
-        {% ifnotequal field "page" %}
-          {% ifnotequal field "submit" %}
+        {% if field != "page" and field != "submit" %}
         <input type="hidden" name="{{ field }}" value="{{ value|default:'' }}">
         </input>
-          {% endifnotequal %}
-        {% endifnotequal %}
+        {% endif %}
       {% endfor %}
     {% endif %}
     </form>
