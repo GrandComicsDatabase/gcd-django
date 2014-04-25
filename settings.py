@@ -280,6 +280,11 @@ NEW_SITE_COVER_CREATION_DATE = datetime.datetime(2009,10,2,14,0,0)
 EMAIL_VOTING_FROM = 'GCD Voting <voting@comics.org>'
 EMAIL_VOTING_ADMIN = EMAIL_CONTACT
 
+###
+# My.comics.org settings
+
+MYCOMICS = False
+
 # absolute path to the directory that holds election files.
 VOTING_DIR = abspath(join(dirname(__file__), 'voting'))
 
