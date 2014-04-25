@@ -130,6 +130,8 @@ elif settings.NO_OI:
                    account_patterns +
                    read_only_patterns
                   )
+elif settings.MYCOMICS:
+    urlpatterns = patterns('', (r'^', include('apps.mycomics.urls')))
 else:
     urlpatterns = (basic_patterns +
                    patterns('', (r'^', include('apps.gcd.urls'))) +
