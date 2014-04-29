@@ -411,7 +411,8 @@ def search(request):
                                       'sort': sort }))
 
 
-def creator_checklist(request, creator, country=None, language=None):
+def checklist(request, creator, country=None, language=None):
+    creator = creator.replace('_', ' ').title()
     get = request.GET.copy()
     get[u'target'] = u'issue'
     get[u'script'] = creator
