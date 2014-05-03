@@ -113,7 +113,7 @@ divisible filter.
           {% include "gcd/bits/series_detail_row.html" %}
         {% empty %}
   <tr class="row_even_{{ row_counter|divisibleby:"2" }}">
-    <td class="empty_month">{{ row.date|date:"Y.m.00" }}
+    <td class="empty_month">{{ row.date|date:"Y-m-00" }}
     <td>&nbsp;</td>
           {% if volume_present %}
     <td>&nbsp;</td>
