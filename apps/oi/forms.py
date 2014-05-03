@@ -1422,8 +1422,8 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
 
     else:
-        special_types = ('(backcovers) *do not use* / *please fix*', '(unknown)',
-                        'biography (nonfictional)')
+        special_types = ['(backcovers) *do not use* / *please fix*', 'filler'] \
+                        + [i for i in OLD_TYPES]
         queryset = StoryType.objects.all()
         if revision is None or (revision is not None and
                                 revision.type.name not in special_types):
@@ -1434,11 +1434,15 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
           help_text='Choose the most appropriate available type',
           **extra)
 
+        fantasy_id = GENRES['en'].index(u'fantasy')
         if language and language.code != 'en' and language.code in GENRES:
             choices = [[g, g + ' / ' + h] for g,h in zip(GENRES['en'],
                                                     GENRES[language.code])]
+            choices[fantasy_id] = [u'fantasy',
+              u'fantasy-supernatural / %s' % GENRES[language.code][fantasy_id]]
         else:
             choices = [[g, g] for g in GENRES['en']]
+            choices[fantasy_id] = [u'fantasy', u'fantasy-supernatural']
         if additional_genres:
             additional_genres.reverse()
             for genre in additional_genres:
