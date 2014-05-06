@@ -1,7 +1,45 @@
+import shlex
+from django.utils.http import urlencode
+from django.utils.encoding import smart_unicode as uni
+
 from haystack.views import FacetedSearchView
 from apps.gcd.views import ResponsePaginator
 from haystack.query import SearchQuerySet
 from haystack.inputs import AutoQuery
+from haystack.backends import SQ
+
+def parse_query_into_sq(query, fields):
+    sq = None
+    not_sq = None
+    or_flag = False
+    for phrase in shlex.split(query.encode('utf-8')):
+        if phrase[0] == '-':
+            query_part = AutoQuery('"%s"' % uni(phrase[1:]))
+            for field in fields:
+                if not not_sq:
+                    not_sq = SQ(**{field:query_part})
+                else:
+                    not_sq |= SQ(**{field:query_part})
+            or_flag = False
+        elif phrase == 'OR':
+            or_flag = True
+        else:
+            query_part = AutoQuery('"%s"' % uni(phrase))
+            field_sq = None
+            for field in fields:
+                if not field_sq:
+                    field_sq = SQ(**{field:query_part})
+                else:
+                    field_sq |= SQ(**{field:query_part})
+            if not sq:
+                sq = field_sq
+            else:
+                if or_flag:
+                    sq |= field_sq
+                else:
+                    sq &= field_sq
+            or_flag = False
+    return sq, not_sq
 
 class GcdSearchQuerySet(SearchQuerySet):
     # SearchQuerySet class by default adds 'AND (query)' condition to the
@@ -25,12 +63,14 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                 self.form.selected_facets = [u'facet_model_name_exact:%s' % \
                                               request.GET['search_object']]
         self.query = self.get_query()
-        #TODO List of fields to add in filter_or should be gathered
+        #TODO List of fields should be gathered
         # automatically from our SearchIndex classes
-        self.form.searchqueryset = self.form.searchqueryset.filter_or(
-            content=AutoQuery(self.query)).filter_or(
-            name=AutoQuery(self.query)).filter_or(
-            title=AutoQuery(self.query))
+        fields = ['content', 'name' , 'title']
+        sq, not_sq = parse_query_into_sq(self.query, fields)
+        if sq:
+            self.form.searchqueryset = self.form.searchqueryset.filter(sq)
+        if not_sq:
+            self.form.searchqueryset = self.form.searchqueryset.exclude(not_sq)
 
         self.results = self.get_results()
         self.sort = ''
@@ -69,7 +109,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                                              'sort_name',
                                                              'sort_code',
                                                              'sequence_number')
-
+        self.query = urlencode({'q': self.query.encode('utf-8')})
         self.paginator = ResponsePaginator(self.results,
                                            view=self.create_response)
         return self.paginator.paginate(request)

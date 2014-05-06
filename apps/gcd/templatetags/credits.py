@@ -124,21 +124,16 @@ def show_credit(story, credit):
                 formatted_credit += __format_credit(story, 'feature')
         return formatted_credit
     elif credit == 'genre' and getattr(story, credit) and \
-      story.issue and \
-      (story.issue.series.language.code != 'en' or \
-        (story.issue.series.language.code == 'en' and \
-           story.issue.series.country.code != 'us')) and \
-         story.issue.series.language.code in GENRES:
+      story.issue:
         genres = story.genre.lower()
         language = story.issue.series.language.code 
         if language == 'en' and \
-           story.issue.series.country.code != 'us':
-            if genres.find('humor') > -1:
-                story.genre = genres.replace('humor', 'humour')
-            if genres.find('sports') > -1:
-                story.genre = genres.replace('sports', 'sport')
-            if genres.find('math & science') > -1:
-                story.genre = genres.replace('math & science', 'maths & science')
+          story.issue.series.country.code != 'us':
+            genres = genres.replace('humor', 'humour')
+            genres = genres.replace('sports', 'sport')
+            genres = genres.replace('math & science', 'maths & science')
+        if language == 'en' or story.issue.series.language.code not in GENRES:
+            story.genre = genres.replace('fantasy', 'fantasy-supernatural')
         else:
             display_genre = u''
             for genre in genres.split(';'):
@@ -151,6 +146,7 @@ def show_credit(story, credit):
                     display_genre += u'%s (%s); ' % (translation, genre)
                 else:
                     display_genre += genre + '; '
+            display_genre = display_genre.replace('(fantasy)', '(fantasy-supernatural)')
             story.genre = display_genre[:-2]
         return __format_credit(story, credit)
     elif hasattr(story, credit):
