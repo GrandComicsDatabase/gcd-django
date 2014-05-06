@@ -476,7 +476,7 @@ def set_series_first_last(series):
 
 def validated_isbn(entered_isbn):
     '''
-    returns ISBN10 or ISBN13 if valid ISBN, empty string otherwiese
+    returns ISBN10 or ISBN13 if valid ISBN, empty string otherwise
     '''
     isbns = entered_isbn.split(';')
     valid_isbns = True
@@ -3197,7 +3197,7 @@ class IssueRevision(Revision):
     no_brand = models.BooleanField(default=False, verbose_name='no brand emblem',
       help_text="Check this box if there is no publisher's logo or tagline.")
 
-    isbn = models.CharField(max_length=32, blank=True, default='',
+    isbn = models.CharField(max_length=51, blank=True, default='',
       verbose_name='ISBN',
       help_text='The ISBN as printed on the item. Do not use this field for '
                 'numbering systems other than ISBN. If both ISBN 10 and '
