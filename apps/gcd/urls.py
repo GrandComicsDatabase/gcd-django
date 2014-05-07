@@ -183,13 +183,13 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_credit'),
 
     # Special display pages
-    url(r'^checklist/(?P<creator>.+)/country/(?P<country>.+)/$',
-     'apps.gcd.views.search.checklist', name='checklist'),
-    url(r'^checklist/(?P<creator>.+)/language/(?P<language>.+)/$',
-     'apps.gcd.views.search.checklist', name='checklist'),
-    url(r'^checklist/(?P<creator>.+)/$',
-     'apps.gcd.views.search.checklist', name='checklist'),
-    
+    url(r'^checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
+     'apps.gcd.views.search.checklist', name='checklist_for_name'),
+    url(r'^checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
+     'apps.gcd.views.search.checklist', name='checklist_for_name'),
+    url(r'^checklist/name/(?P<creator>.+)/$',
+     'apps.gcd.views.search.checklist', name='checklist_for_name'),
+
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.
     (r'^job_number/name/(?P<number>.+)/sort/(?P<sort>.+)/$',
      'apps.gcd.views.search.story_by_job_number_name'),
@@ -269,9 +269,9 @@ urlpatterns += patterns('django.views.generic.simple',
     (r'^graphics/covers/', 'redirect_to', {'url' : None}),
     ('^coversubmit/index.lasso/$', 'redirect_to', {'url' : None}),
     (r'^creator_checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
-      'redirect_to', {'url': r'^checklist/%(creator)s/country/%(country)s/$'}),
+      'redirect_to', {'url': r'^checklist/name/%(creator)s/country/%(country)s/$'}),
     (r'^creator_checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
-      'redirect_to', {'url': r'^checklist/%(creator)s/language/%(language)s/$'}),
+      'redirect_to', {'url': r'^checklist/name/%(creator)s/language/%(language)s/$'}),
     (r'^creator_checklist/name/(?P<creator>.+)/$',
-      'redirect_to', {'url': r'^checklist/%(creator)s/$'})
+      'redirect_to', {'url': r'^checklist/name/%(creator)s/$'})
 )
