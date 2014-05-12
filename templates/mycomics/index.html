@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load i18n %}
 <html>
 <head>
   <title>My comics.org</title>
@@ -6,6 +7,20 @@
 <body>
 
 <h1>MYCOMICS.ORG</h1>
+{% if form.errors %}
+  <p class="error_message_text">
+    Your username and password didn't match. Please try again.
+  </p>
+{% endif %}
+<form method="post" action="{% url login %}">
+  {% csrf_token %}
+  {% trans 'email' %}
+  <input type="text" name="username" id="username"/><br>
+  {% trans 'password' %}
+  <input type="password" name="password" id="password"/>
+  <input type="submit" value="{% trans 'Login' %}" />
+  <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+</form>
 
 </body>
 </html>

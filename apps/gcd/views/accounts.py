@@ -36,14 +36,14 @@ from apps.gcd.forms.accounts import ProfileForm, RegistrationForm, \
 from apps.oi import states
 from apps.mycomics.models import Collector
 
-def login(request, template_name):
+def login(request, template_name, landing_view='default_profile'):
     """
     Do some pre-checking before handing off to the standard login view.
     If anything goes wrong just let the standard login handle it.
     """
 
     if request.user.is_authenticated():
-        return HttpResponseRedirect(urlresolvers.reverse('default_profile'))
+        return HttpResponseRedirect(urlresolvers.reverse(landing_view))
 
     try:
         if request.method == "POST":
