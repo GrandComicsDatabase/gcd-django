@@ -38,7 +38,7 @@ class Issue(models.Model):
     volume = models.CharField(max_length=50, db_index=True)
     no_volume = models.BooleanField(default=False, db_index=True)
     display_volume_with_number = models.BooleanField(default=False, db_index=True)
-    isbn = models.CharField(max_length=32, db_index=True)
+    isbn = models.CharField(max_length=51, db_index=True)
     no_isbn = models.BooleanField(default=False, db_index=True)
     valid_isbn = models.CharField(max_length=13, db_index=True)
     variant_of = models.ForeignKey('self', null=True,

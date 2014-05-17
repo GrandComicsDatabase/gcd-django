@@ -476,7 +476,7 @@ def set_series_first_last(series):
 
 def validated_isbn(entered_isbn):
     '''
-    returns ISBN10 or ISBN13 if valid ISBN, empty string otherwiese
+    returns ISBN10 or ISBN13 if valid ISBN, empty string otherwise
     '''
     isbns = entered_isbn.split(';')
     valid_isbns = True
@@ -484,12 +484,10 @@ def validated_isbn(entered_isbn):
         valid_isbns &= isbn.is_valid(num)
     if valid_isbns and len(isbns) == 1:
         return isbn.compact(isbns[0])
-    elif valid_isbns and len(isbns) == 2:
-        compacted_isbns = [isbn.compact(isbn.to_isbn13(i)) for i in isbns]
-        # if two ISBNs it must be corresponding ISBN10 and ISBN13
-        if compacted_isbns[0] == compacted_isbns[1]:
-            # always store ISBN13 if both exist
-            return compacted_isbns[0]
+    elif valid_isbns and len(isbns) >= 2:
+        # if more than one valid ISBN 13, store just one as the canonical one for now
+        compacted_isbn13s = [isbn.compact(i) for i in isbns if isbn.isbn_type(i) == 'ISBN13']
+        return compacted_isbn13s[0]
     return ''
 
 def remove_leading_article(name):
@@ -3197,7 +3195,7 @@ class IssueRevision(Revision):
     no_brand = models.BooleanField(default=False, verbose_name='no brand emblem',
       help_text="Check this box if there is no publisher's logo or tagline.")
 
-    isbn = models.CharField(max_length=32, blank=True, default='',
+    isbn = models.CharField(max_length=51, blank=True, default='',
       verbose_name='ISBN',
       help_text='The ISBN as printed on the item. Do not use this field for '
                 'numbering systems other than ISBN. If both ISBN 10 and '
