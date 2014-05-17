@@ -8,11 +8,23 @@ from haystack.query import SearchQuerySet
 from haystack.inputs import AutoQuery
 from haystack.backends import SQ
 
+def safe_split(value):
+    try:
+        return shlex.split(value)
+    except ValueError as inst:
+        if str(inst) != 'No closing quotation':
+            raise
+    lex = shlex.shlex(value)
+    lex.quotes = '"'
+    lex.whitespace_split = True
+    lex.commenters = ''
+    return list(lex)
+
 def parse_query_into_sq(query, fields):
     sq = None
     not_sq = None
     or_flag = False
-    for phrase in shlex.split(query.encode('utf-8')):
+    for phrase in safe_split(query.encode('utf-8')):
         if phrase[0] == '-':
             query_part = AutoQuery('"%s"' % uni(phrase[1:]))
             for field in fields:
