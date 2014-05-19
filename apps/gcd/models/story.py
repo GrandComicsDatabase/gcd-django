@@ -12,6 +12,11 @@ STORY_TYPES = {
     'blank': 24,
 }
 
+OLD_TYPES = {
+    '(unknown)',
+    'biography (nonfictional)'
+}
+
 class StoryTypeManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
