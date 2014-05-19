@@ -121,7 +121,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                                              'sort_name',
                                                              'sort_code',
                                                              'sequence_number')
-        self.query = urlencode({'q': self.query.encode('utf-8')})
+        if self.query:
+            self.query = urlencode({'q': self.query.encode('utf-8')})
         self.paginator = ResponsePaginator(self.results,
                                            view=self.create_response)
         return self.paginator.paginate(request)
