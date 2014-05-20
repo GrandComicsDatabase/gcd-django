@@ -27,7 +27,7 @@
   <tr>
         {% if perms.gcd.can_approve or queue_name = 'editing' %}
     <td>
-          {% if changeset.state > states.OPEN %} {{ changeset.magnitude }} {% endif %}
+          {% if queue_name != 'editing' or changeset.state > states.OPEN %} {{ changeset.magnitude }} {% endif %}
     </td>
         {% endif %}
     <td>
