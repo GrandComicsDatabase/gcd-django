@@ -462,7 +462,8 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
             is_safe=True)
 
     if not form.is_valid():
-        return _display_cover_upload_form(request, form, cover, issue)
+        return _display_cover_upload_form(request, form, cover, issue,
+                                          variant=variant)
 
     # process form
     if form.cleaned_data['is_gatefold']:
@@ -569,7 +570,7 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
             info_text = "Image is too small, only " + str(im.size) + \
                         " in size."
             return _display_cover_upload_form(request, form, cover, issue,
-                info_text=info_text)
+                info_text=info_text, variant=variant)
     except IOError:
         # just in case, django *should* have taken care of file type
         changeset.delete()
@@ -577,7 +578,7 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
         info_text = 'Error: File \"' + scan.name + \
                     '" is not a valid picture.'
         return _display_cover_upload_form(request, form, cover, issue,
-            info_text=info_text)
+            info_text=info_text, variant=variant)
 
     # all done, we can save the state
     return finish_cover_revision(request, revision, form.cleaned_data)
