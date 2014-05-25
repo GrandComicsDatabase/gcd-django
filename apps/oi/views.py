@@ -860,7 +860,7 @@ def discuss(request, id):
           'Only EDITING OR REVIEWING changes can be put into discussion.')
 
     comment_text = request.POST['comments'].strip()
-    changeset.discuss(notes=comment_text)
+    changeset.discuss(commenter=request.user, notes=comment_text)
 
     if comment_text:
         email_comments = ' with the comment:\n"%s"' % comment_text
