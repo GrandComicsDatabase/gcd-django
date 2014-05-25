@@ -904,12 +904,12 @@ class Changeset(models.Model):
         self.state = new_state
         self.save()
 
-    def discuss(self, notes=''):
+    def discuss(self, commenter, notes=''):
         if self.state not in [states.OPEN, states.REVIEWING] or \
            self.approver is None:
             raise ValueError, "Only changes with an approver may be discussed."
 
-        self.comments.create(commenter=self.approver,
+        self.comments.create(commenter=commenter,
                              text=notes,
                              old_state=self.state,
                              new_state=states.DISCUSSED)
