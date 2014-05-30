@@ -3868,11 +3868,11 @@ class IssueRevision(Revision):
                     if self.series.language != issue.series.language or \
                       self.series.country != issue.series.country:
                         if self.series.is_comics_publication:
-                            update_count('variant_issues', 1,
+                            update_count('variant issues', 1,
                                         language=self.series.language,
                                         country=self.series.country)
                         if issue.series.is_comics_publication:
-                            update_count('variant_issues', -1,
+                            update_count('variant issues', -1,
                                         language=issue.series.language,
                                         country=issue.series.country)
                 else:
