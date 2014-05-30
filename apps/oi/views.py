@@ -1427,10 +1427,13 @@ def edit_issues_in_bulk(request):
                 if i not in remove_fields:
                     remove_fields.append(i)
                     # some fields belong together, both are either in or out
-                    if i in ['volume', 'brand', 'editing']:
-                        remove_fields.append('no_' + i)
-                    elif i in ['no_volume', 'no_brand', 'no_indicia_publisher',
-                            'no_editing']:
+                    if i in ['volume', 'brand', 'editing', 'indicia_frequency',
+                             'rating', 'barcode', 'isbn']:
+                        if 'no_' + i not in remove_fields:
+                            remove_fields.append('no_' + i)
+                    elif i in ['no_volume', 'no_brand', 'no_editing',
+                            'no_indicia_frequency', 'no_rating', 'no_barcode',
+                            'no_isbn']:
                         if i[3:] not in remove_fields:
                             remove_fields.append(i[3:])
                     elif i == 'indicia_publisher':
