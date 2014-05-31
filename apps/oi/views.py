@@ -27,6 +27,8 @@ from django.contrib.auth.views import login
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
+from haystack.forms import FacetedSearchForm
+
 from apps.gcd.models import *
 from apps.gcd.views import ViewTerminationError, render_error, paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
@@ -36,6 +38,8 @@ from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
+from apps.gcd.views.search_haystack import parse_query_into_sq, GcdSearchQuerySet, \
+                                           PaginatedFacetedSearchView
 from apps.oi.models import *
 from apps.oi.forms import *
 from apps.oi.covers import get_preview_image_tag, \
@@ -4225,6 +4229,31 @@ def get_select_forms(request, initial, data, publisher=False,
     return search_form, cache_form
 
 @permission_required('gcd.can_reserve')
+def process_select_search_haystack(request, select_key):
+    try:
+        data = get_select_data(request, select_key)
+    except KeyError:
+        return _cant_get(request)
+    publisher =  data.get('publisher', False)
+    series = data.get('series', False)
+    issue =  data.get('issue', False)
+    story =  data.get('story', False)
+
+    form = FacetedSearchForm(request.GET)
+    if not form.is_valid(): # do not think this can happen
+        raise ValueError
+    cd = form.cleaned_data
+    if cd['q']:
+        context = {'select_key': select_key,
+                   'allowed_selects': ["issue", "story"]}
+        sqs = GcdSearchQuerySet().facet('facet_model_name')
+        return PaginatedFacetedSearchView(searchqueryset=sqs)(request, context=context)
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('select_object',
+                                      kwargs={'select_key': select_key}) \
+                                    + '?' + request.META['QUERY_STRING'])
+
+@permission_required('gcd.can_reserve')
 def process_select_search(request, select_key):
     try:
         data = get_select_data(request, select_key)
@@ -4337,12 +4366,14 @@ def select_object(request, select_key):
         search_form, cache_form = get_select_forms(request,
                                     initial, request_data, publisher=publisher,
                                     series=series, issue=issue, story=story)
+        haystack_form = FacetedSearchForm()
         return render_to_response('oi/edit/select_object.html',
         {
             'heading': data['heading'],
             'select_key': select_key,
             'cache_form': cache_form,
             'search_form': search_form,
+            'haystack_form': haystack_form,
             'publisher': publisher,
             'series': series,
             'issue': issue,
