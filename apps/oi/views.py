@@ -864,7 +864,7 @@ def discuss(request, id):
           'Only EDITING OR REVIEWING changes can be put into discussion.')
 
     comment_text = request.POST['comments'].strip()
-    changeset.discuss(notes=comment_text)
+    changeset.discuss(commenter=request.user, notes=comment_text)
 
     if comment_text:
         email_comments = ' with the comment:\n"%s"' % comment_text
@@ -1428,23 +1428,31 @@ def edit_issues_in_bulk(request):
         if i not in remove_fields:
             values_list = list(set(items.values_list(i, flat=True)))
             if len(values_list) > 1:
-                if i not in remove_fields:
-                    remove_fields.append(i)
-                    # some fields belong together, both are either in or out
-                    if i in ['volume', 'brand', 'editing']:
+                remove_fields.append(i)
+                # some fields belong together, both are either in or out
+                if i in ['volume', 'brand', 'editing', 'indicia_frequency',
+                         'rating']:
+                    if 'no_' + i not in remove_fields:
                         remove_fields.append('no_' + i)
-                    elif i in ['no_volume', 'no_brand', 'no_indicia_publisher',
-                            'no_editing']:
-                        if i[3:] not in remove_fields:
-                            remove_fields.append(i[3:])
-                    elif i == 'indicia_publisher':
-                        remove_fields.append('indicia_pub_not_printed')
-                    elif i == 'indicia_pub_not_printed':
-                        remove_fields.append('indicia_publisher')
-                    elif i == 'page_count':
-                        remove_fields.append('page_count_uncertain')
-                    elif i == 'page_count_uncertain':
-                        remove_fields.append('page_count')
+                elif i in ['no_volume', 'no_brand', 'no_editing',
+                           'no_indicia_frequency', 'no_rating']:
+                    if i[3:] not in remove_fields:
+                        remove_fields.append(i[3:])
+                elif i == 'indicia_publisher':
+                    remove_fields.append('indicia_pub_not_printed')
+                elif i == 'indicia_pub_not_printed':
+                    remove_fields.append('indicia_publisher')
+                elif i == 'page_count':
+                    remove_fields.append('page_count_uncertain')
+                elif i == 'page_count_uncertain':
+                    remove_fields.append('page_count')
+
+    for i in ['no_barcode', 'no_isbn']:
+        if i not in remove_fields:
+            values_list = list(set(items.values_list(i[3:], flat=True)))
+            if len(values_list) > 1:
+                remove_fields.append(i)
+
     for i in fields:
         if i not in remove_fields:
             values_list = list(set(items.values_list(i, flat=True)))

@@ -904,12 +904,12 @@ class Changeset(models.Model):
         self.state = new_state
         self.save()
 
-    def discuss(self, notes=''):
+    def discuss(self, commenter, notes=''):
         if self.state not in [states.OPEN, states.REVIEWING] or \
            self.approver is None:
             raise ValueError, "Only changes with an approver may be discussed."
 
-        self.comments.create(commenter=self.approver,
+        self.comments.create(commenter=commenter,
                              text=notes,
                              old_state=self.state,
                              new_state=states.DISCUSSED)
@@ -3868,11 +3868,11 @@ class IssueRevision(Revision):
                     if self.series.language != issue.series.language or \
                       self.series.country != issue.series.country:
                         if self.series.is_comics_publication:
-                            update_count('variant_issues', 1,
+                            update_count('variant issues', 1,
                                         language=self.series.language,
                                         country=self.series.country)
                         if issue.series.is_comics_publication:
-                            update_count('variant_issues', -1,
+                            update_count('variant issues', -1,
                                         language=issue.series.language,
                                         country=issue.series.country)
                 else:
