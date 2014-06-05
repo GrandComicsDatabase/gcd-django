@@ -1,26 +1,47 @@
 <!DOCTYPE html>
 {% load i18n %}
+{% load bootstrap3 %}
+{% load compress %}
 <html>
 <head>
-  <title>My comics.org</title>
+  <title> {{ site_name }} </title>
+  {% compress css %}
+    <link rel="stylesheet" type="text/css"
+          href="{{ MEDIA_URL }}css/mycomics/main.css"/>
+    <link rel="stylesheet" type="text/css"
+          href="{{ MEDIA_URL }}css/mycomics/front_page.css"/>
+  {% endcompress %}
+  {% bootstrap_css %}
+  {% bootstrap_javascript %}
+  <link rel="shortcut icon" href="{{ MEDIA_URL }}/img/favicon.ico">
 </head>
 <body>
 
-<h1>MYCOMICS.ORG</h1>
-{% if form.errors %}
-  <p class="error_message_text">
-    Your username and password didn't match. Please try again.
-  </p>
-{% endif %}
-<form method="post" action="{% url my_login %}">
-  {% csrf_token %}
-  {% trans 'email' %}
-  <input type="text" name="username" id="username"/><br>
-  {% trans 'password' %}
-  <input type="password" name="password" id="password"/>
-  <input type="submit" value="{% trans 'Login' %}" />
-  <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-</form>
+<nav class="navbar navbar-default" role="navigation">
+  <div class="container">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <a class="navbar-brand gcd-logo" href="#"></a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      {% trans "Your username and password didn't match. Please try again." %}
+    </div>
+  {% endif %}
+  <form method="post" action="{% url my_login %}" class="form-signin" role="form">
+    {% csrf_token %}
+    <h2 class="form-signin-heading">{% trans 'Please sign in' %}</h2>
+    <input name="username" type="text" class="form-control" placeholder="{% trans 'email' %}" required autofocus>
+    <input name="password" type="password" class="form-control" placeholder="{% trans 'password' %}" required>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">{% trans 'Login' %}</button>
+    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+  </form>
+
+</div>
 
 </body>
 </html>
