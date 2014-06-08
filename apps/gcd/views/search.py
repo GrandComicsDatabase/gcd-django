@@ -1135,6 +1135,14 @@ def handle_numbers(field, data, prefix):
             q_or_only.append(Q(**{ '%svolume__in' % prefix: nums_in }) &\
                              Q(**{ '%sseries__has_volume' % prefix: True }))
 
+    # add verbatim search when nothing processed (e.g. 100-1) or actual range
+    if len(nums_in) != 1:
+        if field == 'issues':
+            q_or_only.append(Q(**{ '%snumber' % prefix: data[field] }))
+        else:
+            q_or_only.append(Q(**{ '%svolume' % prefix: data[field] }) &\
+                                Q(**{ '%sseries__has_volume' % prefix: True }))
+
     return reduce(lambda x, y: x | y, q_or_only)
 
 def search_stories(data, op):
