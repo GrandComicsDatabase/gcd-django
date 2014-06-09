@@ -66,7 +66,7 @@ class GcdSearchQuerySet(SearchQuerySet):
         return self
 
 class PaginatedFacetedSearchView(FacetedSearchView):
-    def __call__(self, request):
+    def __call__(self, request, context=None):
         self.request = request
 
         self.form = self.build_form()
@@ -124,7 +124,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         if self.query:
             self.query = urlencode({'q': self.query.encode('utf-8')})
         self.paginator = ResponsePaginator(self.results,
-                                           view=self.create_response)
+                                           view=self.create_response,
+                                           vars=context)
         return self.paginator.paginate(request)
 
     def extra_context(self):

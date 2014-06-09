@@ -65,11 +65,25 @@
       {% endif %}
       <table class="listing left">
         <tr>
+      {% if select_key %}
+          <th> Selection </th>
+      {% endif %}
           <th>Type</th>
           <th>Name</th>
         </tr>
         {% for result in page.object_list %}
           <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+            {% if select_key %}
+            <td>
+              {% if result.model_name in allowed_selects %}
+              <form action="{% url select_object select_key=select_key %}" method="POST">
+              {% csrf_token %}
+              <input type="submit" name="search_select" value="Select this {{ result.model_name }}">
+              <input type="hidden" name="object_choice" value="{{ result.model_name }}_{{ result.object.id }}">
+              </form>
+              {% endif %}
+            </td>
+            {% endif %}
             {% if result.model_name == 'series' %}
               <td>[SERIES]</td>
               <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.country.code|lower }}.png" alt="{{ result.object.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.full_name }}</a></td>
