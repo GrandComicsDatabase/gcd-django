@@ -4242,18 +4242,18 @@ def process_select_search_haystack(request, select_key):
         data = get_select_data(request, select_key)
     except KeyError:
         return _cant_get(request)
-    publisher =  data.get('publisher', False)
-    series = data.get('series', False)
-    issue =  data.get('issue', False)
-    story =  data.get('story', False)
 
     form = FacetedSearchForm(request.GET)
     if not form.is_valid(): # do not think this can happen
         raise ValueError
     cd = form.cleaned_data
     if cd['q']:
-        context = {'select_key': select_key,
-                   'allowed_selects': ["issue", "story"]}
+        context = {'select_key': select_key}
+        allowed_selects = []
+        for select in ['publisher', 'series', 'issue', 'story']:
+            if data.get(select, False):
+                allowed_selects.append(select)
+        context['allowed_selects'] = allowed_selects
         sqs = GcdSearchQuerySet().facet('facet_model_name')
         return PaginatedFacetedSearchView(searchqueryset=sqs)(request, context=context)
     else:
