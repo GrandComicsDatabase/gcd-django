@@ -1,0 +1,39 @@
+
+.navbar-brand.gcd-logo {
+    background-image: url("../../img/logo_new.png");
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    display: block;
+    height: 40px;
+    margin-bottom: 5px;
+    margin-top: 5px;
+    overflow: visible;
+    padding: 0;
+    width: 113px;
+}
+.navbar-brand.gcd-logo img {
+    height: 50px;
+    width: 113px;
+}
+.middle-header {
+    padding-left: 10px;
+}
+.navbar {
+    padding-right: 10px;
+}
+.clear {
+    clear: both;
+}
+.panel .panel-heading {
+    cursor: pointer;
+}
+.navbar a .glyphicon {
+    color: #FFFFFF;
+}
+.navbar a .glyphicon:hover {
+    text-decoration: none;
+}
+.form-group input[type="checkbox"] {
+    outline: medium none;
+}

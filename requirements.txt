@@ -20,3 +20,4 @@ pyelasticsearch
 django-haystack<2.1.0
 python-dateutil
 git+git://github.com/bennylope/elasticstack.git
+django-bootstrap3

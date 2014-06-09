@@ -96,6 +96,7 @@ INSTALLED_APPS = (
     'south',
     'haystack',
     'elasticstack',
+    'bootstrap3',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -284,6 +285,12 @@ EMAIL_VOTING_ADMIN = EMAIL_CONTACT
 # My.comics.org settings
 
 MYCOMICS = False
+
+# Twitter Bootstrap
+BOOTSTRAP3 = {
+    'jquery_url': MEDIA_URL+'jquery/js/jquery.min.js',
+    'base_url': MEDIA_URL+'bootstrap/',
+    }
 
 # absolute path to the directory that holds election files.
 VOTING_DIR = abspath(join(dirname(__file__), 'voting'))
