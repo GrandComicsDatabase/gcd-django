@@ -11,6 +11,8 @@ def index(request):
 
 @login_required
 def collections(request):
-    vars = {}
+    collections = request.user.collector.collections.all()
+    vars = {'collections': collections}
+
     return render_to_response('mycomics/collections.html', vars,
                           context_instance=RequestContext(request))

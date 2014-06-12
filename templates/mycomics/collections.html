@@ -7,5 +7,13 @@
 
 <h1>Collections</h1>
 
+<ol>
+{% for collection in collections %}
+
+  <li>{{ collection.name }}</li>
+
+{% endfor %}
+</ol>
+
 </body>
 </html>
