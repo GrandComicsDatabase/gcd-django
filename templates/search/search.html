@@ -26,7 +26,7 @@
       </p>
   </form>
     {% if suggestion %}
-    <p>Did you mean <a href="{% url haystack_search %}?q={{ suggestion }}">{{ suggestion }}</a> ?</p>
+    <p>Did you mean <a href="?q={{ suggestion }}">{{ suggestion }}</a> ?</p>
     {% endif %}
     {% if query and paginator.count > 0 %}
       <h1 class="item_id search_id">Search Results:
@@ -143,9 +143,15 @@
       {% if query %}
       <p>No results.</p>
       {% else %}
-      <p>Please enter the search word(s) in the box.
-      <br>Use '-' in front of a word to filter out results with that word. Use ""-quotes to search for phrases.
-      <br>Special characters, e.g. ,;/, are ignored.</p>
+      <p>Please enter the search word(s) in the box. The search is looking for exact matches for each word.</p>
+      <p>You can use four ways to further modify a search:
+        <ul>
+          <li>""-quotes search for phrases, e.g. "Batman and Superman"
+          <li>'-' in front of a word or phrase filters out matching results, e.g. Spider-Man Ditko -Lee
+          <li>* acts as a wild card, e.g. Spir* finds Spirit and Spirou
+          <li>using OR in a search finds matches for the terms before the OR or the <b>one</b> term/phrase directly after the OR, e.g. Grant Morrison OR "Warren Ellis", which is different to Grant Morrison OR Warren Ellis.
+        </ul>
+      Special characters, e.g. ,;/, are ignored.</p>
       {% endif %}
     {% endif %}
 {% endblock %}

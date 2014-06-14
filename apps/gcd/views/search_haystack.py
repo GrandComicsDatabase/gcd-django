@@ -20,29 +20,46 @@ def safe_split(value):
     lex.commenters = ''
     return list(lex)
 
+class GcdAutoQuery(AutoQuery):
+    def prepare(self, query_obj):
+        query_string = super(GcdAutoQuery, self).prepare(query_obj)
+        if u'\*' in query_string and len(query_string) > 2:
+            query_string = query_string.replace(u'\*', u'*')
+        if ' ' in query_string:
+            query_string = '"' + query_string + '"'
+        return query_string
+
+def prepare_sq(phrase, fields, sq):
+    new_sq = sq
+    query_part = GcdAutoQuery('%s' % uni(phrase))
+    if '*' in phrase:
+        query_part_2 = AutoQuery('%s' % uni(phrase))
+    else:
+        query_part_2 = None
+    for field in fields:
+        if not new_sq:
+            new_sq = SQ(**{field:query_part})
+        else:
+            new_sq |= SQ(**{field:query_part})
+        if query_part_2:
+            new_sq |= SQ(**{field:query_part_2})
+    return new_sq
+
+# it may be, that we can do this as our own Query, i.e. similar
+# to the above GcdAutoQuery.
 def parse_query_into_sq(query, fields):
     sq = None
     not_sq = None
     or_flag = False
     for phrase in safe_split(query.encode('utf-8')):
+        query_part_2 = None
         if phrase[0] == '-':
-            query_part = AutoQuery('"%s"' % uni(phrase[1:]))
-            for field in fields:
-                if not not_sq:
-                    not_sq = SQ(**{field:query_part})
-                else:
-                    not_sq |= SQ(**{field:query_part})
+            not_sq = prepare_sq(phrase[1:], fields, not_sq)
             or_flag = False
         elif phrase == 'OR':
             or_flag = True
         else:
-            query_part = AutoQuery('"%s"' % uni(phrase))
-            field_sq = None
-            for field in fields:
-                if not field_sq:
-                    field_sq = SQ(**{field:query_part})
-                else:
-                    field_sq |= SQ(**{field:query_part})
+            field_sq = prepare_sq(phrase, fields, None)
             if not sq:
                 sq = field_sq
             else:
