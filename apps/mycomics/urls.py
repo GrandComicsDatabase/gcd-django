@@ -7,6 +7,7 @@ urlpatterns = patterns('', url(r'^$', 'apps.mycomics.views.index', name='home'),
                                {'template_name': 'mycomics/index.html',
                                 'landing_view': 'collections'},
                                name='my_login'),
-                           url(r'^collections/$', 'apps.mycomics.views.collections',
+                           url(r'^collections/$',
+                               'apps.mycomics.views.collections',
                                name='collections'),
                            )

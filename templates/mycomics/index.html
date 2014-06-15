@@ -38,7 +38,11 @@
     <input name="username" type="text" class="form-control" placeholder="{% trans 'email' %}" required autofocus>
     <input name="password" type="password" class="form-control" placeholder="{% trans 'password' %}" required>
     <button class="btn btn-lg btn-primary btn-block" type="submit">{% trans 'Login' %}</button>
+    {% if next %}
+    <input type="hidden" name="next" value="{{ next }}" />
+    {% else %}
     <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+    {% endif %}
   </form>
 
 </div>
