@@ -372,7 +372,7 @@ GENRES = {
            u'detektiv-mysterium',
            u'',
            u'erotikk',
-           u'fantasy',
+           u'fantasy-overnaturlig',
            u'mote',
            u'historisk',
            u'historie',
