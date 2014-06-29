@@ -372,7 +372,7 @@ GENRES = {
            u'detektiv-mysterium',
            u'',
            u'erotikk',
-           u'fantasy',
+           u'fantasy-overnaturlig',
            u'mote',
            u'historisk',
            u'historie',
@@ -2623,7 +2623,7 @@ class SeriesRevision(Revision):
                 'over the life of the series.')
     binding = models.CharField(max_length=255, blank=True,
       help_text='Binding type, such as Saddle-stitched (stapled in the spine, '
-                'like most U.S. monthly comics), stapled (from font cover '
+                'like most U.S. monthly comics), stapled (from front cover '
                 'through to back cover, near the spine), Bound, Squarebound, '
                 'Perfect Bound, Hardcover, Trade Paperback, Mass Market '
                 'Paperback. This may change over the life of the series.')
