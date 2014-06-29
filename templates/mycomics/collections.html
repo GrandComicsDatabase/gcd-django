@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>My comics.org</title>
-</head>
-<body>
+{% extends "mycomics/logged_in_template.html" %}
+{% load i18n %}
 
-<h1>Collections</h1>
+{% block content %}
+<h1>{% trans "Collections" %}</h1>
 
 <ol>
 {% for collection in collection_list %}
@@ -15,5 +12,4 @@
 {% endfor %}
 </ol>
 
-</body>
-</html>
+{% endblock %}

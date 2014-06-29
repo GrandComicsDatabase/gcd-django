@@ -1,22 +1,13 @@
-<!DOCTYPE html>
+{% extends "mycomics/base_template.html" %}
 {% load i18n %}
-{% load bootstrap3 %}
-{% load compress %}
-<html>
-<head>
-  <title> {{ site_name }} </title>
-  {% compress css %}
-    <link rel="stylesheet" type="text/css"
-          href="{{ MEDIA_URL }}css/mycomics/main.css"/>
-    <link rel="stylesheet" type="text/css"
-          href="{{ MEDIA_URL }}css/mycomics/front_page.css"/>
-  {% endcompress %}
-  {% bootstrap_css %}
-  {% bootstrap_javascript %}
-  <link rel="shortcut icon" href="{{ MEDIA_URL }}/img/favicon.ico">
-</head>
-<body>
 
+
+{% block other-stylesheets %}
+  <link rel="stylesheet" type="text/css"
+        href="{{ MEDIA_URL }}css/mycomics/front_page.css"/>
+{% endblock %}
+
+{% block header %}
 <nav class="navbar navbar-default" role="navigation">
   <div class="container">
     <!-- Brand and toggle get grouped for better mobile display -->
@@ -25,8 +16,9 @@
     </div>
   </div>
 </nav>
+{% endblock %}
 
-<div class="container">
+{% block content %}
   {% if form.errors %}
     <div class="alert alert-danger">
       {% trans "Your username and password didn't match. Please try again." %}
@@ -44,8 +36,4 @@
     <input type="hidden" name="next" value="{{ request.get_full_path }}" />
     {% endif %}
   </form>
-
-</div>
-
-</body>
-</html>
+{% endblock %}
