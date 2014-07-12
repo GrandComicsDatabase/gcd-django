@@ -13,4 +13,5 @@
 {{ object.notes }}
 {{ object|show_keywords }}
 {{ object.issue.series.publisher.name }}
-{{ object.issue.series.name }}
+{{ object.issue.series.name }} {{ object.issue.display_number }}
+{{ object.issue.publication_date }}

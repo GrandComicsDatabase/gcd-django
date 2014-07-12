@@ -102,10 +102,18 @@ class PaginatedFacetedSearchView(FacetedSearchView):
             self.form.searchqueryset = self.form.searchqueryset.exclude(not_sq)
 
         self.results = self.get_results()
-        self.sort = ''
-        if len(self.form.selected_facets) == 1:
-            if 'sort' in request.GET:
-                self.sort = request.GET['sort']
+        if 'sort' in request.GET:
+            self.sort = request.GET['sort']
+        else:
+            self.sort = ''
+        if self.sort == 'country':
+            self.results = self.results.order_by('country',
+                                                 '-_score')
+        elif self.sort == 'year':
+            self.results = self.results.order_by('year',
+                                                 '-_score')
+        elif len(self.form.selected_facets) == 1:
+            if self.sort:
                 if self.form.selected_facets[0] in \
                   [u'facet_model_name_exact:publisher',
                    u'facet_model_name_exact:indicia publisher',
