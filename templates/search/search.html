@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 {% load i18n %}
 {% load display %}
+{% load credits %}
 {% block css %}
   <link rel="stylesheet" type="text/css"
         href="{{ MEDIA_URL }}css/gcd/default.css"/>
@@ -32,15 +33,14 @@
       <h1 class="item_id search_id">Search Results:
         <div class="right">Order:
         {% if form.selected_facets|length == 1 %}
-          {% if sort %}
-          <a href="?{{ query }}{{ facet_page }}">Relevance</a> |
-            {% if 'alpha' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=alpha">Alpha</a>{% else %}Alpha{%endif %} |
-            {% if 'chrono' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=chrono">Chrono</a>{% else %}Chrono{%endif %}
-          {% else %}
-        Relevance | <a href="?{{ query }}{{ facet_page }}&sort=alpha">Alpha</a> | <a href="?{{ query }}{{ facet_page }}&sort=chrono">Chrono</a>
-          {% endif %}
+          {% if sort %}<a href="?{{ query }}{{ facet_page }}">Relevance</a>{% else %}Relevance{% endif %} |
+          {% if 'alpha' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=alpha">Alpha</a>{% else %}Alpha{%endif %} |
+          {% if 'chrono' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=chrono">Chrono</a>{% else %}Chrono{%endif %} |
+          {% if 'country' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=country">Country</a>{% else %}Country{%endif %}
         {% else %}
-        Relevance
+          {% if sort %}<a href="?{{ query }}">Relevance</a>{% else %} Relevance{% endif %} |
+          {% if 'year' not in sort %}<a href="?{{ query }}&sort=year">Year</a>{% else %}Year{% endif %} |
+          {% if 'country' not in sort %}<a href="?{{ query }}&sort=country">Country</a>{% else %}Country{%endif %}
         {% endif %}
         </div>
       </h1>
@@ -100,6 +100,8 @@
               {% else %}
                 [ no title ]</a>
               {% endif %}
+              {% if result.object.feature %} / {{ result.object.feature }}{% endif %}
+              {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}
               (from
               <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.issue.series.country.code|lower }}.png" alt="{{ result.object.issue.series.country.code|upper }}" class="embedded_flag">
               <a href="{{ result.object.issue.get_absolute_url }}">
@@ -129,6 +131,14 @@
         {% endfor %}
       </table>
       <div style="clear: both;"></div>
+      {% if sort %}
+        {% if 'country' in sort %}
+          <p>Sort is per <a href="http://docs.comics.org/wiki/Country_and_Currency_and_Language_Codes">country code</a>, within a country by relevance.</p>
+        {% endif %}
+        {% if 'year' in sort or 'chrono' in sort %}
+          <p>Objects with no date information are listed at the end.</p>
+        {% endif %}
+      {% endif %}
 
       <h1 class="item_id search_id">&nbsp;  </h1>
       <div class="item_id">
@@ -146,7 +156,7 @@
       <p>Please enter the search word(s) in the box. The search is looking for exact matches for each word.</p>
       <p>You can use four ways to further modify a search:
         <ul>
-          <li>""-quotes search for phrases, e.g. "Batman and Superman"
+          <li>""-quotes search for phrases, e.g. "Batman and Superman" or "Asterix 1"
           <li>'-' in front of a word or phrase filters out matching results, e.g. Spider-Man Ditko -Lee
           <li>* acts as a wild card, e.g. Spir* finds Spirit and Spirou
           <li>using OR in a search finds matches for the terms before the OR or the <b>one</b> term/phrase directly after the OR, e.g. Grant Morrison OR "Warren Ellis", which is different to Grant Morrison OR Warren Ellis.
