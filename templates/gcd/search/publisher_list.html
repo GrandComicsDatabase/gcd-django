@@ -1,5 +1,7 @@
 {% extends "gcd/search/base_list.html" %}
 
+{% load display %}
+
 {% block list_contents %}
 <table class="listing">
   <tr style="vertical-align:top">
@@ -7,24 +9,29 @@
     <th> Selection </th>
     {% endif %}
     <th colspan="2"> Publisher </th>
+    <th> Year&nbsp;Began </th>
+    <th> Year&nbsp;Ended </th>
     <th> #&nbsp;Brand Groups </th>
     <th style="text-align:right"> #&nbsp;Indicia / Colophon<br> Publishers </th>
     <th> #&nbsp;Titles </th>
     <th> #&nbsp;Issues </th>
   </tr>
   {% for publisher in items %}
+    {% with publisher|object_filter as publisher %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    {% if select_key %}
+      {% if select_key %}
       <td>
       <form action="{% url select_object select_key=select_key %}" method="POST">
-    {% csrf_token %}
+      {% csrf_token %}
       <input type="submit" name="search_select" value="Select this publisher"></input>
       <input type="hidden" name="object_choice" value="publisher_{{ publisher.id }}"></input>
       </form>
       </td>
-    {% endif %}
+      {% endif %}
       <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
       <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
+      <td> {{ publisher.year_began|default:'' }} </td>
+      <td> {{ publisher.year_ended|default:'' }} </td>
       <td>
       {% if publisher.brand_count %}
           <a href="{{ publisher.get_absolute_url}}brands/">{{ publisher.brand_count }}</a>
@@ -42,6 +49,7 @@
       <td> {{ publisher.series_count }} </td>
       <td> {{ publisher.issue_count }} </td>
     </tr>
+    {% endwith %}
   {% endfor %}
 </table>
 

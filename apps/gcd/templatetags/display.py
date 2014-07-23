@@ -672,6 +672,23 @@ def str_encl(string, bracket):
             return '{' + string + '}'
     return string
 
+def object_filter(search_result):
+    if hasattr(search_result, 'object'):
+        return search_result.object
+    else:
+        return search_result
+
+def current_search(selected, search):
+    if selected:
+        if search == selected:
+            return mark_safe('"%s" selected' % search)
+    else:
+        if search == 'haystack':
+            return mark_safe('"%s" selected' % search)
+    return mark_safe('"%s"' % search)
+
+register.filter(current_search)
+register.filter(object_filter)
 register.filter(str_encl)
 register.filter(key)
 register.filter(absolute_url)
