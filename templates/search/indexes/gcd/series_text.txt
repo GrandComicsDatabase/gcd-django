@@ -2,6 +2,7 @@
 {{ object.name }}
 {{ object.format }}
 {{ object.color }}
+{{ object.dimensions }}
 {{ object.paper_stock }}
 {{ object.binding }}
 {{ object.publishing_format }}
