@@ -105,17 +105,17 @@ class CollectionItem(models.Model):
                     db_table="mycomics_collection_item_collections")
     issue = models.ForeignKey(Issue)
 
-    location = models.ForeignKey(Location)
-    purchase_location = models.ForeignKey(PurchaseLocation)
+    location = models.ForeignKey(Location, null=True)
+    purchase_location = models.ForeignKey(PurchaseLocation, null=True)
 
     notes = models.TextField(blank=True)
     keywords = TaggableManager()
 
-    grade = models.ForeignKey('ConditionGrade', related_name='+')
+    grade = models.ForeignKey('ConditionGrade', related_name='+', null=True)
 
     #TODO add removing these dates together with CollectionItem
-    acquisition_date = models.ForeignKey(Date, related_name='+')
-    sell_date = models.ForeignKey(Date, related_name='+')
+    acquisition_date = models.ForeignKey(Date, related_name='+', null=True)
+    sell_date = models.ForeignKey(Date, related_name='+', null=True)
 
     was_read = models.NullBooleanField(default=None)
     for_sale = models.BooleanField(default=False)
@@ -123,11 +123,11 @@ class CollectionItem(models.Model):
 
     #price fields
     price_paid = models.FloatField(blank=True, null=True)
-    price_paid_currency = models.ForeignKey(Currency, related_name='+')
+    price_paid_currency = models.ForeignKey(Currency, related_name='+', null=True)
     market_value = models.FloatField(blank=True, null=True)
-    market_value_currency = models.ForeignKey(Currency, related_name='+')
+    market_value_currency = models.ForeignKey(Currency, related_name='+', null=True)
     sell_price = models.FloatField(blank=True, null=True)
-    sell_price_currency = models.ForeignKey(Currency, related_name='+')
+    sell_price_currency = models.ForeignKey(Currency, related_name='+', null=True)
 
 class ConditionGradeScale(models.Model):
     """Class representing condition grade scale for use by collectors."""
