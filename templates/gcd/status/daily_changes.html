@@ -36,7 +36,7 @@
   </tr>
   {% for publisher in publishers %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-      <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}"></td>
+      <td class="listing_country"> {{ publisher.country|show_country_info }}></td>
       <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a></td>
       <td>
         {% if publisher.brand_count %}
@@ -82,7 +82,7 @@
   {% for brand in brand_groups %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
-    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ brand.parent.country.code|lower }}.png" alt="{{ brand.parent.country.code|upper }}"></td>
+    <td class="listing_country"> <img {{ brand.parent.country|show_country_info }}></td>
     <td class="listing_publisher"> <a href="{{ brand.parent.get_absolute_url }}">{{ brand.parent.name }}</a></td>
     <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }}</td>
@@ -110,7 +110,7 @@
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
     <td class="listing_country"> 
     {% for group in brand.group.all %}
-    <img align="top" src="{{ MEDIA_URL }}/img/gcd/flags/{{ group.parent.country.code|lower }}.png" alt="{{ group.parent.country.code|upper }}">
+    <img align="top" {{ group.parent.country|show_country_info }}>
     <a href="{{ group.get_absolute_url }}">{{ group.name }}</a>
     {% endfor %}
     </td>
@@ -139,7 +139,7 @@
   {% for ind_pub in indicia_publishers %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ ind_pub.get_absolute_url }}">{{ ind_pub.name }}</a> </td>
-    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ ind_pub.parent.country.code|lower }}.png" alt="{{ imprint.parent.country.code|upper }}"></td>
+    <td class="listing_country"> <img {{ ind_pub.parent.country|show_country_info }}></td>
     <td class="listing_publisher"> <a href="{{ ind_pub.parent.get_absolute_url }}">{{ ind_pub.parent.name }}</a></td>
     <td> {{ ind_pub.issue_count }} </td>
     <td> {{ ind_pub.year_began|default:"" }} </td>
@@ -167,7 +167,7 @@
   {% for series in series %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
-    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.country.code|lower }}.png" alt="{{ series.country.code|upper }}"></td>
+    <td class="listing_country"> <img {{ series.country|show_country_info }}></td>
     <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
     <td> {{ series.year_began }} </td>
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }}</td>
@@ -205,7 +205,7 @@
   {% for issue in issues %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
-    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ issue.series.country.code|lower }}.png" alt="{{ issue.series.country.code|upper }}"></td>
+    <td class="listing_country"> <img {{ issue.series.country|show_country_info }}></td>
     <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
     <td> {{ issue.publication_date|default:"" }} </td>
     <td>

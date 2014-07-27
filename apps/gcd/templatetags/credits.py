@@ -266,14 +266,25 @@ def show_cover_contributor(cover_revision):
     else:
         return cover_revision.changeset.indexer.indexer
 
-
-# these next three might better fit into a different file
+def show_country_info(country, name=None):
+    if name:
+        code = country
+    else:
+        code = country.code
+        name = country.name
+    src = u'src="%s/img/gcd/flags/%s.png"' % (settings.MEDIA_URL,
+                                              code.lower())
+    alt = u'alt="%s"' % esc(code.upper())
+    title = u'title="%s"' % esc(name)
+    return mark_safe(u'%s %s %s' % (src, alt, title))
 
 def get_country_flag(country):
-    return mark_safe(u'<img src="%s/img/gcd/flags/%s.png" alt="%s" '\
+    return mark_safe(u'<img %s '\
            'class="embedded_flag">' \
-           % (settings.MEDIA_URL, country.code.lower(), esc(country)))
+           % show_country_info(country))
 
+
+# these next two are seemingly not used any more
 def show_country(series):
     """
     Translate country code into country name.
@@ -617,8 +628,9 @@ def show_reprints_for_issue(issue):
 
 register.filter(show_credit)
 register.filter(show_credit_status)
-register.filter(show_country)
+register.filter(show_country_info)
 register.filter(get_country_flag)
+register.filter(show_country)
 register.filter(show_language)
 register.filter(show_issue_number)
 register.filter(show_page_count)

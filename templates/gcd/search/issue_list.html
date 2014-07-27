@@ -1,5 +1,6 @@
 {% extends "gcd/search/base_list.html" %}
 
+{% load credits %}
 {% load display %}
 
 {% block list_contents %}
@@ -35,7 +36,7 @@ bulk change</a>
     </form>
     </td>
     {% endif %}
-    <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ issue.series.country.code|lower }}.png" alt="{{ issue.series.country.code|upper }}">
+    <td class="listing_country"> <img {{ issue.series.country|show_country_info }}>
     <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date|default:"" }} </td>

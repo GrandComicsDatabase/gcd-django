@@ -13,7 +13,7 @@
     <th> Matched Search </th>
     {% endif %}
     <th> Story </th>
-    <th> Issue </th>
+    <th colspan="2"> Issue </th>
     <th> Publisher </th>
   </tr>
 {% for story in items %}
@@ -56,6 +56,7 @@
             {% endif %}
          {% endifequal %}
     {% endwith %}
+    <td class="listing_country" style="padding-right: 0px;"> <img {{ story.issue.series.country|show_country_info }}>
     <td> <a href="{{ story.issue.series.get_absolute_url }}">{{ story.issue.series.name }}</a> ({{ story.issue.series.year_began }} series)
          <a href="{{ url }}">#{{ story.issue.display_number }}</a> <br>
     {{ story.issue.publication_date }}
