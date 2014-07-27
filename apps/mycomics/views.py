@@ -17,3 +17,11 @@ def collections(request):
 
     return render_to_response('mycomics/collections.html', vars,
                           context_instance=RequestContext(request))
+
+@login_required
+def collection(request, collection_id):
+    collection = request.user.collector.collections.get(id=collection_id)
+    vars = {'collection': collection}
+
+    return render_to_response('mycomics/collection.html', vars,
+                              context_instance=RequestContext(request))

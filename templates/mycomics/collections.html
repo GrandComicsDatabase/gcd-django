@@ -2,14 +2,51 @@
 {% load i18n %}
 
 {% block content %}
-<h1>{% trans "Collections" %}</h1>
+  <div class="page-header middle-header">
+    <h1>{% trans "Collections list" %}
+      <button type="button" class="btn btn-primary pull-right"
+              style="margin-right: 10px;" data-toggle="modal"
+              href="#add-collection">{% trans "Add new" %}
+      </button>
+    </h1>
+  </div>
 
-<ol>
-{% for collection in collection_list %}
-
-  <li>{{ collection.name }}</li>
-
-{% endfor %}
-</ol>
+  <div class="row">
+    <div class="col-md-9">
+      <div class="row">
+        {% for collection in collection_list %}
+          <div class="col-md-4">
+            <div class="panel panel-default">
+              <div class="panel-heading"
+                   onclick="window.location.href='{% url collection collection.id %}'">
+                <h3 style="display: inline-block;">{{ collection.name }}</h3>
+              </div>
+              <div class="panel-body">
+                <div class="btn-group pull-right">
+                  <button type="button" class="btn btn-primary btn-sm"
+                          style="display: inline-block;" data-toggle="modal"
+                          href="#edit-collection"><span
+                      class="glyphicon glyphicon-pencil"></span></button>
+                  <button type="button" class="btn btn-primary btn-sm"
+                          style="display: inline-block;" data-toggle="modal"
+                          href="#remove-collection"><span
+                      class="glyphicon glyphicon-remove"></span></button>
+                </div>
+                {{ collection.description }}</div>
+            </div>
+          </div>
+          {% if forloop.counter|divisibleby:"3" and not forloop.last %}
+            </div>
+            <div class="row">
+          {% endif %}
+        {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-3">
+      <div class="pull-right">
+        <!-- Here should go adserver script -->
+      </div>
+    </div>
+  </div>
 
 {% endblock %}
