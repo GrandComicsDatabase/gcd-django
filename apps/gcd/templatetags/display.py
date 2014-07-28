@@ -375,7 +375,12 @@ def field_value(revision, field):
                 res_holder_display = ' (ongoing reservation held by %s %s)' % \
                   (res_holder.first_name, res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
-    elif field in ['publisher', 'indicia_publisher', 'brand', 'series']:
+    elif field in ['publisher', 'indicia_publisher', 'series']:
+        return absolute_url(value)
+    elif field == 'brand':
+        if value and value.emblem:
+            return mark_safe('<img src="' + value.emblem.icon.url + '"> ' \
+                             + absolute_url(value))
         return absolute_url(value)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
                    'characters', 'synopsis']:

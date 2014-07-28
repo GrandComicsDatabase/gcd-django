@@ -3,6 +3,9 @@
 {% load i18n %}
 {% load display %}
 {% load credits %}
+{% if MYCOMICS %}
+  {% load collecting %}
+{% endif %}
 
 {% block title %}
   GCD :: Issue :: {{ issue.short_name }}
@@ -138,8 +141,19 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 
     <div id="control_rail">
       <div class="edit_box">
+{% if MYCOMICS %}
+        <div class="edit_header">
+          <div>my.comics.org</div>
+        </div>
+  {% if request.user.is_authenticated %}
+          {{ issue|show_have_want:request.user }}
+          <p><a href="{% url have_issue issue_id=issue.id %}">Add to Have</a><br>
+          <a href="{% url want_issue issue_id=issue.id %}">Add to Want</a>
+        </p>
+  {% endif %}
+{% else %}
         <div class="edit_header">Editing
-{% if request.user.is_authenticated and not preview %}
+  {% if request.user.is_authenticated and not preview %}
           <div class="right">
             <a class="link_info_left" href="{% url export_issue_csv issue.id %}"><span>download issue data (CSV)</span>
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-spreadsheet.png" alt="download issue data" style="border:0;">
@@ -150,38 +164,38 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
             </a>
           </div>
 <a class="right cache_link" href="{% url cache_issue issue_id=issue.id %}">(remember issue)</a>
-{% endif %}
-        </div>
-{% if not preview %}
-  {% with issue as object %}
-  {% with 'Issue' as object_name %}
-  {% with 'issue' as object_class %}
-    {% include "gcd/bits/status_banner.html" %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-  {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved %}
-    {% if not issue.variant_of %}
-  <form method="GET"
-        action="{% url add_variant_issue issue_id=issue.id %}">
-    <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
-  </form>
-    {% endif %}
-    {% if issue.variant_of and not issue.variant_of.reserved %}
-  <form method="POST"
-        action="{% url reserve_two_issues issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
-    {% csrf_token %}
-    <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
-  </form>
-    {% endif %}
-  <form method="GET"
-        action="{% url edit_two_issues issue_id=issue.id %}">
-    <input type="submit" value="{% trans 'Edit with another issue' %}">
-  </form>
   {% endif %}
-{% endif %}
-      </div>
-
+        </div>
+  {% if not preview %}
+    {% with issue as object %}
+    {% with 'Issue' as object_name %}
+    {% with 'issue' as object_class %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved %}
+      {% if not issue.variant_of %}
+    <form method="GET"
+            action="{% url add_variant_issue issue_id=issue.id %}">
+        <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
+    </form>
+      {% endif %}
+      {% if issue.variant_of and not issue.variant_of.reserved %}
+    <form method="POST"
+            action="{% url reserve_two_issues issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
+        {% csrf_token %}
+        <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
+    </form>
+      {% endif %}
+    <form method="GET"
+            action="{% url edit_two_issues issue_id=issue.id %}">
+        <input type="submit" value="{% trans 'Edit with another issue' %}">
+    </form>
+    {% endif %}
+  {% endif %} <!-- not preview -->
+{% endif %} <!-- MYCOMICS -->
+      </div> <!-- edit_box -->
 {% if not preview or issue.source %}
       <div class="change_history">
   {% if preview %}

@@ -57,7 +57,19 @@
   </tr>
 </table>
 
+<h1 class="item_id search_id">
+<div class="left">
+  {% trans "Covers for "%}{{ date }}
+</div>
+{% url apps.gcd.views.details.daily_covers as choose_url%}
+{% url apps.gcd.views.details.daily_covers show_date=date_before as choose_url_before %}
+{% url apps.gcd.views.details.daily_covers show_date=date_after as choose_url_after %}
+{% include "gcd/bits/choose_date.html" %}
+</h1>
 <div id="item_id_footer" class="item_id">
+  <div class="left">
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }}{% trans " covers posted" %}
+  </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}
   {% endif %}

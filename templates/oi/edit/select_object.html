@@ -17,6 +17,29 @@
 {{ heading }}
 Search for {{ target }} by entering the relevant information here:
 
+<form method="get" action="{% url select_object_search_haystack select_key=select_key %}">
+  <p>
+    <label for="id_q">Search for:</label>
+    {{ haystack_form.q }}
+    <select name="search_object" size="1">
+      <option value="all"> All </option>
+{% if story %}
+      <option value="story"> Story </option>
+{% endif %}
+{% if issue or story %}
+      <option value="issue"> Issue </option>
+{% endif %}
+{% if series %}
+      <option value="series"> Series </option>
+{% endif %}
+{% if publisher %}
+      <option value="publisher"> Publisher </option>
+{% endif %}
+    </select>
+    <input type="submit" value="Search">
+  </p>
+</form>
+
 <form action="{% url select_object_search select_key=select_key %}" method="GET">
   <table class="editing">
     <tr>

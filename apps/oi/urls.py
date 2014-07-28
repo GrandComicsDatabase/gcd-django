@@ -229,12 +229,14 @@ urlpatterns = patterns('',
 
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
       oi_views.create_matching_sequence, name='create_matching_sequence'),
-      
+
     url(r'^select_object/(?P<select_key>.+)/search/$',
       oi_views.process_select_search, name='select_object_search'),
+    url(r'^select_object/(?P<select_key>.+)/search_haystack/$',
+      oi_views.process_select_search_haystack, name='select_object_search_haystack'),
     url(r'^select_object/(?P<select_key>.+)/$', oi_views.select_object,
       name='select_object'),
-                
+
     # Generic URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/reserve/$', oi_views.reserve,
         name='reserve_revision'),

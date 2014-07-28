@@ -27,6 +27,8 @@ from django.contrib.auth.views import login
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
+from haystack.forms import FacetedSearchForm
+
 from apps.gcd.models import *
 from apps.gcd.views import ViewTerminationError, render_error, paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
@@ -36,6 +38,8 @@ from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
 from apps.gcd.templatetags.display import show_revision_short
+from apps.gcd.views.search_haystack import parse_query_into_sq, GcdSearchQuerySet, \
+                                           PaginatedFacetedSearchView
 from apps.oi.models import *
 from apps.oi.forms import *
 from apps.oi.covers import get_preview_image_tag, \
@@ -860,7 +864,7 @@ def discuss(request, id):
           'Only EDITING OR REVIEWING changes can be put into discussion.')
 
     comment_text = request.POST['comments'].strip()
-    changeset.discuss(notes=comment_text)
+    changeset.discuss(commenter=request.user, notes=comment_text)
 
     if comment_text:
         email_comments = ' with the comment:\n"%s"' % comment_text
@@ -1424,23 +1428,31 @@ def edit_issues_in_bulk(request):
         if i not in remove_fields:
             values_list = list(set(items.values_list(i, flat=True)))
             if len(values_list) > 1:
-                if i not in remove_fields:
-                    remove_fields.append(i)
-                    # some fields belong together, both are either in or out
-                    if i in ['volume', 'brand', 'editing']:
+                remove_fields.append(i)
+                # some fields belong together, both are either in or out
+                if i in ['volume', 'brand', 'editing', 'indicia_frequency',
+                         'rating']:
+                    if 'no_' + i not in remove_fields:
                         remove_fields.append('no_' + i)
-                    elif i in ['no_volume', 'no_brand', 'no_indicia_publisher',
-                            'no_editing']:
-                        if i[3:] not in remove_fields:
-                            remove_fields.append(i[3:])
-                    elif i == 'indicia_publisher':
-                        remove_fields.append('indicia_pub_not_printed')
-                    elif i == 'indicia_pub_not_printed':
-                        remove_fields.append('indicia_publisher')
-                    elif i == 'page_count':
-                        remove_fields.append('page_count_uncertain')
-                    elif i == 'page_count_uncertain':
-                        remove_fields.append('page_count')
+                elif i in ['no_volume', 'no_brand', 'no_editing',
+                           'no_indicia_frequency', 'no_rating']:
+                    if i[3:] not in remove_fields:
+                        remove_fields.append(i[3:])
+                elif i == 'indicia_publisher':
+                    remove_fields.append('indicia_pub_not_printed')
+                elif i == 'indicia_pub_not_printed':
+                    remove_fields.append('indicia_publisher')
+                elif i == 'page_count':
+                    remove_fields.append('page_count_uncertain')
+                elif i == 'page_count_uncertain':
+                    remove_fields.append('page_count')
+
+    for i in ['no_barcode', 'no_isbn']:
+        if i not in remove_fields:
+            values_list = list(set(items.values_list(i[3:], flat=True)))
+            if len(values_list) > 1:
+                remove_fields.append(i)
+
     for i in fields:
         if i not in remove_fields:
             values_list = list(set(items.values_list(i, flat=True)))
@@ -4225,6 +4237,31 @@ def get_select_forms(request, initial, data, publisher=False,
     return search_form, cache_form
 
 @permission_required('gcd.can_reserve')
+def process_select_search_haystack(request, select_key):
+    try:
+        data = get_select_data(request, select_key)
+    except KeyError:
+        return _cant_get(request)
+
+    form = FacetedSearchForm(request.GET)
+    if not form.is_valid(): # do not think this can happen
+        raise ValueError
+    cd = form.cleaned_data
+    if cd['q']:
+        context = {'select_key': select_key}
+        allowed_selects = []
+        for select in ['publisher', 'series', 'issue', 'story']:
+            if data.get(select, False):
+                allowed_selects.append(select)
+        context['allowed_selects'] = allowed_selects
+        sqs = GcdSearchQuerySet().facet('facet_model_name')
+        return PaginatedFacetedSearchView(searchqueryset=sqs)(request, context=context)
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('select_object',
+                                      kwargs={'select_key': select_key}) \
+                                    + '?' + request.META['QUERY_STRING'])
+
+@permission_required('gcd.can_reserve')
 def process_select_search(request, select_key):
     try:
         data = get_select_data(request, select_key)
@@ -4337,12 +4374,14 @@ def select_object(request, select_key):
         search_form, cache_form = get_select_forms(request,
                                     initial, request_data, publisher=publisher,
                                     series=series, issue=issue, story=story)
+        haystack_form = FacetedSearchForm()
         return render_to_response('oi/edit/select_object.html',
         {
             'heading': data['heading'],
             'select_key': select_key,
             'cache_form': cache_form,
             'search_form': search_form,
+            'haystack_form': haystack_form,
             'publisher': publisher,
             'series': series,
             'issue': issue,

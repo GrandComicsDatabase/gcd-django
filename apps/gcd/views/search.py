@@ -411,7 +411,8 @@ def search(request):
                                       'sort': sort }))
 
 
-def creator_checklist(request, creator, country=None, language=None):
+def checklist_by_name(request, creator, country=None, language=None):
+    creator = creator.replace('+', ' ').title()
     get = request.GET.copy()
     get[u'target'] = u'issue'
     get[u'script'] = creator
@@ -1133,6 +1134,14 @@ def handle_numbers(field, data, prefix):
         else:
             q_or_only.append(Q(**{ '%svolume__in' % prefix: nums_in }) &\
                              Q(**{ '%sseries__has_volume' % prefix: True }))
+
+    # add verbatim search when nothing processed (e.g. 100-1) or actual range
+    if len(nums_in) != 1:
+        if field == 'issues':
+            q_or_only.append(Q(**{ '%snumber' % prefix: data[field] }))
+        else:
+            q_or_only.append(Q(**{ '%svolume' % prefix: data[field] }) &\
+                                Q(**{ '%sseries__has_volume' % prefix: True }))
 
     return reduce(lambda x, y: x | y, q_or_only)
 
