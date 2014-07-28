@@ -382,7 +382,10 @@ def series_details(request, series_id, by_date=False):
                             .count() - num_issues
     on_sale_date_present = series.active_issues().exclude(on_sale_date='')\
                                                  .count()
-    
+    rating_present = series.has_rating and \
+      series.active_issues().filter(no_rating=True, variant_of=None)\
+                            .count() - num_issues
+
     return render_to_response('gcd/details/series_details.html',
       {
         'series': series,
@@ -396,6 +399,7 @@ def series_details(request, series_id, by_date=False):
         'barcode_present': barcode_present,
         'title_present': title_present,
         'on_sale_date_present': on_sale_date_present,
+        'rating_present': rating_present,
         'bad_dates': len(bad_key_dates),
       },
       context_instance=RequestContext(request))
