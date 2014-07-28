@@ -3,4 +3,10 @@
 
 {% block content %}
 Collection {{ collection.name }}
+
+<ol>
+  {% for item in collection.items %}
+    <li>{{ item }}</li>
+  {% endfor %}
+</ol>
 {% endblock %}
