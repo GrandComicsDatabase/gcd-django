@@ -431,13 +431,22 @@ def search(request):
         else: # rare, but possible
             return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
 
+    if 'sort' in request.GET:
+        sort = request.GET['sort']
+    else:
+        sort = ORDER_ALPHA
+
     if request.GET['type'] == "haystack":
-        return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
-          "?q=%s" % request.GET['query'])
+        if sort == ORDER_CHRONO:
+            return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
+            "?q=%s&sort=year" % request.GET['query'])
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
+            "?q=%s" % request.GET['query'])
 
     if request.GET['type'] == "haystack_issue":
         return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
-          "?q=%s&search_object=issue" % request.GET['query'])
+          '?q="%s"&search_object=issue&sort=%s' % (request.GET['query'], sort))
 
     # TODO: Redesign this- the current setup is a quick hack to adjust
     # a design that was elegant when it was written, but things have changed.
@@ -469,11 +478,6 @@ def search(request):
         param_type = object_type + '_name'
     elif object_type == 'job_number':
         param_type = 'number'
-
-    if 'sort' in request.GET:
-        sort = request.GET['sort']
-    else:
-        sort = ORDER_ALPHA
 
     param_type_value = quote(request.GET['query'].strip().encode('utf-8'))
     return HttpResponseRedirect(

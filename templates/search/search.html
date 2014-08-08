@@ -12,7 +12,7 @@
   <form method="get" action=".">
       <p>
         <label for="id_q">Search for:</label>
-        {{ form.q }}
+        {{ form.q }} in 
         <select name="search_object" size="1">
             <option value="all"> All </option>
             <option value="story" {% if 'facet_model_name_exact:story' in form.selected_facets %}selected{% endif %}> Story </option>
@@ -152,7 +152,8 @@
     {% else %}
       {% if query %}
       <p>No results.</p>
-      {% else %}
+      {% endif %}
+    {% endif %}
       <p>Please enter the search word(s) in the box. The search is looking for exact matches for each word.</p>
       <p>You can use four ways to further modify a search:
         <ul>
@@ -162,6 +163,4 @@
           <li>using OR in a search finds matches for the terms before the OR or the <b>one</b> term/phrase directly after the OR, e.g. Grant Morrison OR "Warren Ellis", which is different to Grant Morrison OR Warren Ellis.
         </ul>
       Special characters, e.g. ,;/, are ignored.</p>
-      {% endif %}
-    {% endif %}
 {% endblock %}
