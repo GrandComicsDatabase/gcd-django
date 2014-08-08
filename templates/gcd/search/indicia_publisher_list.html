@@ -1,6 +1,7 @@
 {% extends "gcd/search/base_list.html" %}
 
 {% load display %}
+{% load credits %}
 
 {% block list_contents %}
 <table class="listing">
@@ -14,7 +15,7 @@
   {% for publisher in items %}
     {% with publisher|object_filter as publisher %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-      <td class="listing_country"> <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ publisher.country.code|upper }}">
+      <td class="listing_country"> <img {{ publisher.country|show_country_info }}>
       <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
       <td class="listing_publisher"> <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a></td>
       <td> {{ publisher.year_began|default:'' }} </td>

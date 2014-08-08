@@ -1,7 +1,7 @@
 {% extends "gcd/base_view.html" %}
 {% load i18n %}
-{% load display %}
 {% load credits %}
+{% load display %}
 {% block css %}
   <link rel="stylesheet" type="text/css"
         href="{{ MEDIA_URL }}css/gcd/default.css"/>
@@ -86,11 +86,11 @@
             {% endif %}
             {% if result.model_name == 'series' %}
               <td>[SERIES]</td>
-              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.country.code|lower }}.png" alt="{{ result.object.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.full_name }}</a></td>
+              <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.full_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'issue' %}
               <td>[ISSUE]</td>
-              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.series.country.code|lower }}.png" alt="{{ result.object.series.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
+              <td><img {{ result.object.series.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
                 {{ result.object.publication_date|str_encl:'(' }}</td>
             {% endif %}
             {% if result.model_name == 'story' %}
@@ -103,17 +103,17 @@
               {% if result.object.feature %} / {{ result.object.feature }}{% endif %}
               {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}
               (from
-              <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.issue.series.country.code|lower }}.png" alt="{{ result.object.issue.series.country.code|upper }}" class="embedded_flag">
+              <img {{ result.object.issue.series.country|show_country_info }}  class="embedded_flag">
               <a href="{{ result.object.issue.get_absolute_url }}">
               {{ result.object.issue.full_name }}</a> {{ result.object.issue.publication_date|str_encl:'(' }})</td>
             {% endif %}
             {% if result.model_name == 'publisher' %}
               <td>[PUBLISHER]</td>
-              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.country.code|lower }}.png" alt="{{ result.object.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+              <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'indiciapublisher' %}
               <td>[INDICIA PUBLISHER]</td>
-              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.country.code|lower }}.png" alt="{{ result.object.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
+              <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
               :
               <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
@@ -123,7 +123,7 @@
             {% endif %}
             {% if result.model_name == 'brandgroup' %}
               <td>[BRAND GROUP]</td>
-              <td><img src="{{ MEDIA_URL }}/img/gcd/flags/{{ result.object.parent.country.code|lower }}.png" alt="{{ result.object.parent.country.code|upper }}" class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
+              <td><img {{ result.object.parent.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
                 :
                 <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
