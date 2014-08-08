@@ -1,5 +1,6 @@
 {% extends "gcd/search/base_list.html" %}
 
+{% load display %}
 {% load credits %}
 
 {% block list_contents %}
@@ -13,6 +14,7 @@
     <th> #&nbsp;Issues </th>
   </tr>
   {% for brand in items %}
+    {% with brand|object_filter as brand %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
       <td> {% if brand.emblem %} <a href="{{ brand.get_absolute_url }}"> <img src="{{ brand.emblem.thumbnail.url }}"> {% endif %} </a></td>
       <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
@@ -21,6 +23,7 @@
       <td> {{ brand.year_ended|default:'' }} </td>
       <td> {{ brand.issue_count }} </td>
     </tr>
+    {% endwith %}
   {% endfor %}
 </table>
 {% endblock %}

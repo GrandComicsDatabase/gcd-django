@@ -1,6 +1,7 @@
 {% extends "gcd/search/base_list.html" %}
 
 {% load mathfilter %}
+{% load display %}
 {% load credits %}
 
 {% block list_contents %}
@@ -14,10 +15,11 @@
     <th> Published </th> 
   </tr>
 {% for series in items %}
+  {% with series|object_filter as series %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td class="listing_country" style="padding-right: 0px;"> <img {{ series.country|show_country_info }}>
     <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
-    <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
+    <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> {% if search_term|lower not in series.name.lower %}(issue title(s) match){% endif %}</td>
     <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} </td>
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
     <td>
@@ -39,6 +41,7 @@
     </td>
     <td> {{ series.display_publication_dates }} </td>
   </tr>
+  {% endwith %}
 {% endfor %}
 </table>
 {% endblock %}

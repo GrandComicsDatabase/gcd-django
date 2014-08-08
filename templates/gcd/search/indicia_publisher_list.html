@@ -1,17 +1,19 @@
 {% extends "gcd/search/base_list.html" %}
 
+{% load display %}
 {% load credits %}
 
 {% block list_contents %}
 <table class="listing">
   <tr>
-    <th colspan="2"> Indicia Publisher </th>
+    <th colspan="2"> Indicia / Colophon Publisher </th>
     <th> Parent Publisher </th>
     <th> Year&nbsp;Began </th>
     <th> Year&nbsp;Ended </th>
     <th> #&nbsp;Issues </th>
   </tr>
   {% for publisher in items %}
+    {% with publisher|object_filter as publisher %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
       <td class="listing_country"> <img {{ publisher.country|show_country_info }}>
       <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> 
@@ -20,6 +22,7 @@
       <td> {{ publisher.year_ended|default:'' }} </td>
       <td> {{ publisher.issue_count }} </td>
     </tr>
+    {% endwith %}
   {% endfor %}
 </table>
 {% endblock %}

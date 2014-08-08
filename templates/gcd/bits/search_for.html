@@ -1,20 +1,24 @@
+{% load display %}
+
 <select name="type" size="1">
-    <option value="writer"> Writer </option>
-    <option value="penciller"> Penciller </option>
-    <option value="inker"> Inker </option>
-    <option value="colorist"> Colorist </option>
-    <option value="letterer"> Letterer </option>
-    <option value="editor"> Editor </option>
-    <option value="credit"> Any Credit </option>
-    <option value="story"> Story Title </option>
-    <option value="feature"> Feature </option>
-    <option value="character"> Character </option>
-    <option value="job_number"> Job Number </option>
-    <option value="isbn"> ISBN </option>
-    <option value="barcode"> Barcode </option>
-    <option value="publisher"> Publisher </option>
-    <option value="brand_group"> Publisher Brand Group </option>
-    <option value="brand"> Publisher Brand Emblem </option>
-    <option value="indicia_publisher"> Indicia Publisher </option>
-    <option value="series" selected> Series Name </option>
+    <option value={{ selected|default:""|current_search:"haystack" }}> - </option>
+    <option value={{ selected|default:""|current_search:"haystack_issue" }}> Series # </option>
+    <option value={{ selected|default:""|current_search:"writer" }}> Writer </option>
+    <option value={{ selected|default:""|current_search:"penciller" }}> Penciller </option>
+    <option value={{ selected|default:""|current_search:"inker" }}> Inker </option>
+    <option value={{ selected|default:""|current_search:"colorist" }}> Colorist </option>
+    <option value={{ selected|default:""|current_search:"letterer" }}> Letterer </option>
+    <option value={{ selected|default:""|current_search:"editor" }}> Editor </option>
+    <option value={{ selected|default:""|current_search:"credit" }}> Any Credit </option>
+    <option value={{ selected|default:""|current_search:"story" }}> Story Title </option>
+    <option value={{ selected|default:""|current_search:"feature" }}> Feature </option>
+    <option value={{ selected|default:""|current_search:"character" }}> Character </option>
+    <option value={{ selected|default:""|current_search:"job_number" }}> Job Number </option>
+    <option value={{ selected|default:""|current_search:"isbn" }}> ISBN </option>
+    <option value={{ selected|default:""|current_search:"barcode" }}> Barcode </option>
+    <option value={{ selected|default:""|current_search:"publisher" }}> Publisher Name </option>
+    <option value={{ selected|default:""|current_search:"brand_group" }}> Brand Group Name </option>
+    <option value={{ selected|default:""|current_search:"brand" }}> Brand Emblem Name </option>
+    <option value={{ selected|default:""|current_search:"indicia_publisher" }}> Indicia Publisher Name </option>
+    <option value={{ selected|default:""|current_search:"series" }}> Series Name </option>
 </select>

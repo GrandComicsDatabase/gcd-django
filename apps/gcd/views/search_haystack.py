@@ -158,7 +158,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         extra.update(self.paginator.vars)
 
         suggestion = self.form.get_suggestion()
-        if suggestion == self.query.lower():
+        if suggestion == self.get_query().lower():
             suggestion = u''
         facet_page = ''
         if self.form.selected_facets:
