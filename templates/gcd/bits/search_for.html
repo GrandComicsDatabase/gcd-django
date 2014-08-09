@@ -1,7 +1,7 @@
 {% load display %}
 
 <select name="type" size="1">
-    <option value={{ selected|default:""|current_search:"haystack" }}> - </option>
+    <option value={{ selected|default:""|current_search:"haystack" }}> Everything </option>
     <option value={{ selected|default:""|current_search:"haystack_issue" }}> Series # </option>
     <option value={{ selected|default:""|current_search:"writer" }}> Writer </option>
     <option value={{ selected|default:""|current_search:"penciller" }}> Penciller </option>

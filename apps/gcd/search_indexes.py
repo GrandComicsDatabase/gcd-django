@@ -26,6 +26,12 @@ class ObjectIndex(object):
 
         return self.prepared_data
 
+    def should_update(self, instance, **kwargs):
+        """Overide to check if we need to remove an object from the index."""
+        if instance.deleted:
+            self.remove_object(instance, **kwargs)
+        return not instance.deleted
+
 class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)

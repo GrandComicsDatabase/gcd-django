@@ -18,7 +18,22 @@ def safe_split(value):
     lex.quotes = '"'
     lex.whitespace_split = True
     lex.commenters = ''
+    # sometimes only single ", need to catch that as well
+    try:
+        return list(lex)
+    except ValueError as inst:
+        if str(inst) != 'No closing quotation':
+            raise
+    lex = shlex.shlex(value)
+    lex.quotes = ''
+    lex.whitespace_split = True
+    lex.commenters = ''
     return list(lex)
+
+class GcdNameQuery(AutoQuery):
+    def prepare(self, query_obj):
+        query_string = super(GcdNameQuery, self).prepare(query_obj)
+        return u'*' + query_string + u'*'
 
 class GcdAutoQuery(AutoQuery):
     def prepare(self, query_obj):

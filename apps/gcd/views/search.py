@@ -19,9 +19,10 @@ from django.http import HttpResponseRedirect
 from django.core import urlresolvers
 from django.views.generic.list_detail import object_list
 from django.template import RequestContext
+from django.utils.http import urlquote
 
 from haystack.query import SearchQuerySet
-from apps.gcd.views.search_haystack import GcdAutoQuery
+from apps.gcd.views.search_haystack import GcdNameQuery
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             Country, Language, Indexer, BrandGroup, Brand, \
@@ -190,16 +191,13 @@ def generic_by_name(request, name, q_obj, sort,
              'selected': selected }
     return paginate_response(request, things, template, vars)
 
-def haystack_query(search_term):
-    return GcdAutoQuery(u'*' + search_term + u'*')
-
 def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains=publisher_name)
     return generic_by_name(request, publisher_name, q_obj, sort,
                            Publisher, 'gcd/search/publisher_list.html')
 
 def publisher_by_name_haystack(request, publisher_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(name=haystack_query(publisher_name)) \
+    sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
                           .models(Publisher)
     return generic_by_name(request, publisher_name, None, sort,
                            Publisher, 'gcd/search/publisher_list.html', sqs=sqs)
@@ -210,7 +208,7 @@ def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
                            BrandGroup, 'gcd/search/brand_group_list.html')
 
 def brand_group_by_name_haystack(request, brand_group_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(name=haystack_query(brand_group_name)) \
+    sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_group_name)) \
                           .models(BrandGroup)
     return generic_by_name(request, brand_group_name, None, sort,
                            BrandGroup, 'gcd/search/brand_group_list.html',
@@ -222,7 +220,7 @@ def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
                            Brand, 'gcd/search/brand_list.html')
 
 def brand_by_name_haystack(request, brand_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(name=haystack_query(brand_name)) \
+    sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_name)) \
                           .models(Brand)
     return generic_by_name(request, brand_name, None, sort,
                            Brand, 'gcd/search/brand_list.html', sqs=sqs)
@@ -234,7 +232,7 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
                            'gcd/search/indicia_publisher_list.html')
 
 def indicia_publisher_by_name_haystack(request, ind_pub_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(name=haystack_query(ind_pub_name)) \
+    sqs = SearchQuerySet().filter(name=GcdNameQuery(ind_pub_name)) \
                           .models(IndiciaPublisher)
     return generic_by_name(request, ind_pub_name, None, sort,
                            IndiciaPublisher,
@@ -344,7 +342,7 @@ def series_by_name(request, series_name, sort=ORDER_ALPHA):
                            Series, 'gcd/search/series_list.html')
 
 def series_by_name_haystack(request, series_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(title_search=haystack_query(series_name))
+    sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name))
     return generic_by_name(request, series_name, None, sort,
                            Series, 'gcd/search/series_list.html', sqs=sqs)
 
@@ -436,17 +434,20 @@ def search(request):
     else:
         sort = ORDER_ALPHA
 
+    if request.GET['type'].startswith("haystack"):
+        quoted_query = urlquote(request.GET['query'])
+
     if request.GET['type'] == "haystack":
         if sort == ORDER_CHRONO:
             return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
-            "?q=%s&sort=year" % request.GET['query'])
+            "?q=%s&sort=year" % quoted_query)
         else:
             return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
-            "?q=%s" % request.GET['query'])
+            "?q=%s" % quoted_query)
 
     if request.GET['type'] == "haystack_issue":
         return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
-          '?q="%s"&search_object=issue&sort=%s' % (request.GET['query'], sort))
+          '?q="%s"&search_object=issue&sort=%s' % (quoted_query, sort))
 
     # TODO: Redesign this- the current setup is a quick hack to adjust
     # a design that was elegant when it was written, but things have changed.
