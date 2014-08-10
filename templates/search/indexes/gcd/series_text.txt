@@ -1,5 +1,5 @@
 {% load credits %}
-{{ object.name }}
+{{ object.full_name }}
 {{ object.format }}
 {{ object.color }}
 {{ object.dimensions }}
@@ -8,4 +8,3 @@
 {{ object.publishing_format }}
 {{ object.notes }}
 {{ object|show_keywords }}
-{{ object.publisher.name }}
