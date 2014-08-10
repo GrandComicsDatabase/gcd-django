@@ -97,6 +97,9 @@ The following table is the same as the regular series detail table:
 {% if barcode_present %}
     <th> Barcode </th>
 {% endif %}
+{% if rating_present %}
+    <th> Publisher's Age Guidelines </th>
+{% endif %}
   </tr>
 
 {% comment %}
@@ -140,6 +143,9 @@ divisible filter.
           {% if barcode_present %}
     <td>&nbsp;</td>
           {% endif %}
+          {% if rating_present %}
+    <td>&nbsp;</td>
+          {% endif %}
   </tr>
         {% endfor %}
       {% endwith %}
@@ -177,6 +183,9 @@ cannot be placed in a timeline:
     {% endif %}
     {% if barcode_present %}
     <th> Barcode </th>
+    {% endif %}
+    {% if rating_present %}
+    <th> Publisher's Age Guidelines </th>
     {% endif %}
   </tr>
   {% endif %}

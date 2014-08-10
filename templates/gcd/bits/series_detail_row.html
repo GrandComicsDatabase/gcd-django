@@ -57,5 +57,12 @@
   <td> {{ issue.barcode|default:"?" }} </td>
     {% endif %}
   {% endif %}
+  {% if rating_present %}
+    {% if issue.no_rating %}
+  <td>&nbsp;</td>
+    {% else %}
+  <td> {{ issue.rating|default:"?" }} </td>
+    {% endif %}
+  {% endif %}
 </tr>
 
