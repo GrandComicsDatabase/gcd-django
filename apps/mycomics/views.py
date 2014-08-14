@@ -55,6 +55,7 @@ def want_issue(request, issue_id):
     collected = CollectionItem.objects.create(issue=issue)
     collected.collections.add(request.user.collector.default_want_collection)
 
-    return HttpResponseRedirect(urlresolvers.reverse('apps.gcd.views.details.issue',
-                                                     kwargs={'issue_id': issue_id} ))
+    return HttpResponseRedirect(
+        urlresolvers.reverse('apps.gcd.views.details.issue',
+                             kwargs={'issue_id': issue_id}))
 
