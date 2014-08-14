@@ -7,6 +7,8 @@ from django.http import HttpResponseRedirect
 from apps.gcd.models import Issue
 from apps.mycomics.models import CollectionItem
 
+from apps.gcd.views import ResponsePaginator
+
 def index(request):
     """Generates the front index page."""
 
@@ -25,10 +27,15 @@ def collections(request):
 @login_required
 def collection(request, collection_id):
     collection = request.user.collector.collections.get(id=collection_id)
-    vars = {'collection': collection}
+    items = collection.items.all()
+    collection_list = request.user.collector.collections.all()
+    vars = {'collection': collection,
+            'collection_list': collection_list}
+    paginator = ResponsePaginator(items, template='mycomics/collection.html',
+                                  vars=vars, page_size=25)
 
-    return render_to_response('mycomics/collection.html', vars,
-                              context_instance=RequestContext(request))
+    return paginator.paginate(request)
+
 
 @login_required
 def have_issue(request, issue_id):
@@ -37,8 +44,9 @@ def have_issue(request, issue_id):
     collected = CollectionItem.objects.create(issue=issue)
     collected.collections.add(request.user.collector.default_have_collection)
 
-    return HttpResponseRedirect(urlresolvers.reverse('apps.gcd.views.details.issue',
-                                                     kwargs={'issue_id': issue_id} ))
+    return HttpResponseRedirect(
+        urlresolvers.reverse('apps.gcd.views.details.issue',
+                             kwargs={'issue_id': issue_id}))
 
 @login_required
 def want_issue(request, issue_id):

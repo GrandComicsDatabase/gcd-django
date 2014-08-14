@@ -2,11 +2,48 @@
 {% load i18n %}
 
 {% block content %}
-Collection {{ collection.name }}
+  <div class="page-header middle-header">
+    <h1>{% trans "Collection details" %}: {{ collection.name }}</h1>
+  </div>
 
-<ol>
-  {% for item in collection.items %}
-    <li>{{ item }}</li>
-  {% endfor %}
-</ol>
+  <div class="row">
+    <div class="col-md-2 hidden-xs">
+      <h3>{% trans "Collections" %}:</h3>
+      <div class="list-group">
+        {% for col_item in collection_list %}
+          <a href="{% url collection col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
+            {{ col_item.name }}</a>
+        {% endfor %}
+      </div>
+      <div>
+        <!-- Here should go adserver script -->
+      </div>
+    </div>
+    <div class="col-md-10">
+      {% if paginator.count > 1 %}
+        <ul class="pagination">
+          {% for number in page.page_range %}
+            {% ifequal number page_number %}
+              <li class="active"><span>{{ number }}</span></li>
+            {% else %}
+              <li><a href="{% url collection collection.id %}?page={{ number }}">{{ number }}</a></li>
+            {% endifequal %}
+          {% endfor %}
+        </ul>
+      {% endif %}
+      <div class="row">
+        {% for item in items %}
+          <div class="col-md-2"><div class="thumbnail">
+            <img src="https://dl.dropboxusercontent.com/u/20258902/ideaprojects/my.comics.org/images/932143.jpg" data-toggle="modal" href="#view-item">
+            <div class="caption">{{ item.issue.full_name }}</div>
+          </div></div>
+          {% if forloop.counter|divisibleby:"5" and not forloop.last %}
+            </div>
+            <div class="row">
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
 {% endblock %}

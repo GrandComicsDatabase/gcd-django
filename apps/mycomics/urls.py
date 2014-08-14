@@ -11,7 +11,7 @@ urlpatterns = patterns('',
     url(r'^collections/$',
         'apps.mycomics.views.collections',
         name='collections'),
-    url(r'^collection/(?P<collection_id>\d+)/$',
+    url(r'^collection/(?P<collection_id>\d+)/',
         'apps.mycomics.views.collection',
         name='collection'),
 
