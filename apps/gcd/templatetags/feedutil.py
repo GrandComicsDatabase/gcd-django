@@ -28,7 +28,7 @@ def rm_facebook_url(text):
     found = True
     # the URLs in the feed go via facebook, remove this redirect
     while(found):
-        pos_first = text.find('<a href="http://www.facebook.com/l.php?u=')
+        pos_first = text.find('<a href="http://l.facebook.com/l.php?u=')
         if pos_first >= 0:
             pos_second = pos_first \
               + text[pos_first:].find('target="_blank">') \
@@ -39,11 +39,10 @@ def rm_facebook_url(text):
               + text[pos_third + 4:]
         else:
             found = False
-    # arguably hackish way of showing larger images from facebook on our page
-    text = text.replace('_s.jpg', '_n.jpg', 1)
-    pos = text.find('hphotos') + len('hphotos')
-    pos = pos + text[pos:].find('/') + 1
-    text = text[:pos] + 'p200x200/' + text[pos:]
+    text = text.replace('s130x130', 's200x200', 1)
+    # some images have /v/ in them, there just the replace above is not enough
+    if text.find('/v/') >= 0:
+        text = text.replace('/v/', '/', 1)
     return text
 
 def summarize(text):

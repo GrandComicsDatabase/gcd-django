@@ -1165,10 +1165,10 @@ def agenda(request, language):
     #    used to work, but not currently. If we want to use that again,
     #    need to replace the google link between js_pos and js_pos_end
     #    with one pointing to our own edited version, one per language
-    js_pos = a.find('<script type="text/javascript" src="') + \
-             len('<script type="text/javascript" src="')
+    #js_pos = a.find('<script type="text/javascript" src="') + \
+    #         len('<script type="text/javascript" src="')
     # js_pos_end = a[js_pos:].find('"></script>') + js_pos
-    a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
+    #a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
 
     css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
       len('<link type="text/css" rel="stylesheet" href="')
