@@ -36,7 +36,7 @@
   </tr>
   {% for publisher in publishers %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-      <td class="listing_country"> {{ publisher.country|show_country_info }}></td>
+      <td class="listing_country"> <img {{ publisher.country|show_country_info }}></td>
       <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a></td>
       <td>
         {% if publisher.brand_count %}

@@ -2,7 +2,8 @@
 
 <select name="type" size="1">
     <option value={{ selected|default:""|current_search:"haystack" }}> Everything </option>
-    <option value={{ selected|default:""|current_search:"haystack_issue" }}> Series # </option>
+    <option value={{ selected|default:""|current_search:"series" }}> Series Name </option>
+    <option value={{ selected|default:""|current_search:"haystack_issue" }}> Series Name &amp; Issue # </option>
     <option value={{ selected|default:""|current_search:"writer" }}> Writer </option>
     <option value={{ selected|default:""|current_search:"penciller" }}> Penciller </option>
     <option value={{ selected|default:""|current_search:"inker" }}> Inker </option>
@@ -20,5 +21,4 @@
     <option value={{ selected|default:""|current_search:"brand_group" }}> Brand Group Name </option>
     <option value={{ selected|default:""|current_search:"brand" }}> Brand Emblem Name </option>
     <option value={{ selected|default:""|current_search:"indicia_publisher" }}> Indicia Publisher Name </option>
-    <option value={{ selected|default:""|current_search:"series" }}> Series Name </option>
 </select>
