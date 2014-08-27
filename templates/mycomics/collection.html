@@ -11,7 +11,7 @@
       <h3>{% trans "Collections" %}:</h3>
       <div class="list-group">
         {% for col_item in collection_list %}
-          <a href="{% url collection col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
+          <a href="{% url view_collection col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
             {{ col_item.name }}</a>
         {% endfor %}
       </div>
@@ -26,7 +26,7 @@
             {% ifequal number page_number %}
               <li class="active"><span>{{ number }}</span></li>
             {% else %}
-              <li><a href="{% url collection collection.id %}?page={{ number }}">{{ number }}</a></li>
+              <li><a href="{% url view_collection collection.id %}?page={{ number }}">{{ number }}</a></li>
             {% endifequal %}
           {% endfor %}
         </ul>

@@ -12,23 +12,27 @@ from apps.gcd.views import ResponsePaginator
 def index(request):
     """Generates the front index page."""
 
-    vars = {'next': urlresolvers.reverse('collections')}
+    vars = {'next': urlresolvers.reverse('collections_list')}
     return render_to_response('mycomics/index.html', vars,
                               context_instance=RequestContext(request))
 
+
 @login_required
-def collections(request):
-    collection_list = request.user.collector.collections.all()
+def collections_list(request):
+    def_have = request.user.collector.default_have_collection
+    def_want = request.user.collector.default_want_collection
+    collection_list = request.user.collector.collections.exclude(
+        id=def_have.id).exclude(id=def_want.id).order_by('name')
     vars = {'collection_list': collection_list}
 
     return render_to_response('mycomics/collections.html', vars,
-                          context_instance=RequestContext(request))
+                              context_instance=RequestContext(request))
 
 @login_required
-def collection(request, collection_id):
+def view_collection(request, collection_id):
     collection = request.user.collector.collections.get(id=collection_id)
-    items = collection.items.all()
-    collection_list = request.user.collector.collections.all()
+    items = collection.items.all().order_by('issue__series', 'issue__sort_code')
+    collection_list = request.user.collector.collections.all().order_by('name')
     vars = {'collection': collection,
             'collection_list': collection_list}
     paginator = ResponsePaginator(items, template='mycomics/collection.html',
