@@ -56,14 +56,12 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
                'img/placeholder_' + size + '.jpg"' + \
                'class="cover_img">')
 
-    suffix = "%d/w%d/%d.jpg" % (int(cover.id/1000), width, cover.id)
+    img_url = cover.get_base_url()+("/w%d/%d.jpg" % (width, cover.id))
 
     # For replacement and variant cover uploads we should make sure that no
     # cached cover is displayed. Adding a changing query string seems the
     # prefered solution found on the net.
-    suffix = suffix + '?' + str(hash(cover.last_upload))
-
-    img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR + suffix
+    img_url = img_url + '?' + str(hash(cover.last_upload))
 
     return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) + \
            '" ' + ' class="' + img_class + '"/>')

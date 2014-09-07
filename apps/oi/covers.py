@@ -571,7 +571,8 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
                         " in size."
             return _display_cover_upload_form(request, form, cover, issue,
                 info_text=info_text, variant=variant)
-    except IOError:
+    except IOError as e:
+        print "I/O error: {0}".format(e)
         # just in case, django *should* have taken care of file type
         changeset.delete()
         os.remove(destination.name)

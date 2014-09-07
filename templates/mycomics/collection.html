@@ -1,5 +1,6 @@
 {% extends "mycomics/user_base.html" %}
 {% load i18n %}
+{% load collecting %}
 
 {% block content %}
   <div class="page-header middle-header">
@@ -33,8 +34,8 @@
       {% endif %}
       <div class="row">
         {% for item in items %}
-          <div class="col-md-2"><div class="thumbnail">
-            <img src="https://dl.dropboxusercontent.com/u/20258902/ideaprojects/my.comics.org/images/932143.jpg" data-toggle="modal" href="#view-item">
+          <div class="col-md-2"><div class="thumbnail" data-toggle="modal" href="#view-item">
+            {{ item.issue|show_cover_tag }}
             <div class="caption">{{ item.issue.full_name }}</div>
           </div></div>
           {% if forloop.counter|divisibleby:"5" and not forloop.last %}
