@@ -521,12 +521,12 @@ def status(request, series_id):
 def _get_scan_table(series, show_cover=True):
     # freshly added series have no scans on preview page
     if series is None:
-        return None, None
+        return None, None, None
 
     if not series.is_comics_publication:
         return Cover.objects.none(), get_image_tag(cover=None, 
           zoom_level=ZOOM_MEDIUM, alt_text='First Issue Cover', 
-          can_have_cover=series.is_comics_publication)
+          can_have_cover=series.is_comics_publication), None
     # all a series' covers + all issues with no covers
     covers = Cover.objects.filter(issue__series=series, deleted=False) \
                           .select_related()
