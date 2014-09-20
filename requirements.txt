@@ -19,4 +19,5 @@ wsgiref
 pyelasticsearch
 django-haystack<2.1.0
 python-dateutil
+diff-match-patch
 git+git://github.com/bennylope/elasticstack.git
