@@ -6,6 +6,7 @@ import re
 from urllib2 import urlopen, HTTPError
 from datetime import date, datetime, time, timedelta
 from operator import attrgetter
+from random import randint
 
 from django import forms
 from django.db.models import Q
@@ -275,7 +276,7 @@ def show_series(request, series, preview=False):
     else:
         display_series = series
 
-    scans, first_image_tag = _get_scan_table(display_series)
+    scans, image_tag, issue = _get_scan_table(display_series)
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -287,7 +288,8 @@ def show_series(request, series, preview=False):
       {
         'series': series,
         'scans': scans,
-        'first_image_tag': first_image_tag,
+        'image_tag': image_tag,
+        'image_issue': issue,
         'country': series.country,
         'language': series.language,
         'table_width': table_width,
@@ -516,31 +518,36 @@ def status(request, series_id):
       'table_width': table_width },
       context_instance=RequestContext(request))
 
-def _get_scan_table(series):
+def _get_scan_table(series, show_cover=True):
     # freshly added series have no scans on preview page
     if series is None:
-        return None, None
+        return None, None, None
 
     if not series.is_comics_publication:
         return Cover.objects.none(), get_image_tag(cover=None, 
           zoom_level=ZOOM_MEDIUM, alt_text='First Issue Cover', 
-          can_have_cover=series.is_comics_publication)
+          can_have_cover=series.is_comics_publication), None
     # all a series' covers + all issues with no covers
     covers = Cover.objects.filter(issue__series=series, deleted=False) \
                           .select_related()
     issues = series.issues_without_covers()
 
+    list_covers = list(covers)
     scans = list(issues)
-    scans.extend(list(covers))
+    scans.extend(list_covers)
     scans.sort(key=attrgetter('sort_code'))
 
-    if covers:
-        first_image_tag = get_image_tag(cover=covers[0], zoom_level=ZOOM_MEDIUM,
-                                        alt_text='First Issue Cover')
+    if covers and show_cover:
+        selected_cover = covers[randint(0, covers.count()-1)]
+        image_tag = get_image_tag(cover=selected_cover,
+                                  zoom_level=ZOOM_MEDIUM,
+                                  alt_text='Random Cover from Series')
+        issue = selected_cover.issue
     else:
-        first_image_tag = None
+        image_tag = None
+        issue = None
 
-    return scans, first_image_tag
+    return scans, image_tag, issue
 
 def scans(request, series_id):
     """
@@ -552,7 +559,7 @@ def scans(request, series_id):
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'series', 'id': series_id}))
 
-    scans, unused_tag = _get_scan_table(series)
+    scans, unused_tag, unused_issue = _get_scan_table(series, show_cover=False)
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
@@ -1165,10 +1172,10 @@ def agenda(request, language):
     #    used to work, but not currently. If we want to use that again,
     #    need to replace the google link between js_pos and js_pos_end
     #    with one pointing to our own edited version, one per language
-    js_pos = a.find('<script type="text/javascript" src="') + \
-             len('<script type="text/javascript" src="')
+    #js_pos = a.find('<script type="text/javascript" src="') + \
+    #         len('<script type="text/javascript" src="')
     # js_pos_end = a[js_pos:].find('"></script>') + js_pos
-    a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
+    #a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
 
     css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
       len('<link type="text/css" rel="stylesheet" href="')

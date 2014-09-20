@@ -3203,7 +3203,7 @@ def move_series(request, series_revision_id, publisher_id):
                         ' reserving issues.', series_revision.changeset)
                 for issue_revision in series_revision.changeset.issuerevisions.all():
                     if issue_revision.brand:
-                        new_brand = publisher.active_brands()\
+                        new_brand = publisher.active_brand_emblems()\
                           .filter(name=issue_revision.brand.name)
                         if new_brand.count() == 1:
                             issue_revision.brand = new_brand[0]
@@ -3273,7 +3273,7 @@ def move_issue(request, issue_revision_id, series_id):
         if 'cancel' not in request.POST:
             if issue_revision.series.publisher != series.publisher:
                 if issue_revision.brand:
-                    new_brand = series.publisher.active_brands()\
+                    new_brand = series.publisher.active_brand_emblems()\
                         .filter(name=issue_revision.brand.name)
                     if new_brand.count() == 1:
                         issue_revision.brand = new_brand[0]
