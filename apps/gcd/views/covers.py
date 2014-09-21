@@ -84,7 +84,7 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
         covers = covers.exclude(id__in=exclude_ids)
     if as_list:
         cover_tags = []
-        alt_string = issue.series.name + ' #' + issue.number
+        alt_string = u'Cover for %s' % issue.full_name()
     else:
         tag = ''
 
@@ -115,7 +115,7 @@ def get_image_tags_per_page(page, series=None):
         if series is None:
             cover_series = cover.issue.series
         issue = cover.issue
-        alt_string = cover_series.name + ' #' + issue.number
+        alt_string = u'Cover for %s' % issue.full_name()
         cover_tags.append([cover, issue, get_image_tag(cover,
                                                        alt_string,
                                                        ZOOM_SMALL)])
