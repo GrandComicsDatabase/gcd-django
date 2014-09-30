@@ -5,6 +5,7 @@ from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 
 from apps.gcd.models import Issue
+from apps.mycomics.forms import CollectionForm
 from apps.mycomics.models import CollectionItem
 
 from apps.gcd.views import ResponsePaginator
@@ -40,6 +41,23 @@ def view_collection(request, collection_id):
 
     return paginator.paginate(request)
 
+@login_required
+def add_collection(request):
+    if request.method == 'GET':
+        vars = {'form': CollectionForm}
+        return render_to_response('mycomics/collectionForm.html', vars,
+                              context_instance=RequestContext(request))
+    if request.method == 'POST':
+        form = CollectionForm(request.POST)
+        if not form.is_valid():
+            return render_to_response('mycomics/collectionForm.html',
+                                      {'form': form},
+                                      context_instance=RequestContext(request))
+        collection = form.save(commit=False)
+        collection.collector = request.user.collector
+        collection.save()
+        form.save_m2m()
+        return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 @login_required
 def have_issue(request, issue_id):

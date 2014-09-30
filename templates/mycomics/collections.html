@@ -4,10 +4,9 @@
 {% block content %}
   <div class="page-header middle-header">
     <h1>{% trans "Collections list" %}
-      <button type="button" class="btn btn-primary pull-right"
-              style="margin-right: 10px;" data-toggle="modal"
-              href="#add-collection">{% trans "Add new" %}
-      </button>
+      <a href="{% url add_collection %}"><button type="button" class="btn btn-primary pull-right"
+              style="margin-right: 10px;">{% trans "Add new" %}
+      </button></a>
     </h1>
   </div>
 

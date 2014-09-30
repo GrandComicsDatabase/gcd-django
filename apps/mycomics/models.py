@@ -63,7 +63,7 @@ class Collection(models.Model):
 
     name = models.CharField(blank=False, max_length=255, db_index=True)
     description = models.TextField(blank=True)
-    keywords = TaggableManager()
+    keywords = TaggableManager(blank=True)
 
     public = models.BooleanField(default=False)
 

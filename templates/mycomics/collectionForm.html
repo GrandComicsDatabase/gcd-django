@@ -1,0 +1,15 @@
+{% extends "mycomics/user_base.html" %}
+{% load i18n %}
+
+{% block content %}
+  <div class="page-header middle-header">
+    <h1>{% trans "Adding collection" %}</h1>
+  </div>
+
+  <form action="{% url add_collection %}" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" name="{% trans "Add" %}" value="{% trans "Add" %}"></input>
+  </form>
+
+{% endblock %}
