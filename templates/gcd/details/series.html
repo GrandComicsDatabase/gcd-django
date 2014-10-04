@@ -37,11 +37,13 @@
 {% if series.is_comics_publication and series.has_gallery %}
         <div id="series_cover">
   {% if preview %}
-          <a href="{{ series.source.get_absolute_url }}covers">{{ first_image_tag }}</a>
+          <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
   {% else %}
-          <a href="{{ series.get_absolute_url }}covers">{{ first_image_tag }}</a>
+          <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
   {% endif %}
-
+  #{{ image_issue.display_number }}<br>
+  {{ image_issue.publication_date }}<br>
+          <a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
         </div>
 {% endif %}
 

@@ -19,6 +19,10 @@ from django.http import HttpResponseRedirect
 from django.core import urlresolvers
 from django.views.generic.list_detail import object_list
 from django.template import RequestContext
+from django.utils.http import urlquote
+
+from haystack.query import SearchQuerySet
+from apps.gcd.views.search_haystack import GcdNameQuery
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             Country, Language, Indexer, BrandGroup, Brand, \
@@ -42,7 +46,9 @@ def generic_by_name(request, name, q_obj, sort,
                     class_=Story,
                     template='gcd/search/content_list.html',
                     credit=None,
-                    related=[]):
+                    related=[],
+                    sqs=None,
+                    selected=None):
     """
     Helper function for the most common search cases.
     """
@@ -51,30 +57,54 @@ def generic_by_name(request, name, q_obj, sort,
     plural_suffix = 's'
     query_val = {'method': 'icontains'}
 
-    if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher)):
+    if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher)):
         if class_ is IndiciaPublisher:
             base_name = 'indicia_publisher'
-            display_name = 'Indicia Publisher'
+            display_name = 'Indicia / Colophon Publisher'
+        elif class_ is Brand:
+            display_name = 'Brand Emblem'
+            base_name = 'brand_emblem'
+        elif class_ is BrandGroup:
+            display_name = 'Brand Group'
+            base_name = 'brand_group'
         else:
             display_name = class_.__name__
             base_name = display_name.lower()
+        item_name = display_name.lower()
+        if class_ is Brand:
+            selected = 'brand'
+        else:
+            selected = base_name
+
         plural_suffix = '' if class_ is Series else 's'
         sort_name = "sort_name" if class_ is Series else "name"
-        things = class_.objects.exclude(deleted=True).filter(q_obj)
-        if related:
-            things = things.select_related(*related)
-        if (sort == ORDER_ALPHA):
-            things = things.order_by(sort_name, "year_began")
-        elif (sort == ORDER_CHRONO):
-            things = things.order_by("year_began", sort_name)
+        if sqs == None:
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if related:
+                things = things.select_related(*related)
+            if (sort == ORDER_ALPHA):
+                things = things.order_by(sort_name, "year_began")
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by("year_began", sort_name)
+            things = things.distinct()
+        else:
+            things = sqs
+            if (sort == ORDER_ALPHA):
+                things = things.order_by('sort_name',
+                                         'year')
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by('year',
+                                         'sort_name')
         heading = '%s Search Results' % display_name
         # query_string for the link to the advanced search
         query_val['target'] = base_name
-        query_val[base_name] = name
-        things = things.distinct()
+        if class_ is Publisher:
+            query_val['pub_name'] = name
+        else:
+            query_val[base_name] = name
 
     elif class_ is Issue:
-        base_name = 'issue'
+        item_name = 'issue'
         things = Issue.objects.exclude(deleted=True).filter(q_obj) \
                    .select_related('series__publisher')
         if (sort == ORDER_ALPHA):
@@ -84,13 +114,16 @@ def generic_by_name(request, name, q_obj, sort,
         heading = 'Issue Search Results'
         # query_string for the link to the advanced search
         query_val['target'] = 'issue'
-        query_val['isbn'] = name
+        if credit == 'isbn':
+            query_val['isbn'] = name
+        else:
+            query_val['barcode'] = name
 
     elif (class_ is Story):
         # TODO: move this outside when series deletes are implemented
         q_obj &= Q(deleted=False)
 
-        base_name = 'stor'
+        item_name = 'stor'
         plural_suffix = 'y,ies'
 
         things = class_.objects.filter(q_obj)
@@ -137,6 +170,9 @@ def generic_by_name(request, name, q_obj, sort,
     else:
         raise TypeError, "Unsupported search target!"
 
+    if not selected:
+        selected = credit
+
     if (sort == ORDER_ALPHA):
         change_order = request.path.replace('alpha', 'chrono')
     elif (sort == ORDER_CHRONO):
@@ -144,52 +180,63 @@ def generic_by_name(request, name, q_obj, sort,
     else:
         change_order = ''
 
-    vars = { 'item_name': base_name,
+    vars = { 'item_name': item_name,
              'plural_suffix': plural_suffix,
              'heading': heading,
              'search_term': name,
              'media_url': settings.MEDIA_URL,
              'query_string': urlencode(query_val),
              'change_order': change_order,
-             'which_credit': credit }
+             'which_credit': credit,
+             'selected': selected }
     return paginate_response(request, things, template, vars)
 
-def publishers_by_name(request, publisher_name, sort=ORDER_ALPHA):
-    #Finds publishers
+def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
+    q_obj = Q(name__icontains=publisher_name)
+    return generic_by_name(request, publisher_name, q_obj, sort,
+                           Publisher, 'gcd/search/publisher_list.html')
 
-    pubs = Publisher.objects.exclude(deleted=True).filter(
-      name__icontains = publisher_name)
-    if (sort == ORDER_ALPHA):
-        pubs = pubs.order_by('name', 'year_began')
-    elif (sort == ORDER_CHRONO):
-        pubs = pubs.order_by('year_began', 'name')
-
-    get_copy = request.GET.copy()
-    get_copy.pop('page', None)
-
-    return paginate_response(request, pubs, 'gcd/search/publisher_list.html',
-        { 'items': pubs,
-          'item_name': 'publisher',
-          'plural_suffix': 's',
-          'heading': 'Publisher Search Results',
-          'query_string': get_copy.urlencode(),
-        })
+def publisher_by_name_haystack(request, publisher_name, sort=ORDER_ALPHA):
+    sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
+                          .models(Publisher)
+    return generic_by_name(request, publisher_name, None, sort,
+                           Publisher, 'gcd/search/publisher_list.html', sqs=sqs)
 
 def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains=brand_group_name)
     return generic_by_name(request, brand_group_name, q_obj, sort,
                            BrandGroup, 'gcd/search/brand_group_list.html')
 
+def brand_group_by_name_haystack(request, brand_group_name, sort=ORDER_ALPHA):
+    sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_group_name)) \
+                          .models(BrandGroup)
+    return generic_by_name(request, brand_group_name, None, sort,
+                           BrandGroup, 'gcd/search/brand_group_list.html',
+                           sqs=sqs)
+
 def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains=brand_name)
     return generic_by_name(request, brand_name, q_obj, sort,
                            Brand, 'gcd/search/brand_list.html')
+
+def brand_by_name_haystack(request, brand_name, sort=ORDER_ALPHA):
+    sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_name)) \
+                          .models(Brand)
+    return generic_by_name(request, brand_name, None, sort,
+                           Brand, 'gcd/search/brand_list.html', sqs=sqs)
 
 def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
     q_obj = Q(name__icontains=ind_pub_name)
     return generic_by_name(request, ind_pub_name, q_obj, sort,
                            IndiciaPublisher,
                            'gcd/search/indicia_publisher_list.html')
+
+def indicia_publisher_by_name_haystack(request, ind_pub_name, sort=ORDER_ALPHA):
+    sqs = SearchQuerySet().filter(name=GcdNameQuery(ind_pub_name)) \
+                          .models(IndiciaPublisher)
+    return generic_by_name(request, ind_pub_name, None, sort,
+                           IndiciaPublisher,
+                           'gcd/search/indicia_publisher_list.html', sqs=sqs)
 
 def character_by_name(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
@@ -203,38 +250,45 @@ def character_by_name(request, character_name, sort=ORDER_ALPHA):
     q_obj = Q(characters__icontains=character_name) | \
             Q(feature__icontains=character_name)
     return generic_by_name(request, character_name, q_obj, sort,
-                           credit="characters:" + character_name)
+                           credit="characters:" + character_name,
+                           selected="character")
 
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):
     q_obj = Q(script__icontains=writer)
-    return generic_by_name(request, writer, q_obj, sort, credit="script")
+    return generic_by_name(request, writer, q_obj, sort, credit="script",
+                           selected="writer")
 
 
 def penciller_by_name(request, penciller, sort=ORDER_ALPHA):
     q_obj = Q(pencils__icontains=penciller)
-    return generic_by_name(request, penciller, q_obj, sort, credit="pencils")
+    return generic_by_name(request, penciller, q_obj, sort, credit="pencils",
+                           selected="penciller")
 
 
 def inker_by_name(request, inker, sort=ORDER_ALPHA):
     q_obj = Q(inks__icontains=inker)
-    return generic_by_name(request, inker, q_obj, sort, credit="inks")
+    return generic_by_name(request, inker, q_obj, sort, credit="inks",
+                           selected="inker")
 
 
 def colorist_by_name(request, colorist, sort=ORDER_ALPHA):
     q_obj = Q(colors__icontains=colorist)
-    return generic_by_name(request, colorist, q_obj, sort, credit="colors")
+    return generic_by_name(request, colorist, q_obj, sort, credit="colors",
+                           selected="colorist")
 
 
 def letterer_by_name(request, letterer, sort=ORDER_ALPHA):
     q_obj = Q(letters__icontains=letterer)
-    return generic_by_name(request, letterer, q_obj, sort, credit="letters")
+    return generic_by_name(request, letterer, q_obj, sort, credit="letters",
+                           selected="letterer")
 
 
 def editor_by_name(request, editor, sort=ORDER_ALPHA):
     q_obj = Q(editing__icontains=editor) | Q(issue__editing__icontains=editor)
     return generic_by_name(request, editor, q_obj, sort,
-                           credit="editing_search:"+editor)
+                           credit="editing_search:"+editor,
+                           selected="editor")
 
 
 def story_by_credit(request, name, sort=ORDER_ALPHA):
@@ -246,7 +300,8 @@ def story_by_credit(request, name, sort=ORDER_ALPHA):
             Q(letters__icontains=name) | \
             Q(editing__icontains=name) | \
             Q(issue__editing__icontains=name)
-    return generic_by_name(request, name, q_obj, sort, credit=('any:'+name))
+    return generic_by_name(request, name, q_obj, sort, credit=('any:'+name),
+                           selected="credit")
 
 
 def story_by_job_number(request, number, sort=ORDER_ALPHA):
@@ -269,13 +324,15 @@ def story_by_reprint(request, reprints, sort=ORDER_ALPHA):
 def story_by_title(request, title, sort=ORDER_ALPHA):
     """Looks up story by story (not issue or series) title."""
     q_obj = Q(title__icontains = title)
-    return generic_by_name(request, title, q_obj, sort, credit="title")
+    return generic_by_name(request, title, q_obj, sort, credit="title",
+                           selected="story")
 
 
 def story_by_feature(request, feature, sort=ORDER_ALPHA):
     """Looks up story by feature."""
     q_obj = Q(feature__icontains = feature)
-    return generic_by_name(request, feature, q_obj, sort, credit="feature")
+    return generic_by_name(request, feature, q_obj, sort, credit="feature",
+                           selected="feature")
 
 
 def series_by_name(request, series_name, sort=ORDER_ALPHA):
@@ -283,6 +340,11 @@ def series_by_name(request, series_name, sort=ORDER_ALPHA):
             Q(issue__title__icontains = series_name)
     return generic_by_name(request, series_name, q_obj, sort,
                            Series, 'gcd/search/series_list.html')
+
+def series_by_name_haystack(request, series_name, sort=ORDER_ALPHA):
+    sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name))
+    return generic_by_name(request, series_name, None, sort,
+                           Series, 'gcd/search/series_list.html', sqs=sqs)
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series_name """
@@ -367,13 +429,32 @@ def search(request):
         else: # rare, but possible
             return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
 
+    if 'sort' in request.GET:
+        sort = request.GET['sort']
+    else:
+        sort = ORDER_ALPHA
+
+    if request.GET['type'].startswith("haystack"):
+        quoted_query = urlquote(request.GET['query'])
+
+    if request.GET['type'] == "haystack":
+        if sort == ORDER_CHRONO:
+            return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
+            "?q=%s&sort=year" % quoted_query)
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
+            "?q=%s" % quoted_query)
+
+    if request.GET['type'] == "haystack_issue":
+        return HttpResponseRedirect(urlresolvers.reverse("haystack_search") + \
+          '?q="%s"&search_object=issue&sort=%s' % (quoted_query, sort))
+
     # TODO: Redesign this- the current setup is a quick hack to adjust
     # a design that was elegant when it was written, but things have changed.
     object_type = str(request.GET['type'])
     param_type = object_type
     view_type = object_type
     if view_type == 'publisher':
-        view_type += 's'
         param_type = 'publisher_name'
     elif view_type == 'brand_group':
         param_type = 'brand_group_name'
@@ -382,7 +463,7 @@ def search(request):
     elif view_type == 'indicia_publisher':
         param_type = 'ind_pub_name'
 
-    view = 'apps.gcd.views.search.%s_by_name' % view_type
+    view = '%s_by_name' % view_type
 
     if object_type == 'story':
         param_type = 'title'
@@ -398,11 +479,6 @@ def search(request):
         param_type = object_type + '_name'
     elif object_type == 'job_number':
         param_type = 'number'
-
-    if 'sort' in request.GET:
-        sort = request.GET['sort']
-    else:
-        sort = ORDER_ALPHA
 
     param_type_value = quote(request.GET['query'].strip().encode('utf-8'))
     return HttpResponseRedirect(
@@ -992,7 +1068,7 @@ def search_issues(data, op, stories_q=None):
     prefix = compute_prefix(target, 'issue')
 
     q_and_only = []
-    if target in ['issue', 'cover', 'feature', 'sequence']:
+    if target in ['issue', 'cover', 'issue_cover', 'feature', 'sequence']:
         date_formatter = lambda d: '%04d-%02d-%02d' % (d.year, d.month, d.day)
         if data['use_on_sale_date']:
             q_and_only.extend(search_dates(data, date_formatter,

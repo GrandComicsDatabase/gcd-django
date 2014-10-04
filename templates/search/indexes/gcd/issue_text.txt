@@ -1,7 +1,9 @@
 {% load credits %}
-{{ object.title }}
-{{ object.number }}
+{{ object.series.name }} {{ object.display_number }}
 {{ object.volume }}
+{{ object.title }}
+{{ object.publication_date }}
+{{ object.series.publisher.name }}
 {{ object.isbn }}
 {{ object.barcode }}
 {{ object.variant_name }}
@@ -9,5 +11,3 @@
 {{ object.editing }}
 {{ object.notes }}
 {{ object|show_keywords }}
-{{ object.series.name }}
-{{ object.series.publisher.name }}

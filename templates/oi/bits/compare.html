@@ -1,5 +1,6 @@
 {% load display %}
 {% load credits %}
+{% load compare %}
 {% load i18n %}
 
 {% ifequal changeset_type 'story' %}
@@ -95,11 +96,22 @@
     {% for field in field_list %}
   <tr class="{{ revision.changed|check_changed:field }}">
     <td class="field_name"> {{ field|field_name }} </td>
-      {% if prev_rev %}
+      {% if revision.changed|check_changed:field and prev_rev and not revision.deleted %}
+        {% diff_list prev_rev revision field as diff_list %}
+        {% if diff_list %}
+    <td> {{ diff_list|show_diff:"orig" }} </td>
+    <td> {{ diff_list|show_diff:"change" }} </td>
+        {% else %}
     <td> {{ prev_rev|field_value:field }} </td>
-      {% endif %}
-      {% if not revision.deleted %}
     <td> {{ revision|field_value:field }} </td>
+        {% endif %}
+      {% else %}
+        {% if prev_rev %}
+    <td> {{ prev_rev|field_value:field }} </td>
+        {% endif %}
+        {% if not revision.deleted %}
+    <td> {{ revision|field_value:field }} </td>
+        {% endif %}
       {% endif %}
   </tr>
     {% endfor %}

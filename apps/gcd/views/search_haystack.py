@@ -18,31 +18,63 @@ def safe_split(value):
     lex.quotes = '"'
     lex.whitespace_split = True
     lex.commenters = ''
+    # sometimes only single ", need to catch that as well
+    try:
+        return list(lex)
+    except ValueError as inst:
+        if str(inst) != 'No closing quotation':
+            raise
+    lex = shlex.shlex(value)
+    lex.quotes = ''
+    lex.whitespace_split = True
+    lex.commenters = ''
     return list(lex)
 
+class GcdNameQuery(AutoQuery):
+    def prepare(self, query_obj):
+        query_string = super(GcdNameQuery, self).prepare(query_obj)
+        return u'*' + query_string + u'*'
+
+class GcdAutoQuery(AutoQuery):
+    def prepare(self, query_obj):
+        query_string = super(GcdAutoQuery, self).prepare(query_obj)
+        if u'\*' in query_string and len(query_string) > 2:
+            query_string = query_string.replace(u'\*', u'*')
+        if ' ' in query_string:
+            query_string = '"' + query_string + '"'
+        return query_string
+
+def prepare_sq(phrase, fields, sq):
+    new_sq = sq
+    query_part = GcdAutoQuery('%s' % uni(phrase))
+    if '*' in phrase:
+        query_part_2 = AutoQuery('%s' % uni(phrase))
+    else:
+        query_part_2 = None
+    for field in fields:
+        if not new_sq:
+            new_sq = SQ(**{field:query_part})
+        else:
+            new_sq |= SQ(**{field:query_part})
+        if query_part_2:
+            new_sq |= SQ(**{field:query_part_2})
+    return new_sq
+
+# it may be, that we can do this as our own Query, i.e. similar
+# to the above GcdAutoQuery.
 def parse_query_into_sq(query, fields):
     sq = None
     not_sq = None
     or_flag = False
     for phrase in safe_split(query.encode('utf-8')):
-        if phrase[0] == '-':
-            query_part = AutoQuery('"%s"' % uni(phrase[1:]))
-            for field in fields:
-                if not not_sq:
-                    not_sq = SQ(**{field:query_part})
-                else:
-                    not_sq |= SQ(**{field:query_part})
+        query_part_2 = None
+        if phrase[0] == '-' and len(phrase) > 1:
+            not_sq = prepare_sq(phrase[1:], fields, not_sq)
             or_flag = False
         elif phrase == 'OR':
             or_flag = True
         else:
-            query_part = AutoQuery('"%s"' % uni(phrase))
-            field_sq = None
-            for field in fields:
-                if not field_sq:
-                    field_sq = SQ(**{field:query_part})
-                else:
-                    field_sq |= SQ(**{field:query_part})
+            field_sq = prepare_sq(phrase, fields, None)
             if not sq:
                 sq = field_sq
             else:
@@ -85,10 +117,18 @@ class PaginatedFacetedSearchView(FacetedSearchView):
             self.form.searchqueryset = self.form.searchqueryset.exclude(not_sq)
 
         self.results = self.get_results()
-        self.sort = ''
-        if len(self.form.selected_facets) == 1:
-            if 'sort' in request.GET:
-                self.sort = request.GET['sort']
+        if 'sort' in request.GET:
+            self.sort = request.GET['sort']
+        else:
+            self.sort = ''
+        if self.sort == 'country':
+            self.results = self.results.order_by('country',
+                                                 '-_score')
+        elif self.sort == 'year':
+            self.results = self.results.order_by('year',
+                                                 '-_score')
+        elif len(self.form.selected_facets) == 1:
+            if self.sort:
                 if self.form.selected_facets[0] in \
                   [u'facet_model_name_exact:publisher',
                    u'facet_model_name_exact:indicia publisher',
@@ -97,9 +137,9 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                    u'facet_model_name_exact:series']:
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
-                                                             'year_began')
+                                                             'year')
                     elif request.GET['sort'] == 'chrono':
-                        self.results = self.results.order_by('year_began',
+                        self.results = self.results.order_by('year',
                                                              'sort_name')
                 elif u'facet_model_name_exact:issue' in self.form.selected_facets:
                     if request.GET['sort'] == 'alpha':
@@ -133,7 +173,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         extra.update(self.paginator.vars)
 
         suggestion = self.form.get_suggestion()
-        if suggestion == self.query.lower():
+        if suggestion == self.get_query().lower():
             suggestion = u''
         facet_page = ''
         if self.form.selected_facets:

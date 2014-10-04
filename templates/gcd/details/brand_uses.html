@@ -24,8 +24,8 @@
     <th> Brand Emblem</th>
     <th> Name </th>
     <th> Brand Group </th>
-    <th> Year Began</th>
-    <th> Year Ended</th>
+    <th> Year Began </th>
+    <th> Year Ended </th>
     <th> Notes </th>
   </tr>
 {% for brand_use in items %}
@@ -33,7 +33,7 @@
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {% if brand.emblem %} <a href="{{ brand.get_absolute_url }}"> <img src="{{ brand.emblem.thumbnail.url }}"> {% endif %} </a> </td>
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a> </td>
-    <td class="listing_country">
+    <td>
     {% for group in brand.group.all %}
     <a href="{{ group.get_absolute_url }}">{{ group.name }}</a>
       {% if group.parent != brand_use.publisher %}

@@ -3203,7 +3203,7 @@ def move_series(request, series_revision_id, publisher_id):
                         ' reserving issues.', series_revision.changeset)
                 for issue_revision in series_revision.changeset.issuerevisions.all():
                     if issue_revision.brand:
-                        new_brand = publisher.active_brands()\
+                        new_brand = publisher.active_brand_emblems()\
                           .filter(name=issue_revision.brand.name)
                         if new_brand.count() == 1:
                             issue_revision.brand = new_brand[0]
@@ -3273,7 +3273,7 @@ def move_issue(request, issue_revision_id, series_id):
         if 'cancel' not in request.POST:
             if issue_revision.series.publisher != series.publisher:
                 if issue_revision.brand:
-                    new_brand = series.publisher.active_brands()\
+                    new_brand = series.publisher.active_brand_emblems()\
                         .filter(name=issue_revision.brand.name)
                     if new_brand.count() == 1:
                         issue_revision.brand = new_brand[0]
@@ -3788,7 +3788,8 @@ def show_queue(request, queue_name, state):
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])
     images = changes.filter(change_type=CTYPES['image'])
-    countries=dict(Country.objects.values_list('id','code'))
+    countries = dict(Country.objects.values_list('id', 'code'))
+    country_names = dict(Country.objects.values_list('id', 'name'))
 
     response = render_to_response(
       'oi/queues/%s.html' % queue_name,
@@ -3797,6 +3798,7 @@ def show_queue(request, queue_name, state):
         'indexer': request.user,
         'states': states,
         'countries': countries,
+        'country_names': country_names,
         'data': [
           {
             'object_name': 'Publishers',
