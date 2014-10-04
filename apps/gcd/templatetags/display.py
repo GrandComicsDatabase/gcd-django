@@ -87,12 +87,16 @@ def show_volume(issue):
     return issue.volume
 
 def show_issue(issue):
+    if issue.variant_name:
+        issue_number = "%s [%s]" % (issue.display_number, issue.variant_name)
+    else:
+        issue_number = issue.display_number
     return mark_safe('<a href="%s">%s</a> (%s series) <a href="%s">#%s</a>' %
                      (issue.series.get_absolute_url(),
                       esc(issue.series.name),
                       esc(issue.series.year_began),
                       issue.get_absolute_url(),
-                      esc(issue.display_number)))
+                      esc(issue_number)))
 
 def show_indicia_pub(issue):
     if issue.indicia_publisher is None:
