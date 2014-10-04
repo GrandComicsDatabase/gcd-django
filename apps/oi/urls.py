@@ -78,8 +78,6 @@ urlpatterns = patterns('',
     url(r'^issue/(?P<issue_one_id>\d+)/edit_with/(?P<issue_two_id>\d+)/$',
         oi_views.reserve_two_issues,
         name='reserve_two_issues'),
-    url(r'^issue/(?P<issue_id>\d+)/cache/$', oi_views.cache_content,
-        name='cache_issue'),
 
     url(r'^issue/(?P<issue_id>\d+)/export_issue/$',
         oi_import.export_issue_to_file,
@@ -121,12 +119,8 @@ urlpatterns = patterns('',
         name='toggle_delete_story_revision'),
     url(r'^story/revision/(?P<id>\d+)/move/$', oi_views.move_story_revision,
         name='move_story_revision'),
-    url(r'^story/(?P<story_id>\d+)/cache/$', oi_views.cache_content,
-        name='cache_story'),
     url(r'^story/(?P<id>\d+)/reprint_migration/(?P<changeset_id>\d+)/$', oi_views.confirm_reprint_migration,
         name='confirm_reprint_migration'),
-    url(r'^cover/(?P<cover_story_id>\d+)/cache/$', oi_views.cache_content,
-        name='cache_cover'),
 
     # Image URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', oi_covers.upload_image,
@@ -229,13 +223,6 @@ urlpatterns = patterns('',
 
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
       oi_views.create_matching_sequence, name='create_matching_sequence'),
-
-    url(r'^select_object/(?P<select_key>.+)/search/$',
-      oi_views.process_select_search, name='select_object_search'),
-    url(r'^select_object/(?P<select_key>.+)/search_haystack/$',
-      oi_views.process_select_search_haystack, name='select_object_search_haystack'),
-    url(r'^select_object/(?P<select_key>.+)/$', oi_views.select_object,
-      name='select_object'),
 
     # Generic URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/reserve/$', oi_views.reserve,
