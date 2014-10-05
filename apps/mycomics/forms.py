@@ -1,5 +1,5 @@
 from django.forms import ModelForm
-from apps.mycomics.models import *;
+from apps.mycomics.models import *
 
 class CollectionForm(ModelForm):
     class Meta:
