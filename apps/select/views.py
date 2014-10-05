@@ -4,6 +4,7 @@ from random import random
 from haystack.forms import FacetedSearchForm
 
 from django.contrib.auth.decorators import permission_required
+from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -59,6 +60,27 @@ def get_select_forms(request, initial, data, publisher=False,
         cached_story=cached_story, cached_cover=cached_cover)()
 
     return search_form, cache_form
+
+
+@permission_required('gcd.can_reserve')
+def process_multiple_selects(request, select_key):
+    try:
+        data = get_select_data(request, select_key)
+    except KeyError:
+        return _cant_get(request)
+
+    allowed_selects = data['allowed_selects']
+    choices = request.POST.getlist('object_choice')
+    selections = {}
+    for allowed in allowed_selects:
+        selections[allowed] = []
+    for select in choices:
+        object_type, object_id = select.split('_')
+        if object_type in allowed_selects:
+            selections[object_type].append(int(object_id))
+    data['selections'] = selections
+    store_select_data(request, select_key, data)
+    return data['return'](request, data)
 
 @permission_required('gcd.can_reserve')
 def process_select_search_haystack(request, select_key):
@@ -170,6 +192,7 @@ def process_select_search(request, select_key):
         'items' : search,
         'heading' : heading,
         'select_key': select_key,
+        'no_bulk_edit': True,
         'query_string': request.META['QUERY_STRING'],
         'publisher': cd['publisher'] if cd['publisher'] else '',
         'series': cd['series'] if 'series' in cd and cd['series'] else '',

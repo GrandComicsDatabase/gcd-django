@@ -5,7 +5,7 @@
 
 {% block list_contents %}
 
-{% if request.user.is_authenticated and items and not select_key %}
+{% if request.user.is_authenticated and items and not no_bulk_edit and not MYCOMICS %}
 <div id="bulk_change_info">
 {% ifequal paginator.num_pages 1 %}
 &nbsp;Use this search result for a <a href="{% url edit_issues_in_bulk %}?{{ query_string }}">
@@ -13,6 +13,20 @@ bulk change</a>
 {% else %}
 &nbsp;Note that for a bulk change the number of issues cannot be larger than 100.
 {% endifequal %}
+</div>
+{% endif %}
+
+{% if request.user.is_authenticated and confirm_selection %}
+<form method="POST">
+  {% csrf_token %}
+<div>
+  <input type="submit" name="confirm_selection" value="Add"></input>
+the selected issues to your 
+<select name="collection_id">
+  {% for col_item in collection_list %}
+    <option value="{{ col_item.id }}">{{ col_item.name }}
+  {% endfor %}
+</select>
 </div>
 {% endif %}
 
@@ -36,6 +50,9 @@ bulk change</a>
     </form>
     </td>
     {% endif %}
+    {% if confirm_selection %}
+    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}"></input>
+    {% endif %}
     <td class="listing_country"> <img {{ issue.series.country|show_country_info }}>
     <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
     <td> {{ issue|show_issue }} </td>
@@ -43,4 +60,7 @@ bulk change</a>
   </tr>
 {% endfor %}
 </table>
+{% if request.user.is_authenticated and confirm_selection %}
+</form>
+{% endif %}
 {% endblock %}

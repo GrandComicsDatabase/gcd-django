@@ -134,6 +134,7 @@ elif settings.MYCOMICS:
     urlpatterns = (basic_patterns +
                    patterns('', (r'^', include('apps.mycomics.urls'))) +
                    patterns('', (r'^', include('apps.gcd.urls'))) +
+                   patterns('', (r'^', include('apps.select.urls'))) +
                    account_patterns +
                    read_only_patterns
                    )

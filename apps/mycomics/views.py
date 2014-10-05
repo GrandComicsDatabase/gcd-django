@@ -5,9 +5,13 @@ from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 
 from apps.gcd.models import Issue
-from apps.mycomics.models import CollectionItem
+from apps.gcd.views import render_error, ResponsePaginator, paginate_response
+from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
+    GcdSearchQuerySet
 
-from apps.gcd.views import ResponsePaginator
+from apps.select.views import store_select_data
+
+from apps.mycomics.models import Collection, CollectionItem
 
 def index(request):
     """Generates the front index page."""
@@ -63,3 +67,55 @@ def want_issue(request, issue_id):
         urlresolvers.reverse('apps.gcd.views.details.issue',
                              kwargs={'issue_id': issue_id}))
 
+
+@login_required
+def add_selected_issues_to_collection(request, data):
+    selections = data['selections']
+    issues = Issue.objects.filter(id__in=selections['issue'])
+    if 'story' in selections:
+        issues |= Issue.objects.filter(story__id__in=selections['story'])
+    issues = issues.distinct()
+    if 'confirm_selection' in request.POST:
+        collection_id = int(request.POST['collection_id'])
+        collection = get_object_or_404(Collection, id=collection_id)
+        if collection.collector.user != request.user:
+            return render_error(request,
+              'Only the owner of a collection can add issues to it.',
+              redirect=False)
+        for issue in issues:
+            collected = CollectionItem.objects.create(issue=issue)
+            collected.collections.add(collection)
+        return HttpResponseRedirect(
+            urlresolvers.reverse('view_collection',
+                                kwargs={'collection_id': collection_id}))
+    else:
+        collection_list = request.user.collector.collections.all()\
+                                                            .order_by('name')
+        context = {
+                'item_name': 'issue',
+                'plural_suffix': 's',
+                'no_bulk_edit': True,
+                'heading': 'Issues',
+                'confirm_selection': True,
+                'collection_list': collection_list
+            }
+        return paginate_response(request, issues,
+                                 'gcd/search/issue_list.html', context)
+
+@login_required
+def mycomics_search(request):
+    sqs = GcdSearchQuerySet().facet('facet_model_name')
+
+    allowed_selects = ['issue', 'story']
+    data = {'issue': True,
+            'story': True,
+            'allowed_selects': allowed_selects,
+            'return': add_selected_issues_to_collection,
+            'cancel': HttpResponseRedirect(urlresolvers\
+                                           .reverse('collections_list'))}
+    select_key = store_select_data(request, None, data)
+    context = {'select_key': select_key,
+               'multiple_selects': True,
+               'allowed_selects': allowed_selects}
+    return PaginatedFacetedSearchView(searchqueryset=sqs)(request,
+                                                          context=context)

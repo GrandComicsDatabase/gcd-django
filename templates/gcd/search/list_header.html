@@ -23,7 +23,7 @@
   {% endwith %}
 </div>
 </div>
-{% if position = 'top' and not select_key %}
+{% if position = 'top' and not select_key and not confirm_selection %}
 <div id="search_reminder">
 Refine your search using the <a href="{% url apps.gcd.views.search.advanced_search %}?{{ query_string }}">advanced search</a>.
 {% if change_order %}

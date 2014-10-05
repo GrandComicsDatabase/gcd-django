@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls import patterns, url
 from apps.gcd.views import accounts as account_views
+from apps.mycomics import views as mycomics_views
 
 urlpatterns = patterns('',
     url(r'^$', 'apps.mycomics.views.index', name='home'),
@@ -9,14 +10,18 @@ urlpatterns = patterns('',
         'landing_view': 'collections_list'},
         name='my_login'),
     url(r'^collection/list/$',
-        'apps.mycomics.views.collections_list',
+        mycomics_views.collections_list,
         name='collections_list'),
     url(r'^collection/(?P<collection_id>\d+)/',
-        'apps.mycomics.views.view_collection',
+        mycomics_views.view_collection,
         name='view_collection'),
 
     url(r'^issue/(?P<issue_id>\d+)/have/$',
-     'apps.mycomics.views.have_issue', name='have_issue'),
+     mycomics_views.have_issue, name='have_issue'),
     url(r'^issue/(?P<issue_id>\d+)/want/$',
-     'apps.mycomics.views.want_issue', name='want_issue'),
+     mycomics_views.want_issue, name='want_issue'),
+
+    url(r'^mycomics_search/$',
+      mycomics_views.mycomics_search, name='mycomics_search'),
+
 )
