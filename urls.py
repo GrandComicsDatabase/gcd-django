@@ -141,6 +141,7 @@ else:
     urlpatterns = (basic_patterns +
                    patterns('', (r'^', include('apps.gcd.urls'))) +
                    account_patterns +
+                   patterns('', (r'^', include('apps.select.urls'))) +
                    patterns('', (r'^', include('apps.oi.urls')),
                                 (r'^voting/', include('apps.voting.urls')),
                                 (r'^admin/templatesadmin/', include('templatesadmin.urls')),
