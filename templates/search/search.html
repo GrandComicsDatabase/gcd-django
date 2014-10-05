@@ -63,19 +63,16 @@
           {% endfor %}
         </ul>
       {% endif %}
-      {% if select_key %}
-        {% if multiple_selects %}
+      {% if select_key and multiple_selects %}
         <form action="{% url process_multiple_selects select_key=select_key %}" method="POST">
           {% csrf_token %}
           <input type="submit" name="search_select" value="Submit">
           <div style="clear: both;"></div>
-        {% endif %}
+      {% endif %}
       <table class="listing left">
         <tr>
+      {% if select_key %}
           <th> Selection </th>
-      {% else %}
-      <table class="listing left">
-        <tr>
       {% endif %}
           <th>Type</th>
           <th>Name</th>

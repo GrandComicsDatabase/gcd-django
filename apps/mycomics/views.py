@@ -11,13 +11,18 @@ from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
 
 from apps.select.views import store_select_data
 
+from apps.mycomics.forms import CollectionForm
 from apps.mycomics.models import Collection, CollectionItem
+
+INDEX_TEMPLATE='mycomics/index.html'
+COLLECTION_TEMPLATE='mycomics/collection.html'
+COLLECTION_LIST_TEMPLATE='mycomics/collections.html'
+COLLECTION_FORM_TEMPLATE='mycomics/collectionForm.html'
 
 def index(request):
     """Generates the front index page."""
-
     vars = {'next': urlresolvers.reverse('collections_list')}
-    return render_to_response('mycomics/index.html', vars,
+    return render_to_response(INDEX_TEMPLATE, vars,
                               context_instance=RequestContext(request))
 
 
@@ -29,8 +34,9 @@ def collections_list(request):
         id=def_have.id).exclude(id=def_want.id).order_by('name')
     vars = {'collection_list': collection_list}
 
-    return render_to_response('mycomics/collections.html', vars,
+    return render_to_response(COLLECTION_LIST_TEMPLATE, vars,
                               context_instance=RequestContext(request))
+
 
 @login_required
 def view_collection(request, collection_id):
@@ -39,10 +45,28 @@ def view_collection(request, collection_id):
     collection_list = request.user.collector.collections.all().order_by('name')
     vars = {'collection': collection,
             'collection_list': collection_list}
-    paginator = ResponsePaginator(items, template='mycomics/collection.html',
+    paginator = ResponsePaginator(items, template=COLLECTION_TEMPLATE,
                                   vars=vars, page_size=25)
 
     return paginator.paginate(request)
+
+
+@login_required
+def add_collection(request):
+    if request.method == 'GET':
+        vars = {'form': CollectionForm}
+        return render_to_response(COLLECTION_FORM_TEMPLATE, vars,
+                              context_instance=RequestContext(request))
+    if request.method == 'POST':
+        form = CollectionForm(request.POST)
+        if not form.is_valid():
+            return render_to_response(COLLECTION_FORM_TEMPLATE, {'form': form},
+                                      context_instance=RequestContext(request))
+        collection = form.save(commit=False)
+        collection.collector = request.user.collector
+        collection.save()
+        form.save_m2m()
+        return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 
 @login_required
@@ -55,6 +79,7 @@ def have_issue(request, issue_id):
     return HttpResponseRedirect(
         urlresolvers.reverse('apps.gcd.views.details.issue',
                              kwargs={'issue_id': issue_id}))
+
 
 @login_required
 def want_issue(request, issue_id):
