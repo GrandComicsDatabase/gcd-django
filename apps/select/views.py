@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import permission_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.utils.datastructures import MultiValueDictKeyError
 
 from apps.gcd.models import *
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
