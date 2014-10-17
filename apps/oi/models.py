@@ -1975,6 +1975,15 @@ class BrandGroupRevision(PublisherRevisionBase):
         if self.brand_group is None:
             self.brand_group = brand_group
             self.save()
+            brand_revision = BrandRevision(changeset=self.changeset,
+                             name=self.name,
+                             year_began=self.year_began,
+                             year_ended=self.year_ended,
+                             year_began_uncertain=self.year_began_uncertain,
+                             year_ended_uncertain=self.year_ended_uncertain)
+            brand_revision.save()
+            brand_revision.group.add(self.brand_group)
+            brand_revision.commit_to_display()
 
     def get_absolute_url(self):
         if self.brand_group is None:

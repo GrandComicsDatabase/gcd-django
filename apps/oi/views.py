@@ -2871,7 +2871,7 @@ def select_internal_object(request, id, changeset_id, which_side,
         context_instance=RequestContext(request))
 
 @permission_required('gcd.can_reserve')
-def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
+def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, edit=False):
     story = get_object_or_404(Story, id=story_id)
     issue = get_object_or_404(Issue, id=issue_id)
     reprint_revision = get_object_or_404(ReprintRevision,
@@ -2883,7 +2883,7 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
           'Only the reservation holder may access this page.')
     if issue != changeset_issue.issue:
         return _cant_get(request)
-    if request.method != 'POST':
+    if request.method != 'POST' and not edit:
         if story == reprint_revision.origin_story:
             direction = 'from'
         else:
@@ -3074,6 +3074,20 @@ def save_reprint(request, reprint_revision_id, changeset_id,
     if 'add_reprint_view' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
             kwargs={ 'id': changeset.issuerevisions.get().id }))
+    if 'matching_sequence' in request.POST:
+        if revision.origin_story:
+            story = revision.origin_story
+            issue = revision.target_issue
+        else:
+            story = revision.target_story
+            issue = revision.origin_issue
+        if issue != changeset.issuerevisions.get().issue:
+            return _cant_get(request)
+        return HttpResponseRedirect(
+          urlresolvers.reverse('create_edit_matching_sequence',
+                               kwargs={ 'reprint_revision_id': revision.id,
+                                        'story_id': story.id,
+                                        'issue_id': issue.id }))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
             kwargs={ 'id': changeset_id }))

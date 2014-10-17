@@ -223,6 +223,8 @@ urlpatterns = patterns('',
 
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
       oi_views.create_matching_sequence, name='create_matching_sequence'),
+    url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_edit_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
+      oi_views.create_matching_sequence, {'edit' : 'True'}, name='create_edit_matching_sequence'),
 
     # Generic URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/reserve/$', oi_views.reserve,
