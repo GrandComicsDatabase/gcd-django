@@ -6,8 +6,7 @@
   <div class="panel-body">
     <div class="btn-group pull-right">
       <button type="button" class="btn btn-primary btn-sm"
-              style="display: inline-block;" data-toggle="modal"
-              href="#edit-collection">
+              style="display: inline-block;" onclick="window.location.href='{% url edit_collection collection.id %}'">
         <span class="glyphicon glyphicon-pencil"></span>
       </button>
       <button type="button" class="btn btn-primary btn-sm"

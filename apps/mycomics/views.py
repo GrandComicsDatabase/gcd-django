@@ -8,6 +8,8 @@ from apps.gcd.models import Issue
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
+from apps.mycomics.forms import CollectionForm
+from apps.mycomics.models import Collection, CollectionItem
 
 from apps.select.views import store_select_data
 
@@ -40,7 +42,7 @@ def collections_list(request):
 
 @login_required
 def view_collection(request, collection_id):
-    collection = request.user.collector.collections.get(id=collection_id)
+    collection = get_object_or_404(Collection, id=collection_id, collector=request.user.collector)
     items = collection.items.all().order_by('issue__series', 'issue__sort_code')
     collection_list = request.user.collector.collections.all().order_by('name')
     vars = {'collection': collection,
@@ -52,21 +54,23 @@ def view_collection(request, collection_id):
 
 
 @login_required
-def add_collection(request):
-    if request.method == 'GET':
-        vars = {'form': CollectionForm}
-        return render_to_response(COLLECTION_FORM_TEMPLATE, vars,
-                              context_instance=RequestContext(request))
+def edit_collection(request, collection_id=None):
+    if collection_id:
+        collection = get_object_or_404(Collection, id=collection_id, collector=request.user.collector)
+    else:
+        collection = Collection(collector=request.user.collector)
+
     if request.method == 'POST':
-        form = CollectionForm(request.POST)
-        if not form.is_valid():
-            return render_to_response(COLLECTION_FORM_TEMPLATE, {'form': form},
-                                      context_instance=RequestContext(request))
-        collection = form.save(commit=False)
-        collection.collector = request.user.collector
-        collection.save()
-        form.save_m2m()
-        return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
+        form = CollectionForm(request.POST, instance=collection)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
+
+    else:
+        form = CollectionForm(instance=collection)
+
+    return render_to_response(COLLECTION_FORM_TEMPLATE, {'form': form},
+                                  context_instance=RequestContext(request))
 
 
 @login_required

@@ -3,13 +3,13 @@
 
 {% block content %}
   <div class="page-header middle-header">
-    <h1>{% trans "Adding collection" %}</h1>
+    <h1>{% trans "Editing collection" %}</h1>
   </div>
 
-  <form action="{% url add_collection %}" method="POST">
+  <form action="." method="POST">
     {% csrf_token %}
     {{ form.as_p }}
-    <input type="submit" name="{% trans "Add" %}" value="{% trans "Add" %}"></input>
+    <input type="submit" name="{% trans "Submit" %}" value="{% trans "Submit" %}">
   </form>
 
 {% endblock %}
