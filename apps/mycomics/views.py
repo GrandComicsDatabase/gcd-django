@@ -42,7 +42,8 @@ def collections_list(request):
 
 @login_required
 def view_collection(request, collection_id):
-    collection = get_object_or_404(Collection, id=collection_id, collector=request.user.collector)
+    collection = get_object_or_404(Collection, id=collection_id,
+                                   collector=request.user.collector)
     items = collection.items.all().order_by('issue__series', 'issue__sort_code')
     collection_list = request.user.collector.collections.all().order_by('name')
     vars = {'collection': collection,
@@ -55,8 +56,14 @@ def view_collection(request, collection_id):
 
 @login_required
 def edit_collection(request, collection_id=None):
+    """
+    View for editing and adding of collections. First request comes as GET,
+    which results in displaying page with form. Second request with POST saves
+    this form.
+    """
     if collection_id:
-        collection = get_object_or_404(Collection, id=collection_id, collector=request.user.collector)
+        collection = get_object_or_404(Collection, id=collection_id,
+                                       collector=request.user.collector)
     else:
         collection = Collection(collector=request.user.collector)
 
@@ -64,13 +71,14 @@ def edit_collection(request, collection_id=None):
         form = CollectionForm(request.POST, instance=collection)
         if form.is_valid():
             form.save()
-            return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
+            return HttpResponseRedirect(
+                urlresolvers.reverse('collections_list'))
 
     else:
         form = CollectionForm(instance=collection)
 
     return render_to_response(COLLECTION_FORM_TEMPLATE, {'form': form},
-                                  context_instance=RequestContext(request))
+                              context_instance=RequestContext(request))
 
 
 @login_required
