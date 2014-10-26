@@ -413,7 +413,7 @@ def change_history(request, model_name, id):
     """
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
-                          'image']:
+                          'image', 'series_bond']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {

@@ -2,6 +2,8 @@
 from django.db import models
 from django.core import urlresolvers
 from django.db.models import Count
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
@@ -88,6 +90,12 @@ class Series(models.Model):
 
     def has_keywords(self):
         return self.keywords.exists()
+
+    def has_tracking(self):
+        return self.tracking_notes or self.has_series_bonds()
+
+    def has_series_bonds(self):
+        return self.to_series_bond.count() or self.from_series_bond.count()
 
     def delete(self):
         self.deleted = True
@@ -231,6 +239,18 @@ class Series(models.Model):
     def full_name(self):
         return '%s (%s, %s%s series)' % (self.name, self.publisher,
           self.year_began, self._date_uncertain(self.year_began_uncertain))
+
+    def full_name_with_link(self, publisher=False):
+        if publisher:
+            name_link = '<a href="%s">%s</a> (<a href="%s">%s</a>, %s%s series)' \
+              % (self.get_absolute_url(), esc(self.name),
+                 self.publisher.get_absolute_url(), self.publisher,
+                 self.year_began,
+                 self._date_uncertain(self.year_began_uncertain))
+        else:
+            name_link = '<a href="%s">%s</a>' % (self.get_absolute_url(),
+                                                 esc(self.full_name()))
+        return mark_safe(name_link)
 
     def __unicode__(self):
         return '%s (%s%s series)' % (self.name, self.year_began,

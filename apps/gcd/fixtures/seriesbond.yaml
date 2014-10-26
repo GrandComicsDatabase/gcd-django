@@ -1,0 +1,4 @@
+- fields: {description: Tracks numbering from one series to another., name: numbering_continues,
+    notes: ''}
+  model: gcd.seriesbondtype
+  pk: 1

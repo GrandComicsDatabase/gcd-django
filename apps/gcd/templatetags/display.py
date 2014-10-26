@@ -17,6 +17,7 @@ from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
 from apps.gcd.models.cover import Cover
 from apps.gcd.models.image import Image
+from apps.gcd.models.seriesbond import SeriesBond, BOND_TYPES
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
@@ -98,6 +99,30 @@ def show_issue(issue):
                       issue.get_absolute_url(),
                       esc(issue_number)))
 
+def show_series_tracking(series, direction):
+    target_tracking = series.to_series_bond.filter(\
+                        bond_type__id=BOND_TYPES['tracking'])
+    origin_tracking = series.from_series_bond.filter(\
+                        bond_type__id=BOND_TYPES['tracking'])
+    tracking_line = ""
+    if direction == 'in' and target_tracking.count():
+        for target_series in target_tracking.all():
+            if target_series.target_issue:
+                tracking_line += "<li> numbering continues with %s" % \
+                  target_series.target_issue.full_name_with_link()
+            else:
+                tracking_line += "<li> numbering continues in %s" % \
+                  target_series.target.full_name_with_link()
+    elif direction == 'from' and origin_tracking .count():
+        for origin_series in origin_tracking.all():
+            if origin_series.origin_issue:
+                tracking_line += "<li> numbering continued from %s" % \
+                  origin_series.origin_issue.full_name_with_link()
+            else:
+                tracking_line += "<li> numbering continues from %s" % \
+                  origin_series.origin.full_name_with_link()
+    return mark_safe(tracking_line)
+
 def show_indicia_pub(issue):
     if issue.indicia_publisher is None:
         if issue.indicia_pub_not_printed:
@@ -129,7 +154,12 @@ def header_link(changeset):
     if changeset.inline():
         revision = changeset.inline_revision()
     else:
-        revision = changeset.issuerevisions.all()[0]
+        if changeset.issuerevisions.count():
+            revision = changeset.issuerevisions.all()[0]
+        elif changeset.change_type == CTYPES['series_bond']:
+            revision = changeset.seriesbondrevisions.get()
+        else:
+            raise NotImplementedError
 
     if changeset.change_type == CTYPES['publisher']:
         return absolute_url(revision)
@@ -233,6 +263,8 @@ def changed_fields(changeset, object):
         revision = changeset.issuerevisions.all().get(issue=object.id)
     elif object_class is Series:
         revision = changeset.seriesrevisions.all().get(series=object.id)
+    elif object_class is SeriesBond:
+        revision = changeset.seriesbondrevisions.all().get(series_bond=object.id)
     elif object_class is Publisher:
         revision = changeset.publisherrevisions.all().get(publisher=object.id)
     elif object_class is Brand:
@@ -398,6 +430,7 @@ register.filter(show_story_short)
 register.filter(show_revision_short)
 register.filter(show_volume)
 register.filter(show_issue)
+register.filter(show_series_tracking)
 register.filter(show_indicia_pub)
 register.filter(show_revision_type)
 register.filter(header_link)

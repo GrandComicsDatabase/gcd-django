@@ -6,6 +6,8 @@ from django.core import urlresolvers
 from django.db.models import Sum, Count
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
@@ -305,6 +307,11 @@ class Issue(models.Model):
                                      self.variant_name)
         else:
             return u'%s #%s' % (self.series.full_name(), self.display_number)
+
+    def full_name_with_link(self, publisher=False):
+        name_link = self.series.full_name_with_link(publisher)
+        return mark_safe('%s <a href="%s">#%s</a>' % (name_link,
+          self.get_absolute_url(), esc(self.display_number)))
 
     def short_name(self):
         if self.variant_name:
