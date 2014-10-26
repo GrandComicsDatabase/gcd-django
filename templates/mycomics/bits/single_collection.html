@@ -1,3 +1,5 @@
+{% load collecting %}
+
 <div class="panel panel-default">
   <div class="panel-heading"
        onclick="window.location.href='{% url view_collection collection.id %}'">
@@ -9,11 +11,13 @@
               style="display: inline-block;" onclick="window.location.href='{% url edit_collection collection.id %}'">
         <span class="glyphicon glyphicon-pencil"></span>
       </button>
+      {% if not collection|is_default_collection %}
       <button type="button" class="btn btn-primary btn-sm"
               style="display: inline-block;" data-toggle="modal"
-              href="#remove-collection">
+              href="#remove-collection" onclick="selected_collection={{ collection.id }}">
         <span class="glyphicon glyphicon-remove"></span>
       </button>
+      {% endif %}
     </div>
     {{ collection.description }}</div>
 </div>

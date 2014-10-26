@@ -16,6 +16,9 @@ from apps.select.views import store_select_data
 from apps.mycomics.forms import CollectionForm
 from apps.mycomics.models import Collection, CollectionItem
 
+from django.contrib import messages
+from django.utils.translation import ugettext as _
+
 INDEX_TEMPLATE='mycomics/index.html'
 COLLECTION_TEMPLATE='mycomics/collection.html'
 COLLECTION_LIST_TEMPLATE='mycomics/collections.html'
@@ -71,6 +74,7 @@ def edit_collection(request, collection_id=None):
         form = CollectionForm(request.POST, instance=collection)
         if form.is_valid():
             form.save()
+            messages.success(request, _('Collection saved.'))
             return HttpResponseRedirect(
                 urlresolvers.reverse('collections_list'))
 
@@ -79,6 +83,17 @@ def edit_collection(request, collection_id=None):
 
     return render_to_response(COLLECTION_FORM_TEMPLATE, {'form': form},
                               context_instance=RequestContext(request))
+
+
+@login_required
+def delete_collection(request, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id,
+                                   collector=request.user.collector)
+    collection.delete()
+    #Here I just delete all collection items not belonging to any collection
+    CollectionItem.objects.filter(collections=None).delete()
+    messages.success(request, _('Collection deleted.'))
+    return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 
 @login_required

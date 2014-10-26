@@ -22,6 +22,10 @@ urlpatterns = patterns('',
         'apps.mycomics.views.edit_collection',
         name='edit_collection'),
 
+    url(r'^collection/delete/(?:(?P<collection_id>\d+)?)$',
+        'apps.mycomics.views.delete_collection',
+        name='delete_collection'),
+
     url(r'^issue/(?P<issue_id>\d+)/have/$',
      mycomics_views.have_issue, name='have_issue'),
     url(r'^issue/(?P<issue_id>\d+)/want/$',

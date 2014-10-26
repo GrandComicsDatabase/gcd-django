@@ -25,8 +25,16 @@ def show_have_want(issue, user):
 
     return mark_safe(text)
 
+
 def show_cover_tag(issue):
     return get_image_tags_per_issue(issue, alt_text=u'', zoom_level=ZOOM_SMALL)
+
+
+@register.filter
+def is_default_collection(collection):
+    return (collection == collection.collector.default_want_collection) or (
+      collection == collection.collector.default_have_collection)
+
 
 register.filter(show_have_want)
 register.filter(show_cover_tag)
