@@ -6,6 +6,9 @@
     <th> Votes </th>
 {% if not agenda.secret_ballot %}
     <th> Voters </th>
+  {% if not topic.vote_type.max_votes %}
+    <th> Rank </th>
+  {% endif %}
 {% endif %}
   </tr>
 {% for option in topic.counted_options %}
@@ -13,17 +16,25 @@
     <td> {{ option }} </td>
     <td> {{ option.num_votes}} </td>
   {% if not agenda.secret_ballot %}
-    <td>
     {% if topic.invalid and option.votes.all.count %}
-      Voters hidden for invalid results.
+    <td> Voters hidden for invalid results. </td>
+      {% if not topic.vote_type.max_votes %}
+    <td></td>
+      {% endif %}
     {% else %}
-      <ul class="compact">
+    <td><ul class="compact">
       {% for vote in option.votes.all %}
         <li> {{ vote.voter.first_name }} {{ vote.voter.last_name }} </li>
       {% endfor %}
-      </ul>
+    </ul></td>
+      {% if not topic.vote_type.max_votes %}
+    <td><ul class="compact">
+      {% for vote in option.votes.all %}
+        <li> {{ vote.rank }} </li>
+      {% endfor %}
+    </ul></td>
+      {% endif %}
     {% endif %}
-    </td>
   {% endif %}
   </tr>
 {% endfor %}

@@ -393,6 +393,9 @@ class Option(models.Model):
                                           related_name='voted_options')
     result = models.NullBooleanField(blank=True)
 
+    def rank(self, user):
+        return self.votes.get(voter=user).rank
+
     def __unicode__(self):
         return self.name
 
