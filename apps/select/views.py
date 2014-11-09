@@ -17,6 +17,15 @@ from apps.gcd.views import render_error, paginate_response
 from apps.select.forms import *
 
 ##############################################################################
+# Helper functions
+##############################################################################
+
+def _cant_get_key(request):
+    return render_error(request,
+      'Internal data for selecting objects is corrupted. If this message '
+      'persists try logging out and logging in.', redirect=False)
+
+##############################################################################
 # Cache and select objects
 ##############################################################################
 
@@ -67,7 +76,7 @@ def process_select_search_haystack(request, select_key):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
-        return _cant_get(request)
+        return _cant_get_key(request)
 
     form = FacetedSearchForm(request.GET)
     if not form.is_valid(): # do not think this can happen
@@ -92,7 +101,7 @@ def process_select_search(request, select_key):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
-        return _cant_get(request)
+        return _cant_get_key(request)
     publisher =  data.get('publisher', False)
     series = data.get('series', False)
     issue =  data.get('issue', False)
@@ -185,7 +194,7 @@ def select_object(request, select_key):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
-        return _cant_get(request)
+        return _cant_get_key(request)
     if request.method == 'GET':
         if 'refine_search' in request.GET or 'search_issue' in request.GET:
             request_data = request.GET
