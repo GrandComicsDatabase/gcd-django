@@ -90,7 +90,8 @@ def delete_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
     collection.delete()
-    #Here I just delete all collection items not belonging to any collection
+    #Since above command doesn't delete any CollectionItems I just delete here
+    # all collection items not belonging now to any collection.
     CollectionItem.objects.filter(collections=None).delete()
     messages.success(request, _('Collection deleted.'))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))

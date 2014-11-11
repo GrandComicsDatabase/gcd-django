@@ -307,8 +307,6 @@ POSTGRES_DUMP = 'pg-current.zip'
 # dump (or similar) file again, in minutes.
 DOWNLOAD_DELTA = 5
 
-MESSAGE_STORAGE = 'django.contrib.messages.storage.fallback.FallbackStorage'
-
 #################################################################################
 # settings_local usage
 #################################################################################
