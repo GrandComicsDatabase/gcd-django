@@ -260,6 +260,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
             kwargs['publisher'] = revision.publisher
         return get_series_revision_form(source=revision.source, **kwargs)
 
+    if model_name == 'series_bond':
+        return get_series_bond_revision_form(**kwargs)
+
     if model_name == 'issue':
         if revision is not None and 'publisher' not in kwargs:
             kwargs['publisher'] = revision.series.publisher
@@ -729,6 +732,23 @@ class BrandEmblemSelect(forms.Select):
             return u'<option value="%s"%s>%s</option>' % (
               escape(option_value), selected_html,
               conditional_escape(force_unicode(option_label)))
+
+
+def get_series_bond_revision_form(revision=None, user=None):
+    class RuntimeSeriesBondRevisionForm(SeriesBondRevisionForm):
+        def as_table(self):
+            return super(RuntimeSeriesBondRevisionForm, self).as_table()
+    return RuntimeSeriesBondRevisionForm
+
+class SeriesBondRevisionForm(forms.ModelForm):
+    class Meta:
+        model = SeriesBondRevision
+        fields = get_series_bond_field_list()
+        widgets = {
+          'notes': forms.TextInput(attrs={'class': 'wide'})
+        }
+
+    comments = _get_comments_form_field()
 
 def get_issue_revision_form(publisher, series=None, revision=None,
                             variant_of=None, user=None):

@@ -7,6 +7,9 @@
 {% block list_contents %}
 <table class="listing">
   <tr>
+    {% if select_key %}
+    <th> Selection </th>
+    {% endif %}
     <th colspan="2"> Publisher </th>
     <th> Title </th>
     <th> Year </th>
@@ -17,9 +20,18 @@
 {% for series in items %}
   {% with series|object_filter as series %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    {% if select_key %}
+    <td>
+      <form action="{% url select_object select_key=select_key %}" method="POST">
+      {% csrf_token %}
+        <input type="submit" name="search_select" value="Select this series"></input>
+        <input type="hidden" name="object_choice" value="series_{{ series.id }}"></input>
+      </form>
+    </td>
+    {% endif %}
     <td class="listing_country" style="padding-right: 0px;"> <img {{ series.country|show_country_info }}>
     <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
-    <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> {% if search_term|lower not in series.name.lower %}(issue title(s) match){% endif %}</td>
+    <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} </td>
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
     <td>

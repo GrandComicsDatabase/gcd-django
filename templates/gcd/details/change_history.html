@@ -134,6 +134,25 @@ should include a comment explaining the deletion.
 </div>
 {% endif %}
 
+{% if description = "Series" and object.has_series_bonds %}
+<div>
+  <table class="listing">
+  {% for bond in object.to_series_bond.all %}
+    <tr>
+      <td><a href="{% url change_history model_name='series_bond' id=bond.id %}?collapse=1"> {{ bond }} </a></td>
+      <td>{{ bond }}</td>
+    </tr>
+  {% endfor %}
+  {% for bond in object.from_series_bond.all %}
+    <tr>
+      <td><a href="{% url change_history model_name='series_bond' id=bond.id %}?collapse=1"> {{ bond }} </a></td>
+      <td>{{ bond }}</td>
+    </tr>
+  {% endfor %}
+  </table>
+</div>
+{% endif %}
+
 {% if description = "Brand" and object.emblem %}
 <div>
   <table class="listing">

@@ -42,6 +42,7 @@ CTYPES = {
     'image': 12,
     'brand_group': 13,
     'brand_use': 14,
+    'series_bond': 15,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -52,7 +53,8 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['series'],
                            CTYPES['cover'],
                            CTYPES['reprint'],
-                           CTYPES['image'],))
+                           CTYPES['image'],
+                           CTYPES['series_bond'],))
 
 # Change types that *might* be bulk changes.  But might just have one revision.
 CTYPES_BULK = frozenset((CTYPES['issue_bulk'],
@@ -594,6 +596,9 @@ class Changeset(models.Model):
             return (self.seriesrevisions.all().select_related('series'),
                     self.issuerevisions.all().select_related('issue'))
 
+        if self.change_type == CTYPES['series_bond']:
+            return (self.seriesbondrevisions.all().select_related('series'),)
+
         if self.change_type == CTYPES['publisher']:
             return (self.publisherrevisions.all(), self.brandrevisions.all(),
                     self.indiciapublisherrevisions.all())
@@ -684,10 +689,10 @@ class Changeset(models.Model):
         Used for conditionals in templates, as bulk issue adds and edits as
         well as deletes cannot be edited after submission.
         """
-        return (self.inline() or self.change_type == CTYPES['issue'] or \
-          (self.change_type == CTYPES['issue_add'] \
-            and self.issuerevisions.count() == 1) or \
-          self.change_type in [CTYPES['variant_add'], CTYPES['two_issues']]) \
+        return (self.inline() or self.change_type in [CTYPES['issue'],
+          CTYPES['variant_add'], CTYPES['two_issues'], CTYPES['series_bond']] \
+          or (self.change_type == CTYPES['issue_add'] \
+            and self.issuerevisions.count() == 1)) \
           and not self.deleted()
 
     def ordered_issue_revisions(self):
@@ -725,6 +730,8 @@ class Changeset(models.Model):
             return self.issuerevisions.get(variant_of__isnull=False).queue_name()
         elif self.change_type == CTYPES['image']:
             return self.imagerevisions.get().queue_name()
+        elif self.change_type == CTYPES['series_bond']:
+            return self.seriesbondrevisions.get().queue_name()
         else:
             return self.inline_revision(cache_safe=True).queue_name()
 
@@ -751,7 +758,7 @@ class Changeset(models.Model):
         # issue_adds are separate, avoid revision.previous
         elif self.change_type == CTYPES['issue']:
             return ACTION_MODIFY
-        elif revision.source is None or revision.previous() is None:
+        elif revision.previous() is None:
             return ACTION_ADD
         return ACTION_MODIFY
 
@@ -850,8 +857,8 @@ class Changeset(models.Model):
             if revision.source is not None:
                 revision.source.reserved = False
                 revision.source.save()
-                # if this becomes relevant for other revisions make a method
-                if type(revision) == ReprintRevision:
+                # maybe make a method to call on discard for special stuff ?
+                if type(revision) in [ReprintRevision, SeriesBondRevision]:
                     revision.previous_revision = None
                     revision.save()
                 if type(revision) == StoryRevision:
@@ -1257,15 +1264,18 @@ class Revision(models.Model):
 
         # post_rev stays None if no newer revision is found
         self._post_rev = None
-
         if self.changeset.state == states.APPROVED:
-            post_revs = self.source.revisions \
-              .filter(changeset__state=states.APPROVED) \
-              .filter(Q(modified__gt=self.modified) |
-                      (Q(modified=self.modified) & Q(id__gt=self.id))) \
-              .order_by('modified', 'id')
-            if post_revs.count() > 0:
-                self._post_rev = post_revs[0]
+            if hasattr(self, 'previous_revision'):
+                if hasattr(self, 'next_revision'):
+                    self._post_rev = self.next_revision
+            else:
+                post_revs = self.source.revisions \
+                .filter(changeset__state=states.APPROVED) \
+                .filter(Q(modified__gt=self.modified) |
+                        (Q(modified=self.modified) & Q(id__gt=self.id))) \
+                .order_by('modified', 'id')
+                if post_revs.count() > 0:
+                    self._post_rev = post_revs[0]
         return self._post_rev
 
 
@@ -2970,6 +2980,157 @@ class SeriesRevision(Revision):
             return u'%s (%s series)' % (self.name, self.year_began)
         return unicode(self.series)
 
+def get_series_bond_field_list():
+    return ['notes']
+
+class SeriesBondRevisionManager(RevisionManager):
+
+    def clone_revision(self, series_bond, changeset):
+        """
+        Given an existing SeriesBond instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=series_bond,
+                                              instance_class=SeriesBond,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, series_bond, changeset):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        revision = SeriesBondRevision(
+          # revision-specific fields:
+          series_bond=series_bond,
+          changeset=changeset,
+
+          # copied fields:
+          origin=series_bond.origin,
+          origin_issue=series_bond.origin_issue,
+          target=series_bond.target,
+          target_issue=series_bond.target_issue,
+          bond_type=series_bond.bond_type,
+          notes=series_bond.notes)
+
+        revision.save()
+        previous_revision = SeriesBondRevision.objects.get(\
+          series_bond=series_bond, next_revision=None,
+          changeset__state=states.APPROVED)
+        revision.previous_revision = previous_revision
+        revision.save()
+        return revision
+
+class SeriesBondRevision(Revision):
+    class Meta:
+        db_table = 'oi_series_bond_revision'
+        ordering = ['-created', '-id']
+        get_latest_by = "created"
+
+    objects = SeriesBondRevisionManager()
+
+    series_bond = models.ForeignKey(SeriesBond, null=True,
+                                related_name='revisions')
+
+    origin = models.ForeignKey(Series, null=True,
+                               related_name='origin_bond_revisions')
+    origin_issue = models.ForeignKey(Issue, null=True,
+                          related_name='origin_series_bond_revisions')
+    target = models.ForeignKey(Series, null=True,
+                               related_name='target_bond_revisions')
+    target_issue = models.ForeignKey(Issue, null=True,
+                          related_name='target_series_bond_revisions')
+
+    bond_type = models.ForeignKey(SeriesBondType, null=True,
+                                  related_name='bond_revisions')
+    notes = models.TextField(max_length = 255, default='', blank=True,
+      help_text='Notes about the series bond.')
+
+    previous_revision = models.OneToOneField('self', null=True,
+                                             related_name='next_revision')
+
+    def previous(self):
+        return self.previous_revision
+
+    def _field_list(self):
+        return ['origin', 'origin_issue', 'target', 'target_issue',
+                'notes']
+
+    def _get_blank_values(self):
+        return {
+            'origin': None,
+            'origin_issue': None,
+            'target': None,
+            'target_issue': None,
+            'notes': '',
+        }
+
+    def _start_imp_sum(self):
+        self._seen_origin = False
+        self._seen_target = False
+
+    def _imps_for(self, field_name):
+        """
+        Only one point per origin/target change
+        """
+        if field_name in ('origin', 'origin_issue'):
+           if not self._seen_origin:
+                self._seen_origin = True
+                return 1
+        if field_name in ('target', 
+                          'target_issue'):
+           if not self._seen_target:
+                self._seen_target = True
+                return 1
+        if field_name == 'notes':
+            return 1
+        return 0
+
+    def _source(self):
+        return self.series_bond
+
+    def _source_name(self):
+        return 'series_bond'
+
+    def _queue_name(self):
+        return u'%s continues at %s' % (self.origin, self.target)
+
+    def commit_to_display(self, clear_reservation=True):
+        series_bond = self.series_bond
+        if self.deleted:
+            for revision in series_bond.revisions.all():
+                setattr(revision, "series_bond_id", None)
+                revision.save()
+            series_bond.delete()
+            return
+
+        if series_bond is None:
+            series_bond = SeriesBond()
+        series_bond.origin = self.origin
+        series_bond.origin_issue = self.origin_issue
+        series_bond.target = self.target
+        series_bond.target_issue = self.target_issue
+        series_bond.notes = self.notes
+        series_bond.bond_type = self.bond_type
+
+        if clear_reservation:
+            series_bond.reserved = False
+
+        series_bond.save()
+        if self.series_bond is None:
+            self.series_bond = series_bond
+            self.save()
+        
+    def __unicode__(self):
+        if self.origin_issue:
+            object_string = u'%s' % self.origin_issue
+        else:
+            object_string = u'%s' % self.origin
+        if self.target_issue:
+            object_string += u' continues at %s' % self.target_issue
+        else:
+            object_string += u' continues at %s' % self.target
+        return object_string
 
 def get_issue_field_list():
     return ['number', 'title', 'no_title',

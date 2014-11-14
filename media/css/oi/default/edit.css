@@ -93,6 +93,7 @@ table.added tr.True, tr.added, span.added {
 table.story_list td {
     border-bottom: solid 1px silver;
     padding-left: 0.5em;
+    padding-bottom: 1px;
 }
 
 table.story_list td.import_info {

@@ -97,7 +97,8 @@ def process_select_search(request, select_key):
     series = data.get('series', False)
     issue =  data.get('issue', False)
     story =  data.get('story', False)
-
+    if 'search_series' in request.GET:
+        issue = False
     search_form = get_select_search_form(search_publisher=publisher,
                                          search_series=series,
                                          search_issue=issue,
@@ -158,6 +159,19 @@ def process_select_search(request, select_key):
         plural_suffix = 's'
         search = search.order_by("series__name", "series__year_began",
                                  "key_date")
+    elif 'search_series' in request.GET:
+        search = Series.objects.filter(deleted=False,
+                                name__icontains=cd['series'],
+                                publisher__name__icontains=cd['publisher'])
+        heading = 'Series search for: ' + cd['series']
+        if cd['year']:
+            search = search.filter(year_began=cd['year'])
+            heading = '%s (%s, %d series)' % (cd['series'], publisher,
+                                                  cd['year'])
+        template='gcd/search/series_list.html'
+        base_name = 'series'
+        plural_suffix = ''
+        search = search.order_by("name")
     elif 'search_publisher' in request.GET:
         search = Publisher.objects.filter(deleted=False,
                                           name__icontains=cd['publisher'])
