@@ -24,6 +24,9 @@
     </td>
   </tr>
 </table>
-<input type="submit" name="add_reprint_view" value="Confirm reprint entry - Go to Reprint Overview"></input>
-<input type="submit" name="add_issue_view" value="Confirm reprint entry - Go to Issue Overview"></input>
-<input type="submit" name="cancel" value="Cancel"></input>
+<input type="submit" name="add_reprint_view" value="Confirm reprint entry - Go to Reprint Overview">
+<input type="submit" name="add_issue_view" value="Confirm reprint entry - Go to Issue Overview">
+{% if issue and selected_story %}
+<input type="submit" name="matching_sequence" value="Confirm reprint entry and Create corresponding sequence">
+{% endif %}
+<input type="submit" name="cancel" value="Cancel">

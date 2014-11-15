@@ -4,6 +4,7 @@ from random import random
 from haystack.forms import FacetedSearchForm
 
 from django.contrib.auth.decorators import permission_required
+from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
