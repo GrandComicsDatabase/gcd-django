@@ -1,6 +1,7 @@
 {% extends "voting/base_view.html" %}
 
 {% load display %}
+{% load voting %}
 
 {% block title %} Ballot :: {{ topic.name|truncatewords:4 }} {% endblock %}
 
@@ -45,7 +46,7 @@ Your current vote{{ votes.count|pluralize }}:
 {{ votes.all.0.name }}
 <p>
       {% else %}
-        {% if topic.vote_type.max_votes > topic.vote_type.max_winners %}
+        {% if not topic.vote_type.max_votes %}
 <table>
   <tr>
     <th> Option <th>
@@ -54,7 +55,7 @@ Your current vote{{ votes.count|pluralize }}:
           {% for vote in votes %}
   <tr>
     <td> {{ vote.name }} </td>
-    <td> {{ vote.rank }} </td>
+    <td> {{ vote|show_rank:request.user }} </td>
   </tr>
           {% endfor %}
 </table>
@@ -116,17 +117,32 @@ Total number of voters: {{ topic.num_voters }}
     {{ max_votes }} options before submitting the form).
   </p>
     {% endif %}
+    {% if not max_votes %}
+  <p>
+    Please rank the following options by giving each option a number, where your
+    preferred option gets the lowest number and the others increasingly higher
+    numbers.  You may give no rank to one or more options, these then will be
+    ranked last.  You may give the same rank to several options.  You must
+    submit all of your ranks at the same time.
+  </p>
+    {% endif %}
     {% for option in topic.options.all %}
-      {% if max_votes <= topic.vote_type.max_winners %}
+      {% if max_votes %}
+        {% if max_votes <= topic.vote_type.max_winners %}
   <div class="option">
-        {% if max_votes == 1 %}
+          {% if max_votes == 1 %}
     <input type="radio" name="option" value="{{ option.id }}">{{ option.name }}
-        {% else %}
+          {% else %}
     <input type="checkbox" name="option" value="{{ option.id }}">{{ option.name }}
-        {% endif %}
-        {% if option.text %}
+          {% endif %}
+          {% if option.text %}
     <div class="option_text">{{ option.text }}</div>
+          {% endif %}
+  </div>
         {% endif %}
+      {% else %}
+  <div class="option">
+    <input name="option_{{ option.id }}">{{ option.name }}
   </div>
       {% endif %}
   {% empty %}
