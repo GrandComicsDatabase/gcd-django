@@ -306,6 +306,7 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
         request.session['cached_issue'] = issue_id
     if story_id:
         request.session['cached_story'] = story_id
+        return HttpResponseRedirect(request.META['HTTP_REFERER'] + '#%s' % story_id)
     if cover_story_id:
         request.session['cached_cover'] = cover_story_id
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
