@@ -98,7 +98,6 @@ def _calculate_results(unresolved):
     Given a QuerySet of unresolved topics (with expired deadlines),
     resolve them into results, possibly indicating a tie of some sort.
 
-    TODO: Handle ranked choice voting.
     TODO: Handle the case of abstaning being a "winning" option.
     """
 
@@ -338,11 +337,14 @@ def vote(request):
                   'your vote, please contact the voting administrator at ' +
                   settings.EMAIL_VOTING_ADMIN)
 
-        # for ranked choice options can be empty, set these last in ranking
-        if option.id in ranks:
-            rank = ranks[option.id]
-        if not rank:
-            rank = max(ranks.values()) + 1
+        if not option_params:
+            # for ranked choice options can be empty, set these last in ranking
+            if option.id in ranks:
+                rank = ranks[option.id]
+            if not rank:
+                rank = max(ranks.values()) + 1
+        else:
+            rank = None
         vote = Vote(option=option, voter=voter, rank=rank)
         vote.save()
 

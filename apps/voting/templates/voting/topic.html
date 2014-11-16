@@ -117,6 +117,15 @@ Total number of voters: {{ topic.num_voters }}
     {{ max_votes }} options before submitting the form).
   </p>
     {% endif %}
+    {% if not max_votes %}
+  <p>
+    Please rank the following options by giving each option a number, where your
+    preferred option gets the lowest number and the others increasingly higher
+    numbers.  You may give no rank to one or more options, these then will be
+    ranked last.  You may give the same rank to several options.  You must
+    submit all of your ranks at the same time.
+  </p>
+    {% endif %}
     {% for option in topic.options.all %}
       {% if max_votes %}
         {% if max_votes <= topic.vote_type.max_winners %}
