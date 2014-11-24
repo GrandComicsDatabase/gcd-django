@@ -179,6 +179,10 @@ def _calculate_results(unresolved):
                 option = Option.objects.get(id=result.winner)
                 option.result = True
                 option.save()
+                options = options.exclude(id=result.winner)
+                for option in options:
+                    option.result = False
+                    option.save()
                 topic.result_calculated = True
                 topic.save()
 
