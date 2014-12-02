@@ -274,7 +274,6 @@ def confirm_account(request, key):
 We have a new Indexer!
 
 Name: %s
-Email: %s
 Country: %s
 Languages: %s
 Interests:
@@ -283,7 +282,6 @@ Interests:
 Where heard from us: %s
 Mentor this indexer: %s
         """ % (indexer,
-               indexer.user.email,
                indexer.country.name,
                ', '.join([lang.name for lang in indexer.languages.all()]),
                indexer.interests,
@@ -298,7 +296,7 @@ Mentor this indexer: %s
             email_subject = 'New Indexer: %s' % indexer
 
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
-                  recipient_list=[settings.EMAIL_EDITORS],
+                  recipient_list=[settings.EMAIL_EDITORS, settings.EMAIL_PRTEAM],
                   subject=email_subject,
                   message=email_body,
                   fail_silently=(not settings.BETA))
