@@ -11,13 +11,18 @@ from apps.gcd.models import Issue
 register = template.Library()
 
 def show_have_want(issue, user):
-    count = issue.collectionitem_set.filter(collections__name='Default have collection', collections__collector__user=user).count()
+    count = issue.collectionitem_set.filter(
+        collections__name='Default have collection',
+        collections__collector__user=user).count()
     if count:
-        text = u'I have {} cop{} of this comic.'.format(count, pluralize(count, "y,ies"))
+        text = u'I have {} cop{} of this comic.'.format(count, pluralize(count,
+                                                                    "y,ies"))
     else:
         text = u''
 
-    count = issue.collectionitem_set.filter(collections__name='Default want collection', collections__collector__user=user).count()
+    count = issue.collectionitem_set.filter(
+        collections__name='Default want collection',
+        collections__collector__user=user).count()
     if count:
         if text != '':
             text += '<br>'
@@ -26,8 +31,8 @@ def show_have_want(issue, user):
     return mark_safe(text)
 
 
-def show_cover_tag(issue):
-    return get_image_tags_per_issue(issue, alt_text=u'', zoom_level=ZOOM_SMALL)
+def show_cover_tag(issue, zoom_level=ZOOM_SMALL):
+    return get_image_tags_per_issue(issue, alt_text=u'', zoom_level=zoom_level)
 
 
 @register.filter

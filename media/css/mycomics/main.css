@@ -37,3 +37,7 @@
 .form-group input[type="checkbox"] {
     outline: medium none;
 }
+
+.page-header button.pull-right {
+    margin-right: 10px;
+}

@@ -41,6 +41,7 @@ class CollectorManager(models.Manager):
         collector.default_want_collection = default_want_collection
         collector.save()
 
+
 class Collector(models.Model):
     """Class representing a collector side of the user."""
     user = models.OneToOneField(User)
@@ -55,6 +56,7 @@ class Collector(models.Model):
     default_language = models.ForeignKey(Language, related_name='+')
 
     objects = CollectorManager()
+
 
 class Collection(models.Model):
     """Class for keeping info about particular collections together with
@@ -81,12 +83,17 @@ class Collection(models.Model):
     market_value_used = models.BooleanField(default=False)
     sell_price_used = models.BooleanField(default=False)
 
+
 class Location(models.Model):
     """Class for keeping information about locations of user's collection's
     items."""
     user = models.ForeignKey(Collector)
     name = models.CharField(blank=True, max_length=255)
     description = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return unicode(self.name)
+
 
 class PurchaseLocation(models.Model):
     """Class for keeping information about locations where users purchased
@@ -97,25 +104,34 @@ class PurchaseLocation(models.Model):
     name = models.CharField(blank=True, max_length=255)
     description = models.TextField(blank=True)
 
+    def __unicode__(self):
+        return unicode(self.name)
+
+
 class CollectionItem(models.Model):
     """Class for keeping record of particular item in user's collection."""
+
     class Meta:
-        db_table='mycomics_collection_item'
+        db_table = 'mycomics_collection_item'
+
     collections = models.ManyToManyField(Collection, related_name="items",
-                    db_table="mycomics_collection_item_collections")
+                                db_table="mycomics_collection_item_collections")
     issue = models.ForeignKey(Issue)
 
-    location = models.ForeignKey(Location, null=True)
-    purchase_location = models.ForeignKey(PurchaseLocation, null=True)
+    location = models.ForeignKey(Location, null=True, blank=True)
+    purchase_location = models.ForeignKey(PurchaseLocation, null=True,
+                                          blank=True)
 
     notes = models.TextField(blank=True)
     keywords = TaggableManager()
 
-    grade = models.ForeignKey('ConditionGrade', related_name='+', null=True)
+    grade = models.ForeignKey('ConditionGrade', related_name='+', null=True,
+                              blank=True)
 
-    #TODO add removing these dates together with CollectionItem
-    acquisition_date = models.ForeignKey(Date, related_name='+', null=True)
-    sell_date = models.ForeignKey(Date, related_name='+', null=True)
+    # TODO add removing these dates together with CollectionItem
+    acquisition_date = models.ForeignKey(Date, related_name='+', null=True,
+                                         blank=True)
+    sell_date = models.ForeignKey(Date, related_name='+', null=True, blank=True)
 
     was_read = models.NullBooleanField(default=None)
     for_sale = models.BooleanField(default=False)
@@ -123,11 +139,15 @@ class CollectionItem(models.Model):
 
     #price fields
     price_paid = models.FloatField(blank=True, null=True)
-    price_paid_currency = models.ForeignKey(Currency, related_name='+', null=True)
+    price_paid_currency = models.ForeignKey(Currency, related_name='+',
+                                            null=True, blank=True)
     market_value = models.FloatField(blank=True, null=True)
-    market_value_currency = models.ForeignKey(Currency, related_name='+', null=True)
+    market_value_currency = models.ForeignKey(Currency, related_name='+',
+                                              null=True, blank=True)
     sell_price = models.FloatField(blank=True, null=True)
-    sell_price_currency = models.ForeignKey(Currency, related_name='+', null=True)
+    sell_price_currency = models.ForeignKey(Currency, related_name='+',
+                                            null=True, blank=True)
+
 
 class ConditionGradeScale(models.Model):
     """Class representing condition grade scale for use by collectors."""
@@ -136,6 +156,7 @@ class ConditionGradeScale(models.Model):
 
     name=models.CharField(blank=False,max_length=255)
     description=models.CharField(max_length=2000, blank=True)
+
 
 class ConditionGrade(models.Model):
     """Class representing single grade in a condition grade scale."""
@@ -150,4 +171,7 @@ class ConditionGrade(models.Model):
 
     def __cmp__(self, other):
         return self.value.__cmp__(other.value)
+
+    def __unicode__(self):
+        return unicode(self.name)
 

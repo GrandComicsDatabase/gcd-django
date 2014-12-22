@@ -22,7 +22,7 @@ class Currency(models.Model):
         return (self.code,)
 
     def __unicode__(self):
-        return self.name
+        return unicode(self.code)+u" - "+unicode(self.name)
 
 class Date(models.Model):
     """Class representing dates for gcd with the ability to store partial
@@ -46,7 +46,7 @@ class Date(models.Model):
 
     #TODO it should be decided if complete validation should be done in __init__
 
-    def __init__(self, year=None, month=None, day=None, year_uncertain=False,
+    def set(self, year=None, month=None, day=None, year_uncertain=False,
                  month_uncertain=False, day_uncertain=False):
         self.year = year
         self.month = month

@@ -181,7 +181,7 @@ def __format_credit(story, credit):
             credit_value += '<li>' + esc(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
-        credit_value = __format_keywords(story)
+        credit_value = __format_keywords(story.keywords)
         if credit_value == '':
             return ''
     else: # This takes care of escaping the database entries we display
@@ -198,15 +198,16 @@ def __format_credit(story, credit):
            dt + '<span class="credit_label">' + label + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
-def __format_keywords(story):
-    if type(story.keywords) == unicode:
-        credit_value = story.keywords
+def __format_keywords(keywords):
+    if type(keywords) == unicode:
+        credit_value = keywords
     else:
-        credit_value = esc('; '.join(str(i) for i in story.keywords.all().order_by('name')))
+        credit_value = esc(
+            '; '.join(str(i) for i in keywords.all().order_by('name')))
     return credit_value
 
-def show_keywords(story):
-    return __format_keywords(story)
+def show_keywords(object):
+    return __format_keywords(object.keywords)
 
 def show_credit_status(story):
     """

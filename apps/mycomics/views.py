@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core import urlresolvers
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
@@ -13,7 +13,7 @@ from apps.mycomics.models import Collection, CollectionItem
 
 from apps.select.views import store_select_data
 
-from apps.mycomics.forms import CollectionForm
+from apps.mycomics.forms import *
 from apps.mycomics.models import Collection, CollectionItem
 
 from django.contrib import messages
@@ -22,7 +22,8 @@ from django.utils.translation import ugettext as _
 INDEX_TEMPLATE='mycomics/index.html'
 COLLECTION_TEMPLATE='mycomics/collection.html'
 COLLECTION_LIST_TEMPLATE='mycomics/collections.html'
-COLLECTION_FORM_TEMPLATE='mycomics/collectionForm.html'
+COLLECTION_FORM_TEMPLATE='mycomics/collection_form.html'
+COLLECTION_ITEM_TEMPLATE='mycomics/collection_item.html'
 
 def index(request):
     """Generates the front index page."""
@@ -95,6 +96,45 @@ def delete_collection(request, collection_id):
     CollectionItem.objects.filter(collections=None).delete()
     messages.success(request, _('Collection deleted.'))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
+
+def get_item_for_collector(issue_id, collector):
+    item = get_object_or_404(CollectionItem, id=issue_id)
+    #checking if this user can see this item
+    if item.collections.all()[0].collector != collector:
+        raise Http404
+    return item
+
+@login_required
+def view_issue(request, issue_id):
+    item = get_item_for_collector(issue_id, request.user.collector)
+    form = CollectionItemForm(request.user.collector, instance=item)
+
+    #It would be better to save the whole form but django doesn't let me.
+    request.session['acquisition_date'] = form.fields['acquisition_date']
+    request.session['sell_date'] = form.fields['sell_date']
+
+    return render_to_response(COLLECTION_ITEM_TEMPLATE,
+                              {'item': item, 'form': form},
+                              context_instance=RequestContext(request))
+
+
+@login_required
+def save_issue(request, issue_id):
+    if request.method == 'POST':
+        item = get_item_for_collector(issue_id, request.user.collector)
+        form = CollectionItemForm(request.user.collector, request.POST,
+                                  instance=item)
+
+        form.fields['acquisition_date'] = request.session['acquisition_date']
+        form.fields['sell_date'] = request.session['sell_date']
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('Item saved.'))
+        return HttpResponseRedirect(
+            urlresolvers.reverse('view_issue',
+                                 kwargs={'issue_id': issue_id}))
+
+    raise Http404
 
 
 def add_issues_to_collection(request, collection_id, issues, redirect):

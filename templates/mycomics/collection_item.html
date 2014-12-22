@@ -1,0 +1,66 @@
+{% extends "mycomics/user_base.html" %}
+{% load i18n %}
+{% load collecting %}
+{% load bootstrap3 %}
+{% load credits %}
+
+{% block modals %}
+  <div id="edit-item"  class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{% url save_issue item.id %}" method="POST">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+            <h4 class="modal-title">{% trans "Editing item in collection" %}</h4>
+          </div>
+          <div class="modal-body">
+              {% csrf_token %}
+              {% bootstrap_form form %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <input type="submit" class="btn btn-primary" name="{% trans "Submit" %}" value="{% trans "Submit" %}">
+          </div>
+        </form>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+{% endblock %}
+
+{% block content %}
+  {% bootstrap_messages %}
+  <div class="page-header middle-header">
+    <h1><a href="{{ item.issue.get_absolute_url }}">{{ item.issue.full_name }}</a>
+      <button type="button" class="btn btn-primary pull-right"
+              data-toggle="modal" href="#edit-item">{% trans "Edit" %}
+      </button>
+    </h1>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4">
+      <a href="{{ item.issue.get_absolute_url }}">
+        <div class="thumbnail">
+          {{ item.issue|show_cover_tag:ZOOM_MEDIUM }}
+        </div>
+      </a>
+    </div>
+    <div class="col-md-8">
+      {% if item.notes %}{{ item.notes }}<hr>{% endif %}
+      {% if item.keywords.count %}{% trans "Keywords: " %}{{ item|show_keywords }}<hr>{% endif %}
+      {% trans "Location: " %}{{ item.location }}<br>
+      {% trans "Purchase location: " %}{{ item.purchase_location }}<br>
+      {% trans "Grade: " %}{{ item.grade }}<br>
+      {% trans "Acquisition date: " %}{{ item.acquisition_date }}<br>
+      {% trans "Sell date: " %}{{ item.sell_date }}<br>
+      {% trans "Was read: " %}{{ item.was_read }}<br>
+      {% trans "For sale: " %}{{ item.for_sale }}<br>
+      {% trans "Signed: " %}{{ item.signed }}<br>
+      {% trans "Price paid: " %}{{ item.price_paid }} {{ item.price_paid_currency.code }}<br>
+      {% trans "Market value: " %}{{ item.market_value }} {{ item.market_value_currency.code }}<br>
+      {% trans "Sell price: " %}{{ item.sell_price }} {{ item.sell_price_currency.code }}<br>
+    </div>
+  </div>
+
+
+{% endblock %}
