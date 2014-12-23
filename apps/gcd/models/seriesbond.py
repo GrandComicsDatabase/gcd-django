@@ -36,6 +36,10 @@ class SeriesBond(models.Model):
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
 
+    def _modified(self):
+        return self.revisions.filter(changeset__state=5).latest().modified
+    modified = property(_modified)
+    
     # we check for deleted in the oi for models, so set to False
     deleted = False
     def deletable(self):

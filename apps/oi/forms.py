@@ -737,6 +737,7 @@ class BrandEmblemSelect(forms.Select):
 def get_series_bond_revision_form(revision=None, user=None):
     class RuntimeSeriesBondRevisionForm(SeriesBondRevisionForm):
         def as_table(self):
+            # TODO: add help links
             return super(RuntimeSeriesBondRevisionForm, self).as_table()
     return RuntimeSeriesBondRevisionForm
 
