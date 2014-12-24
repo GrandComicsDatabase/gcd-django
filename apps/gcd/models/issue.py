@@ -183,6 +183,8 @@ class Issue(models.Model):
         return list(variants.exclude(deleted=True))
 
     def _display_number(self):
+        if self.series.is_singleton and self.number == '[nn]':
+            return None
         if self.title and self.series.has_issue_title:
             title = " - " + self.title
         else:

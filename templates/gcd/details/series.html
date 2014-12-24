@@ -82,6 +82,10 @@
             <dt class="long"> Publishing Format:
             <dd id="series_format"> {{ series.publishing_format }}
 {% endif %}
+{% if series.publication_type %}
+            <dt class="long"> Publication Type:
+            <dd id="series_format"> {{ series.publication_type }}
+{% endif %}
 
 {{ series|show_credit:'keywords' }}
           </dl>

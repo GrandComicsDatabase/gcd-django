@@ -178,6 +178,12 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
         action="{% url edit_two_issues issue_id=issue.id %}">
     <input type="submit" value="{% trans 'Edit with another issue' %}">
   </form>
+    {% if issue.series.is_singleton %}
+      <div class="edit_header">Editing Series Data</div>
+      {% with object=issue.series object_name='Series'  object_class='series' %}
+        {% include "gcd/bits/status_banner.html" %}
+      {% endwith %}
+    {% endif %}
   {% endif %}
 {% endif %}
       </div>

@@ -259,6 +259,9 @@ def series(request, series_id):
     if series.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'series', 'id': series_id}))
+    if series.is_singleton:
+        return HttpResponseRedirect(
+          urlresolvers.reverse(issue, kwargs={ 'issue_id': int(series.active_issues()[0].id) }))
 
     return show_series(request, series)
 
@@ -282,7 +285,7 @@ def show_series(request, series, preview=False):
     table_width = 12
     if series.has_issue_title:
         table_width = 2
-        
+
     return render_to_response(
       'gcd/details/series.html',
       {
@@ -1101,6 +1104,13 @@ def show_issue(request, issue, preview=False):
         if request.GET['original_reprint_notes'] == 'True':
             show_original = True
 
+    if series.is_singleton:
+        country = series.country
+        language = series.language
+    else:
+        country = None
+        language = None
+
     return render_to_response(
       'gcd/details/issue.html',
       {
@@ -1114,6 +1124,8 @@ def show_issue(request, issue, preview=False):
         'variant_image_tags': variant_image_tags,
         'images_count': images_count,
         'show_original': show_original,
+        'country': country,
+        'language': language,
         'error_subject': '%s' % issue,
         'preview': preview,
         'NO_ADS': True

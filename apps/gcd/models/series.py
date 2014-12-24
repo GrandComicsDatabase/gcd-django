@@ -15,6 +15,18 @@ from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
 # the other way around.  Probably.
 from apps.oi import states
 
+class SeriesPublicationType(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_series_publication_type'
+        ordering = ['name']
+
+    name = models.CharField(max_length=255, db_index=True)
+    notes = models.TextField()
+
+    def __unicode__(self):
+        return self.name
+
 class Series(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -33,6 +45,7 @@ class Series(models.Model):
     binding = models.CharField(max_length=255, default=u'')
     publishing_format = models.CharField(max_length=255, default=u'')
 
+    publication_type = models.ForeignKey(SeriesPublicationType, null=True, blank=True)
     notes = models.TextField()
     keywords = TaggableManager()
 
@@ -65,6 +78,7 @@ class Series(models.Model):
     has_rating = models.BooleanField(default=False)
 
     is_comics_publication = models.BooleanField()
+    is_singleton = models.BooleanField()
 
     # Fields related to cover image galleries.
     has_gallery = models.BooleanField(db_index=True)
@@ -115,12 +129,12 @@ class Series(models.Model):
 
     def active_base_issues(self):
         return self.active_issues().exclude(variant_of__series=self)
-        
+
     def active_base_issues_variant_count(self):
         issues = self.active_base_issues()
         issues = issues.annotate(variant_count=Count('variant_set'))
         return issues
-        
+
     def ordered_brands(self):
         """
         Provide information on publisher's brands in the order they first

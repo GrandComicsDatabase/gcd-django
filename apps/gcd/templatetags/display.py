@@ -88,16 +88,20 @@ def show_volume(issue):
     return issue.volume
 
 def show_issue(issue):
-    if issue.variant_name:
-        issue_number = "%s [%s]" % (issue.display_number, issue.variant_name)
+    if issue.display_number:
+        issue_number = '#%s' % (esc(issue.display_number))
     else:
-        issue_number = issue.display_number
-    return mark_safe('<a href="%s">%s</a> (%s series) <a href="%s">#%s</a>' %
+        issue_number = ''
+    if issue.variant_name:
+        issue_number = '%s [%s]' % (issue_number, esc(issue.variant_name))
+    if issue_number:
+        issue_number = '<a href="%s">%s</a>' % (issue.get_absolute_url(),
+                                                issue_number)
+    return mark_safe('<a href="%s">%s</a> (%s series) %s' %
                      (issue.series.get_absolute_url(),
                       esc(issue.series.name),
                       esc(issue.series.year_began),
-                      issue.get_absolute_url(),
-                      esc(issue_number)))
+                      issue_number))
 
 def show_series_tracking(series, direction):
     target_tracking = series.to_series_bond.filter(\
