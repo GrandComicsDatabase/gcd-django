@@ -21,7 +21,7 @@ from imagekit.processors import ResizeToFit
 
 from apps.oi import states
 from apps.gcd.models import *
-from apps.gcd.models.issue import INDEXED
+from apps.gcd.models.issue import INDEXED, issue_descriptor
 
 LANGUAGE_STATS = ['de',]
 
@@ -2558,6 +2558,8 @@ class SeriesRevisionManager(RevisionManager):
           paper_stock=series.paper_stock,
           binding=series.binding,
           publishing_format=series.publishing_format,
+          publication_type=series.publication_type,
+          is_singleton=series.is_singleton,
           notes=series.notes,
           keywords=get_keywords(series),
           year_began=series.year_began,
@@ -2586,12 +2588,12 @@ class SeriesRevisionManager(RevisionManager):
 
 def get_series_field_list():
     return ['name', 'leading_article', 'imprint', 'format', 'color', 'dimensions',
-            'paper_stock', 'binding', 'publishing_format', 'year_began',
-            'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
-            'is_current', 'country', 'language', 'has_barcode',
-            'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'has_volume', 'has_rating', 'is_comics_publication',
-            'tracking_notes', 'notes', 'keywords']
+            'paper_stock', 'binding', 'publishing_format', 'publication_type',
+            'is_singleton', 'year_began', 'year_began_uncertain',
+            'year_ended', 'year_ended_uncertain', 'is_current', 'country',
+            'language', 'has_barcode', 'has_indicia_frequency', 'has_isbn',
+            'has_issue_title', 'has_volume', 'has_rating',
+            'is_comics_publication', 'tracking_notes', 'notes', 'keywords']
 
 class SeriesRevision(Revision):
     class Meta:
@@ -2643,6 +2645,8 @@ class SeriesRevision(Revision):
                 'Miniseries, Maxiseries, One-Shot, Graphic Novel.  '
                 '"Was Ongoing Series" may be used if it has ceased '
                 'publication.')
+    publication_type = models.ForeignKey(SeriesPublicationType, null=True,
+      blank=True, help_text="Describe the publication format for user reference.")
 
     year_began = models.IntegerField(help_text='Year first issue published.')
     year_ended = models.IntegerField(null=True, blank=True,
@@ -2678,8 +2682,12 @@ class SeriesRevision(Revision):
       verbose_name="Has Publisher's age guidelines ",
       help_text="Publisher's age guidelines are present for issues of this "
                 "series.")
+
     is_comics_publication = models.BooleanField(
       help_text="Publications in this series are mostly comics publications.")
+    is_singleton = models.BooleanField(
+      help_text="Series consists of one and only one issue by design. "
+      "Note that an issue with no issue number will be created upon approval.")
 
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='',
@@ -2789,6 +2797,8 @@ class SeriesRevision(Revision):
             'paper_stock': '',
             'binding': '',
             'publishing_format': '',
+            'publication_type': None,
+            'is_singleton': False,
             'notes': '',
             'keywords': '',
             'year_began': None,
@@ -2833,6 +2843,15 @@ class SeriesRevision(Revision):
                 self.publisher.save()
                 update_count('series', 1, language=self.language,
                              country=self.country)
+            if self.is_singleton:
+                issue_revision = IssueRevision(changeset=self.changeset,
+                  after=None,
+                  number='[nn]',
+                  publication_date=self.year_began)
+                if len(unicode(self.year_began)) == 4:
+                    issue_revision.key_date='%d-00-00' % self.year_began
+
+
         elif self.deleted:
             if series.is_comics_publication:
                 self.publisher.series_count = F('series_count') - 1
@@ -2871,6 +2890,8 @@ class SeriesRevision(Revision):
         series.binding = self.binding
         series.publishing_format = self.publishing_format
         series.notes = self.notes
+        series.is_singleton = self.is_singleton
+        series.publication_type = self.publication_type
 
         series.year_began = self.year_began
         series.year_ended = self.year_ended
@@ -2969,6 +2990,10 @@ class SeriesRevision(Revision):
         if self.series is None:
             self.series = series
             self.save()
+            if self.is_singleton:
+                issue_revision.series = series
+                issue_revision.save()
+                issue_revision.commit_to_display()
 
     def get_absolute_url(self):
         if self.series is None:
@@ -3387,18 +3412,11 @@ class IssueRevision(Revision):
     valid_isbn = property(_valid_isbn)
 
     def _display_number(self):
-        """
-        Implemented separately because it needs to use the revision's
-        display field and not the source's.  Although the actual construction
-        of the string should really be factored out somewhere for consistency.
-        """
-        if self.title and self.series.has_issue_title:
-            title = " - " + self.title
+        number = issue_descriptor(self)
+        if number:
+            return u'#' + number
         else:
-            title = ""
-        if self.display_volume_with_number:
-            return u'v%s#%s%s' % (self.volume, self.number, title)
-        return self.number + title
+            return u''
     display_number = property(_display_number)
 
     def _sort_code(self):
@@ -4186,29 +4204,31 @@ class IssueRevision(Revision):
 
     def full_name(self):
         if self.variant_name:
-            return u'%s #%s [%s]' % (self.series.full_name(),
-                                     self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series.full_name(),
+                                    self.display_number,
+                                    self.variant_name)
         else:
-            return u'%s #%s' % (self.series.full_name(), self.display_number)
+            return u'%s %s' % (self.series.full_name(), self.display_number)
 
     def short_name(self):
         if self.variant_name:
-            return u'%s #%s [%s]' % (self.series.name,
-                                     self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series.name,
+                                    self.display_number,
+                                    self.variant_name)
         else:
-            return u'%s #%s' % (self.series.name, self.display_number)
+            return u'%s %s' % (self.series.name, self.display_number)
 
     def __unicode__(self):
         """
         Re-implement locally instead of using self.issue because it may change.
         """
         if self.variant_name:
-            return u'%s #%s [%s]' % (self.series, self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series, self.display_number,
+                                    self.variant_name)
+        elif self.display_number:
+            return u'%s %s' % (self.series, self.display_number)
         else:
-            return u'%s #%s' % (self.series, self.display_number)
+            return u'%s' % self.series
 
 def get_story_field_list():
     return ['sequence_number', 'title', 'title_inferred', 'type',

@@ -60,7 +60,7 @@
         <option value="{{ other_issue.id }}"
       {% if issue = other_issue or issue.variant_of = other_issue %}
                 selected
-      {% endif %}>{{ other_issue.display_number }}
+      {% endif %}>{{ other_issue.issue_descriptor }}
       {% if other_issue.variant_count %}*{{ other_issue.variant_count|add:1 }}{% endif %}
         </option>
     {% endfor %}

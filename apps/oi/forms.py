@@ -701,6 +701,14 @@ class SeriesRevisionForm(forms.ModelForm):
         cd['tracking_notes'] = cd['tracking_notes'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        if cd['is_singleton']:
+            if cd['has_indicia_frequency']:
+                raise forms.ValidationError('Singleton series cannot have '
+                  'an indicia frequency.')
+            if cd['has_issue_title']:
+                raise forms.ValidationError('Singleton series cannot have '
+                  'an issue title.')
+            # how to get to series ? Then we could check the number of issues.
         return cd
 
 def _get_series_has_fields_off_note(series, field):
