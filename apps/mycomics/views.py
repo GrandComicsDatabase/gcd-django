@@ -4,7 +4,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 
-from apps.gcd.models import Issue
+from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
@@ -97,28 +97,25 @@ def delete_collection(request, collection_id):
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 
+def add_issues_to_collection(request, collection_id, issues, redirect):
+    collection = get_object_or_404(Collection, id=collection_id)
+    if collection.collector.user != request.user:
+        return render_error(request,
+            'Only the owner of a collection can add issues to it.',
+            redirect=False)
+    for issue in issues:
+        collected = CollectionItem.objects.create(issue=issue)
+        collected.collections.add(collection)
+    return HttpResponseRedirect(redirect)
+
+
 @login_required
-def have_issue(request, issue_id):
-    issue = get_object_or_404(Issue, id=issue_id)
-
-    collected = CollectionItem.objects.create(issue=issue)
-    collected.collections.add(request.user.collector.default_have_collection)
-
-    return HttpResponseRedirect(
-        urlresolvers.reverse('apps.gcd.views.details.issue',
-                             kwargs={'issue_id': issue_id}))
-
-
-@login_required
-def want_issue(request, issue_id):
-    issue = get_object_or_404(Issue, id=issue_id)
-
-    collected = CollectionItem.objects.create(issue=issue)
-    collected.collections.add(request.user.collector.default_want_collection)
-
-    return HttpResponseRedirect(
-        urlresolvers.reverse('apps.gcd.views.details.issue',
-                             kwargs={'issue_id': issue_id}))
+def add_single_issue_to_collection(request, issue_id):
+    issue = Issue.objects.filter(id=issue_id)
+    return add_issues_to_collection(request, 
+        int(request.POST['collection_id']), issue,
+        urlresolvers.reverse('show_issue', 
+                            kwargs={'issue_id': issue_id}))
 
 
 @login_required
@@ -129,18 +126,10 @@ def add_selected_issues_to_collection(request, data):
         issues |= Issue.objects.filter(story__id__in=selections['story'])
     issues = issues.distinct()
     if 'confirm_selection' in request.POST:
-        collection_id = int(request.POST['collection_id'])
-        collection = get_object_or_404(Collection, id=collection_id)
-        if collection.collector.user != request.user:
-            return render_error(request,
-              'Only the owner of a collection can add issues to it.',
-              redirect=False)
-        for issue in issues:
-            collected = CollectionItem.objects.create(issue=issue)
-            collected.collections.add(collection)
-        return HttpResponseRedirect(
-            urlresolvers.reverse('view_collection',
-                                kwargs={'collection_id': collection_id}))
+        return add_issues_to_collection(request, 
+          int(request.POST['collection_id']), issues, 
+          urlresolvers.reverse('view_collection', 
+                               kwargs={'collection_id': collection_id}))
     else:
         collection_list = request.user.collector.collections.all()\
                                                             .order_by('name')
@@ -154,6 +143,32 @@ def add_selected_issues_to_collection(request, data):
             }
         return paginate_response(request, issues,
                                  'gcd/search/issue_list.html', context)
+
+
+@login_required
+def add_series_issues_to_collection(request, series_id):
+    series = get_object_or_404(Series, id=series_id)
+    issues = series.active_base_issues()
+    if 'confirm_selection' in request.POST:
+        return add_issues_to_collection(request, 
+          int(request.POST['collection_id']), issues,
+          urlresolvers.reverse('show_series', 
+                               kwargs={'series_id': series_id}))
+    else:
+        collection_list = request.user.collector.collections.all()\
+                                                            .order_by('name')
+        context = {
+                'item_name': 'issue',
+                'plural_suffix': 's',
+                'no_bulk_edit': True,
+                'heading': 'Issues',
+                'confirm_selection': True,
+                'collection_list': collection_list
+            }
+        return paginate_response(request, issues,
+                                 'gcd/search/issue_list.html', context,
+                                 page_size=issues.count())
+
 
 @login_required
 def mycomics_search(request):

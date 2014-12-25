@@ -157,6 +157,10 @@
         <div class="edit_header">
           <div>my.comics.org</div>
         </div>
+    {% if request.user.is_authenticated %}
+          <p><a href="{% url my_series_issues series_id=series.id %}">Add all issues to a collection</a>
+        </p>
+    {% endif %}
   {% else %}
         <div class="edit_header">Editing</div>
   {% if not preview %}

@@ -42,8 +42,8 @@
     {% endif %}
     <form method="GET" style="display:inline">
         <label for="page">#</label>:
-        <input type="text" name="page" size="3"></input>
-        <input type="submit" value="{% trans 'Go' %}"></input>
+        <input type="text" name="page" size="3">
+        <input type="submit" value="{% trans 'Go' %}">
     {% if advanced_search %}
       {% for field, value in request.GET.items %}
         {% if field != "page" and field != "submit" %}

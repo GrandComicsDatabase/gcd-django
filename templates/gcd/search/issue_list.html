@@ -20,7 +20,7 @@ bulk change</a>
 <form method="POST">
   {% csrf_token %}
 <div>
-  <input type="submit" name="confirm_selection" value="Add"></input>
+  <input type="submit" name="confirm_selection" value="Add">
 the selected issues to your 
 <select name="collection_id">
   {% for col_item in collection_list %}
@@ -45,13 +45,13 @@ the selected issues to your
     <td>
     <form action="{% url select_object select_key=select_key %}" method="POST">
     {% csrf_token %}
-    <input type="submit" name="search_select" value="Select this issue"></input>
-    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}"></input>
+    <input type="submit" name="search_select" value="Select this issue">
+    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
     </form>
     </td>
     {% endif %}
     {% if confirm_selection %}
-    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}"></input>
+    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
     {% endif %}
     <td class="listing_country"> <img {{ issue.series.country|show_country_info }}>
     <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
