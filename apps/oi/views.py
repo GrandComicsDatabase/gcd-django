@@ -3940,7 +3940,7 @@ def show_queue(request, queue_name, state):
               .annotate(country=Max('brandgrouprevisions__parent__country__id')),
           },
           {
-            'object_name': 'Brands',
+            'object_name': 'Brand Emblems',
             'object_type': 'brands',
             'changesets': brands.order_by('modified', 'id')\
               .annotate(country=Max('brandrevisions__group__parent__country__id')),

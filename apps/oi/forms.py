@@ -485,9 +485,19 @@ def get_brand_revision_form(source=None, user=None, revision=None,
                 choices.append([group.id, group])
 
     class RuntimeBrandRevisionForm(BrandRevisionForm):
+        def __init__(self, *args, **kw):
+            super(BrandRevisionForm, self).__init__(*args, **kw)
+            self.fields.keyOrder.insert(self.fields.keyOrder.index('group') + 1,
+                                        self.fields.keyOrder.pop())
+
         group = forms.MultipleChoiceField(required=True,
             widget=FilteredSelectMultiple('Brand Groups', False),
             choices=choices, initial=initial)
+
+        brand_group_other_publisher_id = forms.IntegerField(required=False,
+          label = "Add Brand Group",
+          help_text="One can add a brand group from a different publisher by "
+            "id. If an id is entered the submit will return for confirmation.")
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -540,6 +550,29 @@ class BrandRevisionForm(forms.ModelForm):
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        if cd['brand_group_other_publisher_id']:
+            brand_group = BrandGroup.objects.filter( \
+              id=cd['brand_group_other_publisher_id'], deleted=False)
+            if brand_group:
+                brand_group = brand_group[0]
+                # need to add directly to revision, otherwise validation fails
+                self.instance.group.add(brand_group)
+                choices = self.fields['group'].choices
+                choices.append([brand_group.id, brand_group])
+                # self.data is immutable, need copy
+                data = self.data.copy()
+                data['brand_group_other_publisher_id'] = None
+                self.data = data
+                # need to update with new choices
+                self.fields['group'] = forms.MultipleChoiceField(required=True,
+                    widget=FilteredSelectMultiple('Brand Groups', False),
+                    choices=choices)
+                raise forms.ValidationError( \
+                  "Please confirm selection of brand group '%s'." % brand_group)
+            else:
+                raise forms.ValidationError( \
+                  "A brand group with id %d does not exist." % \
+                  cd['brand_group_other_publisher_id'])
         return cd
 
 def get_brand_use_revision_form(source=None, user=None):
