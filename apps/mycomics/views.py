@@ -3,17 +3,17 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core import urlresolvers
 from django.http import HttpResponseRedirect, Http404
+from django.core.exceptions import PermissionDenied
 
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
-from apps.mycomics.forms import CollectionForm
-from apps.mycomics.models import Collection, CollectionItem
 
 from apps.select.views import store_select_data
 
 from apps.mycomics.forms import *
+from apps.stddata.forms import DateForm
 from apps.mycomics.models import Collection, CollectionItem
 
 from django.contrib import messages
@@ -97,24 +97,29 @@ def delete_collection(request, collection_id):
     messages.success(request, _('Collection deleted.'))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
+
 def get_item_for_collector(issue_id, collector):
     item = get_object_or_404(CollectionItem, id=issue_id)
     #checking if this user can see this item
     if item.collections.all()[0].collector != collector:
-        raise Http404
+        raise PermissionDenied
     return item
+
 
 @login_required
 def view_issue(request, issue_id):
     item = get_item_for_collector(issue_id, request.user.collector)
-    form = CollectionItemForm(request.user.collector, instance=item)
-
-    #It would be better to save the whole form but django doesn't let me.
-    request.session['acquisition_date'] = form.fields['acquisition_date']
-    request.session['sell_date'] = form.fields['sell_date']
+    item_form = CollectionItemForm(request.user.collector, instance=item)
+    sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
+    sell_date_form.fields['date'].label = 'Sell date'
+    acquisition_date_form = DateForm(instance=item.acquisition_date,
+                                     prefix='acquisition_date')
+    acquisition_date_form.fields['date'].label = 'Acquisition date'
 
     return render_to_response(COLLECTION_ITEM_TEMPLATE,
-                              {'item': item, 'form': form},
+                              {'item': item, 'item_form': item_form,
+                               'sell_date_form': sell_date_form,
+                               'acquisition_date_form': acquisition_date_form},
                               context_instance=RequestContext(request))
 
 
@@ -122,14 +127,42 @@ def view_issue(request, issue_id):
 def save_issue(request, issue_id):
     if request.method == 'POST':
         item = get_item_for_collector(issue_id, request.user.collector)
-        form = CollectionItemForm(request.user.collector, request.POST,
+        item_form = CollectionItemForm(request.user.collector, request.POST,
                                   instance=item)
+        sell_date_form = DateForm(request.POST, instance=item.sell_date,
+                                  prefix='sell_date')
+        acquisition_date_form = DateForm(request.POST,
+                                         instance=item.acquisition_date,
+                                         prefix='acquisition_date')
 
-        form.fields['acquisition_date'] = request.session['acquisition_date']
-        form.fields['sell_date'] = request.session['sell_date']
-        if form.is_valid():
-            form.save()
-            messages.success(request, _('Item saved.'))
+        item_form_valid = item_form.is_valid()
+        sell_date_form_valid = sell_date_form.is_valid()
+        acquisition_date_form_valid = acquisition_date_form.is_valid()
+
+        if item_form_valid:
+            if  sell_date_form_valid and acquisition_date_form_valid:
+                sell_date = sell_date_form.save()
+                acquisition_date = acquisition_date_form.save()
+                item = item_form.save(commit=False)
+                item.acquisition_date = acquisition_date
+                item.sell_date = sell_date
+                item.save()
+
+                messages.success(request, _('Item saved.'))
+            else:
+                messages.error(request, _('Date was entered in wrong format.'))
+                return render_to_response(COLLECTION_ITEM_TEMPLATE,
+                                   {'item': item, 'item_form': item_form,
+                                    'sell_date_form': sell_date_form,
+                                    'acquisition_date_form': acquisition_date_form},
+                                   context_instance=RequestContext(request))
+        else:
+            messages.error(request, _('Some data was entered incorrectly.'))
+            return render_to_response(COLLECTION_ITEM_TEMPLATE,
+                               {'item': item, 'item_form': item_form,
+                                'sell_date_form': sell_date_form,
+                                'acquisition_date_form': acquisition_date_form},
+                               context_instance=RequestContext(request))
         return HttpResponseRedirect(
             urlresolvers.reverse('view_issue',
                                  kwargs={'issue_id': issue_id}))

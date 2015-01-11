@@ -15,7 +15,9 @@
           </div>
           <div class="modal-body">
               {% csrf_token %}
-              {% bootstrap_form form %}
+              {% bootstrap_form item_form %}
+              {% bootstrap_form acquisition_date_form %}
+              {% bootstrap_form sell_date_form %}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
@@ -41,7 +43,7 @@
     <div class="col-md-4">
       <a href="{{ item.issue.get_absolute_url }}">
         <div class="thumbnail">
-          {{ item.issue|show_cover_tag:ZOOM_MEDIUM }}
+          {{ item.issue|show_cover_tag_medium }}
         </div>
       </a>
     </div>
@@ -51,14 +53,14 @@
       {% trans "Location: " %}{{ item.location }}<br>
       {% trans "Purchase location: " %}{{ item.purchase_location }}<br>
       {% trans "Grade: " %}{{ item.grade }}<br>
-      {% trans "Acquisition date: " %}{{ item.acquisition_date }}<br>
-      {% trans "Sell date: " %}{{ item.sell_date }}<br>
       {% trans "Was read: " %}{{ item.was_read }}<br>
       {% trans "For sale: " %}{{ item.for_sale }}<br>
       {% trans "Signed: " %}{{ item.signed }}<br>
       {% trans "Price paid: " %}{{ item.price_paid }} {{ item.price_paid_currency.code }}<br>
       {% trans "Market value: " %}{{ item.market_value }} {{ item.market_value_currency.code }}<br>
       {% trans "Sell price: " %}{{ item.sell_price }} {{ item.sell_price_currency.code }}<br>
+      {% trans "Acquisition date: " %}{{ item.acquisition_date }}<br>
+      {% trans "Sell date: " %}{{ item.sell_date }}<br>
     </div>
   </div>
 

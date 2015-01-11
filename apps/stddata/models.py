@@ -22,7 +22,7 @@ class Currency(models.Model):
         return (self.code,)
 
     def __unicode__(self):
-        return unicode(self.code)+u" - "+unicode(self.name)
+        return unicode(self.code) + u" - " + unicode(self.name)
 
 class Date(models.Model):
     """Class representing dates for gcd with the ability to store partial
@@ -44,16 +44,23 @@ class Date(models.Model):
     month_uncertain = models.BooleanField(default=False)
     day_uncertain = models.BooleanField(default=False)
 
-    #TODO it should be decided if complete validation should be done in __init__
-
     def set(self, year=None, month=None, day=None, year_uncertain=False,
                  month_uncertain=False, day_uncertain=False):
         self.year = year
         self.month = month
         self.day = day
-        self.year_uncertain=year_uncertain or (year != None and '?' in year)
-        self.month_uncertain=month_uncertain or (month != None and '?' in month)
-        self.day_uncertain=day_uncertain or (day != None and '?' in day)
+        self.year_uncertain=year_uncertain or not year or ('?' in year)
+        self.month_uncertain=month_uncertain or not month or ('?' in month)
+        self.day_uncertain=day_uncertain or not day or ('?' in day)
 
     def __unicode__(self):
-        return self.year+u'-'+self.month+u'-'+self.day
+        year = self.year or ''
+        if self.year_uncertain and not '?' in self.year:
+            year += '?'
+        month = self.month or ''
+        if self.month_uncertain and not '?' in self.month:
+            month += '?'
+        day = self.day or ''
+        if self.day_uncertain and not '?' in self.day:
+            day += '?'
+        return year+u'-'+month+u'-'+day
