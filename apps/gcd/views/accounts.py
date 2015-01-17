@@ -20,6 +20,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from django.template.loader import get_template
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.views import login as standard_login
@@ -299,6 +300,13 @@ Mentor this indexer: %s
                   recipient_list=[settings.EMAIL_EDITORS, settings.EMAIL_PRTEAM],
                   subject=email_subject,
                   message=email_body,
+                  fail_silently=(not settings.BETA))
+
+        send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
+                  recipient_list=[indexer.user.email],
+                  subject='GCD successfull registration',
+                  message=get_template('gcd/accounts/welcome_mail.html').render(
+                            RequestContext(request)),
                   fail_silently=(not settings.BETA))
 
         return HttpResponseRedirect(urlresolvers.reverse('welcome'))

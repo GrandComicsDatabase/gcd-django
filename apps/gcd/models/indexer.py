@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from django.db import models, settings
 from django.contrib.auth.models import User, Group
+from django.core.mail import EmailMessage
+from django.template import Context
+from django.template.loader import get_template
 
 from apps.gcd.models import Country, Language
 
@@ -104,6 +107,18 @@ class Indexer(models.Model):
         if (old_imps < settings.MEMBERSHIP_IMPS and
           Indexer.objects.get(pk=self.pk).imps >= settings.MEMBERSHIP_IMPS):
             self.user.groups.add(Group.objects.get(name='member'))
+            self.send_member_email()
+
+    def send_member_email(self):
+        email = EmailMessage(from_email=settings.EMAIL_CHAIRMAN,
+                  to=[self.user.email],
+                  subject='GCD full member',
+                  body=get_template('gcd/accounts/new_member_mail.html').render(
+                    Context({'site_name': settings.SITE_NAME,
+                            'chairman': settings.CHAIRMAN })
+                    ),
+                    cc=[settings.EMAIL_CHAIRMAN])
+        email.send(fail_silently=(not settings.BETA))
 
     def get_absolute_url(self):
         return self.user.get_absolute_url()
