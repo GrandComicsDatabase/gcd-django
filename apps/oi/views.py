@@ -2505,8 +2505,6 @@ def save_added_series_bond(request, data, object_type, selected_id):
                                                   target_issue=target_issue)
     series_bond_revision.origin = series
     series_bond_revision.changeset = changeset
-    series_bond_revision.bond_type = SeriesBondType.objects.get(\
-                                       id=BOND_TYPES['tracking'])
     series_bond_revision.save()
     return HttpResponseRedirect(urlresolvers.reverse('edit',
         kwargs={'id': series_bond_revision.changeset.id}))

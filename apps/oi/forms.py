@@ -14,6 +14,7 @@ from django.utils.html import escape, conditional_escape
 
 from apps.oi.models import *
 from apps.gcd.models import *
+from apps.gcd.models.seriesbond import BOND_TRACKING
 from apps.gcd.templatetags.credits import format_page_count
 
 CREATOR_CREDIT_HELP = 'The %s and similar credits for this sequence. If ' \
@@ -777,6 +778,10 @@ class BrandEmblemSelect(forms.Select):
 
 def get_series_bond_revision_form(revision=None, user=None):
     class RuntimeSeriesBondRevisionForm(SeriesBondRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeSeriesBondRevisionForm, self).__init__(*args, **kwargs)
+            self.fields['bond_type'].queryset = \
+                SeriesBondType.objects.filter(id__in=BOND_TRACKING)
         def as_table(self):
             # TODO: add help links
             return super(RuntimeSeriesBondRevisionForm, self).as_table()

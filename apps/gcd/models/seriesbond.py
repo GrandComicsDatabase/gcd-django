@@ -3,20 +3,21 @@ from django.db import models
 from series import Series
 from issue import Issue
 
-BOND_TYPES = {
-    'tracking': 1,
-}
+BOND_TRACKING = {1, 2, 3}
 
 class SeriesBondType(models.Model):
     class Meta:
         app_label = 'gcd'
         db_table = 'gcd_series_bond_type'
 
+    # technical name, not to be changed
     name = models.CharField(max_length=255, db_index=True)
-    # we directly save seriesbondstypes, no blank=True needed
+    # short description, e.g. shown in selection boxes
     description = models.TextField()
-    notes = models.TextField()
+    notes = models.TextField(blank=True)
 
+    def __unicode__(self):
+        return self.description
 
 class SeriesBond(models.Model):
     class Meta:

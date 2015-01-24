@@ -17,7 +17,7 @@ from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
 from apps.gcd.models.cover import Cover
 from apps.gcd.models.image import Image
-from apps.gcd.models.seriesbond import SeriesBond, BOND_TYPES
+from apps.gcd.models.seriesbond import SeriesBond, BOND_TRACKING
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
@@ -112,9 +112,9 @@ def show_issue(issue):
 
 def show_series_tracking(series, direction):
     target_tracking = series.to_series_bond.filter(\
-                        bond_type__id=BOND_TYPES['tracking'])
+                        bond_type__id__in=BOND_TRACKING)
     origin_tracking = series.from_series_bond.filter(\
-                        bond_type__id=BOND_TYPES['tracking'])
+                        bond_type__id__in=BOND_TRACKING)
     tracking_line = ""
     if direction == 'in' and target_tracking.count():
         for target_series in target_tracking.all():

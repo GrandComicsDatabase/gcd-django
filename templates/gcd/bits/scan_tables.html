@@ -13,11 +13,11 @@
   {% for entry in scans %}
     {% if entry.issue %}
     <td class="scan_status_{{ entry.get_cover_status }}">
-      <a href="{{ entry.get_status_url }}">{{ entry.issue.display_number }}</a>
+      <a href="{{ entry.get_status_url }}">{{ entry.issue.issue_descriptor }}</a>
     </td>
     {% else %}
     <td class="scan_status_0">
-      <a href="{% url upload_cover issue_id=entry.id %}">{{ entry.display_number }}</a>
+      <a href="{% url upload_cover issue_id=entry.id %}">{{ entry.issue_descriptor }}</a>
     </td>
     {% endif %}
     {% if forloop.last %}

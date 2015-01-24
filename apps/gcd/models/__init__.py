@@ -23,6 +23,6 @@ from issuereprint import IssueReprint
 from reprint import Reprint
 from reprinttoissue import ReprintToIssue
 from reprintfromissue import ReprintFromIssue
-from seriesbond import SeriesBondType, SeriesBond, BOND_TYPES
+from seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING
 from recent import RecentIndexedIssue
 from image import ImageType, Image

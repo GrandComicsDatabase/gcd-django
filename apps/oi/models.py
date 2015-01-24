@@ -3006,7 +3006,7 @@ class SeriesRevision(Revision):
         return unicode(self.series)
 
 def get_series_bond_field_list():
-    return ['notes']
+    return ['bond_type', 'notes']
 
 class SeriesBondRevisionManager(RevisionManager):
 
@@ -3055,7 +3055,7 @@ class SeriesBondRevision(Revision):
     objects = SeriesBondRevisionManager()
 
     series_bond = models.ForeignKey(SeriesBond, null=True,
-                                related_name='revisions')
+                                    related_name='revisions')
 
     origin = models.ForeignKey(Series, null=True,
                                related_name='origin_bond_revisions')
@@ -3078,8 +3078,8 @@ class SeriesBondRevision(Revision):
         return self.previous_revision
 
     def _field_list(self):
-        return ['origin', 'origin_issue', 'target', 'target_issue',
-                'notes']
+        return ['origin', 'origin_issue', 'target', 'target_issue'] + \
+          get_series_bond_field_list()
 
     def _get_blank_values(self):
         return {
@@ -3087,6 +3087,7 @@ class SeriesBondRevision(Revision):
             'origin_issue': None,
             'target': None,
             'target_issue': None,
+            'bond_type': None,
             'notes': '',
         }
 
