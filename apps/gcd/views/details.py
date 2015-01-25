@@ -3,8 +3,10 @@
 """View methods for pages displaying entity details."""
 
 import re
+from urllib import urlencode
 from urllib2 import urlopen, HTTPError
 from datetime import date, datetime, time, timedelta
+from calendar import monthrange
 from operator import attrgetter
 from random import randint
 
@@ -803,6 +805,69 @@ def daily_changes(request, show_date=None):
       },
       context_instance=RequestContext(request)
     )
+
+def on_sale_weekly(request, year=None, week=None):
+    try:
+        if 'week' in request.GET:
+            year = int(request.GET['year'])
+            week = int(request.GET['week'])
+            # Do a redirect, otherwise pagination links point to today
+            return HttpResponseRedirect(
+                urlresolvers.reverse(
+                'on_sale_weekly',
+                kwargs={'year': year, 'week': week} ))
+        if year:
+            year = int(year)
+        if week:
+            week = int(week)
+    except ValueError:
+        year = None
+    if year == None:
+        year, week = date.today().isocalendar()[0:2]
+    # gregorian calendar date of the first day of the given ISO year
+    fourth_jan = date(int(year), 1, 4)
+    delta = timedelta(fourth_jan.isoweekday()-1)
+    year_start = fourth_jan - delta
+    monday = year_start + timedelta(weeks=int(week)-1)
+    sunday = monday + timedelta(days=6)
+    date_formatter = lambda d: '%04d-%02d-%02d' % (d.year, d.month, d.day)
+    # we need this to filter out incomplete on-sale dates
+    if monday.month != sunday.month:
+        endday = monday.replace(day=monthrange(monday.year,monday.month)[1])
+        issues_on_sale = \
+          Issue.objects.filter(on_sale_date__gte=date_formatter(monday), 
+                               on_sale_date__lte=date_formatter(endday))
+        sunday = monday + timedelta(days=6)
+        startday = sunday.replace(day=1)
+        issues_on_sale = issues_on_sale | \
+          Issue.objects.filter(on_sale_date__gte=date_formatter(startday), 
+                               on_sale_date__lte=date_formatter(sunday))
+
+    else:
+        issues_on_sale = Issue.objects.filter(on_sale_date__gte=date_formatter(monday), 
+                                    on_sale_date__lte=date_formatter(sunday))
+    previous_week = (monday - timedelta(weeks=1)).isocalendar()[0:2]
+    if monday + timedelta(weeks=1) < date.today():
+        next_week = (monday + timedelta(weeks=1)).isocalendar()[0:2]
+    else:
+        next_week = None
+    heading = "Issues on-sale in week %s/%s" % (week, year)
+    dates = "from %s to %s" % (monday.isoformat(), sunday.isoformat())
+    query_val = {'target': 'issue', 
+                 'method': 'icontains'}
+    query_val['start_date'] = monday.isoformat()
+    query_val['end_date'] = sunday.isoformat()
+    query_val['use_on_sale_date'] = True
+    vars = { 
+        'items': issues_on_sale,
+        'heading': heading,
+        'dates': dates,
+        'previous_week': previous_week,
+        'next_week': next_week,
+        'query_string': urlencode(query_val),
+    }
+
+    return paginate_response(request, issues_on_sale, 'gcd/status/issues_on_sale.html', vars)
 
 def int_stats_language(request):
     """
