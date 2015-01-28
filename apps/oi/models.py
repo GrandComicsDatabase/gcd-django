@@ -3132,7 +3132,8 @@ class IssueRevision(Revision):
                 'shipping date in this field, only the publication date.')
     key_date = models.CharField(max_length=10, blank=True, default='',
       validators=[RegexValidator(r'^(17|18|19|20)\d{2}(\.|-)(0[0-9]|1[0-3])(\.|-)\d{2}$')],
-      help_text='Keydate is a translation of the publication date into numeric '
+      help_text='Keydate is a translation of the publication date, possibly '
+                'supplemented by the on-sale date, into numeric '
                 'form for chronological ordering and searches. It is in the '
                 'format YYYY-MM-DD, where the parts of the date not given are '
                 'filled up with 00. For comics dated only by year, the keydate '
