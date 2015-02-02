@@ -4,6 +4,7 @@
 {% load bootstrap3 %}
 
 {% block content %}
+  {% bootstrap_messages %}
   <div class="page-header middle-header">
     <h1>{% trans "Collection details" %}: {{ collection.name }}
       <a href="{% url edit_collection collection.id %}">
@@ -40,7 +41,7 @@
       <div class="row">
         {% for item in items %}
           <div class="col-md-2">
-          <a href="{% url view_issue item.id %}">
+          <a href="{% url view_issue_in_collection item.id collection.id %}">
             <div class="thumbnail">
               {{ item.issue|show_cover_tag }}
               <div class="caption">{{ item.issue.full_name }}</div>

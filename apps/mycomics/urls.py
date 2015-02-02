@@ -25,10 +25,12 @@ urlpatterns = patterns('',
         mycomics_views.delete_collection,
         name='delete_collection'),
 
-    url(r'^issue/(?P<issue_id>\d+)/view/$',
-        mycomics_views.view_issue, name='view_issue'),
+    url(r'^issue/(?P<issue_id>\d+)/collection/(?P<collection_id>\d+)/view/$',
+        mycomics_views.view_issue_in_collection, name='view_issue_in_collection'),
     url(r'^issue/(?P<issue_id>\d+)/save/$',
         mycomics_views.save_issue, name='save_issue'),
+    url(r'^issue/(?P<issue_id>\d+)/collection/(?P<collection_id>\d+)/delete/$',
+        mycomics_views.delete_collection_item, name='delete_collection_item'),
 
     url(r'^series/(?P<series_id>\d+)/add_to_collection/$',
      mycomics_views.add_series_issues_to_collection, name='my_series_issues'),
@@ -37,5 +39,7 @@ urlpatterns = patterns('',
 
     url(r'^mycomics_search/$',
       mycomics_views.mycomics_search, name='mycomics_search'),
+
+    url(r'message/$', mycomics_views.display_message, name='display_message'),
 
 )

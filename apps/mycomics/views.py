@@ -24,11 +24,19 @@ COLLECTION_TEMPLATE='mycomics/collection.html'
 COLLECTION_LIST_TEMPLATE='mycomics/collections.html'
 COLLECTION_FORM_TEMPLATE='mycomics/collection_form.html'
 COLLECTION_ITEM_TEMPLATE='mycomics/collection_item.html'
+MESSAGE_TEMPLATE='mycomics/message.html'
 
 def index(request):
     """Generates the front index page."""
     vars = {'next': urlresolvers.reverse('collections_list')}
     return render_to_response(INDEX_TEMPLATE, vars,
+                              context_instance=RequestContext(request))
+
+
+@login_required
+def display_message(request):
+    """Generates a page displaying only a message set in messages framework."""
+    return render_to_response(MESSAGE_TEMPLATE, {},
                               context_instance=RequestContext(request))
 
 
@@ -106,21 +114,52 @@ def get_item_for_collector(issue_id, collector):
     return item
 
 
-@login_required
-def view_issue(request, issue_id):
-    item = get_item_for_collector(issue_id, request.user.collector)
-    item_form = CollectionItemForm(request.user.collector, instance=item)
-    sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
-    sell_date_form.fields['date'].label = 'Sell date'
-    acquisition_date_form = DateForm(instance=item.acquisition_date,
-                                     prefix='acquisition_date')
-    acquisition_date_form.fields['date'].label = 'Acquisition date'
+def check_item_is_in_collection(request, item, collection):
+    if item not in collection.items.all():
+        messages.error(request,
+                       _("This item doesn't belong to given collection."))
+        return HttpResponseRedirect(urlresolvers.reverse('display_message'))
 
-    return render_to_response(COLLECTION_ITEM_TEMPLATE,
-                              {'item': item, 'item_form': item_form,
-                               'sell_date_form': sell_date_form,
-                               'acquisition_date_form': acquisition_date_form},
-                              context_instance=RequestContext(request))
+
+@login_required
+def delete_collection_item(request, issue_id, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+    item = get_item_for_collector(issue_id, request.user.collector)
+
+    def internal():
+        collection.items.remove(item)
+        if not item.collections:
+            item.acquisition_date.delete()
+            item.sell_date.delete()
+            item.delete()
+        messages.success(request, _("Item removed from collection"))
+        return HttpResponseRedirect(urlresolvers.reverse('view_collection',
+                                      kwargs={'collection_id': collection_id}))
+
+    return check_item_is_in_collection(request, item, collection) or internal()
+
+
+@login_required
+def view_issue_in_collection(request, issue_id, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+    item = get_item_for_collector(issue_id, request.user.collector)
+
+    def internal():
+        item_form = CollectionItemForm(request.user.collector, instance=item)
+        sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
+        sell_date_form.fields['date'].label = 'Sell date'
+        acquisition_date_form = DateForm(instance=item.acquisition_date,
+                                         prefix='acquisition_date')
+        acquisition_date_form.fields['date'].label = 'Acquisition date'
+
+        return render_to_response(COLLECTION_ITEM_TEMPLATE,
+                                  {'item': item, 'item_form': item_form,
+                                   'collection': collection,
+                                   'sell_date_form': sell_date_form,
+                                   'acquisition_date_form': acquisition_date_form},
+                                  context_instance=RequestContext(request))
+
+    return check_item_is_in_collection(request, item, collection) or internal()
 
 
 @login_required
