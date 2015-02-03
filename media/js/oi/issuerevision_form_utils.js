@@ -88,13 +88,13 @@ function keyDate(pubDate, onSaleDate) {
         if (pubDate.month) {
             month = pubDate.month;
             usedPubDate = true;
-            if (usedOnSaleDate) {
+            if (!pubDate.year) {
                 unsure = true; // Got month from pubDate and year from onSaleDate
             }
         } else if ((year == onSaleDate.year || !onSaleDate.year) && onSaleDate.month) {
             month = onSaleDate.month;
             usedOnSaleDate = true;
-            if (usedPubDate) {
+            if (!onSaleDate.year) {
                 unsure = true; // Got month from onSaleDate and year from pubDate
             }
         }
