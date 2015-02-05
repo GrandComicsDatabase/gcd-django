@@ -227,8 +227,11 @@ NO_OI = False
 DEFAULT_FROM_EMAIL = 'GCD Contact <contact@comics.org>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
 EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
+EMAIL_PRTEAM = 'pr-team@comics.org'
 EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
+CHAIRMAN = 'Don Milne'
+EMAIL_CHAIRMAN = '%s <chair@comics.org>' % CHAIRMAN
 
 # Number of days for which a registraton confirmation token is valid.
 REGISTRATION_EXPIRATION_DELTA = 2

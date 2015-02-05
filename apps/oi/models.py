@@ -1985,6 +1985,15 @@ class BrandGroupRevision(PublisherRevisionBase):
         if self.brand_group is None:
             self.brand_group = brand_group
             self.save()
+            brand_revision = BrandRevision(changeset=self.changeset,
+                             name=self.name,
+                             year_began=self.year_began,
+                             year_ended=self.year_ended,
+                             year_began_uncertain=self.year_began_uncertain,
+                             year_ended_uncertain=self.year_ended_uncertain)
+            brand_revision.save()
+            brand_revision.group.add(self.brand_group)
+            brand_revision.commit_to_display()
 
     def get_absolute_url(self):
         if self.brand_group is None:
@@ -3162,9 +3171,9 @@ def get_issue_field_list():
     return ['number', 'title', 'no_title',
             'volume', 'no_volume', 'display_volume_with_number',
             'indicia_publisher', 'indicia_pub_not_printed',
-            'brand', 'no_brand', 'publication_date', 'key_date',
-            'year_on_sale', 'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
-            'indicia_frequency', 'no_indicia_frequency', 'price',
+            'brand', 'no_brand', 'publication_date', 'year_on_sale',
+            'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
+            'key_date', 'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
             'isbn', 'no_isbn', 'barcode', 'no_barcode', 'rating', 'no_rating',
             'notes', 'keywords']
@@ -3310,16 +3319,15 @@ class IssueRevision(Revision):
                 'shipping date in this field, only the publication date.')
     key_date = models.CharField(max_length=10, blank=True, default='',
       validators=[RegexValidator(r'^(17|18|19|20)\d{2}(\.|-)(0[0-9]|1[0-3])(\.|-)\d{2}$')],
-      help_text='Keydate is a translation of the publication date into numeric '
+      help_text='Keydate is a translation of the publication date, possibly '
+                'supplemented by the on-sale date, into numeric '
                 'form for chronological ordering and searches. It is in the '
                 'format YYYY-MM-DD, where the parts of the date not given are '
                 'filled up with 00. For comics dated only by year, the keydate '
                 'is YYYY-00-00. For comics only dated by month the day (DD) '
-                'is 00, and arbitrary numbers such as 10, 20, 30 are used to '
-                'indicate an "early", "mid", or "late" month cover date. For '
-                'the month (MM) on quarterlies, use 04 for Spring, 07 for '
-                'Summer, 10 for Fall and 01 or 12 for Winter (in the northern '
-                'hemisphere, shift accordingly in the southern).')
+                'is 00. For the month (MM) on quarterlies, use 04 for Spring, '
+                '07 for Summer, 10 for Fall and 01 or 12 for Winter (in the '
+                'northern hemisphere, shift accordingly in the southern).')
     year_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
     month_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
     day_on_sale = models.IntegerField(db_index=True, null=True, blank=True)

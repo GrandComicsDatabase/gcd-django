@@ -77,6 +77,11 @@ bash:~/icu/source$ sudo gnumake install
 
 Image libraries
 ===============
+Note that on ubuntu installing the deb-package python-pil will install
+some of the necessary libraries. Additionally, install libjpeg-dev.
+
+If this is not possible and you need images, the following holds:
+
 You will need some additional libraries for PIL to be able to support some
 of the common image formats.  If you are not doing any image editing, this
 is not required.
@@ -105,16 +110,21 @@ http://www.python.org/download/releases/2.7/
 If installing from packages you'll also need development package for python
 (if it's separated, like python-dev on Ubuntu).
 
+If exists, install the package python-virtualenv, then the following three steps
+until distribute are all taken care of.
+
 setuptools
 ==========
 Install setuptools to get easy_install, which we primarily use to install
 better installation tools.  
 http://pypi.python.org/pypi/setuptools/0.6c11
-See the web page for installation instructions.
+See the web page for installation instructions, it might exist as a deb-package,
+e.g. python-setuptools under ubuntu.
 
 pip
 ===
-Use easy_install to install pip:
+Use easy_install to install pip, or install the deb-package if existing, e.g.
+python-pip under ubuntu.
 
 bash:~$ easy_install pip
 
@@ -125,9 +135,9 @@ virtualenv
 We recommend using virtualenv, but it is optional.  It will allow you to isolate
 the libraries you need for the GCD, and not contaminate your system python.
 
-Use pip to install virtualenv, and then create a virtualenv for use with the
-GCD.  For this example, we will create one called "gcd" in a directory called
-"virtualenvs".  
+Use pip to install virtualenv, (again, maybe a deb python-virtualenv exists)
+and then create a virtualenv for use with the GCD.  For this example, we will
+create one called "gcd" in a directory called "virtualenvs".  
 
 bash:~$ pip install virtualenv
 # lots of output
@@ -150,6 +160,9 @@ http://www.virtualenv.org/en/latest/index.html
 
 distribute
 ==========
+Note that distribute does not seem to be necessary anymore. We keep this
+information for now to be on the safe side.
+
 Finally, some of the libraries require "distribute", a replacement for
 setuptools which you installed earlier. If it is globally installed the setup
 of virtualenv will use that one, you can observe this in its output.  The

@@ -26,7 +26,7 @@ var monthRegExp = [
     /^(feb|f[eé]v|φεβ|şubat|helmikuu|luty|guovva)/,
     /^(m[aä]r|márc|μ[αά]ρ|maaliskuu|njukča)/,
     /^(a[pvb]r|ápr|απρ|nisan|huhtikuu|kwiecień|cuoŋo|spring|vår|påsk)/,
-    /^(ma[yigj]|máj|μάι|μαΐ|toukokuu|miesse)/,
+    /^(ma[yigj]|máj|mei|μάι|μαΐ|toukokuu|miesse)/,
     /^(j[uú]n|giu|juin|ιο[υύ]ν|haziran|kesäkuu|czerwiec|geasse)/,
     /^(j[uú]l|lug|juil|ιο[υύ]λ|heinäkuu|temmuz|lipiec|suoidne|summer|sommar)/,
     /^(aug|ago|aoû|α[υύ]γ|ağustos|elokuu|sierpień|borge)/,
@@ -64,9 +64,78 @@ function formatKeyDate(year, month, day) {
     return pad(year, 4) + '-' + pad(month, 2) + '-' + pad(day, 2);
 }
 
-// Try to parse a publication date string
-// Return a key date string or empty if parsing failed
-function parsePubDate (pubDate) {
+// Build a keydate from the publication and on-sale dates
+function keyDate(pubDate, onSaleDate) {
+    var year = 0, month = 0, day = 0, usedPubDate = false, usedOnSaleDate = false, unsure = false;
+
+    if (onSaleDate.year.length == 3) {
+        onSaleDate.year += '0';
+    }
+
+    onSaleDate.year = onSaleDate.year.replace('?', '0');
+    onSaleDate.month = onSaleDate.month.replace('?', '0');
+    onSaleDate.day = onSaleDate.day.replace('?', '0');
+
+    if (pubDate.year) {
+        year = pubDate.year;
+        usedPubDate = true;
+    } else if (onSaleDate.year) {
+        year = onSaleDate.year;
+        usedOnSaleDate = true;
+    }
+
+    if (year) {
+        if (pubDate.month) {
+            month = pubDate.month;
+            usedPubDate = true;
+            if (!pubDate.year) {
+                unsure = true; // Got month from pubDate and year from onSaleDate
+            }
+        } else if ((year == onSaleDate.year || !onSaleDate.year) && onSaleDate.month) {
+            month = onSaleDate.month;
+            usedOnSaleDate = true;
+            if (!onSaleDate.year) {
+                unsure = true; // Got month from onSaleDate and year from pubDate
+            }
+        }
+    }
+
+    if (month) {
+        if (pubDate.day) {
+            day = pubDate.day;
+            usedPubDate = true;
+        } else if (month == onSaleDate.month && onSaleDate.day) {
+            day = onSaleDate.day;
+            usedOnSaleDate = true;
+        }
+    }
+
+    if (unsure) {
+        return { string: '',
+                 indicator: ' Possible keydate: ' + formatKeyDate(year, month, day) + ' - please verify and copy in field manually' };
+    }
+
+    // Return a formatted key date if at least the year was found
+    if (year) {
+        var indicator = ' Auto-set from ';
+        if (usedPubDate && usedOnSaleDate) {
+            indicator += 'publication and on-sale dates';
+        } else if (usedPubDate) {
+            indicator += 'publication date';
+        } else if (usedOnSaleDate) {
+            indicator += 'on-sale date';
+        }
+
+        return { string: formatKeyDate(year, month, day),
+                 indicator: indicator };
+    } else {
+        return { string: '' };
+    }
+}
+
+// Try to parse a publication date string and
+// return the year, month and day
+function parsePubDate(pubDate) {
     var year = 0,
         month = 0,
         day = 0,
@@ -87,18 +156,12 @@ function parsePubDate (pubDate) {
             month = tmpMonth;
         }
     });
-
-    // Return a formatted key date if at least the year was found
-    if (year) {
-        return formatKeyDate(year, month, day);
-    } else {
-        return '';
-    }
+    return { year: year, month: month, day: day };
 }
 
 function isvalidISBN13(a, len){
     if (len){
-        e = len*2 -1; 
+        e = len*2 -1;
     }
     else{
         e = 25;
@@ -201,11 +264,13 @@ function showBarcodeStatus(barcodeField){
 }
 
 $(function() {
-    // Set to true if user edits the key date field
+    var pubDate, onSaleDate;
+
+    // Set to true if user edits the key date field to prevent auto-update
     var keyDateEdited = false;
     var keyDateField = $('#id_key_date');
     var keyDateIndicator = $('<span>').hide().appendTo(document.body);
-    keyDateIndicator.text(' Auto-set from publication date ');
+    keyDateIndicator.text(' Default value ');
     keyDateIndicator.insertAfter(keyDateField);
 
     // Prevent updates to key date field if it's been edited and is not empty
@@ -219,15 +284,60 @@ $(function() {
         }
     });
 
-    // Auto-update key date field from publication date
-    $('#id_publication_date').bind('input', function () {
+    function updateKeyDate () {
         if (!keyDateEdited) {
-            var newdate = parsePubDate($(this).val());
-            if (newdate) {
-                keyDateField.val(newdate);
+            var keyDateInfo = keyDate(pubDate, onSaleDate);
+            if (keyDateInfo.string || keyDateInfo.indicator) {
+                keyDateIndicator.text(keyDateInfo.indicator);
+                keyDateField.val(keyDateInfo.string);
                 keyDateIndicator.show();
             }
         }
+    }
+
+    // set initial date fields
+    pubDate = parsePubDate($('#id_publication_date').val());
+    onSaleDate = {
+        year: $('#id_year_on_sale').val(),
+        month: $('#id_month_on_sale').val(),
+        day: $('#id_day_on_sale').val(),
+    };
+
+    // update keydate fields from publication date
+    $('#id_publication_date').bind('input', function () {
+        pubDate = parsePubDate($(this).val());
+        updateKeyDate();
+    });
+
+    // update keydate fields from on-sale date
+    $('#id_on_sale_date').bind('input', function () {
+        var parts = $(this).val().split(/-/g);
+
+        if (parts[0]) {
+            onSaleDate.year = parts[0];
+        }
+        if (parts[1]) {
+            onSaleDate.month = parts[1];
+        }
+        if (parts[2]) {
+            onSaleDate.month = parts[2];
+        }
+        updateKeyDate();
+    });
+
+    $('#id_year_on_sale').bind('input', function () {
+        onSaleDate.year = $(this).val();
+        updateKeyDate();
+    });
+
+    $('#id_month_on_sale').bind('input', function () {
+        onSaleDate.month = $(this).val();
+        updateKeyDate();
+    });
+
+    $('#id_day_on_sale').bind('input', function () {
+        onSaleDate.day = $(this).val();
+        updateKeyDate();
     });
 
     var isbnField = $('#id_isbn');

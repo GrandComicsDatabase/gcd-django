@@ -46,7 +46,11 @@ for details.
 """
 
 EMAIL_OPEN_AGENDA_ITEM_GENERIC = """
-A new item on the %s Agenda is now open for discussion.  Please see
+A new item on the %s Agenda is now open for discussion:
+
+%s
+
+Please see
 
 %s
 
@@ -145,12 +149,14 @@ def agenda_item_pre_save(sender, **kwargs):
             if list_config.on_agenda_item_open and newly_opened:
                 if list_config.is_primary:
                     subject = "Open: %s" % item.name
-                    message = EMAIL_OPEN_AGENDA_ITEM % (item.agenda, item.name, notes)
+                    message = EMAIL_OPEN_AGENDA_ITEM % (item.agenda, item.name,
+                                                        notes)
                 else:
                     subject="New %s item open" % item.agenda
                     message = EMAIL_OPEN_AGENDA_ITEM_GENERIC % \
-                            (item.agenda, settings.SITE_URL.rstrip('/') +
-                            item.agenda.get_absolute_url())
+                            (item.agenda, item.name,
+                             settings.SITE_URL.rstrip('/') +
+                             item.agenda.get_absolute_url())
                 list_config.send_mail(subject=subject, message=message)
 
             elif list_config.on_agenda_item_add and newly_added:
@@ -392,6 +398,9 @@ class Option(models.Model):
     voters = models.ManyToManyField(User, through='Vote',
                                           related_name='voted_options')
     result = models.NullBooleanField(blank=True)
+
+    def rank(self, user):
+        return self.votes.get(voter=user).rank
 
     def __unicode__(self):
         return self.name
