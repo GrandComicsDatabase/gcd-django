@@ -488,13 +488,14 @@ def get_brand_revision_form(source=None, user=None, revision=None,
     class RuntimeBrandRevisionForm(BrandRevisionForm):
         def __init__(self, *args, **kw):
             super(BrandRevisionForm, self).__init__(*args, **kw)
+            # brand_group_other_publisher_id is last field, move it after group
             self.fields.keyOrder.insert(self.fields.keyOrder.index('group') + 1,
                                         self.fields.keyOrder.pop())
 
         group = forms.MultipleChoiceField(required=True,
             widget=FilteredSelectMultiple('Brand Groups', False),
             choices=choices, initial=initial)
-
+        # maybe only allow editors this to be less confusing to normal indexers
         brand_group_other_publisher_id = forms.IntegerField(required=False,
           label = "Add Brand Group",
           help_text="One can add a brand group from a different publisher by "
@@ -568,6 +569,7 @@ class BrandRevisionForm(forms.ModelForm):
                 self.fields['group'] = forms.MultipleChoiceField(required=True,
                     widget=FilteredSelectMultiple('Brand Groups', False),
                     choices=choices)
+                # TODO maybe do this differently
                 raise forms.ValidationError( \
                   "Please confirm selection of brand group '%s'." % brand_group)
             else:
