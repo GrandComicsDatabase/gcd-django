@@ -320,7 +320,7 @@ $(function() {
             onSaleDate.month = parts[1];
         }
         if (parts[2]) {
-            onSaleDate.month = parts[2];
+            onSaleDate.day = parts[2];
         }
         updateKeyDate();
     });
