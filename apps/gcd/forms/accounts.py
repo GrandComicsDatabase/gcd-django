@@ -70,10 +70,27 @@ class AccountForm(forms.Form):
                  u'This helps us connect you with an Editor knowledgeable in '
                  u'your area to help you learn our indexing system.'))
 
+
     from_where = forms.CharField(widget=forms.Textarea, required=False,
       label='Where did you hear about us',
       help_text=(u'Please tell us where you heard about the GCD. For example '
                  u'a website, a blog, a search, a convention,...'))
+
+    opt_in_email = forms.BooleanField(label="Opt in for emails",
+                                           initial=False,
+                                           required=False,
+      help_text=(u'If checked, you indicate an interest in receiving '
+                 u'communication from GCD members, e.g. newsletters. You will '
+                 u'receive emails related to your data entries in any case.'))
+
+    issue_detail = forms.ChoiceField(choices=[['0', 'core view'],
+                                        ['1', 'edititorial content'],
+                                        ['2', 'all content (including ads)']],
+                               initial='1',
+                               label='Displayed content for issues',
+      help_text=(u'Select how detailed an issue is displayed. Core view '
+                 u'consists of story and cover sequences, edititorial content '
+                 u'(default) has all content besides promos and ads.'))
 
     notify_on_approve = forms.BooleanField(label="Approval emails",
                                            initial=True,

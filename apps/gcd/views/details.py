@@ -21,9 +21,10 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
-from apps.gcd.models import Publisher, Series, Issue, Story, Image, \
+from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
                             IndiciaPublisher, Brand, BrandGroup, CountStats, \
                             Country, Language, Indexer, IndexCredit, Cover
+from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
@@ -1019,6 +1020,7 @@ def show_issue(request, issue, preview=False):
     zoom_level = ZOOM_MEDIUM
     if preview:
         images_count = 0
+        shown_types = StoryType.objects.values_list('id', flat=True)
         # excludes are currently only relevant for variant_add, maybe later
         # other cover moves will be possible
         if issue.changeset.change_type in [CTYPES['variant_add'],
@@ -1057,6 +1059,22 @@ def show_issue(request, issue, preview=False):
                                                 zoom_level=zoom_level,
                                                 alt_text=alt_text))
     else:
+        if 'issue_detail' in request.GET:
+            try:
+                issue_detail = int(request.GET['issue_detail'])
+            except ValueError:
+                issue_detail = 1
+        elif request.user.is_authenticated():
+            issue_detail = request.user.indexer.issue_detail
+        else:
+            issue_detail = 1
+        if issue_detail == 0:
+            shown_types = CORE_TYPES
+        elif issue_detail == 1:
+            shown_types = StoryType.objects.exclude(id__in=AD_TYPES)\
+                            .values_list('id', flat=True)
+        else:
+            shown_types = StoryType.objects.values_list('id', flat=True)
         image_tag = get_image_tags_per_issue(issue=issue,
                                              zoom_level=zoom_level,
                                              alt_text=alt_text)
@@ -1128,6 +1146,7 @@ def show_issue(request, issue, preview=False):
         'language': language,
         'error_subject': '%s' % issue,
         'preview': preview,
+        'shown_types': shown_types,
         'NO_ADS': True
       },
       context_instance=RequestContext(request))

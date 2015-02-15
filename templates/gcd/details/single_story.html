@@ -8,6 +8,9 @@
       <h2 class="sequence header title">
         <span class="title left">{{ story|show_title }}</span>
         <span class="right single_story_navigation"><a class="toc" href="#toc">(Table of Contents)</a></span>
+        {% if story.type.id not in shown_types %}
+        <span class="right single_story_navigation"><a class="toc" href="?issue_detail=2">(Expand)</a> / </span>
+        {% endif %}
       </h2>
       <h3 class="sequence_header feature">
         <span class="left">
@@ -38,51 +41,52 @@
         <span class="right single_story_navigation"><a href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}%23{{ story.id }}&amp;short_desc={{ error_subject|urlencode }}%20-%20{{story|show_title|urlencode}}" target="_blank">(report information)</a></span>
         {% endif %}
       </h3>
-
-      {% if story.has_credits %}
+      {% if story.type.id in shown_types %}
+        {% if story.has_credits %}
       <dl class="credits">
-        {{ story|show_credit:"script" }}
-        {{ story|show_credit:"pencils" }}
-        {{ story|show_credit:"inks" }}
-        {{ story|show_credit:"colors" }}
-        {{ story|show_credit:"letters" }}
-        {{ story|show_credit:"editing" }}
-        {{ story|show_credit:"job_number" }}
+          {{ story|show_credit:"script" }}
+          {{ story|show_credit:"pencils" }}
+          {{ story|show_credit:"inks" }}
+          {{ story|show_credit:"colors" }}
+          {{ story|show_credit:"letters" }}
+          {{ story|show_credit:"editing" }}
+          {{ story|show_credit:"job_number" }}
       </dl>
-      {% endif %}
+        {% endif %}
 
-      {% if story.has_content %}
+        {% if story.has_content %}
         <hr class="content_header"></hr>
         <dl class="contents">
-          {{ story|show_credit:"genre" }}
-          {{ story|show_credit:"characters"|linebreaksbr }}
-          {{ story|show_credit:"synopsis"|linebreaksbr }}
-          {% if show_original %}
-            {% if no_navigation %}
-              {{ story|show_reprints:'With_Story'|linebreaksbr }}
-            {% else %}  
-              {{ story|show_reprints:'True'|linebreaksbr }}
+            {{ story|show_credit:"genre" }}
+            {{ story|show_credit:"characters"|linebreaksbr }}
+            {{ story|show_credit:"synopsis"|linebreaksbr }}
+            {% if show_original %}
+              {% if no_navigation %}
+                {{ story|show_reprints:'With_Story'|linebreaksbr }}
+              {% else %}  
+                {{ story|show_reprints:'True'|linebreaksbr }}
+              {% endif %}
+            {% else %}
+              {{ story|show_reprints|linebreaksbr }}
             {% endif %}
-          {% else %}
-            {{ story|show_reprints|linebreaksbr }}
-          {% endif %}
-          {{ story|show_credit:"keywords" }}
+            {{ story|show_credit:"keywords" }}
         </dl>
-      {% endif %}
+        {% endif %}
 
-      {% if story.notes %}
+        {% if story.notes %}
         <h3 class="notes_header"> Indexer Notes </h3>
-      {% ifequal issue.notes story.notes %}
+        {% ifequal issue.notes story.notes %}
         <p> [Cover story notes are the same as the issue notes
              (see Issue Notes above).  This may mean that
              one or both set of notes need editing as a result of our recent
              migration to having separate issue and cover notes.]
-      {% else %}
+        {% else %}
         <p>{{ story.notes|urlizetrunc:75|linebreaksbr }}</p>
-      {% endifequal %}
-      {% endif %}
+        {% endifequal %}
+        {% endif %}
+      {% endif %} <!-- shown_types -->
 
-      {% if not story.has_credits and not story.has_content and not story.notes %}
+      {% if not story.has_credits and not story.has_content and not story.notes or story.type.id not in shown_types %}
         <dl class="contents"></dl>
       {% endif %}
     </div>

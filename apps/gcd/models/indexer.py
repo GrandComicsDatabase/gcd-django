@@ -37,6 +37,7 @@ class Indexer(models.Model):
     languages = models.ManyToManyField(Language, related_name='indexers',
                                        db_table='gcd_indexer_languages')
     interests = models.TextField(null=True, blank=True)
+    opt_in_email = models.BooleanField(db_index=True)
     from_where = models.TextField(blank=True)
 
     max_reservations = models.IntegerField(default=1)
@@ -52,10 +53,13 @@ class Indexer(models.Model):
     registration_expires = models.DateField(null=True, blank=True, db_index=True)
 
     imps = models.IntegerField(default=0)
+    # display options
+    issue_detail = models.IntegerField(default=1)
+    # editing options
     notify_on_approve = models.BooleanField(db_index=True, default=True)
     collapse_compare_view = models.BooleanField(db_index=True, default=False)
     show_wiki_links = models.BooleanField(db_index=True, default=True)
-    
+
     def can_reserve_another(self):
         from apps.oi.models import CTYPES
 

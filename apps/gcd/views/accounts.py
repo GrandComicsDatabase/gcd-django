@@ -430,6 +430,8 @@ def profile(request, user_id=None, edit=False):
                 [ lang.id for lang in profile_user.indexer.languages.all() ],
               'interests': profile_user.indexer.interests,
               'from_where': profile_user.indexer.from_where,
+              'opt_in_email': profile_user.indexer.opt_in_email,
+              'issue_detail': profile_user.indexer.issue_detail,
               'notify_on_approve': profile_user.indexer.notify_on_approve,
               'collapse_compare_view': profile_user.indexer.collapse_compare_view,
               'show_wiki_links': profile_user.indexer.show_wiki_links,
@@ -494,6 +496,8 @@ def update_profile(request, user_id=None):
     indexer.languages = form.cleaned_data['languages']
     indexer.interests = form.cleaned_data['interests']
     indexer.from_where = form.cleaned_data['from_where']
+    indexer.opt_in_email = form.cleaned_data['opt_in_email']
+    indexer.issue_detail = form.cleaned_data['issue_detail']
     indexer.save()
 
     return HttpResponseRedirect(
