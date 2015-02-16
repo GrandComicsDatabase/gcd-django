@@ -847,7 +847,7 @@ def on_sale_weekly(request, year=None, week=None):
         issues_on_sale = Issue.objects.filter(on_sale_date__gte=date_formatter(monday), 
                                     on_sale_date__lte=date_formatter(sunday))
     previous_week = (monday - timedelta(weeks=1)).isocalendar()[0:2]
-    if monday + timedelta(weeks=1) < date.today():
+    if monday + timedelta(weeks=1) <= date.today():
         next_week = (monday + timedelta(weeks=1)).isocalendar()[0:2]
     else:
         next_week = None
