@@ -25,7 +25,8 @@ from django.contrib.contenttypes.models import ContentType
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
                             IndiciaPublisher, Brand, BrandGroup, CountStats, \
-                            Country, Language, Indexer, IndexCredit, Cover
+                            Country, Language, Indexer, IndexCredit, Cover, \
+                            SeriesBond
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -37,7 +38,7 @@ from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
-                           CTYPES
+                           SeriesBondRevision, CTYPES
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -767,6 +768,12 @@ def daily_changes(request, show_date=None):
     series = Series.objects.filter(id__in=series_revisions).distinct()\
       .select_related('publisher','country', 'first_issue','last_issue')
 
+    series_bond_revisions = list(SeriesBondRevision.objects.filter(
+      changeset__change_type=CTYPES['series_bond'], **args)\
+      .exclude(changeset__indexer=anon).values_list('series_bond', flat=True))
+    series_bonds = SeriesBond.objects.filter(id__in=series_bond_revisions)\
+      .distinct().select_related('origin','target')
+
     issues_change_types = [CTYPES['issue'], CTYPES['variant_add']]
     issue_revisions = list(IssueRevision.objects.filter(\
       changeset__change_type__in=issues_change_types, **args)\
@@ -788,7 +795,7 @@ def daily_changes(request, show_date=None):
     indicia_issues = Issue.objects.filter(image_resources__id__in=indicia_revisions)
     if indicia_issues:
       images.append((indicia_issues, 'image/', 'Indicia Scan', 'issue'))
-    
+
     soo_revisions = list(image_revisions.filter(type__name='SoOScan'))
     soo_issues = Issue.objects.filter(image_resources__id__in=soo_revisions)
     if soo_issues:
@@ -804,6 +811,7 @@ def daily_changes(request, show_date=None):
         'brands' : brands,
         'indicia_publishers' : indicia_publishers,
         'series' : series,
+        'series_bonds' : series_bonds,
         'issues' : issues,
         'all_images' : images
       },

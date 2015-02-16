@@ -180,6 +180,15 @@ def field_value(revision, field):
                         return 'No (note: %d issues have a non-empty %s value)' % \
                                 (value_count, field[4:])
         return yesno(value, 'Yes,No')
+    elif field == 'is_singleton':
+        if hasattr(revision, 'changed'):
+            if revision.changed[field] and value == True:
+                 if revision.series:
+                     value_count = revision.series.active_issues().count()
+                     if value_count:
+                        return 'Yes (note: the series has %d issues)' % \
+                                value_count
+        return yesno(value, 'Yes,No')
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
         return ''

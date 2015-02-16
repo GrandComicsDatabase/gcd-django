@@ -346,7 +346,7 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
     ''' generate reprint link to_issue'''
 
     if only_number:
-        link = u', <a href="%s">#%s</a>' % (issue.get_absolute_url(),
+        link = u', <a href="%s">%s</a>' % (issue.get_absolute_url(),
                                            esc(issue.display_number) )
     else:
         link = u'%s %s <a href="%s">%s</a>' % \
@@ -367,7 +367,7 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
                                    only_number=False):
     ''' generate reprint link to story'''
     if only_number:
-        link = u', <a href="%s#%d">#%s</a>' % (story.issue.get_absolute_url(),
+        link = u', <a href="%s#%d">%s</a>' % (story.issue.get_absolute_url(),
                                     story.id, esc(story.issue.display_number) )
     elif story.sequence_number == 0:
         link = u'%s %s <a href="%s#%d">%s</a>' % \

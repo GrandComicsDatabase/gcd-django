@@ -99,9 +99,26 @@ should include a comment explaining the deletion.
 </table>
 </div>
 
+{% if description = "Issue" and object.series.is_singleton %}
+<div>
+<table class="listing">
+  <tr>
+    <th colspan="2">Change History For Series Data</th>
+  </tr>
+  <tr class="listing_even">
+    <td><a href="{% url change_history model_name='series' id=object.series.id %}?collapse=1"> {{ object.series }} </a></td>
+    <td>{{ object.series.modified }}</td>
+  </tr>
+</table>
+</div>
+{% endif %}
+
 {% if description = "Issue" and perms.gcd.can_approve %}
 <div>
 <table class="listing">
+  <tr>
+    <th colspan="2">Change History For Cover Scans</th>
+  </tr>
   {% for cover in object.cover_set.all %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td><a href="{% url change_history model_name='cover' id=cover.id %}?collapse=1"> {{ cover }} </a></td>
@@ -116,6 +133,9 @@ should include a comment explaining the deletion.
 <div>
   {% if object.indicia_image %}
   <table class="listing">
+    <tr>
+      <th colspan="2">Change History For Indicia Scan</th>
+    </tr>
     {% with model_name='image' object=object.indicia_image %}
       {% include "gcd/bits/change_history_link.html" %}
     {% endwith %}
@@ -123,6 +143,9 @@ should include a comment explaining the deletion.
   {% endif %}
   {% if object.soo_image %}
   <table class="listing">
+    <tr>
+      <th colspan="2">Change History For Statement of Ownership Scan</th>
+    </tr>
     {% with model_name='image' object=object.soo_image %}
       {% include "gcd/bits/change_history_link.html" %}
     {% endwith %}
@@ -134,6 +157,9 @@ should include a comment explaining the deletion.
 {% if description = "Series" and object.has_series_bonds %}
 <div>
   <table class="listing">
+    <tr>
+      <th colspan="2">Change History For Series Bonds</th>
+    </tr>
     {% for bond in object.to_series_bond.all %}
     {% with model_name='series_bond' object=bond %}
       {% include "gcd/bits/change_history_link.html" %}
@@ -151,6 +177,9 @@ should include a comment explaining the deletion.
 {% if description = "Brand" and object.emblem %}
 <div>
   <table class="listing">
+    <tr>
+      <th colspan="2">Change History For Brand Emblem Scan</th>
+    </tr>
   {% with model_name='image' object=object.emblem %}
     {% include "gcd/bits/change_history_link.html" %}
   {% endwith %}

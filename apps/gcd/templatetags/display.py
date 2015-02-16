@@ -124,6 +124,8 @@ def show_series_tracking(series, direction):
             else:
                 tracking_line += "<li> numbering continues in %s" % \
                   target_series.target.full_name_with_link()
+            if target_series.notes:
+                tracking_line += ' [%s]' % target_series.notes
     elif direction == 'from' and origin_tracking .count():
         for origin_series in origin_tracking.all():
             if origin_series.origin_issue:
@@ -132,6 +134,8 @@ def show_series_tracking(series, direction):
             else:
                 tracking_line += "<li> numbering continues from %s" % \
                   origin_series.origin.full_name_with_link()
+            if origin_series.notes:
+                tracking_line += ' [%s]' % origin_series.notes
     return mark_safe(tracking_line)
 
 def show_indicia_pub(issue):
