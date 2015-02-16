@@ -41,7 +41,7 @@
   {% else %}
           <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
   {% endif %}
-  #{{ image_issue.display_number }}<br>
+  {{ image_issue.display_number }}<br>
   {{ image_issue.publication_date }}<br>
           <a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
         </div>
@@ -55,7 +55,7 @@
             <dt> Number of Issues Published:
             <dd id="issues_published"> {{ series.issue_count }} 
   {% if series.issue_count > 1 %}
-            (#{{ series.first_issue.display_number }} - #{{ series.last_issue.display_number}})
+            ({{ series.first_issue.display_number }} - {{ series.last_issue.display_number}})
   {% endif %}
 {% endif %}
 {% if series.format %}
