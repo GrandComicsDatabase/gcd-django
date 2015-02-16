@@ -61,14 +61,14 @@ def issues_with_several_covers(request):
 
 def story_reprint_inspection(request):
     stories = Story.objects.filter(deleted=False,
-      migration_status__reprint_needs_inspection=True)
+      migration_status__reprint_confirmed=False)
 
     qargs = {'deleted': False}
     qorder = ['issue__series__sort_name', 'issue__series__year_began', 'issue__sort_code', 'issue__number', 'sequence_number']
 
     vars = {
         'heading': 'Sequences',
-        'search_item': 'whose migrated reprint notes need inspection',
+        'search_item': 'whose migrated reprint notes need confirmation',
         'item_name': 'sequence',
         'plural_suffix': 's',
     }
