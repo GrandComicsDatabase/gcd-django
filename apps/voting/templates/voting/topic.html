@@ -49,13 +49,15 @@ Your current vote{{ votes.count|pluralize }}:
         {% if not topic.vote_type.max_votes %}
 <table>
   <tr>
-    <th> Option <th>
+    <th> Option </th>
     <th> Rank </th>
+    <th> Text </th>
   </tr>
-          {% for vote in votes %}
+          {% for vote in votes|order_by:"votes__rank" %}
   <tr>
     <td> {{ vote.name }} </td>
     <td> {{ vote|show_rank:request.user }} </td>
+    <td> {{ vote.text }}</td>
   </tr>
           {% endfor %}
 </table>
@@ -141,6 +143,9 @@ Total number of voters: {{ topic.num_voters }}
   </div>
         {% endif %}
       {% else %}
+        {% if option.text %}
+    <div class="option_text">{{ option.text }}</div>
+        {% endif %}
   <div class="option">
     <input name="option_{{ option.id }}">{{ option.name }}
   </div>
