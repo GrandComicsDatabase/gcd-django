@@ -21,28 +21,34 @@
   A click on the cover leads to the large cover view, a click on the issue number to the issue data.
 </div>
 
-<table id="covers">
-  <tr>
+<div class="left">
+  <table id="covers">
+    <tr>
   {% for cover, issue, tag in tags %}
-    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
-      <br>
-      <div class="cover_caption">
-        <span class="cover_number"><a href="{{ issue.get_absolute_url }}">Issue {{ issue.display_number }}</a></span>
+      <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+        <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
+        <br>
+        <div class="cover_caption">
+          <span class="cover_number"><a href="{{ issue.get_absolute_url }}">Issue {{ issue.display_number }}</a></span>
         {% if issue.publication_date %}
-        <br><span class="cover_date">{{ issue.publication_date }}</span>
+          <br><span class="cover_date">{{ issue.publication_date }}</span>
         {% endif %}
-        <br><a href="{% url edit_covers issue_id=cover.issue.id %}">Add/replace cover</a>
-      </div>
-    </td>
+          <br><a href="{% url edit_covers issue_id=cover.issue.id %}">Add/replace cover</a>
+        </div>
+      </td>
     {% if forloop.counter|divisibleby:table_width %}
-  </tr>
-  <tr>
+    </tr>
+    <tr>
     {% endif %}
   {% endfor %}
-  </tr>
-</table>
-
+    </tr>
+  </table>
+</div>
+<div class="right">
+  {% if ADVERTISING and not BETA %}
+    {% include "gcd/bits/ad_med_rectangle.html %}
+  {% endif %}
+</div>
 {% with 1 as paginate_only %}
 {% with issue.series as series %}
 {% with issue.display_number as issue_number %}

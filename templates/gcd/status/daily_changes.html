@@ -194,6 +194,25 @@
 </table>
 {% endif %}
 
+{% if series_bonds %}
+<table class="listing">
+  <tr>
+    <th> Numbering From </th>
+    <th> Continues In </th>
+    <th> Change History </th>
+  </tr>
+  {% for series_bond in series_bonds %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ series_bond.origin.get_absolute_url }}">{{ series_bond.origin }}</a> </td>
+    <td> <a href="{{ series_bond.target.get_absolute_url }}">{{ series_bond.target }}</a> </td>
+    <td>
+      <a href="{% url change_history model_name='series_bond' id=series_bond.id %}">Change History</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
 {% if issues %}
 <table class="listing">
   <tr>

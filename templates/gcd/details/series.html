@@ -144,7 +144,9 @@
           <div class="series_notes">
 {% if series.has_tracking %}
             <div class="series_detail_header"> Tracking </div>
+  {% if series.tracking_notes %}
             <div class="series_notes">{{ series.tracking_notes|linebreaksbr }}</div>
+  {% endif %}
             <ul class="series_detail_info">
               {{ series|show_series_tracking:'in' }}
               {{ series|show_series_tracking:'from' }}

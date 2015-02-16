@@ -121,7 +121,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 {% endif %}
 </div>
 <div class="right">
-{% if issue.series.has_gallery %}
+{% if issue.series.has_gallery and not issue.series.is_singleton %}
               <a href="{{ issue.series.get_absolute_url }}covers">Cover gallery</a>
 {% endif %}
 </div>
@@ -249,18 +249,8 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% endif %}
       </div> <!-- index_credits -->
 {% endif %}
-{% if ADVERTISING and not NO_ADS %}
-<script type="text/javascript"><!--
-google_ad_client = "ca-pub-9033390275710305";
-/* right skyscraper */
-google_ad_slot = "3456338311";
-google_ad_width = 160;
-google_ad_height = 600;
-//-->
-</script>
-<script type="text/javascript"
-src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script>
+{% if ADVERTISING %}
+  {% include "gcd/bits/ad_skyscraper.html" %}
 {% endif %}
     </div> <!-- control_rail -->
   </div> <!-- control_container -->

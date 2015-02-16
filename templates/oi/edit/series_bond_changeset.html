@@ -19,7 +19,7 @@ is
       <td>
 {{ series_bond_revision.target }}
 {% if series_bond_revision.target_issue %}
-with #{{ series_bond_revision.target_issue.display_number }}
+with {{ series_bond_revision.target_issue.display_number }}
 {% endif %}
       </td>
       <td><input type="submit" id="edit_target" name="edit_target" value="Edit"></td>

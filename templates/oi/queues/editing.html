@@ -15,13 +15,18 @@ GCD :: {{ user.indexer }} :: Editing Queue
 
 {% block view_body %}
 <div class="queues">
-<h1> Records You Are Editing </h1>
+  <div class="left" width="70%">
+    <h1> Records You Are Editing </h1>
 
 {% with 'oi/bits/editing_actions.html' as actions %}
 {% with 'edit' as link_target %}
   {% include 'oi/bits/standard_queues.html' %}
 {% endwith %}
 {% endwith %}
+  </div>
+  <div class="indexer_right_box">
+{% include 'oi/bits/indexer_info.html' %}
+  </div>
 </div>
 {% endblock %}
 
