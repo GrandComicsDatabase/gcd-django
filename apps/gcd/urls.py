@@ -215,7 +215,7 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.daily_changes', name='changes_by_date'),
     url(r'^on_sale_weekly/$',
      'apps.gcd.views.details.on_sale_weekly', name='on_sale_this_week'),
-    url(r'^on_sale_weekly/(?P<year>.+)/week/(?P<week>.+)/$',
+    url(r'^on_sale_weekly/(?P<year>\d{4})/week/(?P<week>\d{1,2})/$',
      'apps.gcd.views.details.on_sale_weekly', name='on_sale_weekly'),
 
     url(r'^international_stats_language/$',
