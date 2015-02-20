@@ -39,7 +39,7 @@ def rm_facebook_url(text):
               + text[pos_third + 4:]
         else:
             found = False
-    text = text.replace('s130x130', 's200x200', 1)
+    text = text.replace('s130x130', 'p200x200', 1)
     # some images have /v/ in them, there just the replace above is not enough
     if text.find('/v/') >= 0:
         text = text.replace('/v/', '/', 1)

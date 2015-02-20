@@ -24,7 +24,7 @@
 
 <div class="item_id">
   <div class="left" class="item_data">
-  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} Issue{{ paginator.count|pluralize }} on-sale the week from {{ dates }}.
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} Issue{{ paginator.count|pluralize }} on-sale the week {{ dates }}.
   </div>
   {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
