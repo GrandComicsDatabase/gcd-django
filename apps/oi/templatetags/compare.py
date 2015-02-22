@@ -1,6 +1,7 @@
 from django import template
 from diff_match_patch import diff_match_patch
-from django.template.defaultfilters import yesno, linebreaksbr, urlize
+from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
+                                           pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -186,8 +187,8 @@ def field_value(revision, field):
                  if revision.series:
                      value_count = revision.series.active_issues().count()
                      if value_count:
-                        return 'Yes (note: the series has %d issues)' % \
-                                value_count
+                        return 'Yes (note: the series has %d issue%s)' % \
+                                (value_count, pluralize(value_count))
         return yesno(value, 'Yes,No')
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string

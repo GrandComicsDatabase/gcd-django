@@ -155,6 +155,14 @@ SERIES_HELP_LINKS = {
     'binding': 'Format',
     'publishing_format': 'Format',
     'is_comics_publication': 'Comics_Publication',
+    'is_singleton': 'Is_Singleton',
+    'publication_type': 'Publication_Type',
+    'has_barcode': 'Barcode',
+    'has_indicia_frequency': 'Indicia_frequency',
+    'has_isbn': 'ISBN',
+    'has_issue_title': 'Issue_Title',
+    'has_rating': "Publisher's_Age_Guidelines",
+    'has_volume': 'Volume',
     'comments': 'Comments'
 }
 
@@ -717,6 +725,34 @@ class SeriesRevisionForm(forms.ModelForm):
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
 
+    def clean_has_indicia_frequency(self):
+        cd = self.cleaned_data
+        if cd['is_singleton'] and cd['has_indicia_frequency']:
+            raise forms.ValidationError('Singleton series cannot have '
+              'an indicia frequency.')
+        return cd['has_indicia_frequency']
+
+    def clean_has_issue_title(self):
+        cd = self.cleaned_data
+        if cd['is_singleton'] and cd['has_issue_title']:
+            raise forms.ValidationError('Singleton series cannot have '
+              'an issue title.')
+        return cd['has_issue_title']
+
+    def clean_notes(self):
+        cd = self.cleaned_data
+        if cd['is_singleton'] and cd['notes']:
+            raise forms.ValidationError('Notes for singleton series are '
+              'stored on the issue level.')
+        return cd['notes'].strip()
+
+    def clean_tracking_notes(self):
+        cd = self.cleaned_data
+        if cd['is_singleton'] and cd['tracking_notes']:
+            raise forms.ValidationError('Singleton series cannot have '
+              'tracking notes.')
+        return cd['tracking_notes'].strip()
+
     def clean(self):
         cd = self.cleaned_data
         if self._errors:
@@ -735,17 +771,9 @@ class SeriesRevisionForm(forms.ModelForm):
         cd['paper_stock'] = cd['paper_stock'].strip()
         cd['binding'] = cd['binding'].strip()
         cd['publishing_format'] = cd['publishing_format'].strip()
-        cd['tracking_notes'] = cd['tracking_notes'].strip()
-        cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
-        if cd['is_singleton']:
-            if cd['has_indicia_frequency']:
-                raise forms.ValidationError('Singleton series cannot have '
-                  'an indicia frequency.')
-            if cd['has_issue_title']:
-                raise forms.ValidationError('Singleton series cannot have '
-                  'an issue title.')
-            # how to get to series ? Then we could check the number of issues.
+        # TODO How to get to series ? 
+        # Then we could check the number of issues for singletons
         return cd
 
 def _get_series_has_fields_off_note(series, field):
