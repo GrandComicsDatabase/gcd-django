@@ -819,6 +819,9 @@ def daily_changes(request, show_date=None):
     )
 
 def on_sale_weekly(request, year=None, week=None):
+    """
+    Produce a page displaying the comics on-sale in a given week.
+    """
     try:
         if 'week' in request.GET:
             year = int(request.GET['year'])
@@ -842,22 +845,21 @@ def on_sale_weekly(request, year=None, week=None):
     year_start = fourth_jan - delta
     monday = year_start + timedelta(weeks=int(week)-1)
     sunday = monday + timedelta(days=6)
-    date_formatter = lambda d: '%04d-%02d-%02d' % (d.year, d.month, d.day)
     # we need this to filter out incomplete on-sale dates
     if monday.month != sunday.month:
         endday = monday.replace(day=monthrange(monday.year,monday.month)[1])
         issues_on_sale = \
-          Issue.objects.filter(on_sale_date__gte=date_formatter(monday), 
-                               on_sale_date__lte=date_formatter(endday))
-        sunday = monday + timedelta(days=6)
+          Issue.objects.filter(on_sale_date__gte=monday.isoformat(),
+                               on_sale_date__lte=endday.isoformat())
         startday = sunday.replace(day=1)
         issues_on_sale = issues_on_sale | \
-          Issue.objects.filter(on_sale_date__gte=date_formatter(startday), 
-                               on_sale_date__lte=date_formatter(sunday))
+          Issue.objects.filter(on_sale_date__gte=startday.isoformat(),
+                               on_sale_date__lte=sunday.isoformat())
 
     else:
-        issues_on_sale = Issue.objects.filter(on_sale_date__gte=date_formatter(monday), 
-                                    on_sale_date__lte=date_formatter(sunday))
+        issues_on_sale = Issue.objects\
+                              .filter(on_sale_date__gte=monday.isoformat(),
+                                      on_sale_date__lte=sunday.isoformat())
     previous_week = (monday - timedelta(weeks=1)).isocalendar()[0:2]
     if monday + timedelta(weeks=1) <= date.today():
         next_week = (monday + timedelta(weeks=1)).isocalendar()[0:2]
