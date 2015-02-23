@@ -129,7 +129,7 @@ def show_series_tracking(series, direction):
     elif direction == 'from' and origin_tracking .count():
         for origin_series in origin_tracking.all():
             if origin_series.origin_issue:
-                tracking_line += "<li> numbering continued from %s" % \
+                tracking_line += "<li> numbering continues from %s" % \
                   origin_series.origin_issue.full_name_with_link()
             else:
                 tracking_line += "<li> numbering continues from %s" % \

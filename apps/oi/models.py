@@ -713,7 +713,7 @@ class Changeset(models.Model):
                 elif ir_count > 1:
                     first = self.issuerevisions.order_by('revision_sort_code')[0]
                     last = self.issuerevisions.order_by('-revision_sort_code')[0]
-                    return u'%s #%s - %s' % (first.series, first.display_number,
+                    return u'%s %s - %s' % (first.series, first.display_number,
                                                         last.display_number)
             return u'Unknown State'
         elif self.change_type == CTYPES['issue']:
@@ -2696,7 +2696,8 @@ class SeriesRevision(Revision):
       help_text="Publications in this series are mostly comics publications.")
     is_singleton = models.BooleanField(
       help_text="Series consists of one and only one issue by design. "
-      "Note that an issue with no issue number will be created upon approval.")
+                "Note that for series adds an issue with no issue number will"
+                " be created upon approval.")
 
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='',
@@ -2784,6 +2785,23 @@ class SeriesRevision(Revision):
             return False
         return self.series.has_gallery
     has_gallery = property(_has_gallery)
+
+    def has_tracking(self):
+        if self.series is None:
+            return self.tracking_notes
+        return self.tracking_notes or self.series.has_series_bonds()
+
+    def _to_series_bond(self):
+        if self.series is None:
+            return SeriesBond.objects.filter(pk__isnull=True)
+        return self.series.to_series_bond.all()
+    to_series_bond = property(_to_series_bond)
+
+    def _from_series_bond(self):
+        if self.series is None:
+            return SeriesBond.objects.filter(pk__isnull=True)
+        return self.series.from_series_bond.all()
+    from_series_bond = property(_from_series_bond)
 
     def get_ongoing_revision(self):
         if self.series is None:

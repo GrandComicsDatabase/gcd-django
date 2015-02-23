@@ -27,7 +27,7 @@ INDEXED = {
 }
 
 def issue_descriptor(issue):
-    if issue.series.is_singleton and issue.number == '[nn]':
+    if issue.number == '[nn]' and issue.series.is_singleton:
         return u''
     if issue.title and issue.series.has_issue_title:
         title = u' - ' + issue.title

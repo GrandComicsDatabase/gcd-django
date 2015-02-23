@@ -66,7 +66,7 @@ def header_link(changeset):
             pub_url = absolute_url(revision.issue.series.publisher)
             issue_url = revision.issue.get_absolute_url()
             issue_num = revision.issue.display_number
-            header_link += mark_safe(u' and %s (%s) <a href="%s">#%s</a>' %
+            header_link += mark_safe(u' and %s (%s) <a href="%s">%s</a>' %
                             (series_url, pub_url, issue_url, issue_num))
         if changeset.change_type == CTYPES['cover']:
             if revision.issue.variant_name:

@@ -85,8 +85,10 @@ def field_value(revision, field):
                   (res_holder.first_name, res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
     elif field in ['publisher', 'indicia_publisher', 'series',
-                   'origin', 'origin_issue', 'target', 'target_issue']:
+                   'origin_issue', 'target_issue']:
         return absolute_url(value)
+    elif field in ['origin', 'target']:
+        return value.full_name_with_link()
     elif field == 'brand':
         if value and value.emblem:
             return mark_safe('<img src="' + value.emblem.icon.url + '"> ' \
@@ -185,7 +187,7 @@ def field_value(revision, field):
         if hasattr(revision, 'changed'):
             if revision.changed[field] and value == True:
                  if revision.series:
-                     value_count = revision.series.active_issues().count()
+                     value_count = revision.series.active_base_issues().count()
                      if value_count:
                         return 'Yes (note: the series has %d issue%s)' % \
                                 (value_count, pluralize(value_count))

@@ -32,7 +32,7 @@
       <br/>
       <div class="cover_caption">
         <span class="{{ cover.changeset.changeset_action }}">{{ cover|show_revision_type }}</span><br>
-        {{ issue.series.name }} #{{ issue.display_number }}<br>
+        {{ issue.series.name }} {{ issue.display_number }}<br>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br>
         {% if issue.publication_date %}
         <span class="cover_date">{{ issue.publication_date }}</span><br>

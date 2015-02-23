@@ -63,6 +63,8 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         else:
             return "9999-99-99"
 
+    def prepare_title(self, obj):
+        return obj.short_name()
 
 class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)

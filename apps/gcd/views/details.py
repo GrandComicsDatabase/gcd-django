@@ -263,7 +263,7 @@ def series(request, series_id):
     if series.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'series', 'id': series_id}))
-    if series.is_singleton:
+    if series.is_singleton and series.issue_count:
         return HttpResponseRedirect(
           urlresolvers.reverse(issue, kwargs={ 'issue_id': int(series.active_issues()[0].id) }))
 
@@ -1096,7 +1096,7 @@ def show_issue(request, issue, preview=False):
     zoom_level = ZOOM_MEDIUM
     if preview:
         images_count = 0
-        shown_types = StoryType.objects.values_list('id', flat=True)
+        not_shown_types = []
         # excludes are currently only relevant for variant_add, maybe later
         # other cover moves will be possible
         if issue.changeset.change_type in [CTYPES['variant_add'],
@@ -1145,12 +1145,12 @@ def show_issue(request, issue, preview=False):
         else:
             issue_detail = 1
         if issue_detail == 0:
-            shown_types = CORE_TYPES
+            not_shown_types = StoryType.objects.exclude(id__in=CORE_TYPES)\
+                                .values_list('id', flat=True)
         elif issue_detail == 1:
-            shown_types = StoryType.objects.exclude(id__in=AD_TYPES)\
-                            .values_list('id', flat=True)
+            not_shown_types = AD_TYPES
         else:
-            shown_types = StoryType.objects.values_list('id', flat=True)
+            not_shown_types = []
         image_tag = get_image_tags_per_issue(issue=issue,
                                              zoom_level=zoom_level,
                                              alt_text=alt_text)
@@ -1222,7 +1222,7 @@ def show_issue(request, issue, preview=False):
         'language': language,
         'error_subject': '%s' % issue,
         'preview': preview,
-        'shown_types': shown_types,
+        'not_shown_types': not_shown_types,
         'NO_ADS': True
       },
       context_instance=RequestContext(request))
