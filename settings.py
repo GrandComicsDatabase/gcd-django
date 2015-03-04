@@ -57,7 +57,8 @@ MIDDLEWARE_CLASSES = (
    'django.middleware.transaction.TransactionMiddleware',
    'django_mobile.middleware.MobileDetectionMiddleware',
    'django_mobile.middleware.SetFlavourMiddleware',
-   'apps.gcd.locale_query.LocaleQueryMiddleware'
+   'apps.gcd.locale_query.LocaleQueryMiddleware',
+   'apps.gcd.ErrorHandlingMiddleware'
 )
 
 LANGUAGES = (

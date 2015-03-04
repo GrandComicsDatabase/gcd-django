@@ -32,10 +32,13 @@ class ViewTerminationError(Exception):
     and simply return the included response.
     """
 
-    def __init__(self, response):
+    def __init__(self, response=None, message=None):
         self.response = response
+        self.message = message
+
     def __str__(self):
         return repr(self.response)
+
 
 def index(request):
     """Generates the front index page."""

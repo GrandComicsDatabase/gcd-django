@@ -6,7 +6,8 @@ from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 
 from apps.gcd.models import Issue, Series
-from apps.gcd.views import render_error, ResponsePaginator, paginate_response
+from apps.gcd.views import render_error, ResponsePaginator, paginate_response, \
+    ViewTerminationError
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 
@@ -116,9 +117,7 @@ def get_item_for_collector(issue_id, collector):
 
 def check_item_is_in_collection(request, item, collection):
     if item not in collection.items.all():
-        messages.error(request,
-                       _("This item doesn't belong to given collection."))
-        return HttpResponseRedirect(urlresolvers.reverse('display_message'))
+        raise ViewTerminationError(message="This item doesn't belong to given collection.")
 
 
 @login_required
@@ -126,17 +125,16 @@ def delete_collection_item(request, issue_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     item = get_item_for_collector(issue_id, request.user.collector)
 
-    def internal():
-        collection.items.remove(item)
-        if not item.collections:
-            item.acquisition_date.delete()
-            item.sell_date.delete()
-            item.delete()
-        messages.success(request, _("Item removed from collection"))
-        return HttpResponseRedirect(urlresolvers.reverse('view_collection',
-                                      kwargs={'collection_id': collection_id}))
+    check_item_is_in_collection(request, item, collection)
 
-    return check_item_is_in_collection(request, item, collection) or internal()
+    collection.items.remove(item)
+    if not item.collections:
+        item.acquisition_date.delete()
+        item.sell_date.delete()
+        item.delete()
+    messages.success(request, _("Item removed from collection"))
+    return HttpResponseRedirect(urlresolvers.reverse('view_collection',
+                                  kwargs={'collection_id': collection_id}))
 
 
 @login_required
@@ -144,22 +142,21 @@ def view_issue_in_collection(request, issue_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     item = get_item_for_collector(issue_id, request.user.collector)
 
-    def internal():
-        item_form = CollectionItemForm(request.user.collector, instance=item)
-        sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
-        sell_date_form.fields['date'].label = 'Sell date'
-        acquisition_date_form = DateForm(instance=item.acquisition_date,
-                                         prefix='acquisition_date')
-        acquisition_date_form.fields['date'].label = 'Acquisition date'
+    check_item_is_in_collection(request, item, collection)
 
-        return render_to_response(COLLECTION_ITEM_TEMPLATE,
-                                  {'item': item, 'item_form': item_form,
-                                   'collection': collection,
-                                   'sell_date_form': sell_date_form,
-                                   'acquisition_date_form': acquisition_date_form},
-                                  context_instance=RequestContext(request))
+    item_form = CollectionItemForm(request.user.collector, instance=item)
+    sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
+    sell_date_form.fields['date'].label = 'Sell date'
+    acquisition_date_form = DateForm(instance=item.acquisition_date,
+                                     prefix='acquisition_date')
+    acquisition_date_form.fields['date'].label = 'Acquisition date'
 
-    return check_item_is_in_collection(request, item, collection) or internal()
+    return render_to_response(COLLECTION_ITEM_TEMPLATE,
+                              {'item': item, 'item_form': item_form,
+                               'collection': collection,
+                               'sell_date_form': sell_date_form,
+                               'acquisition_date_form': acquisition_date_form},
+                              context_instance=RequestContext(request))
 
 
 @login_required
