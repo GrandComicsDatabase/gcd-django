@@ -10,6 +10,7 @@ from taggit.managers import TaggableManager
 from apps.gcd.models.country import Country
 from apps.gcd.models.language import Language
 from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
+from apps.gcd.models.seriesbond import SeriesRelativeBond
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -109,7 +110,23 @@ class Series(models.Model):
         return self.tracking_notes or self.has_series_bonds()
 
     def has_series_bonds(self):
-        return self.to_series_bond.count() or self.from_series_bond.count()
+        return self.to_series_bond.exists() or self.from_series_bond.exists()
+
+    def series_relative_bonds(self, **filter_args):
+        """
+        Returns an unsorted list (not queryset!) of SeriesRelativeBond objects.
+
+        SeriesRelativeBonds are not database objects, but can be sorted
+        uniformly and provide access to the underlying SeriesBond.
+
+        Does *not* automatically call has_series_bonds.
+        """
+        bonds = []
+        bonds = [SeriesRelativeBond(self, b)
+                 for b in self.to_series_bond.filter(**filter_args)]
+        bonds.extend([SeriesRelativeBond(self, b)
+                      for b in self.from_series_bond.filter(**filter_args)])
+        return bonds
 
     def delete(self):
         self.deleted = True
