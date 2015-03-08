@@ -19,3 +19,4 @@ settings_local.py
 *.nja
 .idea
 *.iml
+.reviewboardrc

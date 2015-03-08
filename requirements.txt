@@ -16,7 +16,7 @@ git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
 git+git://github.com/GrandComicsDatabase/django-mobile.git
 python-stdnum
 wsgiref
-pyelasticsearch
+pyelasticsearch<1.0
 django-haystack<2.1.0
 python-dateutil
 diff-match-patch
