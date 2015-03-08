@@ -110,32 +110,47 @@ def show_issue(issue):
                       esc(issue.series.year_began),
                       issue_number))
 
-def show_series_tracking(series, direction):
-    target_tracking = series.to_series_bond.filter(\
-                        bond_type__id__in=BOND_TRACKING)
-    origin_tracking = series.from_series_bond.filter(\
-                        bond_type__id__in=BOND_TRACKING)
-    tracking_line = ""
-    if direction == 'in' and target_tracking.count():
-        for target_series in target_tracking.all():
-            if target_series.target_issue:
-                tracking_line += "<li> numbering continues with %s" % \
-                  target_series.target_issue.full_name_with_link()
-            else:
-                tracking_line += "<li> numbering continues in %s" % \
-                  target_series.target.full_name_with_link()
-            if target_series.notes:
-                tracking_line += ' [%s]' % target_series.notes
-    elif direction == 'from' and origin_tracking .count():
-        for origin_series in origin_tracking.all():
-            if origin_series.origin_issue:
-                tracking_line += "<li> numbering continues from %s" % \
-                  origin_series.origin_issue.full_name_with_link()
-            else:
-                tracking_line += "<li> numbering continues from %s" % \
-                  origin_series.origin.full_name_with_link()
-            if origin_series.notes:
-                tracking_line += ' [%s]' % origin_series.notes
+def show_series_tracking(series):
+    tracking_line = u""
+    if not series.has_series_bonds():
+        return mark_safe(tracking_line)
+
+    srbonds = series.series_relative_bonds(bond_type__id__in=BOND_TRACKING)
+    srbonds.sort()
+    for srbond in srbonds:
+        tracking_line += '<dt> '
+        if series == srbond.bond.target:
+            tracking_line += '%s<span class="inactive">%s</span>' % ('->|',
+                                                                     '->')
+            near_issue_preposition = u"with"
+            far_issue_preposition = u"from"
+            far_preposition = u"from"
+        elif series  == srbond.bond.origin:
+            tracking_line += '<span class="inactive">%s</span>%s' % ('->',
+                                                                     '|->')
+            near_issue_preposition = u"from"
+            far_issue_preposition = u"with"
+            far_preposition = u"in"
+        else:
+            # Wait, why are we here?  Should we assert on this?
+            continue
+
+        tracking_line += '<dd> numbering continues '
+        if (srbond.near_issue != srbond.near_issue_default):
+            tracking_line += '%s %s ' % (
+                near_issue_preposition, srbond.near_issue.display_number)
+        if srbond.has_explicit_far_issue:
+            tracking_line += '%s %s' % (
+                far_issue_preposition, srbond.far_issue.full_name_with_link())
+        else:
+            tracking_line += '%s %s' % (
+                far_preposition, srbond.far_series.full_name_with_link())
+
+        if srbond.bond.notes:
+            tracking_line += (
+                '<dl class="bond_notes"><dt>Note:</dt><dd>%s</dl>' %
+                srbond.bond.notes)
+
     return mark_safe(tracking_line)
 
 def show_indicia_pub(issue):
