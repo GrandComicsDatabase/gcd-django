@@ -32,9 +32,8 @@ class ViewTerminationError(Exception):
     and simply return the included response.
     """
 
-    def __init__(self, response=None, message=None):
+    def __init__(self, response):
         self.response = response
-        self.message = message
 
     def __str__(self):
         return repr(self.response)

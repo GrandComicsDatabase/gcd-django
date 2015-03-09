@@ -6,8 +6,8 @@ from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 
 from apps.gcd.models import Issue, Series
-from apps.gcd.views import render_error, ResponsePaginator, paginate_response, \
-    ViewTerminationError
+from apps.gcd.views import render_error, ResponsePaginator, paginate_response
+from apps.gcd import ErrorWithMessage
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 
@@ -117,7 +117,7 @@ def get_item_for_collector(issue_id, collector):
 
 def check_item_is_in_collection(request, item, collection):
     if item not in collection.items.all():
-        raise ViewTerminationError(message="This item doesn't belong to given collection.")
+        raise ErrorWithMessage("This item doesn't belong to given collection.")
 
 
 @login_required

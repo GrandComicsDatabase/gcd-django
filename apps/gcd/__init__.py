@@ -8,6 +8,12 @@ from apps.gcd.views import ViewTerminationError, render_error
 from django.utils.translation import ugettext as _
 
 
+class ErrorWithMessage(ViewTerminationError):
+    def __init__(self, message):
+        ViewTerminationError.__init__(self, None)
+        self.message = message
+
+
 class ErrorHandlingMiddleware:
     def process_exception(self, request, exception):
         if isinstance(exception, ViewTerminationError):
