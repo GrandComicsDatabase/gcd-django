@@ -10,15 +10,15 @@ from django.utils.translation import ugettext as _
 
 class ErrorWithMessage(ViewTerminationError):
     def __init__(self, message):
-        ViewTerminationError.__init__(self, None)
         self.message = message
+
+    def get_response(self, request):
+        return render_error(request, _(self.message), redirect=False)
 
 
 class ErrorHandlingMiddleware:
     def process_exception(self, request, exception):
         if isinstance(exception, ViewTerminationError):
-            return exception.response or render_error(request,
-                                                      _(exception.message),
-                                                      redirect=False)
+            return exception.get_response(request)
 
         return None

@@ -38,6 +38,9 @@ class ViewTerminationError(Exception):
     def __str__(self):
         return repr(self.response)
 
+    def get_response(self, request):
+        return self.response
+
 
 def index(request):
     """Generates the front index page."""
