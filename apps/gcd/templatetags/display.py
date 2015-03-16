@@ -118,24 +118,19 @@ def show_series_tracking(series):
     srbonds = series.series_relative_bonds(bond_type__id__in=BOND_TRACKING)
     srbonds.sort()
     for srbond in srbonds:
-        tracking_line += '<dt> '
         if series == srbond.bond.target:
-            tracking_line += '%s<span class="inactive">%s</span>' % ('->|',
-                                                                     '->')
             near_issue_preposition = u"with"
             far_issue_preposition = u"from"
             far_preposition = u"from"
         elif series  == srbond.bond.origin:
-            tracking_line += '<span class="inactive">%s</span>%s' % ('->',
-                                                                     '|->')
-            near_issue_preposition = u"from"
+            near_issue_preposition = u"after"
             far_issue_preposition = u"with"
             far_preposition = u"in"
         else:
             # Wait, why are we here?  Should we assert on this?
             continue
 
-        tracking_line += '<dd> numbering continues '
+        tracking_line += '<li> numbering continues '
         if (srbond.near_issue != srbond.near_issue_default):
             tracking_line += '%s %s ' % (
                 near_issue_preposition, srbond.near_issue.display_number)

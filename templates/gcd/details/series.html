@@ -147,9 +147,9 @@
   {% if series.tracking_notes %}
             <div class="series_notes">{{ series.tracking_notes|linebreaksbr }}</div>
   {% endif %}
-            <dl>
+            <ul class="series_detail_info">
               {{ series|show_series_tracking }}
-            </dl>
+            </ul>
 {% endif %}
 {% if series.notes %}
             <div class="series_detail_header"> Notes </div>

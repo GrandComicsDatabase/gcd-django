@@ -74,10 +74,3 @@ ul#series_detail_link_list {
     color: #777;
 }
 
-span.inactive {
-    visibility: hidden;
-}
-
-dl.bond_notes {
-    padding-left: 2em;
-}
