@@ -123,9 +123,29 @@ Total number of voters: {{ topic.num_voters }}
   <p>
     Please rank the following options by giving each option a number, where your
     preferred option gets the lowest number and the others increasingly higher
-    numbers.  You may give no rank to one or more options, these then will be
-    ranked last.  You may give the same rank to several options.  You must
-    submit all of your ranks at the same time.
+    numbers.
+
+    <ul>
+        <li> You may rank multiple options with the same number to indicate
+             equal preference.
+        <li> You may leave one or more options blank- this is the same as
+             giving those options a rank lower than all numbered options.
+        <li> Only the order matters, not the exact numbers.
+          <ul>
+            <li> Using 1, 10, 100 has the same effect as 1, 2, 3.
+            <li> What matters is how many wins your ballot gives each
+                 option over the others.
+            <li> Voting A: 1, B: 2, C: 3, D:3 gives A three wins, B two
+                 wins, and does not give C or D any wins.
+            <li> If you changed your ballot to rank D:4, you would still
+                 be giving A three wins and B four wins, but you would now
+                 also be giving C one win.  D would still get no wins.
+            <li> There's more to this than just win counts, but that's
+                 the most accurate simple explanation.  See the
+                 <a href="">Schulze Method</a> for all the math.
+          </ul>
+        <li> You must submit all of your ranks at the same time.
+    </ul>
   </p>
     {% endif %}
     {% for option in topic.options.all %}
