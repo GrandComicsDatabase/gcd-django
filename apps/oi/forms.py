@@ -842,33 +842,34 @@ def get_issue_revision_form(publisher, series=None, revision=None,
               series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
               series.publisher.active_indicia_publishers_no_pending()
+
+            issue_year = None
             if revision and revision.key_date:
-                self.fields['brand'].queryset = \
-                    self.fields['brand'].queryset\
-                    .exclude(year_ended__lt=int(revision.key_date[:4]))
-                self.fields['indicia_publisher'].queryset = \
-                    self.fields['indicia_publisher'].queryset.\
-                    exclude(year_ended__lt=int(revision.key_date[:4]))
-                self.fields['brand'].queryset = \
-                    self.fields['brand'].queryset\
-                    .exclude(year_began__gt=int(revision.key_date[:4]))
-                self.fields['indicia_publisher'].queryset = \
-                    self.fields['indicia_publisher'].queryset\
-                    .exclude(year_began__gt=int(revision.key_date[:4]))
+                issue_year = int(revision.key_date[:4])
             elif revision and revision.year_on_sale and \
-                int(log10(revision.year_on_sale))+1 == 4:
-                self.fields['brand'].queryset = \
-                    self.fields['brand'].queryset\
-                    .exclude(year_ended__lt=revision.year_on_sale)
+                int(log10(revision.year_on_sale)) + 1 == 4:
+                issue_year = revision.year_on_sale
+            if issue_year:
+                brands = self.fields['brand'].queryset
+                brands = brands.filter(in_use__year_began__lte=issue_year,
+                                in_use__year_ended=None,
+                                in_use__publisher__id=series.publisher.id) | \
+                         brands.filter(in_use__year_began=None,
+                                in_use__year_ended__gte=issue_year,
+                                in_use__publisher__id=series.publisher.id) | \
+                         brands.filter(in_use__year_began=None,
+                                in_use__year_ended=None,
+                                in_use__publisher__id=series.publisher.id) | \
+                         brands.filter(in_use__year_began__lte=issue_year,
+                                in_use__year_ended__gte=issue_year,
+                                in_use__publisher__id=series.publisher.id)
+                self.fields['brand'].queryset = brands.distinct()
                 self.fields['indicia_publisher'].queryset = \
                     self.fields['indicia_publisher'].queryset\
-                    .exclude(year_ended__lt=revision.year_on_sale)
-                self.fields['brand'].queryset = \
-                    self.fields['brand'].queryset\
-                    .exclude(year_began__gt=revision.year_on_sale)
+                    .exclude(year_ended__lt=issue_year)
                 self.fields['indicia_publisher'].queryset = \
                     self.fields['indicia_publisher'].queryset\
-                    .exclude(year_began__gt=revision.year_on_sale)
+                    .exclude(year_began__gt=issue_year)
             else:
                 if series.year_began:
                     self.fields['brand'].queryset = \

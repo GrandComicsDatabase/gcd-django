@@ -9,11 +9,10 @@
 <link rel="stylesheet" type="text/css"
       href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+      href="{{ MEDIA_URL }}css/select/{{ style|default:'default' }}.css"/>
 {% endblock %}
 
 {% block view_body %}
-<p>
 {{ heading }}
 Search for {{ target }} by entering the relevant information here:
 
@@ -41,7 +40,7 @@ Search for {{ target }} by entering the relevant information here:
 </form>
 
 <form action="{% url select_object_search select_key=select_key %}" method="GET">
-  <table class="editing">
+  <table class="select_search">
     <tr>
 {% for field in search_form.visible_fields %}
       <th>{{ field.label_tag }}</th>
@@ -74,20 +73,21 @@ Search for {{ target }} by entering the relevant information here:
   <input type="submit" name="search_publisher" value="Search for publisher"></input>
 {% endif %}
 </form>
-</p>
+
+{% if cache_form.visible_fields %}
+<p>
+or select from the data cache:
+{% for radio in cache_form.object_choice %}
 <form action="{% url select_object select_key=select_key %}" method="POST">
 {% csrf_token %}
-<p>
-{% if cache_form.visible_fields %}
-or select from the data cache:
-  <table class="editing">
-  {{ cache_form.as_table }}
-  </table>
-  <input type="submit" name="select_object" value="Select marked"></input>
+ <input type="submit" name="select_object" value="Select">
+ <input type="hidden" name="object_choice" value="{{ radio.choice_value }}">
+{{ radio.choice_label }}
+</form>
+{% endfor %}
+</p>
 {% endif %}
 {% if story or issue %}
-</p>
-</form>
   {% if issue %}
 <form action="{% url select_object select_key=select_key %}" method="POST">
 {% csrf_token %}

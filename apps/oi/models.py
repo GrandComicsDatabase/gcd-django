@@ -3538,6 +3538,11 @@ class IssueRevision(Revision):
                self.from_issue_reprints.count() or \
                self.to_issue_reprints.count()
 
+    def can_add_reprints(self):
+        if self.variant_of and self.ordered_story_revisions().count() > 0:
+            return False
+        return True
+
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.issue with a story/issue
     #    in the current direction under consideration
