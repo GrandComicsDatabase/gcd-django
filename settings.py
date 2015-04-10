@@ -199,6 +199,8 @@ ELASTICSEARCH_INDEX_SETTINGS = {
 
 ELASTICSEARCH_DEFAULT_ANALYZER = 'default'
 
+USE_ELASTICSEARCH = False
+
 #################################################################################
 # GCD site settings
 #################################################################################

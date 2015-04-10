@@ -192,51 +192,52 @@ def generic_by_name(request, name, q_obj, sort,
     return paginate_response(request, things, template, vars)
 
 def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
-    q_obj = Q(name__icontains=publisher_name)
-    return generic_by_name(request, publisher_name, q_obj, sort,
-                           Publisher, 'gcd/search/publisher_list.html')
-
-def publisher_by_name_haystack(request, publisher_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
-                          .models(Publisher)
-    return generic_by_name(request, publisher_name, None, sort,
-                           Publisher, 'gcd/search/publisher_list.html', sqs=sqs)
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
+                              .models(Publisher)
+        return generic_by_name(request, publisher_name, None, sort, Publisher,
+                               'gcd/search/publisher_list.html', sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=publisher_name)
+        return generic_by_name(request, publisher_name, q_obj, sort,
+                               Publisher, 'gcd/search/publisher_list.html')
 
 def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
-    q_obj = Q(name__icontains=brand_group_name)
-    return generic_by_name(request, brand_group_name, q_obj, sort,
-                           BrandGroup, 'gcd/search/brand_group_list.html')
-
-def brand_group_by_name_haystack(request, brand_group_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_group_name)) \
-                          .models(BrandGroup)
-    return generic_by_name(request, brand_group_name, None, sort,
-                           BrandGroup, 'gcd/search/brand_group_list.html',
-                           sqs=sqs)
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_group_name)) \
+                              .models(BrandGroup)
+        return generic_by_name(request, brand_group_name, None, sort,
+                               BrandGroup, 'gcd/search/brand_group_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=brand_group_name)
+        return generic_by_name(request, brand_group_name, q_obj, sort,
+                               BrandGroup, 'gcd/search/brand_group_list.html')
 
 def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
-    q_obj = Q(name__icontains=brand_name)
-    return generic_by_name(request, brand_name, q_obj, sort,
-                           Brand, 'gcd/search/brand_list.html')
-
-def brand_by_name_haystack(request, brand_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_name)) \
-                          .models(Brand)
-    return generic_by_name(request, brand_name, None, sort,
-                           Brand, 'gcd/search/brand_list.html', sqs=sqs)
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_name)) \
+                              .models(Brand)
+        return generic_by_name(request, brand_name, None, sort, Brand, 
+                               'gcd/search/brand_list.html', sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=brand_name)
+        return generic_by_name(request, brand_name, q_obj, sort,
+                               Brand, 'gcd/search/brand_list.html')
 
 def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
-    q_obj = Q(name__icontains=ind_pub_name)
-    return generic_by_name(request, ind_pub_name, q_obj, sort,
-                           IndiciaPublisher,
-                           'gcd/search/indicia_publisher_list.html')
-
-def indicia_publisher_by_name_haystack(request, ind_pub_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(name=GcdNameQuery(ind_pub_name)) \
-                          .models(IndiciaPublisher)
-    return generic_by_name(request, ind_pub_name, None, sort,
-                           IndiciaPublisher,
-                           'gcd/search/indicia_publisher_list.html', sqs=sqs)
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(ind_pub_name)) \
+                            .models(IndiciaPublisher)
+        return generic_by_name(request, ind_pub_name, None, sort,
+                               IndiciaPublisher,
+                               'gcd/search/indicia_publisher_list.html', 
+                               sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=ind_pub_name)
+        return generic_by_name(request, ind_pub_name, q_obj, sort,
+                               IndiciaPublisher,
+                               'gcd/search/indicia_publisher_list.html')
 
 def character_by_name(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
@@ -340,11 +341,6 @@ def series_by_name(request, series_name, sort=ORDER_ALPHA):
             Q(issue__title__icontains = series_name)
     return generic_by_name(request, series_name, q_obj, sort,
                            Series, 'gcd/search/series_list.html')
-
-def series_by_name_haystack(request, series_name, sort=ORDER_ALPHA):
-    sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name))
-    return generic_by_name(request, series_name, None, sort,
-                           Series, 'gcd/search/series_list.html', sqs=sqs)
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series_name """

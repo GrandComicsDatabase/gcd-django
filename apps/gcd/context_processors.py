@@ -9,5 +9,7 @@ def gcd(request):
         stuff['BETA'] = settings.BETA
     if hasattr(settings, 'ADVERTISING'):
         stuff['ADVERTISING'] = settings.ADVERTISING
+    if hasattr(settings, 'USE_ELASTICSEARCH'):
+        stuff['USE_ELASTICSEARCH'] = settings.USE_ELASTICSEARCH
     return stuff
 

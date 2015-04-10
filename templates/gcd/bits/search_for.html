@@ -1,9 +1,13 @@
 {% load display %}
 
 <select name="type" size="1">
+  {% if USE_ELASTICSEARCH %}
     <option value={{ selected|default:""|current_search:"haystack" }}> Everything </option>
+  {% endif %}
     <option value={{ selected|default:""|current_search:"series" }}> Series Name </option>
+  {% if USE_ELASTICSEARCH %}
     <option value={{ selected|default:""|current_search:"haystack_issue" }}> Series Name &amp; Issue # </option>
+  {% endif %}
     <option value={{ selected|default:""|current_search:"writer" }}> Writer </option>
     <option value={{ selected|default:""|current_search:"penciller" }}> Penciller </option>
     <option value={{ selected|default:""|current_search:"inker" }}> Inker </option>
