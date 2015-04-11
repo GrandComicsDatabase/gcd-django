@@ -1,6 +1,7 @@
 import hashlib
 import os.path
 from datetime import datetime
+from pyvotecore.schulze_method import SchulzeMethod
 
 from django.conf import settings
 from django.db.models import Q
@@ -97,7 +98,6 @@ def _calculate_results(unresolved):
     Given a QuerySet of unresolved topics (with expired deadlines),
     resolve them into results, possibly indicating a tie of some sort.
 
-    TODO: Handle ranked choice voting.
     TODO: Handle the case of abstaning being a "winning" option.
     """
 
@@ -143,6 +143,49 @@ def _calculate_results(unresolved):
             extra = ('\n\nPlease note that Charter Amendments require a 2/3 '
                      'majority to pass.')
 
+        elif not topic.vote_type.max_votes:
+            # evaluate Schulze method. First collect votes, than use library.
+            voters = User.objects.filter(votes__option__topic=topic).distinct()
+            options = topic.options.all()
+            ballots = []
+            for voter in voters:
+                votes = Vote.objects.filter(option__in=options, voter=voter)\
+                                    .order_by('rank')
+                ordered_votes = []
+                last_rank = votes[0].rank-1
+                current_rank = 0
+                for vote in votes:
+                    if vote.rank == last_rank:
+                        ordered_votes[-1].append(vote.option_id)
+                    else:
+                        ordered_votes.append([vote.option_id])
+                        last_rank = vote.rank
+                        current_rank += 1
+                    vote.rank = current_rank
+                    vote.save()
+                ballot = {'ballot': ordered_votes}
+                ballots.append(ballot)
+            result = SchulzeMethod(ballots, ballot_notation = "grouping")
+            if hasattr(result,'tied_winners'):
+                # Schulze method can be tied as well, treat as other ties
+                options = Option.objects.filter(id__in=result.tied_winners)
+                for option in options:
+                    option.result = True
+                    option.save()
+                topic.invalid = True
+                topic.result_calculated = True
+                topic.save()
+            else:
+                option = Option.objects.get(id=result.winner)
+                option.result = True
+                option.save()
+                options = options.exclude(id=result.winner)
+                for option in options:
+                    option.result = False
+                    option.save()
+                topic.result_calculated = True
+                topic.save()
+
         elif topic.vote_type.max_votes <= topic.vote_type.max_winners:
             # Flag ties that affect the validity of the results,
             # and set any tied options after the valid winning range
@@ -171,7 +214,6 @@ def _calculate_results(unresolved):
             topic.save()
 
         else:
-            # TODO: Implement Schulze method.
             return
 
         _send_result_email(topic, extra)
@@ -237,10 +279,25 @@ def vote(request):
     topic = None
     voter = None
     option_params = request.POST.getlist('option')
-    options = Option.objects.filter(id__in=option_params)
-
-    # Get all of these now because we may need to iterate twice.
-    options = options.select_related('topic__agenda', 'topic__vote_type').all()
+    ranks = {}
+    if not option_params:
+        # ranked_choice, collect all ranks
+        values = request.POST.keys()
+        for value in values:
+            if value.startswith('option'):
+                if request.POST[value]:
+                    try:
+                        ranks[int(value[7:])] = int(request.POST[value])
+                    except ValueError:
+                        return render_error(request,
+                        'You must enter a full number for the ranking.')
+                else:
+                    ranks[int(value[7:])] = None
+        options = Option.objects.filter(id__in=ranks.keys())
+    else:
+        options = Option.objects.filter(id__in=option_params)
+        # Get all of these now because we may need to iterate twice.
+        options = options.select_related('topic__agenda', 'topic__vote_type').all()
     if not options:
         return render_error(request,
                             'You must choose at least one option to vote.')
@@ -284,8 +341,15 @@ def vote(request):
                   'your vote, please contact the voting administrator at ' +
                   settings.EMAIL_VOTING_ADMIN)
 
-        # Ranked voting not yet supported (no UI) so just set rank to None.
-        vote = Vote(option=option, voter=voter, rank=None)
+        if not option_params:
+            # for ranked choice options can be empty, set these last in ranking
+            if option.id in ranks:
+                rank = ranks[option.id]
+            if not rank:
+                rank = max(ranks.values()) + 1
+        else:
+            rank = None
+        vote = Vote(option=option, voter=voter, rank=rank)
         vote.save()
 
     if topic.agenda.secret_ballot:

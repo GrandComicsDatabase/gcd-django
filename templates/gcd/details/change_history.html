@@ -99,14 +99,30 @@ should include a comment explaining the deletion.
 </table>
 </div>
 
+{% if description = "Issue" and object.series.is_singleton %}
+<div>
+<table class="listing">
+  <tr>
+    <th colspan="2">Change History For Series Data</th>
+  </tr>
+  <tr class="listing_even">
+    <td><a href="{% url change_history model_name='series' id=object.series.id %}?collapse=1"> {{ object.series }} </a></td>
+    <td>{{ object.series.modified }}</td>
+  </tr>
+</table>
+</div>
+{% endif %}
+
 {% if description = "Issue" and perms.gcd.can_approve %}
 <div>
 <table class="listing">
+  <tr>
+    <th colspan="2">Change History For Cover Scans</th>
+  </tr>
   {% for cover in object.cover_set.all %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td><a href="{% url change_history model_name='cover' id=cover.id %}?collapse=1"> {{ cover }} </a></td>
     <td>{{ cover.last_upload }}</td>
-    </td>
   </tr>
   {% endfor %}
 </table>
@@ -118,19 +134,43 @@ should include a comment explaining the deletion.
   {% if object.indicia_image %}
   <table class="listing">
     <tr>
-      <td><a href="{% url change_history model_name='image' id=object.indicia_image.id %}?collapse=1"> {{ object.indicia_image }} </a></td>
-      <td>{{ object.indicia_image.modified }}</td>
+      <th colspan="2">Change History For Indicia Scan</th>
     </tr>
+    {% with model_name='image' object=object.indicia_image %}
+      {% include "gcd/bits/change_history_link.html" %}
+    {% endwith %}
   </table>
   {% endif %}
   {% if object.soo_image %}
   <table class="listing">
     <tr>
-      <td><a href="{% url change_history model_name='image' id=object.soo_image.id %}?collapse=1"> {{ object.soo_image }} </a></td>
-      <td>{{ object.soo_image.modified }}</td>
+      <th colspan="2">Change History For Statement of Ownership Scan</th>
     </tr>
+    {% with model_name='image' object=object.soo_image %}
+      {% include "gcd/bits/change_history_link.html" %}
+    {% endwith %}
   </table>
   {% endif %}
+</div>
+{% endif %}
+
+{% if description = "Series" and object.has_series_bonds %}
+<div>
+  <table class="listing">
+    <tr>
+      <th colspan="2">Change History For Series Bonds</th>
+    </tr>
+    {% for bond in object.to_series_bond.all %}
+    {% with model_name='series_bond' object=bond %}
+      {% include "gcd/bits/change_history_link.html" %}
+    {% endwith %}
+  {% endfor %}
+  {% for bond in object.from_series_bond.all %}
+    {% with model_name='series_bond' object=bond %}
+      {% include "gcd/bits/change_history_link.html" %}
+    {% endwith %}
+  {% endfor %}
+  </table>
 </div>
 {% endif %}
 
@@ -138,9 +178,11 @@ should include a comment explaining the deletion.
 <div>
   <table class="listing">
     <tr>
-      <td><a href="{% url change_history model_name='image' id=object.emblem.id %}?collapse=1"> {{ object.emblem }} </a></td>
-      <td>{{ object.emblem.modified }}</td>
+      <th colspan="2">Change History For Brand Emblem Scan</th>
     </tr>
+  {% with model_name='image' object=object.emblem %}
+    {% include "gcd/bits/change_history_link.html" %}
+  {% endwith %}
   </table>
 </div>
 {% endif %}

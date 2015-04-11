@@ -48,6 +48,7 @@ REVISION_CLASSES = {
     'brand': BrandRevision,
     'brand_use': BrandUseRevision,
     'series': SeriesRevision,
+    'series_bond': SeriesBondRevision,
     'issue': IssueRevision,
     'story': StoryRevision,
     'cover': CoverRevision,
@@ -62,6 +63,7 @@ DISPLAY_CLASSES = {
     'brand': Brand,
     'brand_use': BrandUse,
     'series': Series,
+    'series_bond': SeriesBond,
     'issue': Issue,
     'story': Story,
     'cover': Cover,
@@ -196,7 +198,7 @@ def reserve(request, id, model_name, delete=False,
 
         if delete:
             changeset.submit(notes=request.POST['comments'], delete=True)
-            if model_name == 'image':
+            if model_name in ['image', 'series_bond']:
                 return HttpResponseRedirect(urlresolvers.reverse('editing'))
             if model_name == 'cover':
                 return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
@@ -2402,6 +2404,128 @@ def _display_add_story_form(request, issue, form, changeset_id):
       context_instance=RequestContext(request))
 
 ##############################################################################
+# Series Bond Editing
+##############################################################################
+
+@permission_required('gcd.can_reserve')
+def edit_series_bonds(request, series_id):
+    series = get_object_or_404(Series, id=series_id)
+    return render_to_response('oi/edit/list_series_bonds.html',
+      {
+        'series': series,
+      },
+      context_instance=RequestContext(request))
+
+@permission_required('gcd.can_reserve')
+def save_selected_series_bond(request, data, object_type, selected_id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    series_bond_revision = get_object_or_404(SeriesBondRevision,
+                           id=data['series_bond_revision_id'])
+    if object_type == 'series':
+        series = get_object_or_404(Series, id=selected_id)
+        if data['which_side'] == 'origin':
+            series_bond_revision.origin = series
+            series_bond_revision.origin_issue = None
+        else:
+            series_bond_revision.target = series
+            series_bond_revision.target_issue = None
+    else:
+        issue = get_object_or_404(Issue, id=selected_id)
+        if data['which_side'] == 'origin':
+            series_bond_revision.origin = issue.series
+            series_bond_revision.origin_issue = issue
+        else:
+            series_bond_revision.target = issue.series
+            series_bond_revision.target_issue = issue
+    series_bond_revision.save()
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+        kwargs={'id': series_bond_revision.changeset.id}))
+
+@permission_required('gcd.can_reserve')
+def edit_series_bond(request, id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    series_bond_revision = get_object_or_404(SeriesBondRevision, id=id)
+    number = ''
+    if 'edit_origin' in request.POST:
+        which_side = 'origin'
+        series = series_bond_revision.origin
+        if series_bond_revision.origin_issue:
+            number = series_bond_revision.origin_issue.number
+    elif 'edit_target' in request.POST:
+        which_side = 'target'
+        series = series_bond_revision.target
+        if series_bond_revision.target_issue:
+            number = series_bond_revision.target_issue.number
+    elif 'flip_direction' in request.POST:
+        series = series_bond_revision.target
+        issue = series_bond_revision.target_issue
+        series_bond_revision.target = series_bond_revision.origin
+        series_bond_revision.target_issue = series_bond_revision.origin_issue
+        series_bond_revision.origin = series
+        series_bond_revision.origin_issue = issue
+        series_bond_revision.save()
+        return HttpResponseRedirect(urlresolvers.reverse('edit',
+            kwargs={'id': series_bond_revision.changeset.id}))
+    else:
+        raise NotImplementedError
+    initial = {'series': series.name,
+            'publisher': series.publisher,
+            'year': series.year_began,
+            'number': number}
+    data = {'series_bond_revision_id': id,
+            'initial': initial,
+            'series': True,
+            'issue': True,
+            'heading': mark_safe('<h2>Select %s of the bond %s</h2>' % \
+                                 (which_side, series_bond_revision)),
+            'target': 'a series or issue',
+            'return': save_selected_series_bond,
+            'which_side': which_side,
+            'cancel': HttpResponseRedirect(urlresolvers.reverse('edit',
+                        kwargs={'id': series_bond_revision.changeset.id}))}
+    select_key = store_select_data(request, None, data)
+    return HttpResponseRedirect(urlresolvers.reverse('select_object',
+        kwargs={'select_key': select_key}))
+
+def save_added_series_bond(request, data, object_type, selected_id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                        change_type=CTYPES['series_bond'])
+    changeset.save()
+    series = get_object_or_404(Series, id=data['series_id'])
+    if object_type == 'series':
+        target = get_object_or_404(Series, id=selected_id)
+        series_bond_revision = SeriesBondRevision(target=target)
+    else:
+        target_issue = get_object_or_404(Issue, id=selected_id)
+        series_bond_revision = SeriesBondRevision(target=target_issue.series,
+                                                  target_issue=target_issue)
+    series_bond_revision.origin = series
+    series_bond_revision.changeset = changeset
+    series_bond_revision.save()
+    return HttpResponseRedirect(urlresolvers.reverse('edit',
+        kwargs={'id': series_bond_revision.changeset.id}))
+
+@permission_required('gcd.can_reserve')
+def add_series_bond(request, id):
+    series = get_object_or_404(Series, id=id)
+    data = {'series_id': id,
+            'series': True,
+            'issue': True,
+            'heading': mark_safe('<h2>Select other side of the bond</h2>'),
+            'target': 'a series or issue',
+            'return': save_added_series_bond,
+            'cancel': HttpResponseRedirect(urlresolvers.reverse('show_series',
+                        kwargs={'series_id': series.id}))}
+    select_key = store_select_data(request, None, data)
+    return HttpResponseRedirect(urlresolvers.reverse('select_object',
+        kwargs={'select_key': select_key}))
+
+
+##############################################################################
 # Reprint Link Editing
 ##############################################################################
 
@@ -2871,7 +2995,7 @@ def select_internal_object(request, id, changeset_id, which_side,
         context_instance=RequestContext(request))
 
 @permission_required('gcd.can_reserve')
-def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
+def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, edit=False):
     story = get_object_or_404(Story, id=story_id)
     issue = get_object_or_404(Issue, id=issue_id)
     reprint_revision = get_object_or_404(ReprintRevision,
@@ -2883,7 +3007,7 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id):
           'Only the reservation holder may access this page.')
     if issue != changeset_issue.issue:
         return _cant_get(request)
-    if request.method != 'POST':
+    if request.method != 'POST' and not edit:
         if story == reprint_revision.origin_story:
             direction = 'from'
         else:
@@ -3074,6 +3198,20 @@ def save_reprint(request, reprint_revision_id, changeset_id,
     if 'add_reprint_view' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
             kwargs={ 'id': changeset.issuerevisions.get().id }))
+    if 'matching_sequence' in request.POST:
+        if revision.origin_story:
+            story = revision.origin_story
+            issue = revision.target_issue
+        else:
+            story = revision.target_story
+            issue = revision.origin_issue
+        if issue != changeset.issuerevisions.get().issue:
+            return _cant_get(request)
+        return HttpResponseRedirect(
+          urlresolvers.reverse('create_edit_matching_sequence',
+                               kwargs={ 'reprint_revision_id': revision.id,
+                                        'story_id': story.id,
+                                        'issue_id': issue.id }))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
             kwargs={ 'id': changeset_id }))
@@ -3776,6 +3914,7 @@ def show_queue(request, queue_name, state):
     brands = changes.filter(change_type=CTYPES['brand'])
     brand_uses = changes.filter(change_type=CTYPES['brand_use'])
     series = changes.filter(change_type=CTYPES['series'])
+    series_bonds = changes.filter(change_type=CTYPES['series_bond'])
     issue_adds = changes.filter(change_type=CTYPES['issue_add'])
     issues = changes.filter(change_type__in=[CTYPES['issue'],
                                              CTYPES['variant_add'],
@@ -3785,7 +3924,6 @@ def show_queue(request, queue_name, state):
     images = changes.filter(change_type=CTYPES['image'])
     countries = dict(Country.objects.values_list('id', 'code'))
     country_names = dict(Country.objects.values_list('id', 'name'))
-
     response = render_to_response(
       'oi/queues/%s.html' % queue_name,
       {
@@ -3814,7 +3952,7 @@ def show_queue(request, queue_name, state):
               .annotate(country=Max('brandgrouprevisions__parent__country__id')),
           },
           {
-            'object_name': 'Brands',
+            'object_name': 'Brand Emblems',
             'object_type': 'brands',
             'changesets': brands.order_by('modified', 'id')\
               .annotate(country=Max('brandrevisions__group__parent__country__id')),
@@ -3830,6 +3968,12 @@ def show_queue(request, queue_name, state):
             'object_type': 'series',
             'changesets': series.order_by('modified', 'id')\
               .annotate(country=Max('seriesrevisions__country__id')),
+          },
+          {
+            'object_name': 'Series Bonds',
+            'object_type': 'series_bond',
+            'changesets': series_bonds.order_by('modified', 'id')\
+              .annotate(country=Max('seriesbondrevisions__origin__country__id')),
           },
           {
             'object_name': 'Issue Skeletons',
@@ -3926,6 +4070,8 @@ def compare(request, id):
                                    CTYPES['issue_bulk'], CTYPES['variant_add'],
                                    CTYPES['two_issues']]:
         revision = changeset.issuerevisions.all()[0]
+    elif changeset.change_type == CTYPES['series_bond']:
+        revision = changeset.seriesbondrevisions.all()[0]
     else:
         # never reached at the moment
         raise NotImplementedError

@@ -56,8 +56,15 @@ urlpatterns = patterns('',
     url(r'^series/(?P<series_id>\d+)/reorder/issue_number/$',
         oi_views.reorder_series_by_issue_number,
         name='reorder_series_issue_number'),
+    url(r'^series/(?P<series_id>\d+)/edit_bonds/$',
+        oi_views.edit_series_bonds, name='edit_series_bonds'),
     url(r'^series/revision/(?P<series_revision_id>\d+)/move/(?P<publisher_id>\d+)/$',
         oi_views.move_series, name='move_series'),
+
+    url(r'^series_bond/revision/(?P<id>\d+)/$',
+        oi_views.edit_series_bond, name='edit_series_bond'),
+    url(r'^series_bond/add/(?P<id>\d+)/$',
+        oi_views.add_series_bond, name='add_series_bond'),
 
     # Issue URLs
     url(r'^series/(?P<series_id>\d+)/add_issue/$', oi_views.add_issue,
@@ -223,6 +230,8 @@ urlpatterns = patterns('',
 
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
       oi_views.create_matching_sequence, name='create_matching_sequence'),
+    url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_edit_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
+      oi_views.create_matching_sequence, {'edit' : 'True'}, name='create_edit_matching_sequence'),
 
     # Generic URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/reserve/$', oi_views.reserve,

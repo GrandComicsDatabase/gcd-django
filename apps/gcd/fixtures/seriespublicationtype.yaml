@@ -1,0 +1,9 @@
+- fields: {name: book, notes: ''}
+  model: gcd.seriespublicationtype
+  pk: 1
+- fields: {name: magazine, notes: ''}
+  model: gcd.seriespublicationtype
+  pk: 2
+- fields: {name: album, notes: ''}
+  model: gcd.seriespublicationtype
+  pk: 3

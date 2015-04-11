@@ -69,43 +69,44 @@
           <input type="submit" name="search_select" value="Submit">
           <div style="clear: both;"></div>
       {% endif %}
-      <table class="listing left">
-        <tr>
+      <div class="left">
+        <table class="listing left">
+          <tr>
       {% if select_key %}
-          <th> Selection </th>
+            <th> Selection </th>
       {% endif %}
-          <th>Type</th>
-          <th>Name</th>
-        </tr>
+            <th>Type</th>
+            <th>Name</th>
+          </tr>
         {% for result in page.object_list %}
-          <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
             {% if select_key %}
-            <td>
+              <td>
               {% if result.model_name in allowed_selects %}
                 {% if multiple_selects %}
-              <input type="checkbox" name="object_choice" value="{{ result.model_name }}_{{ result.object.id }}">
+                <input type="checkbox" name="object_choice" value="{{ result.model_name }}_{{ result.object.id }}">
                 {% else %}
-              <form action="{% url select_object select_key=select_key %}" method="POST">
-                {% csrf_token %}
+                <form action="{% url select_object select_key=select_key %}" method="POST">
+                  {% csrf_token %}
                 <input type="submit" name="search_select" value="Select this {{ result.model_name }}">
                 <input type="hidden" name="object_choice" value="{{ result.model_name }}_{{ result.object.id }}">
-              </form>
+                </form>
                 {% endif %}
               {% endif %}
-            </td>
+              </td>
             {% endif %}
             {% if result.model_name == 'series' %}
-              <td>[SERIES]</td>
-              <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.full_name }}</a></td>
+                <td>[SERIES]</td>
+                <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.full_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'issue' %}
-              <td>[ISSUE]</td>
-              <td><img {{ result.object.series.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
+                <td>[ISSUE]</td>
+                <td><img {{ result.object.series.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
                 {{ result.object.publication_date|str_encl:'(' }}</td>
             {% endif %}
             {% if result.model_name == 'story' %}
-              <td>[STORY]</td>
-              <td><a href="{{ result.object.get_absolute_url }}">{% if result.object.title %}
+                <td>[STORY]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{% if result.object.title %}
                 {{ result.object.title }}</a>
               {% else %}
                 [ no title ]</a>
@@ -113,33 +114,39 @@
               {% if result.object.feature %} / {{ result.object.feature }}{% endif %}
               {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}
               (from
-              <img {{ result.object.issue.series.country|show_country_info }}  class="embedded_flag">
-              <a href="{{ result.object.issue.get_absolute_url }}">
+                <img {{ result.object.issue.series.country|show_country_info }}  class="embedded_flag">
+                <a href="{{ result.object.issue.get_absolute_url }}">
               {{ result.object.issue.full_name }}</a> {{ result.object.issue.publication_date|str_encl:'(' }})</td>
             {% endif %}
             {% if result.model_name == 'publisher' %}
-              <td>[PUBLISHER]</td>
-              <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+                <td>[PUBLISHER]</td>
+                <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'indiciapublisher' %}
-              <td>[INDICIA PUBLISHER]</td>
-              <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
+                <td>[INDICIA PUBLISHER]</td>
+                <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
               :
-              <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
-            {% endif %}
-            {% if result.model_name == 'brand' %}
-              <td>[BRAND EMBLEM]</td>
-              <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
-            {% endif %}
-            {% if result.model_name == 'brandgroup' %}
-              <td>[BRAND GROUP]</td>
-              <td><img {{ result.object.parent.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
-                :
                 <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
-          </tr>
+            {% if result.model_name == 'brand' %}
+                <td>[BRAND EMBLEM]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'brandgroup' %}
+                <td>[BRAND GROUP]</td>
+                <td><img {{ result.object.parent.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
+                :
+                  <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
+            </tr>
         {% endfor %}
-      </table>
+        </table>
+      </div>
+      <div class="right">
+        {% if ADVERTISING and not BETA %}
+          {% include "gcd/bits/ad_skyscraper.html" %}
+        {% endif %}
+      </div>
       {% if select_key and multiple_selects %}
       <div style="clear: both;"></div>
         <input type="submit" name="search_select" value="Submit">

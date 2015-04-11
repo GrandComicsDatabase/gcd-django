@@ -1,6 +1,7 @@
 from django import template
 from diff_match_patch import diff_match_patch
-from django.template.defaultfilters import yesno, linebreaksbr, urlize
+from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
+                                           pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -83,8 +84,11 @@ def field_value(revision, field):
                 res_holder_display = ' (ongoing reservation held by %s %s)' % \
                   (res_holder.first_name, res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
-    elif field in ['publisher', 'indicia_publisher', 'series']:
+    elif field in ['publisher', 'indicia_publisher', 'series',
+                   'origin_issue', 'target_issue']:
         return absolute_url(value)
+    elif field in ['origin', 'target']:
+        return value.full_name_with_link()
     elif field == 'brand':
         if value and value.emblem:
             return mark_safe('<img src="' + value.emblem.icon.url + '"> ' \
@@ -179,6 +183,15 @@ def field_value(revision, field):
                         return 'No (note: %d issues have a non-empty %s value)' % \
                                 (value_count, field[4:])
         return yesno(value, 'Yes,No')
+    elif field == 'is_singleton':
+        if hasattr(revision, 'changed'):
+            if revision.changed[field] and value == True:
+                 if revision.series:
+                     value_count = revision.series.active_base_issues().count()
+                     if value_count:
+                        return 'Yes (note: the series has %d issue%s)' % \
+                                (value_count, pluralize(value_count))
+        return yesno(value, 'Yes,No')
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
         return ''
@@ -191,7 +204,7 @@ def diff_list(prev_rev, revision, field):
                  'characters', 'synopsis', 'script', 'pencils', 'inks',
                  'colors', 'letters', 'editing', 'feature', 'title',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
-                 'publishing_format', 'format', 'name', 'barcode', 'isbn',
+                 'publishing_format', 'format', 'name', 
                  'price', 'indicia_frequency']:
         diff = diff_match_patch().diff_main(getattr(prev_rev, field),
                                             getattr(revision, field))

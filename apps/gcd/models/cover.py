@@ -83,4 +83,4 @@ class Cover(models.Model):
         return self.revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
     def __unicode__(self):
-        return u'%s #%s cover' % (self.issue.series, self.issue.display_number)
+        return u'%s %s cover' % (self.issue.series, self.issue.display_number)

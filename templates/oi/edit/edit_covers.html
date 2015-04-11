@@ -20,7 +20,7 @@ Edit Covers :: {{ issue }}
 <h2>Covers for
 {{ issue.series|absolute_url }}
 ({{ issue.series.publisher|absolute_url }})
-<a href="{{ issue.get_absolute_url }}">#{{ issue.display_number }}</a>
+<a href="{{ issue.get_absolute_url }}">{{ issue.display_number }}</a>
 {% if issue.variant_name %} [{{ issue.variant_name }}] {% endif %}
 </h2>
 {% if issue.can_upload_variants %}

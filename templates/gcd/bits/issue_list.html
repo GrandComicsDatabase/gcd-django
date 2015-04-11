@@ -1,0 +1,50 @@
+{% load credits %}
+{% load display %}
+
+{% if request.user.is_authenticated and confirm_selection %}
+<form method="POST">
+  {% csrf_token %}
+<div>
+  <input type="submit" name="confirm_selection" value="Add">
+the selected issues to your 
+<select name="collection_id">
+  {% for col_item in collection_list %}
+    <option value="{{ col_item.id }}">{{ col_item.name }}
+  {% endfor %}
+</select>
+</div>
+{% endif %}
+
+<table class="listing">
+  <tr>
+    {% if select_key %}
+    <th> Selection </th>
+    {% endif %}
+    <th colspan="2"> Publisher </th>
+    <th> Issue </th>
+    <th> Date </th>
+  </tr>
+{% for issue in items %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    {% if select_key %}
+    <td>
+    <form action="{% url select_object select_key=select_key %}" method="POST">
+    {% csrf_token %}
+    <input type="submit" name="search_select" value="Select this issue">
+    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
+    </form>
+    </td>
+    {% endif %}
+    {% if confirm_selection %}
+    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
+    {% endif %}
+    <td class="listing_country"> <img {{ issue.series.country|show_country_info }}>
+    <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
+    <td> {{ issue|show_issue }} </td>
+    <td> {{ issue.publication_date|default:"" }} </td>
+  </tr>
+{% endfor %}
+</table>
+{% if request.user.is_authenticated and confirm_selection %}
+</form>
+{% endif %}

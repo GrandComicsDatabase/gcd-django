@@ -14,6 +14,8 @@ from django.utils.html import escape, conditional_escape
 
 from apps.oi.models import *
 from apps.gcd.models import *
+from apps.gcd.models.seriesbond import BOND_TRACKING
+from apps.gcd.models.story import NON_OPTIONAL_TYPES
 from apps.gcd.templatetags.credits import format_page_count
 
 CREATOR_CREDIT_HELP = 'The %s and similar credits for this sequence. If ' \
@@ -153,6 +155,14 @@ SERIES_HELP_LINKS = {
     'binding': 'Format',
     'publishing_format': 'Format',
     'is_comics_publication': 'Comics_Publication',
+    'is_singleton': 'Is_Singleton',
+    'publication_type': 'Publication_Type',
+    'has_barcode': 'Barcode',
+    'has_indicia_frequency': 'Indicia_frequency',
+    'has_isbn': 'ISBN',
+    'has_issue_title': 'Issue_Title',
+    'has_rating': "Publisher's_Age_Guidelines",
+    'has_volume': 'Volume',
     'comments': 'Comments'
 }
 
@@ -259,6 +269,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
         if 'publisher' not in kwargs:
             kwargs['publisher'] = revision.publisher
         return get_series_revision_form(source=revision.source, **kwargs)
+
+    if model_name == 'series_bond':
+        return get_series_bond_revision_form(**kwargs)
 
     if model_name == 'issue':
         if revision is not None and 'publisher' not in kwargs:
@@ -482,9 +495,20 @@ def get_brand_revision_form(source=None, user=None, revision=None,
                 choices.append([group.id, group])
 
     class RuntimeBrandRevisionForm(BrandRevisionForm):
+        def __init__(self, *args, **kw):
+            super(BrandRevisionForm, self).__init__(*args, **kw)
+            # brand_group_other_publisher_id is last field, move it after group
+            self.fields.keyOrder.insert(self.fields.keyOrder.index('group') + 1,
+                                        self.fields.keyOrder.pop())
+
         group = forms.MultipleChoiceField(required=True,
             widget=FilteredSelectMultiple('Brand Groups', False),
             choices=choices, initial=initial)
+        # maybe only allow editors this to be less confusing to normal indexers
+        brand_group_other_publisher_id = forms.IntegerField(required=False,
+          label = "Add Brand Group",
+          help_text="One can add a brand group from a different publisher by "
+            "id. If an id is entered the submit will return for confirmation.")
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -537,6 +561,30 @@ class BrandRevisionForm(forms.ModelForm):
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        if cd['brand_group_other_publisher_id']:
+            brand_group = BrandGroup.objects.filter( \
+              id=cd['brand_group_other_publisher_id'], deleted=False)
+            if brand_group:
+                brand_group = brand_group[0]
+                # need to add directly to revision, otherwise validation fails
+                self.instance.group.add(brand_group)
+                choices = self.fields['group'].choices
+                choices.append([brand_group.id, brand_group])
+                # self.data is immutable, need copy
+                data = self.data.copy()
+                data['brand_group_other_publisher_id'] = None
+                self.data = data
+                # need to update with new choices
+                self.fields['group'] = forms.MultipleChoiceField(required=True,
+                    widget=FilteredSelectMultiple('Brand Groups', False),
+                    choices=choices)
+                # TODO maybe do this differently
+                raise forms.ValidationError( \
+                  "Please confirm selection of brand group '%s'." % brand_group)
+            else:
+                raise forms.ValidationError( \
+                  "A brand group with id %d does not exist." % \
+                  cd['brand_group_other_publisher_id'])
         return cd
 
 def get_brand_use_revision_form(source=None, user=None):
@@ -677,6 +725,34 @@ class SeriesRevisionForm(forms.ModelForm):
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
 
+    def clean_has_indicia_frequency(self):
+        cd = self.cleaned_data
+        if cd['is_singleton'] and cd['has_indicia_frequency']:
+            raise forms.ValidationError('Singleton series cannot have '
+              'an indicia frequency.')
+        return cd['has_indicia_frequency']
+
+    def clean_has_issue_title(self):
+        cd = self.cleaned_data
+        if cd['is_singleton'] and cd['has_issue_title']:
+            raise forms.ValidationError('Singleton series cannot have '
+              'an issue title.')
+        return cd['has_issue_title']
+
+    def clean_notes(self):
+        cd = self.cleaned_data
+        if cd['is_singleton'] and cd['notes']:
+            raise forms.ValidationError('Notes for singleton series are '
+              'stored on the issue level.')
+        return cd['notes'].strip()
+
+    def clean_tracking_notes(self):
+        cd = self.cleaned_data
+        if cd['is_singleton'] and cd['tracking_notes']:
+            raise forms.ValidationError('Singleton series cannot have '
+              'tracking notes.')
+        return cd['tracking_notes'].strip()
+
     def clean(self):
         cd = self.cleaned_data
         if self._errors:
@@ -695,9 +771,9 @@ class SeriesRevisionForm(forms.ModelForm):
         cd['paper_stock'] = cd['paper_stock'].strip()
         cd['binding'] = cd['binding'].strip()
         cd['publishing_format'] = cd['publishing_format'].strip()
-        cd['tracking_notes'] = cd['tracking_notes'].strip()
-        cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        # TODO How to get to series ? 
+        # Then we could check the number of issues for singletons
         return cd
 
 def _get_series_has_fields_off_note(series, field):
@@ -729,6 +805,28 @@ class BrandEmblemSelect(forms.Select):
             return u'<option value="%s"%s>%s</option>' % (
               escape(option_value), selected_html,
               conditional_escape(force_unicode(option_label)))
+
+
+def get_series_bond_revision_form(revision=None, user=None):
+    class RuntimeSeriesBondRevisionForm(SeriesBondRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeSeriesBondRevisionForm, self).__init__(*args, **kwargs)
+            self.fields['bond_type'].queryset = \
+                SeriesBondType.objects.filter(id__in=BOND_TRACKING)
+        def as_table(self):
+            # TODO: add help links
+            return super(RuntimeSeriesBondRevisionForm, self).as_table()
+    return RuntimeSeriesBondRevisionForm
+
+class SeriesBondRevisionForm(forms.ModelForm):
+    class Meta:
+        model = SeriesBondRevision
+        fields = get_series_bond_field_list()
+        widgets = {
+          'notes': forms.TextInput(attrs={'class': 'wide'})
+        }
+
+    comments = _get_comments_form_field()
 
 def get_issue_revision_form(publisher, series=None, revision=None,
                             variant_of=None, user=None):
@@ -1596,47 +1694,18 @@ class StoryRevisionForm(forms.ModelForm):
               ['Do not use [] around unofficial story titles, check the '
                'unofficial checkbox instead.'])
 
-        if not cd['no_script'] and cd['script'] == "":
-            raise forms.ValidationError(
-              ['Script field or No Script checkbox must be filled in.'])
-        if cd['no_script'] and cd['script'] != "":
-            raise forms.ValidationError(
-              ['Script field and No Script checkbox cannot both be filled in.'])
+        for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
+                         'editing']:
+            if cd['type'].id in NON_OPTIONAL_TYPES:
+                if not cd['no_%s' % seq_type] and cd[seq_type] == "":
+                    raise forms.ValidationError(
+                      ['%s field or No %s checkbox must be filled in.' % \
+                        (seq_type.capitalize(), seq_type.capitalize())])
 
-        if not cd['no_pencils'] and cd['pencils'] == "":
-            raise forms.ValidationError(
-              ['Pencils field or No Pencils checkbox must be filled in.'])
-        if cd['no_pencils'] and cd['pencils'] != "":
-            raise forms.ValidationError(
-              ['Pencils field and No Pencils checkbox cannot both be filled in.'])
-
-        if not cd['no_inks'] and cd['inks'] == "":
-            raise forms.ValidationError(
-              ['Inks field or No Inks checkbox must be filled in.'])
-        if cd['no_inks'] and cd['inks'] != "":
-            raise forms.ValidationError(
-              ['Inks field and No Inks checkbox cannot both be filled in.'])
-
-        if not cd['no_colors'] and cd['colors'] == "":
-            raise forms.ValidationError(
-              ['Colors field or No Colors checkbox must be filled in.'])
-        if cd['no_colors'] and cd['colors'] != "":
-            raise forms.ValidationError(
-              ['Colors field and No Colors checkbox cannot both be filled in.'])
-
-        if not cd['no_letters'] and cd['letters'] == "":
-            raise forms.ValidationError(
-              ['Letters field or No Letters checkbox must be filled in.'])
-        if cd['no_letters'] and cd['letters'] != "":
-            raise forms.ValidationError(
-              ['Letters field and No Letters checkbox cannot both be filled in.'])
-
-        if not cd['no_editing'] and cd['editing'] == "":
-            raise forms.ValidationError(
-              ['Editing field or No Editing checkbox must be filled in.'])
-        if cd['no_editing'] and cd['editing'] != "":
-            raise forms.ValidationError(
-              ['Editing field and No Editing checkbox cannot both be filled in.'])
+            if cd['no_%s' % seq_type] and cd[seq_type] != "":
+                raise forms.ValidationError(
+                  ['%s field and No %s checkbox cannot both be filled in.'% \
+                    (seq_type.capitalize(), seq_type.capitalize())])
 
         if (len(cd['synopsis']) > settings.LIMIT_SYNOPSIS_LENGTH and
             (self.instance is None or

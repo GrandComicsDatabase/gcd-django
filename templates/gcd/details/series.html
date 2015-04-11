@@ -41,7 +41,7 @@
   {% else %}
           <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
   {% endif %}
-  #{{ image_issue.display_number }}<br>
+  {{ image_issue.display_number }}<br>
   {{ image_issue.publication_date }}<br>
           <a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
         </div>
@@ -55,7 +55,7 @@
             <dt> Number of Issues Published:
             <dd id="issues_published"> {{ series.issue_count }} 
   {% if series.issue_count > 1 %}
-            (#{{ series.first_issue.display_number }} - #{{ series.last_issue.display_number}})
+            ({{ series.first_issue.display_number }} - {{ series.last_issue.display_number}})
   {% endif %}
 {% endif %}
 {% if series.format %}
@@ -81,6 +81,10 @@
 {% if series.publishing_format %}
             <dt class="long"> Publishing Format:
             <dd id="series_format"> {{ series.publishing_format }}
+{% endif %}
+{% if series.publication_type %}
+            <dt class="long"> Publication Type:
+            <dd id="series_format"> {{ series.publication_type }}
 {% endif %}
 
 {{ series|show_credit:'keywords' }}
@@ -138,9 +142,15 @@
 {% endif %}
 
           <div class="series_notes">
-{% if series.tracking_notes %}
+{% if series.has_tracking %}
             <div class="series_detail_header"> Tracking </div>
+  {% if series.tracking_notes %}
             <div class="series_notes">{{ series.tracking_notes|linebreaksbr }}</div>
+  {% endif %}
+            <ul class="series_detail_info">
+              {{ series|show_series_tracking:'from' }}
+              {{ series|show_series_tracking:'in' }}
+            </ul>
 {% endif %}
 {% if series.notes %}
             <div class="series_detail_header"> Notes </div>
@@ -208,7 +218,17 @@
           </input>
         </form>
         {% endif %}
-      {% endif %}
+        {% if series.has_series_bonds %}
+        <form method="GET" action="{% url edit_series_bonds series_id=series.id %}">
+          <input id="edit" name="edit" type="submit" value="Edit series bonds">
+          </input>
+        </form>
+        {% endif %}
+        <form method="GET" action="{% url add_series_bond id=series.id %}">
+          <input id="add" name="add" type="submit" value="Add series bond">
+          </input>
+        </form>
+      {% endif %} <!-- pending_deletion -->
     {% else %}
       {% if series.reserved %}
         <form action="{% url login %}" method="GET">

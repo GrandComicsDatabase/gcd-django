@@ -58,7 +58,7 @@
     {% endwith %}
     <td class="listing_country" style="padding-right: 0px;"> <img {{ story.issue.series.country|show_country_info }}>
     <td> <a href="{{ story.issue.series.get_absolute_url }}">{{ story.issue.series.name }}</a> ({{ story.issue.series.year_began }} series)
-         <a href="{{ url }}">#{{ story.issue.display_number }}</a> <br>
+         <a href="{{ url }}">{{ story.issue.display_number }}</a> <br>
     {{ story.issue.publication_date }}
     <td> <a href="{{ story.issue.series.publisher.get_absolute_url }}">{{ story.issue.series.publisher.name }}</a> </td>
   </tr>

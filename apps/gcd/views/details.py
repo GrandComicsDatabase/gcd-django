@@ -3,8 +3,10 @@
 """View methods for pages displaying entity details."""
 
 import re
+from urllib import urlencode
 from urllib2 import urlopen, HTTPError
 from datetime import date, datetime, time, timedelta
+from calendar import monthrange
 from operator import attrgetter
 from random import randint
 
@@ -21,9 +23,11 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
-from apps.gcd.models import Publisher, Series, Issue, Story, Image, \
+from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
                             IndiciaPublisher, Brand, BrandGroup, CountStats, \
-                            Country, Language, Indexer, IndexCredit, Cover
+                            Country, Language, Indexer, IndexCredit, Cover, \
+                            SeriesBond
+from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
@@ -34,7 +38,7 @@ from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
-                           CTYPES
+                           SeriesBondRevision, CTYPES
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -259,6 +263,9 @@ def series(request, series_id):
     if series.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'series', 'id': series_id}))
+    if series.is_singleton and series.issue_count:
+        return HttpResponseRedirect(
+          urlresolvers.reverse(issue, kwargs={ 'issue_id': int(series.active_issues()[0].id) }))
 
     return show_series(request, series)
 
@@ -282,7 +289,7 @@ def show_series(request, series, preview=False):
     table_width = 12
     if series.has_issue_title:
         table_width = 2
-        
+
     return render_to_response(
       'gcd/details/series.html',
       {
@@ -413,7 +420,7 @@ def change_history(request, model_name, id):
     """
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
-                          'image']:
+                          'image', 'series_bond']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {
@@ -761,6 +768,12 @@ def daily_changes(request, show_date=None):
     series = Series.objects.filter(id__in=series_revisions).distinct()\
       .select_related('publisher','country', 'first_issue','last_issue')
 
+    series_bond_revisions = list(SeriesBondRevision.objects.filter(
+      changeset__change_type=CTYPES['series_bond'], **args)\
+      .exclude(changeset__indexer=anon).values_list('series_bond', flat=True))
+    series_bonds = SeriesBond.objects.filter(id__in=series_bond_revisions)\
+      .distinct().select_related('origin','target')
+
     issues_change_types = [CTYPES['issue'], CTYPES['variant_add']]
     issue_revisions = list(IssueRevision.objects.filter(\
       changeset__change_type__in=issues_change_types, **args)\
@@ -782,7 +795,7 @@ def daily_changes(request, show_date=None):
     indicia_issues = Issue.objects.filter(image_resources__id__in=indicia_revisions)
     if indicia_issues:
       images.append((indicia_issues, 'image/', 'Indicia Scan', 'issue'))
-    
+
     soo_revisions = list(image_revisions.filter(type__name='SoOScan'))
     soo_issues = Issue.objects.filter(image_resources__id__in=soo_revisions)
     if soo_issues:
@@ -798,11 +811,77 @@ def daily_changes(request, show_date=None):
         'brands' : brands,
         'indicia_publishers' : indicia_publishers,
         'series' : series,
+        'series_bonds' : series_bonds,
         'issues' : issues,
         'all_images' : images
       },
       context_instance=RequestContext(request)
     )
+
+def on_sale_weekly(request, year=None, week=None):
+    """
+    Produce a page displaying the comics on-sale in a given week.
+    """
+    try:
+        if 'week' in request.GET:
+            year = int(request.GET['year'])
+            week = int(request.GET['week'])
+            # Do a redirect, otherwise pagination links point to today
+            return HttpResponseRedirect(
+                urlresolvers.reverse(
+                'on_sale_weekly',
+                kwargs={'year': year, 'week': week} ))
+        if year:
+            year = int(year)
+        if week:
+            week = int(week)
+    except ValueError:
+        year = None
+    if year == None:
+        year, week = date.today().isocalendar()[0:2]
+    # gregorian calendar date of the first day of the given ISO year
+    fourth_jan = date(int(year), 1, 4)
+    delta = timedelta(fourth_jan.isoweekday()-1)
+    year_start = fourth_jan - delta
+    monday = year_start + timedelta(weeks=int(week)-1)
+    sunday = monday + timedelta(days=6)
+    # we need this to filter out incomplete on-sale dates
+    if monday.month != sunday.month:
+        endday = monday.replace(day=monthrange(monday.year,monday.month)[1])
+        issues_on_sale = \
+          Issue.objects.filter(on_sale_date__gte=monday.isoformat(),
+                               on_sale_date__lte=endday.isoformat())
+        startday = sunday.replace(day=1)
+        issues_on_sale = issues_on_sale | \
+          Issue.objects.filter(on_sale_date__gte=startday.isoformat(),
+                               on_sale_date__lte=sunday.isoformat())
+
+    else:
+        issues_on_sale = Issue.objects\
+                              .filter(on_sale_date__gte=monday.isoformat(),
+                                      on_sale_date__lte=sunday.isoformat())
+    previous_week = (monday - timedelta(weeks=1)).isocalendar()[0:2]
+    if monday + timedelta(weeks=1) <= date.today():
+        next_week = (monday + timedelta(weeks=1)).isocalendar()[0:2]
+    else:
+        next_week = None
+    heading = "Issues on-sale in week %s/%s" % (week, year)
+    dates = "from %s to %s" % (monday.isoformat(), sunday.isoformat())
+    query_val = {'target': 'issue', 
+                 'method': 'icontains'}
+    query_val['start_date'] = monday.isoformat()
+    query_val['end_date'] = sunday.isoformat()
+    query_val['use_on_sale_date'] = True
+    vars = { 
+        'items': issues_on_sale,
+        'heading': heading,
+        'dates': dates,
+        'previous_week': previous_week,
+        'next_week': next_week,
+        'query_string': urlencode(query_val),
+    }
+
+    return paginate_response(request, issues_on_sale, 'gcd/status/issues_on_sale.html', vars)
 
 def int_stats_language(request):
     """
@@ -877,7 +956,8 @@ def cover(request, issue_id, size):
 
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
-    cover_tag = get_image_tags_per_issue(issue, "Cover for %s" % unicode(issue), 
+    cover_tag = get_image_tags_per_issue(issue, "Cover for %s" % \
+                                                unicode(issue.full_name()), 
                                          size, variants=True)
 
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
@@ -1016,6 +1096,7 @@ def show_issue(request, issue, preview=False):
     zoom_level = ZOOM_MEDIUM
     if preview:
         images_count = 0
+        not_shown_types = []
         # excludes are currently only relevant for variant_add, maybe later
         # other cover moves will be possible
         if issue.changeset.change_type in [CTYPES['variant_add'],
@@ -1054,6 +1135,22 @@ def show_issue(request, issue, preview=False):
                                                 zoom_level=zoom_level,
                                                 alt_text=alt_text))
     else:
+        if 'issue_detail' in request.GET:
+            try:
+                issue_detail = int(request.GET['issue_detail'])
+            except ValueError:
+                issue_detail = 1
+        elif request.user.is_authenticated():
+            issue_detail = request.user.indexer.issue_detail
+        else:
+            issue_detail = 1
+        if issue_detail == 0:
+            not_shown_types = StoryType.objects.exclude(id__in=CORE_TYPES)\
+                                .values_list('id', flat=True)
+        elif issue_detail == 1:
+            not_shown_types = AD_TYPES
+        else:
+            not_shown_types = []
         image_tag = get_image_tags_per_issue(issue=issue,
                                              zoom_level=zoom_level,
                                              alt_text=alt_text)
@@ -1101,6 +1198,13 @@ def show_issue(request, issue, preview=False):
         if request.GET['original_reprint_notes'] == 'True':
             show_original = True
 
+    if series.is_singleton:
+        country = series.country
+        language = series.language
+    else:
+        country = None
+        language = None
+
     return render_to_response(
       'gcd/details/issue.html',
       {
@@ -1114,8 +1218,11 @@ def show_issue(request, issue, preview=False):
         'variant_image_tags': variant_image_tags,
         'images_count': images_count,
         'show_original': show_original,
+        'country': country,
+        'language': language,
         'error_subject': '%s' % issue,
         'preview': preview,
+        'not_shown_types': not_shown_types,
         'NO_ADS': True
       },
       context_instance=RequestContext(request))

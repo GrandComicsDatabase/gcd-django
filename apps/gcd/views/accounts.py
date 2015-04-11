@@ -20,6 +20,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from django.template.loader import get_template
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.views import login as standard_login
@@ -276,7 +277,6 @@ def confirm_account(request, key):
 We have a new Indexer!
 
 Name: %s
-Email: %s
 Country: %s
 Languages: %s
 Interests:
@@ -285,7 +285,6 @@ Interests:
 Where heard from us: %s
 Mentor this indexer: %s
         """ % (indexer,
-               indexer.user.email,
                indexer.country.name,
                ', '.join([lang.name for lang in indexer.languages.all()]),
                indexer.interests,
@@ -300,9 +299,16 @@ Mentor this indexer: %s
             email_subject = 'New Indexer: %s' % indexer
 
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
-                  recipient_list=[settings.EMAIL_EDITORS],
+                  recipient_list=[settings.EMAIL_EDITORS, settings.EMAIL_PRTEAM],
                   subject=email_subject,
                   message=email_body,
+                  fail_silently=(not settings.BETA))
+
+        send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
+                  recipient_list=[indexer.user.email],
+                  subject='GCD successfull registration',
+                  message=get_template('gcd/accounts/welcome_mail.html').render(
+                            RequestContext(request)),
                   fail_silently=(not settings.BETA))
 
         return HttpResponseRedirect(urlresolvers.reverse('welcome'))
@@ -426,6 +432,8 @@ def profile(request, user_id=None, edit=False):
                 [ lang.id for lang in profile_user.indexer.languages.all() ],
               'interests': profile_user.indexer.interests,
               'from_where': profile_user.indexer.from_where,
+              'opt_in_email': profile_user.indexer.opt_in_email,
+              'issue_detail': profile_user.indexer.issue_detail,
               'notify_on_approve': profile_user.indexer.notify_on_approve,
               'collapse_compare_view': profile_user.indexer.collapse_compare_view,
               'show_wiki_links': profile_user.indexer.show_wiki_links,
@@ -490,6 +498,8 @@ def update_profile(request, user_id=None):
     indexer.languages = form.cleaned_data['languages']
     indexer.interests = form.cleaned_data['interests']
     indexer.from_where = form.cleaned_data['from_where']
+    indexer.opt_in_email = form.cleaned_data['opt_in_email']
+    indexer.issue_detail = form.cleaned_data['issue_detail']
     indexer.save()
 
     return HttpResponseRedirect(

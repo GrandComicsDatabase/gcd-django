@@ -1,7 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% load credits %}
-{% load display %}
+{% load editing %}
 
 {% block title %}
 Reviewing :: {{ revision }}
@@ -69,7 +69,7 @@ Reviewing :: {{ revision }}
   <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
 {% if cover_width %}
   <div>The full cover file has a width of {{ cover_width }} pixels.</div>
-  {% if perms.gcd.can_approve and revision.created > settings.NEW_SITE_COVER_CREATION_DATE and not settings.BETA %}
+  {% if perms.gcd.can_vote and revision.created > settings.NEW_SITE_COVER_CREATION_DATE and not settings.BETA %}
 <a href="{{ revision.approved_file }}">full uploaded cover</a>
   {% endif %}
 {% endif %}

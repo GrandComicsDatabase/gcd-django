@@ -1,0 +1,76 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h1>Series bonds for {{ series }} </h1>
+
+  {% if series.from_series_bond.count %}
+<table class="story_list">
+    {% for bond in series.from_series_bond.all %}
+  <tr>
+    <td> {{ bond }} </td>
+      {% if bond.reserved %}
+    <td colspan="2">
+        is reserved
+    </td>
+      {% else %}
+    <td>
+        {% if user.is_authenticated %}
+      <form method="POST" action="{% url reserve_revision model_name='series_bond',id=bond.id %}">
+          {% csrf_token %}
+        <input id="edit" name="edit" type="submit" value="Edit"></input>
+      </form>
+    </td>
+    <td>
+        <form method="GET" action="{% url delete_revision model_name='series_bond',id=bond.id %}">
+          <input type="submit" value="Delete">
+        </form>
+        {% endif %}
+    </td>
+      {% endif %}
+  </tr>
+    {% endfor %}
+</table>
+  {% endif %}
+
+  {% if series.to_series_bond.count %}
+<table class="story_list">
+    {% for bond in series.to_series_bond.all %}
+  <tr>
+    <td> {{ bond }} </td>
+      {% if bond.reserved %}
+    <td colspan="2">
+        is reserved
+    </td>
+      {% else %}
+    <td>
+        {% if user.is_authenticated %}
+      <form method="POST" action="{% url reserve_revision model_name='series_bond',id=bond.id %}">
+          {% csrf_token %}
+        <input id="edit" name="edit" type="submit" value="Edit"></input>
+      </form>
+    </td>
+    <td>
+        <form method="GET" action="{% url delete_revision model_name='series_bond',id=bond.id %}">
+          <input type="submit" value="Delete">
+        </form>
+        {% endif %}
+    </td>
+      {% endif %}
+  </tr>
+    {% endfor %}
+</table>
+  {% endif %}
+
+{% endblock %}

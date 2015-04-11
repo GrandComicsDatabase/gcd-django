@@ -6,6 +6,8 @@ from django.core import urlresolvers
 from django.db.models import Sum, Count
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
@@ -24,6 +26,16 @@ INDEXED = {
     'ten_percent': 3,
 }
 
+def issue_descriptor(issue):
+    if issue.number == '[nn]' and issue.series.is_singleton:
+        return u''
+    if issue.title and issue.series.has_issue_title:
+        title = u' - ' + issue.title
+    else:
+        title = u''
+    if issue.display_volume_with_number:
+        return u'v%s#%s%s' % (issue.volume, issue.number, title)
+    return issue.number + title
 
 class Issue(models.Model):
     class Meta:
@@ -68,7 +80,7 @@ class Issue(models.Model):
     notes = models.TextField()
 
     keywords = TaggableManager()
-    
+
     # Series and publisher links
     series = models.ForeignKey(Series)
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
@@ -180,14 +192,15 @@ class Issue(models.Model):
             variants = self.variant_set.all()
         return list(variants.exclude(deleted=True))
 
+    def issue_descriptor(self):
+        return issue_descriptor(self)
+
     def _display_number(self):
-        if self.title and self.series.has_issue_title:
-            title = " - " + self.title
+        number = self.issue_descriptor()
+        if number:
+            return u'#' + number
         else:
-            title = ""
-        if self.display_volume_with_number:
-            return u'v%s#%s%s' % (self.volume, self.number, title)
-        return self.number + title
+            return u''
     display_number = property(_display_number)
 
     # determine and set whether something has been indexed at all or not
@@ -300,24 +313,29 @@ class Issue(models.Model):
 
     def full_name(self, variant_name=True):
         if variant_name and self.variant_name:
-            return u'%s #%s [%s]' % (self.series.full_name(),
-                                     self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series.full_name(),
+                                    self.display_number,
+                                    self.variant_name)
         else:
-            return u'%s #%s' % (self.series.full_name(), self.display_number)
+            return u'%s %s' % (self.series.full_name(), self.display_number)
+
+    def full_name_with_link(self, publisher=False):
+        name_link = self.series.full_name_with_link(publisher)
+        return mark_safe('%s <a href="%s">%s</a>' % (name_link,
+          self.get_absolute_url(), esc(self.display_number)))
 
     def short_name(self):
         if self.variant_name:
-            return u'%s #%s [%s]' % (self.series.name,
-                                     self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series.name,
+                                    self.display_number,
+                                    self.variant_name)
         else:
-            return u'%s #%s' % (self.series.name, self.display_number)
+            return u'%s %s' % (self.series.name, self.display_number)
 
     def __unicode__(self):
         if self.variant_name:
-            return u'%s #%s [%s]' % (self.series, self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series, self.display_number,
+                                    self.variant_name)
         else:
-            return u'%s #%s' % (self.series, self.display_number)
+            return u'%s %s' % (self.series, self.display_number)
 

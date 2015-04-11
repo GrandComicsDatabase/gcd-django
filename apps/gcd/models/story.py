@@ -17,6 +17,13 @@ OLD_TYPES = {
     'biography (nonfictional)'
 }
 
+# core sequence types: (photo, text) story, cover (incl. reprint)
+CORE_TYPES = [6, 7, 13, 19, 21]
+# ad sequence types: ad, promo
+AD_TYPES = [2, 16]
+# non-optional sequences: story, cover (incl. reprint)
+NON_OPTIONAL_TYPES = [6, 7, 19]
+
 class StoryTypeManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)

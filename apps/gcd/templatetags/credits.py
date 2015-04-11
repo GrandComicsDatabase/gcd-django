@@ -301,13 +301,6 @@ def show_language(series):
     """
     return unicode(series.language)
 
-def show_issue_number(issue_number):
-    """
-    Return issue number, unless it is marked as not having one.
-    """
-    return mark_safe('<span class="issue_number"><span class="p">#</span>' + \
-        esc(issue_number) + '</span>')
-
 def show_page_count(story, show_page=False):
     """
     Return a properly formatted page count, with "?" as needed.
@@ -354,7 +347,7 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
     ''' generate reprint link to_issue'''
 
     if only_number:
-        link = u', <a href="%s">#%s</a>' % (issue.get_absolute_url(),
+        link = u', <a href="%s">%s</a>' % (issue.get_absolute_url(),
                                            esc(issue.display_number) )
     else:
         link = u'%s %s <a href="%s">%s</a>' % \
@@ -375,7 +368,7 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
                                    only_number=False):
     ''' generate reprint link to story'''
     if only_number:
-        link = u', <a href="%s#%d">#%s</a>' % (story.issue.get_absolute_url(),
+        link = u', <a href="%s#%d">%s</a>' % (story.issue.get_absolute_url(),
                                     story.id, esc(story.issue.display_number) )
     elif story.sequence_number == 0:
         link = u'%s %s <a href="%s#%d">%s</a>' % \
@@ -633,7 +626,6 @@ register.filter(show_country_info)
 register.filter(get_country_flag)
 register.filter(show_country)
 register.filter(show_language)
-register.filter(show_issue_number)
 register.filter(show_page_count)
 register.filter(format_page_count)
 register.filter(show_title)

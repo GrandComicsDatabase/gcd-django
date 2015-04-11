@@ -21,7 +21,7 @@ from imagekit.processors import ResizeToFit
 
 from apps.oi import states
 from apps.gcd.models import *
-from apps.gcd.models.issue import INDEXED
+from apps.gcd.models.issue import INDEXED, issue_descriptor
 
 LANGUAGE_STATS = ['de',]
 
@@ -42,6 +42,7 @@ CTYPES = {
     'image': 12,
     'brand_group': 13,
     'brand_use': 14,
+    'series_bond': 15,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -52,7 +53,8 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['series'],
                            CTYPES['cover'],
                            CTYPES['reprint'],
-                           CTYPES['image'],))
+                           CTYPES['image'],
+                           CTYPES['series_bond'],))
 
 # Change types that *might* be bulk changes.  But might just have one revision.
 CTYPES_BULK = frozenset((CTYPES['issue_bulk'],
@@ -594,6 +596,9 @@ class Changeset(models.Model):
             return (self.seriesrevisions.all().select_related('series'),
                     self.issuerevisions.all().select_related('issue'))
 
+        if self.change_type == CTYPES['series_bond']:
+            return (self.seriesbondrevisions.all().select_related('series'),)
+
         if self.change_type == CTYPES['publisher']:
             return (self.publisherrevisions.all(), self.brandrevisions.all(),
                     self.indiciapublisherrevisions.all())
@@ -684,10 +689,10 @@ class Changeset(models.Model):
         Used for conditionals in templates, as bulk issue adds and edits as
         well as deletes cannot be edited after submission.
         """
-        return (self.inline() or self.change_type == CTYPES['issue'] or \
-          (self.change_type == CTYPES['issue_add'] \
-            and self.issuerevisions.count() == 1) or \
-          self.change_type in [CTYPES['variant_add'], CTYPES['two_issues']]) \
+        return (self.inline() or self.change_type in [CTYPES['issue'],
+          CTYPES['variant_add'], CTYPES['two_issues'], CTYPES['series_bond']] \
+          or (self.change_type == CTYPES['issue_add'] \
+            and self.issuerevisions.count() == 1)) \
           and not self.deleted()
 
     def ordered_issue_revisions(self):
@@ -708,7 +713,7 @@ class Changeset(models.Model):
                 elif ir_count > 1:
                     first = self.issuerevisions.order_by('revision_sort_code')[0]
                     last = self.issuerevisions.order_by('-revision_sort_code')[0]
-                    return u'%s #%s - %s' % (first.series, first.display_number,
+                    return u'%s %s - %s' % (first.series, first.display_number,
                                                         last.display_number)
             return u'Unknown State'
         elif self.change_type == CTYPES['issue']:
@@ -725,6 +730,8 @@ class Changeset(models.Model):
             return self.issuerevisions.get(variant_of__isnull=False).queue_name()
         elif self.change_type == CTYPES['image']:
             return self.imagerevisions.get().queue_name()
+        elif self.change_type == CTYPES['series_bond']:
+            return self.seriesbondrevisions.get().queue_name()
         else:
             return self.inline_revision(cache_safe=True).queue_name()
 
@@ -751,7 +758,7 @@ class Changeset(models.Model):
         # issue_adds are separate, avoid revision.previous
         elif self.change_type == CTYPES['issue']:
             return ACTION_MODIFY
-        elif revision.source is None or revision.previous() is None:
+        elif revision.previous() is None:
             return ACTION_ADD
         return ACTION_MODIFY
 
@@ -850,8 +857,8 @@ class Changeset(models.Model):
             if revision.source is not None:
                 revision.source.reserved = False
                 revision.source.save()
-                # if this becomes relevant for other revisions make a method
-                if type(revision) == ReprintRevision:
+                # maybe make a method to call on discard for special stuff ?
+                if type(revision) in [ReprintRevision, SeriesBondRevision]:
                     revision.previous_revision = None
                     revision.save()
                 if type(revision) == StoryRevision:
@@ -1257,15 +1264,18 @@ class Revision(models.Model):
 
         # post_rev stays None if no newer revision is found
         self._post_rev = None
-
         if self.changeset.state == states.APPROVED:
-            post_revs = self.source.revisions \
-              .filter(changeset__state=states.APPROVED) \
-              .filter(Q(modified__gt=self.modified) |
-                      (Q(modified=self.modified) & Q(id__gt=self.id))) \
-              .order_by('modified', 'id')
-            if post_revs.count() > 0:
-                self._post_rev = post_revs[0]
+            if hasattr(self, 'previous_revision'):
+                if hasattr(self, 'next_revision'):
+                    self._post_rev = self.next_revision
+            else:
+                post_revs = self.source.revisions \
+                .filter(changeset__state=states.APPROVED) \
+                .filter(Q(modified__gt=self.modified) |
+                        (Q(modified=self.modified) & Q(id__gt=self.id))) \
+                .order_by('modified', 'id')
+                if post_revs.count() > 0:
+                    self._post_rev = post_revs[0]
         return self._post_rev
 
 
@@ -1975,6 +1985,15 @@ class BrandGroupRevision(PublisherRevisionBase):
         if self.brand_group is None:
             self.brand_group = brand_group
             self.save()
+            brand_revision = BrandRevision(changeset=self.changeset,
+                             name=self.name,
+                             year_began=self.year_began,
+                             year_ended=self.year_ended,
+                             year_began_uncertain=self.year_began_uncertain,
+                             year_ended_uncertain=self.year_ended_uncertain)
+            brand_revision.save()
+            brand_revision.group.add(self.brand_group)
+            brand_revision.commit_to_display()
 
     def get_absolute_url(self):
         if self.brand_group is None:
@@ -2548,6 +2567,8 @@ class SeriesRevisionManager(RevisionManager):
           paper_stock=series.paper_stock,
           binding=series.binding,
           publishing_format=series.publishing_format,
+          publication_type=series.publication_type,
+          is_singleton=series.is_singleton,
           notes=series.notes,
           keywords=get_keywords(series),
           year_began=series.year_began,
@@ -2576,12 +2597,12 @@ class SeriesRevisionManager(RevisionManager):
 
 def get_series_field_list():
     return ['name', 'leading_article', 'imprint', 'format', 'color', 'dimensions',
-            'paper_stock', 'binding', 'publishing_format', 'year_began',
-            'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
-            'is_current', 'country', 'language', 'has_barcode',
-            'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'has_volume', 'has_rating', 'is_comics_publication',
-            'tracking_notes', 'notes', 'keywords']
+            'paper_stock', 'binding', 'publishing_format', 'publication_type',
+            'is_singleton', 'year_began', 'year_began_uncertain',
+            'year_ended', 'year_ended_uncertain', 'is_current', 'country',
+            'language', 'has_barcode', 'has_indicia_frequency', 'has_isbn',
+            'has_issue_title', 'has_volume', 'has_rating',
+            'is_comics_publication', 'tracking_notes', 'notes', 'keywords']
 
 class SeriesRevision(Revision):
     class Meta:
@@ -2633,6 +2654,8 @@ class SeriesRevision(Revision):
                 'Miniseries, Maxiseries, One-Shot, Graphic Novel.  '
                 '"Was Ongoing Series" may be used if it has ceased '
                 'publication.')
+    publication_type = models.ForeignKey(SeriesPublicationType, null=True,
+      blank=True, help_text="Describe the publication format for user reference.")
 
     year_began = models.IntegerField(help_text='Year first issue published.')
     year_ended = models.IntegerField(null=True, blank=True,
@@ -2668,8 +2691,13 @@ class SeriesRevision(Revision):
       verbose_name="Has Publisher's age guidelines ",
       help_text="Publisher's age guidelines are present for issues of this "
                 "series.")
+
     is_comics_publication = models.BooleanField(
       help_text="Publications in this series are mostly comics publications.")
+    is_singleton = models.BooleanField(
+      help_text="Series consists of one and only one issue by design. "
+                "Note that for series adds an issue with no issue number will"
+                " be created upon approval.")
 
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='',
@@ -2758,6 +2786,23 @@ class SeriesRevision(Revision):
         return self.series.has_gallery
     has_gallery = property(_has_gallery)
 
+    def has_tracking(self):
+        if self.series is None:
+            return self.tracking_notes
+        return self.tracking_notes or self.series.has_series_bonds()
+
+    def _to_series_bond(self):
+        if self.series is None:
+            return SeriesBond.objects.filter(pk__isnull=True)
+        return self.series.to_series_bond.all()
+    to_series_bond = property(_to_series_bond)
+
+    def _from_series_bond(self):
+        if self.series is None:
+            return SeriesBond.objects.filter(pk__isnull=True)
+        return self.series.from_series_bond.all()
+    from_series_bond = property(_from_series_bond)
+
     def get_ongoing_revision(self):
         if self.series is None:
             return None
@@ -2779,6 +2824,8 @@ class SeriesRevision(Revision):
             'paper_stock': '',
             'binding': '',
             'publishing_format': '',
+            'publication_type': None,
+            'is_singleton': False,
             'notes': '',
             'keywords': '',
             'year_began': None,
@@ -2823,6 +2870,15 @@ class SeriesRevision(Revision):
                 self.publisher.save()
                 update_count('series', 1, language=self.language,
                              country=self.country)
+            if self.is_singleton:
+                issue_revision = IssueRevision(changeset=self.changeset,
+                  after=None,
+                  number='[nn]',
+                  publication_date=self.year_began)
+                if len(unicode(self.year_began)) == 4:
+                    issue_revision.key_date='%d-00-00' % self.year_began
+
+
         elif self.deleted:
             if series.is_comics_publication:
                 self.publisher.series_count = F('series_count') - 1
@@ -2861,6 +2917,8 @@ class SeriesRevision(Revision):
         series.binding = self.binding
         series.publishing_format = self.publishing_format
         series.notes = self.notes
+        series.is_singleton = self.is_singleton
+        series.publication_type = self.publication_type
 
         series.year_began = self.year_began
         series.year_ended = self.year_ended
@@ -2959,6 +3017,10 @@ class SeriesRevision(Revision):
         if self.series is None:
             self.series = series
             self.save()
+            if self.is_singleton:
+                issue_revision.series = series
+                issue_revision.save()
+                issue_revision.commit_to_display()
 
     def get_absolute_url(self):
         if self.series is None:
@@ -2970,14 +3032,166 @@ class SeriesRevision(Revision):
             return u'%s (%s series)' % (self.name, self.year_began)
         return unicode(self.series)
 
+def get_series_bond_field_list():
+    return ['bond_type', 'notes']
+
+class SeriesBondRevisionManager(RevisionManager):
+
+    def clone_revision(self, series_bond, changeset):
+        """
+        Given an existing SeriesBond instance, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=series_bond,
+                                              instance_class=SeriesBond,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, series_bond, changeset):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        revision = SeriesBondRevision(
+          # revision-specific fields:
+          series_bond=series_bond,
+          changeset=changeset,
+
+          # copied fields:
+          origin=series_bond.origin,
+          origin_issue=series_bond.origin_issue,
+          target=series_bond.target,
+          target_issue=series_bond.target_issue,
+          bond_type=series_bond.bond_type,
+          notes=series_bond.notes)
+
+        revision.save()
+        previous_revision = SeriesBondRevision.objects.get(\
+          series_bond=series_bond, next_revision=None,
+          changeset__state=states.APPROVED)
+        revision.previous_revision = previous_revision
+        revision.save()
+        return revision
+
+class SeriesBondRevision(Revision):
+    class Meta:
+        db_table = 'oi_series_bond_revision'
+        ordering = ['-created', '-id']
+        get_latest_by = "created"
+
+    objects = SeriesBondRevisionManager()
+
+    series_bond = models.ForeignKey(SeriesBond, null=True,
+                                    related_name='revisions')
+
+    origin = models.ForeignKey(Series, null=True,
+                               related_name='origin_bond_revisions')
+    origin_issue = models.ForeignKey(Issue, null=True,
+                          related_name='origin_series_bond_revisions')
+    target = models.ForeignKey(Series, null=True,
+                               related_name='target_bond_revisions')
+    target_issue = models.ForeignKey(Issue, null=True,
+                          related_name='target_series_bond_revisions')
+
+    bond_type = models.ForeignKey(SeriesBondType, null=True,
+                                  related_name='bond_revisions')
+    notes = models.TextField(max_length = 255, default='', blank=True,
+      help_text='Notes about the series bond.')
+
+    previous_revision = models.OneToOneField('self', null=True,
+                                             related_name='next_revision')
+
+    def previous(self):
+        return self.previous_revision
+
+    def _field_list(self):
+        return ['origin', 'origin_issue', 'target', 'target_issue'] + \
+          get_series_bond_field_list()
+
+    def _get_blank_values(self):
+        return {
+            'origin': None,
+            'origin_issue': None,
+            'target': None,
+            'target_issue': None,
+            'bond_type': None,
+            'notes': '',
+        }
+
+    def _start_imp_sum(self):
+        self._seen_origin = False
+        self._seen_target = False
+
+    def _imps_for(self, field_name):
+        """
+        Only one point per origin/target change
+        """
+        if field_name in ('origin', 'origin_issue'):
+           if not self._seen_origin:
+                self._seen_origin = True
+                return 1
+        if field_name in ('target', 
+                          'target_issue'):
+           if not self._seen_target:
+                self._seen_target = True
+                return 1
+        if field_name == 'notes':
+            return 1
+        return 0
+
+    def _source(self):
+        return self.series_bond
+
+    def _source_name(self):
+        return 'series_bond'
+
+    def _queue_name(self):
+        return u'%s continues at %s' % (self.origin, self.target)
+
+    def commit_to_display(self, clear_reservation=True):
+        series_bond = self.series_bond
+        if self.deleted:
+            for revision in series_bond.revisions.all():
+                setattr(revision, "series_bond_id", None)
+                revision.save()
+            series_bond.delete()
+            return
+
+        if series_bond is None:
+            series_bond = SeriesBond()
+        series_bond.origin = self.origin
+        series_bond.origin_issue = self.origin_issue
+        series_bond.target = self.target
+        series_bond.target_issue = self.target_issue
+        series_bond.notes = self.notes
+        series_bond.bond_type = self.bond_type
+
+        if clear_reservation:
+            series_bond.reserved = False
+
+        series_bond.save()
+        if self.series_bond is None:
+            self.series_bond = series_bond
+            self.save()
+        
+    def __unicode__(self):
+        if self.origin_issue:
+            object_string = u'%s' % self.origin_issue
+        else:
+            object_string = u'%s' % self.origin
+        if self.target_issue:
+            object_string += u' continues at %s' % self.target_issue
+        else:
+            object_string += u' continues at %s' % self.target
+        return object_string
 
 def get_issue_field_list():
     return ['number', 'title', 'no_title',
             'volume', 'no_volume', 'display_volume_with_number',
             'indicia_publisher', 'indicia_pub_not_printed',
-            'brand', 'no_brand', 'publication_date', 'key_date',
-            'year_on_sale', 'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
-            'indicia_frequency', 'no_indicia_frequency', 'price',
+            'brand', 'no_brand', 'publication_date', 'year_on_sale',
+            'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
+            'key_date', 'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
             'isbn', 'no_isbn', 'barcode', 'no_barcode', 'rating', 'no_rating',
             'notes', 'keywords']
@@ -3123,16 +3337,15 @@ class IssueRevision(Revision):
                 'shipping date in this field, only the publication date.')
     key_date = models.CharField(max_length=10, blank=True, default='',
       validators=[RegexValidator(r'^(17|18|19|20)\d{2}(\.|-)(0[0-9]|1[0-3])(\.|-)\d{2}$')],
-      help_text='Keydate is a translation of the publication date into numeric '
+      help_text='Keydate is a translation of the publication date, possibly '
+                'supplemented by the on-sale date, into numeric '
                 'form for chronological ordering and searches. It is in the '
                 'format YYYY-MM-DD, where the parts of the date not given are '
                 'filled up with 00. For comics dated only by year, the keydate '
                 'is YYYY-00-00. For comics only dated by month the day (DD) '
-                'is 00, and arbitrary numbers such as 10, 20, 30 are used to '
-                'indicate an "early", "mid", or "late" month cover date. For '
-                'the month (MM) on quarterlies, use 04 for Spring, 07 for '
-                'Summer, 10 for Fall and 01 or 12 for Winter (in the northern '
-                'hemisphere, shift accordingly in the southern).')
+                'is 00. For the month (MM) on quarterlies, use 04 for Spring, '
+                '07 for Summer, 10 for Fall and 01 or 12 for Winter (in the '
+                'northern hemisphere, shift accordingly in the southern).')
     year_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
     month_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
     day_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
@@ -3226,18 +3439,11 @@ class IssueRevision(Revision):
     valid_isbn = property(_valid_isbn)
 
     def _display_number(self):
-        """
-        Implemented separately because it needs to use the revision's
-        display field and not the source's.  Although the actual construction
-        of the string should really be factored out somewhere for consistency.
-        """
-        if self.title and self.series.has_issue_title:
-            title = " - " + self.title
+        number = issue_descriptor(self)
+        if number:
+            return u'#' + number
         else:
-            title = ""
-        if self.display_volume_with_number:
-            return u'v%s#%s%s' % (self.volume, self.number, title)
-        return self.number + title
+            return u''
     display_number = property(_display_number)
 
     def _sort_code(self):
@@ -4025,29 +4231,31 @@ class IssueRevision(Revision):
 
     def full_name(self):
         if self.variant_name:
-            return u'%s #%s [%s]' % (self.series.full_name(),
-                                     self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series.full_name(),
+                                    self.display_number,
+                                    self.variant_name)
         else:
-            return u'%s #%s' % (self.series.full_name(), self.display_number)
+            return u'%s %s' % (self.series.full_name(), self.display_number)
 
     def short_name(self):
         if self.variant_name:
-            return u'%s #%s [%s]' % (self.series.name,
-                                     self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series.name,
+                                    self.display_number,
+                                    self.variant_name)
         else:
-            return u'%s #%s' % (self.series.name, self.display_number)
+            return u'%s %s' % (self.series.name, self.display_number)
 
     def __unicode__(self):
         """
         Re-implement locally instead of using self.issue because it may change.
         """
         if self.variant_name:
-            return u'%s #%s [%s]' % (self.series, self.display_number,
-                                     self.variant_name)
+            return u'%s %s [%s]' % (self.series, self.display_number,
+                                    self.variant_name)
+        elif self.display_number:
+            return u'%s %s' % (self.series, self.display_number)
         else:
-            return u'%s #%s' % (self.series, self.display_number)
+            return u'%s' % self.series
 
 def get_story_field_list():
     return ['sequence_number', 'title', 'title_inferred', 'type',

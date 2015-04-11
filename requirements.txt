@@ -20,5 +20,6 @@ pyelasticsearch
 django-haystack<2.1.0
 python-dateutil
 diff-match-patch
+python-vote-core
 git+git://github.com/bennylope/elasticstack.git
 django-bootstrap3

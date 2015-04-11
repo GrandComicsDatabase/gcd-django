@@ -46,7 +46,11 @@ for details.
 """
 
 EMAIL_OPEN_AGENDA_ITEM_GENERIC = """
-A new item on the %s Agenda is now open for discussion.  Please see
+A new item on the %s Agenda is now open for discussion:
+
+%s
+
+Please see
 
 %s
 
@@ -123,40 +127,43 @@ class AgendaItem(models.Model):
         return self.name
 
 def agenda_item_pre_save(sender, **kwargs):
-    item = kwargs['instance']
+    if kwargs['raw'] != True:
+        item = kwargs['instance']
 
-    newly_added = not item.id
-    if newly_added and item.open:
-        newly_opened = True
-    elif item.open:
-        old_item = AgendaItem.objects.get(id=item.id)
-        newly_opened = not old_item.open
-    else:
-        newly_opened = False
+        newly_added = not item.id
+        if newly_added and item.open:
+            newly_opened = True
+        elif item.open:
+            old_item = AgendaItem.objects.get(id=item.id)
+            newly_opened = not old_item.open
+        else:
+            newly_opened = False
 
-    # Send mail about the agenda item.
-    if item.notes:
-        notes = item.notes
-    else:
-        notes = u''
+        # Send mail about the agenda item.
+        if item.notes:
+            notes = item.notes
+        else:
+            notes = u''
 
-    for list_config in item.agenda.agenda_mailing_lists.all():
-        if list_config.on_agenda_item_open and newly_opened:
-            if list_config.is_primary:
-                subject = "Open: %s" % item.name
-                message = EMAIL_OPEN_AGENDA_ITEM % (item.agenda, item.name, notes)
-            else:
-                subject="New %s item open" % item.agenda
-                message = EMAIL_OPEN_AGENDA_ITEM_GENERIC % \
-                          (item.agenda, settings.SITE_URL.rstrip('/') +
-                           item.agenda.get_absolute_url())
-            list_config.send_mail(subject=subject, message=message)
+        for list_config in item.agenda.agenda_mailing_lists.all():
+            if list_config.on_agenda_item_open and newly_opened:
+                if list_config.is_primary:
+                    subject = "Open: %s" % item.name
+                    message = EMAIL_OPEN_AGENDA_ITEM % (item.agenda, item.name,
+                                                        notes)
+                else:
+                    subject="New %s item open" % item.agenda
+                    message = EMAIL_OPEN_AGENDA_ITEM_GENERIC % \
+                            (item.agenda, item.name,
+                             settings.SITE_URL.rstrip('/') +
+                             item.agenda.get_absolute_url())
+                list_config.send_mail(subject=subject, message=message)
 
-        elif list_config.on_agenda_item_add and newly_added:
-            list_config.send_mail(
-              subject="New %s item added" % item.agenda,
-              message=EMAIL_ADD_AGENDA_ITEM % (item.agenda,
-                settings.SITE_URL.rstrip('/') + item.agenda.get_absolute_url()))
+            elif list_config.on_agenda_item_add and newly_added:
+                list_config.send_mail(
+                subject="New %s item added" % item.agenda,
+                message=EMAIL_ADD_AGENDA_ITEM % (item.agenda,
+                    settings.SITE_URL.rstrip('/') + item.agenda.get_absolute_url()))
 
 models.signals.pre_save.connect(agenda_item_pre_save, sender=AgendaItem)
 
@@ -320,57 +327,59 @@ def topic_pre_save(sender, **kwargs):
     Callback to initialize the token and/or create standard options if needed.
     Note that this function must be defined outside of any class.
     """
-    topic = kwargs['instance']
-    if topic.agenda.uses_tokens and topic.token is None:
-        salt = hashlib.sha1(str(random())).hexdigest()[:5]
-        topic.token = hashlib.sha1(salt + topic.name).hexdigest()
+    if kwargs['raw'] != True:
+        topic = kwargs['instance']
+        if topic.agenda.uses_tokens and topic.token is None:
+            salt = hashlib.sha1(str(random())).hexdigest()[:5]
+            topic.token = hashlib.sha1(salt + topic.name).hexdigest()
 
-    if topic.id is not None:
-        old_topic = Topic.objects.get(pk=topic.id)
-        opened = not old_topic.open and topic.open
-    else:
-        opened = topic.open
+        if topic.id is not None:
+            old_topic = Topic.objects.get(pk=topic.id)
+            opened = not old_topic.open and topic.open
+        else:
+            opened = topic.open
 
-    # We can't send email in pre_save because we don't have an id yet if this
-    # is a newly added topic.  So set a flag to be read in topic_post_save().
-    if opened:
-        topic.post_save_send_mail = True
-    else:
-        topic.post_save_send_mail = False
+        # We can't send email in pre_save because we don't have an id yet if this
+        # is a newly added topic.  So set a flag to be read in topic_post_save().
+        if opened:
+            topic.post_save_send_mail = True
+        else:
+            topic.post_save_send_mail = False
 
 def topic_post_save(sender, **kwargs):
-    topic = kwargs['instance']
-    if topic.vote_type.name in (TYPE_PASS_FAIL, TYPE_CHARTER) and \
-       topic.options.count() == 0:
-        topic.options.create(name='For', ballot_position=0)
-        topic.options.create(name='Against', ballot_position=1)
-    if topic.agenda.allows_abstentions and \
-       topic.options.filter(name__iexact='Abstain').count() == 0:
-        # Set the ballot position to something really high.  Ballot positions
-        # are relative not absolute, so as long as it's larger than any likely
-        # number of ballot positions, this will put the 'Abstain' at the end
-        # of the ballot.  And if it somehow doesn't, that's not really a big
-        # deal anyway and easily fixed by the admin.
-        topic.options.create(name='Abstain', ballot_position=1000000)
+    if kwargs['raw'] != True:
+        topic = kwargs['instance']
+        if topic.vote_type.name in (TYPE_PASS_FAIL, TYPE_CHARTER) and \
+        topic.options.count() == 0:
+            topic.options.create(name='For', ballot_position=0)
+            topic.options.create(name='Against', ballot_position=1)
+        if topic.agenda.allows_abstentions and \
+        topic.options.filter(name__iexact='Abstain').count() == 0:
+            # Set the ballot position to something really high.  Ballot positions
+            # are relative not absolute, so as long as it's larger than any likely
+            # number of ballot positions, this will put the 'Abstain' at the end
+            # of the ballot.  And if it somehow doesn't, that's not really a big
+            # deal anyway and easily fixed by the admin.
+            topic.options.create(name='Abstain', ballot_position=1000000)
 
-    if not topic.post_save_send_mail:
-        return
+        if not topic.post_save_send_mail:
+            return
 
-    # Send mail that we have a new ballot up for vote.
-    for list_config in topic.agenda.agenda_mailing_lists.all():
-        if list_config.on_vote_open:
-            token_string = ''
-            if topic.token and list_config.display_token:
-                token_string = EMAIL_TOKEN_STRING % topic.token
+        # Send mail that we have a new ballot up for vote.
+        for list_config in topic.agenda.agenda_mailing_lists.all():
+            if list_config.on_vote_open:
+                token_string = ''
+                if topic.token and list_config.display_token:
+                    token_string = EMAIL_TOKEN_STRING % topic.token
 
-            email_body = EMAIL_OPEN_BALLOT % (
-              topic,
-              topic.text,
-              settings.SITE_URL.rstrip('/') + topic.get_absolute_url(),
-              token_string,
-              topic.deadline.strftime('%d %B %Y %H:%M:%S ') + settings.TIME_ZONE)
+                email_body = EMAIL_OPEN_BALLOT % (
+                topic,
+                topic.text,
+                settings.SITE_URL.rstrip('/') + topic.get_absolute_url(),
+                token_string,
+                topic.deadline.strftime('%d %B %Y %H:%M:%S ') + settings.TIME_ZONE)
 
-            list_config.send_mail("GCD Ballot Open: %s" % topic, email_body)
+                list_config.send_mail("GCD Ballot Open: %s" % topic, email_body)
 
 models.signals.pre_save.connect(topic_pre_save, sender=Topic)
 models.signals.post_save.connect(topic_post_save, sender=Topic)
@@ -389,6 +398,9 @@ class Option(models.Model):
     voters = models.ManyToManyField(User, through='Vote',
                                           related_name='voted_options')
     result = models.NullBooleanField(blank=True)
+
+    def rank(self, user):
+        return self.votes.get(voter=user).rank
 
     def __unicode__(self):
         return self.name

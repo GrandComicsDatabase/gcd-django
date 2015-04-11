@@ -8,12 +8,22 @@ from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.utils.datastructures import MultiValueDictKeyError
 
 from apps.gcd.models import *
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import render_error, paginate_response
 from apps.select.forms import *
+
+##############################################################################
+# Helper functions
+##############################################################################
+
+def _cant_get_key(request):
+    return render_error(request,
+      'Internal data for selecting objects is corrupted. If this message '
+      'persists try logging out and logging in.', redirect=False)
 
 ##############################################################################
 # Cache and select objects
@@ -87,7 +97,7 @@ def process_select_search_haystack(request, select_key):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
-        return _cant_get(request)
+        return _cant_get_key(request)
 
     form = FacetedSearchForm(request.GET)
     if not form.is_valid(): # do not think this can happen
@@ -112,12 +122,13 @@ def process_select_search(request, select_key):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
-        return _cant_get(request)
+        return _cant_get_key(request)
     publisher =  data.get('publisher', False)
     series = data.get('series', False)
     issue =  data.get('issue', False)
     story =  data.get('story', False)
-
+    if 'search_series' in request.GET:
+        issue = False
     search_form = get_select_search_form(search_publisher=publisher,
                                          search_series=series,
                                          search_issue=issue,
@@ -178,6 +189,19 @@ def process_select_search(request, select_key):
         plural_suffix = 's'
         search = search.order_by("series__name", "series__year_began",
                                  "key_date")
+    elif 'search_series' in request.GET:
+        search = Series.objects.filter(deleted=False,
+                                name__icontains=cd['series'],
+                                publisher__name__icontains=cd['publisher'])
+        heading = 'Series search for: ' + cd['series']
+        if cd['year']:
+            search = search.filter(year_began=cd['year'])
+            heading = '%s (%s, %d series)' % (cd['series'], publisher,
+                                                  cd['year'])
+        template='gcd/search/series_list.html'
+        base_name = 'series'
+        plural_suffix = ''
+        search = search.order_by("name")
     elif 'search_publisher' in request.GET:
         search = Publisher.objects.filter(deleted=False,
                                           name__icontains=cd['publisher'])
@@ -206,7 +230,7 @@ def select_object(request, select_key):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
-        return _cant_get(request)
+        return _cant_get_key(request)
     if request.method == 'GET':
         if 'refine_search' in request.GET or 'search_issue' in request.GET:
             request_data = request.GET
@@ -318,6 +342,7 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
         request.session['cached_issue'] = issue_id
     if story_id:
         request.session['cached_story'] = story_id
+        return HttpResponseRedirect(request.META['HTTP_REFERER'] + '#%s' % story_id)
     if cover_story_id:
         request.session['cached_cover'] = cover_story_id
     return HttpResponseRedirect(request.META['HTTP_REFERER'])

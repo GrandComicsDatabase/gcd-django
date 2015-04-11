@@ -70,7 +70,7 @@
   <tr>
     <th> Field </th>
     {% if revision.deleted %}
-    <th> Deleted </th>
+    <th> <a href="{% url compare id=prev_rev.changeset_id %}?collapse=1"> Previous </a> / Deleted </th>
     {% else %}
       {% if prev_rev %}
         {% if no_prev_link %}

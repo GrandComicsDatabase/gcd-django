@@ -67,6 +67,9 @@ Search for {{ target }} by entering the relevant information here:
 {% if issue or story %}
   <input type="submit" name="search_issue" value="Search for issues"></input>
 {% endif %}
+{% if series %}
+  <input type="submit" name="search_series" value="Search for series"></input>
+{% endif %}
 {% if publisher %}
   <input type="submit" name="search_publisher" value="Search for publisher"></input>
 {% endif %}

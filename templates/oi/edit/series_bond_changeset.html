@@ -1,0 +1,33 @@
+{% with changeset.seriesbondrevisions.get as series_bond_revision %}
+<form class="changeset" method="POST" action="{% url edit_series_bond id=series_bond_revision.id %}">
+{% csrf_token %}
+  <table class="story_list">
+    <tr>
+      <td>The numbering of </td>
+      <td>
+{{ series_bond_revision.origin }}
+{% if series_bond_revision.origin_issue %}
+is from {{ series_bond_revision.origin_issue.display_number }} on
+{% else %}
+is
+{% endif %}
+      </td>
+      <td><input type="submit" id="edit_origin" name="edit_origin" value="Edit"></td>
+    </tr>
+    <tr>
+      <td>continued at</td>
+      <td>
+{{ series_bond_revision.target }}
+{% if series_bond_revision.target_issue %}
+with {{ series_bond_revision.target_issue.display_number }}
+{% endif %}
+      </td>
+      <td><input type="submit" id="edit_target" name="edit_target" value="Edit"></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td align="right"><input type="submit" id="flip_direction" name="flip_direction" value="Flip direction"></td>
+  </table>
+</form>
+{% endwith %}

@@ -9,7 +9,7 @@ the traditional models.py and views.py files.
 from country import Country
 from language import Language
 from publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, BrandUse
-from series import Series
+from series import Series, SeriesPublicationType
 from issue import Issue
 from story import StoryType, Story, STORY_TYPES, OLD_TYPES
 from cover import Cover
@@ -23,5 +23,6 @@ from issuereprint import IssueReprint
 from reprint import Reprint
 from reprinttoissue import ReprintToIssue
 from reprintfromissue import ReprintFromIssue
+from seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING
 from recent import RecentIndexedIssue
 from image import ImageType, Image

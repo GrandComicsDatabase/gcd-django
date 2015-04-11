@@ -17,6 +17,9 @@ class StoryTypeAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
     list_editable = ('sort_code',)
 
+class SeriesBondTypeAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
 class IndexerAdmin(admin.ModelAdmin):
     search_fields = ('user__first_name', 'user__last_name',
                      'user__username', 'user__email')
@@ -48,6 +51,7 @@ class ImpGrantAdmin(admin.ModelAdmin):
 admin.site.register(Country, CountryAdmin)
 admin.site.register(Language, LanguageAdmin)
 admin.site.register(StoryType, StoryTypeAdmin)
+admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 admin.site.register(Indexer, IndexerAdmin)
 admin.site.register(ImpGrant, ImpGrantAdmin)
 
