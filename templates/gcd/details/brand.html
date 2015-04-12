@@ -51,22 +51,27 @@ GCD :: Brand Emblem :: {{ brand.name }}
 {% if not preview or brand.source %}
     <div id="control_rail">
       <div class="edit_box">
+  {% if MYCOMICS %}
+        <div class="edit_header">
+          <div>my.comics.org</div>
+        </div>
+  {% else %}
         <div class="edit_header">Editing</div>
-  {% if not preview %}
-    {% with brand as object %}
-    {% with 'brand' as object_class %}
-    {% with 'Brand Emblem' as object_name %}
-      {% include "gcd/bits/status_banner.html" %}
-    {% endwith %}
-    {% endwith %}
-    {% endwith %}
-    {% if brand.emblem %}
-      {% if brand.emblem.reserved %}
-      <div style='padding:.4em' class="index_status_1">
-      Brand emblem changes pending
-      </div>
-      {% else %}
-        {% if user.is_authenticated %}
+    {% if not preview %}
+      {% with brand as object %}
+      {% with 'brand' as object_class %}
+      {% with 'Brand Emblem' as object_name %}
+        {% include "gcd/bits/status_banner.html" %}
+      {% endwith %}
+      {% endwith %}
+      {% endwith %}
+      {% if brand.emblem %}
+        {% if brand.emblem.reserved %}
+        <div style='padding:.4em' class="index_status_1">
+        Brand emblem changes pending
+        </div>
+        {% else %}
+          {% if user.is_authenticated %}
         <form method="GET"
           action="{% url replace_image model_name='brand' id=brand.id image_id=brand.emblem.id %}">
           <input type="submit" value="{% trans 'Replace Brand Image' %}">
@@ -75,24 +80,25 @@ GCD :: Brand Emblem :: {{ brand.name }}
           action="{% url delete_revision model_name='image' id=brand.emblem.id %}">
           <input type="submit" value="{% trans 'Delete Brand Image' %}">
         </form>
+          {% endif %}
         {% endif %}
-      {% endif %}
-    {% else %}
-        {% if user.is_authenticated %}
+      {% else %}
+          {% if user.is_authenticated %}
         <form method="GET"
           action="{% url upload_image model_name='brand' id=brand.id image_type='BrandScan' %}">
           <input type="submit" value="{% trans 'Add Brand Image' %}">
         </form>
+        {% endif %}
+      {% endif %}
+      {% if user.is_authenticated %}
+        <form method="POST"
+          action="{% url add_brand_use brand_id=brand.id %}">
+      {% csrf_token %}
+          <input id="add_use" name="add_use" type="submit" value="Add Brand Use"></input>
+        </form>
       {% endif %}
     {% endif %}
-    {% if user.is_authenticated %}
-      <form method="POST"
-        action="{% url add_brand_use brand_id=brand.id %}">
-    {% csrf_token %}
-        <input id="add_use" name="add_use" type="submit" value="Add Brand Use"></input>
-      </form>
-    {% endif %}
-  {% endif %}
+  {% endif %} <!-- MYCOMICS -->
       </div>
       <div class="change_history">
   {% if preview %}
@@ -102,7 +108,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
   {% endif %}
       </div>
     </div> <!-- control_rail -->
-{% endif %}
+{% endif %} <!-- not preview or brand.source -->
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 
@@ -150,7 +156,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
     <td> {{ use.year_began|default:"" }} </td>
     <td> {{ use.year_ended|default:"" }} </td>
     <td> {{ use.notes }} </td>
-  {% if user.is_authenticated %}
+  {% if user.is_authenticated and not MYCOMICS %}
     <td>
     {% if use.reserved %}
     is reserved

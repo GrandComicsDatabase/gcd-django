@@ -29,6 +29,8 @@ MESSAGE_TEMPLATE='mycomics/message.html'
 
 def index(request):
     """Generates the front index page."""
+    if request.user:
+        return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
     vars = {'next': urlresolvers.reverse('collections_list')}
     return render_to_response(INDEX_TEMPLATE, vars,
                               context_instance=RequestContext(request))

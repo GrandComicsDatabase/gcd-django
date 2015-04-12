@@ -57,17 +57,23 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 {% if not preview or indicia_publisher.source %}
   <div id="control_rail">
     <div class="edit_box">
+  {% if MYCOMICS %}
+      <div class="edit_header">
+        <div>my.comics.org</div>
+      </div>
+  {% else %}
       <div class="edit_header">Editing</div>
-  {% if not preview %}
-    {% with indicia_publisher as object %}
-    {% with 'indicia_publisher' as object_class %}
-    {% with 'Indicia / Colophon Publisher' as object_name %}
-      {% include "gcd/bits/status_banner.html" %}
-    {% endwith %}
-    {% endwith %}
-    {% endwith %}
-  {% endif %}
+     {% if not preview %}
+       {% with indicia_publisher as object %}
+       {% with 'indicia_publisher' as object_class %}
+       {% with 'Indicia / Colophon Publisher' as object_name %}
+         {% include "gcd/bits/status_banner.html" %}
+       {% endwith %}
+       {% endwith %}
+       {% endwith %}
+     {% endif %}
     </div>
+  {% endif %} <!-- MYCOMICS -->
     <div class="change_history">
   {% if preview %}
       <a href="{% url change_history model_name='indicia_publisher' id=indicia_publisher.source.id %}">Change History</a>

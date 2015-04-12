@@ -17,7 +17,7 @@
 {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
 <div class="publisher_list_control_panel">
-{% if user.is_authenticated and not publisher.pending_deletion %}
+{% if user.is_authenticated and not publisher.pending_deletion and not MYCOMICS %}
   <form method="GET"
         action="{% url add_brand_group parent_id=publisher.id %}">
     <input id="add" name="add" type="submit" value="Add another brand group" />

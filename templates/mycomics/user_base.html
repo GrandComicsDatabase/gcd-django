@@ -29,11 +29,15 @@
       </form>
       <ul class="nav navbar-nav navbar-right">
         <li><span class="navbar-text"><span class="glyphicon glyphicon-user"></span> {{ request.user.username }}
-                            (<a href="settings.html"><span class="glyphicon glyphicon-cog"></span></a>)&nbsp;</span>
+                            {# (<a href="settings.html"><span class="glyphicon glyphicon-cog"></span></a>)&nbsp;#}</span>
         </li>
         <li>
-          <button type="button" class="btn btn-default navbar-btn" style="display: inline;">{% trans 'Log out' %}
-          </button>
+          <form action="{% url logout %}" method="POST">
+         {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="btn btn-default navbar-btn" style="display: inline;">{% trans 'Log out' %}
+            </button>
+           </form>
         </li>
       </ul>
     </div>

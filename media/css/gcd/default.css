@@ -207,7 +207,17 @@ div.search_id_nav {
     font-weight: bold;
 }
 
-.search_bar form {
+.my_search_bar{
+    clear: both;
+    background-color: #A9302A;
+    color: white;
+    margin-bottom: 0.5em;
+    vertical-align: middle;
+    padding: 0.6em;
+    font-weight: bold;
+}
+
+.search_bar form, .my_search_bar form {
     margin: 0;
     display: inline;
 }
@@ -217,15 +227,15 @@ div.search_id_nav {
     padding: 0.3em;
 }
 
-.search_bar input {
+.search_bar input, .my_search_bar input {
     font-size: 0.8em;
 }
 
-.search_bar select {
+.search_bar select, .my_search_bar select {
     font-size: 0.8em;
 }
 
-.search_bar img, #plain_bar img {
+.search_bar img, .my_search_bar img, #plain_bar img {
     display: inline;
     height: 2em;
     position: relative;
@@ -239,6 +249,10 @@ div.search_id_nav {
 
 .search_bar :visited {
     color: black;
+}
+
+.my_search_bar :link, .my_search_bar :visited  {
+    color: white;
 }
 
 #plain_bar span {
