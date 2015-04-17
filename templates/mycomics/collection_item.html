@@ -8,7 +8,7 @@
   <div id="edit-item" class="modal fade" tabindex="-1" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{% url save_issue item.id %}" method="POST">
+        <form action="{% url save_item item.id collection.id %}" method="POST">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
             <h4 class="modal-title">{% trans "Editing item in collection" %}</h4>
@@ -16,8 +16,12 @@
           <div class="modal-body">
               {% csrf_token %}
               {% bootstrap_form item_form %}
-              {% bootstrap_form acquisition_date_form %}
-              {% bootstrap_form sell_date_form %}
+              {% if acquisition_date_form %}
+                {% bootstrap_form acquisition_date_form %}
+              {% endif %}
+              {% if sell_date_form %}
+                {% bootstrap_form sell_date_form %}
+              {% endif %}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
@@ -72,17 +76,39 @@
     <div class="col-md-8">
       {% if item.notes %}{{ item.notes }}<hr>{% endif %}
       {% if item.keywords.count %}{% trans "Keywords: " %}{{ item|show_keywords }}<hr>{% endif %}
-      {% trans "Location: " %}{{ item.location }}<br>
-      {% trans "Purchase location: " %}{{ item.purchase_location }}<br>
-      {% trans "Grade: " %}{{ item.grade }}<br>
-      {% trans "Was read: " %}{{ item.was_read }}<br>
-      {% trans "For sale: " %}{{ item.for_sale }}<br>
-      {% trans "Signed: " %}{{ item.signed }}<br>
-      {% trans "Price paid: " %}{{ item.price_paid }} {{ item.price_paid_currency.code }}<br>
-      {% trans "Market value: " %}{{ item.market_value }} {{ item.market_value_currency.code }}<br>
-      {% trans "Sell price: " %}{{ item.sell_price }} {{ item.sell_price_currency.code }}<br>
-      {% trans "Acquisition date: " %}{{ item.acquisition_date }}<br>
-      {% trans "Sell date: " %}{{ item.sell_date }}<br>
+      {% if collection.location_used %}
+        {% trans "Location: " %}{{ item.location }}<br>
+      {% endif %}
+      {% if collection.purchase_location_used %}
+        {% trans "Purchase location: " %}{{ item.purchase_location }}<br>
+      {% endif %}
+      {% if collection.condition_used %}
+        {% trans "Grade: " %}{{ item.grade|default:'' }}<br>
+      {% endif %}
+      {% if collection.was_read_location_used %}
+        {% trans "Was read: " %}{{ item.was_read|yesno }}<br>
+      {% endif %}
+      {% if collection.for_sale_used %}
+        {% trans "For sale: " %}{{ item.for_sale|yesno }}<br>
+      {% endif %}
+      {% if collection.signed_used %}
+        {% trans "Signed: " %}{{ item.signed|yesno }}<br>
+      {% endif %}
+      {% if collection.price_paid_used %}
+        {% trans "Price paid: " %}{% if item.price_paid %}{{ item.price_paid }} {{ item.price_paid_currency.code }}{% endif %}<br>
+      {% endif %}
+      {% if collection.market_value_used %}
+        {% trans "Market value: " %}{% if item.market_value %}{{ item.market_value }} {{ item.market_value_currency.code }}{% endif %}<br>
+      {% endif %}
+      {% if collection.sell_price_used %}
+        {% trans "Sell price: " %}{% if item.sell_price %}{{ item.sell_price }} {{ item.sell_price_currency.code }}{% endif %}<br>
+      {% endif %}
+      {% if collection.acquisition_date_used %}
+        {% trans "Acquisition date: " %}{{ item.acquisition_date }}<br>
+      {% endif %}
+      {% if collection.sell_date_used %}
+        {% trans "Sell date: " %}{{ item.sell_date }}<br>
+      {% endif %}
     </div>
   </div>
 

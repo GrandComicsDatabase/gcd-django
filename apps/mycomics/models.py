@@ -123,7 +123,7 @@ class CollectionItem(models.Model):
                                           blank=True)
 
     notes = models.TextField(blank=True)
-    keywords = TaggableManager()
+    keywords = TaggableManager(blank=True)
 
     grade = models.ForeignKey('ConditionGrade', related_name='+', null=True,
                               blank=True)

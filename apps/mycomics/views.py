@@ -109,8 +109,8 @@ def delete_collection(request, collection_id):
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 
-def get_item_for_collector(issue_id, collector):
-    item = get_object_or_404(CollectionItem, id=issue_id)
+def get_item_for_collector(item_id, collector):
+    item = get_object_or_404(CollectionItem, id=item_id)
     #checking if this user can see this item
     if item.collections.all()[0].collector != collector:
         raise PermissionDenied
@@ -123,16 +123,18 @@ def check_item_is_in_collection(request, item, collection):
 
 
 @login_required
-def delete_collection_item(request, issue_id, collection_id):
+def delete_collection_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
-    item = get_item_for_collector(issue_id, request.user.collector)
+    item = get_item_for_collector(item_id, request.user.collector)
 
     check_item_is_in_collection(request, item, collection)
 
     collection.items.remove(item)
-    if not item.collections:
-        item.acquisition_date.delete()
-        item.sell_date.delete()
+    if not item.collections.count():
+        if item.acquisition_date:
+            item.acquisition_date.delete()
+        if item.sell_date:
+            item.sell_date.delete()
         item.delete()
     messages.success(request, _("Item removed from collection"))
     return HttpResponseRedirect(urlresolvers.reverse('view_collection',
@@ -140,18 +142,24 @@ def delete_collection_item(request, issue_id, collection_id):
 
 
 @login_required
-def view_issue_in_collection(request, issue_id, collection_id):
+def view_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
-    item = get_item_for_collector(issue_id, request.user.collector)
+    item = get_item_for_collector(item_id, request.user.collector)
 
     check_item_is_in_collection(request, item, collection)
 
     item_form = CollectionItemForm(request.user.collector, instance=item)
-    sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
-    sell_date_form.fields['date'].label = 'Sell date'
-    acquisition_date_form = DateForm(instance=item.acquisition_date,
-                                     prefix='acquisition_date')
-    acquisition_date_form.fields['date'].label = 'Acquisition date'
+    if item.collections.filter(sell_date_used=True).exists():
+        sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
+        sell_date_form.fields['date'].label = _('Sell date')
+    else:
+        sell_date_form = None
+    if item.collections.filter(acquisition_date_used=True).exists():
+        acquisition_date_form = DateForm(instance=item.acquisition_date,
+                                        prefix='acquisition_date')
+        acquisition_date_form.fields['date'].label = _('Acquisition date')
+    else:
+        acquisition_date_form = None
 
     return render_to_response(COLLECTION_ITEM_TEMPLATE,
                               {'item': item, 'item_form': item_form,
@@ -162,35 +170,58 @@ def view_issue_in_collection(request, issue_id, collection_id):
 
 
 @login_required
-def save_issue(request, issue_id):
+def save_item(request, item_id, collection_id):
     if request.method == 'POST':
-        item = get_item_for_collector(issue_id, request.user.collector)
+        collection = get_object_or_404(Collection, id=collection_id)
+        item = get_item_for_collector(item_id, request.user.collector)
         item_form = CollectionItemForm(request.user.collector, request.POST,
-                                  instance=item)
-        sell_date_form = DateForm(request.POST, instance=item.sell_date,
-                                  prefix='sell_date')
-        acquisition_date_form = DateForm(request.POST,
-                                         instance=item.acquisition_date,
-                                         prefix='acquisition_date')
-
+                                       instance=item)
         item_form_valid = item_form.is_valid()
-        sell_date_form_valid = sell_date_form.is_valid()
-        acquisition_date_form_valid = acquisition_date_form.is_valid()
+
+        if item.collections.filter(sell_date_used=True).exists():
+            sell_date_form = DateForm(request.POST, instance=item.sell_date,
+                                      prefix='sell_date')
+            sell_date_form_valid = sell_date_form.is_valid()
+        else:
+            sell_date_form = None
+            sell_date_form_valid = True
+
+        if item.collections.filter(acquisition_date_used=True).exists():
+            acquisition_date_form = DateForm(request.POST,
+                                             instance=item.acquisition_date,
+                                             prefix='acquisition_date')
+            acquisition_date_form_valid = acquisition_date_form.is_valid()
+        else:
+            acquisition_date_form = None
+            acquisition_date_form_valid = True
 
         if item_form_valid:
             if  sell_date_form_valid and acquisition_date_form_valid:
-                sell_date = sell_date_form.save()
-                acquisition_date = acquisition_date_form.save()
+                if sell_date_form:
+                    sell_date = sell_date_form.save()
+                else:
+                    sell_date = None
+                if acquisition_date_form:
+                    acquisition_date = acquisition_date_form.save()
+                else:
+                    acquisition_date = None
                 item = item_form.save(commit=False)
                 item.acquisition_date = acquisition_date
                 item.sell_date = sell_date
                 item.save()
+                item_form.save_m2m()
 
                 messages.success(request, _('Item saved.'))
             else:
+                if sell_date_form:
+                    sell_date_form.fields['date'].label = _('Sell date')
+                if acquisition_date_form:
+                    acquisition_date_form.fields['date'].label = \
+                                                        _('Acquisition date')
                 messages.error(request, _('Date was entered in wrong format.'))
                 return render_to_response(COLLECTION_ITEM_TEMPLATE,
                                    {'item': item, 'item_form': item_form,
+                                    'collection': collection,
                                     'sell_date_form': sell_date_form,
                                     'acquisition_date_form': acquisition_date_form},
                                    context_instance=RequestContext(request))
@@ -198,12 +229,14 @@ def save_issue(request, issue_id):
             messages.error(request, _('Some data was entered incorrectly.'))
             return render_to_response(COLLECTION_ITEM_TEMPLATE,
                                {'item': item, 'item_form': item_form,
+                                'collection': collection,
                                 'sell_date_form': sell_date_form,
                                 'acquisition_date_form': acquisition_date_form},
                                context_instance=RequestContext(request))
         return HttpResponseRedirect(
-            urlresolvers.reverse('view_issue',
-                                 kwargs={'issue_id': issue_id}))
+            urlresolvers.reverse('view_item',
+                                 kwargs={'item_id': item_id,
+                                         'collection_id': collection_id}))
 
     raise Http404
 
@@ -237,10 +270,10 @@ def add_selected_issues_to_collection(request, data):
         issues |= Issue.objects.filter(story__id__in=selections['story'])
     issues = issues.distinct()
     if 'confirm_selection' in request.POST:
-        return add_issues_to_collection(request, 
-          int(request.POST['collection_id']), issues, 
-          urlresolvers.reverse('view_collection', 
-                               kwargs={'collection_id': collection_id}))
+        collection_id = int(request.POST['collection_id'])
+        return add_issues_to_collection(request,
+          collection_id, issues, urlresolvers.reverse('view_collection',
+                                 kwargs={'collection_id': collection_id}))
     else:
         collection_list = request.user.collector.collections.all()\
                                                             .order_by('name')

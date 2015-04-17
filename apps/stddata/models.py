@@ -63,4 +63,7 @@ class Date(models.Model):
         day = self.day or ''
         if self.day_uncertain and not '?' in self.day:
             day += '?'
-        return year+u'-'+month+u'-'+day
+        if year or month or day:
+            return year+u'-'+month+u'-'+day
+        else:
+            return u''

@@ -41,7 +41,7 @@
       <div class="row">
         {% for item in items %}
           <div class="col-md-2">
-          <a href="{% url view_issue_in_collection item.id collection.id %}">
+          <a href="{% url view_item item.id collection.id %}">
             <div class="thumbnail">
               {{ item.issue|show_cover_tag }}
               <div class="caption">{{ item.issue.full_name }}</div>
