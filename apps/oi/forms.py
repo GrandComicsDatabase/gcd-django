@@ -1740,12 +1740,14 @@ class UploadScanForm(forms.Form):
     """ Form for cover uploads. """
 
     scan = forms.ImageField(widget=forms.FileInput)
-    source = forms.CharField(label='Source', required=False,
-      help_text='If you upload a scan from another website, please '
-                'ask for permission and mention the source. If you upload '
-                'on behalf of someone you can mention this here as well.')
+    source = forms.CharField(label='Source', required=True,
+      help_text='If you upload a scan from another website, make sure you '
+                'have permission to do that and mention the source. If you '
+                'upload on behalf of someone else you can mention this here as'
+                ' well. Otherwise, indicate that you scanned it yourself.')
     remember_source = forms.BooleanField(label='Remember the source',
-                                         required=False)
+                                         required=False,
+      help_text="Tick only if you do multiple uploads from the source.")
     marked = forms.BooleanField(label="Mark cover for replacement", required=False,
       help_text='Uploads of sub-standard scans for older and/or rare comics '
                 'are fine, but please mark them for replacement.')
@@ -1767,7 +1769,8 @@ class UploadScanForm(forms.Form):
 
     def clean(self):
         cd = self.cleaned_data
-        cd['source'] = cd['source'].strip()
+        if 'source' in cd:
+            cd['source'] = cd['source'].strip()
         cd['comments'] = cd['comments'].strip()
         if cd['is_wraparound'] and cd['is_gatefold']:
             raise forms.ValidationError(

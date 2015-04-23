@@ -72,6 +72,11 @@ div.success {
     float: left;
 }
 
+div.cover_guidelines {
+    float: left;
+    margin-top: 1em;
+}
+
 #guidelines {
     clear: both;
 }
