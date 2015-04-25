@@ -1028,6 +1028,10 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 cd['month_on_sale'] = cd['on_sale_date'].month
                 cd['day_on_sale'] = cd['on_sale_date'].day
 
+            if cd['page_count_uncertain'] and not cd['page_count']:
+                raise forms.ValidationError('You cannot check page count '
+                  'uncertain without a page count.')
+
             if cd['no_barcode'] and cd['barcode']:
                 raise forms.ValidationError(
                   'You cannot specify a barcode and check "no barcode" at '

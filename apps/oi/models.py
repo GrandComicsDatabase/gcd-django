@@ -2840,10 +2840,10 @@ class SeriesRevision(Revision):
             'publisher': None,
             'imprint': None,
             'has_barcode': True,
-            'has_indicia_frequency': True,
+            'has_indicia_frequency': False,
             'has_isbn': True,
             'has_issue_title': False,
-            'has_volume': True,
+            'has_volume': False,
             'has_rating': False,
             'is_comics_publication': True,
         }

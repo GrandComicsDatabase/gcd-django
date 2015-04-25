@@ -1836,9 +1836,7 @@ def add_series(request, publisher_id):
             initial['country'] = publisher.country.id
             # TODO: make these using same code as get_blank_values
             initial['has_barcode'] = True
-            initial['has_indicia_frequency'] = True
             initial['has_isbn'] = True
-            initial['has_volume'] = True
             initial['is_comics_publication'] = True
             form = get_series_revision_form(publisher,
                                             user=request.user)(initial=initial)
