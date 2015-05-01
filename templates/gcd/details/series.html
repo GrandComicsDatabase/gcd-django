@@ -164,13 +164,7 @@
     <div id="control_rail">
       <div class="edit_box">
   {% if MYCOMICS %}
-        <div class="edit_header">
-          <div>my.comics.org</div>
-        </div>
-    {% if request.user.is_authenticated %}
-          <p><a href="{% url my_series_issues series_id=series.id %}">Add all issues to a collection</a>
-        </p>
-    {% endif %}
+    {% include 'mycomics/bits/series_control.html' %}
   {% else %}
         <div class="edit_header">Editing</div>
     {% if not preview %}

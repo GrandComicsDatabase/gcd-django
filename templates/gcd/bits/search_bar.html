@@ -1,4 +1,8 @@
+{% if MYCOMICS %}
+<div class="my_search_bar">
+{% else %}
 <div class="search_bar">
+{% endif %}
   <form action="{% url apps.gcd.views.search.search %}" method="get">
     <a href="{% url apps.gcd.views.index %}"><img src="{{ MEDIA_URL }}/img/logo_icon_new.png" alt="GCD" style="border:0;"></a>
     | <a href="{% url apps.gcd.views.index %}">Home</a> |
@@ -12,7 +16,11 @@
   </form>
   | <a href="{% url apps.gcd.views.search.advanced_search %}">Advanced Search</a> |
 {% if user.is_authenticated %}
+  {% if MYCOMICS %}
+  <a href="{% url collections_list %}">Collections</a> |
+  {% else %}
   <a href="{% url editing %}">Editing</a> |
+  {% endif %}
   <form action="{% url logout %}" method="POST">
     {% csrf_token %}
     <input type="submit" name="logout" value="Log Out" />

@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core import urlresolvers
@@ -294,19 +295,35 @@ def add_series_issues_to_collection(request, series_id):
     series = get_object_or_404(Series, id=series_id)
     issues = series.active_base_issues()
     if 'confirm_selection' in request.POST:
-        return add_issues_to_collection(request, 
-          int(request.POST['collection_id']), issues,
-          urlresolvers.reverse('show_series', 
-                               kwargs={'series_id': series_id}))
+        # add all issues (without variants) to the selected collection
+        collection_id = int(request.POST['collection_id'])
+        collection = get_object_or_404(Collection, id=collection_id)
+        messages.success(request, u"All issues added to your '%s' collection."\
+                                  % collection.name)
+        return add_issues_to_collection(request, collection_id, issues,
+          urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
     else:
+        # allow user to choose which issues to add to the selected collection
         collection_list = request.user.collector.collections.all()\
                                                             .order_by('name')
-        context = {
+        if request.GET['which_issues'] == 'all_issues':
+            issues = series.active_issues()
+        elif request.GET['which_issues'] == 'variant_issues':
+            issues = series.active_issues().exclude(variant_of=None)
+        data = {'issue': True,
+                'allowed_selects': ['issue',],
+                'return': add_selected_issues_to_collection,
+                'cancel': HttpResponseRedirect(urlresolvers\
+                            .reverse('show_series',
+                                     kwargs={'series_id': series_id}))}
+        select_key = store_select_data(request, None, data)
+        context = {'select_key': select_key,
+                'multiple_selects': True,
                 'item_name': 'issue',
                 'plural_suffix': 's',
                 'no_bulk_edit': True,
+                'all_pre_selected': True,
                 'heading': 'Issues',
-                'confirm_selection': True,
                 'collection_list': collection_list
             }
         return paginate_response(request, issues,

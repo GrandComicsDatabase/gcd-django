@@ -409,6 +409,10 @@ table#covers span.modify {
 
 
 /* Listing table stuff */
+form.before_listing {
+    margin-top: 1em;
+    float: left;
+}
 
 .listing {
     float: left;

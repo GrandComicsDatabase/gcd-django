@@ -1,17 +1,9 @@
 {% extends "gcd/base.html" %}
 
 {% block body %}
-  {% if MYCOMICS %}
-    {% include "gcd/bits/my_search_bar.html" %}
-  {% else %}
-    {% include "gcd/bits/search_bar.html" %}
-  {% endif %}
+  {% include "gcd/bits/search_bar.html" %}
 
   {% block view_body %}{% endblock %}
 
-  {% if MYCOMICS %}
-    {% include "gcd/bits/my_search_bar.html" %}
-  {% else %}
-    {% include "gcd/bits/search_bar.html" %}
-  {% endif %}
+  {% include "gcd/bits/search_bar.html" %}
 {% endblock %}

@@ -19,8 +19,8 @@
   {% endwith %}
   {% endwith %}
 
-  {% if select_key %}
-<div class='left'>  
+  {% if select_key and not multiple_selects %}
+<div class='left'>
 <p>
 <form action="{% url select_object select_key=select_key %}" method="POST">
   {% csrf_token %}

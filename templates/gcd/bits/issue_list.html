@@ -1,8 +1,14 @@
 {% load credits %}
 {% load display %}
 
+{% comment %}
+Either confirm_selection and select_key can be used. 
+With confirm_selection one can confirm a list of issues.
+With select_key the user can select one (or more with multiple_selects) issues.
+{% endcomment %}
+
 {% if request.user.is_authenticated and confirm_selection %}
-<form method="POST">
+<form method="POST" class="before_listing">
   {% csrf_token %}
 <div>
   <input type="submit" name="confirm_selection" value="Add">
@@ -15,6 +21,12 @@ the selected issues to your
 </div>
 {% endif %}
 
+{% if select_key and multiple_selects %}
+<form action="{% url process_multiple_selects select_key=select_key %}" method="POST" class="before_listing">
+  {% csrf_token %}
+  <input type="submit" name="search_select" value="Select issues">
+  <div style="clear: both;"></div>
+{% endif %}
 <table class="listing">
   <tr>
     {% if select_key %}
@@ -28,11 +40,15 @@ the selected issues to your
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     {% if select_key %}
     <td>
-    <form action="{% url select_object select_key=select_key %}" method="POST">
-    {% csrf_token %}
-    <input type="submit" name="search_select" value="Select this issue">
-    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
-    </form>
+      {% if multiple_selects %}
+      <input type="checkbox" name="object_choice" value="issue_{{ issue.id }}" {% if all_pre_selected %}checked{% endif %}>
+      {% else %}
+      <form action="{% url select_object select_key=select_key %}" method="POST">
+        {% csrf_token %}
+      <input type="submit" name="search_select" value="Select this issue">
+      <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
+      </form>
+      {% endif %}
     </td>
     {% endif %}
     {% if confirm_selection %}
@@ -45,6 +61,9 @@ the selected issues to your
   </tr>
 {% endfor %}
 </table>
+{% if select_key and multiple_selects %}
+</form>
+{% endif %}
 {% if request.user.is_authenticated and confirm_selection %}
 </form>
 {% endif %}
