@@ -72,7 +72,7 @@
       </form>
     </td>
     <td align="right">
-    {% if changeset.change_type == CTYPES.issue %}
+    {% if issue_revision.can_add_reprints %}
       <form class="changeset" method="GET"
             action="{% url add_issue_reprint issue_id=issue_revision.id,changeset_id=changeset.id %}">
         <input type="submit" value="Add reprint">

@@ -842,33 +842,34 @@ def get_issue_revision_form(publisher, series=None, revision=None,
               series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
               series.publisher.active_indicia_publishers_no_pending()
+
+            issue_year = None
             if revision and revision.key_date:
-                self.fields['brand'].queryset = \
-                    self.fields['brand'].queryset\
-                    .exclude(year_ended__lt=int(revision.key_date[:4]))
-                self.fields['indicia_publisher'].queryset = \
-                    self.fields['indicia_publisher'].queryset.\
-                    exclude(year_ended__lt=int(revision.key_date[:4]))
-                self.fields['brand'].queryset = \
-                    self.fields['brand'].queryset\
-                    .exclude(year_began__gt=int(revision.key_date[:4]))
-                self.fields['indicia_publisher'].queryset = \
-                    self.fields['indicia_publisher'].queryset\
-                    .exclude(year_began__gt=int(revision.key_date[:4]))
+                issue_year = int(revision.key_date[:4])
             elif revision and revision.year_on_sale and \
-                int(log10(revision.year_on_sale))+1 == 4:
-                self.fields['brand'].queryset = \
-                    self.fields['brand'].queryset\
-                    .exclude(year_ended__lt=revision.year_on_sale)
+                int(log10(revision.year_on_sale)) + 1 == 4:
+                issue_year = revision.year_on_sale
+            if issue_year:
+                brands = self.fields['brand'].queryset
+                brands = brands.filter(in_use__year_began__lte=issue_year,
+                                in_use__year_ended=None,
+                                in_use__publisher__id=series.publisher.id) | \
+                         brands.filter(in_use__year_began=None,
+                                in_use__year_ended__gte=issue_year,
+                                in_use__publisher__id=series.publisher.id) | \
+                         brands.filter(in_use__year_began=None,
+                                in_use__year_ended=None,
+                                in_use__publisher__id=series.publisher.id) | \
+                         brands.filter(in_use__year_began__lte=issue_year,
+                                in_use__year_ended__gte=issue_year,
+                                in_use__publisher__id=series.publisher.id)
+                self.fields['brand'].queryset = brands.distinct()
                 self.fields['indicia_publisher'].queryset = \
                     self.fields['indicia_publisher'].queryset\
-                    .exclude(year_ended__lt=revision.year_on_sale)
-                self.fields['brand'].queryset = \
-                    self.fields['brand'].queryset\
-                    .exclude(year_began__gt=revision.year_on_sale)
+                    .exclude(year_ended__lt=issue_year)
                 self.fields['indicia_publisher'].queryset = \
                     self.fields['indicia_publisher'].queryset\
-                    .exclude(year_began__gt=revision.year_on_sale)
+                    .exclude(year_began__gt=issue_year)
             else:
                 if series.year_began:
                     self.fields['brand'].queryset = \
@@ -1740,12 +1741,14 @@ class UploadScanForm(forms.Form):
     """ Form for cover uploads. """
 
     scan = forms.ImageField(widget=forms.FileInput)
-    source = forms.CharField(label='Source', required=False,
-      help_text='If you upload a scan from another website, please '
-                'ask for permission and mention the source. If you upload '
-                'on behalf of someone you can mention this here as well.')
+    source = forms.CharField(label='Source', required=True,
+      help_text='If you upload a scan from another website, make sure you '
+                'have permission to do that and mention the source. If you '
+                'upload on behalf of someone else you can mention this here as'
+                ' well. Otherwise, indicate that you scanned it yourself.')
     remember_source = forms.BooleanField(label='Remember the source',
-                                         required=False)
+                                         required=False,
+      help_text="Tick only if you do multiple uploads from the source.")
     marked = forms.BooleanField(label="Mark cover for replacement", required=False,
       help_text='Uploads of sub-standard scans for older and/or rare comics '
                 'are fine, but please mark them for replacement.')
@@ -1767,7 +1770,8 @@ class UploadScanForm(forms.Form):
 
     def clean(self):
         cd = self.cleaned_data
-        cd['source'] = cd['source'].strip()
+        if 'source' in cd:
+            cd['source'] = cd['source'].strip()
         cd['comments'] = cd['comments'].strip()
         if cd['is_wraparound'] and cd['is_gatefold']:
             raise forms.ValidationError(

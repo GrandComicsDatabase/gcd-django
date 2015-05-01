@@ -11,5 +11,7 @@ def gcd(request):
         stuff['ADVERTISING'] = settings.ADVERTISING
     if hasattr(settings, 'MYCOMICS'):
         stuff['MYCOMICS'] = settings.MYCOMICS
+    if hasattr(settings, 'USE_ELASTICSEARCH'):
+        stuff['USE_ELASTICSEARCH'] = settings.USE_ELASTICSEARCH
     return stuff
 

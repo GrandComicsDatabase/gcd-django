@@ -34,45 +34,7 @@ if ($(window).width() < 1240) {
 }
 </script>
 
-<div id="blithering">
-<b>Advanced Search</b> is somewhat experimental and has some known bugs and limitations:
-<ul>
-  <li> The default ordering of the search results sorts according to series
-       name and issue date.
-       This ordering is not very useful if you search for publishers, you might
-       want to change it under "Ordering".
-  <li> All "contains" searches match exact substrings.  Punctuation is not
-       ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
-       two different searches.
-  <li> There's no way to search for multiple values in a field (for instance,
-       while you can search for stories written or penciled by someone,
-       you cannot search for stories penciled by either Jack Kirby or
-       Joe Simon.
-  <li> Searching by date is somewhat tricky.  Supported formats include
-       "year.month.day", "year-month-day", "month/day/year",
-       "month-name day, year", "day month-name, year" and just plain year.
-  <li> You cannot use 00 for month or day since that is not a date. Instead
-       use the last day of the preceding year/month, e.g. 1989.12.31
-       to 1990.12.31 will find all comics we have recorded with a publication
-       date in 1990.
-  <li> Date searching for series and stories uses a hidden field that is
-       not always filled out.  This is the same field used for sorting by
-       date, which is why sometimes several out-of-sequence results will
-       appear at the beginning of the list.  It is also possible to search
-       an issue's cover date as a text field without any conversion to an
-       actual date.
-  <li> Many older indexes do not list the feature characters under characters
-       as well. Therefore the standard search for characters (using the search
-       box on top of the pages) returns matches in either the feature or the
-       characters field. This search behaviour is not supported by the
-       advanced search for technical reasons.  You can somewhat simulate it
-       by using the "OR some fields" option.
-  <li> Note that since there is no direct relation between publisher brands and
-       indicia publishers, you cannot use the brand fields while searching for
-       indicia publishers, and you cannot use the indicia publisher fields while
-       searching for publisher brands.
-</ul>
-</div>
+<b>Advanced Search</b> allows field specific results. It is somewhat experimental and has <a href="#blithering">some known bugs and limitations</a>, see below for more information.
 
 {% if error_text %}
 <div class="error_message">
@@ -83,11 +45,9 @@ if ($(window).width() < 1240) {
 <form id="advanced_search_form"
       action="{% url apps.gcd.views.search.process_advanced %}"
       method="get">
-<div>
-<fieldset class="submit">
+<fieldset class="submit" style="margin-bottom: 0em">
   <input type="submit" value="Search">
 </fieldset>
-</div>
 
 <div class="search_left">
 <fieldset class="control">
@@ -261,6 +221,49 @@ if ($(window).width() < 1240) {
 </fieldset>
 </div>
 </form>
+
+<div class="search_left">
+  <div id="blithering">
+  <a name="blithering"></a>
+    <b>Advanced Search</b> is somewhat experimental and has some known bugs and limitations
+    <ul>
+      <li> The default ordering of the search results sorts according to series
+           name and issue date.
+           This ordering is not very useful if you search for publishers, you might
+           want to change it under "Ordering".
+      <li> All "contains" searches match exact substrings.  Punctuation is not
+           ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
+           two different searches.
+      <li> There's no way to search for multiple values in a field (for instance,
+           while you can search for stories written or penciled by someone,
+           you cannot search for stories penciled by either Jack Kirby or
+           Joe Simon.
+      <li> Searching by date is somewhat tricky.  Supported formats include
+           "year.month.day", "year-month-day", "month/day/year",
+           "month-name day, year", "day month-name, year" and just plain year.
+      <li> You cannot use 00 for month or day since that is not a date. Instead
+           use the last day of the preceding year/month, e.g. 1989.12.31
+           to 1990.12.31 will find all comics we have recorded with a publication
+           date in 1990.
+      <li> Date searching for series and stories uses a hidden field that is
+           not always filled out.  This is the same field used for sorting by
+           date, which is why sometimes several out-of-sequence results will
+           appear at the beginning of the list.  It is also possible to search
+           an issue's cover date as a text field without any conversion to an
+           actual date.
+      <li> Many older indexes do not list the feature characters under characters
+           as well. Therefore the standard search for characters (using the search
+           box on top of the pages) returns matches in either the feature or the
+           characters field. This search behaviour is not supported by the
+           advanced search for technical reasons.  You can somewhat simulate it
+           by using the "OR some fields" option.
+      <li> Note that since there is no direct relation between publisher brands and
+           indicia publishers, you cannot use the brand fields while searching for
+           indicia publishers, and you cannot use the indicia publisher fields while
+           searching for publisher brands.
+    </ul>
+  </div>
+</div>
 <hr style="border-bottom:0; height:1px">
 
 {% endblock %}
