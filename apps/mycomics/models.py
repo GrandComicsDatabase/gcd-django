@@ -55,6 +55,9 @@ class Collector(models.Model):
                                                 null=True)
     default_language = models.ForeignKey(Language, related_name='+')
 
+    default_currency = models.ForeignKey(Currency, related_name='+',
+                                           null=True, blank=True)
+
     objects = CollectorManager()
 
 
@@ -82,6 +85,9 @@ class Collection(models.Model):
     price_paid_used = models.BooleanField(default=False)
     market_value_used = models.BooleanField(default=False)
     sell_price_used = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return unicode(self.name)
 
 
 class Location(models.Model):
@@ -156,6 +162,9 @@ class ConditionGradeScale(models.Model):
 
     name=models.CharField(blank=False,max_length=255)
     description=models.CharField(max_length=2000, blank=True)
+
+    def __unicode__(self):
+        return unicode(self.name)
 
 
 class ConditionGrade(models.Model):

@@ -1,0 +1,18 @@
+{% extends "mycomics/user_base.html" %}
+{% load i18n %}
+{% load bootstrap3 %}
+
+{% block content %}
+
+  {% bootstrap_messages %}
+  <div class="page-header middle-header">
+    <h1>{% trans "Settings" %}</h1>
+  </div>
+
+  <form action="." method="POST">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <input type="submit" class="btn btn-primary" name="{% trans "Submit" %}" value="{% trans "Submit" %}">
+  </form>
+
+{% endblock %}

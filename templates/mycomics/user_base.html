@@ -28,8 +28,8 @@
         <button type="submit" class="btn btn-default">{% trans 'Submit' %}</button>
       </form>
       <ul class="nav navbar-nav navbar-right">
-        <li><span class="navbar-text"><span class="glyphicon glyphicon-user"></span> {{ request.user.get_full_name }}
-                            {# (<a href="settings.html"><span class="glyphicon glyphicon-cog"></span></a>)&nbsp;#}</span>
+        <li><span class="navbar-text"><span class="glyphicon glyphicon-user"></span> {{ request.user.get_full_name  }}
+                             (<a href="{% url settings %}"><span class="glyphicon glyphicon-cog"></span></a>)&nbsp;</span>
         </li>
         <li>
           <form action="{% url logout %}" method="POST">

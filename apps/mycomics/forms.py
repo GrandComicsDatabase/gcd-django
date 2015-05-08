@@ -2,6 +2,18 @@ from django.forms import ModelForm
 from apps.mycomics.models import *
 from apps.oi.forms import _clean_keywords
 
+class CollectorForm(ModelForm):
+    class Meta:
+        model = Collector
+        exclude = ('user')
+
+    def __init__(self, collector, *args, **kwargs):
+        kwargs['instance']=collector
+        super(CollectorForm, self).__init__(*args, **kwargs)
+        collections = Collection.objects.filter(collector=collector)
+        self.fields['default_have_collection'].queryset = collections
+        self.fields['default_want_collection'].queryset = collections
+
 
 class CollectionForm(ModelForm):
     class Meta:

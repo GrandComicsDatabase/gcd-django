@@ -27,6 +27,7 @@ COLLECTION_LIST_TEMPLATE='mycomics/collections.html'
 COLLECTION_FORM_TEMPLATE='mycomics/collection_form.html'
 COLLECTION_ITEM_TEMPLATE='mycomics/collection_item.html'
 MESSAGE_TEMPLATE='mycomics/message.html'
+SETTINGS_TEMPLATE='mycomics/settings.html'
 
 def index(request):
     """Generates the front index page."""
@@ -348,3 +349,26 @@ def mycomics_search(request):
                'allowed_selects': allowed_selects}
     return PaginatedFacetedSearchView(searchqueryset=sqs)(request,
                                                           context=context)
+
+
+@login_required
+def settings(request):
+    """
+    View for editing user settings. First request comes as GET,
+    which results in displaying page with form. Second request with POST saves
+    this form.
+    """
+    if request.method == 'POST':
+        form = CollectorForm(request.user.collector, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('Settings saved.'))
+            return HttpResponseRedirect(
+                urlresolvers.reverse('settings'))
+    else:
+        form = CollectorForm(request.user.collector)
+
+    return render_to_response(SETTINGS_TEMPLATE, {'form' : form},
+                              context_instance=RequestContext(request))
+
+

@@ -42,4 +42,5 @@ urlpatterns = patterns('',
 
     url(r'message/$', mycomics_views.display_message, name='display_message'),
 
+    url(r'settings/$', mycomics_views.settings, name='settings'),
 )
