@@ -103,6 +103,9 @@ The latest version can be downloaded here: http://www.elasticsearch.org/download
 
 Either use the provided deb/rpm or unpack it and run 'bin/elasticsearch -f' (on Linux and Mac) or 'bin\elasticsearch.bat' (on Windows).
 
+If you get an error like "Unsupported major.minor version 51.0" and a stack
+trace, it means that you need to update your java runtime.
+
 After that you can run 'python manage.py rebuild_index' in gcd-django directory to populate your search indexes with data.
 
 Launching your test web server
