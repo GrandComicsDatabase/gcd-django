@@ -3,6 +3,7 @@
 {% load i18n %}
 {% load credits %}
 {% load display %}
+{% load compress %}
 
 {% block title %}
 GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
@@ -155,5 +156,23 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 <div id="guidelines">
 {% include "oi/bits/cover_guidelines.html" %}
 </div>
+
+{% compress js %}
+  {% include 'oi/bits/jquery.html' %}
+  <script type='text/javascript'>
+  $(function () {
+    $('form[method=post]')
+        .submit(function (event) {
+            var source = $('#id_source');
+            if (!$.trim(source.val())) {
+                if (source.siblings('ul').length == 0) {
+                    source.before('<ul class="errorlist"><li>This field is required.</li></ul>');
+                }
+                event.preventDefault();
+            }
+        });
+  });
+  </script>
+{% endcompress %}
 {% endblock %}
 
