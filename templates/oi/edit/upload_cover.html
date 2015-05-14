@@ -157,8 +157,8 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 {% include "oi/bits/cover_guidelines.html" %}
 </div>
 
+{% include 'oi/bits/jquery.html' %}
 {% compress js %}
-  {% include 'oi/bits/jquery.html' %}
   <script type='text/javascript'>
   $(function () {
     $('form[method=post]')
