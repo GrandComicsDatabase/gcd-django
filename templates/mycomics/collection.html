@@ -27,21 +27,7 @@
       </div>
     </div>
     <div class="col-md-10">
-      {% if paginator.count > 1 %}
-        <ul class="pagination">
-          {% for number in page.page_range %}
-            {% if number %}
-              {% ifequal number page_number %}
-          <li class="active"><span>{{ number }}</span></li>
-              {% else %}
-          <li><a href="{% url view_collection collection.id %}?page={{ number }}">{{ number }}</a></li>
-              {% endifequal %}
-            {% else %}
-          <li><a>...</a></li>
-            {% endif %}
-          {% endfor %}
-        </ul>
-      {% endif %}
+      {% include "mycomics/bits/collection_pagination.html" %}
       <div class="row">
         {% for item in items %}
           <div class="col-md-2">
@@ -58,6 +44,7 @@
           {% endif %}
         {% endfor %}
       </div>
+      {% include "mycomics/bits/collection_pagination.html" %}
     </div>
   </div>
 

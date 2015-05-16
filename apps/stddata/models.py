@@ -45,13 +45,16 @@ class Date(models.Model):
     day_uncertain = models.BooleanField(default=False)
 
     def set(self, year=None, month=None, day=None, year_uncertain=False,
-                 month_uncertain=False, day_uncertain=False):
+                 month_uncertain=False, day_uncertain=False, empty=False):
         self.year = year
         self.month = month
         self.day = day
-        self.year_uncertain=year_uncertain or not year or ('?' in year)
-        self.month_uncertain=month_uncertain or not month or ('?' in month)
-        self.day_uncertain=day_uncertain or not day or ('?' in day)
+        self.year_uncertain=year_uncertain or (not year and not empty) \
+                                           or ('?' in year)
+        self.month_uncertain=month_uncertain or (not month and not empty) \
+                                             or ('?' in month)
+        self.day_uncertain=day_uncertain or (not day and not empty) \
+                                         or ('?' in day)
 
     def __unicode__(self):
         year = self.year or ''

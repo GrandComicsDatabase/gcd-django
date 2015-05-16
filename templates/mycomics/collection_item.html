@@ -77,15 +77,15 @@
       {% if item.notes %}{{ item.notes }}<hr>{% endif %}
       {% if item.keywords.count %}{% trans "Keywords: " %}{{ item|show_keywords }}<hr>{% endif %}
       {% if collection.location_used %}
-        {% trans "Location: " %}{{ item.location }}<br>
+        {% trans "Location: " %}{{ item.location|default:'-' }}<br>
       {% endif %}
       {% if collection.purchase_location_used %}
-        {% trans "Purchase location: " %}{{ item.purchase_location }}<br>
+        {% trans "Purchase location: " %}{{ item.purchase_location|default:'-' }}<br>
       {% endif %}
       {% if collection.condition_used %}
-        {% trans "Grade: " %}{{ item.grade|default:'' }}<br>
+        {% trans "Grade: " %}{{ item.grade|default:'-' }}<br>
       {% endif %}
-      {% if collection.was_read_location_used %}
+      {% if collection.was_read_used %}
         {% trans "Was read: " %}{{ item.was_read|yesno }}<br>
       {% endif %}
       {% if collection.for_sale_used %}
@@ -95,19 +95,19 @@
         {% trans "Signed: " %}{{ item.signed|yesno }}<br>
       {% endif %}
       {% if collection.price_paid_used %}
-        {% trans "Price paid: " %}{% if item.price_paid %}{{ item.price_paid }} {{ item.price_paid_currency.code }}{% endif %}<br>
+        {% trans "Price paid: " %}{% if item.price_paid %}{{ item.price_paid }} {{ item.price_paid_currency.code }}{% else %}-{% endif %}<br>
       {% endif %}
       {% if collection.market_value_used %}
-        {% trans "Market value: " %}{% if item.market_value %}{{ item.market_value }} {{ item.market_value_currency.code }}{% endif %}<br>
+        {% trans "Market value: " %}{% if item.market_value %}{{ item.market_value }} {{ item.market_value_currency.code }}{% else %}-{% endif %}<br>
       {% endif %}
       {% if collection.sell_price_used %}
-        {% trans "Sell price: " %}{% if item.sell_price %}{{ item.sell_price }} {{ item.sell_price_currency.code }}{% endif %}<br>
+        {% trans "Sell price: " %}{% if item.sell_price %}{{ item.sell_price }} {{ item.sell_price_currency.code }}{% else %}-{% endif %}<br>
       {% endif %}
       {% if collection.acquisition_date_used %}
-        {% trans "Acquisition date: " %}{{ item.acquisition_date }}<br>
+        {% trans "Acquisition date: " %}{{ item.acquisition_date|default:'-'|force_escape|default:'-' }}<br>
       {% endif %}
       {% if collection.sell_date_used %}
-        {% trans "Sell date: " %}{{ item.sell_date }}<br>
+        {% trans "Sell date: " %}{{ item.sell_date|default:'-'|force_escape|default:'-' }}<br>
       {% endif %}
     </div>
   </div>

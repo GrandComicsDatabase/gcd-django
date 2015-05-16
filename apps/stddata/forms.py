@@ -11,7 +11,9 @@ class DateForm(ModelForm):
         exclude = ('year', 'month', 'day', 'year_uncertain', 'month_uncertain',
                    'day_uncertain')
 
-    date = CharField(max_length=13, required=False)
+    date = CharField(max_length=13, required=False,
+                     help_text='Enter date as YYYY-MM-DD. A ? can be used in '
+                               'each part to indicate uncertainty.')
 
     def __init__(self, *args, **kwargs):
         super(DateForm, self).__init__(*args, **kwargs)
@@ -21,6 +23,12 @@ class DateForm(ModelForm):
     def clean_date(self):
         date = self.cleaned_data['date']
         if not date:
+            if self.instance:
+                self.instance.set(year='', month='', day='',
+                                  year_uncertain=False,
+                                  month_uncertain=False,
+                                  day_uncertain=False,
+                                  empty=True)
             return None
         dparts = date.split('-')
 
