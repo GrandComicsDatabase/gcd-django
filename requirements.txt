@@ -1,6 +1,5 @@
 BeautifulSoup
 Django<1.5
-feedparser
 MySQL-python
 Pillow < 2.0
 PyICU
@@ -22,3 +21,4 @@ python-dateutil
 diff-match-patch
 python-vote-core
 git+git://github.com/bennylope/elasticstack.git
+facebook-sdk
