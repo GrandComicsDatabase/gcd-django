@@ -144,13 +144,16 @@ class CollectionItem(models.Model):
     signed = models.BooleanField(default=False)
 
     #price fields
-    price_paid = models.FloatField(blank=True, null=True)
+    price_paid = models.DecimalField(max_digits=10, decimal_places=2,
+                                     blank=True, null=True)
     price_paid_currency = models.ForeignKey(Currency, related_name='+',
                                             null=True, blank=True)
-    market_value = models.FloatField(blank=True, null=True)
+    market_value = models.DecimalField(max_digits=10, decimal_places=2,
+                                       blank=True, null=True)
     market_value_currency = models.ForeignKey(Currency, related_name='+',
                                               null=True, blank=True)
-    sell_price = models.FloatField(blank=True, null=True)
+    sell_price = models.DecimalField(max_digits=10, decimal_places=2,
+                                     blank=True, null=True)
     sell_price_currency = models.ForeignKey(Currency, related_name='+',
                                             null=True, blank=True)
 
