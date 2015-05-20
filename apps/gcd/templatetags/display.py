@@ -117,6 +117,16 @@ def show_series_tracking(series):
 
     srbonds = series.series_relative_bonds(bond_type__id__in=BOND_TRACKING)
     srbonds.sort()
+
+    # See if we have any notes between links, because we'll format differently
+    # for that.  However, if only the last link has a note, we don't care
+    # because there's no following note for it to crowd up against.
+    has_interior_notes = False
+    for srbond in srbonds[0:-1]:
+        if srbond.bond.notes:
+            has_interior_notes = True
+            break
+
     for srbond in srbonds:
         if series == srbond.bond.target:
             near_issue_preposition = u"with"
@@ -145,6 +155,9 @@ def show_series_tracking(series):
             tracking_line += (
                 '<dl class="bond_notes"><dt>Note:</dt><dd>%s</dl>' %
                 srbond.bond.notes)
+        elif has_interior_notes:
+            # Put in a blank dl to make the spacing uniform.
+            tracking_line += '<dl></dl>'
 
     return mark_safe(tracking_line)
 
