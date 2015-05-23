@@ -188,9 +188,12 @@ def field_value(revision, field):
             if revision.changed[field] and value == True:
                  if revision.series:
                      value_count = revision.series.active_base_issues().count()
-                     if value_count:
+                     if value_count != 1:
                         return 'Yes (note: the series has %d issue%s)' % \
                                 (value_count, pluralize(value_count))
+                     elif revision.series.active_issues()\
+                                  .exclude(indicia_frequency='').count():
+                        return 'Yes (note: the issue has an indicia frequency)'
         return yesno(value, 'Yes,No')
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
