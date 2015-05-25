@@ -1,4 +1,5 @@
 {% extends "voting/base_view.html" %}
+{% load url from future %}
 
 {% block title %} GCD :: Agenda :: {{ agenda }} {% endblock %}
 
@@ -54,7 +55,7 @@
   </tr>
 {% for topic in pending_topics %}
   <tr>
-    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
     <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
     <td> awaiting your vote </td>
   </tr>
@@ -65,14 +66,14 @@
 {% endfor %}
 {% for topic in voted_topics %}
   <tr>
-    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
     <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
     <td> vote received </td>
   </tr>
 {% endfor %}
 {% for topic in forbidden_topics %}
   <tr>
-    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
     <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
     <td> you are not a voter for this agenda</td>
   </tr>
@@ -91,7 +92,7 @@
 {% for topic in closed_topics %}
   <tr class='{{ topic.invalid|yesno:"invalid,valid" }}'>
     <td class='longest_column'>
-      <a href="{% url ballot id=topic.id %}">{{ topic }}</a>
+      <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a>
     </td>
     <td> {{ topic.num_voters }} </td>
     <td>
