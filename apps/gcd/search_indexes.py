@@ -129,7 +129,7 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
         return super(ObjectIndex, self).index_queryset(using).exclude(
-            type=STORY_TYPES['blank'])
+            type=STORY_TYPES['blank']).filter(deleted=False)
 
 
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):

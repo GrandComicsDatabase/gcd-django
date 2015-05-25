@@ -2867,7 +2867,9 @@ class SeriesRevision(Revision):
             series = Series(issue_count=0)
             if self.is_comics_publication:
                 self.publisher.series_count = F('series_count') + 1
-                self.publisher.save()
+                if not self.is_singleton:
+                    # if save also happens in IssueRevision gets twice +1
+                    self.publisher.save()
                 update_count('series', 1, language=self.language,
                              country=self.country)
             if self.is_singleton:

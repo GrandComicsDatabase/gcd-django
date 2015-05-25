@@ -426,9 +426,9 @@ def change_history(request, model_name, id):
             return render_to_response('gcd/error.html', {
               'error_text': 'There is no change history for this type of object.'},
               context_instance=RequestContext(request))
-    if model_name == 'cover' and not request.user.has_perm('gcd.can_approve'):
+    if model_name == 'cover' and not request.user.has_perm('gcd.can_vote'):
         return render_to_response('gcd/error.html', {
-          'error_text': 'Only editors can access the change history for covers.'},
+          'error_text': 'Only members can access the change history for covers.'},
           context_instance=RequestContext(request))
 
     template = 'gcd/details/change_history.html'
