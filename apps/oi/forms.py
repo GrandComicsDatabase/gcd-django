@@ -725,13 +725,6 @@ class SeriesRevisionForm(forms.ModelForm):
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
 
-    def clean_has_indicia_frequency(self):
-        cd = self.cleaned_data
-        if cd['is_singleton'] and cd['has_indicia_frequency']:
-            raise forms.ValidationError('Singleton series cannot have '
-              'an indicia frequency.')
-        return cd['has_indicia_frequency']
-
     def clean_has_issue_title(self):
         cd = self.cleaned_data
         if cd['is_singleton'] and cd['has_issue_title']:
