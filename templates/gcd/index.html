@@ -3,6 +3,7 @@
 {% load humanize %}
 {% load i18n %}
 {% load compress %}
+{% load url from future %}
 
 <html>
 <head>
@@ -134,25 +135,25 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
           </div>
           <div id="useful_links_inner" class="box_inner">
             <ul>
-              <li><a href="{% url covers_today %}">{% trans "Today's covers" %}</a>
-              <li><a href="{% url changes_today %}">{% trans "Today's changes" %}</a>
-              <li><a href="{% url on_sale_this_week %}">{% trans "On-sale this week" %}</a>
+              <li><a href="{% url "covers_today" %}">{% trans "Today's covers" %}</a>
+              <li><a href="{% url "changes_today" %}">{% trans "Today's changes" %}</a>
+              <li><a href="{% url "on_sale_this_week" %}">{% trans "On-sale this week" %}</a>
               <li>{% trans "International statistics" %}
               <ul style="margin-left:1em">
-              <li><a href="{% url international_stats_language %}">{% trans "by Language" %}</a>
-              <li><a href="{% url international_stats_country %}">{% trans "by Country" %}</a>
+              <li><a href="{% url "international_stats_language" %}">{% trans "by Language" %}</a>
+              <li><a href="{% url "international_stats_country" %}">{% trans "by Country" %}</a>
               </ul>
               {% if language %}
-              <li><a href="{% url apps.gcd.views.index %}">English start page</a></li>
+              <li><a href="{% url "apps.gcd.views.index" %}">English start page</a></li>
               {% endif %}
               {% ifnotequal language.code 'de' %}
-              <li><a href="{% url apps.gcd.views.index %}?lang=de">Deutsche Startseite</a></li>
+              <li><a href="{% url "apps.gcd.views.index" %}?lang=de">Deutsche Startseite</a></li>
               {% endifnotequal %}
               {% ifnotequal language.code 'nl' %}
-              <li><a href="{% url apps.gcd.views.index %}?lang=nl">Nederlandse startpagina</a></li>
+              <li><a href="{% url "apps.gcd.views.index" %}?lang=nl">Nederlandse startpagina</a></li>
               {% endifnotequal %}
               {% ifnotequal language.code 'sv' %}
-              <li><a href="{% url apps.gcd.views.index %}?lang=sv">Svensk startsida</a></li>
+              <li><a href="{% url "apps.gcd.views.index" %}?lang=sv">Svensk startsida</a></li>
               {% endifnotequal %}
             </ul>
           </div>
@@ -218,7 +219,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
       {% endblocktrans %}
     </div>
     <div class="footer_item">
-    The GCD <a href="{% url privacy %}">{% trans 'Privacy Policy' %}</a>.
+    The GCD <a href="{% url "privacy" %}">{% trans 'Privacy Policy' %}</a>.
     {% trans 'The GCD Web Site code is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>' %}.
   </div>
     <div class="footer_item">
