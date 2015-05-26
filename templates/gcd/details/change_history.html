@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -87,7 +88,7 @@ should include a comment explaining the deletion.
   </tr>
 {% for changeset in changesets %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td><a href="{% url compare id=changeset.id %}?collapse=1"> {{ changeset.modified }} </a></td>
+    <td><a href="{% url "compare" id=changeset.id %}?collapse=1"> {{ changeset.modified }} </a></td>
     <td>{{ changeset.indexer.indexer|absolute_url }}</td>
     <td>{{ changeset.approver.indexer|absolute_url }}</td>
     <td>
@@ -106,7 +107,7 @@ should include a comment explaining the deletion.
     <th colspan="2">Change History For Series Data</th>
   </tr>
   <tr class="listing_even">
-    <td><a href="{% url change_history model_name='series' id=object.series.id %}?collapse=1"> {{ object.series }} </a></td>
+    <td><a href="{% url "change_history" model_name='series' id=object.series.id %}?collapse=1"> {{ object.series }} </a></td>
     <td>{{ object.series.modified }}</td>
   </tr>
 </table>
@@ -121,7 +122,7 @@ should include a comment explaining the deletion.
   </tr>
   {% for cover in object.cover_set.all %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td><a href="{% url change_history model_name='cover' id=cover.id %}?collapse=1"> {{ cover }} </a></td>
+    <td><a href="{% url "change_history" model_name='cover' id=cover.id %}?collapse=1"> {{ cover }} </a></td>
     <td>{{ cover.last_upload }}</td>
   </tr>
   {% endfor %}
