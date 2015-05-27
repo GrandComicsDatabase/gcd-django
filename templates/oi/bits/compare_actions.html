@@ -1,4 +1,6 @@
-<form id="review" action="{% url process id=changeset.id %}" method="POST">
+{% load url from future %}
+
+<form id="review" action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
   <div>
   <label for="comments">Comment:</label> <br>

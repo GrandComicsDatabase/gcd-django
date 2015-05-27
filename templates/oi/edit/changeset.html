@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load url from future %}
 
 {% load credits %}
 {% load editing %}
@@ -33,7 +34,7 @@
   This change has been submitted for approval, but is not yet under review.
   {% ifequal changeset.indexer user %}
     {% if changeset.editable %}
-  <form action="{% url process id=changeset.id %}" method="POST">
+  <form action="{% url "process" id=changeset.id %}" method="POST">
     {% csrf_token %}
     <input type="submit" name="retract" value="Retract change and edit further" />
     <label for="comments">Comments</label>
@@ -96,7 +97,7 @@
         {% with changeset.comments as comments %}
           {% include 'oi/bits/comments.html' %}
         {% endwith %}
-<form method="POST" action="{% url process id=changeset.id %}">
+<form method="POST" action="{% url "process" id=changeset.id %}">
   {% csrf_token %}
   <table class="editing">
     <tr>
@@ -130,7 +131,7 @@ This change is being edited by {{ changeset.indexer.indexer }}.
 
 {% else %} <!--- change is not OPEN --->
 <p>
-  <a href="{% url compare id=changeset.id %}">Compare changes</a>
+  <a href="{% url "compare" id=changeset.id %}">Compare changes</a>
 </p>
 {% endifequal %}
 </div>
