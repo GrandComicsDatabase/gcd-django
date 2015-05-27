@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load url from future %}
 
 {% block title %}GCD Data Dumps{% endblock %}
 
@@ -72,7 +73,7 @@ Data last updated:
   <li> {{ name }}: <span class="important">{{ timestamp }}</span>
 {% endfor %}
 </ul>
-<form method="POST" action="{% url download %}" class="download">
+<form method="POST" action="{% url "download" %}" class="download">
   {% csrf_token %}
   <p>
     <label for="purpose">{{ form.purpose.label }}</label>
