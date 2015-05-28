@@ -1,4 +1,6 @@
 {% extends "gcd/base_view.html" %}
+
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -77,7 +79,7 @@
             {% if select_key %}
               <td>
               {% if result.model_name in allowed_selects %}
-                <form action="{% url select_object select_key=select_key %}" method="POST">
+                <form action="{% url "select_object" select_key=select_key %}" method="POST">
               {% csrf_token %}
                 <input type="submit" name="search_select" value="Select this {{ result.model_name }}">
                 <input type="hidden" name="object_choice" value="{{ result.model_name }}_{{ result.object.id }}">
