@@ -1,5 +1,6 @@
 {% load credits %}
 {% load display %}
+{% load url from future %}
 
 {% for section in data %}
   {% with section.changesets.count as section_count %}
@@ -38,9 +39,9 @@
           {% endwith %}
         {% endif %}
         {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
-      <a href="{% url compare id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">{{ changeset.queue_name }}</a>
+      <a href="{% url "compare" id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">{{ changeset.queue_name }}</a>
         {% else %}
-      <a href="{% url edit id=changeset.id %}">{{ changeset.queue_name }}</a>
+      <a href="{% url "edit" id=changeset.id %}">{{ changeset.queue_name }}</a>
         {% endif %}
       <span class="{{ changeset.changeset_action }}">{{ changeset.queue_descriptor }}</span>
     </td>

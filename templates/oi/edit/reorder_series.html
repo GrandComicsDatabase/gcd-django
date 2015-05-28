@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load credits %}
 {% load display %}
 
@@ -29,7 +30,7 @@ changes in the "custom reordering" section before committing the entire change
 or even previewing a second time.
 </p>
 <hr>
-<form method="POST" action="{% url reorder_series_key_date series_id=series.id %}">
+<form method="POST" action="{% url "reorder_series_key_date" series_id=series.id %}">
   {% csrf_token %}
   <input type="submit" name="submit" value="Preview reorder by key_date">
 <p>
@@ -39,7 +40,7 @@ times.
 </form>
 <hr>
 <form method="POST"
-      action="{% url reorder_series_issue_number series_id=series.id %}">
+      action="{% url "reorder_series_issue_number" series_id=series.id %}">
   {% csrf_token %}
   <input type="submit" name="submit" value="Preview reorder by issue number">
 </form>
@@ -61,7 +62,7 @@ will not work.
        changes.
 </ul>
 
-<form method="POST" action="{% url reorder_series series_id=series.id %}">
+<form method="POST" action="{% url "reorder_series" series_id=series.id %}">
 {% csrf_token %}
 <table>
   <tr>

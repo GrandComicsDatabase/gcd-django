@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load credits %}
 {% load display %}
 
@@ -25,11 +26,11 @@ Edit Covers :: {{ issue }}
 </h2>
 {% if issue.can_upload_variants %}
   {% if not issue.variant_of %}
-<form action="{% url upload_variant issue_id=issue.id %}" method="GET">
+<form action="{% url "upload_variant" issue_id=issue.id %}" method="GET">
   <input type="submit" value="Add variant issue with new cover">
 </form>
   {% endif %}
-<form action="{% url upload_cover issue_id=issue.id %}" method="GET">
+<form action="{% url "upload_cover" issue_id=issue.id %}" method="GET">
   <input type="submit" value="Add additional cover (dust jacket, flip cover)">
 </form>
 {% endif %}
@@ -44,31 +45,31 @@ Edit Covers :: {{ issue }}
 <a href="{{ issue.get_absolute_url }}cover/4">Large</a><br>
   {% if perms.gcd.can_approve and not pending %}
     {% if not cover.marked %}
-<form action="{% url mark_cover cover_id=cover.id %}" method="POST">
+<form action="{% url "mark_cover" cover_id=cover.id %}" method="POST">
   {% csrf_token %}
   <input type="submit" value="Mark for replacement">
 </form>
     {% else %}
-<form action="{% url unmark_cover cover_id=cover.id %}" method="POST">
+<form action="{% url "unmark_cover" cover_id=cover.id %}" method="POST">
   {% csrf_token %}
   <input type="submit" value="Remove mark for replacement">
 </form>
     {% endif %}
   {% endif %}
   {% if pending %}
-<a href="{% url compare id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
+<a href="{% url "compare" id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
   {% else %}
     {% if cover.deletable %}
 <div>
       {% if not cover.issue.variant_of and not issue.reserved %}
-  <form action="{% url add_variant_issue issue_id=cover.issue.id, cover_id=cover.id %}" method="GET">
+  <form action="{% url "add_variant_issue" issue_id=cover.issue.id cover_id=cover.id %}" method="GET">
     <input title="Press to create a new variant issue with this cover." type="submit" value="Create variant for cover">
   </form>
       {% endif %}
-  <form class="cover_button" action="{% url replace_cover cover_id=cover.id %}" method="GET">
+  <form class="cover_button" action="{% url "replace_cover" cover_id=cover.id %}" method="GET">
     <input type="submit" value="Replace">
   </form>
-  <form class="cover_button" method="GET" action="{% url delete_revision model_name="cover",id=cover.id %}">
+  <form class="cover_button" method="GET" action="{% url "delete_revision" model_name="cover" id=cover.id %}">
     <input type="submit" value="Delete">
   </form>
 </div>
