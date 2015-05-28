@@ -1,5 +1,6 @@
 {% load credits %}
 {% load display %}
+{% load url from future %}
 
 <table class="listing">
   <tr>
@@ -14,7 +15,7 @@
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     {% if select_key %}
     <td>
-    <form action="{% url select_object select_key=select_key %}" method="POST">
+    <form action="{% url "select_object" select_key=select_key %}" method="POST">
     {% csrf_token %}
     <input type="submit" name="search_select" value="Select this issue"></input>
     <input type="hidden" name="object_choice" value="issue_{{ issue.id }}"></input>

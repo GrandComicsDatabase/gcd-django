@@ -1,6 +1,7 @@
 {% load i18n %}
 {% load credits %}
 {% load display %}
+{% load url from future %}
 
 {% ifnotequal paginate_only 1 %}
 <h1 class="item_id">
@@ -46,14 +47,14 @@
   <div class="right" class="prev_next">
   {% if prev_issue %}
     {% if description %}
-    <a href="{% url change_history model_name='issue' id=prev_issue.id %}">&lt; {% trans "Previous Issue" %}</a>
+    <a href="{% url "change_history" model_name='issue' id=prev_issue.id %}">&lt; {% trans "Previous Issue" %}</a>
     {% else %}
     <a href="{{ prev_issue.get_absolute_url }}{{ extra }}">&lt; {% trans "Previous Issue" %}</a>
     {% endif %}
     |
   {% endif %}
     <form style="display:inline"
-          action="{% url apps.gcd.views.details.issue_form %}">
+          action="{% url "apps.gcd.views.details.issue_form" %}">
       <input type="hidden" name="extra" value="{{ extra }}">
       <select name="id" id="id">
     {% for other_issue in series.active_base_issues_variant_count %}
@@ -70,7 +71,7 @@
   {% if next_issue %}
     |
     {% if description %}
-    <a href="{% url change_history model_name='issue' id=next_issue.id %}">{% trans "Next Issue" %} &gt;</a>
+    <a href="{% url "change_history" model_name='issue' id=next_issue.id %}">{% trans "Next Issue" %} &gt;</a>
     {% else %}
     <a href="{{ next_issue.get_absolute_url }}{{ extra }}">{% trans "Next Issue" %} &gt;</a>
     {% endif %}
