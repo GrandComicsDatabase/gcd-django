@@ -1,4 +1,5 @@
 {% extends "gcd/base.html" %}
+{% load url from future %}
 
 {% block title %}
   GCD :: {{ heading }}
@@ -16,9 +17,9 @@
 <div class="left">
   {{ heading }}
 </div>
-{% url apps.gcd.views.details.on_sale_weekly as choose_url%}
-{% url apps.gcd.views.details.on_sale_weekly previous_week.0 previous_week.1 as choose_url_before %}
-{% url apps.gcd.views.details.on_sale_weekly next_week.0 next_week.1 as choose_url_after %}
+{% url "apps.gcd.views.details.on_sale_weekly" as choose_url%}
+{% url "apps.gcd.views.details.on_sale_weekly" previous_week.0 previous_week.1 as choose_url_before %}
+{% url "apps.gcd.views.details.on_sale_weekly" next_week.0 next_week.1 as choose_url_after %}
 {% include "gcd/bits/choose_week.html" %}
 </h1>
 
@@ -31,7 +32,7 @@
   {% endwith %}
 </div>
 <div id="search_reminder">
-You can filter the list using the <a href="{% url apps.gcd.views.search.advanced_search %}?{{ query_string }}">advanced search</a>.
+You can filter the list using the <a href="{% url "apps.gcd.views.search.advanced_search" %}?{{ query_string }}">advanced search</a>.
 </div>
 
   {% include "gcd/bits/issue_list.html" %}
@@ -40,9 +41,9 @@ You can filter the list using the <a href="{% url apps.gcd.views.search.advanced
 <div class="left">
   {{ heading }}
 </div>
-{% url apps.gcd.views.details.on_sale_weekly as choose_url%}
-{% url apps.gcd.views.details.on_sale_weekly previous_week.0 previous_week.1 as choose_url_before %}
-{% url apps.gcd.views.details.on_sale_weekly next_week.0 next_week.1 as choose_url_after %}
+{% url "apps.gcd.views.details.on_sale_weekly" as choose_url%}
+{% url "apps.gcd.views.details.on_sale_weekly" previous_week.0 previous_week.1 as choose_url_before %}
+{% url "apps.gcd.views.details.on_sale_weekly" next_week.0 next_week.1 as choose_url_after %}
 {% include "gcd/bits/choose_week.html" %}
 </h1>
 
