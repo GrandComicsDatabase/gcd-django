@@ -1,5 +1,7 @@
+{% load url from future %}
+
 {% with changeset.seriesbondrevisions.get as series_bond_revision %}
-<form class="changeset" method="POST" action="{% url edit_series_bond id=series_bond_revision.id %}">
+<form class="changeset" method="POST" action="{% url "edit_series_bond" id=series_bond_revision.id %}">
 {% csrf_token %}
   <table class="story_list">
     <tr>

@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load url from future %}
 
 {% load display %}
 
@@ -35,7 +36,7 @@ If you want to add issues that must sort after any of the issues shown
 below in the list of current active issue adds for this series,
 you must wait until those issues are approved.<br>
 {% for add in issue_adds %}
-<a href="{% url compare id=add.id %}">{{ add }}</a><br>
+<a href="{% url "compare" id=add.id %}">{{ add }}</a><br>
 {% endfor %}
 </p>
 {% endif %}
@@ -43,7 +44,7 @@ you must wait until those issues are approved.<br>
 <table class="add_issues">
 <tr>
   <td>
-    <form method="GET" action="{% url add_issue series_id=series.id %}">
+    <form method="GET" action="{% url "add_issue" series_id=series.id %}">
       <input id="add" type="submit" value="Add single">
       </input>
     </form>
@@ -55,7 +56,7 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET"
-          action="{% url add_multiple_issues method='number',series_id=series.id %}">
+          action="{% url "add_multiple_issues" method='number' series_id=series.id %}">
       <input id="add" type="submit" value="Add multiple">
       </input>
     </form>
@@ -68,7 +69,7 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET"
-          action="{% url add_multiple_issues method='volume',series_id=series.id %}">
+          action="{% url "add_multiple_issues" method='volume' series_id=series.id %}">
       <input id="add" type="submit" value="Add multiple">
       </input>
     </form>
@@ -81,7 +82,7 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET"
-          action="{% url add_multiple_issues method='year',series_id=series.id %}">
+          action="{% url "add_multiple_issues" method='year' series_id=series.id %}">
       <input id="add" type="submit" value="Add multiple">
       </input>
     </form>
@@ -94,7 +95,7 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET"
-          action="{% url add_multiple_issues method='year_volume',series_id=series.id %}">
+          action="{% url "add_multiple_issues" method='year_volume' series_id=series.id %}">
       <input id="add" type="submit" value="Add multiple">
       </input>
     </form>

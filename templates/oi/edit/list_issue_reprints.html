@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load credits %}
 {% load display %}
 
@@ -16,14 +17,14 @@
 <h1>Reprint links for {{ issue_revision }}
 {% if issue_revision.can_add_reprints %}
   <form class="changeset" method="GET"
-        action="{% url add_issue_reprint issue_id=issue_revision.id,changeset_id=changeset.id %}">
+        action="{% url "add_issue_reprint" issue_id=issue_revision.id changeset_id=changeset.id %}">
   <input type="submit" value="Add reprint">
   </form>
 {% endif %}
 </h1>
 
 <p>
-  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+  <a href="{% url "edit" id=changeset.id %}">Return to edit overview page</a>
 </p>
 <p>With the left 'change' button one can reposition a reprint link inside this issue, with the right 'change' button one can edit the other side of the reprint link. </p>
 {% with issue_revision as issue %}
@@ -88,7 +89,7 @@
 <h2>{{ story_revision|show_story_short }}
   {% if not story_revision.deleted %}
   <form class="story_button" method="GET"
-            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id %}">
+            action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id %}">
         <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
                value="Add reprint">
   </form>
@@ -102,7 +103,7 @@
   <li>{{ reprint }}
       {% if not story_revision.deleted %}
     <form class="story_button" method="GET"
-            action="{% url add_story_reprint story_id=story_revision.id,changeset_id=changeset.id,reprint_note=reprint|urlencode %}">
+            action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id reprint_note=reprint|urlencode %}">
         <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
                value="Add reprint">
     </form>
@@ -170,7 +171,7 @@
 {% endfor %}
 
 <p>
-  <a href="{% url edit id=changeset.id %}">Return to edit overview page</a>
+  <a href="{% url "edit" id=changeset.id %}">Return to edit overview page</a>
 </p>
 
 {% endblock %}
