@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -98,11 +99,11 @@
   {% endif %}
   {% if not preview or series.source %}
     {% if preview %}
-            <a  href="{% url series_details series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
-            <a href="{% url series_timeline series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+            <a  href="{% url "series_details" series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
+            <a href="{% url "series_timeline" series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
     {% else %}
-            <a href="{% url series_details series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
-            <a href="{% url series_timeline series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+            <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
+            <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
     {% endif %}
   {% endif %}
 {% endif %}
@@ -113,16 +114,16 @@
           <ul class="series_detail_info">
   {% for brand in brands %}
             <li> {{ brand|absolute_url }}
-                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ brand|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.used_issue_count }} issue{{ brand.used_issue_count|pluralize }}</a>)
+                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ brand|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.used_issue_count }} issue{{ brand.used_issue_count|pluralize }}</a>)
   {% endfor %}
   {% if brand_counts.no_brand %}
             <li> no publisher's brand 
-                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_none }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }}</a>)                 
+                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_none }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }}</a>)                 
                  
   {% endif %}
   {% if brand_counts.unknown %}
             <li> without publisher's brand information
-                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }}</a>)                 
+                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }}</a>)                 
   {% endif %}
           </ul>
 {% endif %}
@@ -132,11 +133,11 @@
           <ul class="series_detail_info">
   {% for ip in series.ordered_indicia_publishers %}
             <li> {{ ip|absolute_url }}
-                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ ip|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ ip.used_issue_count }} issue{{ ip.used_issue_count|pluralize }}</a>)
+                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ ip|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ ip.used_issue_count }} issue{{ ip.used_issue_count|pluralize }}</a>)
   {% endfor %}
   {% if indicia_publisher_counts.unknown %}
             <li> without indicia publisher information
-                 (<a href="{% url apps.gcd.views.search.process_advanced %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)                 
+                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)                 
   {% endif %}
         </ul>
 {% endif %}
@@ -172,7 +173,7 @@
         </span></div>
       {% endif %}
       {% if request.user == series.ongoing_reservation.indexer and not series.pending_deletion %}
-        <form method="POST" action="{% url delete_ongoing series_id=series.id %}">
+        <form method="POST" action="{% url "delete_ongoing" series_id=series.id %}">
           {% csrf_token %}
           <input id="delete_ongoing" name="delete_ongoing" type="submit"
                  value="Free ongoing reservation">
@@ -190,7 +191,7 @@
     {% if user.is_authenticated %}
       {% if not series.pending_deletion %}
         {% if series.is_current and not series.ongoing_reservation %}
-        <form method="POST" action="{% url apps.oi.views.ongoing %}">
+        <form method="POST" action="{% url "apps.oi.views.ongoing" %}">
           {% csrf_token %}
           <input id="series" name="series" type="hidden" value="{{ series.id }}">
           </input>
@@ -198,30 +199,30 @@
           </input>
         </form>
         {% endif %}
-        <form method="GET" action="{% url add_issues series_id=series.id %}">
+        <form method="GET" action="{% url "add_issues" series_id=series.id %}">
           <input id="add" name="add" type="submit" value="Add issues">
           </input>
         </form>
         {% if perms.gcd.can_approve and series.issue_count %}
-        <form method="GET" action="{% url reorder_series series_id=series.id %}">
+        <form method="GET" action="{% url "reorder_series" series_id=series.id %}">
           <input id="reorder" name="reorder" type="submit" value="Reorder issues">
           </input>
         </form>
         {% endif %}
         {% if series.has_series_bonds %}
-        <form method="GET" action="{% url edit_series_bonds series_id=series.id %}">
+        <form method="GET" action="{% url "edit_series_bonds" series_id=series.id %}">
           <input id="edit" name="edit" type="submit" value="Edit series bonds">
           </input>
         </form>
         {% endif %}
-        <form method="GET" action="{% url add_series_bond id=series.id %}">
+        <form method="GET" action="{% url "add_series_bond" id=series.id %}">
           <input id="add" name="add" type="submit" value="Add series bond">
           </input>
         </form>
       {% endif %} <!-- pending_deletion -->
     {% else %}
       {% if series.reserved %}
-        <form action="{% url login %}" method="GET">
+        <form action="{% url "login" %}" method="GET">
           <input type="submit" name="login" value="Log in to edit" />
           <input type="hidden" name="next" value="{{ request.get_full_path }}" />
         </form>
@@ -231,9 +232,9 @@
       </div>
       <div class="change_history">
   {% if preview %}
-        <a href="{% url change_history model_name='series' id=series.source.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='series' id=series.source.id %}">Change History</a>
   {% else %}
-        <a href="{% url change_history model_name='series' id=series.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='series' id=series.id %}">Change History</a>
   {% endif %}
       </div>
     </div> <!-- control_rail -->

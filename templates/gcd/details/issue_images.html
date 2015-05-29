@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 
 {% block title %}
@@ -31,10 +32,10 @@ The image has a size of {{ indicia_image.image_file.width }} x {{ indicia_image.
 {% else %}
 We are on a development server with no images.
 {% endif %}
-<br><a href="{% url replace_image model_name='issue' id=issue.id image_id=indicia_image.id %}">replace scan of indicia</a>
-/ <a href="{% url delete_revision model_name='image' id=indicia_image.id %}">delete scan of indicia</a>
+<br><a href="{% url "replace_image" model_name='issue' id=issue.id image_id=indicia_image.id %}">replace scan of indicia</a>
+/ <a href="{% url "delete_revision" model_name='image' id=indicia_image.id %}">delete scan of indicia</a>
 {% else %}
-<a href="{% url upload_image model_name='issue' id=issue.id image_type='IndiciaScan' %}">add scan of indicia</a>
+<a href="{% url "upload_image" model_name='issue' id=issue.id image_type='IndiciaScan' %}">add scan of indicia</a>
 {% endif %}
 </div>
 </p>
@@ -49,10 +50,10 @@ The image has a size of {{ soo_image.image_file.width }} x {{ soo_image.image_fi
 {% else %}
 We are on a development server with no images.
 {% endif %}
-<br><a href="{% url replace_image model_name='issue' id=issue.id image_id=soo_image.id %}">replace scan of statement of ownership</a>
-/ <a href="{% url delete_revision model_name='image' id=soo_image.id %}">delete scan of statement of ownership</a>
+<br><a href="{% url "replace_image" model_name='issue' id=issue.id image_id=soo_image.id %}">replace scan of statement of ownership</a>
+/ <a href="{% url "delete_revision" model_name='image' id=soo_image.id %}">delete scan of statement of ownership</a>
 {% else %}
-<a href="{% url upload_image model_name='issue' id=issue.id image_type='SoOScan' %}">add scan of statement of ownership</a>
+<a href="{% url "upload_image" model_name='issue' id=issue.id image_type='SoOScan' %}">add scan of statement of ownership</a>
 {% endif %}
 </div>
 </p>
