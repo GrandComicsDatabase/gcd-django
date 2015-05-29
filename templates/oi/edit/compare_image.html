@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load url from future %}
 
 {% load credits %}
 {% load editing %}
@@ -40,7 +41,7 @@ Reviewing :: {{ revision }}
   {% endif %}
       </div>
       <div>
-      Image <a href="{% url compare id=replaced_image.changeset.id %}">
+      Image <a href="{% url "compare" id=replaced_image.changeset.id %}">
       uploaded on {{ replaced_image.created }}</a> by <br>
       {{ replaced_image.changeset.indexer.indexer }}.
       </div>
@@ -67,7 +68,7 @@ Reviewing :: {{ revision }}
   {% endif %}
   {% if revision.deleted %}
   <div>
-    Image <a href="{% url compare id=revision.previous.changeset.id %}">
+    Image <a href="{% url "compare" id=revision.previous.changeset.id %}">
     uploaded on {{ revision.previous.created }}</a> by <br>
     {{ revision.previous.changeset.indexer.indexer }}.
   </div>
@@ -76,7 +77,7 @@ Reviewing :: {{ revision }}
   <p><span class="comparison_highlight">image is marked for replacement</span></p>
   {% ifequal changeset.state states.REVIEWING %}
     {% ifequal user changeset.approver %}
-  <form action="{% url unmark_image_revision revision_id=revision.id %}" method="POST">
+  <form action="{% url "unmark_image_revision" revision_id=revision.id %}" method="POST">
     {% csrf_token %}
     <input type="submit" value="Remove mark for replacement">
   </form>
@@ -85,7 +86,7 @@ Reviewing :: {{ revision }}
 {% else %}
   {% ifequal changeset.state states.REVIEWING %}
     {% ifequal user changeset.approver %}
-  <form action="{% url mark_image_revision revision_id=revision.id %}" method="POST">
+  <form action="{% url "mark_image_revision" revision_id=revision.id %}" method="POST">
     {% csrf_token %}
     <input type="submit" value="Mark for replacement">
   </form>

@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load credits %}
 {% load display %}
 
@@ -16,7 +17,7 @@
 {{ heading }}
 Search for {{ target }} by entering the relevant information here:
 
-<form method="get" action="{% url select_object_search_haystack select_key=select_key %}">
+<form method="get" action="{% url "select_object_search_haystack" select_key=select_key %}">
   <p>
     <label for="id_q">Search for:</label>
     {{ haystack_form.q }}
@@ -39,7 +40,7 @@ Search for {{ target }} by entering the relevant information here:
   </p>
 </form>
 
-<form action="{% url select_object_search select_key=select_key %}" method="GET">
+<form action="{% url "select_object_search" select_key=select_key %}" method="GET">
   <table class="select_search">
     <tr>
 {% for field in search_form.visible_fields %}
@@ -78,7 +79,7 @@ Search for {{ target }} by entering the relevant information here:
 <p>
 or select from the data cache:
 {% for radio in cache_form.object_choice %}
-<form action="{% url select_object select_key=select_key %}" method="POST">
+<form action="{% url "select_object" select_key=select_key %}" method="POST">
 {% csrf_token %}
  <input type="submit" name="select_object" value="Select">
  <input type="hidden" name="object_choice" value="{{ radio.choice_value }}">
@@ -89,7 +90,7 @@ or select from the data cache:
 {% endif %}
 {% if story or issue %}
   {% if issue %}
-<form action="{% url select_object select_key=select_key %}" method="POST">
+<form action="{% url "select_object" select_key=select_key %}" method="POST">
 {% csrf_token %}
 <p>
 or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;)
@@ -99,7 +100,7 @@ or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;
 </form>
   {% endif %}
   {% if story %}
-<form action="{% url select_object select_key=select_key %}" method="POST">
+<form action="{% url "select_object" select_key=select_key %}" method="POST">
 {% csrf_token %}
 <p>
 or enter the id of a story (from its url in the table contents: www.comics.org/issue/&lt;issue_id&gt;/#&lt;story_id&gt;)
@@ -110,7 +111,7 @@ or enter the id of a story (from its url in the table contents: www.comics.org/i
 </p>
 {% endif %}
 <p>
-  <form action="{% url select_object select_key=select_key %}" method="POST">
+  <form action="{% url "select_object" select_key=select_key %}" method="POST">
   {% csrf_token %}
   <input type="submit" name="cancel" value="Cancel"></input>
   </form>

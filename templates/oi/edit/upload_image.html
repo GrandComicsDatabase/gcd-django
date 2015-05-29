@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -32,10 +33,10 @@ GCD :: Image upload for {{ display_obj }}
   <fieldset class="universal">
     <ol>
 {% if current_image %}
-      <form action="{% url replace_image model_name=model_name id=display_obj.id image_id=current_image.id %}" method="post" enctype="multipart/form-data">
+      <form action="{% url "replace_image" model_name=model_name id=display_obj.id image_id=current_image.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
 {% else %}
-      <form action="{% url upload_image model_name=model_name id=display_obj.id image_type=image_type %}" method="post" enctype="multipart/form-data">
+      <form action="{% url "upload_image" model_name=model_name id=display_obj.id image_type=image_type %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
 {% endif %}
         <table class="editing">
