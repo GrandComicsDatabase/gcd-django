@@ -1798,7 +1798,7 @@ class UploadVariantScanForm(UploadScanForm):
       help_text='Name of this variant. Examples are: "Cover A" (if listed as '
         'such in the issue), "second printing", "newsstand", "direct", or the '
         'name of the artist if different from the base issue.')
-    variant_artwork = forms.BooleanField(required=False,
+    variant_artwork = forms.BooleanField(required=False, initial=True,
       label = 'Variant artwork',
       help_text='Check this box if the uploaded variant cover has artwork '
         'different from the base issue. If checked a cover sequence will '

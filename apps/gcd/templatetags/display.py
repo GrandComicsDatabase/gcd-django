@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
 from datetime import datetime, timedelta
+from stdnum import ean as stdean
+from stdnum import isbn as stdisbn
 
 from django.conf import settings
 from django.utils.safestring import mark_safe
@@ -93,6 +95,50 @@ def show_issue_number(issue_number):
     """
     return mark_safe('<span class="issue_number">' + \
         esc(issue_number) + '</span>')
+
+def show_one_barcode(_barcode):
+    """
+    display barcode, if two parts display separated.
+    """
+
+    # remove space and hyphens
+    try:
+        barcode = str(_barcode).replace('-', '').replace(' ', '')
+        int(barcode)
+    except ValueError:
+        return _barcode
+
+    if len(barcode) > 16:
+        # if extra 5 digits remove them (EAN 5)
+        first = barcode[:-5]
+        if stdean.is_valid(first):
+            return '%s %s' % (first, barcode[-5:])
+    elif len(barcode) > 13:
+        # if extra 2 digits remove them (EAN 2)
+        first = barcode[:-2]
+        if stdean.is_valid(first):
+            return '%s %s' % (first, barcode[-2:])
+
+    return barcode
+
+def show_barcode(_barcode):
+    barcode = ''
+    for code in _barcode.split(';'):
+        barcode += show_one_barcode(code) + '; '
+    if barcode:
+        # chop trailing '; '
+        return barcode[:-2]
+
+def show_isbn(_isbn):
+    isbn = ''
+    for code in _isbn.split(';'):
+        if stdisbn.is_valid(code):
+            isbn += stdisbn.format(code) + '; '
+        else:
+            isbn += code + '; '
+    if isbn:
+        # chop trailing '; '
+        return isbn[:-2]
 
 def show_issue(issue):
     if issue.display_number:
@@ -348,6 +394,8 @@ register.filter(show_story_short)
 register.filter(show_revision_short)
 register.filter(show_volume)
 register.filter(show_issue_number)
+register.filter(show_barcode)
+register.filter(show_isbn)
 register.filter(show_issue)
 register.filter(show_series_tracking)
 register.filter(show_indicia_pub)
