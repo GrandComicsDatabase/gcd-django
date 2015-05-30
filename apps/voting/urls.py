@@ -1,5 +1,5 @@
 from django.core import urlresolvers
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, url
 from django.conf import settings
 
 from apps.voting import views as voting_views

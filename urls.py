@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, url, include
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views

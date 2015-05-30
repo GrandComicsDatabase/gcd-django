@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.core import urlresolvers
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, url
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.views.generic import base as bv
