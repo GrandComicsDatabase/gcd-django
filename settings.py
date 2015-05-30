@@ -21,6 +21,11 @@ which variables you can or must override.
 DEBUG          = True
 TEMPLATE_DEBUG = DEBUG
 
+ALLOWED_HOSTS = [
+    '.comics.org',
+    '.comics.org.',  # Allow FQDN and subdomains.  Can be dropped in 1.7
+]
+
 # absolute path to the directory that holds templates.
 TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
                   abspath(join(dirname(__file__), 'apps', 'voting', 'templates')),)
