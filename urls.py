@@ -3,7 +3,7 @@ from django.conf.urls.defaults import *
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.views.generic.simple import direct_to_template
+from django.views.generic import base as bv
 from django.shortcuts import redirect
 
 from apps.gcd.views import accounts as account_views
@@ -24,15 +24,18 @@ js_info_dict = {
 
 basic_patterns = patterns('',
     # Read-only URLS: basic messages and the gcd display pages.
-    url(r'^privacy/$', direct_to_template,
-        { 'template': 'gcd/privacy.html' }, name='privacy'),
+    url(r'^privacy/$',
+        bv.TemplateView.as_view(template_name='gcd/privacy.html'),
+        name='privacy'),
 
     url(r'gcd-error/$', error_view, name='error'),
 
-    url(r'^donate/$', direct_to_template,
-        { 'template': 'gcd/donate/donate.html' }, name='donate'),
-    url(r'^donate/thanks/$', direct_to_template,
-        { 'template': 'gcd/donate/thanks.html' }, name='donate_thanks'),
+    url(r'^donate/$',
+        bv.TemplateView.as_view(template_name='gcd/donate/donate.html'),
+        name='donate'),
+    url(r'^donate/thanks/$',
+        bv.TemplateView.as_view(template_name='gcd/donate/thanks.html'),
+        name='donate_thanks'),
     url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
 )
 
@@ -58,16 +61,15 @@ account_patterns = patterns('',
         { 'edit': True },
         name='edit_profile'),
     url(r'^accounts/welcome/$',
-        direct_to_template,
-        { 'template': 'gcd/accounts/welcome.html' },
+        bv.TemplateView.as_view(template_name='gcd/accounts/welcome.html'),
         name='welcome'),
     url(r'^accounts/confirm/$',
-        direct_to_template,
-        { 'template': 'gcd/accounts/confirm_instructions.html' },
+        bv.TemplateView.as_view(
+          template_name='gcd/accounts/confirm_instructions.html'),
         name='confirm_instructions'),
     url(r'^accounts/resend/$',
-        direct_to_template,
-        { 'template': 'gcd/accounts/resend_instructions.html' },
+        bv.TemplateView.as_view(
+          template_name='gcd/accounts/resend_instructions.html'),
         name='resend_instructions'),
     url(r'^accounts/confirm/(?P<key>[0-9a-f]+)/$',
         account_views.confirm_account,

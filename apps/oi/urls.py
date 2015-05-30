@@ -2,8 +2,8 @@
 from django.core import urlresolvers
 from django.conf.urls.defaults import *
 from django.conf import settings
-from django.views.generic.simple import direct_to_template
 from django.contrib.auth.decorators import login_required
+from django.views.generic import base as bv
 
 from apps.oi import views as oi_views
 from apps.oi import covers as oi_covers
@@ -13,8 +13,9 @@ from apps.oi import states
 
 urlpatterns = patterns('',
     # General-purpose new record add page.
-    url(r'^add/$', login_required(direct_to_template),
-        { 'template': 'oi/edit/add.html' },
+    url(r'^add/$',
+        login_required(
+          bv.TemplateView.as_view(template_name='oi/edit/add.html')),
         name='add'),
 
     url(r'^mentoring/$', oi_views.mentoring,
@@ -288,10 +289,11 @@ urlpatterns = patterns('',
     url(r'^coordinator/clear_issues',
       oi_coordinators.clear_reservations_nine_weeks,
       {}, name='clear_issues'),
-    url(r'^coordinator/$',  direct_to_template,
-        { 'template': 'oi/edit/coordinators.html' }, name='coordinators_toc'),
+    url(r'^coordinator/$',
+        bv.TemplateView.as_view(template_name='oi/edit/coordinators.html'),
+        name='coordinators_toc'),
 )
 
-urlpatterns += patterns('django.views.generic.simple',
-    (r'^changeset/(?P<id>\d+)/$', 'redirect_to', {'url' : 'compare' })
+urlpatterns += patterns('',
+    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare')),
 )
