@@ -565,8 +565,8 @@ class Changeset(models.Model):
 
     # In production, change_type is a tinyint(2) due to the small value set.
     change_type = models.IntegerField(db_index=True)
-    migrated = models.BooleanField(default=False, db_index=True, blank=True)
-    date_inferred = models.BooleanField(default=False, blank=True)
+    migrated = models.BooleanField(default=False, db_index=True)
+    date_inferred = models.BooleanField(default=False)
 
     imps = models.IntegerField(default=0)
 
@@ -1470,9 +1470,9 @@ class PublisherRevisionBase(Revision):
     year_ended = models.IntegerField(null=True, blank=True,
       help_text='The last year in which the publisher was active. '
                 'Leave blank if the publisher is still active.')
-    year_began_uncertain = models.BooleanField(blank=True,
+    year_began_uncertain = models.BooleanField(default=False,
       help_text='Check if you are not certain of the beginning year.')
-    year_ended_uncertain = models.BooleanField(blank=True,
+    year_ended_uncertain = models.BooleanField(default=False,
       help_text='Check if you are not certain of the ending year, or if you '
                 'are not certain whether the publisher is still active.')
 
@@ -1590,7 +1590,7 @@ class PublisherRevision(PublisherRevisionBase):
                                null=True, blank=True, db_index=True,
                                related_name='imprint_revisions')
 
-    date_inferred = models.BooleanField(default=False, blank=True)
+    date_inferred = models.BooleanField(default=False)
 
     def _source(self):
         return self.publisher
@@ -1752,7 +1752,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     indicia_publisher = models.ForeignKey('gcd.IndiciaPublisher', null=True,
                                            related_name='revisions')
 
-    is_surrogate = models.BooleanField()
+    is_surrogate = models.BooleanField(default=False)
 
     country = models.ForeignKey('gcd.Country', db_index=True,
                                 related_name='indicia_publishers_revisions')
@@ -2224,9 +2224,9 @@ class BrandUseRevision(Revision):
 
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
-    year_began_uncertain = models.BooleanField(blank=True)
-    year_ended_uncertain = models.BooleanField(blank=True)
-    notes = models.TextField(max_length = 255, blank=True)
+    year_began_uncertain = models.BooleanField(default=False)
+    year_ended_uncertain = models.BooleanField(default=False)
+    notes = models.TextField(max_length=255, blank=True)
 
     def _source(self):
         return self.brand_use
@@ -2622,7 +2622,7 @@ class SeriesRevision(Revision):
     name = models.CharField(max_length=255,
       help_text='Series name as it appears in the indicia (or cover only '
                 'if there is no indicia).')
-    leading_article = models.BooleanField(default=False, blank=True,
+    leading_article = models.BooleanField(default=False,
       help_text='Check if the name starts with an article.')
 
     # The "format" field is a legacy field that is being split into
@@ -2660,11 +2660,11 @@ class SeriesRevision(Revision):
     year_began = models.IntegerField(help_text='Year first issue published.')
     year_ended = models.IntegerField(null=True, blank=True,
       help_text='Leave blank if the series is still producing new issues.')
-    year_began_uncertain = models.BooleanField(blank=True,
+    year_began_uncertain = models.BooleanField(default=False,
       help_text='Check if you are not certain of the beginning year.')
-    year_ended_uncertain = models.BooleanField(blank=True,
+    year_ended_uncertain = models.BooleanField(default=False,
       help_text='Check if you are not certain of the ending year.')
-    is_current = models.BooleanField(
+    is_current = models.BooleanField(default=False,
       help_text='Check if new issues are still being produced for this '
                 'series. Only uncheck after the last issue is approved '
                 'and in our database.')
@@ -2677,24 +2677,24 @@ class SeriesRevision(Revision):
       help_text='Field to track numbering from one series to another.')
 
     # Fields for handling the presence of certain issue fields
-    has_barcode = models.BooleanField(
+    has_barcode = models.BooleanField(default=False,
       help_text="Barcodes are present for issues of this series.")
-    has_indicia_frequency = models.BooleanField(
+    has_indicia_frequency = models.BooleanField(default=False,
       help_text="Indicia frequencies are present for issues of this series.")
-    has_isbn = models.BooleanField(verbose_name='Has ISBN',
+    has_isbn = models.BooleanField(default=False, verbose_name='Has ISBN',
       help_text="ISBNs are present for issues of this series.")
-    has_issue_title = models.BooleanField(
+    has_issue_title = models.BooleanField(default=False,
       help_text="Titles are present for issues of this series.")
-    has_volume = models.BooleanField(
+    has_volume = models.BooleanField(default=False,
       help_text="Volume numbers are present for issues of this series.")
-    has_rating = models.BooleanField(
+    has_rating = models.BooleanField(default=False,
       verbose_name="Has Publisher's age guidelines ",
       help_text="Publisher's age guidelines are present for issues of this "
                 "series.")
 
-    is_comics_publication = models.BooleanField(
+    is_comics_publication = models.BooleanField(default=False,
       help_text="Publications in this series are mostly comics publications.")
-    is_singleton = models.BooleanField(
+    is_singleton = models.BooleanField(default=False,
       help_text="Series consists of one and only one issue by design. "
                 "Note that for series adds an issue with no issue number will"
                 " be created upon approval.")
@@ -2715,7 +2715,7 @@ class SeriesRevision(Revision):
                                   related_name='series_revisions')
     imprint = models.ForeignKey(Publisher, null=True, blank=True, default=None,
                                 related_name='imprint_series_revisions')
-    date_inferred = models.BooleanField(default=False, blank=True)
+    date_inferred = models.BooleanField(default=False)
 
     def _first_issue(self):
         if self.series is None:
@@ -3349,7 +3349,7 @@ class IssueRevision(Revision):
     year_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
     month_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
     day_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
-    on_sale_date_uncertain = models.BooleanField(blank=True,
+    on_sale_date_uncertain = models.BooleanField(default=False,
       help_text='The uncertain flag only relates to the actual entered data, '
         'therefore if e.g. no day is entered, but the month and year are '
         'certain, the uncertain flag is not set.')
@@ -3432,7 +3432,7 @@ class IssueRevision(Revision):
       verbose_name="No publisher's age guidelines",
       help_text="Check this box if there are no publisher's age guidelines.")
 
-    date_inferred = models.BooleanField(default=False, blank=True)
+    date_inferred = models.BooleanField(default=False)
 
     def _valid_isbn(self):
         return validated_isbn(self.isbn)
@@ -4379,7 +4379,7 @@ class StoryRevision(Revision):
                 'entries are to be separated by semi-colons.')
 
     issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
-    date_inferred = models.BooleanField(default=False, blank=True)
+    date_inferred = models.BooleanField(default=False)
 
     def _my_issue_revision(self):
         if not hasattr(self, '_saved_my_issue_revision'):

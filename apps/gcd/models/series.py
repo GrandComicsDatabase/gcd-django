@@ -52,9 +52,9 @@ class Series(models.Model):
 
     year_began = models.IntegerField(db_index=True)
     year_ended = models.IntegerField(null=True)
-    year_began_uncertain = models.BooleanField(blank=True)
-    year_ended_uncertain = models.BooleanField(blank=True)
-    is_current = models.BooleanField(blank=True, db_index=True)
+    year_began_uncertain = models.BooleanField(default=False)
+    year_ended_uncertain = models.BooleanField(default=False)
+    is_current = models.BooleanField(default=False, db_index=True)
     publication_dates = models.CharField(max_length=255)
 
     first_issue = models.ForeignKey('Issue', null=True,
@@ -71,18 +71,18 @@ class Series(models.Model):
     tracking_notes = models.TextField()
 
     # Fields for handling the presence of certain issue fields
-    has_barcode = models.BooleanField()
-    has_indicia_frequency = models.BooleanField()
-    has_isbn = models.BooleanField()
-    has_issue_title = models.BooleanField()
-    has_volume = models.BooleanField()
+    has_barcode = models.BooleanField(default=False)
+    has_indicia_frequency = models.BooleanField(default=False)
+    has_isbn = models.BooleanField(default=False)
+    has_issue_title = models.BooleanField(default=False)
+    has_volume = models.BooleanField(default=False)
     has_rating = models.BooleanField(default=False)
 
-    is_comics_publication = models.BooleanField()
-    is_singleton = models.BooleanField()
+    is_comics_publication = models.BooleanField(default=False)
+    is_singleton = models.BooleanField(default=False)
 
     # Fields related to cover image galleries.
-    has_gallery = models.BooleanField(db_index=True)
+    has_gallery = models.BooleanField(default=False, db_index=True)
 
     # Fields related to indexing activities.
     # Only "reserved" is in active use.  "open_reserve" is a legacy field
