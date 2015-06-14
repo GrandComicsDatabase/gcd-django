@@ -18,7 +18,6 @@
     {% include "gcd/search/list_header.html" %}
   {% endwith %}
   {% endwith %}
-
   {% if select_key %}
 <div class='left'>  
 <p>
@@ -37,8 +36,15 @@
 </p>
 </div>
   {% endif %}
-
+<div style="clear: both;"></div>
+<div class="left">
   {% block list_contents %}{% endblock %}
+</div>
+<div class="right">
+  {% if ADVERTISING and not BETA %}
+    {% include "gcd/bits/ad_skyscraper.html" %}
+  {% endif %}
+</div>
 
   {% if used_search_terms %}
     {% include "gcd/bits/search_terms.html" %}
