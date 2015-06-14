@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load display %}
 
 {% block title %}
@@ -39,20 +40,20 @@ GCD :: {{ user.indexer }} :: Editor Log
 {% for changeset in items %}
 <tr>
 {% if changeset.inline %}
-    <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
     <td><a href="{{ changeset.inline_revision.source.get_absolute_url }}">{{ changeset }}</a></td>
 {% else %}
     {% if changeset.change_type == CTYPES.issue %}
-    <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue</a></td>
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue</a></td>
     <td><a href="{{ changeset.issuerevisions.all.0.source.get_absolute_url }}">{{ changeset }}</a></td>
     {% else %}
       {% if changeset.change_type == CTYPES.issue_add %}
-    <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue skeletons</a></td>
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue skeletons</a></td>
       {% else %}
         {% if changeset.change_type == CTYPES.issue_bulk %}
-    <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue bulk changes</a></td>
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue bulk changes</a></td>
         {% else %}
-    <td class="{{ changeset.changeset_action }}"><a href="{% url compare id=changeset.id %}">issue variant add (with base)</a></td>
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue variant add (with base)</a></td>
         {% endif %}
       {% endif %}
     <td>{{ changeset }}</td>

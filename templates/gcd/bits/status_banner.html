@@ -1,3 +1,5 @@
+{% load url from future %}
+
 {% if object.reserved %}
   {% with object.revisions.active as revision %}
   {% with revision.changeset as changeset %}
@@ -8,7 +10,7 @@
     {{ changeset.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
     (since {{ revision.created|date:"Y-m-d" }},  
       {% ifequal changeset.indexer request.user %}
-    <a href="{% url edit id=changeset.id %}"> edit this change</a>)
+    <a href="{% url "edit" id=changeset.id %}"> edit this change</a>)
       {% else %}
     last edit {{ revision.modified|date:"Y-m-d" }})
       {% endifequal %}
@@ -17,14 +19,14 @@
     Edits to this {{ object_name }}
     are currently awaiting review by a GCD Editor
       {% if request.user.is_authenticated %}
-    (<a href="{% url compare id=changeset.id %}">view the edits</a>)
+    (<a href="{% url "compare" id=changeset.id %}">view the edits</a>)
       {% endif %}
     {% endifequal %}
     {% if changeset.state = states.REVIEWING or changeset.state = states.DISCUSSED %}
     Edits to this {{ object_name }}
     are being reviewed by GCD Editor {{ changeset.approver.indexer }}
       {% if request.user.is_authenticated %}
-    (<a href="{% url compare id=changeset.id %}">view the edits</a>)
+    (<a href="{% url "compare" id=changeset.id %}">view the edits</a>)
       {% endif %}
     {% endif %}
   </span>
@@ -34,12 +36,12 @@
 {% else %}
   {% if user.is_authenticated %}
 <form method="POST"
-      action="{% url reserve_revision model_name=object_class,id=object.id %}">
+      action="{% url "reserve_revision" model_name=object_class id=object.id %}">
   {% csrf_token %}
   <input id="edit" name="edit" type="submit" value="Edit"></input>
 </form>
     {% if object.deletable %}
-<form method="GET" action="{% url delete_revision model_name=object_class,id=object.id %}">
+<form method="GET" action="{% url "delete_revision" model_name=object_class id=object.id %}">
   <input type="submit" value="Delete">
 </form>
     {% else %}
@@ -60,7 +62,7 @@
 </div>
     {% endif %}
   {% else %}
-<form action="{% url login %}" method="GET">
+<form action="{% url "login" %}" method="GET">
   <input type="submit" name="login" value="Log in to edit" />
   <input type="hidden" name="next" value="{{ request.get_full_path }}" />
 </form>

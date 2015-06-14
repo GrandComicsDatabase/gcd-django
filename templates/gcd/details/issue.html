@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
@@ -92,13 +93,13 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 {% else %}
   {% if preview %}
     {% if issue.issue %}
-            <a href="{% url upload_cover issue_id=issue.issue.id %}">{{ image_tag }}</a>
+            <a href="{% url "upload_cover" issue_id=issue.issue.id %}">{{ image_tag }}</a>
     {% else %}
             {{ image_tag }}
     {% endif %}
   {% else %}
     {% if issue.series.is_comics_publication or issue.can_have_cover %}
-            <a href="{% url upload_cover issue_id=issue.id %}">{{ image_tag }}</a>
+            <a href="{% url "upload_cover" issue_id=issue.id %}">{{ image_tag }}</a>
     {% else %}
             <a href="http://docs.comics.org/wiki/Comics_Publication"> {{ image_tag }}</a>
     {% endif %}
@@ -115,7 +116,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
               View: <a href="{{ issue.get_absolute_url }}cover/4">Large</a>
               <br>
   {% if not preview %}
-              <a href="{% url edit_covers issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a>
+              <a href="{% url "edit_covers" issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a>
               <br>
   {% endif %}
 {% endif %}
@@ -141,15 +142,15 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
         <div class="edit_header">Editing
 {% if request.user.is_authenticated and not preview %}
           <div class="right">
-            <a class="link_info_left" href="{% url export_issue_csv issue.id %}"><span>download issue data (CSV)</span>
+            <a class="link_info_left" href="{% url "export_issue_csv" issue.id %}"><span>download issue data (CSV)</span>
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-spreadsheet.png" alt="download issue data" style="border:0;">
             </a>
 
-            <a class="link_info_left" href="{% url export_issue issue.id %}"><span>download issue data</span>
+            <a class="link_info_left" href="{% url "export_issue" issue.id %}"><span>download issue data</span>
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-save.png" alt="download issue data" style="border:0;">
             </a>
           </div>
-<a class="right cache_link" href="{% url cache_issue issue_id=issue.id %}">(remember issue)</a>
+<a class="right cache_link" href="{% url "cache_issue" issue_id=issue.id %}">(remember issue)</a>
 {% endif %}
         </div>
 {% if not preview %}
@@ -163,19 +164,19 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved %}
     {% if not issue.variant_of %}
   <form method="GET"
-        action="{% url add_variant_issue issue_id=issue.id %}">
+        action="{% url "add_variant_issue" issue_id=issue.id %}">
     <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
   </form>
     {% endif %}
     {% if issue.variant_of and not issue.variant_of.reserved %}
   <form method="POST"
-        action="{% url reserve_two_issues issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
+        action="{% url "reserve_two_issues" issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
     {% csrf_token %}
     <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
   </form>
     {% endif %}
   <form method="GET"
-        action="{% url edit_two_issues issue_id=issue.id %}">
+        action="{% url "edit_two_issues" issue_id=issue.id %}">
     <input type="submit" value="{% trans 'Edit with another issue' %}">
   </form>
   {% endif %}
@@ -191,16 +192,16 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 {% if not preview or issue.source %}
       <div class="change_history">
   {% if preview %}
-        <a href="{% url issue_images issue_id=issue.source.id %}">Resources ({{ images_count }}) </a>
+        <a href="{% url "issue_images" issue_id=issue.source.id %}">Resources ({{ images_count }}) </a>
   {% else %}
-        <a href="{% url issue_images issue_id=issue.id %}">Resources ({{ images_count }}) </a>
+        <a href="{% url "issue_images" issue_id=issue.id %}">Resources ({{ images_count }}) </a>
   {% endif %}
       </div>
       <div class="change_history">
   {% if preview %}
-        <a href="{% url change_history model_name='issue' id=issue.source.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='issue' id=issue.source.id %}">Change History</a>
   {% else %}
-        <a href="{% url change_history model_name='issue' id=issue.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='issue' id=issue.id %}">Change History</a>
   {% endif %}
       </div>
 {% endif %}

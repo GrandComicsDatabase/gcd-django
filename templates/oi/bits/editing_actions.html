@@ -1,4 +1,6 @@
-<form action="{% url process id=changeset.id %}"
+{% load url from future %}
+
+<form action="{% url "process" id=changeset.id %}"
       method="POST">
   {% csrf_token %}
   <input type="submit" name="discard" value="Discard"></input>

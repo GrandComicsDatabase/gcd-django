@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -41,14 +42,14 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
   <fieldset class="universal">
     <ol>
 {% if upload_type = 'replacement' %}
-      <form action="{% url replace_cover cover_id=cover.id %}" method="post" enctype="multipart/form-data">
+      <form action="{% url "replace_cover" cover_id=cover.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
 {% else %}
   {% if upload_type = 'variant' %}
-      <form action="{% url upload_variant issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+      <form action="{% url "upload_variant" issue_id=issue.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
   {% else %}
-      <form action="{% url upload_cover issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+      <form action="{% url "upload_cover" issue_id=issue.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {% endif %}
   {% endif %}
@@ -132,7 +133,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
   <tr>
   {% for cover, tag in active_covers %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{% url compare id=cover.changeset.id %}">{{ tag }}</a>
+      <a href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
     </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>
@@ -148,7 +149,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 <h2> pending variant add{{ pending_variant_adds|length|pluralize }} </h2>
   <ul>
   {% for variant in pending_variant_adds %}
-  <li><a href="{% url compare id=variant.id %}">{{ variant }}</a>
+  <li><a href="{% url "compare" id=variant.id %}">{{ variant }}</a>
   {% endfor %}
   </ul>
 {% endif %}

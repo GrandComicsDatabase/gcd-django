@@ -1,4 +1,5 @@
 {% extends "voting/base_view.html" %}
+{% load url from future %}
 
 {% load display %}
 {% load voting %}
@@ -99,7 +100,7 @@ Total number of voters: {{ topic.num_voters }}
   {% endif %}
 </p>
 {% else %}
-<form method=POST action="{% url vote %}">
+<form method=POST action="{% url "vote" %}">
   {% csrf_token %}
   {% if topic.token %}
   <p class="instructions">

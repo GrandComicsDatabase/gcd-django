@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% block title %}
 GCD :: Add Confirm Two Edits
 {% endblock %}
@@ -14,7 +15,7 @@ GCD :: Add Confirm Two Edits
 {% block view_body %}
 
 <h2>Do you want to edit {{ issue_one.full_name }} together with {{ issue_two.full_name }} ?</h2>
-<form method="POST" action="{% url reserve_two_issues issue_one_id=issue_one.id, issue_two_id=issue_two.id %}">
+<form method="POST" action="{% url "reserve_two_issues" issue_one_id=issue_one.id issue_two_id=issue_two.id %}">
 {% csrf_token %}
 <input type="submit" value="Confirm edit of both issues."></input>
 <input type="submit" name="cancel" value="Return to {{ issue_one }}."></input>

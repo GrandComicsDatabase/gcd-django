@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load forms %}
 
 {% block css %}
@@ -18,7 +19,7 @@
 {% if user.is_authenticated %}
 <p>
 Please
-<form id="inline_logout" action="{% url logout %}" method="POST">
+<form id="inline_logout" action="{% url "logout" %}" method="POST">
   {% csrf_token %}
   <input type="submit" name="logout" value="Log Out" />
   <input type="hidden" name="next" value="{{ request.get_full_path }}" />

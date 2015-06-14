@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -28,7 +29,7 @@
   <tr>
   {% for cover, issue, tag in tags %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{% url compare id=cover.changeset.id %}">{{ tag }}</a>
+      <a href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
       <br/>
       <div class="cover_caption">
         <span class="{{ cover.changeset.changeset_action }}">{{ cover|show_revision_type }}</span><br>
@@ -44,7 +45,7 @@
         {% else %}
             {% if perms.gcd.can_approve %}
               {% ifnotequal cover.changeset.indexer user %}
-<form action="{% url process id=cover.changeset.id %}" method="POST">
+<form action="{% url "process" id=cover.changeset.id %}" method="POST">
   {% csrf_token %}
   <input type="submit" name="assign" value="Assign"></input>
   <input type="hidden" name="comments" value=""></input>

@@ -37,16 +37,16 @@ class Indexer(models.Model):
     languages = models.ManyToManyField(Language, related_name='indexers',
                                        db_table='gcd_indexer_languages')
     interests = models.TextField(null=True, blank=True)
-    opt_in_email = models.BooleanField(db_index=True)
+    opt_in_email = models.BooleanField(default=False, db_index=True)
     from_where = models.TextField(blank=True)
 
     max_reservations = models.IntegerField(default=1)
     max_ongoing = models.IntegerField(default=0)
 
     mentor = models.ForeignKey(User, related_name='mentees', null=True, blank=True)
-    is_new = models.BooleanField(db_index=True)
-    is_banned = models.BooleanField(db_index=True)
-    deceased = models.BooleanField(db_index=True)
+    is_new = models.BooleanField(default=False, db_index=True)
+    is_banned = models.BooleanField(default=False, db_index=True)
+    deceased = models.BooleanField(default=False, db_index=True)
 
     registration_key = models.CharField(max_length=40, null=True,
                                         db_index=True, editable=False)

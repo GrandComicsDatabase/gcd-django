@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load credits %}
 {% load editing %}
 
@@ -40,7 +41,7 @@ Reviewing :: {{ revision }}
     <a href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_front_tag }}</a>
   {% endif %}
     <div>
-      Cover <a href="{% url compare id=old_cover.changeset.id %}">
+      Cover <a href="{% url "compare" id=old_cover.changeset.id %}">
       uploaded on {{ old_cover.created }}</a> by <br>
       {{ old_cover|show_cover_contributor }}.
     </div>
@@ -83,7 +84,7 @@ Reviewing :: {{ revision }}
   <div>
 {% if revision.deleted %}
     <div>
-      Cover <a href="{% url compare id=old_cover.changeset.id %}">
+      Cover <a href="{% url "compare" id=old_cover.changeset.id %}">
       uploaded on {{ old_cover.created }}</a> by <br>
       {{ old_cover|show_cover_contributor }}.
     </div>
@@ -94,7 +95,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
     <p><span class="comparison_highlight">cover is marked for replacement</span></p>
   {% ifequal changeset.state states.REVIEWING %}
     {% ifequal user changeset.approver %}
-    <form action="{% url unmark_cover_revision revision_id=revision.id %}" method="POST">
+    <form action="{% url "unmark_cover_revision" revision_id=revision.id %}" method="POST">
       {% csrf_token %}
       <input type="submit" value="Remove mark for replacement">
     </form>
@@ -103,7 +104,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 {% else %}
   {% ifequal changeset.state states.REVIEWING %}
     {% ifequal user changeset.approver %}
-    <form action="{% url mark_cover_revision revision_id=revision.id %}" method="POST">
+    <form action="{% url "mark_cover_revision" revision_id=revision.id %}" method="POST">
       {% csrf_token %}
       <input type="submit" value="Mark for replacement">
     </form>
@@ -120,7 +121,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   </p>
   {% if changeset.state = states.REVIEWING %}
     {% if user = changeset.approver %}
-      <form action="{% url flip_artwork_flag revision_id=revision.id %}" method="POST">
+      <form action="{% url "flip_artwork_flag" revision_id=revision.id %}" method="POST">
         {% csrf_token %}
         <input type="submit" name="flip_artwork_flag" value="Flip the variant artwork flag" />
       </form>
@@ -167,7 +168,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   <tr>
   {% for cover, tag in pending_covers %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{% url compare id=cover.changeset.id %}">{{ tag }}</a>
+      <a href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
       <br>
       <div class="cover_caption">
         uploaded on {{ cover.created }}<br>
@@ -188,7 +189,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 <h2> pending variant add{{ pending_variant_adds|length|pluralize }} </h2>
   <ul>
   {% for variant in pending_variant_adds %}
-    <li><a href="{% url compare id=variant.id %}">{{ variant }}</a>
+    <li><a href="{% url "compare" id=variant.id %}">{{ variant }}</a>
   {% endfor %}
   </ul>
 </div>
@@ -199,7 +200,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 <h2> Existing variant{{ variants_without_covers|length|pluralize }} with covers </h2>
   <ul>
   {% for variant in variants_without_covers %}
-    <li><a href="{% url show_issue issue_id=variant.id %}">{{ variant }}</a>
+    <li><a href="{% url "show_issue" issue_id=variant.id %}">{{ variant }}</a>
   {% endfor %}
   </ul>
 </div>

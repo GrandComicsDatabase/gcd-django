@@ -1,6 +1,8 @@
+{% load url from future %}
+
 {% if changeset.state = states.REVIEWING or changeset.state = states.DISCUSSED %}
   {% if changeset.approver == user %}
-<form action="{% url process id=changeset.id %}" method="POST">
+<form action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
   <input type="submit" name="release" value="Unassign" />
   <input type="hidden" name="comments" class="comments" />
@@ -10,7 +12,7 @@
   {% endif %}
 {% else %}
   {% if perms.gcd.can_approve and changeset.indexer != user or changeset.indexer = user and changeset.editable and section.object_type != 'cover' %}
-<form action="{% url process id=changeset.id %}" method="POST">
+<form action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
   <input type="hidden" name="comments" class="comments" />
     {% if changeset.indexer != user %}

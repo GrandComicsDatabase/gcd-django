@@ -1,4 +1,6 @@
 {% extends "gcd/base_view.html" %}
+
+{% load url from future %}
 {% load humanize %}
 {% load i18n %}
 {% load statustags %}
@@ -13,7 +15,7 @@
 {% block view_body %}
 <div style='margin-bottom: 1em'>
 Statistics by {{ type }}, ordered by number of 
-<form style='display:inline;' action="{% if type == 'language' %}{% url international_stats_language %}{% else %}{% url international_stats_country %}{% endif %}" method="get">
+<form style='display:inline;' action="{% if type == 'language' %}{% url "international_stats_language" %}{% else %}{% url "international_stats_country" %}{% endif %}" method="get">
     {{ form }}
     <input type="submit" name="submit" value="reorder">
 </form>
@@ -22,7 +24,7 @@ Statistics by {{ type }}, ordered by number of
 <div class="{% cycle 'stats_left' 'stats_right'%}">
         <h3 class="item_id">
         <div class='stats_content'>
-            Statistics for Comics {% if type == 'country' %} published {% endif %} in <a href="{% url process_advanced_search %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{% if type == 'country' %}country={{ object.code }}{% else %}language={{ object.code }}{% endif %}">{{ object }}</a>
+            Statistics for Comics {% if type == 'country' %} published {% endif %} in <a href="{% url "process_advanced_search" %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{% if type == 'country' %}country={{ object.code }}{% else %}language={{ object.code }}{% endif %}">{{ object }}</a>
         </div>
         </h3>
         <div class='stats_content'>

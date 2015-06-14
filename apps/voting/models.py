@@ -174,12 +174,12 @@ class AgendaMailingList(models.Model):
     mailing_list = models.ForeignKey(MailingList, null=True, blank=True,
                                      related_name='agenda_mailing_lists')
     group = models.ForeignKey(Group, null=True, blank=True)
-    on_agenda_item_add = models.BooleanField()
-    on_agenda_item_open = models.BooleanField()
-    on_vote_open = models.BooleanField()
-    on_vote_close = models.BooleanField()
-    is_primary = models.BooleanField()
-    reminder = models.BooleanField()
+    on_agenda_item_add = models.BooleanField(default=False)
+    on_agenda_item_open = models.BooleanField(default=False)
+    on_vote_open = models.BooleanField(default=False)
+    on_vote_close = models.BooleanField(default=False)
+    is_primary = models.BooleanField(default=False)
+    reminder = models.BooleanField(default=False)
     display_token = models.BooleanField(default=False)
 
     def send_mail(self, subject, message):

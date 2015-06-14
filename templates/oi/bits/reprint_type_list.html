@@ -1,3 +1,4 @@
+{% load url from future %}
 {% load display %}
 <tr colspan="2" align="left" {% if reprint.deleted %} class="deleted" {% endif %} {% if reprint.changeset and reprint.in_type = None and reprint.out_type = None %} class="added" {% endif %}>
   {% if reprint.changeset and not reprint.changeset = changeset and reprint.source %}
@@ -7,7 +8,7 @@
   {% endif %}
   <td>
 {% if not reprint.reserved and not reprint.changeset %}
-<form action="{% url reserve_reprint reprint_id=reprint.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+<form action="{% url "reserve_reprint" reprint_id=reprint.id changeset_id=changeset.id reprint_type=reprint_type %}" method="POST">
   {% csrf_token %}
   {% if not is_source %}
     <input type="submit" name="edit_target_internal" value="Change target">
@@ -19,7 +20,7 @@
     <input type="submit" name="edit_note_origin" value="Edit note">
   {% endif %}
   {% comment %}
-  keep this as an alternativ, with this we could make a reprint point out of the current issue
+  keep this as an alternative, with this we could make a reprint point out of the current issue
   but this might make things more complicated for indexer and editor
   {% if not is_source %}
     <input type="submit" name="edit_target" value="Change target">
@@ -39,7 +40,7 @@
 </form>
 {% else %}
     {% if reprint.changeset_id = changeset.id %}
-<form action="{% url edit_reprint id=reprint.id %}" method="POST">
+<form action="{% url "edit_reprint" id=reprint.id %}" method="POST">
       {% csrf_token %}
       {% if reprint.deleted %}
     <input type="submit" name="restore" value="Restore">
@@ -79,7 +80,7 @@
 </form>
     {% else %}
       {% if reprint.changeset.state = states.APPROVED %}
-<form action="{% url reserve_reprint reprint_id=reprint.source.id,changeset_id=changeset.id,reprint_type=reprint_type %}" method="POST">
+<form action="{% url "reserve_reprint" reprint_id=reprint.source.id changeset_id=changeset.id reprint_type=reprint_type %}" method="POST">
         {% csrf_token %}
         {% if not is_source %}
     <input type="submit" name="edit_target_internal" value="Change target">
@@ -111,9 +112,9 @@
 </form>
       {% else %}
         {% if reprint.changeset %}
-    Is reserved in a different <a href="{% url compare id=reprint.changeset.id %}">changeset</a>.
+    Is reserved in a different <a href="{% url "compare" id=reprint.changeset.id %}">changeset</a>.
         {% else %}
-    Is reserved in a different <a href="{% url compare id=reprint.revisions.latest.changeset.id %}">changeset</a>.
+    Is reserved in a different <a href="{% url "compare" id=reprint.revisions.latest.changeset.id %}">changeset</a>.
         {% endif %}
       {% endif %}
     {% endif %}

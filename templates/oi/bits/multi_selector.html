@@ -1,3 +1,5 @@
+{% load url from future %}
+
 {% if flavour != 'mobile' %}
   {% load compress %}
 
@@ -28,5 +30,5 @@ SelectFilter2.js doesn't work in the compress tags in any case
 <script type="text/javascript"
         src="{{ MEDIA_URL }}admin/js/SelectFilter2.js"></script>
 <script type="text/javascript"
-        src="{% url django.views.i18n.javascript_catalog %}"></script>
+        src="{% url "django.views.i18n.javascript_catalog" %}"></script>
 {% endif %}

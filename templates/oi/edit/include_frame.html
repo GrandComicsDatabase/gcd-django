@@ -1,11 +1,13 @@
-<form action="{% url process id=changeset.id %}" method="POST">
+{% load url from future %}
+
+<form action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
   <table class="editing">
   {{ form.as_table }}
   </table>
   {% if changeset.comments.count > 1 %} {% comment %} change was sent back {% endcomment %}
   <p>
-    <a href="{% url compare id=changeset.id %}">Compare changes</a>
+    <a href="{% url "compare" id=changeset.id %}">Compare changes</a>
   </p>
   {% endif %}
   {% with changeset.comments as comments %}

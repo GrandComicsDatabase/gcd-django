@@ -1,3 +1,4 @@
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -32,9 +33,9 @@
         {% if not preview %}
           {% if user.is_authenticated and story %}
             {% if is_cover %}
-        <span class="right single_story_navigation"><a href="{% url cache_cover cover_story_id=story.id %}">(remember cover)</a></span>
+        <span class="right single_story_navigation"><a href="{% url "cache_cover" cover_story_id=story.id %}">(remember cover)</a></span>
             {% else %}
-        <span class="right single_story_navigation"><a href="{% url cache_story story_id=story.id %}">(remember story)</a></span>
+        <span class="right single_story_navigation"><a href="{% url "cache_story" story_id=story.id %}">(remember story)</a></span>
             {% endif %}
         <span class="right non_bold">/</span>
           {% endif %}

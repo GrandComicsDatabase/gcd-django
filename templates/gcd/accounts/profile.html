@@ -1,10 +1,12 @@
 {% extends "oi/base_view.html" %}
+{% load url from future %}
+
 <!--
-Account organization is messedup, leading to this template reaching over
+Account organization is messed up, leading to this template reaching over
 into the OI app as well as the GCD app for CSS and the base template.
 It should either be factored into a third app or made part of the OI,
 but there's just not enough time to rework it since this code base is supposed
-to have a limited lifespan anyway.
+to have a limited lifespan anyway. <-(LOL 5+ years later)
   -->
 
 {% load forms %}
@@ -78,7 +80,7 @@ to have a limited lifespan anyway.
   {% include 'gcd/bits/profile_display.html' %}
 
   {% if profile_user == user %}
-<form action="{% url edit_profile user_id=profile_user.id %}" method="GET"
+<form action="{% url "edit_profile" user_id=profile_user.id %}" method="GET"
       class="profile_form">
   <input type="submit" value="Edit Profile">
 </form>

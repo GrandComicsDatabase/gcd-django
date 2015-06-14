@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
@@ -68,11 +69,11 @@ GCD :: Brand Emblem :: {{ brand.name }}
       {% else %}
         {% if user.is_authenticated %}
         <form method="GET"
-          action="{% url replace_image model_name='brand' id=brand.id image_id=brand.emblem.id %}">
+          action="{% url "replace_image" model_name='brand' id=brand.id image_id=brand.emblem.id %}">
           <input type="submit" value="{% trans 'Replace Brand Image' %}">
         </form>
         <form method="GET"
-          action="{% url delete_revision model_name='image' id=brand.emblem.id %}">
+          action="{% url "delete_revision" model_name='image' id=brand.emblem.id %}">
           <input type="submit" value="{% trans 'Delete Brand Image' %}">
         </form>
         {% endif %}
@@ -80,14 +81,14 @@ GCD :: Brand Emblem :: {{ brand.name }}
     {% else %}
         {% if user.is_authenticated %}
         <form method="GET"
-          action="{% url upload_image model_name='brand' id=brand.id image_type='BrandScan' %}">
+          action="{% url "upload_image" model_name='brand' id=brand.id image_type='BrandScan' %}">
           <input type="submit" value="{% trans 'Add Brand Image' %}">
         </form>
       {% endif %}
     {% endif %}
     {% if user.is_authenticated %}
       <form method="POST"
-        action="{% url add_brand_use brand_id=brand.id %}">
+        action="{% url "add_brand_use" brand_id=brand.id %}">
     {% csrf_token %}
         <input id="add_use" name="add_use" type="submit" value="Add Brand Use"></input>
       </form>
@@ -96,9 +97,9 @@ GCD :: Brand Emblem :: {{ brand.name }}
       </div>
       <div class="change_history">
   {% if preview %}
-        <a href="{% url change_history model_name='brand' id=brand.source.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='brand' id=brand.source.id %}">Change History</a>
   {% else %}
-        <a href="{% url change_history model_name='brand' id=brand.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='brand' id=brand.id %}">Change History</a>
   {% endif %}
       </div>
     </div> <!-- control_rail -->
@@ -156,12 +157,12 @@ GCD :: Brand Emblem :: {{ brand.name }}
     is reserved
     {% else %}
       <form method="POST"
-        action="{% url reserve_revision model_name='brand_use',id=use.id %}" style="display:inline">
+        action="{% url "reserve_revision" model_name='brand_use' id=use.id %}" style="display:inline">
     {% csrf_token %}
         <input id="edit" name="edit" type="submit" value="Edit"></input>
       </form>
       <form method="POST"
-        action="{% url delete_revision model_name='brand_use',id=use.id %}" style="display:inline">
+        action="{% url "delete_revision" model_name='brand_use' id=use.id %}" style="display:inline">
     {% csrf_token %}
         <input type="submit" value="Delete"></input>
       </form>

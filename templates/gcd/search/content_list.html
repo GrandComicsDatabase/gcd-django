@@ -1,4 +1,6 @@
 {% extends "gcd/search/base_list.html" %}
+
+{% load url from future %}
 {% load credits %}
 {% load i18n %}
 {% load mathfilter %}
@@ -21,12 +23,12 @@
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     {% if select_key %}
     <td>
-    <form action="{% url select_object select_key=select_key %}" method="POST">
+    <form action="{% url "select_object" select_key=select_key %}" method="POST">
     {% csrf_token %}
     <input type="submit" name="search_select" value="Select this story"></input>
     <input type="hidden" name="object_choice" value="story_{{ story.id }}"></input>
     </form>
-    <form action="{% url select_object select_key=select_key %}" method="POST">
+    <form action="{% url "select_object" select_key=select_key %}" method="POST">
     {% csrf_token %}
     <input type="submit" name="search_select" value="Select this issue"></input>
     <input type="hidden" name="object_choice" value="issue_{{ story.issue.id }}"></input>

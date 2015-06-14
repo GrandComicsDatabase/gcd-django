@@ -1,4 +1,5 @@
 {% load gcdtable %}
+{% load url from future %}
 
 <table border="1" class="status" id="key">
   <tr>
@@ -17,7 +18,7 @@
     </td>
     {% else %}
     <td class="scan_status_0">
-      <a href="{% url upload_cover issue_id=entry.id %}">{{ entry.issue_descriptor }}</a>
+      <a href="{% url "upload_cover" issue_id=entry.id %}">{{ entry.issue_descriptor }}</a>
     </td>
     {% endif %}
     {% if forloop.last %}
