@@ -1,4 +1,5 @@
 {% extends "mycomics/user_base.html" %}
+{% load url from future %}
 {% load i18n %}
 {% load collecting %}
 {% load bootstrap3 %}
@@ -7,7 +8,7 @@
   {% bootstrap_messages %}
   <div class="page-header middle-header">
     <h1>{% trans "Collection details" %}: {{ collection.name }}
-      <a href="{% url edit_collection collection.id %}">
+      <a href="{% url "edit_collection" collection.id %}">
         <button type="button" class="btn btn-primary pull-right">{% trans "Edit" %}
       </button></a>
     </h1>
@@ -18,7 +19,7 @@
       <h3>{% trans "Collections" %}:</h3>
       <div class="list-group">
         {% for col_item in collection_list %}
-          <a href="{% url view_collection col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
+          <a href="{% url "view_collection" col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
             {{ col_item.name }}</a>
         {% endfor %}
       </div>
@@ -31,7 +32,7 @@
       <div class="row">
         {% for item in items %}
           <div class="col-md-2">
-          <a href="{% url view_item item.id collection.id %}">
+          <a href="{% url "view_item" item.id collection.id %}">
             <div class="thumbnail">
               {{ item.issue|show_cover_tag }}
               <div class="caption">{{ item.issue.full_name }}</div>

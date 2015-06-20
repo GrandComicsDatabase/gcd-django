@@ -148,7 +148,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
         </div>
   {% if request.user.is_authenticated %}
           {{ issue|show_have_want:request.user }}
-        <form method="POST" action="{% url my_issue issue_id=issue.id %}">
+        <form method="POST" action="{% url "my_issue" issue_id=issue.id %}">
             {% csrf_token %}
           <div>
             <input type="submit" name="confirm_selection" value="Add">

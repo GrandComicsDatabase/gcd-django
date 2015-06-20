@@ -1,14 +1,15 @@
 {% load collecting %}
+{% load url from future %}
 
 <div class="panel panel-default">
   <div class="panel-heading"
-       onclick="window.location.href='{% url view_collection collection.id %}'">
+       onclick="window.location.href='{% url "view_collection" collection.id %}'">
     <h3 style="display: inline-block;">{{ collection.name }}</h3>
   </div>
   <div class="panel-body">
     <div class="btn-group pull-right">
       <button type="button" class="btn btn-primary btn-sm"
-              style="display: inline-block;" onclick="window.location.href='{% url edit_collection collection.id %}'">
+              style="display: inline-block;" onclick="window.location.href='{% url "edit_collection" collection.id %}'">
         <span class="glyphicon glyphicon-pencil"></span>
       </button>
       {% if not collection|is_default_collection %}
