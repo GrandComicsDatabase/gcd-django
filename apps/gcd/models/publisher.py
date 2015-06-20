@@ -24,8 +24,8 @@ class BasePublisher(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
-    year_began_uncertain = models.BooleanField(blank=True, db_index=True)
-    year_ended_uncertain = models.BooleanField(blank=True, db_index=True)
+    year_began_uncertain = models.BooleanField(default=False, db_index=True)
+    year_ended_uncertain = models.BooleanField(default=False, db_index=True)
     notes = models.TextField()
     keywords = TaggableManager()
     url = models.URLField(max_length=255, blank=True, default=u'')
@@ -64,7 +64,7 @@ class Publisher(BasePublisher):
 
     # Deprecated fields about relating publishers/imprints to each other
     # Probably can be removed from model definition
-    is_master = models.BooleanField(db_index=True)
+    is_master = models.BooleanField(default=False, db_index=True)
     parent = models.ForeignKey('self', null=True,
                                related_name='imprint_set')
 
@@ -145,7 +145,7 @@ class IndiciaPublisher(BasePublisher):
         app_label = 'gcd'
 
     parent = models.ForeignKey(Publisher)
-    is_surrogate = models.BooleanField(db_index=True)
+    is_surrogate = models.BooleanField(default=False, db_index=True)
     country = models.ForeignKey(Country)
 
     issue_count = models.IntegerField(default=0)
@@ -264,13 +264,13 @@ class BrandUse(models.Model):
 
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
-    year_began_uncertain = models.BooleanField(blank=True, db_index=True)
-    year_ended_uncertain = models.BooleanField(blank=True, db_index=True)
+    year_began_uncertain = models.BooleanField(default=False, db_index=True)
+    year_ended_uncertain = models.BooleanField(default=False, db_index=True)
 
     notes = models.TextField()
 
     # Fields related to change management.
-    reserved = models.BooleanField(default=0, db_index=True)
+    reserved = models.BooleanField(default=False, db_index=True)
     created = models.DateField(auto_now_add=True)
     modified = models.DateField(auto_now=True)
 

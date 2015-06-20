@@ -1,3 +1,5 @@
+{% load url from future %}
+
 <div id="front_page_content_inner">
 <div class="announcement">
 <h2>Willkommen bei der {{ site_name }}!</h2>
@@ -59,7 +61,7 @@ Wie alle weiterführenden Seiten sind auch die Seiten zur Registrierung, Datener
 bisher auf Englisch gehalten. Falls Fragen auftreten, neben dem <a href="http://groups.google.de/group/gcd-deutschland/">deutschsprachigen Email-Verteiler</a> kann man auch direkt per Email <a href="mailto:gcd-contact-de@comics.org">Kontakt</a> auf Deutsch aufnehmen.
 
   <dt>Titelbilder hinzufügen
-  <dd>Die vielleicht einfachste und schnellste Möglichkeit bei der GCD mitzuwirken ist es Titelbilder hochzuladen. Entweder sieht man die Lücken beim durchschauen der Webseite, oder sucht mit Hilfe der <a href="{% url apps.gcd.views.search.advanced_search %}">erweiterten Suche</a> nach benötigten Titelbilder, dort dafür 'Cover is Needed' anklicken. Bevor neue Titelbilder auf der Seite zu sehen sind müssen diese dann noch, wie alle Beiträge, von einem anderen GCD-Mitarbeiter freigeschaltet werden.
+  <dd>Die vielleicht einfachste und schnellste Möglichkeit bei der GCD mitzuwirken ist es Titelbilder hochzuladen. Entweder sieht man die Lücken beim durchschauen der Webseite, oder sucht mit Hilfe der <a href="{% url "apps.gcd.views.search.advanced_search" %}">erweiterten Suche</a> nach benötigten Titelbilder, dort dafür 'Cover is Needed' anklicken. Bevor neue Titelbilder auf der Seite zu sehen sind müssen diese dann noch, wie alle Beiträge, von einem anderen GCD-Mitarbeiter freigeschaltet werden.
 
   <dt>Informationen beitragen
   <dd>Fehlt ein Comic, eine Serie oder gar ein Verlag ? Willst du Informationen zu Autor, Zeichner, eine kurze Inhaltsangabe, die auftretenden Charaktere, ... eintragen ? Oder einfach nur einen nervigen Tippfehler korrigieren ?

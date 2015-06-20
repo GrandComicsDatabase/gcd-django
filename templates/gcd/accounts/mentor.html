@@ -1,4 +1,5 @@
 {% extends "gcd/base_view.html" %}
+{% load url from future %}
 
 {% load forms %}
 
@@ -13,7 +14,7 @@
 
 {% block view_body %}
 
-<p><a href="{% url mentoring %}">New Indexers Mentoring Overview</a></p> 
+<p><a href="{% url "mentoring" %}">New Indexers Mentoring Overview</a></p> 
 
 {% if indexer.mentor %}
   {% ifequal indexer.mentor user %}
@@ -27,7 +28,7 @@
   {% endifequal %}
 {% else %}
   {% if indexer.is_new %}
-    <form action="{% url mentor indexer_id=indexer.id %}" method="POST">
+    <form action="{% url "mentor" indexer_id=indexer.id %}" method="POST">
       {% csrf_token %}
       <input type="submit" value="Mentor this Indexer">
     </form>

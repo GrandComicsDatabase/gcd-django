@@ -1,12 +1,14 @@
 # Based on http://code.google.com/p/django-feedutil/ by Douglas Napoleone
 #
-import feedparser
+import facebook
 from time import mktime
 from datetime import datetime
 from django import template
 from django.conf import settings
 from django.core.cache import cache
-from django.template.defaultfilters import urlizetrunc
+from django.template.defaultfilters import urlizetrunc, linebreaksbr, urlize
+from django.utils.http import urlquote
+from django.utils.safestring import mark_safe
 
 def _getdefault(name, default=None):
     try:
@@ -22,29 +24,6 @@ FEEDUTIL_SUMMARY_HTML_WORDS =  _getdefault('FEEDUTIL_SUMMARY_HTML_WORDS', 25)
 
 register = template.Library()
 
-# some cleaning up of the content of an entry
-# text parsing is involved, can fail if facebook changes the way do things
-def rm_facebook_url(text):
-    found = True
-    # the URLs in the feed go via facebook, remove this redirect
-    while(found):
-        pos_first = text.find('<a href="http://l.facebook.com/l.php?u=')
-        if pos_first >= 0:
-            pos_second = pos_first \
-              + text[pos_first:].find('target="_blank">') \
-              + len('target="_blank">')
-            pos_third = pos_second + text[pos_second:].find('</a>')
-            text = text[:pos_first] \
-              + urlizetrunc(text[pos_second:pos_third], 75) \
-              + text[pos_third + 4:]
-        else:
-            found = False
-    text = text.replace('s130x130', 'p200x200', 1)
-    # some images have /v/ in them, there just the replace above is not enough
-    if text.find('/v/') >= 0:
-        text = text.replace('/v/', '/', 1)
-    return text
-
 def summarize(text):
     cleaned = template.defaultfilters.striptags(text)
     l = len(cleaned)
@@ -56,7 +35,20 @@ def summarize_html(text):
     return template.defaultfilters.truncatewords_html(text,
                             FEEDUTIL_SUMMARY_HTML_WORDS) + ' ...'
 
+def parse_comments(fb_comments):
+    # if we want to add comments from Facebook:
+    # a) add comments to fields in pull_feed
+    # b) add 'comments':
+    #    parse_comments(entry['comments']) if entry.has_key('comments') else ''
+    #    to an entry in posts
+    comments = ''
+    for comment in fb_comments['data']:
+        comments += comment['message'] + '<br>'
+    return mark_safe(comments)
+
 def pull_feed(feed_url, posts_to_show=None, cache_expires=None):
+    if not hasattr(settings, 'FB_API_ACCESS_TOKEN'):
+        return []
     if posts_to_show is None: posts_to_show = FEEDUTIL_NUM_POSTS
     if cache_expires is None: cache_expires = FEEDUTIL_CACHE_MIN
     cachename = 'feed_cache_' + template.defaultfilters.slugify(feed_url)
@@ -67,25 +59,22 @@ def pull_feed(feed_url, posts_to_show=None, cache_expires=None):
     if data is None:
         # load feed
         try:
-            feed = feedparser.parse(feed_url)
-            entries = feed['entries']
+            graph = facebook.GraphAPI(access_token=settings.FB_API_ACCESS_TOKEN)
+            json_posts = graph.request('/GrandComicsDatabase/posts',
+              args={'fields': 'full_picture, link, message', 'limit': 10})
+            entries = json_posts.items()[1][1]
             if posts_to_show > 0 and len(entries) > posts_to_show:
                entries = entries[:posts_to_show]
             posts = [ {
-                'title': entry.title,
-                'author': entry.author if entry.has_key('author') else '',
-                'summary': summarize(entry.summary \
-                  if entry.has_key('summary') else entry.content[0]['value']),
-                'summary_html': summarize_html(entry.description if \
-                  entry.has_key('description') else entry.content[0]['value']),
-                'content': rm_facebook_url(entry.description) \
-                  if entry.has_key('description') \
-                  else rm_facebook_url(entry.content[0]['value']),
-                'url': entry.link,
-                'comments': entry.comments if entry.has_key('comments') else '',
-                'published': datetime.fromtimestamp(mktime(entry.published_parsed)) \
-                  if entry.has_key('published_parsed') else '', }
-              for entry in entries ]
+                'author': 'Grand Comics Database',
+                'mail_body': urlquote(entry['message']),
+                'mail_subject': urlquote('From the %s' % settings.SITE_NAME),
+                'summary_html': summarize_html(entry['message']),
+                'content': linebreaksbr(urlizetrunc(entry['message'], 75)),
+                'url': entry['link'],
+                'picture': entry['full_picture'],
+                'published': entry['created_time'], }
+              for entry in entries if entry.has_key('message') ]
         except:
             if settings.DEBUG:
                 raise

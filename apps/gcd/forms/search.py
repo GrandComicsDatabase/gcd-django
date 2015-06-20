@@ -114,8 +114,8 @@ class AdvancedSearch(forms.Form):
                                   required=False)
     series_year_began = forms.IntegerField(required=False, 
                                            label='Series Year Began')
-    is_comics = forms.NullBooleanField(label="More than 50% comics",
-      required=False,
+    is_comics = forms.NullBooleanField(label="Comics Publication, "
+      "i.e. 50+x% comics", required=False,
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
@@ -132,8 +132,17 @@ class AdvancedSearch(forms.Form):
     volume = forms.CharField(label='Volume', required=False)
     issue_title = forms.CharField(label='Title', required=False)
     variant_name = forms.CharField(label='Variant Name', required=False)
+    is_variant = forms.NullBooleanField(label='Is a Variant', required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
     price = forms.CharField(required=False)
     issue_pages = forms.CharField(label='Issue Pages', required=False)
+    issue_pages_uncertain = forms.NullBooleanField(\
+      label='Page count uncertain', required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
     issue_notes = forms.CharField(label='Issue Notes', required=False)
     issue_editing = forms.CharField(label='Issue Editing', required=False)
     issue_date = forms.CharField(label='Cover Date', required=False)
@@ -174,6 +183,11 @@ class AdvancedSearch(forms.Form):
 
     title = forms.CharField(required=False)
     pages = forms.CharField(required=False)
+    pages_uncertain = forms.NullBooleanField(label='Page count uncertain',
+      required=False,
+      widget=forms.Select(choices=((None, ""),
+                                   (True, "yes"),
+                                   (False, "no"))))
 
     script = forms.CharField(required=False)
     pencils = forms.CharField(required=False)

@@ -14,6 +14,32 @@ This file assumes that you're cloning the "master" branch from github.
 If you want to run the current production branch, please inquire
 as to which branch is current at http://groups.google.com/group/gcd-tech/
 
+***********************************************
+IMPORTANT NOTE FOR Mac OS X 10.8 Mountain Lion:
+***********************************************
+
+You may see an error such as this while compiling, particularly when pip
+installing packages that need compiled extensions:
+
+    clang: error: unknown argument: '-mno-fused-madd' [-Wunused-command-line-argument-hard-error-in-future]
+    clang: note: this will be a hard error (cannot be downgraded to a warning) in the future
+    error: command 'clang' failed with exit status 1
+ 
+To work around this, do the following:
+
+    bash$ export CFLAGS=-Qunused-arguments
+    bash$ export CPPFLAGS=-Qunused-arguments
+
+The bugs that caused this have been fixed in OS X 10.9 Mavericks and later.
+
+See
+http://stackoverflow.com/questions/22313407/clang-error-unknown-argument-mno-fused-madd-python-package-installation-fa
+for more information
+
+************************************
+END Mac OS X 10.8 Mountain Lion NOTE
+************************************
+
 To run:
 
 0.  You'll need Python.  We are currently using Python 2.7.
@@ -43,6 +69,10 @@ default-storage-engine = InnoDB
 These settings will save you from accidentally not using foreign keys or
 transactions, or from trying to stuff unicode into an 8-bit character set.
 None of those are fun to debug or recover from.
+
+Note that MySQL may not create an /etc/my.cnf during installation
+(for instance on Mac OS X Mountain Lion).  Just create one yourself with these
+two lines in it.
 
 If installing using Linux packages of some sort and also using pip/virtualenv
 for Python libraries as described below, you will also need

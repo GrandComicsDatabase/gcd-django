@@ -14,7 +14,7 @@ class Error(models.Model):
     error_key = models.CharField(primary_key=True, max_length=40, editable=False)
     error_text = models.TextField(null=True, blank=True)
 
-    is_safe = models.BooleanField()
+    is_safe = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.error_text

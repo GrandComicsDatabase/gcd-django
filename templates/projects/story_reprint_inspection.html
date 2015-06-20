@@ -1,5 +1,6 @@
 {% extends "gcd/search/base_list.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
@@ -39,7 +40,7 @@
 <p class="imp_in_use">
 </p>
 
-<form id="imp_in_use_form" action={% url story_reprint_inspection %} method="GET">
+<form id="imp_in_use_form" action={% url "story_reprint_inspection" %} method="GET">
   {% csrf_token %}
   <table>
     {{ form.as_table }}

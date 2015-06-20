@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, url
 from apps.select import views as select_views
 
 urlpatterns = patterns('',

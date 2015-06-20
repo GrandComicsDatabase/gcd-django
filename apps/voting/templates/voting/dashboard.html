@@ -1,4 +1,5 @@
 {% extends "voting/base_view.html" %}
+{% load url from future %}
 
 {% block title %} GCD :: Voting {% endblock %}
 
@@ -27,7 +28,7 @@ a ballot you can't vote on.
   </tr>
 {% for topic in pending_topics %}
   <tr>
-    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
     <td> {{ topic.agenda }} </td>
     <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
     <td> awaiting your vote </td>
@@ -39,7 +40,7 @@ a ballot you can't vote on.
 {% endfor %}
 {% for topic in voted_topics %}
   <tr>
-    <td> <a href="{% url ballot id=topic.id %}">{{ topic }}</a> </td>
+    <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
     <td> {{ topic.agenda }} </td>
     <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
     <td> vote received </td>
@@ -50,7 +51,7 @@ a ballot you can't vote on.
 <h2>Agendas</h2>
 <ul>
 {% for agenda in agendas %}
-  <li> <a href="{% url agenda id=agenda.id %}">{{ agenda }}</a>
+  <li> <a href="{% url "agenda" id=agenda.id %}">{{ agenda }}</a>
 {% empty %}
   <li> There are no active agendas at this time.
 {% endfor %}

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, url
 from django.conf import settings
-from django.views.generic.simple import direct_to_template
+from django.views.generic import base as bv
 from haystack.forms import FacetedSearchForm
 from haystack.views import search_view_factory
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
@@ -240,8 +240,8 @@ urlpatterns = patterns('',
     # calendar
     (r'^agenda/(?P<language>.+)/$','apps.gcd.views.details.agenda'),
     (r'^agenda/','apps.gcd.views.details.agenda', {'language' : 'en'}),
-    (r'^calendar/$', direct_to_template,
-        { 'template': 'gcd/status/calendar.html' }),
+    (r'^calendar/$',
+     bv.TemplateView.as_view(template_name='gcd/status/calendar.html')),
 
     # admin tools
     (r'^countries/$','apps.gcd.views.details.countries_in_use'),
@@ -268,19 +268,21 @@ urlpatterns += patterns('haystack.views',
                             name='haystack_search'),
 )
 
-urlpatterns += patterns('django.views.generic.simple',
-    (r'^international_stats/$', 'redirect_to',
-      {'url' : '/international_stats_language/' }),
-    ('^covers_for_replacement.lasso/$', 'redirect_to',
-      {'url' : '/covers_to_replace/' }),
-    ('^index.lasso/$', 'redirect_to', {'url' : '/' }),
-    ('^donate.lasso/$', 'redirect_to', {'url' : '/donate/' }),
-    (r'^graphics/covers/', 'redirect_to', {'url' : None}),
-    ('^coversubmit/index.lasso/$', 'redirect_to', {'url' : None}),
+urlpatterns += patterns('',
+    (r'^international_stats/$',
+     bv.RedirectView.as_view(url='/international_stats_language/')),
+    ('^covers_for_replacement.lasso/$',
+      bv.RedirectView.as_view(url='/covers_to_replace/')),
+    ('^index.lasso/$', bv.RedirectView.as_view(url='/')),
+    ('^donate.lasso/$', bv.RedirectView.as_view(url='/donate/')),
+    (r'^graphics/covers/', bv.RedirectView.as_view(url=None)),
+    ('^coversubmit/index.lasso/$', bv.RedirectView.as_view(url=None)),
     (r'^creator_checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
-      'redirect_to', {'url': '/checklist/name/%(creator)s/country/%(country)s/'}),
+      bv.RedirectView.as_view(
+        url='/checklist/name/%(creator)s/country/%(country)s/')),
     (r'^creator_checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
-      'redirect_to', {'url': '/checklist/name/%(creator)s/language/%(language)s/'}),
+      bv.RedirectView.as_view(
+        url='/checklist/name/%(creator)s/language/%(language)s/')),
     (r'^creator_checklist/name/(?P<creator>.+)/$',
-      'redirect_to', {'url': '/checklist/name/%(creator)s/'})
+      bv.RedirectView.as_view(url='/checklist/name/%(creator)s/'))
 )

@@ -1,8 +1,11 @@
 {% for post in posts %}
 <div class="feed-post">
-{{ post.content|safe }}
-<a href="{{ post.url }}" title="{{ post.title|escape }}"><img alt="comment on facebook" src="{{ MEDIA_URL }}/img/gcd/social/facebook_32.png"></a>
-<a href="https://plus.google.com/114804467432159116851"><img alt="google+" src="{{ MEDIA_URL }}/img/gcd/social/google_plus_32.png"></a>
+{{ post.content }}
+</p>
+<img width="150px" src="{{ post.picture }}">
+<a href="{{ post.url }}"><img alt="comment on facebook" src="{{ MEDIA_URL }}/img/gcd/social/facebook_32.png"></a>
+<a href="https://plus.google.com/+GrandComicsDatabase"><img alt="google+" src="{{ MEDIA_URL }}/img/gcd/social/google_plus_32.png"></a>
+<a href="mailto:?body={{ post.mail_body }}&subject={{ post.mail_subject }}"><img alt="email" src="{{ MEDIA_URL }}/img/gcd/social/email_32.png"></a>
 </div>
 <hr class="feed-post">
 {% endfor %}

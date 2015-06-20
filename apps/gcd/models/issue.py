@@ -65,7 +65,7 @@ class Issue(models.Model):
     publication_date = models.CharField(max_length=255)
     key_date = models.CharField(max_length=10, db_index=True)
     on_sale_date = models.CharField(max_length=10, db_index=True)
-    on_sale_date_uncertain = models.BooleanField(blank=True)
+    on_sale_date_uncertain = models.BooleanField(default=False)
     sort_code = models.IntegerField(db_index=True)
     indicia_frequency = models.CharField(max_length=255)
     no_indicia_frequency = models.BooleanField(default=False, db_index=True)

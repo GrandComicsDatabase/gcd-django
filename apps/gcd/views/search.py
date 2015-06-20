@@ -17,7 +17,6 @@ from django.shortcuts import render_to_response, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
 from django.core import urlresolvers
-from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 from django.utils.http import urlquote
 
@@ -1090,6 +1089,11 @@ def search_issues(data, op, stories_q=None):
     if data['variant_name']:
         q_objs.append(Q(**{ '%svariant_name__%s' % (prefix, op): \
                         data['variant_name'] }))
+    if data['is_variant'] is not None:
+        if data['is_variant'] is True:
+            q_objs.append(~Q(**{ '%svariant_of' % prefix: None }))
+        else:
+            q_objs.append(Q(**{ '%svariant_of' % prefix: None }))
     if data['issue_date']:
         q_objs.append(
           Q(**{ '%spublication_date__%s' % (prefix, op): data['issue_date'] }))
@@ -1162,6 +1166,9 @@ def search_issues(data, op, stories_q=None):
     except ValueError:
         raise SearchError, ("Page count must be a decimal number or a pair of "
                             "decimal numbers separated by a hyphen.")
+    if data['issue_pages_uncertain'] is not None:
+        q_objs.append(Q(**{ '%spage_count_uncertain' % \
+                            prefix: data['issue_pages_uncertain'] }))
 
     # issue_editing is handled in search_stories since it is a credit
     # need to account for that here
@@ -1265,10 +1272,13 @@ def search_stories(data, op):
             else:
                 q_and_only.append(Q(**{ '%spage_count' % prefix:
                                         Decimal(data['pages']) }))
-
     except ValueError:
         raise SearchError, ("Page count must be a decimal number or a pair of "
                             "decimal numbers separated by a hyphen.")
+
+    if data['pages_uncertain'] is not None:
+        q_objs.append(Q(**{ '%spage_count_uncertain' % \
+                            prefix: data['pages_uncertain'] }))
 
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))

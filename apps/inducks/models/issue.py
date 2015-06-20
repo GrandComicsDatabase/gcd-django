@@ -24,7 +24,7 @@ class Issue(models.Model):
                                         db_column = 'oldestdate',
                                         null = True)
     price = models.CharField(max_length = 100, db_column = 'price', null = True)
-    fully_indexed = models.BooleanField(db_column = 'fullyindexed')
+    fully_indexed = models.BooleanField(default = False, db_column = 'fullyindexed')
     error_message = models.TextField(db_column = 'errormessage', null = True)
     page_count = models.CharField(max_length = 100, db_column = 'pages', 
                                     null = True)

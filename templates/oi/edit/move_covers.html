@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load credits %}
 {% load display %}
 
@@ -33,11 +34,11 @@ Move Covers :: {{ issue }}
 Zoom:
 <a href="{{ issue.get_absolute_url }}cover/4">Large</a><br>
   {% if pending %}
-<a href="{% url compare id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
+<a href="{% url "compare" id=cover.revisions.active.changeset.id %}">Cover changes pending</a>
   {% else %}
     {% if cover.deletable %}
 <div>
-  <form action="{% url move_cover id=changeset.id, cover_id=cover.id %}" method="POST">
+  <form action="{% url "move_cover" id=changeset.id cover_id=cover.id %}" method="POST">
     {% csrf_token %}
     <input type="submit" value="Move cover">
   </form>

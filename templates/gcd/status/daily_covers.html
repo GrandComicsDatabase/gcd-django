@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 
@@ -16,9 +17,9 @@
 <div class="left">
   {% trans "Covers for "%}{{ date }}
 </div>
-{% url apps.gcd.views.details.daily_covers as choose_url%}
-{% url apps.gcd.views.details.daily_covers show_date=date_before as choose_url_before %}
-{% url apps.gcd.views.details.daily_covers show_date=date_after as choose_url_after %}
+{% url "apps.gcd.views.details.daily_covers" as choose_url%}
+{% url "apps.gcd.views.details.daily_covers" show_date=date_before as choose_url_before %}
+{% url "apps.gcd.views.details.daily_covers" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 
@@ -46,7 +47,7 @@
         {% if issue.publication_date %}
         <span class="cover_date">{{ issue.publication_date }}</span><br>
         {% endif %}
-        <a href="{% url edit_covers issue_id=cover.issue.id %}">Add/replace cover</a>
+        <a href="{% url "edit_covers" issue_id=cover.issue.id %}">Add/replace cover</a>
       </div>
     </td>
     {% if forloop.counter|divisibleby:table_width %}
@@ -61,9 +62,9 @@
 <div class="left">
   {% trans "Covers for "%}{{ date }}
 </div>
-{% url apps.gcd.views.details.daily_covers as choose_url%}
-{% url apps.gcd.views.details.daily_covers show_date=date_before as choose_url_before %}
-{% url apps.gcd.views.details.daily_covers show_date=date_after as choose_url_after %}
+{% url "apps.gcd.views.details.daily_covers" as choose_url%}
+{% url "apps.gcd.views.details.daily_covers" show_date=date_before as choose_url_before %}
+{% url "apps.gcd.views.details.daily_covers" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 <div id="item_id_footer" class="item_id">

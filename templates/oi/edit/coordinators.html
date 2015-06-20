@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% block title %}
 GCD :: Clearing Reservations
 {% endblock %}
@@ -14,10 +15,10 @@ GCD :: Clearing Reservations
 {% block view_body %}
 
 <p>
-<a href="{% url clear_publisher_series %}">Clearing reservation of publishers and series (older than one week)</a>
+<a href="{% url "clear_publisher_series" %}">Clearing reservation of publishers and series (older than one week)</a>
 </p>
 <p>
-<a href="{% url clear_issues %}">Clearing reservation of issues, discard cover uploads in editing state (older than nine weeks)</a>
+<a href="{% url "clear_issues" %}">Clearing reservation of issues, discard cover uploads in editing state (older than nine weeks)</a>
 </p>
 {% endblock %}
 

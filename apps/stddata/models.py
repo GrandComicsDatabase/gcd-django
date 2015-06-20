@@ -16,7 +16,7 @@ class Currency(models.Model):
         unique=True)
     name = models.CharField(blank=False, null=False, max_length=100,
         db_index=True)
-    is_decimal = models.BooleanField(blank=False, default=True)
+    is_decimal = models.BooleanField(default=True)
 
     def natural_key(self):
         return (self.code,)

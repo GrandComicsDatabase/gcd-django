@@ -5,7 +5,11 @@ from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.templatetags.display import absolute_url, field_name, sum_page_counts
+from stdnum import ean as stdean
+
+from apps.gcd.templatetags.display import absolute_url, field_name, \
+                                          sum_page_counts, show_barcode, \
+                                          show_isbn
 from apps.gcd.templatetags.credits import format_page_count, split_reprint_string
 
 from apps.oi import states
@@ -16,13 +20,7 @@ register = template.Library()
 
 def valid_barcode(barcode):
     '''
-    validates a barcode
-    - ignore the check digit
-    - count from right to left
-    - add odd numbered times 3
-    - add even numbered
-    - 10 - (result modulo 10) is check digit
-    - check digit of 10 becomes 0
+    validates a barcode with stdnum
     '''
 
     # remove space and hyphens
@@ -32,33 +30,14 @@ def valid_barcode(barcode):
     except ValueError:
         return False
 
-    # if extra 5 digits remove them (EAN 5)
     if len(barcode) > 16:
+        # if extra 5 digits remove them (EAN 5)
         barcode = barcode[:-5]
     elif len(barcode) > 13:
         # if extra 2 digits remove them (EAN 2)
         barcode = barcode[:-2]
 
-    if len(barcode) not in (13, 12, 8):
-        return False
-
-    odd = True
-    check_sum = 0
-    # odd/even from back
-    for number in barcode[:-1][::-1]:
-        if odd:
-            check_sum += int(number)*3
-        else:
-            check_sum += int(number)
-        odd = not odd
-
-    check_digit = 10 - (check_sum % 10)
-    if check_digit == 10:
-        check_digit = 0
-    if int(barcode[-1]) == check_digit:
-        return True
-    else:
-        return False
+    return stdean.is_valid(barcode)
 
 # check to return True for yellow css compare highlighting
 def check_changed(changed, field):
@@ -146,9 +125,9 @@ def field_value(revision, field):
     elif field == 'isbn':
         if value:
             if validated_isbn(value):
-                return u'%s (note: valid ISBN)' % value
+                return u'%s (note: valid ISBN)' % show_isbn(value)
             elif len(value.split(';')) > 1:
-                return_val = value + ' (note: '
+                return_val = show_isbn(value) + ' (note: '
                 for isbn in value.split(';'):
                     return_val = return_val + u'%s; ' % ("valid ISBN" \
                                    if validated_isbn(isbn) else "invalid ISBN")
@@ -158,11 +137,11 @@ def field_value(revision, field):
     elif field == 'barcode':
         if value:
             barcodes = value.split(';')
-            return_val = value + ' (note: '
+            return_val = show_barcode(value) + ' (note: '
             for barcode in barcodes:
-                return_val = return_val + u'%s; ' % ("valid UPC/EAN" \
+                return_val = return_val + u'%s; ' % ("valid UPC/EAN part" \
                              if valid_barcode(barcode) \
-                             else "invalid UPC/EAN or non-standard")
+                             else "invalid UPC/EAN part or non-standard")
             return return_val[:-2] + ')'
     elif field == 'leading_article':
         if value == True:
@@ -188,9 +167,12 @@ def field_value(revision, field):
             if revision.changed[field] and value == True:
                  if revision.series:
                      value_count = revision.series.active_base_issues().count()
-                     if value_count:
+                     if value_count != 1:
                         return 'Yes (note: the series has %d issue%s)' % \
                                 (value_count, pluralize(value_count))
+                     elif revision.series.active_issues()\
+                                  .exclude(indicia_frequency='').count():
+                        return 'Yes (note: the issue has an indicia frequency)'
         return yesno(value, 'Yes,No')
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string

@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load url from future %}
 
 {% load display %}
 {% load editing %}
@@ -46,9 +47,9 @@ the following issues (links open in new windows):
   <td> {{ issue.volume }}
   <td> {{ issue.number }}
   <td> {{ issue.display_number }}
-  <td> <a class="new_window" href="{% url preview_revision model_name=model_name,id=issue.id %}" target=_blank>Preview</a>
+  <td> <a class="new_window" href="{% url "preview_revision" model_name=model_name id=issue.id %}" target=_blank>Preview</a>
     {% if changeset.state = states.APPROVED %}
-  <td> {% if issue.posterior %}<a href="{% url compare id=issue.posterior.changeset.id %}?collapse=1"> Next Change ({{ issue.posterior.modified|date:"Y-m-d" }}) {% endif %} </a>
+  <td> {% if issue.posterior %}<a href="{% url "compare" id=issue.posterior.changeset.id %}?collapse=1"> Next Change ({{ issue.posterior.modified|date:"Y-m-d" }}) {% endif %} </a>
     {% endif %}
 </tr>
   {% endfor %}
@@ -60,7 +61,7 @@ that publication date, key date and notes will always be blank.
 </p>
 {% else %}
 the following issue:
-<a class="new_window" href="{% url preview_revision model_name=model_name,id=revision.id %}" target=_blank>Preview</a>
+<a class="new_window" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview</a>
 {% endif %}
 {% if revision.variant_of %}
   {% include 'oi/bits/compare_variant_issue.html' %}
