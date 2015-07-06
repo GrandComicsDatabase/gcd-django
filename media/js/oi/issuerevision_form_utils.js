@@ -50,6 +50,39 @@ function checkMonth(str) {
     return 0;
 }
 
+// Try to parse a Japanese date in the form [reign]YYYY年[MM月[DD日]]
+function parseJpDate(str) {
+    var re = /(平成|昭和|大正|明治)?\s*(\d{1,4})年\s*(?:(\d{1,2})月\s*(?:(\d{1,2})日)?)?/;
+    var match = str.match(re);
+    var date = { year: 0, month: 0, day: 0 };
+    var reignOffset = {
+        '平成': 1988, // Heisei 1989–present
+        '昭和': 1925, // Shōwa  1926–1989
+        '大正': 1911, // Taishō 1912–1926
+        '明治': 1867, // Meiji  1868–1912
+    };
+
+    if (match) {
+        if (match[2]) {
+            // year found
+            date.year = parseInt(match[2], 10);
+            if (match[1]) {
+                // reign found (traditional date)
+                date.year += reignOffset[match[1]];
+            }
+            if (match[3] && match[3] >= 1 && match[3] <= 12) {
+                // month found
+                date.month = match[3];
+                if (match[4]) {
+                    // day found
+                    date.day = match[4];
+                }
+            }
+        }
+    }
+    return date;
+}
+
 // Zero-pad integers up to four digits long
 function pad(n, len) {
     var s = n.toString();
@@ -141,6 +174,12 @@ function parsePubDate(pubDate) {
         day = 0,
         tmpMonth,
         parts = pubDate.split(/(\s|[[{}(),?']|]|-|\.)+/g);
+
+    // Check for Japanese date
+    var jpDate = parseJpDate(pubDate);
+    if (jpDate.year) {
+        return jpDate;
+    }
 
     // Check each part for the presense of a year, day or month
     $.each(parts, function () {
