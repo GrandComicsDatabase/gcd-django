@@ -7,6 +7,7 @@ from series import Series
 from issue import Issue
 
 STORY_TYPES = {
+    'insert': 11,
     'promo': 16,
     'soo': 22,
     'blank': 24,
