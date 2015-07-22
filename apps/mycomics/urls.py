@@ -40,7 +40,21 @@ urlpatterns = patterns('',
     url(r'^mycomics_search/$',
       mycomics_views.mycomics_search, name='mycomics_search'),
 
-    url(r'message/$', mycomics_views.display_message, name='display_message'),
+    url(r'^message/$', mycomics_views.display_message, name='display_message'),
 
-    url(r'settings/$', mycomics_views.settings, name='settings'),
+    url(r'^settings/$', mycomics_views.settings, name='settings'),
+
+    url(r'^location/edit/(?P<id>\d+)$', mycomics_views.edit_location,
+        name='edit_location'),
+    url(r'^location/edit/$', mycomics_views.edit_location,
+        name='edit_location'),
+    url(r'^purchase_location/edit/$', mycomics_views.edit_purchase_location,
+        name='edit_purchase_location'),
+    url(r'^purchase_location/edit/(?P<id>\d+)$',
+        mycomics_views.edit_purchase_location, name='edit_purchase_location'),
+    url(r'^location/delete/(?:(?P<location_id>\d+)?)$',
+        mycomics_views.delete_location, name='delete_location'),
+    url(r'^purchase_location/delete/(?:(?P<location_id>\d+)?)$',
+        mycomics_views.delete_purchase_location,
+        name='delete_purchase_location'),
 )

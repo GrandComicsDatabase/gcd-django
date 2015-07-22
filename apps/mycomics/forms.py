@@ -21,6 +21,18 @@ class CollectionForm(ModelForm):
         exclude = ('collector')
 
 
+class LocationForm(ModelForm):
+    class Meta:
+        model = Location
+        exclude = ('user')
+
+
+class PurchaseLocationForm(ModelForm):
+    class Meta:
+        model = PurchaseLocation
+        exclude = ('user')
+
+
 class CollectionItemForm(ModelForm):
     class Meta:
         model = CollectionItem

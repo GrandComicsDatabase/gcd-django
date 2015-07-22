@@ -359,16 +359,72 @@ def settings(request):
     this form.
     """
     if request.method == 'POST':
-        form = CollectorForm(request.user.collector, request.POST)
-        if form.is_valid():
-            form.save()
+        settings_form = CollectorForm(request.user.collector, request.POST)
+        if settings_form.is_valid():
+            settings_form.save()
             messages.success(request, _('Settings saved.'))
             return HttpResponseRedirect(
                 urlresolvers.reverse('settings'))
     else:
-        form = CollectorForm(request.user.collector)
+        settings_form = CollectorForm(request.user.collector)
 
-    return render_to_response(SETTINGS_TEMPLATE, {'form' : form},
+    location_form = LocationForm(instance=Location(user=request.user.collector))
+    purchase_location_form = PurchaseLocationForm(
+        instance=PurchaseLocation(user=request.user.collector))
+    locations = Location.objects.filter(user=request.user.collector)
+    purchase_locations = PurchaseLocation.objects.filter(
+        user=request.user.collector)
+
+    return render_to_response(SETTINGS_TEMPLATE,
+                              {'settings_form' : settings_form,
+                               'location_form' : location_form,
+                               'purchase_location_form' : purchase_location_form,
+                               'locations' : locations,
+                               'purchase_locations' : purchase_locations},
                               context_instance=RequestContext(request))
 
+
+def _edit_location(request, location_class, location_form_class, location_id):
+    if location_id:
+        location = get_object_or_404(location_class, id=location_id,
+                                     user=request.user.collector)
+    else:
+        location = location_class(user=request.user.collector)
+    form = location_form_class(request.POST, instance=location)
+    if form.is_valid():
+        form.save()
+        messages.success(request, _('Location saved.'))
+    else:
+        #Since there is no real validation, this should't happen anyway
+        messages.error(_('Entered data was incorrect.'))
+
+    return HttpResponseRedirect(urlresolvers.reverse('settings'))
+
+
+@login_required
+def edit_location(request, id=None):
+    return _edit_location(request, Location, LocationForm, id)
+
+
+@login_required
+def edit_purchase_location(request, id=None):
+    return _edit_location(request, PurchaseLocation, PurchaseLocationForm, id)
+
+
+def _delete_location(request, location_class, location_id):
+    location = get_object_or_404(location_class, id=location_id,
+                                 user=request.user.collector)
+    location.delete()
+    messages.success(request, _('Location deleted.'))
+    return HttpResponseRedirect(urlresolvers.reverse('settings'))
+
+
+@login_required
+def delete_location(request, location_id):
+    return _delete_location(request, Location, location_id)
+
+
+@login_required
+def delete_purchase_location(request, location_id):
+    return _delete_location(request, PurchaseLocation, location_id)
 

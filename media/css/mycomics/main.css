@@ -41,3 +41,7 @@
 .page-header button.pull-right {
     margin-right: 10px;
 }
+
+.warning-sign {
+    color: red;
+}

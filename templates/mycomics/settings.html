@@ -2,17 +2,178 @@
 {% load i18n %}
 {% load bootstrap3 %}
 
+{% block modals %}
+  <script type="application/javascript">
+    var selected_location;
+  </script>
+  <div id="remove-location" class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" onclick="$('.removal_warning').hide()"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+          <h4 class="modal-title">{% trans "Remove Location" %}</h4>
+        </div>
+        <div class="modal-body">
+          <p>{% trans "Do you want to remove this location?" %}</p>
+          <p class="removal_warning" style="display: none"><span class="glyphicon glyphicon-exclamation-sign warning-sign"></span> {% trans "This location is selected for some of your items." %}</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.removal_warning').hide()">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url delete_location %}'+selected_location">{% trans "Confirm" %}</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  <div id="remove-purchase-location" class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" onclick="$('.removal_warning').hide()"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+          <h4 class="modal-title">{% trans "Remove Location" %}</h4>
+        </div>
+        <div class="modal-body">
+          <p>{% trans "Do you want to remove this purchase location?" %}</p>
+          <p class="removal_warning" style="display: none"><span class="glyphicon glyphicon-exclamation-sign warning-sign"></span> {% trans "This location is selected for some of your items." %}</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.removal_warning').hide()">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url delete_purchase_location %}'+selected_location">{% trans "Confirm" %}</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  <div id="edit-location" class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+          <h4 class="modal-title">{% trans "Edit Location" %}</h4>
+        </div>
+        <div class="modal-body">
+          <form id="editLocation" action="{% url edit_location %}" method="POST">
+            {% csrf_token %}
+            {% bootstrap_form location_form %}
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary" onclick="$('#editLocation').submit()">{% trans "Confirm" %}</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  <div id="edit-purchase-location" class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+          <h4 class="modal-title">{% trans "Edit Purchase Location" %}</h4>
+        </div>
+        <div class="modal-body">
+          <form id="editPurchaseLocation" action="{% url edit_purchase_location %}" method="POST">
+            {% csrf_token %}
+            {% bootstrap_form purchase_location_form %}
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary" onclick="$('#editPurchaseLocation').submit()">{% trans "Confirm" %}</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+{% endblock %}
+
 {% block content %}
+
+  <script type="application/javascript">
+    $().ready(function() {
+      document.forms['editLocation'].originalAction = document.forms['editLocation'].action;
+      document.forms['editPurchaseLocation'].originalAction = document.forms['editPurchaseLocation'].action;
+    });
+    var locations = [];
+    var purchase_locations = [];
+    {% for location in locations %}
+        locations[{{ location.id }}] = {name: "{{ location.name }}",
+                                        description: "{{ location.description }}"}
+    {% endfor %}
+    {% for plocation in purchase_locations %}
+      purchase_locations[{{ plocation.id }}] = {name: "{{ plocation.name }}",
+        description: "{{ plocation.descrption }}"}
+    {% endfor %}
+    var set_location_for_edit = function(form, id, list){
+      if (id) {
+        form.action = form.originalAction+id;
+        form.elements['name'].value = list[id].name;
+        form.elements['description'].value = list[id].description;
+      } else {
+        form.action = form.originalAction;
+        form.elements['name'].value = '';
+        form.elements['description'].value = '';
+      }
+    }
+  </script>
 
   {% bootstrap_messages %}
   <div class="page-header middle-header">
     <h1>{% trans "Settings" %}</h1>
   </div>
 
-  <form action="." method="POST">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-    <input type="submit" class="btn btn-primary" name="{% trans "Submit" %}" value="{% trans "Submit" %}">
-  </form>
+  <div class="row">
+    <div class="col-md-6">
+      <form action="." method="POST">
+        {% csrf_token %}
+        {% bootstrap_form settings_form %}
+        <input type="submit" class="btn btn-primary" name="{% trans "Submit" %}" value="{% trans "Submit" %}">
+      </form>
+    </div>
+    <div class="col-md-6">
+          <h2>{% trans "Locations" %}
+            <button class="btn btn-primary pull-right" type="button"
+                    data-toggle="modal" href="#edit-location" onclick="set_location_for_edit(document.forms['editLocation'])">
+              {% trans "Add" %}
+            </button>
+          </h2>
+      <ul class="list-group">
+        {% for location in locations %}
+          <li class="list-group-item">{{ location.name }}
+              <span class="pull-right">
+                <button type="button" class="btn btn-primary btn-xs"
+                        data-toggle="modal" href="#edit-location"
+                        onclick="set_location_for_edit(document.forms['editLocation'], {{ location.id }}, locations)">
+                  {% trans "Edit" %}</button>
+                <button type="button" class="btn {% if location.items.all %}btn-warning{% else %}btn-primary{% endif %} btn-xs"
+                        data-toggle="modal" href="#remove-location" onclick="selected_location={{ location.id }}
+                    {% if location.items.all %}; $('.removal_warning').show(){% endif %}">
+                  {% trans "Delete" %}</button>
+              </span>
+          </li>
+        {% endfor %}
+      </ul>
+      <hr>
+          <h2>{% trans "Purchase Locations" %}
+            <button class="btn btn-primary pull-right" type="button"
+                    data-toggle="modal" href="#edit-purchase-location" onclick="set_location_for_edit(document.forms['editPurchaseLocation'])">
+              {% trans "Add" %}
+            </button>
+          </h2>
+      <ul class="list-group">
+        {% for plocation in purchase_locations %}
+          <li class="list-group-item">{{ plocation.name }}
+              <span class="pull-right">
+                <button type="button" class="btn btn-primary btn-xs"
+                        data-toggle="modal" href="#edit-purchase-location"
+                        onclick="set_location_for_edit(document.forms['editPurchaseLocation'], {{ plocation.id }}, purchase_locations)">
+                  {% trans "Edit" %}</button>
+                <button type="button" class="btn {% if plocation.items.all %}btn-warning{% else %}btn-primary{% endif %} btn-xs"
+                        data-toggle="modal" href="#remove-purchase-location" onclick="selected_location={{ plocation.id }}
+                    {% if plocation.items.all %}; $('.removal_warning').show(){% endif %}">
+                  {% trans "Delete" %}</button>
+              </span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    </div>
 
 {% endblock %}

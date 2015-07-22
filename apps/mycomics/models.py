@@ -124,9 +124,12 @@ class CollectionItem(models.Model):
                                 db_table="mycomics_collection_item_collections")
     issue = models.ForeignKey(Issue)
 
-    location = models.ForeignKey(Location, null=True, blank=True)
+    location = models.ForeignKey(Location, null=True, blank=True,
+                                 related_name="items",
+                                 on_delete=models.SET_NULL)
     purchase_location = models.ForeignKey(PurchaseLocation, null=True,
-                                          blank=True)
+                                          blank=True, related_name="items",
+                                          on_delete=models.SET_NULL)
 
     notes = models.TextField(blank=True)
     keywords = TaggableManager(blank=True)
