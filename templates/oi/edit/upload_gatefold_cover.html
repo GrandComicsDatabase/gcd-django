@@ -1,4 +1,5 @@
 {% extends "gcd/base.html" %}
+{% load url from future %}
 
 {% block title %}
 Select front cover for {{ issue }}
@@ -19,7 +20,7 @@ Select front cover for {{ issue }}
   <img src='{{ MEDIA_URL }}img/gcd/new_covers/tmp/{{ scan_name }}' id='cropbox' width='{{ width }}'>
   <div id='preview_box'>
   </div>
-  <form method='post' action='{% url gatefold_cover %}'>
+  <form method='post' action='{% url "gatefold_cover" %}'>
   {% csrf_token %}
   <ul id='coords'>
     {{ form.as_ul }}

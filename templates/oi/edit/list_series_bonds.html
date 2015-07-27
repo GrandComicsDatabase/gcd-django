@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 
+{% load url from future %}
 {% load credits %}
 {% load display %}
 
@@ -27,13 +28,13 @@
       {% else %}
     <td>
         {% if user.is_authenticated %}
-      <form method="POST" action="{% url reserve_revision model_name='series_bond',id=bond.id %}">
+      <form method="POST" action="{% url "reserve_revision" model_name='series_bond' id=bond.id %}">
           {% csrf_token %}
         <input id="edit" name="edit" type="submit" value="Edit"></input>
       </form>
     </td>
     <td>
-        <form method="GET" action="{% url delete_revision model_name='series_bond',id=bond.id %}">
+        <form method="GET" action="{% url "delete_revision" model_name='series_bond' id=bond.id %}">
           <input type="submit" value="Delete">
         </form>
         {% endif %}
@@ -56,13 +57,13 @@
       {% else %}
     <td>
         {% if user.is_authenticated %}
-      <form method="POST" action="{% url reserve_revision model_name='series_bond',id=bond.id %}">
+      <form method="POST" action="{% url "reserve_revision" model_name='series_bond' id=bond.id %}">
           {% csrf_token %}
         <input id="edit" name="edit" type="submit" value="Edit"></input>
       </form>
     </td>
     <td>
-        <form method="GET" action="{% url delete_revision model_name='series_bond',id=bond.id %}">
+        <form method="GET" action="{% url "delete_revision" model_name='series_bond' id=bond.id %}">
           <input type="submit" value="Delete">
         </form>
         {% endif %}

@@ -1,5 +1,6 @@
 {% extends "gcd/base.html" %}
 
+{% load url from future %}
 {% load forms %}
 {% load compress %}
 
@@ -43,7 +44,7 @@ if ($(window).width() < 1240) {
 {% endif %}
 {{ form.non_field_errors }}
 <form id="advanced_search_form"
-      action="{% url apps.gcd.views.search.process_advanced %}"
+      action="{% url "apps.gcd.views.search.process_advanced" %}"
       method="get">
 <fieldset class="submit" style="margin-bottom: 0em">
   <input type="submit" value="Search">
@@ -85,6 +86,7 @@ if ($(window).width() < 1240) {
     {{ form.feature|show_form }}
     {{ form.job_number|show_form }}
     {{ form.pages|show_form }}
+    {{ form.pages_uncertain|show_form }}
     {{ form.type|show_form }}
   </ol>
 
@@ -195,10 +197,12 @@ if ($(window).width() < 1240) {
     {{ form.volume|show_form }}
     {{ form.issue_title|show_form }}
     {{ form.variant_name|show_form }}
+    {{ form.is_variant|show_form }}
     {{ form.issue_date|show_form }}
     {{ form.indicia_frequency|show_form }}
     {{ form.price|show_form }}
     {{ form.issue_pages|show_form }}
+    {{ form.issue_pages_uncertain|show_form }}
     {{ form.issue_editing|show_form }}
     {{ form.isbn|show_form }}
     {{ form.barcode|show_form }}

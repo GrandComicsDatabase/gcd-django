@@ -1,21 +1,23 @@
 {% load i18n %}
+{% load url from future %}
+
 <div id="front_page_login">
     {% if user.is_authenticated %}
         <p>
         {% trans 'You are logged in as ' %}{{ user.indexer }}<br>
-        <a href="{% url editing %}">{% trans 'Editing' %}</a> |
-        <a href="{% url default_profile %}">{% trans 'Profile' %}</a>
+        <a href="{% url "editing" %}">{% trans 'Editing' %}</a> |
+        <a href="{% url "default_profile" %}">{% trans 'Profile' %}</a>
         </p>
         {% if user.is_staff %}
         <a href="/admin">{% trans 'Admin' %}</a> |
         {% endif %}
-        <form action="{% url logout %}" method="POST" class="login_form">
+        <form action="{% url "logout" %}" method="POST" class="login_form">
             {% csrf_token %}
             <input type="submit" name="logout" value="{% trans 'Logout' %}" />
             <input type="hidden" name="next" value="{{ request.get_full_path }}" />
         </form>
     {% else %}
-        <form method="post" action="{% url login %}">
+        <form method="post" action="{% url "login" %}">
             {% csrf_token %}
             {% trans 'email' %}
             <input type="text" name="username" id="username"/><br>
@@ -25,10 +27,10 @@
             <input type="hidden" name="next" value="{{ request.get_full_path }}" />
         </form>
         <div id="forgot_password">
-            <a href="{% url forgot_password %}">{% trans 'Forgot password?' %}</a>
+            <a href="{% url "forgot_password" %}">{% trans 'Forgot password?' %}</a>
         </div>
         <div id="register">
-            <a href="{% url register %}">{% trans 'Register' %}</a>
+            <a href="{% url "register" %}">{% trans 'Register' %}</a>
         </div>
     {% endif %}
 </div>

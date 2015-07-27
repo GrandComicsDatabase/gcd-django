@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load url from future %}
 
 {% block title %}
 GCD :: Mentoring New Indexers
@@ -24,15 +25,15 @@ GCD :: Mentoring New Indexers
   </tr>
 {% for indexer in my_mentees %}
   <tr>
-    <td><a href="{% url view_profile user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
+    <td><a href="{% url "view_profile" user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
     <td>{{ indexer.indexer.country }}</td>
     <td> 
-      <form method="POST" action="{% url mentor_not_new indexer_id=indexer.indexer.id %}">
+      <form method="POST" action="{% url "mentor_not_new" indexer_id=indexer.indexer.id %}">
         {% csrf_token %}
         <input type="submit" name="mentor_not_new"
                value="Understands indexing- release as full indexer"></input>
       </form>
-      <form action="{% url unmentor indexer_id=indexer.indexer.id %}" method="POST">
+      <form action="{% url "unmentor" indexer_id=indexer.indexer.id %}" method="POST">
         {% csrf_token %}
         <input type="submit" value="Indexer inactive- return to unmentored list">
       </form>
@@ -50,11 +51,11 @@ GCD :: Mentoring New Indexers
   </tr>
 {% for indexer in new_indexers %}
   <tr>
-    <td><a href="{% url mentor indexer_id=indexer.indexer.id %}">{{ indexer.indexer }}</a><br></td>
+    <td><a href="{% url "mentor" indexer_id=indexer.indexer.id %}">{{ indexer.indexer }}</a><br></td>
     <td>{{ indexer.indexer.country }}</td>
     <td width="45%">{{ indexer.indexer.interests }}</td>
     <td>
-      <form action="{% url mentor indexer_id=indexer.indexer.id %}" method="POST">
+      <form action="{% url "mentor" indexer_id=indexer.indexer.id %}" method="POST">
         {% csrf_token %}
         <input type="submit" value="Mentor this Indexer">
       </form>
@@ -71,9 +72,9 @@ GCD :: Mentoring New Indexers
   </tr>
 {% for indexer in mentees %}
   <tr>
-    <td><a href="{% url view_profile user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
+    <td><a href="{% url "view_profile" user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
     <td>{{ indexer.indexer.country }}</td>
-    <td> <a href="{% url view_profile user_id=indexer.indexer.mentor.id %}">{{ indexer.indexer.mentor.indexer }}</a></td>
+    <td> <a href="{% url "view_profile" user_id=indexer.indexer.mentor.id %}">{{ indexer.indexer.mentor.indexer }}</a></td>
   </tr>
 {% endfor %}
 </table>

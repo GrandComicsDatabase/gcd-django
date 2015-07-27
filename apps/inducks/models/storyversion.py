@@ -27,7 +27,7 @@ class StoryVersion(models.Model):
     page_count = models.IntegerField(db_column = 'entirepages', null = True)
     page_numerator = models.IntegerField(db_column = 'brokenpagenumerator', null = True)
     page_denominator = models.IntegerField(db_column = 'brokenpagedenominator', null = True)
-    no_broken_page = models.BooleanField(db_column = 'brokenpageunspecified')
+    no_broken_page = models.BooleanField(default = False, db_column = 'brokenpageunspecified')
     type = models.CharField(max_length = 100, db_column = 'kind',
                             null = True)
     base_story = models.ForeignKey(BaseStory, 

@@ -17,6 +17,6 @@ class CreatorRole(models.Model):
                             db_column = 'plotwritartink')
     creator = models.ForeignKey(Creator, primary_key = True, 
                                 db_column = 'personcode')
-    indirect = models.BooleanField(db_column = 'indirect')
+    indirect = models.BooleanField(default = False, db_column = 'indirect')
     notes = models.TextField(max_length = 1000, db_column = 'storyjobcomment',
                              null = True)

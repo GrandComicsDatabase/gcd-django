@@ -1,4 +1,5 @@
 {% extends "gcd/base_view.html" %}
+{% load url from future %}
 
 {% block title %}GCD Privacy Policy{% endblock %}
 
@@ -16,7 +17,7 @@ your registered information with any third party.
 We ask for personal information such as your email address when you register.
 This information is only used to provide functionality to you such as sending
 you feedback on any data contributions that you make to the site.  You may edit
-this information on your <a href="{% url default_profile %}">profile page</a>.
+this information on your <a href="{% url "default_profile" %}">profile page</a>.
 <p>
 When a visitor requests or reads a page no more IP and other technical information is collected than is typically collected by web sites. We may keep raw logs of such transactions, but these will not be published or used to track legitimate users.
 </p>

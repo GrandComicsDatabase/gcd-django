@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -33,9 +34,9 @@
 <h3> Series {% if by_date %}Timeline{% else %}Details{% endif %} </h3>
 <p>
 {% if by_date %}
-  <a href="{% url series_details series_id=series.id %}">See series details by issue</a> (displays one row per issue with no gaps, by the regular issue sort order)
+  <a href="{% url "series_details" series_id=series.id %}">See series details by issue</a> (displays one row per issue with no gaps, by the regular issue sort order)
 {% else %}
-  <a href="{% url series_timeline series_id=series.id %}">See series timeline</a>
+  <a href="{% url "series_timeline" series_id=series.id %}">See series timeline</a>
   (depends on key dates being set correctly)
 {% endif %}
 </p>

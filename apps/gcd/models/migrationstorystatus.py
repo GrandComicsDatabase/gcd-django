@@ -12,10 +12,8 @@ class MigrationStoryStatus(models.Model):
         db_table = 'gcd_migration_story_status'
 
     story = models.OneToOneField(Story, related_name='migration_status')
-    reprint_needs_inspection = models.BooleanField(blank=True, default=False,
-                                                   db_index=True)
-    reprint_confirmed = models.BooleanField(blank=True, default=False,
-                                            db_index=True)
+    reprint_needs_inspection = models.BooleanField(default=False, db_index=True)
+    reprint_confirmed = models.BooleanField(default=False, db_index=True)
 
     # In production, this field is indexed for the first 255 characters,
     # but Django cannot produce a length-limited index and MySQL

@@ -106,7 +106,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
             if request.GET['search_object'] != "all":
                 self.form.selected_facets = [u'facet_model_name_exact:%s' % \
                                               request.GET['search_object']]
-        self.query = self.get_query()
+        self.query = self.get_query().strip('\\')
         #TODO List of fields should be gathered
         # automatically from our SearchIndex classes
         fields = ['content', 'name' , 'title']

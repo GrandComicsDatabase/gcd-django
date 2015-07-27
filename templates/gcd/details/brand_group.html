@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
@@ -64,7 +65,7 @@ GCD :: Brand Group :: {{ brand.name }}
       {% endwith %}
       {% if user.is_authenticated and not publisher.pending_deletion %}
         <form method="GET"
-              action="{% url add_brand_via_group brand_group_id=brand.id %}">
+              action="{% url "add_brand_via_group" brand_group_id=brand.id %}">
           <input id="add" name="add" type="submit" value="Add brand emblem" />
         </form>
       {% endif %} <!-- logged in -->
@@ -73,9 +74,9 @@ GCD :: Brand Group :: {{ brand.name }}
       </div>
       <div class="change_history">
   {% if preview %}
-        <a href="{% url change_history model_name='brand_group' id=brand.source.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='brand_group' id=brand.source.id %}">Change History</a>
   {% else %}
-        <a href="{% url change_history model_name='brand_group' id=brand.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='brand_group' id=brand.id %}">Change History</a>
   {% endif %}
       </div>
     </div> <!-- control_rail -->

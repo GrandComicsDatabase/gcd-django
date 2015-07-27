@@ -1,3 +1,4 @@
+{% load url from future %}
 <div class="edit_header">
     <div>my.comics.org</div>
 </div>
@@ -9,7 +10,7 @@
 </ul>
 {% endif %}
 {% if request.user.is_authenticated %}
-<form action="{% url my_series_issues series_id=series.id %}" method="get">
+<form action="{% url "my_series_issues" series_id=series.id %}" method="get">
   <input type="submit" name="submit" value="Select issues"> from this series 
   <select name="which_issues">
     <option value="base_issues">without variants</option>
@@ -18,7 +19,7 @@
   </select>
 to add to a collection.
 </form>
-<form method="POST" action="{% url my_series_issues series_id=series.id %}">
+<form method="POST" action="{% url "my_series_issues" series_id=series.id %}">
   {% csrf_token %}
   <div>
     <input type="submit" name="confirm_selection" value="Add all issues">

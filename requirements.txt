@@ -1,6 +1,5 @@
 BeautifulSoup
 Django<1.5
-feedparser
 MySQL-python
 Pillow < 2.0
 PyICU
@@ -16,10 +15,11 @@ git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
 git+git://github.com/GrandComicsDatabase/django-mobile.git
 python-stdnum
 wsgiref
-pyelasticsearch
+pyelasticsearch<1.0
 django-haystack<2.1.0
 python-dateutil
 diff-match-patch
 python-vote-core
 git+git://github.com/bennylope/elasticstack.git
 django-bootstrap3
+facebook-sdk

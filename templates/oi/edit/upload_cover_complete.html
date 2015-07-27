@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 {% load display %}
+{% load url from future %}
 
 {% block title %}
 GCD :: Cover for {{ issue.series.name }} {{ issue.display_number }}
@@ -33,8 +34,8 @@ This cover upload has been successfully submitted and is awaiting approval by an
 
 <div>
   <div id="cover_uploaded">
-    <a href="{% url compare id=revision.changeset.id %}">{{ tag|safe }}</a><br/>
-    <a href="{% url compare id=revision.changeset.id %}">Zoom / Compare</a><br>
+    <a href="{% url "compare" id=revision.changeset.id %}">{{ tag|safe }}</a><br/>
+    <a href="{% url "compare" id=revision.changeset.id %}">Zoom / Compare</a><br>
     <a href="{{ issue.series.get_absolute_url}}scans">Cover Scan Status</a><br/>
     <a href="{{ issue.series.get_absolute_url }}covers">Cover Gallery</a><br>
     <br>
@@ -46,7 +47,7 @@ This cover upload has been successfully submitted and is awaiting approval by an
     <ul>
     Issues missing covers
   {% for issue in blank_issues %}
-      <li><a href="{% url upload_cover issue_id=issue.id %}">{{ issue.short_name }}</a>
+      <li><a href="{% url "upload_cover" issue_id=issue.id %}">{{ issue.short_name }}</a>
       </li>
   {% endfor %}
     </ul>
@@ -62,7 +63,7 @@ This cover upload has been successfully submitted and is awaiting approval by an
 {% endif %}
     <ul>
     Add a variant cover
-    <li><a href="{% url upload_variant issue_id=issue.id %}">{{ issue.short_name }}</a>
+    <li><a href="{% url "upload_variant" issue_id=issue.id %}">{{ issue.short_name }}</a>
     </li>
     </ul>
   </div>

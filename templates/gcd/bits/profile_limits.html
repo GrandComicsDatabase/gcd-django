@@ -1,4 +1,5 @@
 {% load accounts %}
+{% load url from future %}
 
 {% if user|can_view_profile_details:profile_user %}
 <ul>
@@ -12,7 +13,7 @@
     </span>
   <li> Mentor:
     {% if profile_user.indexer.mentor %}
-    <span class="data_value"><a href="{% url view_profile user_id=profile_user.indexer.mentor.id %}">
+    <span class="data_value"><a href="{% url "view_profile" user_id=profile_user.indexer.mentor.id %}">
       {{ profile_user.indexer.mentor.indexer }}</a></span>
     {% ifequal user profile_user %}
     (<a href="mailto:{{ profile_user.indexer.mentor.email }}">{{ profile_user.indexer.mentor.email }}</a>)

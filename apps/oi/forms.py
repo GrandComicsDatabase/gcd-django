@@ -725,13 +725,6 @@ class SeriesRevisionForm(forms.ModelForm):
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
 
-    def clean_has_indicia_frequency(self):
-        cd = self.cleaned_data
-        if cd['is_singleton'] and cd['has_indicia_frequency']:
-            raise forms.ValidationError('Singleton series cannot have '
-              'an indicia frequency.')
-        return cd['has_indicia_frequency']
-
     def clean_has_issue_title(self):
         cd = self.cleaned_data
         if cd['is_singleton'] and cd['has_issue_title']:
@@ -1027,6 +1020,10 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 cd['year_on_sale'] = cd['on_sale_date'].year
                 cd['month_on_sale'] = cd['on_sale_date'].month
                 cd['day_on_sale'] = cd['on_sale_date'].day
+
+            if cd['page_count_uncertain'] and not cd['page_count']:
+                raise forms.ValidationError('You cannot check page count '
+                  'uncertain without a page count.')
 
             if cd['no_barcode'] and cd['barcode']:
                 raise forms.ValidationError(
@@ -1801,7 +1798,7 @@ class UploadVariantScanForm(UploadScanForm):
       help_text='Name of this variant. Examples are: "Cover A" (if listed as '
         'such in the issue), "second printing", "newsstand", "direct", or the '
         'name of the artist if different from the base issue.')
-    variant_artwork = forms.BooleanField(required=False,
+    variant_artwork = forms.BooleanField(required=False, initial=True,
       label = 'Variant artwork',
       help_text='Check this box if the uploaded variant cover has artwork '
         'different from the base issue. If checked a cover sequence will '

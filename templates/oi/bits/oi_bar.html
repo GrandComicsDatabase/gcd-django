@@ -1,24 +1,26 @@
+{% load url from future %}
+
 {% if user.is_authenticated %}
 <div class="oi_bar">
   <span class="oi_bar_title">
     <a href="http://docs.comics.org/wiki/Formatting_Documentation">Help</a> |
     <a href="http://docs.comics.org/wiki/OI_Tutorial">Tutorial</a>
   </span>
-  <a href="{% url editing %}">Editing</a> |
-  <a href="{% url pending %}">Pending</a> |
-  <a href="{% url pending_covers %}">Covers</a> |
+  <a href="{% url "editing" %}">Editing</a> |
+  <a href="{% url "pending" %}">Pending</a> |
+  <a href="{% url "pending_covers" %}">Covers</a> |
   {% if perms.gcd.can_approve %}
-  <a href="{% url reviewing %}">Reviewing</a> |
-  <a href="{% url editor_log %}">Editor Log</a> |
+  <a href="{% url "reviewing" %}">Reviewing</a> |
+  <a href="{% url "editor_log" %}">Editor Log</a> |
   {% endif %}
-  <a href="{% url approved %}">Approved</a> |
-  <a href="{% url add %}">Add New</a> |
+  <a href="{% url "approved" %}">Approved</a> |
+  <a href="{% url "add" %}">Add New</a> |
   {% if perms.gcd.can_mentor %}
-  <a href="{% url mentoring %}">Mentoring</a> |
+  <a href="{% url "mentoring" %}">Mentoring</a> |
   {% endif %}
-  <a href="{% url voting_dashboard %}">Voting</a> |
+  <a href="{% url "voting_dashboard" %}">Voting</a> |
   {% if not user.is_anonymous %}
-  <a href="{% url view_profile user_id=user.id %}">Profile</a> |
+  <a href="{% url "view_profile" user_id=user.id %}">Profile</a> |
   {% endif %}
   {% if user.is_staff %}
   <a href="/admin/">Admin</a> |

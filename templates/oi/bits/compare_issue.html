@@ -1,4 +1,6 @@
 {% load display %}
+{% load url from future %}
+
 {% if revision.issue and revision.issue.has_covers %}
 <a class="new_window" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>
   {% if revision.deleted %}
@@ -7,7 +9,7 @@
 {% endif %}
 {% if user == revision.changeset.indexer %}
   {% if changeset.state == states.OPEN %}
-<a href="{% url edit_revision model_name=model_name,id=revision.id %}">Edit issue data</a>.
+<a href="{% url "edit_revision" model_name=model_name id=revision.id %}">Edit issue data</a>.
   {% endif %}
 {% endif %}
 {% if revision.previous and revision.series != revision.previous.series %}

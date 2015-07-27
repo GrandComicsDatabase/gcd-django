@@ -1,4 +1,5 @@
 {% extends "mycomics/user_base.html" %}
+{% load url from future %}
 {% load i18n %}
 {% load collecting %}
 {% load bootstrap3 %}
@@ -8,7 +9,7 @@
   <div id="edit-item" class="modal fade" tabindex="-1" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{% url save_item item.id collection.id %}" method="POST">
+        <form action="{% url "save_item" item.id collection.id %}" method="POST">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
             <h4 class="modal-title">{% trans "Editing item in collection" %}</h4>
@@ -43,7 +44,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
-          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url delete_collection_item item.id collection.id %}'">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url "delete_collection_item" item.id collection.id %}'">{% trans "Confirm" %}</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -55,7 +56,7 @@
   <div class="page-header middle-header">
     <h1><a href="{{ item.issue.get_absolute_url }}">{{ item.issue.full_name }}</a>
     </h1>
-    <h4>In: <a href="{% url view_collection collection.id %}">{{ collection.name }}</a>
+    <h4>In: <a href="{% url "view_collection" collection.id %}">{{ collection.name }}</a>
       <button type="button" class="btn btn-primary pull-right"
               data-toggle="modal" href="#edit-item">{% trans "Edit" %}
       </button>

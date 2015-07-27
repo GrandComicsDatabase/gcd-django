@@ -1,4 +1,6 @@
 {% load i18n %}
+{% load url from future %}
+
 <div class="footer_disclaimer">
   <div class="footer_item">
     {% blocktrans with request.build_absolute_uri as uri and error_subject|urlencode as error_sub %}
@@ -12,7 +14,7 @@
     {% trans 'All rights to cover images reserved by the respective copyright holders.' %}
   </div>
   <div class="footer_item">
-    <a href="{% url privacy %}">{% trans 'Privacy Policy' %}</a>
+    <a href="{% url "privacy" %}">{% trans 'Privacy Policy' %}</a>
   </div>
   <div class="footer_item">
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">

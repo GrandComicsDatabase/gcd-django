@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load url from future %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
@@ -76,9 +77,9 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
   {% endif %} <!-- MYCOMICS -->
     <div class="change_history">
   {% if preview %}
-      <a href="{% url change_history model_name='indicia_publisher' id=indicia_publisher.source.id %}">Change History</a>
+      <a href="{% url "change_history" model_name='indicia_publisher' id=indicia_publisher.source.id %}">Change History</a>
   {% else %}
-      <a href="{% url change_history model_name='indicia_publisher' id=indicia_publisher.id %}">Change History</a>
+      <a href="{% url "change_history" model_name='indicia_publisher' id=indicia_publisher.id %}">Change History</a>
   {% endif %}
     </div>
   </div>

@@ -1,4 +1,5 @@
 {% extends "gcd/base_view.html" %}
+{% load url from future %}
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
@@ -26,7 +27,7 @@ As a new user, while you may upload as many covers as you like, you are initiall
 This is to allow an <a href="http://docs.comics.org/wiki/List_of_editors">Editor</a> to help you and answer any questions with your first few data contributions.
 <p>
 The number of data changes you can make at a time will automatically increase starting with your first approval, after which you can also reserve all new issues in a series as well as making changes one issue at a time.
-You can see your current maximum allowed changes on your <a href="{% url default_profile %}">profile page</a>.
+You can see your current maximum allowed changes on your <a href="{% url "default_profile" %}">profile page</a>.
 You can also edit your profile from that page.
 <p>
 Please consider signing up for our main <a href="http://groups.google.com/group/gcd-main">mailing list</a> or one of the <a href="http://docs.comics.org/wiki/Email_Lists_FAQ#International_mailing_lists"> international ones</a>.
