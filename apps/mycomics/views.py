@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core import urlresolvers
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
+from django.conf import settings
 
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
@@ -57,12 +58,20 @@ def collections_list(request):
                               context_instance=RequestContext(request))
 
 
-@login_required
 def view_collection(request, collection_id):
-    collection = get_object_or_404(Collection, id=collection_id,
-                                   collector=request.user.collector)
+    collection = get_object_or_404(Collection, id=collection_id)
+    if request.user.is_authenticated() and \
+      collection.collector == request.user.collector:
+        collection_list = request.user.collector.collections.all()\
+                                                .order_by('name')
+    elif collection.public == True:
+        collection_list = Collection.objects.none()
+    elif not request.user.is_authenticated():
+        return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+    else:
+        raise PermissionDenied
+
     items = collection.items.all().order_by('issue__series', 'issue__sort_code')
-    collection_list = request.user.collector.collections.all().order_by('name')
     vars = {'collection': collection,
             'collection_list': collection_list}
     paginator = ResponsePaginator(items, template=COLLECTION_TEMPLATE,
@@ -143,25 +152,33 @@ def delete_collection_item(request, item_id, collection_id):
                                   kwargs={'collection_id': collection_id}))
 
 
-@login_required
 def view_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
-    item = get_item_for_collector(item_id, request.user.collector)
+    if request.user.is_authenticated() and \
+      collection.collector == request.user.collector:
+        item = get_item_for_collector(item_id, request.user.collector)
+    elif collection.public == True:
+        item = get_item_for_collector(item_id, collection.collector)
+    elif not request.user.is_authenticated():
+        return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+    else:
+        raise PermissionDenied
 
     check_item_is_in_collection(request, item, collection)
 
-    item_form = CollectionItemForm(request.user.collector, instance=item)
-    if item.collections.filter(sell_date_used=True).exists():
-        sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
-        sell_date_form.fields['date'].label = _('Sell date')
-    else:
-        sell_date_form = None
-    if item.collections.filter(acquisition_date_used=True).exists():
-        acquisition_date_form = DateForm(instance=item.acquisition_date,
-                                        prefix='acquisition_date')
-        acquisition_date_form.fields['date'].label = _('Acquisition date')
-    else:
-        acquisition_date_form = None
+    item_form = None
+    sell_date_form = None
+    acquisition_date_form = None
+    if request.user.is_authenticated() and \
+      collection.collector == request.user.collector:
+        item_form = CollectionItemForm(request.user.collector, instance=item)
+        if item.collections.filter(sell_date_used=True).exists():
+            sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
+            sell_date_form.fields['date'].label = _('Sell date')
+        if item.collections.filter(acquisition_date_used=True).exists():
+            acquisition_date_form = DateForm(instance=item.acquisition_date,
+                                            prefix='acquisition_date')
+            acquisition_date_form.fields['date'].label = _('Acquisition date')
 
     return render_to_response(COLLECTION_ITEM_TEMPLATE,
                               {'item': item, 'item_form': item_form,
@@ -352,7 +369,7 @@ def mycomics_search(request):
 
 
 @login_required
-def settings(request):
+def mycomics_settings(request):
     """
     View for editing user settings. First request comes as GET,
     which results in displaying page with form. Second request with POST saves
@@ -364,7 +381,7 @@ def settings(request):
             settings_form.save()
             messages.success(request, _('Settings saved.'))
             return HttpResponseRedirect(
-                urlresolvers.reverse('settings'))
+                urlresolvers.reverse('mycomics_settings'))
     else:
         settings_form = CollectorForm(request.user.collector)
 

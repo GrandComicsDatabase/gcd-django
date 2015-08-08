@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils.safestring import mark_safe
 from apps.gcd.models import Issue, Language
 from apps.stddata.models import Currency, Date
 from taggit.managers import TaggableManager
@@ -85,6 +86,13 @@ class Collection(models.Model):
     price_paid_used = models.BooleanField(default=False)
     market_value_used = models.BooleanField(default=False)
     sell_price_used = models.BooleanField(default=False)
+
+    def name_status(self):
+        if self.public:
+            status = '<span class="glyphicon glyphicon-eye-open">&thinsp;</span>'
+        else:
+            status = '<span class="glyphicon glyphicon-eye-close">&thinsp;</span>'
+        return mark_safe(status + unicode(self))
 
     def __unicode__(self):
         return unicode(self.name)

@@ -6,6 +6,7 @@
 {% load credits %}
 
 {% block modals %}
+  {% if request.user.collector = collection.collector %}
   <div id="edit-item" class="modal fade" tabindex="-1" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -49,6 +50,7 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -57,12 +59,15 @@
     <h1><a href="{{ item.issue.get_absolute_url }}">{{ item.issue.full_name }}</a>
     </h1>
     <h4>In: <a href="{% url "view_collection" collection.id %}">{{ collection.name }}</a>
+    {% if request.user.collector = collection.collector %}
       <button type="button" class="btn btn-primary pull-right"
               data-toggle="modal" href="#edit-item">{% trans "Edit" %}
       </button>
       <button type="button" class="btn btn-primary pull-right"
               data-toggle="modal" href="#delete-collection-item">{% trans "Delete from collection" %}
       </button>
+    {% else %} / {{ collection.collector.user.indexer }}
+    {% endif %}
     </h4>
   </div>
 

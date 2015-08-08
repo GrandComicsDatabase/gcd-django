@@ -8,9 +8,12 @@
   {% bootstrap_messages %}
   <div class="page-header middle-header">
     <h1>{% trans "Collection details" %}: {{ collection.name }}
+    {% if request.user.collector = collection.collector %}
       <a href="{% url "edit_collection" collection.id %}">
         <button type="button" class="btn btn-primary pull-right">{% trans "Edit" %}
       </button></a>
+    {% else %} / {{ collection.collector.user.indexer }}
+    {% endif %}
     </h1>
   </div>
 
@@ -20,7 +23,7 @@
       <div class="list-group">
         {% for col_item in collection_list %}
           <a href="{% url "view_collection" col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
-            {{ col_item.name }}</a>
+            {{ col_item.name_status }}</a>
         {% endfor %}
       </div>
       <div>
