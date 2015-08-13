@@ -2,6 +2,7 @@
 from django.db import models
 from django.core import urlresolvers
 from django.db.models import Count
+from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -266,6 +267,29 @@ class Series(models.Model):
             else:
                 date += u'?'
             return date
+
+    def search_result_name(self):
+        if self.issue_count <= 1 and not self.is_current:
+            date = u'%s%s' % (unicode(self.year_began),
+              self._date_uncertain(self.year_began_uncertain))
+        else:
+            date = u'%s%s - ' % (self.year_began,
+              self._date_uncertain(self.year_began_uncertain))
+            if self.is_current:
+                date += 'Present'
+            elif self.year_ended:
+                date += u'%s%s' % (unicode(self.year_ended),
+                  self._date_uncertain(self.year_ended_uncertain))
+            else:
+                date += u'?'
+
+        if self.is_singleton:
+            issues = ''
+        else:
+            issues = '%d issue%s in' % (self.issue_count, 
+                                        pluralize(self.issue_count))
+
+        return '%s (%s) %s %s' % (self.name, self.publisher, issues, date)
 
     def full_name(self):
         return '%s (%s, %s%s series)' % (self.name, self.publisher,

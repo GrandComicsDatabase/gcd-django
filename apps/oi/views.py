@@ -2287,6 +2287,10 @@ def add_story(request, issue_revision_id, changeset_id):
                   'You cannot add more than one story to a variant issue.',
                   redirect=False)
 
+        if issue:
+            is_comics_publication = issue.series.is_comics_publication
+        else: # for variants added with base issue the issue is not set
+            is_comics_publication = True
         if request.method != 'POST':
             seq = ''
             if 'added_sequence_number' in request.GET:
@@ -2298,14 +2302,9 @@ def add_story(request, issue_revision_id, changeset_id):
             else:
                 initial = _get_initial_add_story_data(request, issue_revision,
                                                       seq)
-                if issue:
-                    is_comics_publication = issue.series.is_comics_publication
-                else: # for variants added with base issue the issue is not set
-                    is_comics_publication = True
                 form = get_story_revision_form(user=request.user,
                   is_comics_publication=is_comics_publication,
-                  language=issue_revision.series.language)\
-                  (initial=initial)
+                  language=issue_revision.series.language)(initial=initial)
             return _display_add_story_form(request, issue_revision, form,
                                            changeset_id)
 
@@ -2314,6 +2313,7 @@ def add_story(request, issue_revision_id, changeset_id):
               kwargs={ 'id': changeset_id }))
 
         form = get_story_revision_form(user=request.user,
+                 is_comics_publication=is_comics_publication,
                  language=issue_revision.series.language)(request.POST)
         if not form.is_valid():
             return _display_add_story_form(request, issue_revision, form,
