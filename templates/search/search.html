@@ -66,7 +66,7 @@
         </ul>
       {% endif %}
       {% if select_key and multiple_selects %}
-        <form action="{% url process_multiple_selects select_key=select_key %}" method="POST">
+        <form action="{% url "process_multiple_selects" select_key=select_key %}" method="POST">
           {% csrf_token %}
           <input type="submit" name="search_select" value="Submit">
           <div style="clear: both;"></div>

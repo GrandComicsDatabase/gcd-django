@@ -9,6 +9,7 @@ from django.conf import settings
 
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
+from apps.gcd.views.alpha_pagination import AlphaPaginator
 from apps.gcd import ErrorWithMessage
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
@@ -75,8 +76,9 @@ def view_collection(request, collection_id):
     vars = {'collection': collection,
             'collection_list': collection_list}
     paginator = ResponsePaginator(items, template=COLLECTION_TEMPLATE,
-                                  vars=vars, page_size=25)
-
+                                  vars=vars, per_page=25)
+    alpha_paginator = AlphaPaginator(items, per_page=25)
+    paginator.vars['alpha_paginator'] = alpha_paginator
     return paginator.paginate(request)
 
 

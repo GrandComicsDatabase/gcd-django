@@ -790,8 +790,8 @@ def process_advanced(request):
         context['table_width'] = COVER_TABLE_WIDTH
         context['NO_ADS'] = True
         return paginate_response(request, items, template, context,
-                             page_size=50, callback_key='tags',
-                             callback=get_image_tags_per_page)
+                                 per_page=50, callback_key='tags',
+                                 callback=get_image_tags_per_page)
     else:
         return paginate_response(request, items, template, context)
 

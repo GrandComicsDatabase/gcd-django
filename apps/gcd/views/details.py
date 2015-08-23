@@ -601,7 +601,7 @@ def covers_to_replace(request, starts_with=None):
         'starts_with' : starts_with,
         'NO_ADS': True,
       },
-      page_size=50,
+      per_page=50,
       callback_key='tags',
       callback=get_image_tags_per_page)
 
@@ -676,7 +676,7 @@ def daily_covers(request, show_date=None):
         'table_width' : table_width,
         'NO_ADS': True
       },
-      page_size=50,
+      per_page=50,
       callback_key='tags',
       callback=get_image_tags_per_page)
 
@@ -1008,7 +1008,7 @@ def covers(request, series_id):
     }
 
     return paginate_response(request, covers, 'gcd/details/covers.html', vars,
-      page_size=50,
+      per_page=50,
       callback_key='tags',
       callback=lambda page: get_image_tags_per_page(page, series))
 

@@ -3,8 +3,8 @@ Due to uncertainty about how to best structure things and the size of the app,
 the models and views were split into multiple individual files instead of
 the traditional models.py and views.py files.
 
-This file contains the front page view, plus utilities for working with requests,
-responses and errors. 
+This file contains the front page view, plus utilities for working with
+requests, responses and errors.
 """
 
 import hashlib
@@ -24,6 +24,7 @@ from apps.gcd.models import Error, CountStats, Language
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
+
 
 class ViewTerminationError(Exception):
     """
@@ -55,7 +56,6 @@ def index(request):
         except Language.DoesNotExist:
             pass
 
-
     if language:
         front_page_content = ("gcd/front_page/front_page_content_%s.html" %
                               language.code)
@@ -64,13 +64,13 @@ def index(request):
         front_page_content = "gcd/front_page/front_page_content.html"
         stats_for_language = None
 
-    vars = { 'stats' : stats, 'language' : language,
-             'stats_for_language' : stats_for_language, 
-             'front_page_content' : front_page_content,
-             'CALENDAR': settings.CALENDAR }
+    vars = {'stats': stats, 'language': language,
+            'stats_for_language': stats_for_language,
+            'front_page_content': front_page_content,
+            'CALENDAR': settings.CALENDAR}
     return render_to_response('gcd/index.html', vars,
                               context_instance=RequestContext(request))
-      
+
 
 class ResponsePaginator(object):
     """
@@ -78,7 +78,7 @@ class ResponsePaginator(object):
     http://bitbucket.org/miracle2k/djutils/src/tip/djutils/pagination.py.
     We could reconsider writing our own code.
     """
-    def __init__(self, queryset, vars=None, template=None, page_size=100,
+    def __init__(self, queryset, vars=None, template=None, per_page=100,
                  callback_key=None, callback=None, view=None):
         """
         Either template or view should be set
@@ -90,10 +90,11 @@ class ResponsePaginator(object):
         self.callback_key = callback_key
         self.callback = callback
         self.view = view
-        self.p = DiggPaginator(queryset, page_size, body=7, padding=2, tail=1)
+        self.p = DiggPaginator(queryset, per_page, body=7, padding=2, tail=1)
 
     def paginate(self, request):
         page_num = 1
+        self.vars['pagination_type'] = 'num'
         redirect = None
         if ('page' in request.GET):
             try:
@@ -103,7 +104,29 @@ class ResponsePaginator(object):
                 elif page_num < 1:
                     redirect = 1
             except ValueError:
-                redirect = 1
+                if 'alpha_paginator' in self.vars and \
+                  request.GET['page'][:2] == 'a_':
+                    self.alpha_paginator = self.vars['alpha_paginator']
+                    try:
+                        alpha_page_num = int(request.GET['page'][2:])
+                        if alpha_page_num > self.alpha_paginator.num_pages:
+                            redirect = 'a_%d' % self.alpha_paginator.num_pages
+                        elif page_num < 1:
+                            redirect = 'a_1'
+                        else:
+                            alpha_page = \
+                              self.alpha_paginator.page(alpha_page_num)
+                            self.vars['pagination_type'] = 'alpha'
+                            self.vars['alpha_page'] = alpha_page
+                            issue_count = 0
+                            for i in range(1,alpha_page_num):
+                                issue_count += \
+                                  self.alpha_paginator.page(i).count
+                            page_num = int(issue_count/self.p.per_page) + 1
+                    except ValueError:
+                        redirect = 1
+                else:
+                    redirect = 1
 
         if redirect is not None:
             args = request.GET.copy()
@@ -112,8 +135,10 @@ class ResponsePaginator(object):
                                         u'?' + args.urlencode())
 
         page = self.p.page(page_num)
-
-        self.vars['items'] = page.object_list
+        if self.vars['pagination_type'] == 'alpha':
+            self.vars['items'] = alpha_page.object_list[:self.p.per_page]
+        else:
+            self.vars['items'] = page.object_list
         self.vars['paginator'] = self.p
         self.vars['page'] = page
         self.vars['page_number'] = page_num
@@ -128,15 +153,15 @@ class ResponsePaginator(object):
                                   context_instance=RequestContext(request))
 
 
-def paginate_response(request, queryset, template, vars, page_size=100,
+def paginate_response(request, queryset, template, vars, per_page=100,
                       callback_key=None, callback=None):
     return ResponsePaginator(queryset, vars=vars, template=template,
-                             page_size=page_size,
+                             per_page=per_page,
                              callback_key=callback_key,
                              callback=callback).paginate(request)
 
 
-def render_error(request, error_text, redirect=True, is_safe = False):
+def render_error(request, error_text, redirect=True, is_safe=False):
     """
     Utility function to render an error page as a response.  Can be
     called to return the page directly as a response or used to
@@ -150,7 +175,7 @@ def render_error(request, error_text, redirect=True, is_safe = False):
             salt = hashlib.sha1(str(random())).hexdigest()[:5]
             key = hashlib.sha1(salt + error_text.encode('utf-8')).hexdigest()
             Error.objects.create(error_key=key, is_safe=is_safe,
-                                  error_text=error_text,)
+                                 error_text=error_text,)
             return HttpResponseRedirect(
               urlresolvers.reverse('error') +
               u'?error_key=' + key)
@@ -163,7 +188,7 @@ def render_error(request, error_text, redirect=True, is_safe = False):
         return error_view(request, error_text)
 
 
-def error_view(request, error_text = ''):
+def error_view(request, error_text=''):
     """
     Looks up a specified error in the GCD's custom errors table,
     and renders a generic error page using that error's text.
@@ -180,11 +205,10 @@ def error_view(request, error_text = ''):
             if errors.count() == 1:
                 error_text = unicode(errors[0])
                 if errors[0].is_safe:
-                     error_text = mark_safe(error_text)
+                    error_text = mark_safe(error_text)
                 errors[0].delete()
             else:
                 error_text = 'Unknown error.'
     return render_to_response('gcd/error.html',
-                              { 'error_text': error_text },
+                              {'error_text': error_text},
                               context_instance=RequestContext(request))
-

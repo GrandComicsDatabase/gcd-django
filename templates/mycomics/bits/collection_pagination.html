@@ -3,11 +3,30 @@
   <ul class="pagination">
     {% for number in page.page_range %}
       {% if number %}
-        {% ifequal number page_number %}
+        {% if number == page_number %}
+          {% if pagination_type == 'num' %}
     <li class="active"><span>{{ number }}</span></li>
+          {% else %}
+    <li class="active"><a href="{% url "view_collection" collection.id %}?page={{ number }}">{{ number }}</a></li>
+          {% endif %}
         {% else %}
     <li><a href="{% url "view_collection" collection.id %}?page={{ number }}">{{ number }}</a></li>
-        {% endifequal %}
+        {% endif %}
+      {% else %}
+    <li><a>...</a></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+{% endif %}
+{% if alpha_paginator.count > 1 %}
+  <ul class="pagination pull-right">
+    {% for a_page in alpha_paginator.page_range %}
+      {% if a_page %}
+        {% if a_page == alpha_page %}
+    <li class="active"><span>{{ a_page }}</span></li>
+        {% else %}
+    <li><a href="{% url "view_collection" collection.id %}?page=a_{{ a_page.number }}">{{ a_page }}</a></li>
+        {% endif %}
       {% else %}
     <li><a>...</a></li>
       {% endif %}
