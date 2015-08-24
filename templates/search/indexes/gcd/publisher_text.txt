@@ -1,4 +1,4 @@
 {% load credits %}
-{{ object.name }}
-{{ object.notes }}
+{{ object.name|safe }}
+{{ object.notes|safe }}
 {{ object|show_keywords }}

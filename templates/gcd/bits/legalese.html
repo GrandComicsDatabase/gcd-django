@@ -2,6 +2,7 @@
 {% load url from future %}
 
 <div class="footer_disclaimer">
+  {% if error_link %}
   <div class="footer_item">
     {% blocktrans with request.build_absolute_uri as uri and error_subject|urlencode as error_sub %}
     If you believe any of this data to be incorrect, please
@@ -9,25 +10,21 @@
        target="_blank">let us know</a>.
     {% endblocktrans %}
   </div>
+  {% endif %}
   <div class="footer_item">
     {% trans 'Cover thumbnails are used for identification purposes only.' %}
     {% trans 'All rights to cover images reserved by the respective copyright holders.' %}
   </div>
   <div class="footer_item">
-    <a href="{% url "privacy" %}">{% trans 'Privacy Policy' %}</a>
-  </div>
-  <div class="footer_item">
     <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">
       <img alt="Creative Commons License" src="{{ MEDIA_URL }}/img/cc_license80x15.png"></a>
     {% blocktrans %}
-All portions of <a href="http://www.comics.org/" rel="cc:attributionURL">the {{ site_name }}</a>, except where noted otherwise, are
+All portions of <a href="http://www.comics.org/" rel="cc:attributionURL">the {{ site_name }}</a>&trade;, except where noted otherwise, are
 copyrighted by the GCD and are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a>. This includes but is not necessarily limited to our database schema and data distribution format.    
     {% endblocktrans %}
   </div>
   <div class="footer_item">
-    {% trans 'The GCD Web Site code is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>' %}
-  </div>
-  <div class="footer_item">
-    {% include "gcd/bits/google.html" %}
+    The GCD <a href="{% url "privacy" %}">{% trans 'Privacy Policy' %}</a>.
+    {% trans 'The GCD Web Site code is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>' %}.
   </div>
 </div>

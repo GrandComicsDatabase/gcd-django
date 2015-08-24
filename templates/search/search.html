@@ -99,7 +99,7 @@
             {% endif %}
             {% if result.model_name == 'series' %}
                 <td>[SERIES]</td>
-                <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.full_name }}</a></td>
+                <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'issue' %}
                 <td>[ISSUE]</td>

@@ -2791,6 +2791,12 @@ class SeriesRevision(Revision):
             return self.tracking_notes
         return self.tracking_notes or self.series.has_series_bonds()
 
+    def has_series_bonds(self):
+        if self.series is None:
+            return False
+        else:
+            return self.series.has_series_bonds()
+
     def _to_series_bond(self):
         if self.series is None:
             return SeriesBond.objects.filter(pk__isnull=True)
