@@ -15,7 +15,7 @@ from django.utils.html import escape, conditional_escape
 from apps.oi.models import *
 from apps.gcd.models import *
 from apps.gcd.models.seriesbond import BOND_TRACKING
-from apps.gcd.models.story import NON_OPTIONAL_TYPES
+from apps.gcd.models.story import NON_OPTIONAL_TYPES, STORY_TYPES
 from apps.gcd.templatetags.credits import format_page_count
 
 CREATOR_CREDIT_HELP = 'The %s and similar credits for this sequence. If ' \
@@ -1712,6 +1712,12 @@ class StoryRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['The synopsis field may not be longer than %d characters.' %
                   settings.LIMIT_SYNOPSIS_LENGTH])
+
+        if (cd['page_count'] is None and not cd['page_count_uncertain'] and
+            cd['type'].id != STORY_TYPES['insert']):
+            raise forms.ValidationError(
+              ['Page count uncertain must be checked if the page count '
+               'is not filled in.'])
 
         return cd
 

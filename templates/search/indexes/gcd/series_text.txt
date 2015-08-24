@@ -1,10 +1,10 @@
 {% load credits %}
-{{ object.full_name }}
-{{ object.format }}
-{{ object.color }}
-{{ object.dimensions }}
-{{ object.paper_stock }}
-{{ object.binding }}
-{{ object.publishing_format }}
-{{ object.notes }}
+{{ object.full_name|safe }}
+{{ object.format|safe }}
+{{ object.color|safe }}
+{{ object.dimensions|safe }}
+{{ object.paper_stock|safe }}
+{{ object.binding|safe }}
+{{ object.publishing_format|safe }}
+{{ object.notes|safe }}
 {{ object|show_keywords }}

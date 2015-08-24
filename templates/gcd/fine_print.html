@@ -1,3 +1,6 @@
 <div class="fine_print">
-{% include 'gcd/bits/legalese.html' %}
+{% with 1 as error_link %}
+  {% include 'gcd/bits/legalese.html' %}
+{% endwith %}
+  {% include "gcd/bits/ad_bottom.html" %}
 </div>

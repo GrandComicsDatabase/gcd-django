@@ -1,17 +1,17 @@
 {% load credits %}
-{{ object.title }}
-{{ object.feature }}
-{{ object.script }}
-{{ object.pencils }}
-{{ object.inks }}
-{{ object.colors }}
-{{ object.letters }}
-{{ object.editing }}
+{{ object.title|safe }}
+{{ object.feature|safe }}
+{{ object.script|safe }}
+{{ object.pencils|safe }}
+{{ object.inks|safe }}
+{{ object.colors|safe }}
+{{ object.letters|safe }}
+{{ object.editing|safe }}
 {{ object.genre }}
-{{ object.characters }}
-{{ object.synopsis }}
-{{ object.notes }}
-{{ object|show_keywords }}
-{{ object.issue.series.publisher.name }}
-{{ object.issue.series.name }} {{ object.issue.display_number }}
-{{ object.issue.publication_date }}
+{{ object.characters|safe }}
+{{ object.synopsis|safe }}
+{{ object.notes|safe }}
+{{ object|show_keywords|safe }}
+{{ object.issue.series.publisher.name|safe }}
+{{ object.issue.series.name|safe }} {{ object.issue.display_number }}
+{{ object.issue.publication_date|safe }}

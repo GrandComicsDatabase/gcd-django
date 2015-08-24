@@ -1,13 +1,13 @@
 {% load credits %}
-{{ object.series.name }} {{ object.display_number }}
+{{ object.series.name|safe }} {{ object.display_number }}
 {{ object.volume }}
-{{ object.title }}
-{{ object.publication_date }}
-{{ object.series.publisher.name }}
+{{ object.title|safe }}
+{{ object.publication_date|safe }}
+{{ object.series.publisher.name|safe }}
 {{ object.isbn }}
 {{ object.barcode }}
-{{ object.variant_name }}
-{{ object.indicia_frequency }}
-{{ object.editing }}
-{{ object.notes }}
+{{ object.variant_name|safe }}
+{{ object.indicia_frequency|safe }}
+{{ object.editing|safe }}
+{{ object.notes|safe }}
 {{ object|show_keywords }}
