@@ -23,7 +23,12 @@
       <div class="list-group">
         {% for col_item in collection_list %}
           <a href="{% url "view_collection" col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
-            {{ col_item.name_status }}</a>
+          {% if col_item.public %}
+            <span class="glyphicon glyphicon-eye-open">&thinsp;</span>
+          {% else %}
+            <span class="glyphicon glyphicon-eye-close"></span>
+          {% endif %}
+            {{ col_item }}</a>
         {% endfor %}
       </div>
       <div>

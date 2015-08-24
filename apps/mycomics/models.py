@@ -87,13 +87,6 @@ class Collection(models.Model):
     market_value_used = models.BooleanField(default=False)
     sell_price_used = models.BooleanField(default=False)
 
-    def name_status(self):
-        if self.public:
-            status = '<span class="glyphicon glyphicon-eye-open">&thinsp;</span>'
-        else:
-            status = '<span class="glyphicon glyphicon-eye-close">&thinsp;</span>'
-        return mark_safe(status + unicode(self))
-
     def __unicode__(self):
         return unicode(self.name)
 
