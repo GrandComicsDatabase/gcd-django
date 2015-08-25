@@ -1,5 +1,5 @@
 <div class="footer_item" align="center">
-{% if ADVERTISING and not BETA %}
+{% if ADVERTISING and not BETA and not EDITING %}
   {% if NO_ADS %} {% comment %} NO_ADS means no ads from a specific provider on pages with cover images, distinction currently not relevant. {% endcomment %}
     {% if flavour != 'mobile' %}
     <script type="text/javascript" src="http://ap.lijit.com/www/delivery/fpi.js?z=284912&u=comics_org&width=728&height=90"></script>

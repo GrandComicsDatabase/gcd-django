@@ -90,6 +90,10 @@ def _cant_get(request):
       'This page may only be accessed through the proper form.',
        redirect=False)
 
+def oi_render_to_response(template_name, context, context_instance):
+    context['EDITING'] = True
+    return render_to_response(template_name, context, context_instance)
+
 ##############################################################################
 # Generic view functions
 ##############################################################################
@@ -113,7 +117,7 @@ def delete(request, id, model_name):
             return render_error(request,
               u'"%s" cannot be deleted.' % display_obj, redirect=False)
 
-        return render_to_response('oi/edit/deletion_comment.html',
+        return oi_render_to_response('oi/edit/deletion_comment.html',
         {
             'model_name' : model_name,
             'id' : id,
@@ -131,7 +135,7 @@ def delete(request, id, model_name):
 
     if not request.POST.__contains__('comments') or \
        request.POST['comments'].strip() == '':
-        return render_to_response('oi/edit/deletion_comment.html',
+        return oi_render_to_response('oi/edit/deletion_comment.html',
         {
             'model_name' : model_name,
             'id' : id,
@@ -334,7 +338,7 @@ def confirm_two_edits(request, data, object_type, issue_two_id):
     if issue_two.reserved:
         return render_error(request, 'Issue %s is reserved.' % issue_two,
                             redirect=False)
-    return render_to_response('oi/edit/confirm_two_edits.html',
+    return oi_render_to_response('oi/edit/confirm_two_edits.html',
         {'issue_one': issue_one, 'issue_two': issue_two},
         context_instance=RequestContext(request))
 
@@ -397,7 +401,7 @@ def _display_edit_form(request, changeset, form, revision=None):
     else:
         template = 'oi/edit/revision.html'
 
-    response = render_to_response(
+    response = oi_render_to_response(
       template,
       {
         'changeset': changeset,
@@ -421,7 +425,7 @@ def submit(request, id):
 
     changeset = get_object_or_404(Changeset, id=id)
     if (request.user != changeset.indexer):
-        return render_to_response('gcd/error.html',
+        return oi_render_to_response('gcd/error.html',
           {'error_text': 'A change may only be submitted by its author.'},
           context_instance=RequestContext(request))
     comment_text = request.POST['comments'].strip()
@@ -547,7 +551,7 @@ def retract(request, id):
     changeset = get_object_or_404(Changeset, id=id)
 
     if request.user != changeset.indexer:
-        return render_to_response('gcd/error.html',
+        return oi_render_to_response('gcd/error.html',
           {'error_text': 'A change may only be retracted by its author.'},
           context_instance=RequestContext(request))
     comment_text = request.POST['comments'].strip()
@@ -575,7 +579,7 @@ def confirm_discard(request, id, has_comment=0):
           'Only ACTIVE changes can be discarded.')
 
     if request.method != 'POST':
-        return render_to_response('oi/edit/confirm_discard.html',
+        return oi_render_to_response('oi/edit/confirm_discard.html',
                                   {'changeset': changeset },
                                   context_instance=RequestContext(request))
 
@@ -631,7 +635,7 @@ def discard(request, id):
 
     if (request.user != changeset.indexer and
         request.user != changeset.approver):
-        return render_to_response('gcd/error.html',
+        return oi_render_to_response('gcd/error.html',
           { 'error_text':
             'Only the author or the assigned editor can discard a change.' },
           context_instance=RequestContext(request))
@@ -796,7 +800,7 @@ def release(request, id):
 
     changeset = get_object_or_404(Changeset, id=id)
     if request.user != changeset.approver:
-        return render_to_response('gcd/error.html',
+        return oi_render_to_response('gcd/error.html',
           {'error_text': 'A change may only be released by its approver.'},
           context_instance=RequestContext(request))
 
@@ -847,7 +851,7 @@ def discuss(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     if request.user != changeset.approver and \
       request.user != changeset.indexer:
-        return render_to_response('gcd/error.html',
+        return oi_render_to_response('gcd/error.html',
           {'error_text': 'A change may only be put into discussion by its ' \
                          'indexer or approver.'},
           context_instance=RequestContext(request))
@@ -1520,7 +1524,7 @@ def _display_bulk_issue_change_form(request, form,
                                     target, method, logic, used_search_terms):
     url_name = 'edit_issues_in_bulk'
     url = urlresolvers.reverse(url_name) + '?' + search_option
-    return render_to_response('oi/edit/bulk_frame.html',
+    return oi_render_to_response('oi/edit/bulk_frame.html',
       {
         'object_name': 'Issues',
         'object_url': url,
@@ -1566,7 +1570,7 @@ def _display_add_publisher_form(request, form):
     object_name = 'Publisher'
     object_url = urlresolvers.reverse('add_publisher')
 
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': object_url,
@@ -1617,7 +1621,7 @@ def _display_add_indicia_publisher_form(request, parent, form):
     object_url = urlresolvers.reverse('add_indicia_publisher',
                                           kwargs={ 'parent_id': parent.id })
 
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': object_url,
@@ -1667,7 +1671,7 @@ def _display_add_brand_group_form(request, parent, form):
     object_url = urlresolvers.reverse('add_brand_group',
                                       kwargs={ 'parent_id': parent.id })
 
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': object_url,
@@ -1740,7 +1744,7 @@ def _display_add_brand_form(request, form, brand_group=None, publisher=None):
         object_url = urlresolvers.reverse('add_brand_via_publisher',
                                         kwargs={ 'publisher_id': publisher.id })
 
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': object_url,
@@ -1810,7 +1814,7 @@ def _display_add_brand_use_form(request, form, brand, publisher):
                                       kwargs={ 'brand_id': brand.id,
                                                'publisher_id': publisher.id})
 
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': object_url,
@@ -1869,7 +1873,7 @@ def _display_add_series_form(request, publisher, form):
         'publisher_id': publisher.id,
     }
     url = urlresolvers.reverse('add_series', kwargs=kwargs)
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': 'Series',
         'object_url': url,
@@ -2075,7 +2079,7 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         url = urlresolvers.reverse('add_issue', kwargs=kwargs)
         object_name = 'Issue'
 
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': url,
@@ -2103,7 +2107,7 @@ def add_issues(request, series_id, method=None):
           u'since "%s" is deleted or pending deletion.' % series)
 
     if method is None:
-        return render_to_response('oi/edit/add_issues.html',
+        return oi_render_to_response('oi/edit/add_issues.html',
                                   { 'series': series,
                                     'issue_adds' : issue_adds },
                                   context_instance=RequestContext(request))
@@ -2262,7 +2266,7 @@ def _display_bulk_issue_form(request, series, form, method=None):
         kwargs['method'] = method
         url_name = 'add_multiple_issues'
     url = urlresolvers.reverse(url_name, kwargs=kwargs)
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': 'Issues',
         'object_url': url,
@@ -2391,7 +2395,7 @@ def _display_add_story_form(request, issue, form, changeset_id):
         'changeset_id': changeset_id,
     }
     url = urlresolvers.reverse('add_story', kwargs=kwargs)
-    return render_to_response('oi/edit/add_frame.html',
+    return oi_render_to_response('oi/edit/add_frame.html',
       {
         'object_name': 'Story',
         'object_url': url,
@@ -2408,7 +2412,7 @@ def _display_add_story_form(request, issue, form, changeset_id):
 @permission_required('gcd.can_reserve')
 def edit_series_bonds(request, series_id):
     series = get_object_or_404(Series, id=series_id)
-    return render_to_response('oi/edit/list_series_bonds.html',
+    return oi_render_to_response('oi/edit/list_series_bonds.html',
       {
         'series': series,
       },
@@ -2536,7 +2540,7 @@ def confirm_reprint_migration(request, id, changeset_id):
     migration_status = get_object_or_404(MigrationStoryStatus, story__id=id)
     if request.method == 'GET':
         story = changeset.storyrevisions.get(story__id=id)
-        return render_to_response('oi/edit/confirm_reprint_migration.html',
+        return oi_render_to_response('oi/edit/confirm_reprint_migration.html',
           {
               'story': story,
               'changeset': changeset,
@@ -2634,7 +2638,7 @@ def list_issue_reprints(request, id):
     if request.user != changeset.indexer:
         return render_error(request,
           'Only the reservation holder may access this page.')
-    response = render_to_response('oi/edit/list_issue_reprints.html',
+    response = oi_render_to_response('oi/edit/list_issue_reprints.html',
       { 'issue_revision': issue_revision, 'changeset': changeset },
       context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
@@ -2844,7 +2848,7 @@ def edit_reprint(request, id, which_side=None):
                 selected_story = None
                 selected_issue = reprint_revision.origin_issue
 
-        return render_to_response('oi/edit/confirm_reprint.html',
+        return oi_render_to_response('oi/edit/confirm_reprint.html',
             {
             'story': story,
             'issue': issue,
@@ -2864,7 +2868,7 @@ def edit_reprint(request, id, which_side=None):
 
     if which_side.endswith('internal'):
         issue_revision  = select_issue.revisions.get(changeset=changeset)
-        return render_to_response('oi/edit/select_internal_object.html',
+        return oi_render_to_response('oi/edit/select_internal_object.html',
             { 'issue_revision': issue_revision, 'changeset': changeset,
               'reprint_revision': reprint_revision,
               'which_side': which_side[:6] },
@@ -2985,7 +2989,7 @@ def select_internal_object(request, id, changeset_id, which_side,
         this_story = get_object_or_404(StoryRevision, id=story_id)
         this_issue = None
 
-    return render_to_response('oi/edit/confirm_internal.html',
+    return oi_render_to_response('oi/edit/confirm_internal.html',
         { 'this_issue': this_issue, 'this_story': this_story,
           'other_issue': other_issue, 'other_story': other_story,
           'changeset': changeset, 'reprint_revision_id': reprint_revision.id,
@@ -3010,7 +3014,7 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
             direction = 'from'
         else:
             direction = 'in'
-        return render_to_response('oi/edit/create_matching_sequence.html',
+        return oi_render_to_response('oi/edit/create_matching_sequence.html',
             { 'issue': issue, 'story': story,
               'reprint_revision': reprint_revision, 'direction': direction },
             context_instance=RequestContext(request))
@@ -3092,7 +3096,7 @@ def confirm_reprint(request, data, object_type, selected_id):
         which_side = data['which_side']
     else:
         which_side = None
-    return render_to_response('oi/edit/confirm_reprint.html',
+    return oi_render_to_response('oi/edit/confirm_reprint.html',
         {
         'story': story,
         'issue': current_issue,
@@ -3239,7 +3243,7 @@ def remove_reprint_revision(request, id):
         target_issue = reprint.target_issue
 
     if request.method != 'POST':
-        return render_to_response('oi/edit/confirm_remove_reprint.html',
+        return oi_render_to_response('oi/edit/confirm_remove_reprint.html',
         {
             'origin': origin,
             'origin_issue': origin_issue,
@@ -3299,7 +3303,7 @@ def move_series(request, series_revision_id, publisher_id):
         cancel_button = "Cancel"
         confirm_button = "move of series %s to publisher %s" % \
           (series_revision.series, publisher)
-        return render_to_response('oi/edit/confirm.html',
+        return oi_render_to_response('oi/edit/confirm.html',
                                 {
                                     'type': 'Series Move',
                                     'header_text': mark_safe(header_text),
@@ -3391,7 +3395,7 @@ def move_issue(request, issue_revision_id, series_id):
         cancel_button = "Cancel"
         confirm_button = "move of issue %s to series %s" % (issue_revision.issue,
                                                             series)
-        return render_to_response('oi/edit/confirm.html',
+        return oi_render_to_response('oi/edit/confirm.html',
                                 {
                                     'type': 'Issue Move',
                                     'header_text': header_text,
@@ -3473,7 +3477,7 @@ def move_cover(request, id, cover_id=None):
                   "current covers", ZOOM_MEDIUM, as_list=True):
                   image.append(revision)
                   covers.append(image)
-        return render_to_response(
+        return oi_render_to_response(
           'oi/edit/move_covers.html',
           {
               'changeset': changeset,
@@ -3535,7 +3539,7 @@ def remove_story_revision(request, id):
         return toggle_delete_story_revision(request, id)
 
     if request.method != 'POST':
-        return render_to_response('oi/edit/remove_story_revision.html',
+        return oi_render_to_response('oi/edit/remove_story_revision.html',
         {
             'story' : story,
             'issue' : story.issue
@@ -3686,7 +3690,7 @@ def _process_reorder_form(request, parent, sort_field, child_name, child_class):
 def reorder_series(request, series_id):
     series = get_object_or_404(Series, id=series_id)
     if request.method != 'POST':
-        return render_to_response('oi/edit/reorder_series.html',
+        return oi_render_to_response('oi/edit/reorder_series.html',
           { 'series': series,
             'issue_list': [ (i, None) for i in series.active_issues() ] },
           context_instance=RequestContext(request))
@@ -3767,7 +3771,7 @@ def _reorder_series(request, series, issues):
           'apps.gcd.views.details.series',
           kwargs={ 'series_id': series.id }))
 
-    return render_to_response('oi/edit/reorder_series.html',
+    return oi_render_to_response('oi/edit/reorder_series.html',
       { 'series': series,
         'issue_list': issue_list },
       context_instance=RequestContext(request))
@@ -3783,7 +3787,7 @@ def reorder_stories(request, issue_id, changeset_id):
     # This is analagous to issues needing to exist before stories can be added.
     issue_revision = changeset.issuerevisions.get(issue=issue_id)
     if request.method != 'POST':
-        return render_to_response('oi/edit/reorder_stories.html',
+        return oi_render_to_response('oi/edit/reorder_stories.html',
           { 'issue': issue_revision, 'changeset': changeset },
           context_instance=RequestContext(request))
 
@@ -3922,7 +3926,7 @@ def show_queue(request, queue_name, state):
     images = changes.filter(change_type=CTYPES['image'])
     countries = dict(Country.objects.values_list('id', 'code'))
     country_names = dict(Country.objects.values_list('id', 'name'))
-    response = render_to_response(
+    response = oi_render_to_response(
       'oi/queues/%s.html' % queue_name,
       {
         'queue_name': queue_name,
@@ -4019,7 +4023,7 @@ def show_approved(request):
       request,
       changes,
       'oi/queues/approved.html',
-      {'CTYPES': CTYPES},
+      {'CTYPES': CTYPES, 'EDITING': True},
       page_size=50)
 
 @login_required
@@ -4035,7 +4039,7 @@ def show_editor_log(request):
       request,
       changes,
       'oi/queues/editor_log.html',
-      {'CTYPES': CTYPES},
+      {'CTYPES': CTYPES, 'EDITING': True},
       page_size=50)
 
 @login_required
@@ -4052,9 +4056,7 @@ def show_cover_queue(request):
       request,
       covers,
       'oi/queues/covers.html',
-      {
-        'table_width' : table_width,
-      },
+      {'table_width' : table_width, 'EDITING': True},
       page_size=50,
       callback_key='tags',
       callback=get_preview_image_tags_per_page)
@@ -4127,7 +4129,7 @@ def compare(request, id):
             else:
                 field_list.remove('after')
 
-    response = render_to_response(template,
+    response = oi_render_to_response(template,
                                   {'changeset': changeset,
                                    'revision': revision,
                                    'prev_rev': prev_rev,
@@ -4266,7 +4268,7 @@ def cover_compare(request, changeset, revision):
                   revision.cover.id,
                   revision.changeset.created.strftime('%Y%m%d_%H%M%S')))
 
-    response = render_to_response('oi/edit/compare_cover.html',
+    response = oi_render_to_response('oi/edit/compare_cover.html',
                                   kwargs,
                                   context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
@@ -4305,7 +4307,7 @@ def image_compare(request, changeset, revision):
         else:
             kwargs['replaced_image_file'] = replaced_image.image_file
 
-    response = render_to_response('oi/edit/compare_image.html',
+    response = oi_render_to_response('oi/edit/compare_image.html',
                                   kwargs,
                                   context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
@@ -4348,7 +4350,7 @@ def mentoring(request):
                           .filter(indexer__is_new=True) \
                           .exclude(indexer__mentor=request.user)
 
-    return render_to_response('oi/queues/mentoring.html',
+    return oi_render_to_response('oi/queues/mentoring.html',
       {
         'new_indexers': new_indexers,
         'my_mentees': my_mentees,
@@ -4422,7 +4424,7 @@ def download(request):
             else:
                 raise
 
-    return render_to_response('oi/download.html',
+    return oi_render_to_response('oi/download.html',
       {
         'method': request.method,
         'timestamps': timestamps,
