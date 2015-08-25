@@ -74,7 +74,8 @@ def pull_feed(feed_url, posts_to_show=None, cache_expires=None):
                 'url': entry['link'],
                 'picture': entry['full_picture'],
                 'published': entry['created_time'], }
-              for entry in entries if entry.has_key('message') ]
+              for entry in entries all (k in entry for k in ('message', 
+                                                             'full_picture')) ]
         except:
             if settings.DEBUG:
                 raise

@@ -187,7 +187,7 @@ def diff_list(prev_rev, revision, field):
                  'colors', 'letters', 'editing', 'feature', 'title',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name', 
-                 'price', 'indicia_frequency']:
+                 'price', 'indicia_frequency', 'variant_name']:
         diff = diff_match_patch().diff_main(getattr(prev_rev, field),
                                             getattr(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)
