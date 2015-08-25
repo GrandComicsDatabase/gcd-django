@@ -4020,7 +4020,7 @@ def show_approved(request):
       changes,
       'oi/queues/approved.html',
       {'CTYPES': CTYPES},
-      page_size=50)
+      per_page=50)
 
 @login_required
 def show_editor_log(request):
@@ -4036,7 +4036,7 @@ def show_editor_log(request):
       changes,
       'oi/queues/editor_log.html',
       {'CTYPES': CTYPES},
-      page_size=50)
+      per_page=50)
 
 @login_required
 def show_cover_queue(request):
@@ -4055,7 +4055,7 @@ def show_cover_queue(request):
       {
         'table_width' : table_width,
       },
-      page_size=50,
+      per_page=50,
       callback_key='tags',
       callback=get_preview_image_tags_per_page)
 
