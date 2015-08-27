@@ -25,7 +25,7 @@ to add to a collection.
     <input type="submit" name="confirm_selection" value="Add all issues">
     <br> (without variants) to your 
     <select name="collection_id">
-  {% for col_item in request.user.collector.collections.all %}
+  {% for col_item in request.user.collector.ordered_collections %}
       <option value="{{ col_item.id }}">{{ col_item.name }}</option>
   {% endfor %}
     </select>

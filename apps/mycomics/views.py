@@ -1,9 +1,11 @@
+import csv
+
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core import urlresolvers
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 
@@ -13,6 +15,8 @@ from apps.gcd.views.alpha_pagination import AlphaPaginator
 from apps.gcd import ErrorWithMessage
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
+
+from apps.oi.import_export import UnicodeWriter
 
 from apps.select.views import store_select_data
 
@@ -63,8 +67,7 @@ def view_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     if request.user.is_authenticated() and \
       collection.collector == request.user.collector:
-        collection_list = request.user.collector.collections.all()\
-                                                .order_by('name')
+        collection_list = request.user.collector.ordered_collections()
     elif collection.public == True:
         collection_list = Collection.objects.none()
     elif not request.user.is_authenticated():
@@ -120,6 +123,89 @@ def delete_collection(request, collection_id):
     CollectionItem.objects.filter(collections=None).delete()
     messages.success(request, _('Collection deleted.'))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
+
+@login_required
+def export_collection(request, collection_id):
+    """
+    Export of collections in csv-format. Only used fields are exported.
+    """
+    collection = get_object_or_404(Collection, id=collection_id,
+                                   collector=request.user.collector)
+    filename = unicode(collection).replace(' ', '_').encode('utf-8')
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=%s.csv' % filename
+    writer = UnicodeWriter(response)
+
+    export_data = ["series", "publisher", "number"]
+    if collection.condition_used:
+        export_data.append("grade")
+    if collection.acquisition_date_used:
+        export_data.append("acquisition date")
+    if collection.sell_date_used:
+        export_data.append("sell_date")
+    if collection.location_used:
+        export_data.append("location")
+    if collection.purchase_location_used:
+        export_data.append("purchase location")
+    if collection.was_read_used:
+        export_data.append("was read")
+    if collection.for_sale_used:
+        export_data.append("for sale")
+    if collection.signed_used:
+        export_data.append("signed")
+    if collection.price_paid_used:
+        export_data.append("price paid")
+    if collection.market_value_used:
+        export_data.append("market value")
+    if collection.sell_price_used:
+        export_data.append("sell price")
+    writer.writerow(export_data)
+
+    items = collection.items.all().order_by('issue__series',
+                                            'issue__sort_code')
+    for item in items:
+        export_data = [item.issue.series.name, item.issue.series.publisher.name]
+        if item.issue.variant_name:
+            export_data.append("%s [%s]" % (item.issue.issue_descriptor(),
+                                            item.issue.variant_name))
+        else:
+            export_data.append(item.issue.issue_descriptor())
+        if collection.condition_used:
+            export_data.append(unicode(item.grade) if item.grade else u'')
+        if collection.acquisition_date_used:
+            export_data.append(unicode(item.acquisition_date) \
+                               if item.acquisition_date else u'')
+        if collection.sell_date_used:
+            export_data.append(unicode(item.sell_date) \
+                               if item.sell_date else u'')
+        if collection.location_used:
+            export_data.append(unicode(item.location) \
+                               if item.location else u'')
+        if collection.purchase_location_used:
+            export_data.append(unicode(item.purchase_location) \
+                               if item.purchase_location else u'')
+        if collection.was_read_used:
+            export_data.append(unicode(item.was_read) \
+                               if item.was_read != None else u'')
+        if collection.for_sale_used:
+            export_data.append(unicode(item.for_sale))
+        if collection.signed_used:
+            export_data.append(unicode(item.signed))
+        if collection.price_paid_used:
+            export_data.append(u"%s %s" % (item.price_paid,
+                                           item.price_paid_currency.code) \
+                               if item.price_paid else u'')
+        if collection.market_value_used:
+            export_data.append(u"%s %s" % (item.market_value,
+                                           item.market_value_currency.code) \
+                               if item.market_value else u'')
+        if collection.sell_price_used:
+            export_data.append(u"%s %s" % (item.sell_price,
+                                           item.sell_price_currency.code) \
+                               if item.sell_price else u'')
+        writer.writerow(export_data)
+
+    return response
 
 
 def get_item_for_collector(item_id, collector):
@@ -296,7 +382,7 @@ def add_selected_issues_to_collection(request, data):
           collection_id, issues, urlresolvers.reverse('view_collection',
                                  kwargs={'collection_id': collection_id}))
     else:
-        collection_list = request.user.collector.collections.all()
+        collection_list = request.user.collector.ordered_collections()
         context = {
                 'item_name': 'issue',
                 'plural_suffix': 's',
@@ -323,8 +409,6 @@ def add_series_issues_to_collection(request, series_id):
           urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
     else:
         # allow user to choose which issues to add to the selected collection
-        collection_list = request.user.collector.collections.all()\
-                                                            .order_by('name')
         if request.GET['which_issues'] == 'all_issues':
             issues = series.active_issues()
         elif request.GET['which_issues'] == 'variant_issues':
@@ -342,8 +426,7 @@ def add_series_issues_to_collection(request, series_id):
                 'plural_suffix': 's',
                 'no_bulk_edit': True,
                 'all_pre_selected': True,
-                'heading': 'Issues',
-                'collection_list': collection_list
+                'heading': 'Issues'
             }
         return paginate_response(request, issues,
                                  'gcd/search/issue_list.html', context,

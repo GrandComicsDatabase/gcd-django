@@ -61,6 +61,18 @@ class Collector(models.Model):
 
     objects = CollectorManager()
 
+    def ordered_collections(self):
+        """
+        Default collections come first, the rest in alphabetical order.
+        """
+        collections_list = [self.default_have_collection,
+                            self.default_want_collection]
+        other = self.collections.exclude(id=self.default_have_collection.id)\
+                                .exclude(id=self.default_want_collection.id)\
+                                .order_by('name')
+        collections_list.extend(list(other))
+        return collections_list
+
 
 class Collection(models.Model):
     """Class for keeping info about particular collections together with

@@ -154,7 +154,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
             <input type="submit" name="confirm_selection" value="Add">
             this issue to your 
             <select name="collection_id">
-            {% for col_item in request.user.collector.collections.all %}
+            {% for col_item in request.user.collector.ordered_collections %}
               <option value="{{ col_item.id }}">{{ col_item.name }}
             {% endfor %}
             </select>
