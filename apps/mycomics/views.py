@@ -296,8 +296,7 @@ def add_selected_issues_to_collection(request, data):
           collection_id, issues, urlresolvers.reverse('view_collection',
                                  kwargs={'collection_id': collection_id}))
     else:
-        collection_list = request.user.collector.collections.all()\
-                                                            .order_by('name')
+        collection_list = request.user.collector.collections.all()
         context = {
                 'item_name': 'issue',
                 'plural_suffix': 's',
@@ -348,7 +347,7 @@ def add_series_issues_to_collection(request, series_id):
             }
         return paginate_response(request, issues,
                                  'gcd/search/issue_list.html', context,
-                                 page_size=issues.count())
+                                 per_page=issues.count())
 
 
 @login_required
@@ -417,7 +416,7 @@ def _edit_location(request, location_class, location_form_class, location_id):
         #Since there is no real validation, this should't happen anyway
         messages.error(_('Entered data was incorrect.'))
 
-    return HttpResponseRedirect(urlresolvers.reverse('settings'))
+    return HttpResponseRedirect(urlresolvers.reverse('mycomics_settings'))
 
 
 @login_required
@@ -435,7 +434,7 @@ def _delete_location(request, location_class, location_id):
                                  user=request.user.collector)
     location.delete()
     messages.success(request, _('Location deleted.'))
-    return HttpResponseRedirect(urlresolvers.reverse('settings'))
+    return HttpResponseRedirect(urlresolvers.reverse('mycomics_settings'))
 
 
 @login_required

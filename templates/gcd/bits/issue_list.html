@@ -23,7 +23,7 @@ the selected issues to your
 {% endif %}
 
 {% if select_key and multiple_selects %}
-<form action="{% url process_multiple_selects select_key=select_key %}" method="POST" class="before_listing">
+<form action="{% url "process_multiple_selects" select_key=select_key %}" method="POST" class="before_listing">
   {% csrf_token %}
   <input type="submit" name="search_select" value="Select issues">
   <div style="clear: both;"></div>
