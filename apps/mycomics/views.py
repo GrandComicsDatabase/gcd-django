@@ -75,7 +75,9 @@ def view_collection(request, collection_id):
     else:
         raise PermissionDenied
 
-    items = collection.items.all().order_by('issue__series', 'issue__sort_code')
+    items = collection.items.all().order_by('issue__series',
+                                            'issue__sort_code')\
+                                  .select_related('issue__series')
     vars = {'collection': collection,
             'collection_list': collection_list}
     paginator = ResponsePaginator(items, template=COLLECTION_TEMPLATE,
@@ -392,7 +394,8 @@ def add_selected_issues_to_collection(request, data):
                 'collection_list': collection_list
             }
         return paginate_response(request, issues,
-                                 'gcd/search/issue_list.html', context)
+                                 'gcd/search/issue_list.html', context,
+                                 per_page=issues.count())
 
 
 @login_required

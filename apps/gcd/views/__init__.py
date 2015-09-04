@@ -118,7 +118,7 @@ class ResponsePaginator(object):
                               self.alpha_paginator.page(alpha_page_num)
                             self.vars['pagination_type'] = 'alpha'
                             self.vars['alpha_page'] = alpha_page
-                            issue_count = 0
+                            issue_count = self.alpha_paginator.number_offset
                             for i in range(1,alpha_page_num):
                                 issue_count += \
                                   self.alpha_paginator.page(i).count

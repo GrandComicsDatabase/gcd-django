@@ -34,6 +34,7 @@ class AlphaPaginator(object):
         self.page_range = []
         self.object_list = queryset
         self.count = len(self.object_list)
+        self.number_offset = 0
 
         # chunk up the objects so we don't need to iterate over the whole list
         # for each letter
@@ -77,6 +78,11 @@ class AlphaPaginator(object):
                 current_page = NamePage(self)
 
             current_page.add(sub_list, letter)
+
+        # count issues for non-ASCII-letters start of series numbers
+        for letter in chunks:
+            if letter not in string.ascii_uppercase:
+                self.number_offset += len(chunks[letter])
 
         # if we finished the for loop with a page that isn't empty, add it
         if current_page.count > 0:

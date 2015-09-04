@@ -11,19 +11,19 @@ from apps.gcd.models import Issue
 register = template.Library()
 
 def show_have_want(issue, user):
-    count = issue.collectionitem_set.filter(
-        collections__name='Default have collection',
+    count = issue.collectionitem_set\
+                 .filter(collections__collector__user=user).count()
+    want_count = issue.collectionitem_set.filter(
+        collections=user.collector.default_want_collection,
         collections__collector__user=user).count()
+    count -= want_count
     if count:
         text = u'I have {} cop{} of this comic.'.format(count, pluralize(count,
                                                                     "y,ies"))
     else:
         text = u''
 
-    count = issue.collectionitem_set.filter(
-        collections__name='Default want collection',
-        collections__collector__user=user).count()
-    if count:
+    if want_count:
         if text != '':
             text += '<br>'
         text += u'This comic is on my want list.'

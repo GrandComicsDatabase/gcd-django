@@ -77,7 +77,7 @@ def process_multiple_selects(request, select_key):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
-        return _cant_get(request)
+        return _cant_get_key(request)
 
     allowed_selects = data['allowed_selects']
     choices = request.POST.getlist('object_choice')

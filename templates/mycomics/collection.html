@@ -8,7 +8,7 @@
   {% bootstrap_messages %}
   <div class="page-header middle-header">
     <h1>{% trans "Collection details" %}: {{ collection.name }}
-    {% if request.user.collector = collection.collector %}
+    {% if request.user.collector == collection.collector %}
       <div class="btn-group pull-right">
         <a href="{% url "export_collection" collection.id %}">
           <button type="button" class="btn" style="display: inline-block;">
