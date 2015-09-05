@@ -12,7 +12,7 @@ register = template.Library()
 
 def show_have_want(issue, user):
     count = issue.collectionitem_set\
-                 .filter(collections__collector__user=user).count()
+                 .filter(collections__collector__user=user).distinct().count()
     want_count = issue.collectionitem_set.filter(
         collections=user.collector.default_want_collection,
         collections__collector__user=user).count()
@@ -24,7 +24,7 @@ def show_have_want(issue, user):
         text = u''
 
     if want_count:
-        if text != '':
+        if text != u'':
             text += '<br>'
         text += u'This comic is on my want list.'
 
