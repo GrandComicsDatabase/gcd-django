@@ -1,4 +1,6 @@
 from collections import OrderedDict
+import datetime
+from django.core import urlresolvers
 from django.db import models
 from django.conf import settings
 
@@ -17,10 +19,10 @@ class NameType(models.Model):
         verbose_name_plural = 'Name Types'
 
     description = models.TextField(null=True, blank=True)
-    type = models.CharField(max_length=50)
+    type = models.CharField(max_length=50, null=True, blank=True)
 
     def __unicode__(self):
-        return self.type
+        return unicode(self.type)
 
 
 class SourceType(models.Model):
@@ -36,7 +38,7 @@ class SourceType(models.Model):
     type = models.CharField(max_length=50)
 
     def __unicode__(self):
-        return self.type
+        return unicode(self.type)
 
 
 class RelationType(models.Model):
@@ -52,7 +54,7 @@ class RelationType(models.Model):
     type = models.CharField(max_length=50)
 
     def __unicode__(self):
-        return self.type
+        return unicode(self.type)
 
 
 class CreatorManager(models.Manager):
@@ -135,6 +137,13 @@ class Creator(models.Model):
     sample_scan = models.FileField(upload_to=settings.SAMPLE_SCAN_DIR)
     notes = models.TextField(blank=True, null=True)
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now())
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now())
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
     def __unicode__(self):
         return '%s (%s)' % (self.name, self.name_type)
 
@@ -151,10 +160,10 @@ class Creator(models.Model):
 
     def get_text_fields(self):
         fields_dict = OrderedDict()
-        fields_dict['name'] = self.name
+        fields_dict['Name'] = self.name
         fields_dict['Name Type'] = self.name_type.type
-        fields_dict['Birth Year'] = self.birth_year
-        fields_dict['Birth Year Uncertain'] = self.birth_year_uncertain
+        fields_dict['Birth Year Uncertain'] = self.birth_year
+        fields_dict['Birth Year'] = self.birth_year_uncertain
         fields_dict['Birth Month'] = self.birth_month
         fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
         fields_dict['Birth Date'] = self.birth_date
@@ -165,7 +174,6 @@ class Creator(models.Model):
         fields_dict['Death Month Uncertain'] = self.death_month_uncertain
         fields_dict['Death Date'] = self.death_date
         fields_dict['Death Date Uncertain'] = self.death_date_uncertain
-        fields_dict['whos_who'] = self.whos_who
         fields_dict['Birth Country'] = self.birth_country.name
         fields_dict['Birth Country Uncertain'] = self.birth_country_uncertain
         fields_dict['Birth Province'] = self.birth_province
@@ -181,6 +189,14 @@ class Creator(models.Model):
         fields_dict['Bio'] = self.bio
         fields_dict['Notes'] = self.notes
         return fields_dict
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_creators',
+            kwargs={'creators_id': self.id } )
+
+    def deletable(self):
+        return True
 
 
 class NameRelation(models.Model):
@@ -201,8 +217,8 @@ class NameRelation(models.Model):
     rel_source = models.ManyToManyField(SourceType)
 
     def __unicode__(self):
-        return '%s >Name_Relation< %s :: %s' % (self.gcd_official_name,
-                                                self.to_name, self.rel_type
+        return '%s >Name_Relation< %s :: %s' % (unicode(self.gcd_official_name),
+                                                unicode(self.to_name), unicode(self.rel_type)
                                                 )
 
 class NameSource(models.Model):
@@ -213,15 +229,15 @@ class NameSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Name Source'
 
     creator = models.ForeignKey(Creator, related_name='creatornamesource')
     source_type = models.ForeignKey(SourceType, related_name='namesourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class BirthYearSource(models.Model):
@@ -231,15 +247,15 @@ class BirthYearSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Birth Year Source'
 
     creator = models.ForeignKey(Creator, related_name='creatorbirthyearsource')
     source_type = models.ForeignKey(SourceType, related_name='creatorbirthyearsourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class BirthMonthSource(models.Model):
@@ -249,15 +265,15 @@ class BirthMonthSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Birth Month Source'
 
     creator = models.ForeignKey(Creator, related_name='creatorbirthmonthsource')
     source_type = models.ForeignKey(SourceType, related_name='creatorbirthmonthsourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class BirthDateSource(models.Model):
@@ -267,15 +283,15 @@ class BirthDateSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Birth Date Source'
 
     creator = models.ForeignKey(Creator, related_name='creatorbirthdatesource')
     source_type = models.ForeignKey(SourceType, related_name='creatorbirthdatesourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class DeathYearSource(models.Model):
@@ -285,15 +301,15 @@ class DeathYearSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Death Year Source'
 
     creator = models.ForeignKey(Creator, related_name='creatordeathyearsource')
     source_type = models.ForeignKey(SourceType, related_name='creatordeathyearsourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class DeathMonthSource(models.Model):
@@ -303,15 +319,15 @@ class DeathMonthSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Death Month Source'
 
     creator = models.ForeignKey(Creator, related_name='creatordeathmonthsource')
     source_type = models.ForeignKey(SourceType, related_name='creatordeathmonthsourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class DeathDateSource(models.Model):
@@ -321,15 +337,15 @@ class DeathDateSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Death Date Source'
 
     creator = models.ForeignKey(Creator, related_name='creatordeathdatesource')
     source_type = models.ForeignKey(SourceType, related_name='creatordeathdatesourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class BirthCountrySource(models.Model):
@@ -339,15 +355,15 @@ class BirthCountrySource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Birth Country Source'
 
     creator = models.ForeignKey(Creator, related_name='creatorbirthcountrysource')
     source_type = models.ForeignKey(SourceType, related_name='creatorbirthcountrysourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class BirthProvinceSource(models.Model):
@@ -357,15 +373,15 @@ class BirthProvinceSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Birth Province Source'
 
     creator = models.ForeignKey(Creator, related_name='creatorbirthprovincesource')
     source_type = models.ForeignKey(SourceType, related_name='creatorbirthprovincesourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class BirthCitySource(models.Model):
@@ -375,15 +391,15 @@ class BirthCitySource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Birth City Source'
 
     creator = models.ForeignKey(Creator, related_name='creatorbirthcitysource')
     source_type = models.ForeignKey(SourceType, related_name='creatorbirthcitysourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class DeathCountrySource(models.Model):
@@ -393,15 +409,15 @@ class DeathCountrySource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Death Country Source'
 
     creator = models.ForeignKey(Creator, related_name='creatordeathcountrysource')
     source_type = models.ForeignKey(SourceType, related_name='creatordeathcountrysourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class DeathProvinceSource(models.Model):
@@ -411,15 +427,15 @@ class DeathProvinceSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Death Province Source'
 
     creator = models.ForeignKey(Creator, related_name='creatordeathprovincesource')
     source_type = models.ForeignKey(SourceType, related_name='creatordeathprovincesourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class DeathCitySource(models.Model):
@@ -429,15 +445,15 @@ class DeathCitySource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Death City Source'
 
     creator = models.ForeignKey(Creator, related_name='creatordeathcitysource')
     source_type = models.ForeignKey(SourceType, related_name='creatordeathcitysourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class PortraitSource(models.Model):
@@ -447,15 +463,15 @@ class PortraitSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Portrait Source'
 
     creator = models.ForeignKey(Creator, related_name='creatorportraitsource')
     source_type = models.ForeignKey(SourceType, related_name='creatorportraitsourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
 
 class BioSource(models.Model):
@@ -465,16 +481,16 @@ class BioSource(models.Model):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('source_name',)
+        ordering = ('source_description',)
         verbose_name_plural = 'Bio Source'
 
     creator = models.ForeignKey(Creator, related_name='creatorbiosource')
     source_type = models.ForeignKey(SourceType, related_name='creatorbiosourcetype')
-    source_name = models.TextField()
+    source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return self.source_name
-
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        
 
 class School(models.Model):
 
@@ -489,7 +505,7 @@ class School(models.Model):
     school_name = models.CharField(max_length=200)
 
     def __unicode__(self):
-        return self.school_name
+        return unicode(self.school_name)
 
 
 class CreatorSchoolDetail(models.Model):
@@ -512,7 +528,7 @@ class CreatorSchoolDetail(models.Model):
     school_source = models.ManyToManyField(SourceType, related_name='schoolsource')
 
     def __unicode__(self):
-        return '%s - %s' % (self.creator.name, self.school.school_name)
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.school.school_name))
 
 
 class Degree(models.Model):
@@ -529,7 +545,7 @@ class Degree(models.Model):
     degree_name = models.CharField(max_length=200)
 
     def __unicode__(self):
-        return self.degree_name
+        return unicode(self.degree_name)
 
 
 class CreatorDegreeDetail(models.Model):
@@ -544,13 +560,13 @@ class CreatorDegreeDetail(models.Model):
         verbose_name_plural = 'Creator Degree Details'
 
     creator = models.ForeignKey(Creator, related_name='creator_degree')
-    school = models.ForeignKey(School, related_name='schooldetails')
+    school = models.ForeignKey(School, related_name='schooldetails', null=True)
     degree = models.ForeignKey(Degree, related_name='degreedetails')
     degree_year = models.PositiveSmallIntegerField(null=True, blank=True)
     degree_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return '%s - %s' % (self.creator.name, self.degree.degree_name)
+        return '%s - %s' % (unicode(self.creator.name), unicode(self.degree.degree_name))
 
 
 class ArtInfluence(models.Model):
@@ -576,7 +592,7 @@ class ArtInfluence(models.Model):
     influence_source = models.ManyToManyField(SourceType, related_name='influencesource')
 
     def __unicode__(self):
-        return self.influence_name
+        return unicode(self.influence_name)
 
 
 class MembershipType(models.Model):
@@ -591,7 +607,7 @@ class MembershipType(models.Model):
     type = models.CharField(max_length=100)
 
     def __unicode__(self):
-        return self.type
+        return unicode(self.type)
 
 
 class Membership(models.Model):
@@ -615,7 +631,7 @@ class Membership(models.Model):
     membership_source = models.ManyToManyField(SourceType, related_name='membershipsource')
 
     def __unicode__(self):
-        return '%s - %s' % (self.creator, self.membership_type)
+        return '%s - %s' % (unicode(self.creator), unicode(self.membership_type))
 
 
 class Award(models.Model):
@@ -635,7 +651,7 @@ class Award(models.Model):
     award_source = models.ManyToManyField(SourceType, related_name='awardsource')
 
     def __unicode__(self):
-        return self.award_name
+        return unicode(self.award_name)
 
 
 class NonComicWorkType(models.Model):
@@ -650,7 +666,7 @@ class NonComicWorkType(models.Model):
     type = models.CharField(max_length=100)
 
     def __unicode__(self):
-        return self.type
+        return unicode(self.type)
 
 
 class NonComicWorkRole(models.Model):
@@ -665,7 +681,7 @@ class NonComicWorkRole(models.Model):
     role_name = models.CharField(max_length=200)
 
     def __unicode__(self):
-        return self.role_name
+        return unicode(self.role_name)
 
 
 class NonComicWork(models.Model):
@@ -689,7 +705,7 @@ class NonComicWork(models.Model):
 
 
     def __unicode__(self):
-        return '%s - %s' % (self.creator, self.work_type)
+        return '%s - %s' % (unicode(self.creator), unicode(self.work_type))
 
 
 class NonComicWorkYear(models.Model):
@@ -708,7 +724,7 @@ class NonComicWorkYear(models.Model):
     work_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return '%s - %s' % (self.non_comic_work, self.work_year)
+        return '%s - %s' % (unicode(self.non_comic_work), unicode(self.work_year))
 
 
 class NonComicWorkLink(models.Model):
@@ -724,4 +740,4 @@ class NonComicWorkLink(models.Model):
     link = models.URLField(max_length=255)
 
     def __unicode__(self):
-        return self.link
+        return unicode(self.link)
