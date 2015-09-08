@@ -202,5 +202,5 @@ class ConditionGrade(models.Model):
         return self.value.__cmp__(other.value)
 
     def __unicode__(self):
-        return unicode(self.name)
+        return u"%s - %s" % (self.code, self.name)
 

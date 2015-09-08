@@ -1,4 +1,4 @@
-from django.forms import ModelForm
+from django.forms import ModelForm, Form, ChoiceField
 from apps.mycomics.models import *
 from apps.oi.forms import _clean_keywords
 
@@ -77,3 +77,14 @@ class CollectionItemForm(ModelForm):
 
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
+
+
+class CollectionSelectForm(Form):
+    collection = ChoiceField()
+
+    def __init__(self, collector, collections=None, *args, **kwargs):
+        super(CollectionSelectForm, self).__init__(*args, **kwargs)
+        choices = [(collection.id, collection) for collection in collector.ordered_collections()]
+        if collections:
+            choices[:] = [choice for choice in choices if choice[1] not in collections]
+        self.fields['collection'].choices = [collection for collection in choices]
