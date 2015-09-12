@@ -56,7 +56,7 @@ def issues_with_several_covers(request):
     vars['advanced_search'] = True
 
     return paginate_response(request, issues,
-                             'projects/issues_with_several_covers.html', vars, page_size=50)
+                             'projects/issues_with_several_covers.html', vars, per_page=50)
 
 
 def story_reprint_inspection(request):
@@ -98,4 +98,4 @@ def story_reprint_inspection(request):
     vars['advanced_search'] = True
 
     return paginate_response(request, stories,
-                             'projects/story_reprint_inspection.html', vars, page_size=50)
+                             'projects/story_reprint_inspection.html', vars, per_page=50)
