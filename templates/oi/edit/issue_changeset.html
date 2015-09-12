@@ -40,7 +40,7 @@
       <br>Only a cover sequence can be added to a variant, and only if the cover artwork is different. On the issue display page the <br>sequences from the <a href="{% url "show_issue" issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence, if that one exists.
       <input type="hidden"
     {% else %}
-      Sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
+      sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
       <input type="text" size="4"
     {% endif %}
              id="added_sequence_number"
@@ -90,7 +90,7 @@
         <input type="submit" id="add_variant_to_issue_revision_{{ issue_revision.id }}"
                name="add_variant_to_issue_revision_{{ issue_revision.id }}"
                value="Add variant issue">
-      </form>Note that you cannot remove a variant from a changeset afterwards.
+      </form>
     </td>
   </tr>
   {% endif %}
@@ -100,7 +100,7 @@
       <form method="GET"
         action="{% url "move_issue" issue_revision_id=issue_revision.id series_id=0 %}">
         <input type="submit" value="Move to series with id"></input>
-        <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"></input> Brand/indicia publisher reset if publisher changes.
+        <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"></input> brand/indicia publisher values might reset
       </form>
     </td>
   </tr>
@@ -241,7 +241,7 @@
   </tr>
   <tr>
     <td class="import_info">
-      <a class="new_window" href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> (opens in a new window) about the file format for imports.
+      <a class="new_window" href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> about the file format for imports.
     </td>
     <td>
     </td>
@@ -254,6 +254,5 @@
 {% for issue_revision in changeset.issuerevisions.all %}
   | <a class="new_window" href="{% url "preview_revision" model_name='issue' id=issue_revision.id %}" target=_blank>Preview
   {% if issue_revision.variant_of %} (Variant) {% endif %}</a>
-  (opens in a new window)
 {% endfor %}
 </p>

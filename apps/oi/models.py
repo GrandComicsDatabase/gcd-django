@@ -3341,8 +3341,7 @@ class IssueRevision(Revision):
       help_text='The publicaton date as printed on the comic, except with the '
                 'name of the month (if any) spelled out.  Any part of the date '
                 'that is not printed on the comic but is known should be put '
-                'in square brackets, such as "[January] 2009".  Do NOT use the '
-                'shipping date in this field, only the publication date.')
+                'in square brackets, such as "[January] 2009". ')
     key_date = models.CharField(max_length=10, blank=True, default='',
       validators=[RegexValidator(r'^(17|18|19|20)\d{2}(\.|-)(0[0-9]|1[0-3])(\.|-)\d{2}$')],
       help_text='Keydate is a translation of the publication date, possibly '
@@ -3364,7 +3363,7 @@ class IssueRevision(Revision):
     indicia_frequency = models.CharField(max_length=255, blank=True, default='',
       help_text='If relevant, the frequency of publication specified in the '
                 'indicia, which may not match the actual publication schedule. '
-                'This is most often found on U.S. ongoing series.')
+                'This is most often found on ongoing magazine series.')
     no_indicia_frequency = models.BooleanField(default=False,
       help_text='Check this box if there is no publication frequency printed '
                 'on the comic.')
@@ -3413,10 +3412,12 @@ class IssueRevision(Revision):
     brand = models.ForeignKey(Brand, null=True, default=None, blank=True,
       related_name='issue_revisions', verbose_name='brand emblem',
       help_text="The publisher's logo or tagline on the cover of the comic, "
-                "if any. Some U.S. golden age publishers did not put any "
-                "identifiable brand marks on their comics."                )
+                "if any. If no matching brand emblem exists, it either "
+                " needs to be added to the database, or the years used "
+                "information of an existing one needs to be changed.")
     no_brand = models.BooleanField(default=False, verbose_name='no brand emblem',
-      help_text="Check this box if there is no publisher's logo or tagline.")
+      help_text="Some comics do not have any identifiable brand marks. Check "
+                "this box if there is no publisher's logo or tagline.")
 
     isbn = models.CharField(max_length=32, blank=True, default='',
       verbose_name='ISBN',
