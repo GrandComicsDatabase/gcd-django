@@ -1,0 +1,249 @@
+{% extends "gcd/base_view.html" %}
+
+{% load i18n %}
+
+{% block title %}
+  GCD :: Creator :: {{ creator.name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+ {% include "gcd/bits/creator_header.html" %}
+
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+      <div class="pub_data">
+            {% for name, value in creator.get_text_fields.items %}
+                  {% if forloop.first %}
+                      <div class="table-container">
+                  {% endif %}
+                  {% if value %}
+                        <p><strong>{{name}}</strong> : {{value}}</p>
+                  {% endif %}
+                  {% if forloop.last %}
+                          {% for name, value in creator.get_link_fields.items %}
+                              {% if value %}
+                                  <p><strong>{{name}}</strong>: <a href="{{value}}">{{value}}</a></p>
+                              {% endif %}
+                          {% endfor %}
+                          {% for name, value in creator.get_file_fields.items %}
+                              {% if value %}
+                                  <p><strong>{{name}}</strong> : </p>
+                                  <img src="{{ MEDIA_URL }}{{value}}" width="150px;" height="100px;">
+                              {% endif %}
+                          {% endfor %}
+                        </div>
+                  {% endif %}
+            {% endfor %}
+
+
+            <!--Creator's Namerelations-->
+        {% for related_person in creator.related_person.all%}
+            {% if forloop.first %}
+                <p class="table-title">Name Relations</p>
+                <div class="table-container">
+            {% endif %}
+            <p><strong>Related name</strong> : {{related_person.to_name}}</p>
+            <p><strong>Relation type</strong> : {{related_person.rel_type}}</p>
+            {% if related_person.rel_source %}
+                <p><strong>Relation source</strong> : {{related_person.rel_source}}</p>
+            {% endif %}
+            {% if not forloop.last %}
+                    <hr/>
+            {% endif %}
+            {% if forloop.last %}
+                    </div>
+            {% endif %}
+        {% endfor %}
+
+      <!--Creator's Schools-->
+        {% for school in creator.schools.all %}
+            {% if forloop.first %}
+                <p class="table-title">Schools</p>
+                <div class="table-container">
+            {% endif %}
+            <p><strong>School name</strong> : {{school}}</p>
+            {% if school.school_year_began %}
+                <p><strong>School year began</strong> : {{school.school_year_began}}</p>
+            {% endif %}
+            {% if school.school_year_ended %}
+                <p><strong>School year ended</strong> : {{school.school_year_ended}}</p>
+            {% endif %}
+            {% if school.school_source.all %}
+                <p><strong>School source</strong> :{% for source in school.school_source.all %} {{source.type}},{% endfor %}</p>
+            {% endif %}
+            {% if not forloop.last %}
+                    <hr/>
+            {% endif %}
+            {% if forloop.last %}
+                    </div>
+            {% endif %}
+        {% endfor %}
+        <!--Creator's Degrees-->
+        {% for degree in creator.degrees.all   %}
+            {% if forloop.first %}
+                <p class="table-title">Degrees</p>
+                <div class="table-container">
+            {% endif %}
+            <p><strong>Degree name</strong> : {{degree}}</p>
+            {% if degree.school %}
+                <p><strong>School name</strong> : {{degree.school.school_name}}</p>
+            {% endif %}
+            {% if degree.degree_year %}
+                <p><strong>Degree year</strong> : {{degree.degree_year}}</p>
+            {% endif %}
+            {% if not forloop.last %}
+                    <hr/>
+            {% endif %}
+            {% if forloop.last %}
+                    </div>
+            {% endif %}
+        {% endfor %}
+
+        <!--Creator's Awards-->
+        {% for award in creator.award_set.all  %}
+            {% if forloop.first %}
+                <p class="table-title">Awards</p>
+                <div class="table-container">
+            {% endif %}
+            <p><strong>Award name</strong> : {{award.award_name}}</p>
+            {% if award.award_year %}
+                <p><strong>Award year</strong> : {{award.award_year}}</p>
+            {% endif %}
+            {% if award.award_source.all %}
+                <p><strong>Award source</strong> :{% for source in award.award_source.all %} {{ source.type }},{% endfor %}</p>
+            {% endif %}
+            {% if not forloop.last %}
+                    <hr/>
+            {% endif %}
+            {% if forloop.last %}
+                    </div>
+            {% endif %}
+        {% endfor %}
+        <!--Creator's Art Influences-->
+        {% for influence in creator.artinfluence_set.all %}
+            {% if forloop.first %}
+                <p class="table-title">Art Influences</p>
+                <div class="table-container">
+            {% endif %}
+            <p><strong>Influence name</strong> : {{influence.influence_name}}</p>
+            {% if influence.influence_source.all %}
+                <p><strong>Influence source</strong> :{% for source in influence.influence_source.all %} {{ source.type }}, {% endfor %}</p>
+            {% endif %}
+            {% if influence.is_self_identify %}
+                {% if influence.self_identify_influences_doc %}
+                    <p><strong>Influence Doc</strong>{{influence.self_identify_influences_doc}}</p>
+                {% endif %}
+            {% endif %}
+            {% if not forloop.last %}
+                    <hr/>
+            {% endif %}
+            {% if forloop.last %}
+                    </div>
+            {% endif %}
+        {% endfor %}
+
+        <!--Creator's Memberships-->
+        {% for membership in creator.membership_set.all  %}
+            {% if forloop.first %}
+                <p class="table-title">Memberships</p>
+            {% endif %}
+            <p><strong>Organization name</strong> : {{membership.organization_name}}</p>
+            <p><strong>Membership type</strong> : {{membership.membership_type.type}}</p>
+            <p><strong>Membership begin year</strong> : {{membership.membership_begin_year}}</p>
+            <p><strong>Membership end year</strong> : {{membership.membership_end_year}}</p>
+            {% if membership.membership_source.all %}
+                <p><strong>Membership source</strong> :{% for source in membership.membership_source.all %} {{source.type}},{% endfor %}</p>
+            {% endif %}
+            {% if not forloop.last %}
+                    <hr/>
+            {% endif %}
+            {% if forloop.last %}
+                    </div>
+            {% endif %}
+        {% endfor %}
+        <!--Creator's Noncomic works-->
+        {% for ncw in creator.noncomicwork_set.all  %}
+            {% if forloop.first %}
+                <p class="table-title">Non Comic Works</p>
+                <div class="table-container">
+            {% endif %}
+            <p><strong>Work type</strong> : {{ ncw.work_type.type }}</p>
+            {% if ncw.publication_title %}
+                <p><strong>Publication title</strong>: {{ncw.publication_title}}</p>
+            {% endif %}
+            {% if ncw.employer_name %}
+                <p><strong>Employer name</strong> : {{ncw.employer_name}}</p>
+            {% endif %}
+            {% if ncw.work_title %}
+                <p><strong>Work title</strong> : {{ncw.work_title}}</p>
+            {% endif %}
+            <p><strong>Work role</strong> : {{ncw.work_role.role_name}}</p>
+            {% if ncw.work_source.all %}
+                <p><strong>Work source</strong> : {% for source in ncw.work_source.all %}{{ source.type }}, {% endfor %}</p>
+            {% endif %}
+            {% if ncw.work_notes %}
+                <p><strong>Work notes</strong> : {{ncw.work_notes}}</p>
+            {% endif %}
+            {% for year in ncw.noncomicworkyear_set.all %}
+                {% if forloop.first %}
+                    <p><strong>Year(s)</strong> :
+                {% endif %}
+                {{year.work_year}}{% if not forloop.last %}, {% endif %}
+                {% if forloop.last %}
+                    </p>
+                {% endif %}
+            {% endfor %}
+            {% for link in ncw.noncomicworklink_set.all %}
+                {% if forloop.first %}
+                    <p><strong>Link(s)</strong> :
+                {% endif %}
+                <a href="{{link.link}}">{{link.link}}</a>{% if not forloop.last %}, {% endif %}
+                {% if forloop.last %}
+                    </p>
+                {% endif %}
+            {% endfor %}
+            {% if not forloop.last %}
+                    <hr/>
+            {% endif %}
+            {% if forloop.last %}
+                    </div>
+            {% endif %}
+        {% endfor %}
+
+            <br>
+      </div> <!-- pub_data -->
+    </div> <!-- control_center -->
+
+  {% if not preview or creator.source %}
+    <div id="control_rail">
+      <div class="edit_box">
+        <div class="edit_header">Editing</div>
+  {% if not preview %}
+    {% with creator as object %}
+    {% with 'creators' as object_class %}
+    {% with 'creators' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+
+  {% endif %} <!-- not preview -->
+      </div> <!-- edit_box -->
+      <div class="change_history">
+  {% if preview %}
+        <a href="{% url change_history model_name='creators' id=creator.source.id %}">Change History</a>
+  {% else %}
+        <a href="{% url change_history model_name='creators' id=creator.id %}">Change History</a>
+  {% endif %}
+      </div>
+    </div> <!-- control_rail -->
+{% endif %}
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+{% endblock %}
