@@ -21,6 +21,12 @@ urlpatterns = patterns('',
     url(r'^mentoring/$', oi_views.mentoring,
         name='mentoring'),
 
+    # Creator URLs
+
+    url(r'^creators/add/$',
+     'apps.oi.views.add_creator', name='add_creator'),
+
+
     # Publisher URLs
     url(r'^publisher/add/$',
         oi_views.add_publisher,

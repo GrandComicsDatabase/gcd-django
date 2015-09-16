@@ -17,6 +17,8 @@ def header_link(changeset):
             revision = changeset.issuerevisions.all()[0]
         elif changeset.change_type == CTYPES['series_bond']:
             revision = changeset.seriesbondrevisions.get()
+        elif changeset.change_type == CTYPES['creators']:
+            revision = changeset.creatorrevisions.get()
         else:
             raise NotImplementedError
 
