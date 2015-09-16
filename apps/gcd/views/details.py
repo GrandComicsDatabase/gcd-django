@@ -38,7 +38,8 @@ from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
-                           SeriesBondRevision, CTYPES
+                           SeriesBondRevision,CreatorRevision, CTYPES
+from apps.gcd.models.creator import Creator
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -50,6 +51,26 @@ COVER_TABLE_WIDTH = 5
 
 IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
+
+
+def creator(request, creators_id):
+    creator = get_object_or_404(Creator, id=creators_id)
+
+    if creator.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creators', 'id': creators_id}))
+
+    return show_creator(request, creator)
+
+def show_creator(request, creator, preview=False):
+    creator_series = []
+    vars = {'creator': creator,
+            'current': [],
+            'error_subject': creator,
+            'preview': preview}
+
+    return paginate_response(request, creator_series,
+                             'gcd/details/creator.html', vars)
 
 def publisher(request, publisher_id):
     """
@@ -69,7 +90,7 @@ def show_publisher(request, publisher, preview=False):
                                                     is_current=True),
              'error_subject': publisher,
              'preview': preview}
-    
+
     return paginate_response(request, publisher_series,
                              'gcd/details/publisher.html', vars)
     
@@ -418,9 +439,10 @@ def change_history(request, model_name, id):
     Displays the change history of the given object of the type
     specified by model_name.
     """
+    from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
-                          'image', 'series_bond']:
+                          'image', 'series_bond', 'creators']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {
@@ -438,14 +460,18 @@ def change_history(request, model_name, id):
     if model_name == 'imprint':
         object = get_object_or_404(Publisher, id=id, is_master=False)
         filter_string = 'publisherrevisions__publisher'
+
     else:
-        # can't import up top because of circular dependency
-        from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
         object = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
 
         # filter is publisherrevisions__publisher, seriesrevisions__series, etc.
         filter_string = '%ss__%s' % (REVISION_CLASSES[model_name].__name__.lower(),
                                      model_name)
+
+        # to remove last character 's' from filter string for creators only
+        if model_name == 'creators':
+            filter_string = filter_string[:-1]
+
     kwargs = { str(filter_string): object, 'state': states.APPROVED }
     changesets = Changeset.objects.filter(**kwargs).order_by('-modified', '-id')
 

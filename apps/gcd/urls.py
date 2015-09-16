@@ -73,6 +73,15 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.indicia_publisher_by_name',
      name='indicia_publisher_by_name'),
 
+    url(r'^creators/(?P<creators_id>\d+)/$',
+     'apps.gcd.views.details.creator', name='show_creators'),
+    url(r'^creators/name/(?P<creator_name>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.creator_by_name',
+     name='creator_by_name'),
+    url(r'^creators/name/(?P<creator_name>.+)/$',
+     'apps.gcd.views.search.creator_by_name',
+     name='creator_by_name'),
+
     url(r'^imprint/(?P<imprint_id>\d+)/$', 'apps.gcd.views.details.imprint',
       name='show_imprint'),
 
@@ -187,11 +196,11 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_credit'),
 
     # Special display pages
-    url(r'^checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
+    url(r'^checklist/name/(?P<creators>.+)/country/(?P<country>.+)/$',
      'apps.gcd.views.search.checklist_by_name', name='checklist_by_name'),
-    url(r'^checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
+    url(r'^checklist/name/(?P<creators>.+)/language/(?P<language>.+)/$',
      'apps.gcd.views.search.checklist_by_name', name='checklist_by_name'),
-    url(r'^checklist/name/(?P<creator>.+)/$',
+    url(r'^checklist/name/(?P<creators>.+)/$',
      'apps.gcd.views.search.checklist_by_name', name='checklist_by_name'),
 
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.
@@ -277,12 +286,12 @@ urlpatterns += patterns('',
     ('^donate.lasso/$', bv.RedirectView.as_view(url='/donate/')),
     (r'^graphics/covers/', bv.RedirectView.as_view(url=None)),
     ('^coversubmit/index.lasso/$', bv.RedirectView.as_view(url=None)),
-    (r'^creator_checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
+    (r'^creator_checklist/name/(?P<creators>.+)/country/(?P<country>.+)/$',
       bv.RedirectView.as_view(
-        url='/checklist/name/%(creator)s/country/%(country)s/')),
-    (r'^creator_checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
+        url='/checklist/name/%(creators)s/country/%(country)s/')),
+    (r'^creator_checklist/name/(?P<creators>.+)/language/(?P<language>.+)/$',
       bv.RedirectView.as_view(
-        url='/checklist/name/%(creator)s/language/%(language)s/')),
-    (r'^creator_checklist/name/(?P<creator>.+)/$',
-      bv.RedirectView.as_view(url='/checklist/name/%(creator)s/'))
+        url='/checklist/name/%(creators)s/language/%(language)s/')),
+    (r'^creator_checklist/name/(?P<creators>.+)/$',
+      bv.RedirectView.as_view(url='/checklist/name/%(creators)s/'))
 )

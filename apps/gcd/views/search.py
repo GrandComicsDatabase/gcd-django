@@ -17,6 +17,7 @@ from django.shortcuts import render_to_response, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
 from django.core import urlresolvers
+from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 from django.utils.http import urlquote
 
@@ -25,7 +26,7 @@ from apps.gcd.views.search_haystack import GcdNameQuery
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             Country, Language, Indexer, BrandGroup, Brand, \
-                            IndiciaPublisher, STORY_TYPES
+                            IndiciaPublisher, STORY_TYPES,Creator
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO, render_error
@@ -70,6 +71,7 @@ def generic_by_name(request, name, q_obj, sort,
             display_name = class_.__name__
             base_name = display_name.lower()
         item_name = display_name.lower()
+
         if class_ is Brand:
             selected = 'brand'
         else:
@@ -101,6 +103,24 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['pub_name'] = name
         else:
             query_val[base_name] = name
+
+    elif (class_ is Creator):
+        base_name = 'creator'
+        display_name = 'Creator'
+
+        plural_suffix = 's'
+        sort_name = "name"
+        heading = 'Creator Search Results'
+        item_name = display_name.lower()
+        things = class_.objects.exclude(deleted=True).filter(q_obj)
+        # if related:
+        #     things = things.select_related(*related)
+
+        # if (sort == ORDER_ALPHA):
+        #     things = things.order_by(sort_name, "year_began")
+        # elif (sort == ORDER_CHRONO):
+        #     things = things.order_by("year_began", sort_name)
+        things = things.distinct()
 
     elif class_ is Issue:
         item_name = 'issue'
@@ -237,6 +257,20 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
         return generic_by_name(request, ind_pub_name, q_obj, sort,
                                IndiciaPublisher,
                                'gcd/search/indicia_publisher_list.html')
+
+def creator_by_name(request, creator_name, sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(creator_name)) \
+                            .models(IndiciaPublisher)
+        return generic_by_name(request, creator_name, None, sort,
+                               Creator,
+                               'gcd/search/creator_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=creator_name)
+        return generic_by_name(request, creator_name, q_obj, sort,
+                               Creator,
+                               'gcd/search/creator_list.html')
 
 def character_by_name(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
@@ -449,6 +483,7 @@ def search(request):
     object_type = str(request.GET['type'])
     param_type = object_type
     view_type = object_type
+
     if view_type == 'publisher':
         param_type = 'publisher_name'
     elif view_type == 'brand_group':
@@ -457,6 +492,8 @@ def search(request):
         param_type = 'brand_name'
     elif view_type == 'indicia_publisher':
         param_type = 'ind_pub_name'
+    elif view_type == 'creator':
+        param_type = 'creator_name'
 
     view = '%s_by_name' % view_type
 
@@ -478,8 +515,8 @@ def search(request):
     param_type_value = quote(request.GET['query'].strip().encode('utf-8'))
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
-                           kwargs = { param_type: param_type_value,
-                                      'sort': sort }))
+                           kwargs={param_type: param_type_value,
+                                      'sort': sort}))
 
 
 def checklist_by_name(request, creator, country=None, language=None):
