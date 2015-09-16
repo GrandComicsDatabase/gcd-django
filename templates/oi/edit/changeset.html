@@ -80,6 +80,9 @@
       {% if changeset.seriesrevisions.count %}
 <p class="error">Series not supported in group changesets.</p>
       {% endif %}
+      {% if changeset.change_type == CTYPES.creators %}
+          {% include "oi/edit/include_frame.html" %}
+      {% endif %}
 
     {% comment %}
       For now, assume the app ensures that there are either many issues and
