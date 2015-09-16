@@ -1,0 +1,12 @@
+{% load i18n %}
+
+<!-- Probably needs to be refactored with the series_issue_header.html file
+     somehow, but deal with that later. -->
+
+{% ifnotequal paginate_only 1 %}
+<h1 class="item_id">
+  <div class="left">
+      <a href="{{ creator.get_absolute_url }}">{{ creator.name }}</a>
+  </div>
+</h1>
+{% endifnotequal %}
