@@ -287,6 +287,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name in ['cover', 'image']:
         return get_cover_revision_form(revision, **kwargs)
 
+    if model_name in ['creators']:
+        return CreatorRevisionForm
+
     raise NotImplementedError
 
 class ForeignKeyField(forms.IntegerField):
@@ -1809,7 +1812,7 @@ class UploadVariantScanForm(UploadScanForm):
       label = 'Variant artwork',
       help_text='Check this box if the uploaded variant cover has artwork '
         'different from the base issue. If checked a cover sequence will '
-        'be generated with question marks in the creator fields on approval.')
+        'be generated with question marks in the creators fields on approval.')
     reservation_requested = forms.BooleanField(required=False,
       label = 'Request variant reservation',
       help_text='Ideally you request a reservation for the new variant to later'
@@ -1876,3 +1879,17 @@ class DownloadForm(forms.Form):
               'and crediting terms in order to download the data.')
 
         return cd
+
+class CreatorRevisionForm(forms.ModelForm):
+    comments = forms.CharField('comments',widget=forms.Textarea,
+                              required=False,
+     help_text='Comments between the Indexer and Editor about the change. '
+               'These comments are part of the public change history, but '
+               'are not part of the regular display.')
+    class Meta:
+        model = CreatorRevision
+        exclude = ['related_person', 'changeset', 'creator', 'deleted']
+
+
+    
+
