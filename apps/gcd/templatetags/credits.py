@@ -273,7 +273,7 @@ def show_country_info(country, name=None):
     else:
         code = country.code
         name = country.name
-    src = u'src="%s/img/gcd/flags/%s.png"' % (settings.MEDIA_URL,
+    src = u'src="%simg/gcd/flags/%s.png"' % (settings.MEDIA_URL,
                                               code.lower())
     alt = u'alt="%s"' % esc(code.upper())
     title = u'title="%s"' % esc(name)
