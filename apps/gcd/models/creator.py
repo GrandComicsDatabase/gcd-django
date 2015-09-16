@@ -162,8 +162,8 @@ class Creator(models.Model):
         fields_dict = OrderedDict()
         fields_dict['Name'] = self.name
         fields_dict['Name Type'] = self.name_type.type
-        fields_dict['Birth Year Uncertain'] = self.birth_year
-        fields_dict['Birth Year'] = self.birth_year_uncertain
+        fields_dict['Birth Year'] = self.birth_year
+        fields_dict['Birth Year Uncertain'] = self.birth_year_uncertain
         fields_dict['Birth Month'] = self.birth_month
         fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
         fields_dict['Birth Date'] = self.birth_date
