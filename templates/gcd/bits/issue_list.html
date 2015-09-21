@@ -1,5 +1,6 @@
 {% load credits %}
 {% load display %}
+{% load compress %}
 {% load url from future %}
 
 {% comment %}
@@ -31,7 +32,10 @@ the selected issues to your
 <table class="listing">
   <tr>
     {% if select_key %}
-    <th> Selection </th>
+    <th class="select_heading"><span>Selection</span>
+      <a href="#" id="select_all" class="hidden">Select all</a>
+      <a href="#" id="select_none" class="hidden">Select none</a>
+    </th>
     {% endif %}
     <th colspan="2"> Publisher </th>
     <th> Issue </th>
@@ -64,6 +68,11 @@ the selected issues to your
 </table>
 {% if select_key and multiple_selects %}
 </form>
+{% include "oi/bits/jquery.html" %}
+{% compress js %}
+<script type='text/javascript'
+        src='{{ MEDIA_URL }}js/select_utils.js'></script>
+{% endcompress %}
 {% endif %}
 {% if request.user.is_authenticated and confirm_selection %}
 </form>
