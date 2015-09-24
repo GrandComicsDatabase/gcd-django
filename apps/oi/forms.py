@@ -20,7 +20,7 @@ from apps.gcd.templatetags.credits import format_page_count
 
 CREATOR_CREDIT_HELP = 'The %s and similar credits for this sequence, where ' \
   'multiple credits are separated with semicolons. If the credit applies to' \
-  ' this sequence type but is unknown, enter a question mark.'
+  ' this sequence type but the creator is unknown, enter a question mark.'
 NO_CREATOR_CREDIT_HELP = 'Check this box if %s does not apply to this ' \
                 'sequence%s and leave the %s field blank. '
 GENERIC_ERROR_MESSAGE = 'Please correct the field errors.  Scroll down to see '\
@@ -213,7 +213,7 @@ class HiddenInputWithHelp(forms.TextInput):
 def _get_comments_form_field():
     return forms.CharField(widget=forms.Textarea, required=False,
       help_text='Comments about the change. These are part of the change '
-                'history, but not of the regular display.')
+                'history, but not part of the regular display.')
 
 def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
@@ -1575,9 +1575,9 @@ class StoryRevisionForm(forms.ModelForm):
       help_text='Enter the relevant creator credits in the following fields, '
                 'where multiple credits are separated by semi-colons. Notes '
                 'are in () and aliases in []. If the credit applies to a '
-                'sequence type, but is unknown enter a question mark. If a '
-                'field is not required for a sequence type it can be left '
-                'blank.', label='')
+                'sequence type, but the creator is unknown enter a question '
+                'mark. If a field is not required for a sequence type it can '
+                'be left blank.', label='')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,

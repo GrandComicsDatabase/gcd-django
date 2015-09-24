@@ -3413,8 +3413,8 @@ class IssueRevision(Revision):
       related_name='issue_revisions', verbose_name='brand emblem',
       help_text="The publisher's logo or tagline on the cover of the comic, "
                 "if any. If no matching brand emblem exists, it either "
-                " needs to be added to the database, or the years used "
-                "information of an existing one needs to be changed.")
+                " needs to be added to the database, or information for the "
+                "years used of an existing one needs to be changed.")
     no_brand = models.BooleanField(default=False, verbose_name='no brand emblem',
       help_text="Some comics do not have any identifiable brand marks. Check "
                 "this box if there is no publisher's logo or tagline.")

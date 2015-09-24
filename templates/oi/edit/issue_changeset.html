@@ -241,7 +241,7 @@
   </tr>
   <tr>
     <td class="import_info">
-      <a class="new_window" href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> about the file format for imports.
+      <a class="new_window" href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information<span>opens in a new window</span></a> about the file format for imports.
     </td>
     <td>
     </td>
@@ -252,7 +252,7 @@
 <p>
   <a href="{% url "compare" id=changeset.id %}">Compare changes</a>
 {% for issue_revision in changeset.issuerevisions.all %}
-  | <a class="new_window" href="{% url "preview_revision" model_name='issue' id=issue_revision.id %}" target=_blank>Preview
+  | <a class="new_window" href="{% url "preview_revision" model_name='issue' id=issue_revision.id %}" target=_blank>Preview<span>opens in a new window</span>
   {% if issue_revision.variant_of %} (Variant) {% endif %}</a>
 {% endfor %}
 </p>
