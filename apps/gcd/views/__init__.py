@@ -135,10 +135,7 @@ class ResponsePaginator(object):
                                         u'?' + args.urlencode())
 
         page = self.p.page(page_num)
-        if self.vars['pagination_type'] == 'alpha':
-            self.vars['items'] = alpha_page.object_list[:self.p.per_page]
-        else:
-            self.vars['items'] = page.object_list
+        self.vars['items'] = page.object_list
         self.vars['paginator'] = self.p
         self.vars['page'] = page
         self.vars['page_number'] = page_num

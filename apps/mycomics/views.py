@@ -34,6 +34,8 @@ COLLECTION_FORM_TEMPLATE='mycomics/collection_form.html'
 COLLECTION_ITEM_TEMPLATE='mycomics/collection_item.html'
 MESSAGE_TEMPLATE='mycomics/message.html'
 SETTINGS_TEMPLATE='mycomics/settings.html'
+DEFAULT_PER_PAGE=25
+
 
 def index(request):
     """Generates the front index page."""
@@ -81,8 +83,8 @@ def view_collection(request, collection_id):
     vars = {'collection': collection,
             'collection_list': collection_list}
     paginator = ResponsePaginator(items, template=COLLECTION_TEMPLATE,
-                                  vars=vars, per_page=25)
-    alpha_paginator = AlphaPaginator(items, per_page=25)
+                                  vars=vars, per_page=DEFAULT_PER_PAGE)
+    alpha_paginator = AlphaPaginator(items, per_page=DEFAULT_PER_PAGE)
     paginator.vars['alpha_paginator'] = alpha_paginator
     return paginator.paginate(request)
 
@@ -225,10 +227,21 @@ def check_item_is_in_collection(request, item, collection):
 
 @login_required
 def delete_collection_item(request, item_id, collection_id):
+    if request.method != 'POST':
+        raise ErrorWithMessage("This page may only be accessed through the "
+                               "proper form.")
+
     collection = get_object_or_404(Collection, id=collection_id)
     item = get_item_for_collector(item_id, request.user.collector)
 
     check_item_is_in_collection(request, item, collection)
+
+    position = collection.items.filter(issue__series__name__lte=
+                                         item.issue.series.name)\
+                               .exclude(issue__series__name=
+                                          item.issue.series.name,
+                                        issue__sort_code__gt=
+                                          item.issue.sort_code).count()
 
     collection.items.remove(item)
     if not item.collections.count():
@@ -239,7 +252,8 @@ def delete_collection_item(request, item_id, collection_id):
         item.delete()
     messages.success(request, _("Item removed from collection"))
     return HttpResponseRedirect(urlresolvers.reverse('view_collection',
-                                  kwargs={'collection_id': collection_id}))
+                                  kwargs={'collection_id': collection_id}) + \
+                                "?page=%d" % (position/DEFAULT_PER_PAGE + 1))
 
 
 def view_item(request, item_id, collection_id):
