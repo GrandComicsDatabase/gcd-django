@@ -120,7 +120,7 @@ def register(request):
         return render_to_response('gcd/accounts/register.html',
           { 'form' : form },
           context_instance=RequestContext(request))
-        
+
     errors = []
     form = RegistrationForm(request.POST)
     if not form.is_valid():
@@ -164,7 +164,7 @@ def register(request):
                 raise
 
     if new_user is None:
-        return render_error(request, 
+        return render_error(request,
           ('Could not create unique internal account name.  This is a very '
            'unlikely error, and it will probably go away if you try to '
            'register again.  We apologize for the inconvenience.  If it '
@@ -343,7 +343,7 @@ def handle_existing_account(request, users):
 
     user = users[0]
     if user.is_active:
-        return render_error(request, 
+        return render_error(request,
           'You already have an active account with this email address.  If '
           'you have forgotten your password, you may <a href="' +
            urlresolvers.reverse('forgot_password') + '">reset '
@@ -356,7 +356,7 @@ def handle_existing_account(request, users):
             user.indexer.registration_expires = date.today() + \
               timedelta(settings.REGISTRATION_EXPIRATION_DELTA)
             user.indexer.save()
-            
+
             email_body = u"""
 Hello from the %s!
 
@@ -442,6 +442,9 @@ def profile(request, user_id=None, edit=False):
         else:
             return render_error(request,
               "You may not edit other users' profiles")
+
+    if profile_user == request.user:
+        context['ranking'] = ranking(profile_user.indexer)
 
     return render_to_response('gcd/accounts/profile.html',
                               context,
@@ -574,7 +577,7 @@ def mentor_not_new(request, indexer_id):
     indexer = get_object_or_404(Indexer, id=indexer_id)
     if indexer.mentor != request.user:
         return render_error(request,
-          'You are not allowed to change the state of this new Indexer', 
+          'You are not allowed to change the state of this new Indexer',
           redirect=False)
     else:
         if request.method == 'POST':
@@ -584,6 +587,25 @@ def mentor_not_new(request, indexer_id):
             indexer.max_ongoing = max(settings.RESERVE_MAX_ONGOING_DEFAULT,
                                       indexer.max_ongoing)
             indexer.save()
-    
+
     return HttpResponseRedirect(urlresolvers.reverse('mentoring'))
 
+def ranking(indexer):
+    """
+    Returns a dictionary of indexer ranking information (by IMPs).
+    """
+    # Query for list of indexers with more imps than this indexer (with gt and
+    # not gte because indexers with equal imps are tied). When ordered by imps,
+    # the first in the list is the one to beat to rise to next level.
+    worldwide = Indexer.objects.order_by('imps')\
+        .exclude(user__username=settings.ANON_USER_NAME) \
+        .filter(imps__gt=indexer.imps)
+    national = worldwide.filter(country=indexer.country)
+
+    return {
+        'national': national.count() + 1,
+        'global': worldwide.count() + 1,
+        'national_levelup':
+            (national[0].imps - indexer.imps + 1) if national else None,
+        'global_levelup':
+            (worldwide[0].imps - indexer.imps + 1) if worldwide else None }

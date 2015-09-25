@@ -583,6 +583,19 @@ div.ongoing_status form {
     font-weight: bold;
 }
 
+.hidden {
+    display: none;
+}
+
+/* Fix "Selection" column width to avoid jumping when heading is changed dynamically */
+.select_heading {
+    width: 7em;
+}
+
+.select_heading :link {
+    color: white;
+}
+
 /* For form error messages, which usually need div positioning */
 .error_message {
     color: red;
@@ -617,6 +630,21 @@ div.ongoing_status form {
 a.new_window {
     padding-right: 13px;
     background: transparent no-repeat right center url(external.png);
+    position:relative;
+    z-index:1;
+}
+
+a.new_window:hover span
+{
+    display:block;
+    position:absolute;
+    left:0em;
+    width:11em;
+    border:1px solid black;
+    background-color: #FFF;
+    color:#000;
+    text-align: center;
+    padding: 5px;
 }
 
 a.link_info_left
@@ -626,12 +654,12 @@ a.link_info_left
     text-decoration:none;
 }
 
-a.link_info_left:hover
+a.link_info_left:hover, a.new_window:hover
 {
     z-index:2;
 }
 
-a.link_info_left span
+a.link_info_left span, a.new_window span
 {
     display: none;
 }
@@ -647,7 +675,7 @@ a.link_info_left:hover span
     color:#000;
     text-align: center;
     padding: 5px;
-    font-size: 0.8em;
+    font-size: 0.9em;
 }
 
 #donate_table {
