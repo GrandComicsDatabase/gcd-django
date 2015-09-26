@@ -6,6 +6,7 @@
 {% load credits %}
 
 {% block modals %}
+  {{ block.super }}
   {% if request.user.collector == collection.collector %}
   <div id="edit-item" class="modal fade" tabindex="-1" style="display: none;">
     <div class="modal-dialog">
@@ -36,7 +37,7 @@
   <div id="delete-collection-item" class="modal fade" tabindex="-1" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{% url "delete_collection_item" item.id collection.id %}" method="POST">
+        <form action="{% url "delete_item" item.id collection.id %}" method="POST">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
             <h4 class="modal-title">{% trans "Delete Item From Collection" %}</h4>
@@ -53,21 +54,59 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
+  <div id="move-collection-item" class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{% url "move_item" item.id collection.id %}" method="POST">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+            <h4 class="modal-title">{% trans "Move The Item To Another Collection" %}</h4>
+          </div>
+          <div class="modal-body">
+          {% bootstrap_form collection_form %}
+          {% csrf_token %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <input type="submit" class="btn btn-primary" name="move" value="{% trans "Move" %}">
+            {#<input type="submit" class="btn btn-primary" name="copy" value="{% trans "Copy" %}">#}
+          </div>
+        </form>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
   {% endif %}
 {% endblock %}
 
 {% block content %}
   {% bootstrap_messages %}
   <div class="page-header middle-header">
-    <h1><a href="{{ item.issue.get_absolute_url }}">{{ item.issue.full_name }}</a>
+    <h1>
+    <a href="{{ item.issue.get_absolute_url }}">{{ item.issue.full_name }}</a>
+    {% if item_after %}
+    <a href="{% url 'view_item' item_id=item_after.id collection_id=collection.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-right"></span></button></a>
+    {% endif %}
+    {% if item_before %}
+    <a href="{% url 'view_item' item_id=item_before.id collection_id=collection.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-left"></span></button></a>
+    {% endif %}
     </h1>
-    <h4>In: <a href="{% url "view_collection" collection.id %}">{{ collection.name }}</a>
+    <h4>In: <a href="{% url "view_collection" collection.id %}?page={{ page }}">{{ collection.name }}</a>
     {% if request.user.collector == collection.collector %}
+      {% if other_collections %}
+        Also in:
+        {% for other_collection in other_collections %}
+          {% if not forloop.first %}/{% endif %}
+          <a href="{% url "view_collection" other_collection.id %}">{{ other_collection.name }}</a>
+        {% endfor %}
+      {% endif %}
       <button type="button" class="btn btn-primary pull-right"
               data-toggle="modal" href="#edit-item">{% trans "Edit" %}
       </button>
       <button type="button" class="btn btn-primary pull-right"
               data-toggle="modal" href="#delete-collection-item">{% trans "Delete from collection" %}
+      </button>
+      <button type="button" class="btn btn-primary pull-right"
+              data-toggle="modal" href="#move-collection-item">{% trans "To other collection" %}
       </button>
     {% else %} / {{ collection.collector.user.indexer }}
     {% endif %}

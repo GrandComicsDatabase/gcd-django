@@ -225,8 +225,14 @@ def check_item_is_in_collection(request, item, collection):
         raise ErrorWithMessage("This item doesn't belong to given collection.")
 
 
+def check_item_is_not_in_collection(request, item, collection):
+    if item in collection.items.all():
+        raise ErrorWithMessage("This item already does belong to given "
+                               "collection.")
+
+
 @login_required
-def delete_collection_item(request, item_id, collection_id):
+def delete_item(request, item_id, collection_id):
     if request.method != 'POST':
         raise ErrorWithMessage("This page may only be accessed through the "
                                "proper form.")
@@ -256,6 +262,39 @@ def delete_collection_item(request, item_id, collection_id):
                                 "?page=%d" % (position/DEFAULT_PER_PAGE + 1))
 
 
+@login_required
+def move_item(request, item_id, collection_id):
+    if request.method != 'POST':
+        raise ErrorWithMessage("This page may only be accessed through the "
+                               "proper form.")
+    from_collection = get_object_or_404(Collection, id=collection_id)
+    item = get_item_for_collector(item_id, request.user.collector)
+    check_item_is_in_collection(request, item, from_collection)
+    collection_form = CollectionSelectForm(request.user.collector, None, request.POST)
+    if collection_form.is_valid():
+        to_collection_id = collection_form.cleaned_data['collection']
+        to_collection = get_object_or_404(Collection, id=to_collection_id)
+
+        check_item_is_in_collection(request, item, from_collection)
+        check_item_is_not_in_collection(request, item, to_collection)
+        if 'move' in request.POST:
+            from_collection.items.remove(item)
+            item.collections.add(to_collection)
+            messages.success(request, _("Item moved between collections"))
+            return HttpResponseRedirect(urlresolvers.reverse('view_item',
+                                    kwargs={'item_id': item_id,
+                                            'collection_id': to_collection_id}))
+        #elif 'copy' in request.POST:
+            #item.collections.add(to_collection)
+            #messages.success(request, _("Item copied between collections"))
+        else:
+            messages.error(request, _("Item unchanged"))
+
+    return HttpResponseRedirect(urlresolvers.reverse('view_item',
+                                kwargs={'item_id': item_id,
+                                        'collection_id': collection_id}))
+
+
 def view_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     if request.user.is_authenticated() and \
@@ -270,7 +309,6 @@ def view_item(request, item_id, collection_id):
 
     check_item_is_in_collection(request, item, collection)
 
-    item_form = None
     sell_date_form = None
     acquisition_date_form = None
     if request.user.is_authenticated() and \
@@ -283,12 +321,45 @@ def view_item(request, item_id, collection_id):
             acquisition_date_form = DateForm(instance=item.acquisition_date,
                                             prefix='acquisition_date')
             acquisition_date_form.fields['date'].label = _('Acquisition date')
+        collection_form = CollectionSelectForm(request.user.collector,
+                                        collections=item.collections.all())
+        other_collections = item.collections.exclude(id=collection.id)
+    else:
+        item_form = None
+        collection_form = None
+        other_collections = None
+
+    item_before = collection.items.filter(issue__series__name__lte=
+                                              item.issue.series.name)\
+                                    .exclude(issue__series__name=
+                                               item.issue.series.name,
+                                             issue__sort_code__gte=
+                                               item.issue.sort_code).reverse()
+
+    if item_before:
+        page = item_before.count()/DEFAULT_PER_PAGE + 1
+        item_before = item_before[0]
+    else:
+        page = 1
+    item_after = collection.items.filter(issue__series__name__gte=
+                                             item.issue.series.name)\
+                                     .exclude(issue__series__name=
+                                                item.issue.series.name,
+                                              issue__sort_code__lte=
+                                                item.issue.sort_code)
+    if item_after:
+        item_after = item_after[0]
 
     return render_to_response(COLLECTION_ITEM_TEMPLATE,
                               {'item': item, 'item_form': item_form,
+                               'item_before': item_before,
+                               'item_after': item_after,
+                               'page': page,
                                'collection': collection,
+                               'other_collections': other_collections,
                                'sell_date_form': sell_date_form,
-                               'acquisition_date_form': acquisition_date_form},
+                               'acquisition_date_form': acquisition_date_form,
+                               'collection_form': collection_form},
                               context_instance=RequestContext(request))
 
 
