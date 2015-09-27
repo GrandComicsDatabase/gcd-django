@@ -2,6 +2,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.safestring import mark_safe
+from django.core import urlresolvers
+
 from apps.gcd.models import Issue, Language
 from apps.stddata.models import Currency, Date
 from taggit.managers import TaggableManager
@@ -99,6 +101,10 @@ class Collection(models.Model):
     market_value_used = models.BooleanField(default=False)
     sell_price_used = models.BooleanField(default=False)
 
+    def get_absolute_url(self):
+        return urlresolvers.reverse('view_collection',
+                                    kwargs={'collection_id':self.id})
+
     def __unicode__(self):
         return unicode(self.name)
 
@@ -174,6 +180,9 @@ class CollectionItem(models.Model):
     sell_price_currency = models.ForeignKey(Currency, related_name='+',
                                             null=True, blank=True)
 
+    def get_absolute_url(self, collection):
+        return urlresolvers.reverse('view_item', kwargs={'item_id':self.id,
+                                    'collection_id':collection.id})
 
 class ConditionGradeScale(models.Model):
     """Class representing condition grade scale for use by collectors."""

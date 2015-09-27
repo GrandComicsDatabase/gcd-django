@@ -8,6 +8,8 @@ from django.core import urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
@@ -231,6 +233,15 @@ def check_item_is_not_in_collection(request, item, collection):
                                "collection.")
 
 
+def get_collection_for_owner(request, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+    if collection.collector.user != request.user:
+        return render_error(request,
+            'Only the owner of a collection can add issues to it.',
+            redirect=False)
+    return collection
+
+
 @login_required
 def delete_item(request, item_id, collection_id):
     if request.method != 'POST':
@@ -297,11 +308,12 @@ def move_item(request, item_id, collection_id):
 
 def view_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
+    collector = collection.collector
     if request.user.is_authenticated() and \
-      collection.collector == request.user.collector:
+      collector == request.user.collector:
         item = get_item_for_collector(item_id, request.user.collector)
     elif collection.public == True:
-        item = get_item_for_collector(item_id, collection.collector)
+        item = get_item_for_collector(item_id, collector)
     elif not request.user.is_authenticated():
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     else:
@@ -312,8 +324,17 @@ def view_item(request, item_id, collection_id):
     sell_date_form = None
     acquisition_date_form = None
     if request.user.is_authenticated() and \
-      collection.collector == request.user.collector:
-        item_form = CollectionItemForm(request.user.collector, instance=item)
+      collector == request.user.collector:
+        initial = {}
+        if collector.default_currency:
+            if not item.price_paid_currency:
+                initial['price_paid_currency'] = collector.default_currency
+            if not item.sell_price_currency:
+                initial['sell_price_currency'] = collector.default_currency
+            if not item.market_value_currency:
+                initial['market_value_currency'] = collector.default_currency
+        item_form = CollectionItemForm(collector, instance=item,
+                                       initial=initial)
         if item.collections.filter(sell_date_used=True).exists():
             sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
             sell_date_form.fields['date'].label = _('Sell date')
@@ -321,7 +342,7 @@ def view_item(request, item_id, collection_id):
             acquisition_date_form = DateForm(instance=item.acquisition_date,
                                             prefix='acquisition_date')
             acquisition_date_form.fields['date'].label = _('Acquisition date')
-        collection_form = CollectionSelectForm(request.user.collector,
+        collection_form = CollectionSelectForm(collector,
                                         collections=item.collections.all())
         other_collections = item.collections.exclude(id=collection.id)
     else:
@@ -436,11 +457,7 @@ def save_item(request, item_id, collection_id):
 
 
 def add_issues_to_collection(request, collection_id, issues, redirect):
-    collection = get_object_or_404(Collection, id=collection_id)
-    if collection.collector.user != request.user:
-        return render_error(request,
-            'Only the owner of a collection can add issues to it.',
-            redirect=False)
+    collection = get_collection_for_owner(request, collection_id)
     for issue in issues:
         collected = CollectionItem.objects.create(issue=issue)
         collected.collections.add(collection)
@@ -449,11 +466,17 @@ def add_issues_to_collection(request, collection_id, issues, redirect):
 
 @login_required
 def add_single_issue_to_collection(request, issue_id):
-    issue = Issue.objects.filter(id=issue_id)
-    return add_issues_to_collection(request, 
-        int(request.POST['collection_id']), issue,
-        urlresolvers.reverse('show_issue', 
-                            kwargs={'issue_id': issue_id}))
+    issue = Issue.objects.get(id=issue_id)
+    collection = get_collection_for_owner(request,
+                   collection_id=int(request.POST['collection_id']))
+    collected = CollectionItem.objects.create(issue=issue)
+    collected.collections.add(collection)
+    messages.success(request, u"Issue <a href='%s'>%s</a> was added to your "
+                               "'%s' collection." % \
+                              (collected.get_absolute_url(collection),
+                               esc(issue), esc(collection.name)))
+    return HttpResponseRedirect(urlresolvers.reverse('show_issue',
+                                  kwargs={'issue_id': issue_id}))
 
 
 @login_required
@@ -491,8 +514,17 @@ def add_series_issues_to_collection(request, series_id):
         # add all issues (without variants) to the selected collection
         collection_id = int(request.POST['collection_id'])
         collection = get_object_or_404(Collection, id=collection_id)
-        messages.success(request, u"All issues added to your '%s' collection."\
-                                  % collection.name)
+        item_before = collection.items.filter(issue__series__sort_name__lt=
+                                              series.sort_name).reverse()
+
+        if item_before:
+            page = "?page=%d" % (item_before.count()/DEFAULT_PER_PAGE + 1)
+        else:
+            page = ""
+        messages.success(request, u"All issues added to your "
+                                   "<a href='%s%s'>%s</a> collection." % \
+                                   (collection.get_absolute_url(), page,
+                                    collection.name))
         return add_issues_to_collection(request, collection_id, issues,
           urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
     else:

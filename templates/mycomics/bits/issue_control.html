@@ -1,0 +1,28 @@
+{% load url from future %}
+{% load collecting %}
+
+<div class="edit_header">
+    <div>my.comics.org</div>
+</div>
+{% if messages %}
+<ul class="messages">
+  {% for message in messages %}
+  <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% if request.user.is_authenticated %}
+  {{ issue|show_have_want:request.user }}
+<form method="POST" action="{% url "my_issue" issue_id=issue.id %}">
+  {% csrf_token %}
+  <div>
+    <input type="submit" name="confirm_selection" value="Add">
+    this issue to your 
+    <select name="collection_id">
+    {% for col_item in request.user.collector.ordered_collections %}
+      <option value="{{ col_item.id }}">{{ col_item.name }}
+    {% endfor %}
+    </select>
+  </div>
+</form>
+{% endif %}
