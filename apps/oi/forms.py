@@ -725,7 +725,7 @@ class SeriesRevisionForm(forms.ModelForm):
         cd['binding'] = cd['binding'].strip()
         cd['publishing_format'] = cd['publishing_format'].strip()
         cd['comments'] = cd['comments'].strip()
-        if cd['reservation_requested'] and \
+        if 'reservation_requested' in cd and cd['reservation_requested'] and \
             (not cd['is_current'] and not cd['is_singleton']):
             raise forms.ValidationError('A reservation can only be requested'
                     ' for currently ongoing series.')
@@ -742,7 +742,8 @@ class SeriesRevisionForm(forms.ModelForm):
         if cd['is_singleton'] and cd['is_current']:
             raise forms.ValidationError('Singleton series do not continue '
               'and therefore cannot be current in our sense.')
-        if cd['is_singleton'] and cd['reservation_requested']:
+        if cd['is_singleton'] and 'reservation_requested' in cd and \
+          cd['reservation_requested']:
             raise forms.ValidationError('Reservations for the created issue '
               'of a singleton series are not supported for technical reasons.')
 
@@ -1560,7 +1561,7 @@ class StoryRevisionForm(forms.ModelForm):
     title = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide',
                                                           'autofocus':''}),
                             required=False,
-      help_text='If the title is not available, preferably use as a title'
+      help_text='If no title can be determined, preferably use here'
                 ' the first line of text/dialogue in "quotation marks", or '
                 'a made up title, and check unofficial title.')
     title_inferred = forms.BooleanField(required=False,

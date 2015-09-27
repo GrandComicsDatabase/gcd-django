@@ -242,10 +242,10 @@ def delete_item(request, item_id, collection_id):
 
     check_item_is_in_collection(request, item, collection)
 
-    position = collection.items.filter(issue__series__name__lte=
-                                         item.issue.series.name)\
-                               .exclude(issue__series__name=
-                                          item.issue.series.name,
+    position = collection.items.filter(issue__series__sort_name__lte=
+                                         item.issue.series.sort_name)\
+                               .exclude(issue__series__sort_name=
+                                          item.issue.series.sort_name,
                                         issue__sort_code__gt=
                                           item.issue.sort_code).count()
 
@@ -329,10 +329,10 @@ def view_item(request, item_id, collection_id):
         collection_form = None
         other_collections = None
 
-    item_before = collection.items.filter(issue__series__name__lte=
-                                              item.issue.series.name)\
-                                    .exclude(issue__series__name=
-                                               item.issue.series.name,
+    item_before = collection.items.filter(issue__series__sort_name__lte=
+                                              item.issue.series.sort_name)\
+                                    .exclude(issue__series__sort_name=
+                                               item.issue.series.sort_name,
                                              issue__sort_code__gte=
                                                item.issue.sort_code).reverse()
 
@@ -341,10 +341,10 @@ def view_item(request, item_id, collection_id):
         item_before = item_before[0]
     else:
         page = 1
-    item_after = collection.items.filter(issue__series__name__gte=
-                                             item.issue.series.name)\
-                                     .exclude(issue__series__name=
-                                                item.issue.series.name,
+    item_after = collection.items.filter(issue__series__sort_name__gte=
+                                             item.issue.series.sort_name)\
+                                     .exclude(issue__series__sort_name=
+                                                item.issue.series.sort_name,
                                               issue__sort_code__lte=
                                                 item.issue.sort_code)
     if item_after:
