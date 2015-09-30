@@ -3,7 +3,6 @@ import datetime
 from django.core import urlresolvers
 from django.db import models
 from django.conf import settings
-from apps.oi import *
 from apps.gcd.models.country import Country
 
 
