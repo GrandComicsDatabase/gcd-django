@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from django.db import transaction, connection, settings
+from django.conf import settings
+from django.db import transaction, connection
 from django.contrib.auth.models import User
 from django.utils.encoding import smart_unicode as uni
 from django.utils.encoding import smart_str

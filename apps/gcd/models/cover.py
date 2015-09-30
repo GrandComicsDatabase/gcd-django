@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from django.db import models, settings
+from django.conf import settings
+from django.db import models
 from django.core import urlresolvers
 
 from issue import Issue

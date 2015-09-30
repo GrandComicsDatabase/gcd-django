@@ -1,5 +1,5 @@
 BeautifulSoup
-Django<1.5
+Django<1.6
 MySQL-python
 Pillow < 2.0
 PyICU
@@ -10,8 +10,8 @@ South
 django-appconf
 django-compressor
 django-imagekit<3.0
-git+git://github.com/GrandComicsDatabase/django-taggit.git
-git+git://github.com/GrandComicsDatabase/django-templatesadmin.git
+git+git://github.com/GrandComicsDatabase/django-taggit.git@django18
+git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@django18
 git+git://github.com/GrandComicsDatabase/django-mobile.git
 python-stdnum
 wsgiref

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.utils.encoding import smart_unicode as uni
+from django.conf import settings
+from django.db import transaction, connection
 from django.db.models import Q
-from django.db import transaction, connection, settings
 from django.contrib.auth.models import User
 
 from apps.gcd.models import Story, Issue

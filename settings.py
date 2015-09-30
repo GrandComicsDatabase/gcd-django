@@ -36,8 +36,11 @@ MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
 MEDIA_URL = '/site_media/'
 
 # We're not using django.contrib.staticfiles yet, but the admin site
-# is happier with a STATIC_URL.
+# is happier with a STATIC_URL and django-compressor has changed from
+# defaulting to MEDIA_* to STATIC_* for its settings.
+# for its settings.
 STATIC_URL = MEDIA_URL
+STATIC_ROOT = MEDIA_ROOT
 
 # Database settings. Override yours in a settings_local.py
 DATABASES = {
@@ -178,6 +181,11 @@ COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                 'templates/gcd/front_page/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
+
+# settings for django-taggit
+SOUTH_MIGRATION_MODULES = {
+    'taggit': 'taggit.south_migration',
+}
 
 #################################################################################
 # Haystack and search

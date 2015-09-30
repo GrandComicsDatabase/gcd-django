@@ -1,7 +1,8 @@
 import sys
 import logging
 import datetime
-from django.db import models, transaction, connection, settings
+from django.conf import settings
+from django.db import models, transaction, connection
 from django.contrib.auth.models import User
 from apps.gcd.models.publisher import Publisher
 from apps.oi.models import *

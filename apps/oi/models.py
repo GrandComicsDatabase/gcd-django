@@ -5,7 +5,8 @@ import re
 import os, glob
 from stdnum import isbn
 
-from django.db import models, settings
+from django.conf import settings
+from django.db import models
 from django.db.models import Q, F, Count, Max, Manager
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.models import User

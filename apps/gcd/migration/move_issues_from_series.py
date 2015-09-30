@@ -1,5 +1,6 @@
 import sys
-from django.db import transaction, connection, settings
+from django.conf import settings
+from django.db import transaction, connection
 
 from apps.oi.models import *
 from apps.oi.views import _do_reserve
