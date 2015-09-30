@@ -83,6 +83,19 @@
       {% if changeset.change_type == CTYPES.creators %}
           {% include "oi/edit/include_frame.html" %}
       {% endif %}
+       {% if changeset.change_type == CTYPES.creator_membership %}
+          {% include "oi/edit/include_frame.html" %}
+      {% endif %}
+      {% if changeset.change_type == CTYPES.creator_award %}
+          {% include "oi/edit/include_frame.html" %}
+      {% endif %}
+      {% if changeset.change_type == CTYPES.creator_artinfluence %}
+          {% include "oi/edit/include_frame.html" %}
+      {% endif %}
+      {% if changeset.change_type == CTYPES.creator_noncomicwork %}
+          {% include "oi/edit/include_frame.html" %}
+      {% endif %}
+
 
     {% comment %}
       For now, assume the app ensures that there are either many issues and

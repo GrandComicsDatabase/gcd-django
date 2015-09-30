@@ -15,7 +15,7 @@ from apps.oi.models import StoryRevision, CTYPES
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, Publisher
-from apps.gcd.models.creator import Creator
+from apps.gcd.models.creator import Creator, Membership, Award, ArtInfluence, NonComicWork
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
 from apps.gcd.models.cover import Cover
@@ -264,6 +264,15 @@ def changed_fields(changeset, object):
                             .get(indicia_publisher=object.id)
     elif object_class is Creator:
         revision = changeset.creatorrevisions.all().get(creator=object.id)
+
+    elif object_class is Membership:
+        revision = changeset.creatormembershiprevisions.all().get(creator_membership=object.id)
+    elif object_class is Award:
+        revision = changeset.creatorawardrevisions.all().get(creator_award=object.id)
+    elif object_class is ArtInfluence:
+        revision = changeset.creatorartinfluencerevisions.all().get(creator_artinfluence=object.id)
+    elif object_class is NonComicWork:
+        revision = changeset.creatornoncomicworkrevisions.all().get(creator_noncomicwork=object.id)
     elif object_class in [Cover, Image]:
         return ""
 

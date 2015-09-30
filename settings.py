@@ -21,10 +21,10 @@ which variables you can or must override.
 DEBUG          = True
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = [
-    '.comics.org',
-    '.comics.org.',  # Allow FQDN and subdomains.  Can be dropped in 1.7
-]
+# ALLOWED_HOSTS = [
+#     '.comics.org',
+#     '.comics.org.',  # Allow FQDN and subdomains.  Can be dropped in 1.7
+# ]
 
 # absolute path to the directory that holds templates.
 TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
@@ -271,6 +271,8 @@ COVERS_DIR = '/img/gcd/covers_by_id/'
 NEW_COVERS_DIR = '/img/gcd/new_covers/'
 GENERIC_IMAGE_DIR = 'img/gcd/generic_images/'
 NEW_GENERIC_IMAGE_DIR = 'img/gcd/new_generic_images/'
+PORTRAIT_DIR = 'img/gcd/portriats'
+SAMPLE_SCAN_DIR = 'img/gcd/sample_scans'
 
 # Name of the directory in the gcd/icons tree under the media root
 # to use for icons within the app.

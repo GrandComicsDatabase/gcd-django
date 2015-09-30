@@ -25,7 +25,16 @@ urlpatterns = patterns('',
 
     url(r'^creators/add/$',
      'apps.oi.views.add_creator', name='add_creator'),
-
+    # url(r'^creators/(?P<creator_id>\d+)/relation/add/$',
+    #  'apps.oi.views.add_creator_relation', name='add_creator_relation'),
+    url(r'^creators/(?P<creator_id>\d+)/membership/add/$',
+     'apps.oi.views.add_creator_membership', name='add_creator_membership'),
+    url(r'^creators/(?P<creator_id>\d+)/award/add/$',
+     'apps.oi.views.add_creator_award', name='add_creator_award'),
+    url(r'^creators/(?P<creator_id>\d+)/influence/add/$',
+     'apps.oi.views.add_creator_artinfluence', name='add_creator_artinfluence'),
+    url(r'^creators/(?P<creator_id>\d+)/non_comic_work/add/$',
+     'apps.oi.views.add_creator_noncomicwork', name='add_creator_non_comic_work'),
 
     # Publisher URLs
     url(r'^publisher/add/$',
