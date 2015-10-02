@@ -79,7 +79,7 @@
              <hr>
              {% for award in creator.award_set.all %}
                 {% if not award.deleted %}
-                    <h3>Awards:{ forloop.counter }}</h3>
+                    <h3>Awards:{{ forloop.counter }}</h3>
                     <p><strong>Award name</strong> : {{award.award_name}}</p>
                     {% if award.award_year %}
                         <p><strong>Award year</strong> : {{award.award_year}}</p>
@@ -195,16 +195,16 @@
 {#            <a href="{% url add_creator_relation creator.id %}">#}
 {#                <button>Add Relation</button>#}
 {#            </a>#}
-            <a href="{% url add_creator_artinfluence creator.id %}">
+            <a href="{% url "add_creator_artinfluence" creator.id %}">
                 <button>Add Influence</button>
             </a>
-            <a href="{% url add_creator_membership creator.id %}">
+            <a href="{% url "add_creator_membership" creator.id %}">
                 <button>Add Membership</button>
             </a>
-            <a href="{% url add_creator_award creator.id %}">
+            <a href="{% url "add_creator_award" creator.id %}">
                 <button>Add Award</button>
             </a>
-            <a href="{% url add_creator_non_comic_work creator.id %}">
+            <a href="{% url "add_creator_non_comic_work" creator.id %}">
                 <button>Add NonComic Work</button>
             </a>
             {% endif %}
