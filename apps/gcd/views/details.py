@@ -26,7 +26,7 @@ from django.contrib.contenttypes.models import ContentType
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
                             IndiciaPublisher, Brand, BrandGroup, CountStats, \
                             Country, Language, Indexer, IndexCredit, Cover, \
-                            SeriesBond
+                            SeriesBond, Membership, Award, ArtInfluence, NonComicWork
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -62,6 +62,38 @@ def creator(request, creators_id):
 
     return show_creator(request, creator)
 
+def creator_membership(request, creator_membership_id):
+    creator_membership = get_object_or_404(Membership, id=creator_membership_id)
+    if creator_membership.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creator_membership', 'id': creator_membership_id}))
+
+    return show_creator_membership(request, creator_membership)
+
+def creator_award(request, creator_award_id):
+    creator_award = get_object_or_404(Award, id=creator_award_id)
+    if creator_award.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creator_award', 'id': creator_award_id}))
+
+    return show_creator_award(request, creator_award)
+
+def creator_artinfluence(request, creator_artinfluence_id):
+    creator_artinfluence = get_object_or_404(ArtInfluence, id=creator_artinfluence_id)
+    if creator_artinfluence.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creator_artinfluence', 'id': creator_artinfluence_id}))
+
+    return show_creator_artinfluence(request, creator_artinfluence)
+
+def creator_noncomicwork(request, creator_noncomicwork_id):
+    creator_noncomicwork = get_object_or_404(NonComicWork, id=creator_noncomicwork_id)
+    if creator_noncomicwork.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creator_noncomicwork', 'id': creator_noncomicwork_id}))
+
+    return show_creator_noncomicwork(request, creator_noncomicwork)
+
 def show_creator(request, creator, preview=False):
     creator_series = []
     vars = {'creator': creator,
@@ -71,6 +103,42 @@ def show_creator(request, creator, preview=False):
 
     return paginate_response(request, creator_series,
                              'gcd/details/creator.html', vars)
+
+def show_creator_membership(request, creator_membership, preview=False):
+    creator_membership_series = []
+    vars = {'creator_membership': creator_membership,
+            'current': [],
+            'error_subject': creator_membership,
+            'preview': preview}
+    return paginate_response(request, creator_membership_series,
+                                 'gcd/details/creator_membership_details.html', vars)
+
+def show_creator_award(request, creator_award, preview=False):
+    creator_award_series = []
+    vars = {'creator_award': creator_award,
+            'current': [],
+            'error_subject': creator_award,
+            'preview': preview}
+    return paginate_response(request, creator_award_series,
+                                 'gcd/details/creator_award_details.html', vars)
+
+def show_creator_artinfluence(request, creator_artinfluence, preview=False):
+    creator_artinfluence_series = []
+    vars = {'creator_artinfluence': creator_artinfluence,
+            'current': [],
+            'error_subject': creator_artinfluence,
+            'preview': preview}
+    return paginate_response(request, creator_artinfluence_series,
+                                 'gcd/details/creator_artinfluence_details.html', vars)
+
+def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
+    creator_noncomicwork_series = []
+    vars = {'creator_noncomicwork': creator_noncomicwork,
+            'current': [],
+            'error_subject': creator_noncomicwork,
+            'preview': preview}
+    return paginate_response(request, creator_noncomicwork_series,
+                                 'gcd/details/creator_noncomicwork_details.html', vars)
 
 def publisher(request, publisher_id):
     """
@@ -442,7 +510,8 @@ def change_history(request, model_name, id):
     from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
-                          'image', 'series_bond', 'creators']:
+                          'image', 'series_bond', 'creators', 'creator_membership',
+                          'creator_award', 'creator_artinfluence','creator_noncomicwork']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('gcd/error.html', {

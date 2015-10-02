@@ -1,0 +1,37 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Adding Creator Art Influence
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/gcd/default.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+    {% include "oi/bits/multi_selector.html" %}
+    <div class="edit">
+        <form action='' method="post">
+            {% csrf_token %}
+            <!-- Creator's Awards table -->
+            <h1>Adding Creator Art Influence</h1>
+            <table class="editing">
+                {% for field in artinfluence_form %}
+                <tr>
+                    <th>
+                        <label>{{ field.label|capfirst }}</label>
+                    </th>
+                    <td>
+                        {{ field.errors.as_ul }}
+                        {{field}}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            <input type="submit" value="Submit">
+            <input type="submit" name="cancel" value="Cancel">
+        </form>
+    </div>
+{% endblock %}

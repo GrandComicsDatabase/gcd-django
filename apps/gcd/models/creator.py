@@ -3,7 +3,6 @@ import datetime
 from django.core import urlresolvers
 from django.db import models
 from django.conf import settings
-
 from apps.gcd.models.country import Country
 
 
@@ -63,7 +62,6 @@ class CreatorManager(models.Manager):
     with this custom manager in future
     """
     pass
-
 
 
 class Creator(models.Model):
@@ -145,7 +143,7 @@ class Creator(models.Model):
     deleted = models.BooleanField(default=False, db_index=True)
 
     def __unicode__(self):
-        return '%s (%s)' % (self.name, self.name_type)
+        return '%s' % self.name
 
     def get_link_fields(self):
         links_dict = {}
@@ -198,6 +196,24 @@ class Creator(models.Model):
     def deletable(self):
         return True
 
+    def pending_deletion(self):
+        return self.revisions.filter(changeset__state__in=states.ACTIVE,
+                                     deleted=True).count() == 1
+
+    def delete(self):
+        return self
+
+    def active_creator_membership(self):
+        return self.membership_set.exclude(deleted=True)
+
+    def active_creator_award(self):
+        return self.award_set.exclude(deleted=True)
+
+    def active_creator_artinfluence(self):
+        return self.artinfluence_set.exclude(deleted=True)
+
+    def active_creator_noncomicwork(self):
+        return self.noncomicwork_set.exclude(deleted=True)
 
 class NameRelation(models.Model):
 
@@ -591,8 +607,24 @@ class ArtInfluence(models.Model):
     self_identify_influences_doc = models.TextField(blank=True, null=True)
     influence_source = models.ManyToManyField(SourceType, related_name='influencesource')
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now())
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now())
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+
     def __unicode__(self):
         return unicode(self.influence_name)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_creator_artinfluence',
+            kwargs={'creator_artinfluence_id': self.id })
+
+    def deletable(self):
+        return True
 
 
 class MembershipType(models.Model):
@@ -630,8 +662,24 @@ class Membership(models.Model):
     membership_end_year_uncertain = models.BooleanField(default=False)
     membership_source = models.ManyToManyField(SourceType, related_name='membershipsource')
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now())
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now())
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.membership_type))
+        return '%s' % unicode(self.organization_name)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_creator_membership',
+            kwargs={'creator_membership_id': self.id } )
+
+    def deletable(self):
+        return True
 
 
 class Award(models.Model):
@@ -650,8 +698,22 @@ class Award(models.Model):
     award_year_uncertain = models.BooleanField(default=False)
     award_source = models.ManyToManyField(SourceType, related_name='awardsource')
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now())
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now())
+
+    deleted = models.BooleanField(default=False, db_index=True)
     def __unicode__(self):
         return unicode(self.award_name)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_creator_award',
+            kwargs={'creator_award_id': self.id })
+
+    def deletable(self):
+        return True
 
 
 class NonComicWorkType(models.Model):
@@ -696,16 +758,31 @@ class NonComicWork(models.Model):
 
     creator = models.ForeignKey(Creator)
     work_type = models.ForeignKey(NonComicWorkType)
-    publication_title = models.CharField(max_length=200, blank=True, null=True)
+    publication_title = models.CharField(max_length=200)
     employer_name = models.CharField(max_length=200, null=True, blank=True)
-    work_title = models.CharField(max_length=255, null=True, blank=True)
+    work_title = models.CharField(max_length=255, blank=True, null=True)
     work_role = models.ForeignKey(NonComicWorkRole)
     work_source = models.ManyToManyField(SourceType, related_name='worksource')
     work_notes = models.TextField(blank=True, null=True)
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True, default=datetime.datetime.now())
+    modified = models.DateTimeField(auto_now=True, default=datetime.datetime.now())
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.work_type))
+        return '%s' % (unicode(self.publication_title))
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_creator_noncomicwork',
+            kwargs={'creator_noncomicwork_id': self.id })
+
+    def deletable(self):
+        return True
 
 
 class NonComicWorkYear(models.Model):
@@ -741,3 +818,6 @@ class NonComicWorkLink(models.Model):
 
     def __unicode__(self):
         return unicode(self.link)
+
+    def deletable(self):
+        return True

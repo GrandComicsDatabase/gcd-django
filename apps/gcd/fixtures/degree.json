@@ -1,0 +1,58 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.degree",
+        "fields": {
+            "degree_name": "B.A"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.degree",
+        "fields": {
+            "degree_name": "B.Com"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.degree",
+        "fields": {
+            "degree_name": "BE"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.degree",
+        "fields": {
+            "degree_name": "Dr"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "gcd.degree",
+        "fields": {
+            "degree_name": "M.B.A"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "gcd.degree",
+        "fields": {
+            "degree_name": "M.E"
+        }
+    },
+    {
+        "pk": 7,
+        "model": "gcd.degree",
+        "fields": {
+            "degree_name": "M.S"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "gcd.degree",
+        "fields": {
+            "degree_name": "P.h.d"
+        }
+    }
+]

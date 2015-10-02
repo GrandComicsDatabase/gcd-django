@@ -271,6 +271,8 @@ COVERS_DIR = '/img/gcd/covers_by_id/'
 NEW_COVERS_DIR = '/img/gcd/new_covers/'
 GENERIC_IMAGE_DIR = 'img/gcd/generic_images/'
 NEW_GENERIC_IMAGE_DIR = 'img/gcd/new_generic_images/'
+PORTRAIT_DIR = 'img/gcd/portriats'
+SAMPLE_SCAN_DIR = 'img/gcd/sample_scans'
 
 # Name of the directory in the gcd/icons tree under the media root
 # to use for icons within the app.
