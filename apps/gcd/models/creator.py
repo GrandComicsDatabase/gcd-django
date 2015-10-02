@@ -4,7 +4,7 @@ from django.core import urlresolvers
 from django.db import models
 from django.conf import settings
 from apps.gcd.models.country import Country
-
+from apps.oi import states
 
 class NameType(models.Model):
 
