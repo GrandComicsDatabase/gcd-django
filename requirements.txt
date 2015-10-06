@@ -5,6 +5,7 @@ Pillow < 2.0
 PyICU
 PyYAML
 Pygments
+pytz
 RBTools
 South
 django-appconf

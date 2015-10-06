@@ -4397,9 +4397,8 @@ def download(request):
 
             record = Download(user=request.user, description=repr(desc))
             record.save()
-            dump = File(open(path))
 
-            response = HttpResponse(dump.chunks(), mimetype='application/zip')
+            response = FileResponse(open(path, 'rb'), mimetype='application/zip')
             response['Content-Disposition'] = 'attachment; filename=current.zip'
             return response
     else:
