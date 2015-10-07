@@ -1,5 +1,5 @@
 BeautifulSoup
-Django<1.6
+Django<1.7
 MySQL-python
 Pillow < 2.0
 PyICU
