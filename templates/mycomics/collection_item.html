@@ -54,6 +54,7 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
+    {% if collection_form %}
   <div id="move-collection-item" class="modal fade" tabindex="-1" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -75,6 +76,7 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
+    {% endif %}
   {% endif %}
 {% endblock %}
 
@@ -143,13 +145,13 @@
         {% trans "Signed: " %}{{ item.signed|yesno }}<br>
       {% endif %}
       {% if collection.price_paid_used %}
-        {% trans "Price paid: " %}{% if item.price_paid %}{{ item.price_paid }} {{ item.price_paid_currency.code }}{% else %}-{% endif %}<br>
+        {% trans "Price paid: " %}{% if item.price_paid != None %}{{ item.price_paid }} {{ item.price_paid_currency.code }}{% else %}-{% endif %}<br>
       {% endif %}
       {% if collection.market_value_used %}
-        {% trans "Market value: " %}{% if item.market_value %}{{ item.market_value }} {{ item.market_value_currency.code }}{% else %}-{% endif %}<br>
+        {% trans "Market value: " %}{% if item.market_value != None %}{{ item.market_value }} {{ item.market_value_currency.code }}{% else %}-{% endif %}<br>
       {% endif %}
       {% if collection.sell_price_used %}
-        {% trans "Sell price: " %}{% if item.sell_price %}{{ item.sell_price }} {{ item.sell_price_currency.code }}{% else %}-{% endif %}<br>
+        {% trans "Sell price: " %}{% if item.sell_price != None %}{{ item.sell_price }} {{ item.sell_price_currency.code }}{% else %}-{% endif %}<br>
       {% endif %}
       {% if collection.acquisition_date_used %}
         {% trans "Acquisition date: " %}{{ item.acquisition_date|default:'-'|force_escape|default:'-' }}<br>
