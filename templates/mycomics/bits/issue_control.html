@@ -25,4 +25,11 @@
     </select>
   </div>
 </form>
+<ul>
+  {% for item in issue|item_collections:request.user %}
+    {% for collection in item.collections.all %}
+      <li>in <a href='{{ item|item_url:collection }}'>{{ collection }}</a>
+    {% endfor %}
+  {% endfor %}
+</ul>
 {% endif %}

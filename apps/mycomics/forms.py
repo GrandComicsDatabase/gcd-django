@@ -1,4 +1,4 @@
-from django.forms import ModelForm, Form, ChoiceField
+from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect
 from apps.mycomics.models import *
 from apps.oi.forms import _clean_keywords
 
@@ -19,6 +19,9 @@ class CollectionForm(ModelForm):
     class Meta:
         model = Collection
         exclude = ('collector')
+        widgets = {'own_default': RadioSelect(choices = ((None, "---"),
+                                              (True, "I own this comic."),
+                                              (False, "I want this comic."))),}
 
 
 class LocationForm(ModelForm):
@@ -32,11 +35,13 @@ class PurchaseLocationForm(ModelForm):
         model = PurchaseLocation
         exclude = ('user')
 
-
 class CollectionItemForm(ModelForm):
     class Meta:
         model = CollectionItem
         exclude = ('collections', 'issue', 'acquisition_date', 'sell_date')
+        widgets = {'own': Select(choices = ((None, "---"),
+                                            (True, "I own this comic."),
+                                            (False, "I want this comic."))),}
 
     def __init__(self, user, *args, **kwargs):
         super(CollectionItemForm, self).__init__(*args, **kwargs)
@@ -59,6 +64,8 @@ class CollectionItemForm(ModelForm):
         else:
             self.fields['purchase_location'].queryset = \
                         PurchaseLocation.objects.filter(user=user)
+        if not collections.filter(own_used=True).exists():
+            self.fields.pop('own')
         if not collections.filter(was_read_used=True).exists():
             self.fields.pop('was_read')
         if not collections.filter(for_sale_used=True).exists():

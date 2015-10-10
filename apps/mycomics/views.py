@@ -261,13 +261,19 @@ def delete_item(request, item_id, collection_id):
                                           item.issue.sort_code).count()
 
     collection.items.remove(item)
+    messages.success(request,
+                     _("Item removed from %s" % collection))
     if not item.collections.count():
         if item.acquisition_date:
             item.acquisition_date.delete()
         if item.sell_date:
             item.sell_date.delete()
         item.delete()
-    messages.success(request, _("Item removed from collection"))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('view_item',
+                        kwargs={'item_id': item.id,
+                                'collection_id': item.collections.all()[0].id}))
+
     return HttpResponseRedirect(urlresolvers.reverse('view_collection',
                                   kwargs={'collection_id': collection_id}) + \
                                 "?page=%d" % (position/DEFAULT_PER_PAGE + 1))
@@ -292,12 +298,20 @@ def move_item(request, item_id, collection_id):
             from_collection.items.remove(item)
             item.collections.add(to_collection)
             messages.success(request, _("Item moved between collections"))
+            if to_collection.own_used and to_collection.own_default != None:
+                if to_collection.own_default != item.own:
+                    messages.warning(request, _("Own/want default for new "
+                                     "collection differs from item status."))
             return HttpResponseRedirect(urlresolvers.reverse('view_item',
                                     kwargs={'item_id': item_id,
                                             'collection_id': to_collection_id}))
-        #elif 'copy' in request.POST:
-            #item.collections.add(to_collection)
-            #messages.success(request, _("Item copied between collections"))
+        elif 'copy' in request.POST:
+            item.collections.add(to_collection)
+            messages.success(request, _("Item copied between collections"))
+            if to_collection.own_used and to_collection.own_default != None:
+                if to_collection.own_default != item.own:
+                    messages.warning(request, _("Own/want default for new "
+                                     "collection differs from item status."))
         else:
             messages.error(request, _("Item unchanged"))
 
@@ -351,11 +365,16 @@ def view_item(request, item_id, collection_id):
         other_collections = None
 
     item_before = collection.items.filter(issue__series__sort_name__lte=
-                                              item.issue.series.sort_name)\
-                                    .exclude(issue__series__sort_name=
-                                               item.issue.series.sort_name,
-                                             issue__sort_code__gte=
-                                               item.issue.sort_code).reverse()
+                                            item.issue.series.sort_name)\
+                                  .exclude(issue__series__sort_name=
+                                             item.issue.series.sort_name,
+                                           issue__sort_code__gt=
+                                             item.issue.sort_code)\
+                                  .exclude(issue__series__sort_name=
+                                             item.issue.series.sort_name,
+                                           issue__sort_code=
+                                             item.issue.sort_code,
+                                           id__gte=item.id).reverse()
 
     if item_before:
         page = item_before.count()/DEFAULT_PER_PAGE + 1
@@ -363,11 +382,16 @@ def view_item(request, item_id, collection_id):
     else:
         page = 1
     item_after = collection.items.filter(issue__series__sort_name__gte=
-                                             item.issue.series.sort_name)\
-                                     .exclude(issue__series__sort_name=
-                                                item.issue.series.sort_name,
-                                              issue__sort_code__lte=
-                                                item.issue.sort_code)
+                                           item.issue.series.sort_name)\
+                                 .exclude(issue__series__sort_name=
+                                            item.issue.series.sort_name,
+                                          issue__sort_code__lt=
+                                            item.issue.sort_code)\
+                                 .exclude(issue__series__sort_name=
+                                            item.issue.series.sort_name,
+                                          issue__sort_code=
+                                            item.issue.sort_code,
+                                          id__lte=item.id)
     if item_after:
         item_after = item_after[0]
 
@@ -461,6 +485,9 @@ def add_issues_to_collection(request, collection_id, issues, redirect):
     for issue in issues:
         collected = CollectionItem.objects.create(issue=issue)
         collected.collections.add(collection)
+        if collection.own_used:
+            collected.own = collection.own_default
+            collected.save()
     return HttpResponseRedirect(redirect)
 
 
@@ -471,6 +498,9 @@ def add_single_issue_to_collection(request, issue_id):
                    collection_id=int(request.POST['collection_id']))
     collected = CollectionItem.objects.create(issue=issue)
     collected.collections.add(collection)
+    if collection.own_used:
+        collected.own = collection.own_default
+        collected.save()
     messages.success(request, u"Issue <a href='%s'>%s</a> was added to your "
                                "'%s' collection." % \
                               (collected.get_absolute_url(collection),

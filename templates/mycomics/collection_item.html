@@ -69,8 +69,8 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <input type="submit" class="btn btn-primary" name="copy" value="{% trans "Copy" %}">
             <input type="submit" class="btn btn-primary" name="move" value="{% trans "Move" %}">
-            {#<input type="submit" class="btn btn-primary" name="copy" value="{% trans "Copy" %}">#}
           </div>
         </form>
       </div><!-- /.modal-content -->
@@ -98,7 +98,7 @@
         Also in:
         {% for other_collection in other_collections %}
           {% if not forloop.first %}/{% endif %}
-          <a href="{% url "view_collection" other_collection.id %}">{{ other_collection.name }}</a>
+          <a href="{% url "view_item" item_id=item.id collection_id=other_collection.id %}">{{ other_collection.name }}</a>
         {% endfor %}
       {% endif %}
       <button type="button" class="btn btn-primary pull-right"
@@ -124,6 +124,9 @@
       </a>
     </div>
     <div class="col-md-8">
+      {% if collection.own_used and request.user.collector == collection.collector %}
+        {{ item.own|yesno:"I own this comic.<br>,I want this comic.<br>,"|safe }}
+      {% endif %}
       {% if item.notes %}{{ item.notes }}<hr>{% endif %}
       {% if item.keywords.count %}{% trans "Keywords: " %}{{ item|show_keywords }}<hr>{% endif %}
       {% if collection.location_used %}

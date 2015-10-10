@@ -11,15 +11,15 @@ from apps.gcd.models import Issue
 register = template.Library()
 
 def show_have_want(issue, user):
-    count = issue.collectionitem_set\
-                 .filter(collections__collector__user=user).distinct().count()
-    want_count = issue.collectionitem_set.filter(
-        collections=user.collector.default_want_collection,
-        collections__collector__user=user).count()
-    count -= want_count
-    if count:
-        text = u'I have {} cop{} of this comic.'.format(count, pluralize(count,
-                                                                    "y,ies"))
+    have_count = issue.collectionitem_set.filter(own=True,
+                    collections__collector__user=user).distinct().count()
+    want_count = issue.collectionitem_set.filter(own=False,
+                    collections__collector__user=user).distinct().count()
+
+    if have_count:
+        text = u'I own {} cop{} of this comic.'.format(have_count,
+                                                       pluralize(have_count,
+                                                                 "y,ies"))
     else:
         text = u''
 
@@ -29,6 +29,17 @@ def show_have_want(issue, user):
         text += u'This comic is on my want list.'
 
     return mark_safe(text)
+
+
+@register.filter
+def item_collections(issue, user):
+    items = issue.collectionitem_set.filter(collections__collector__user=user)
+    return items
+
+
+@register.filter
+def item_url(item, collection):
+    return item.get_absolute_url(collection)
 
 
 def show_cover_tag(issue):

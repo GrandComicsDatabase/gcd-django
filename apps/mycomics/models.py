@@ -85,21 +85,38 @@ class Collection(models.Model):
     description = models.TextField(blank=True)
     keywords = TaggableManager(blank=True)
 
-    public = models.BooleanField(default=False)
+    public = models.BooleanField(default=False,
+               verbose_name="collection is public and can be viewed by all")
 
     #Configuration of fields used - notes and keywords are assumed to be always
     # 'on'.
-    condition_used = models.BooleanField(default=False)
-    acquisition_date_used = models.BooleanField(default=False)
-    sell_date_used = models.BooleanField(default=False)
-    location_used = models.BooleanField(default=False)
-    purchase_location_used = models.BooleanField(default=False)
-    was_read_used = models.BooleanField(default=False)
-    for_sale_used = models.BooleanField(default=False)
-    signed_used = models.BooleanField(default=False)
-    price_paid_used = models.BooleanField(default=False)
-    market_value_used = models.BooleanField(default=False)
-    sell_price_used = models.BooleanField(default=False)
+    condition_used = models.BooleanField(default=False,
+                                         verbose_name="show condition")
+    acquisition_date_used = models.BooleanField(default=False,
+                                   verbose_name="show acquisition date")
+    sell_date_used = models.BooleanField(default=False,
+                                         verbose_name="show sell data")
+    location_used = models.BooleanField(default=False,
+                                        verbose_name="show location")
+    purchase_location_used = models.BooleanField(default=False,
+                                    verbose_name="show purchase location")
+    own_used = models.BooleanField(default=False,
+                                   verbose_name="show own/want status")
+    own_default = models.NullBooleanField(default=None,
+                            verbose_name="default ownership status when "
+                                         "adding items to this collection")
+    was_read_used = models.BooleanField(default=False,
+                                        verbose_name="show read status")
+    for_sale_used = models.BooleanField(default=False,
+                                        verbose_name="show for sale status")
+    signed_used = models.BooleanField(default=False,
+                                      verbose_name="show signed status")
+    price_paid_used = models.BooleanField(default=False,
+                                          verbose_name="show price paid")
+    market_value_used = models.BooleanField(default=False,
+                               verbose_name="show entered market value")
+    sell_price_used = models.BooleanField(default=False,
+                                          verbose_name="show sell price")
 
     def get_absolute_url(self):
         return urlresolvers.reverse('view_collection',
@@ -138,7 +155,7 @@ class CollectionItem(models.Model):
 
     class Meta:
         db_table = 'mycomics_collection_item'
-        ordering = ['issue__series__sort_name', 'issue__sort_code']
+        ordering = ['issue__series__sort_name', 'issue__sort_code', 'id']
 
     collections = models.ManyToManyField(Collection, related_name="items",
                                 db_table="mycomics_collection_item_collections")
@@ -157,11 +174,11 @@ class CollectionItem(models.Model):
     grade = models.ForeignKey('ConditionGrade', related_name='+', null=True,
                               blank=True)
 
-    # TODO add removing these dates together with CollectionItem
     acquisition_date = models.ForeignKey(Date, related_name='+', null=True,
                                          blank=True)
     sell_date = models.ForeignKey(Date, related_name='+', null=True, blank=True)
 
+    own = models.NullBooleanField(default=None, verbose_name="ownership")
     was_read = models.NullBooleanField(default=None)
     for_sale = models.BooleanField(default=False)
     signed = models.BooleanField(default=False)
