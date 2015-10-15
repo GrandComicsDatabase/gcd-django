@@ -25,6 +25,8 @@ from apps.gcd.models.issue import INDEXED, issue_descriptor
 
 LANGUAGE_STATS = ['de',]
 
+MONTH_CHOICES = [(i, i) for i in range(1,13)]
+
 # Changeset type "constants"
 CTYPES = {
     'unknown': 0,
@@ -5678,7 +5680,7 @@ class CreatorRevision(Revision):
     birth_year_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_birthyearsource',
                                                through='BirthYearSourceRevision')
-    birth_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    birth_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, null=True, blank=True)
     birth_month_uncertain = models.BooleanField(default=False)
     birth_month_source = models.ManyToManyField('gcd.SourceType',
                                                 related_name='cr_birthmonthsource',
@@ -5693,7 +5695,7 @@ class CreatorRevision(Revision):
     death_year_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_deathyearsource',
                                                through='DeathYearSourceRevision')
-    death_month = models.PositiveSmallIntegerField(null=True, blank=True)
+    death_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, null=True, blank=True)
     death_month_uncertain = models.BooleanField(default=False)
     death_month_source = models.ManyToManyField('gcd.SourceType',
                                                 related_name='cr_deathmonthsource',
