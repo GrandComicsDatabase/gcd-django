@@ -4694,6 +4694,7 @@ def download(request):
       },
       context_instance=RequestContext(request))
 
+@permission_required('gcd.can_reserve')
 def add_creator(request, template_name='oi/creators/creators.html'):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -4826,6 +4827,7 @@ def add_creator(request, template_name='oi/creators/creators.html'):
     context['mode'] = 'new'
     return render(request, template_name, context)
 
+@permission_required('gcd.can_reserve')
 def add_creator_membership(request, creator_id, template_name='oi/creators/creator_memberships.html'):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -4872,6 +4874,7 @@ def add_creator_membership(request, creator_id, template_name='oi/creators/creat
     context['mode'] = 'new'
     return render(request, template_name, context)
 
+@permission_required('gcd.can_reserve')
 def add_creator_award(request, creator_id, template_name='oi/creators/creator_awards.html'):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -4918,6 +4921,7 @@ def add_creator_award(request, creator_id, template_name='oi/creators/creator_aw
     context['mode'] = 'new'
     return render(request, template_name, context)
 
+@permission_required('gcd.can_reserve')
 def add_creator_artinfluence(request, creator_id, template_name='oi/creators/creator_artinfluences.html'):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -4964,6 +4968,7 @@ def add_creator_artinfluence(request, creator_id, template_name='oi/creators/cre
     context['mode'] = 'new'
     return render(request, template_name, context)
 
+@permission_required('gcd.can_reserve')
 def add_creator_noncomicwork(request, creator_id, template_name='oi/creators/creator_noncomic_works.html'):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
