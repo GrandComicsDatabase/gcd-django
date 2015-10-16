@@ -159,6 +159,11 @@ CACHES = {
 # have two choices for caches, this one has persistent, cached session data
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
+# we would like to move the default JSONSerializer, but currently that
+# causes problems (see issue #102 on GitHub).  This is a workaround
+# to retain the Django 1.5 and earlier behavior.
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+
 # Corresponds to the django_site database table. As far
 # as I know, we won't be using this for the GCD.
 SITE_ID = 1
