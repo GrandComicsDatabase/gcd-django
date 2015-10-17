@@ -33,7 +33,8 @@ def show_have_want(issue, user):
 
 @register.filter
 def item_collections(issue, user):
-    items = issue.collectionitem_set.filter(collections__collector__user=user)
+    items = issue.collectionitem_set.filter(collections__collector__user=user)\
+                                    .distinct()
     return items
 
 
