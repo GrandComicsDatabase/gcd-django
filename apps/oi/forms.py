@@ -1892,55 +1892,40 @@ class DownloadForm(forms.Form):
         return cd
 
 class CreatorRevisionForm(forms.ModelForm):
-    comments = forms.CharField('comments',widget=forms.Textarea,
-                              required=False,
-     help_text='Comments between the Indexer and Editor about the change. '
-               'These comments are part of the public change history, but '
-               'are not part of the regular display.')
+    comments = _get_comments_form_field()
+
     class Meta:
         model = CreatorRevision
         exclude = ['related_person', 'changeset', 'creator', 'deleted']
 
 
 class CreatorMembershipRevisionForm(forms.ModelForm):
-    comments = forms.CharField('comments',widget=forms.Textarea,
-                              required=False,
-                              help_text='Comments between the Indexer and Editor about the change. '
-                                       'These comments are part of the public change history, but '
-                                       'are not part of the regular display.')
+    comments = _get_comments_form_field()
+
     class Meta:
         model = CreatorMembershipRevision
         exclude = ['creator','creator_membership','changeset', 'deleted',]
 
 
 class CreatorAwardRevisionForm(forms.ModelForm):
-    comments = forms.CharField('comments',widget=forms.Textarea,
-                              required=False,
-                              help_text='Comments between the Indexer and Editor about the change. '
-                                       'These comments are part of the public change history, but '
-                                       'are not part of the regular display.')
+    comments = _get_comments_form_field()
+
     class Meta:
         model = CreatorAwardRevision
         exclude = ['creator','creator_award','changeset', 'deleted',]
 
 
 class CreatorArtInfluenceRevisionForm(forms.ModelForm):
-    comments = forms.CharField('comments',widget=forms.Textarea,
-                              required=False,
-                              help_text='Comments between the Indexer and Editor about the change. '
-                                       'These comments are part of the public change history, but '
-                                       'are not part of the regular display.')
+    comments = _get_comments_form_field()
+
     class Meta:
         model = CreatorArtInfluenceRevision
         exclude = ['creator','creator_artinfluence','changeset', 'deleted',]
 
 
 class CreatorNonComicWorkRevisionForm(forms.ModelForm):
-    comments = forms.CharField('comments',widget=forms.Textarea,
-                              required=False,
-                              help_text='Comments between the Indexer and Editor about the change. '
-                                       'These comments are part of the public change history, but '
-                                       'are not part of the regular display.')
+    comments = _get_comments_form_field()
+
     class Meta:
         model = CreatorNonComicWorkRevision
         exclude = ['creator','creator_noncomicwork','changeset', 'deleted',]

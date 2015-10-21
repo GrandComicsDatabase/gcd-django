@@ -17,7 +17,6 @@ from django.shortcuts import render_to_response, \
                              get_list_or_404
 from django.http import HttpResponseRedirect
 from django.core import urlresolvers
-from django.views.generic.list_detail import object_list
 from django.template import RequestContext
 from django.utils.http import urlquote
 
