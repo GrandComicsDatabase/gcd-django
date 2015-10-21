@@ -17,6 +17,16 @@ def header_link(changeset):
             revision = changeset.issuerevisions.all()[0]
         elif changeset.change_type == CTYPES['series_bond']:
             revision = changeset.seriesbondrevisions.get()
+        elif changeset.change_type == CTYPES['creators']:
+            revision = changeset.creatorrevisions.get()
+        elif changeset.change_type == CTYPES['creator_membership']:
+            revision = changeset.creatormembershiprevisions.all()[0]
+        elif changeset.change_type == CTYPES['creator_award']:
+            revision = changeset.creatorawardrevisions.all()[0]
+        elif changeset.change_type == CTYPES['creator_artinfluence']:
+            revision = changeset.creatorartinfluencerevisions.all()[0]
+        elif changeset.change_type == CTYPES['creator_noncomicwork']:
+            revision = changeset.creatornoncomicworkrevisions.all()[0]
         else:
             raise NotImplementedError
 
@@ -102,6 +112,18 @@ def header_link(changeset):
         return mark_safe(u'%s (%s) %s' % (series_url, pub_url, issue_num))
     elif changeset.change_type == CTYPES['image']:
         return absolute_url(revision.object)
+    elif changeset.change_type == CTYPES['creator_membership']:
+        return mark_safe(u'%s : %s' %
+                         (absolute_url(revision.creator), absolute_url(revision)))
+    elif changeset.change_type == CTYPES['creator_award']:
+        return mark_safe(u'%s : %s' %
+                         (absolute_url(revision.creator), absolute_url(revision)))
+    elif changeset.change_type == CTYPES['creator_artinfluence']:
+        return mark_safe(u'%s : %s' %
+                         (absolute_url(revision.creator), absolute_url(revision)))
+    elif changeset.change_type == CTYPES['creator_noncomicwork']:
+        return mark_safe(u'%s : %s' %
+                         (absolute_url(revision.creator), absolute_url(revision)))
     else:
         return u''
 

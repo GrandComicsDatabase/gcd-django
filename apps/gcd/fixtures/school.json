@@ -1,0 +1,72 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Appalachian High School"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Autauga Academy"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Baldwin County High School"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "California Institute of Technology"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Colby College"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Foley High School"
+        }
+    },
+    {
+        "pk": 7,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Georgiana School"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Locust Fork High School"
+        }
+    },
+    {
+        "pk": 9,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Prattville Christian Academy"
+        }
+    },
+    {
+        "pk": 10,
+        "model": "gcd.school",
+        "fields": {
+            "school_name": "Princeton University"
+        }
+    }
+]

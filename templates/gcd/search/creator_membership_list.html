@@ -1,0 +1,29 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% load display %}
+{% load credits %}
+
+{% block list_contents %}
+<table class="listing">
+  <tr>
+    <th>Creator</th>
+    <th>Organization Name</th>
+    <th> Membership Type</th>
+    <th>Membership Begin Year <th>
+    <th> Membership End Year </th>
+  </tr>
+
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+        {% for creator_membership in items %}
+    {% with creator_membership|object_filter as creator_membership %}
+      <td>{{ creator_membership.creator }}</td>
+      <td><a href="{{ creator_membership.get_absolute_url }}"> {{ creator_membership.organization_name  }}</a> </td>
+      <td> {{ creator_membership.membership_type }} </td>
+      <td> {{ creator_membership.membership_begin_year}} </td>
+      <td> {{ creator_membership.membership_end_year}} </td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>
+{% endblock %}
+

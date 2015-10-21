@@ -1,0 +1,32 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+Adding Creator
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/gcd/default.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+    {% include "oi/bits/multi_selector.html" %}
+    <div class="edit">
+        <form action='' method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!--Creator's basic table-->
+            <h1>
+                {% ifequal mode "new" %}Adding Creator{% endifequal %}
+            </h1>
+            <h1>
+                {% ifequal mode "edit" %}Editing Creator{% endifequal %}
+            </h1>
+            <table class="editing">
+                {{creator_form.as_table}}
+            </table>
+            <input type="submit" value="Submit Creator" name="submit">
+            <input type="submit" name="cancel" value="Cancel">
+        </form>
+    </div>
+{% endblock %}

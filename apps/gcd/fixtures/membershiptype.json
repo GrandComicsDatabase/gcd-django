@@ -1,0 +1,23 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.membershiptype",
+        "fields": {
+            "type": "member"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.membershiptype",
+        "fields": {
+            "type": "president"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.membershiptype",
+        "fields": {
+            "type": "treasurer"
+        }
+    }
+]
