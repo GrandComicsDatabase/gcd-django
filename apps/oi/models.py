@@ -2,6 +2,7 @@
 import itertools
 import operator
 import re
+import calendar
 import os, glob
 from stdnum import isbn
 
@@ -25,7 +26,7 @@ from apps.gcd.models.issue import INDEXED, issue_descriptor
 
 LANGUAGE_STATS = ['de',]
 
-MONTH_CHOICES = [(i, i) for i in range(1,13)]
+MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1,13)]
 
 # Changeset type "constants"
 CTYPES = {
@@ -5847,13 +5848,13 @@ class CreatorRevision(Revision):
         fields_dict['Name Type'] = self.name_type.type
         fields_dict['Birth Year Uncertain'] = self.birth_year
         fields_dict['Birth Year'] = self.birth_year_uncertain
-        fields_dict['Birth Month'] = self.birth_month
+        fields_dict['Birth Month'] = calendar.month_name[self.birth_month]
         fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
         fields_dict['Birth Date'] = self.birth_date
         fields_dict['Birth Date Uncertain'] = self.birth_date_uncertain
         fields_dict['Death Year'] = self.death_year
         fields_dict['Death Year Uncertain'] = self.death_year_uncertain
-        fields_dict['Death Month'] = self.death_month
+        fields_dict['Death Month'] = calendar.month_name[self.death_month]
         fields_dict['Death Month Uncertain'] = self.death_month_uncertain
         fields_dict['Death Date'] = self.death_date
         fields_dict['Death Date Uncertain'] = self.death_date_uncertain
