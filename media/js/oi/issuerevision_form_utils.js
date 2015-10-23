@@ -24,7 +24,7 @@ $.fn.addToOptionWidth = function(){
 var monthRegExp = [
     /^(jan|gen|ene|ιαν|ocak|tammikuu|styczeń|o(dd|đđ)ajag)/,
     /^(feb|f[eé]v|φεβ|şubat|helmikuu|luty|guovva)/,
-    /^(m[aä]r|márc|μ[αά]ρ|maaliskuu|njukča)/,
+    /^(m[aä]r|márc|maart|μ[αά]ρ|maaliskuu|njukča)/,
     /^(a[pvb]r|ápr|απρ|nisan|huhtikuu|kwiecień|cuoŋo|spring|vår|påsk)/,
     /^(ma[yigj]|máj|mei|μάι|μαΐ|toukokuu|miesse)/,
     /^(j[uú]n|giu|juin|ιο[υύ]ν|haziran|kesäkuu|czerwiec|geasse)/,

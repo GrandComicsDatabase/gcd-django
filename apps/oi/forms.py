@@ -18,14 +18,11 @@ from apps.gcd.models.seriesbond import BOND_TRACKING
 from apps.gcd.models.story import NON_OPTIONAL_TYPES, STORY_TYPES
 from apps.gcd.templatetags.credits import format_page_count
 
-CREATOR_CREDIT_HELP = 'The %s and similar credits for this sequence. If ' \
-  'multiple persons or credits, please list them all separated with ' \
-  'semicolons. If you do not know who did this, but the credit applies to ' \
-  'this sequence type, enter a question mark.'
+CREATOR_CREDIT_HELP = 'The %s and similar credits for this sequence, where ' \
+  'multiple credits are separated with semicolons. If the credit applies to' \
+  ' this sequence type but the creator is unknown, enter a question mark.'
 NO_CREATOR_CREDIT_HELP = 'Check this box if %s does not apply to this ' \
-                'sequence, %s, and leave the %s field blank. ' \
-                'If the credit is relevant but unknown ignore this checkbox '\
-                'and enter a question mark in the %s field.'
+                'sequence%s and leave the %s field blank. '
 GENERIC_ERROR_MESSAGE = 'Please correct the field errors.  Scroll down to see '\
                         'the specific error message(s) next to each field.'
 
@@ -210,13 +207,13 @@ class HiddenInputWithHelp(forms.TextInput):
         self.key = self.attrs.get('key', False)
 
     def render(self, name, value, *args, **kwargs):
-        return mark_safe(super(HiddenInputWithHelp, self).render(name, value, self.attrs))
+        return mark_safe(super(HiddenInputWithHelp, self).render(name, value,
+                                                                 self.attrs))
 
 def _get_comments_form_field():
     return forms.CharField(widget=forms.Textarea, required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+      help_text='Comments about the change. These are part of the change '
+                'history, but not part of the regular display.')
 
 def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
@@ -368,11 +365,7 @@ class PublisherRevisionForm(forms.ModelForm):
         widgets = {'name': forms.TextInput(attrs={'autofocus':''})}
 
     country = forms.ModelChoiceField(queryset=Country.objects.exclude(code='xx'))
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+    comments = _get_comments_form_field()
 
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
@@ -465,11 +458,7 @@ class BrandGroupRevisionForm(forms.ModelForm):
       help_text='The official web site of the brand.  Leave blank if the '
                 'publisher does not have a specific web site for the brand group.')
 
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+    comments = _get_comments_form_field()
 
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
@@ -559,11 +548,7 @@ class BrandRevisionForm(forms.ModelForm):
       help_text='The official web site of the brand.  Leave blank if the '
                 'publisher does not have a specific web site for the brand.')
 
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+    comments = _get_comments_form_field()
 
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
@@ -628,11 +613,7 @@ class BrandUseRevisionForm(forms.ModelForm):
       help_text='Check if you are not certain of the last year the brand '
                 'was used, or if you are not certain whether it is still in use.')
 
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+    comments = _get_comments_form_field()
 
     def clean(self):
         cd = self.cleaned_data
@@ -740,27 +721,6 @@ class SeriesRevisionForm(forms.ModelForm):
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
 
-    def clean_has_issue_title(self):
-        cd = self.cleaned_data
-        if cd['is_singleton'] and cd['has_issue_title']:
-            raise forms.ValidationError('Singleton series cannot have '
-              'an issue title.')
-        return cd['has_issue_title']
-
-    def clean_notes(self):
-        cd = self.cleaned_data
-        if cd['is_singleton'] and cd['notes']:
-            raise forms.ValidationError('Notes for singleton series are '
-              'stored on the issue level.')
-        return cd['notes'].strip()
-
-    def clean_tracking_notes(self):
-        cd = self.cleaned_data
-        if cd['is_singleton'] and cd['tracking_notes']:
-            raise forms.ValidationError('Singleton series cannot have '
-              'tracking notes.')
-        return cd['tracking_notes'].strip()
-
     def clean(self):
         cd = self.cleaned_data
         if self._errors:
@@ -780,6 +740,28 @@ class SeriesRevisionForm(forms.ModelForm):
         cd['binding'] = cd['binding'].strip()
         cd['publishing_format'] = cd['publishing_format'].strip()
         cd['comments'] = cd['comments'].strip()
+        if 'reservation_requested' in cd and cd['reservation_requested'] and \
+            (not cd['is_current'] and not cd['is_singleton']):
+            raise forms.ValidationError('A reservation can only be requested'
+                    ' for currently ongoing series.')
+        # some status checks for singleton series
+        if cd['is_singleton'] and cd['has_issue_title']:
+            raise forms.ValidationError('Singleton series cannot have '
+              'an issue title.')
+        if cd['is_singleton'] and cd['notes']:
+            raise forms.ValidationError('Notes for singleton series are '
+              'stored on the issue level.')
+        if cd['is_singleton'] and cd['tracking_notes']:
+            raise forms.ValidationError('Singleton series cannot have '
+              'tracking notes.')
+        if cd['is_singleton'] and cd['is_current']:
+            raise forms.ValidationError('Singleton series do not continue '
+              'and therefore cannot be current in our sense.')
+        if cd['is_singleton'] and 'reservation_requested' in cd and \
+          cd['reservation_requested']:
+            raise forms.ValidationError('Reservations for the created issue '
+              'of a singleton series are not supported for technical reasons.')
+
         # TODO How to get to series ? 
         # Then we could check the number of issues for singletons
         return cd
@@ -906,43 +888,53 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
 
+        turned_off_list = ''
+
         if not series.has_issue_title:
-            help_text, no_title = _get_series_has_fields_off_note(series,
-                                                                  'title')
-            title = forms.CharField(widget=HiddenInputWithHelp, required=False,
-              help_text=help_text)
+            no_title = forms.BooleanField(widget=forms.HiddenInput,
+                                          required=False)
+            title = forms.CharField(widget=HiddenInput, required=False)
+            turned_off_list += 'title, '
 
         if not series.has_volume:
-            help_text, no_volume = _get_series_has_fields_off_note(series,
-                                                                   'volume')
-            help_text, display_volume_with_number = \
-              _get_series_has_fields_off_note(series, 'volume')
-            volume = forms.CharField(widget=HiddenInputWithHelp, required=False,
-              help_text=help_text)
+            no_volume = forms.BooleanField(widget=forms.HiddenInput,
+                                          required=False)
+            display_volume_with_number = forms.BooleanField(\
+              widget=forms.HiddenInput, required=False)
+            volume = forms.CharField(widget=HiddenInput, required=False)
+            turned_off_list += 'volume, '
+
         if not series.has_indicia_frequency:
-            help_text, no_indicia_frequency = \
-              _get_series_has_fields_off_note(series, 'indicia frequency')
-            indicia_frequency = forms.CharField(widget=HiddenInputWithHelp,
-              required=False,
-              help_text=help_text)
+            no_indicia_frequency = forms.BooleanField(widget=forms.HiddenInput,
+                                                      required=False)
+            indicia_frequency = forms.CharField(widget=HiddenInput,
+                                                required=False)
+            turned_off_list += 'indicia_frequency, '
 
         if not series.has_isbn:
-            help_text, no_isbn = _get_series_has_fields_off_note(series, 'ISBN')
-            isbn = forms.CharField(widget=HiddenInputWithHelp, required=False,
-              help_text=help_text, label='ISBN')
+            no_isbn = forms.BooleanField(widget=forms.HiddenInput,
+                                          required=False)
+            isbn = forms.CharField(widget=HiddenInput, required=False)
+            turned_off_list += 'isbn, '
 
         if not series.has_barcode:
-            help_text, no_barcode = \
-              _get_series_has_fields_off_note(series, 'barcode')
-            barcode = forms.CharField(widget=HiddenInputWithHelp,
-              required=False, help_text=help_text)
+            no_barcode = forms.BooleanField(widget=forms.HiddenInput,
+                                          required=False)
+            barcode = forms.CharField(widget=HiddenInput, required=False)
+            turned_off_list += 'barcode, '
 
         if not series.has_rating:
-            help_text, no_rating = \
-              _get_series_has_fields_off_note(series, "publisher's age guidelines")
-            rating = forms.CharField(widget=HiddenInputWithHelp,
-              required=False, help_text=help_text,
-              label="Publisher's age guidelines")
+            no_rating = forms.BooleanField(widget=forms.HiddenInput,
+                                          required=False)
+            rating = forms.CharField(widget=HiddenInput, required=False)
+            turned_off_list += 'publisher age guidelines'
+
+        if turned_off_list:
+            turned_off_help = forms.CharField(widget=HiddenInputWithHelp,
+              required=False, label='Deactivated fields',
+              help_text='The fields "%s" are deactivated for this series. To '
+                        'enter a value for one of these the corresponding '
+                        'series setting has to be changed.' % turned_off_list)
 
         def clean_year_on_sale(self):
             year_on_sale = self.cleaned_data['year_on_sale']
@@ -1119,7 +1111,9 @@ class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
         fields = get_issue_field_list()
+        fields.insert(fields.index('year_on_sale'), 'on_sale_date_help')
         fields.insert(fields.index('year_on_sale'), 'on_sale_date')
+        fields.insert(fields.index('keywords') + 1, 'turned_off_help')
         widgets = {
           'number': forms.TextInput(attrs={'class': 'wide', 'autofocus':''}),
           'title': forms.TextInput(attrs={'class': 'wide'}),
@@ -1135,14 +1129,17 @@ class IssueRevisionForm(forms.ModelForm):
         }
 
     comments = _get_comments_form_field()
-    on_sale_date = forms.DateField(required=False, input_formats=['%Y-%m-%d'],
-      help_text='The on-sale date can be entered in two ways. Either in this '
-                'field in the format YYYY-MM-DD, where all parts need to be '
-                'entered, or using the following three fields. If only '
-                'partial information is known you need to use the second '
+    turned_off_help = forms.CharField(widget=HiddenInput)
+    on_sale_date_help = forms.CharField(widget=HiddenInputWithHelp,
+                                        required=False, label='',
+      help_text='The on-sale (shipping) date can be entered in two ways: '
+                'Either in the next field as YYYY-MM-DD, where all parts need '
+                ' to be entered, or using the following three fields. If only'
+                ' partial information is known you need to use the second '
                 'option and enter the part of the date which is known. '
                 'If you only know the decade you can enter the first three '
                 'digits, e.g. 199 for the decade 1990-1999.')
+    on_sale_date = forms.DateField(required=False, input_formats=['%Y-%m-%d'])
 
 def get_bulk_issue_revision_form(series, method, user=None):
     if method == 'number':
@@ -1541,7 +1538,6 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
 
     class RuntimeStoryRevisionForm(StoryRevisionForm):
         type = forms.ModelChoiceField(queryset=queryset,
-          help_text='Choose the most appropriate available type',
           **extra)
 
         fantasy_id = GENRES['en'].index(u'fantasy')
@@ -1571,6 +1567,7 @@ class StoryRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryRevision
         fields = get_story_field_list()
+        fields.insert(fields.index('job_number')+1, 'creator_help')
 
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
@@ -1579,75 +1576,68 @@ class StoryRevisionForm(forms.ModelForm):
     title = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide',
                                                           'autofocus':''}),
                             required=False,
-      help_text='If the title is not listed, use the first line of dialog, '
-                'place it in "quotation marks" and check the next box.  Do *not* '
-                'place the title in brackets.  Title is required for sequences of '
-                'type "comic story", "text story" and "text article", but may be left '
-                'blank for sequences of other types.')
+      help_text='If no title can be determined, preferably use here'
+                ' the first line of text/dialogue in "quotation marks", or '
+                'a made up title, and check unofficial title.')
     title_inferred = forms.BooleanField(required=False,
       label='Unofficial title',
-      help_text='Check if the title was taken from the first line of dialogue or '
-                'was made up (titles from dialogue are preferred, and should be '
-                'enclosed in "quotation marks")')
+      help_text='')
 
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3)
-    page_count_uncertain = forms.BooleanField(required=False,
-      help_text="Check if you do not know or aren't sure about the page count.")
+    page_count_uncertain = forms.BooleanField(required=False)
+
+    creator_help = forms.CharField(widget=HiddenInputWithHelp, required=False,
+      help_text='Enter the relevant creator credits in the following fields, '
+                'where multiple credits are separated by semi-colons. Notes '
+                'are in () and aliases in []. If the credit applies to a '
+                'sequence type, but the creator is unknown enter a question '
+                'mark. If a field is not required for a sequence type it can '
+                'be left blank.', label='')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,
-                             help_text=CREATOR_CREDIT_HELP % 'scripter')
+                             help_text='')
     pencils = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                               required=False,
-                             help_text=CREATOR_CREDIT_HELP % 'penciler')
+                             help_text='')
     inks = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                            required=False,
-                           help_text=CREATOR_CREDIT_HELP % 'inker')
+                           help_text='')
     colors = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,
-                             help_text=CREATOR_CREDIT_HELP % 'colorist')
+                             help_text='')
     letters = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                               required=False,
-                             help_text=CREATOR_CREDIT_HELP % 'letterer')
+      help_text='If the lettering is produced as normal printed text rather '
+                'than comic-style lettering, enter the word "typeset" here.')
     editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,
-                             help_text=CREATOR_CREDIT_HELP % 'editor')
+                             help_text='')
 
     no_script = forms.BooleanField(required=False,
       help_text=NO_CREATOR_CREDIT_HELP % ('script or plot',
-        'e.g. for a cover or single-page illustration', 'script', 'script'))
+        ', e.g. for a cover or single-page illustration,', 'script'))
     no_pencils = forms.BooleanField(required=False,
-      help_text=NO_CREATOR_CREDIT_HELP % ('penciler', 'e.g. for '
-                'an unillustrated text article', 'pencils', 'pencils'))
+      help_text=NO_CREATOR_CREDIT_HELP % ('pencils', ', e.g. for '
+                'an unillustrated text article,', 'pencils'))
     no_inks = forms.BooleanField(required=False,
-      help_text=NO_CREATOR_CREDIT_HELP % ('inker', 'e.g. for a '
-                'story colored straight from pencils', 'inks', 'inks'))
+      help_text=NO_CREATOR_CREDIT_HELP % ('inks', ', e.g. for a '
+                'story colored straight from pencils,', 'inks'))
     no_colors = forms.BooleanField(required=False,
-      help_text=NO_CREATOR_CREDIT_HELP % ('colorist', 'e.g. for '
-                'a black-and-white comic', 'colors', 'colors'))
+      help_text=NO_CREATOR_CREDIT_HELP % ('colors', ', e.g. for '
+                'a black-and-white comic,', 'colors'))
     no_letters = forms.BooleanField(required=False,
-      help_text='Check this box if lettering does not apply to this sequence, '
-                ' and leave the letters box blank.  '
-                'However, if the only letters are produced as normal '
-                'printed text rather than comic-style lettering, put the word '
-                '"typeset" in the letters field and do not check this box. '
-                'If the credit is relevant but unknown ignore this checkbox and '
-                'enter a question mark in the letters field.')
+      help_text=NO_CREATOR_CREDIT_HELP % ('letters', '', 'letters'))
     no_editing = forms.BooleanField(required=False,
       help_text='Check this box if there is no separate editor for this sequence. '
                 'This is common when there is an editor for the whole issue.')
     synopsis = forms.CharField(widget=forms.Textarea(attrs={'style': 'height: 9em'}),
                                required=False,
-      help_text='A brief (600 character maximum) description of the contents.  '
-                'No text under copyright may be used without clear permission '
-                'and credit.  Solicitation or other promotional text may NOT '
-                'be used.')
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+      help_text='A brief description of the contents. No text under copyright,'
+                ' such as solicitation or other promotional text, may be used'
+                ' without clear permission and credit.')
+    comments = _get_comments_form_field()
 
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
@@ -1780,11 +1770,7 @@ class UploadScanForm(forms.Form):
       help_text='Cover is a non-standard wraparound cover or a gatefold cover. '
                 'After the upload you will select the front cover part. '
                 'The selection will not work if JavaScript is turned off.')
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False,
-      help_text='Comments between the Indexer and Editor about the change. '
-                'These comments are part of the public change history, but '
-                'are not part of the regular display.')
+    comments = _get_comments_form_field()
 
     def clean(self):
         cd = self.cleaned_data
