@@ -37,4 +37,9 @@
     <input type="hidden" name="next" value="{{ request.get_full_path }}" />
     {% endif %}
   </form>
+
+  <p class="text-center">
+    <a href="{% url "forgot_password" %}">{% trans 'Forgot password?' %}</a> <br>
+    <a href="{% url "register" %}">{% trans 'Register' %}</a>
+  </p>
 {% endblock %}

@@ -5,7 +5,7 @@ from apps.oi.forms import _clean_keywords
 class CollectorForm(ModelForm):
     class Meta:
         model = Collector
-        exclude = ('user')
+        exclude = ('user',)
 
     def __init__(self, collector, *args, **kwargs):
         kwargs['instance']=collector
@@ -18,7 +18,7 @@ class CollectorForm(ModelForm):
 class CollectionForm(ModelForm):
     class Meta:
         model = Collection
-        exclude = ('collector')
+        exclude = ('collector',)
         widgets = {'own_default': RadioSelect(choices = ((None, "---"),
                                               (True, "I own this comic."),
                                               (False, "I want this comic."))),}
@@ -27,13 +27,13 @@ class CollectionForm(ModelForm):
 class LocationForm(ModelForm):
     class Meta:
         model = Location
-        exclude = ('user')
+        exclude = ('user',)
 
 
 class PurchaseLocationForm(ModelForm):
     class Meta:
         model = PurchaseLocation
-        exclude = ('user')
+        exclude = ('user',)
 
 class CollectionItemForm(ModelForm):
     class Meta:
