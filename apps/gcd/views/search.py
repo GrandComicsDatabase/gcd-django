@@ -4,7 +4,7 @@ View methods related to displaying search and search results pages.
 """
 
 from re import *
-from urllib import urlopen, quote, urlencode
+from urllib import urlopen, urlencode
 from decimal import Decimal
 from string import capitalize
 from stdnum import isbn as stdisbn
@@ -612,7 +612,7 @@ def search(request):
     elif object_type == 'job_number':
         param_type = 'number'
 
-    param_type_value = quote(request.GET['query'].strip().encode('utf-8'))
+    param_type_value = request.GET['query'].strip().encode('utf-8')
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
                            kwargs={param_type: param_type_value,
