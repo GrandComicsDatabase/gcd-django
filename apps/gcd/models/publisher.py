@@ -218,14 +218,14 @@ class Brand(BasePublisher):
 
     image_resources = generic.GenericRelation(Image)
 
-    def _emblem(self):
+    @property
+    def emblem(self):
         img = Image.objects.filter(object_id=self.id, deleted=False,
           content_type = ContentType.objects.get_for_model(self), type__id=3)
         if img:
             return img.get()
         else:
             return None
-    emblem = property(_emblem)
 
     def deletable(self):
         return self.issue_count == 0 and \

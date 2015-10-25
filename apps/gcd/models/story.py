@@ -128,20 +128,20 @@ class Story(models.Model):
                self.from_issue_reprints.count() or \
                self.to_issue_reprints.count()
 
-    def _reprint_needs_inspection(self):
+    @property
+    def reprint_needs_inspection(self):
         if hasattr(self, 'migration_status') and self.migration_status:
             return self.migration_status.reprint_needs_inspection
         else:
             return False
-    reprint_needs_inspection = property(_reprint_needs_inspection)
 
-    def _reprint_confirmed(self):
+    @property
+    def reprint_confirmed(self):
         if hasattr(self, 'migration_status') and self.migration_status:
             return self.migration_status.reprint_confirmed
         else:
             return True
-    reprint_confirmed = property(_reprint_confirmed)
-               
+
     def has_data(self):
         """Simplifies UI checks for conditionals.  All non-heading fields"""
         return self.has_credits() or self.has_content() or self.notes
