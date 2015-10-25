@@ -580,7 +580,7 @@ class Changeset(models.Model):
     def _revision_sets(self):
         if self.change_type in [CTYPES['issue'], CTYPES['variant_add'],
                                 CTYPES['two_issues']]:
-            return (self.issuerevisions.all().select_related('issue', 'series'),
+            return (self.issuerevisions.all(),
                     self.storyrevisions.all(), self.coverrevisions.all(),
                     self.reprintrevisions.all())
 
@@ -588,12 +588,12 @@ class Changeset(models.Model):
             return (self.issuerevisions.all().select_related('issue', 'series'),)
 
         if self.change_type == CTYPES['cover']:
-            return (self.coverrevisions.all().select_related('issue__series'),
+            return (self.coverrevisions.all(),
                     self.issuerevisions.all().select_related('issue', 'series'),
                     self.storyrevisions.all())
 
         if self.change_type == CTYPES['series']:
-            return (self.seriesrevisions.all().select_related('series'),
+            return (self.seriesrevisions.all(),
                     self.issuerevisions.all().select_related('issue'))
 
         if self.change_type == CTYPES['series_bond']:
