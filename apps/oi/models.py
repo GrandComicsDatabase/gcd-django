@@ -1217,7 +1217,7 @@ class Revision(models.Model):
         Since this is different for each revision, the subclass must override this.
         """
         # Call separate method for polymorphism
-        self._get_source()
+        return self._get_source()
 
     def _get_source(self):
         raise NotImplementedError
@@ -1228,7 +1228,7 @@ class Revision(models.Model):
         Used to key lookups in various shared view methods.
         """
         # Call separate method for polymorphism
-        self._get_source_name()
+        return self._get_source_name()
 
     def _get_source_name(self):
         raise NotImplementedError
@@ -1632,10 +1632,10 @@ class PublisherRevision(PublisherRevisionBase):
 
     date_inferred = models.BooleanField(default=False)
 
-    def _source(self):
+    def _get_source(self):
         return self.publisher
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'publisher'
 
     def active_series(self):
@@ -1801,10 +1801,10 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
                                null=True, blank=True, db_index=True,
                                related_name='indicia_publisher_revisions')
 
-    def _source(self):
+    def _get_source(self):
         return self.indicia_publisher
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'indicia_publisher'
 
     def _field_list(self):
@@ -1942,10 +1942,10 @@ class BrandGroupRevision(PublisherRevisionBase):
                                null=True, blank=True, db_index=True,
                                related_name='brand_group_revisions')
 
-    def _source(self):
+    def _get_source(self):
         return self.brand_group
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'brand_group'
 
     def _field_list(self):
@@ -2088,10 +2088,10 @@ class BrandRevision(PublisherRevisionBase):
     group = models.ManyToManyField('gcd.BrandGroup', blank=False,
                                    related_name='brand_revisions')
 
-    def _source(self):
+    def _get_source(self):
         return self.brand
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'brand'
 
     def _field_list(self):
@@ -2268,10 +2268,10 @@ class BrandUseRevision(Revision):
     year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(max_length=255, blank=True)
 
-    def _source(self):
+    def _get_source(self):
         return self.brand_use
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'brand_use'
 
     def _field_list(self):
@@ -2425,10 +2425,10 @@ class CoverRevision(Revision):
 
     file_source = models.CharField(max_length=255, null=True)
 
-    def _source(self):
+    def _get_source(self):
         return self.cover
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'cover'
 
     def _get_blank_values(self):
@@ -2801,10 +2801,10 @@ class SeriesRevision(Revision):
             return { 'unknown': 0 }
         return self.series.indicia_publisher_info_counts()
 
-    def _source(self):
+    def _get_source(self):
         return self.series
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'series'
 
     def active_base_issues(self):
@@ -3187,10 +3187,10 @@ class SeriesBondRevision(Revision):
             return 1
         return 0
 
-    def _source(self):
+    def _get_source(self):
         return self.series_bond
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'series_bond'
 
     def _queue_name(self):
@@ -3981,10 +3981,10 @@ class IssueRevision(Revision):
         # Note, the "after" field does not directly contribute IMPs.
         return 0
 
-    def _source(self):
+    def _get_source(self):
         return self.issue
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'issue'
 
     def _do_complete_added_revision(self, series, variant_of=None):
@@ -4575,10 +4575,10 @@ class StoryRevision(Revision):
                 return 1
         return 0
 
-    def _source(self):
+    def _get_source(self):
         return self.story
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'story'
 
     def _do_complete_added_revision(self, issue):
@@ -5111,7 +5111,7 @@ class ReprintRevision(Revision):
     def previous(self):
         return self.previous_revision
 
-    def _source(self):
+    def _get_source(self):
         if self.deleted and self.changeset.state == states.APPROVED:
             return None
         if self.out_type != None:
@@ -5137,7 +5137,7 @@ class ReprintRevision(Revision):
         # TODO is None the right return ? Maybe placeholder object ?
         return None
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'reprint'
 
     def _field_list(self):
@@ -5451,10 +5451,10 @@ class ImageRevision(Revision):
         return u'%s for %s' % (self.type.description,
                                unicode(self.object.full_name()))
 
-    def _source(self):
+    def _get_source(self):
         return self.image
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'image'
 
     def _get_blank_values(self):
@@ -5888,10 +5888,10 @@ class CreatorRevision(Revision):
     def description(self):
         return '%s (%s)' % (self.name, self.name_type)
 
-    def _source(self):
+    def _get_source(self):
         return self.creator
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creators'
 
     def _imps_for(self, field_name):
@@ -6244,10 +6244,10 @@ class NameSourceRevision(Revision):
     def __unicode__(self):
         return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
 
-    def _source(self):
+    def _get_source(self):
         return self.name_source
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'name_source'
 
 
@@ -7229,10 +7229,10 @@ class CreatorMembershipRevision(Revision):
             'membership_end_year_uncertain': '',
         }
 
-    def _source(self):
+    def _get_source(self):
         return self.creator_membership
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creator_membership'
 
     def _imps_for(self, field_name):
@@ -7362,10 +7362,10 @@ class CreatorAwardRevision(Revision):
             'award_year_uncertain': '',
         }
 
-    def _source(self):
+    def _get_source(self):
         return self.creator_award
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creator_award'
 
     def _imps_for(self, field_name):
@@ -7499,10 +7499,10 @@ class CreatorArtInfluenceRevision(Revision):
             'self_identify_influences_doc': '',
         }
 
-    def _source(self):
+    def _get_source(self):
         return self.creator_artinfluence
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creator_artinfluence'
 
     def _imps_for(self, field_name):
@@ -7649,10 +7649,10 @@ class CreatorNonComicWorkRevision(Revision):
             'work_notes': '',
         }
 
-    def _source(self):
+    def _get_source(self):
         return self.creator_noncomicwork
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creator_noncomicwork'
 
     def _imps_for(self, field_name):
