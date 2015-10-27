@@ -11,7 +11,8 @@ from django.utils.html import conditional_escape as esc
 from django import template
 from django.template.defaultfilters import title
 
-from apps.oi.models import StoryRevision, CTYPES
+from apps.oi import states
+from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, Publisher
@@ -24,6 +25,17 @@ from apps.gcd.models.seriesbond import SeriesBond, BOND_TRACKING
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
+
+STATE_CSS_NAME = { 
+    states.UNRESERVED: 'available',
+    states.BASELINE: 'baseline',
+    states.OPEN: 'editing',
+    states.PENDING: 'pending',
+    states.DISCUSSED: 'discussed',
+    states.REVIEWING: 'reviewing',
+    states.APPROVED: 'approved',
+    states.DISCARDED: 'discarded',
+}
 
 def absolute_url(item, additional=''):
     if item is not None and hasattr(item, 'get_absolute_url'):
@@ -220,6 +232,21 @@ def show_indicia_pub(issue):
         if issue.indicia_pub_not_printed:
             ip_url += u' [not printed on item]'
     return mark_safe(ip_url)
+
+def index_status_css(issue):
+    """
+    Text form of issue indexing status.  If clauses arranged in order of most
+    likely case to least.
+    """
+    if issue.reserved:
+        active =  issue.revisions.get(changeset__state__in=states.ACTIVE)
+        return STATE_CSS_NAME[active.changeset.state]
+    elif issue.is_indexed == INDEXED['full']:
+        return 'approved'
+    elif issue.is_indexed in [INDEXED['partial'], INDEXED['ten_percent']]:
+        return 'partial'
+    else:
+        return 'available'
 
 def show_revision_type(cover):
     if cover.deleted:
@@ -434,6 +461,7 @@ register.filter(show_isbn)
 register.filter(show_issue)
 register.filter(show_series_tracking)
 register.filter(show_indicia_pub)
+register.filter(index_status_css)
 register.filter(show_revision_type)
 register.filter(changed_fields)
 register.filter(changed_story_list)

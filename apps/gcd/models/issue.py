@@ -238,21 +238,6 @@ class Issue(models.Model):
                         variant.save()
         return self.is_indexed
 
-    def index_status_name(self):
-        """
-        Text form of status.  If clauses arranged in order of most
-        likely case to least.
-        """
-        if self.reserved:
-            active =  self.revisions.get(changeset__state__in=states.ACTIVE)
-            return states.CSS_NAME[active.changeset.state]
-        elif self.is_indexed == INDEXED['full']:
-            return 'approved'
-        elif self.is_indexed in [INDEXED['partial'], INDEXED['ten_percent']]:
-            return 'partial'
-        else:
-            return 'available'
-
     def get_prev_next_issue(self):
         """
         Find the issues immediately before and after the given issue.
