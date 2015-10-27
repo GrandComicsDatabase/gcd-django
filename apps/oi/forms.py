@@ -761,7 +761,7 @@ class BrandEmblemSelect(forms.Select):
         url = ''
         if option_value:
             brand = Brand.objects.get(id=option_value)
-            if brand.emblem:
+            if brand.emblem and not settings.FAKE_IMAGES:
                 url = brand.emblem.icon.url
         option_value = force_unicode(option_value)
         if option_value in selected_choices:
