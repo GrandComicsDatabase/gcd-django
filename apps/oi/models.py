@@ -1145,6 +1145,35 @@ class ChangesetComment(models.Model):
     def display_new_state(self):
         return states.DISPLAY_NAME[self.new_state]
 
+
+class RevisionLock(models.Model):
+    """
+    Indicates that a particular Changeset has a partocular row locked.
+
+    In order to have an active Revision for a given row, a Changeset
+    must hold a lock on it.  Rows in this table represent locks,
+    and the unique_together constraint on the content type and object id
+    ensure that only one Changeset can hold an object's lock at a time.
+    Locks are released by deleting the row.
+
+    A lock with a NULL changeset is used to check that the object can
+    be locked before creating a Changeset that would not be used
+    if the lock fails.
+
+    TODO: cron job to periodically scan for stale locks?
+    """
+    class Meta:
+        db_table = 'oi_revision_lock'
+        unique_together = ('content_type', 'object_id')
+
+    changeset = models.ForeignKey(Changeset, null=True,
+                                  related_name='revision_locks')
+
+    content_type = models.ForeignKey(content_models.ContentType)
+    object_id = models.IntegerField(db_index=True)
+    locked_object = generic.GenericForeignKey('content_type', 'object_id')
+
+
 class RevisionManager(models.Manager):
     """
     Custom manager base class for revisions.
