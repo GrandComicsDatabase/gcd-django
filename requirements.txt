@@ -24,3 +24,6 @@ python-vote-core
 git+git://github.com/bennylope/elasticstack.git
 django-bootstrap3
 facebook-sdk
+flake8
+pytest
+pytest-django
