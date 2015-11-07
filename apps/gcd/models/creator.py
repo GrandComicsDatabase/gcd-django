@@ -46,7 +46,7 @@ class CreatorNameDetails(models.Model):
     source = models.ManyToManyField('SourceType', related_name='namesources', null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s(%s)' % (unicode(self.creator.gcd_official_name), unicode(self.name),unicode(self.type.type) )
+        return '%s - %s(%s)' % (unicode(self.creator), unicode(self.name),unicode(self.type.type) )
 
 
 class SourceType(models.Model):
@@ -181,7 +181,7 @@ class Creator(models.Model):
 
     def get_text_fields(self):
         fields_dict = OrderedDict()
-        fields_dict['Gcd Official Name'] = self.gcd_official_name
+        fields_dict['GCD Official Name'] = self.gcd_official_name
         fields_dict['Birth Year'] = self.birth_year
         fields_dict['Birth Year Uncertain'] = self.birth_year_uncertain
         fields_dict['Birth Month'] = calendar.month_name[self.birth_month] if self.birth_month else None
@@ -272,7 +272,7 @@ class BirthYearSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthMonthSource(models.Model):
@@ -290,7 +290,7 @@ class BirthMonthSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthDateSource(models.Model):
@@ -308,7 +308,7 @@ class BirthDateSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathYearSource(models.Model):
@@ -326,7 +326,7 @@ class DeathYearSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathMonthSource(models.Model):
@@ -344,7 +344,7 @@ class DeathMonthSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathDateSource(models.Model):
@@ -362,7 +362,7 @@ class DeathDateSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthCountrySource(models.Model):
@@ -380,7 +380,7 @@ class BirthCountrySource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthProvinceSource(models.Model):
@@ -398,7 +398,7 @@ class BirthProvinceSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthCitySource(models.Model):
@@ -416,7 +416,7 @@ class BirthCitySource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathCountrySource(models.Model):
@@ -434,7 +434,7 @@ class DeathCountrySource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathProvinceSource(models.Model):
@@ -452,7 +452,7 @@ class DeathProvinceSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathCitySource(models.Model):
@@ -470,7 +470,7 @@ class DeathCitySource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class PortraitSource(models.Model):
@@ -488,7 +488,7 @@ class PortraitSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BioSource(models.Model):
@@ -506,7 +506,7 @@ class BioSource(models.Model):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
         
 
 class School(models.Model):
@@ -545,7 +545,7 @@ class CreatorSchoolDetail(models.Model):
     school_source = models.ManyToManyField(SourceType, related_name='schoolsource', null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.school.school_name))
+        return '%s - %s' % (unicode(self.creator), unicode(self.school.school_name))
 
 
 class Degree(models.Model):
@@ -583,7 +583,7 @@ class CreatorDegreeDetail(models.Model):
     degree_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.degree.degree_name))
+        return '%s - %s' % (unicode(self.creator), unicode(self.degree.degree_name))
 
 
 class ArtInfluence(models.Model):

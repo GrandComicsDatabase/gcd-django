@@ -5874,7 +5874,7 @@ class CreatorRevision(Revision):
 
     def get_text_fields(self):
         fields_dict = OrderedDict()
-        fields_dict['Gcd Official Name'] = self.gcd_official_name
+        fields_dict['GCD Official Name'] = self.gcd_official_name
         fields_dict['Birth Year Uncertain'] = self.birth_year
         fields_dict['Birth Year'] = self.birth_year_uncertain
         fields_dict['Birth Month'] = calendar.month_name[self.birth_month] if self.birth_month else None
@@ -5979,15 +5979,20 @@ class CreatorRevision(Revision):
             ctr.reserved = False
         ctr.save()
 
-        CreatorNameDetails.objects.filter(creator=ctr).delete()
         creator_name_details = self.cr_creator_names.all()
+        updated_creator_name_list = []
         for creator_name_detail in creator_name_details:
-            creator_name_object = CreatorNameDetails.objects.create(creator=ctr,
-                                                                    name=creator_name_detail.name,
-                                                                    type=creator_name_detail.type)
+            creator_name_object, created = CreatorNameDetails.objects.get_or_create(creator=ctr,
+                                                                           name=creator_name_detail.name,
+                                                                           type=creator_name_detail.type)
+
+            creator_name_object.source.clear()
             sources = creator_name_detail.source.all()
             for source in sources:
                 creator_name_object.source.add(source)
+
+            updated_creator_name_list.append(creator_name_object.id)
+        CreatorNameDetails.objects.exclude(creator=ctr, id__in=updated_creator_name_list).delete()
 
         BirthYearSource.objects.filter(creator=ctr).delete()
         birth_year_sources = self.cr_creatorbirthyearsource.all()
@@ -6267,7 +6272,7 @@ class CreatorNameDetailsRevision(Revision):
     source = models.ManyToManyField('gcd.SourceType', related_name='cr_namesources', null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s(%s)' % (unicode(self.creator.gcd_official_name), unicode(self.name),unicode(self.type.type))
+        return '%s - %s(%s)' % (unicode(self.creator), unicode(self.name),unicode(self.type.type))
 
     def _source(self):
         return self.name
@@ -6327,7 +6332,7 @@ class BirthYearSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthMonthSourceRevisionManager(RevisionManager):
@@ -6381,7 +6386,7 @@ class BirthMonthSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthDateSourceRevisionManager(RevisionManager):
@@ -6435,7 +6440,7 @@ class BirthDateSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathYearSourceRevisionManager(RevisionManager):
@@ -6489,7 +6494,7 @@ class DeathYearSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathMonthSourceRevisionManager(RevisionManager):
@@ -6543,7 +6548,7 @@ class DeathMonthSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathDateSourceRevisionManager(RevisionManager):
@@ -6597,7 +6602,7 @@ class DeathDateSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthCountrySourceRevisionManager(RevisionManager):
@@ -6651,7 +6656,7 @@ class BirthCountrySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthProvinceSourceRevisionManager(RevisionManager):
@@ -6705,7 +6710,7 @@ class BirthProvinceSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthCitySourceRevisionManager(RevisionManager):
@@ -6759,7 +6764,7 @@ class BirthCitySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathCountrySourceRevisionManager(RevisionManager):
@@ -6813,7 +6818,7 @@ class DeathCountrySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathProvinceSourceRevisionManager(RevisionManager):
@@ -6867,7 +6872,7 @@ class DeathProvinceSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathCitySourceRevisionManager(RevisionManager):
@@ -6921,7 +6926,7 @@ class DeathCitySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class PortraitSourceRevisionManager(RevisionManager):
@@ -6975,7 +6980,7 @@ class PortraitSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class BioSourceRevisionManager(RevisionManager):
@@ -7029,7 +7034,7 @@ class BioSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
 
 
 class CreatorSchoolDetailRevisionManager(RevisionManager):
@@ -7091,7 +7096,7 @@ class CreatorSchoolDetailRevision(Revision):
                                            blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.school.school_name))
+        return '%s - %s' % (unicode(self.creator), unicode(self.school.school_name))
 
 
 class CreatorDegreeDetailRevisionManager(RevisionManager):
@@ -7150,7 +7155,7 @@ class CreatorDegreeDetailRevision(Revision):
     degree_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.degree.degree_name))
+        return '%s - %s' % (unicode(self.creator), unicode(self.degree.degree_name))
 
 
 class CreatorMembershipRevisionManager(RevisionManager):

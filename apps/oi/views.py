@@ -710,22 +710,31 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                                                          changeset=revision.changeset)
 
 
-                    CreatorNameDetailsRevision.objects.filter(creator=revision).delete()
                     total_creator_names = int(request.POST.get('total_names'))
 
+                    updated_creator_name_list = []
                     for i in range(1, total_creator_names + 1):
                         if 'name'+ str(i) in request.POST:
                             name = request.POST.get('name'+ str(i))
                             type_id = request.POST.get('type'+ str(i))
                             sources = request.POST.getlist('sources'+ str(i))
-
                             type = NameType.objects.get(id=type_id)
-                            creatorname = CreatorNameDetailsRevision.objects.create(creator=revision,
-                                                                                   name=name,
-                                                                                   type=type,
-                                                                                   changeset=changeset)
+
+                            try:
+                                creatorname = CreatorNameDetailsRevision.objects.get(creator=revision,
+                                                                                     name=name,
+                                                                                     type=type)
+                            except ObjectDoesNotExist:
+                                creatorname = CreatorNameDetailsRevision.objects.create(creator=revision,
+                                                                                        name=name,
+                                                                                        type=type,
+                                                                                        changeset=changeset)
+                            creatorname.source.clear()
                             for source in sources:
                                 creatorname.source.add(source)
+
+                            updated_creator_name_list.append(creatorname.id)
+                    CreatorNameDetailsRevision.objects.exclude(creator=revision, id__in=updated_creator_name_list).delete()
 
                 elif revision.changeset.change_type == CTYPES['creator_membership']:
                     revision.membership_source.clear()
