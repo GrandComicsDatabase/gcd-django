@@ -20,6 +20,32 @@ from apps.gcd.models import *  # noqa
 from apps.gcd.models.issue import INDEXED
 
 
+CTYPES = {
+    'publisher': 1,
+}
+
+
+def update_count(*args, **kwargs):
+    # Just a dummy for now, always mocked in test cases.
+    # Will be re-added as cases expand to cover CountStats.
+    pass
+
+
+def get_keywords(source):
+    return u'; '.join(unicode(i) for i in source.keywords.all()
+                                                .order_by('name'))
+
+
+def save_keywords(revision, source):
+    if revision.keywords:
+        source.keywords.set(*[x.strip() for x in revision.keywords.split(';')])
+        revision.keywords = u'; '.join(
+            unicode(i) for i in source.keywords.all().order_by('name'))
+        revision.save()
+    else:
+        source.keywords.set()
+
+
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
