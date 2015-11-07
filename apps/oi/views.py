@@ -28,8 +28,7 @@ from django.contrib.contenttypes.models import ContentType
 from apps.gcd.models import *
 from apps.gcd.views import ViewTerminationError, render_error, paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
-    show_brand_group, show_brand, show_series, show_issue, show_creator,\
-    show_creator_membership,show_creator_award, show_creator_artinfluence, show_creator_noncomicwork
+    show_brand_group, show_brand, show_series, show_issue
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -55,13 +54,6 @@ REVISION_CLASSES = {
     'cover': CoverRevision,
     'reprint': ReprintRevision,
     'image': ImageRevision,
-    'creators': CreatorRevision,
-    'school': CreatorSchoolDetailRevision,
-    'degree': CreatorDegreeDetailRevision,
-    'creator_membership': CreatorMembershipRevision,
-    'creator_award': CreatorAwardRevision,
-    'creator_artinfluence': CreatorArtInfluenceRevision,
-    'creator_noncomicwork': CreatorNonComicWorkRevision,
 }
 
 DISPLAY_CLASSES = {
@@ -80,13 +72,6 @@ DISPLAY_CLASSES = {
     'reprint_from_issue': ReprintFromIssue,
     'issue_reprint': IssueReprint,
     'image': Image,
-    'creators': Creator,
-    'schools': CreatorSchoolDetail,
-    'degrees': CreatorDegreeDetail,
-    'creator_membership':Membership,
-    'creator_award': Award,
-    'creator_artinfluence': ArtInfluence,
-    'creator_noncomicwork': NonComicWork,
 }
 
 REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
@@ -320,35 +305,6 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
             indicia_publisher_revision.deleted = True
             indicia_publisher_revision.save()
 
-    elif model_name == 'creators' and delete:
-        for creatormembership in revision.creator.active_creator_membership():
-            creator_membership_revison = \
-              CreatorMembershipRevision.objects.clone_revision(
-                creatormembership=creatormembership, changeset=changeset)
-            creator_membership_revison.deleted = True
-            creator_membership_revison.save()
-
-        for creatoraward in revision.creator.active_creator_award():
-            creator_award_revison = \
-              CreatorAwardRevision.objects.clone_revision(
-                creatoraward=creatoraward, changeset=changeset)
-            creator_award_revison.deleted = True
-            creator_award_revison.save()
-
-        for creatorartinfluence in revision.creator.active_creator_artinfluence():
-            creator_artinfluence_revison = \
-              CreatorArtInfluenceRevision.objects.clone_revision(
-                creatorartinfluence=creatorartinfluence, changeset=changeset)
-            creator_artinfluence_revison.deleted = True
-            creator_artinfluence_revison.save()
-
-        for creatornoncomicwork in revision.creator.active_creator_noncomicwork():
-            creator_noncomicwork_revison = \
-              CreatorNonComicWorkRevision.objects.clone_revision(
-                creatornoncomicwork=creatornoncomicwork, changeset=changeset)
-            creator_noncomicwork_revison.deleted = True
-            creator_noncomicwork_revison.save()
-
     return changeset
 
 @permission_required('gcd.can_reserve')
@@ -428,12 +384,7 @@ def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     form = None
     revision = None
-    if changeset.inline() or changeset.change_type == CTYPES['creators']\
-            or changeset.change_type == CTYPES['creator_membership'] \
-            or changeset.change_type == CTYPES['creator_award']\
-            or changeset.change_type == CTYPES['creator_artinfluence']\
-            or changeset.change_type == CTYPES['creator_noncomicwork']:
-
+    if changeset.inline():
         revision = changeset.inline_revision()
         form_class = get_revision_form(revision, user=request.user)
         form = form_class(instance=revision)
@@ -443,12 +394,7 @@ def edit(request, id):
     return _display_edit_form(request, changeset, form, revision)
 
 def _display_edit_form(request, changeset, form, revision=None):
-    if revision is None or changeset.inline() or changeset.change_type == CTYPES['creators'] \
-            or changeset.change_type == CTYPES['creator_membership']\
-            or changeset.change_type == CTYPES['creator_award']\
-            or changeset.change_type == CTYPES['creator_artinfluence']\
-            or changeset.change_type == CTYPES['creator_noncomicwork']:
-
+    if revision is None or changeset.inline():
         template = 'oi/edit/changeset.html'
         if revision is None:
             revision = changeset.inline_revision()
@@ -571,153 +517,6 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
             # and the text 'field' is called that as well.
             if not (len(form.cleaned_data) == 1 and \
                                 'comments' in form.cleaned_data):
-                if revision.changeset.change_type == CTYPES['creators']:
-                    NameSourceRevision.objects.filter(creator=revision).delete()
-                    name_sources = form.cleaned_data.get('name_source')
-                    for name_source in name_sources:
-                        NameSourceRevision.objects.create(creator=revision,
-                                                          source_type=name_source,
-                                                          changeset=revision.changeset)
-
-                    birth_year_sources = form.cleaned_data.get('birth_year_source')
-                    BirthYearSourceRevision.objects.filter(creator=revision).delete()
-                    for birth_year_source in birth_year_sources:
-                        BirthYearSourceRevision.objects.create(creator=revision,
-                                                               source_type=birth_year_source,
-                                                               changeset=revision.changeset)
-
-                    birth_month_sources = form.cleaned_data.get('birth_month_source')
-                    BirthMonthSourceRevision.objects.filter(creator=revision).delete()
-                    for birth_month_source in birth_month_sources:
-                        BirthMonthSourceRevision.objects.create(creator=revision,
-                                                                source_type=birth_month_source,
-                                                                changeset=revision.changeset)
-
-                    birth_date_sources = form.cleaned_data.get('birth_date_source')
-                    BirthDateSourceRevision.objects.filter(creator=revision).delete()
-                    for birth_date_source in birth_date_sources:
-                        BirthDateSourceRevision.objects.create(creator=revision,
-                                                               source_type=birth_date_source,
-                                                               changeset=revision.changeset)
-
-                    death_year_sources = form.cleaned_data.get('death_year_source')
-                    DeathYearSourceRevision.objects.filter(creator=revision).delete()
-                    for death_year_source in death_year_sources:
-                        DeathYearSourceRevision.objects.create(creator=revision,
-                                                               source_type=death_year_source,
-                                                               changeset=revision.changeset)
-
-                    death_month_sources = form.cleaned_data.get('death_month_source')
-                    DeathMonthSourceRevision.objects.filter(creator=revision).delete()
-                    for death_month_source in death_month_sources:
-                        DeathMonthSourceRevision.objects.create(creator=revision,
-                                                                source_type=death_month_source,
-                                                                changeset=revision.changeset)
-
-                    death_date_sources = form.cleaned_data.get('death_date_source')
-                    DeathDateSourceRevision.objects.filter(creator=revision).delete()
-                    for death_date_source in death_date_sources:
-                        DeathDateSourceRevision.objects.create(creator=revision,
-                                                               source_type=death_date_source,
-                                                               changeset=revision.changeset)
-
-                    birth_country_sources = form.cleaned_data.get('birth_country_source')
-                    BirthCountrySourceRevision.objects.filter(creator=revision).delete()
-                    for birth_country_source in birth_country_sources:
-                        BirthCountrySourceRevision.objects.create(creator=revision,
-                                                                  source_type=birth_country_source,
-                                                                  changeset=revision.changeset)
-
-                    birth_province_sources = form.cleaned_data.get('birth_province_source')
-                    BirthProvinceSourceRevision.objects.filter(creator=revision).delete()
-                    for birth_province_source in birth_province_sources:
-                        BirthProvinceSourceRevision.objects.create(creator=revision,
-                                                                   source_type=birth_province_source,
-                                                                   changeset=revision.changeset)
-
-                    birth_city_sources = form.cleaned_data.get('birth_city_source')
-                    BirthCitySourceRevision.objects.filter(creator=revision).delete()
-                    for birth_city_source in birth_city_sources:
-                        BirthCitySourceRevision.objects.create(creator=revision,
-                                                               source_type=birth_city_source,
-                                                               changeset=revision.changeset)
-
-                    death_country_sources = form.cleaned_data.get('death_country_source')
-                    DeathCountrySourceRevision.objects.filter(creator=revision).delete()
-                    for death_country_source in death_country_sources:
-                        DeathCountrySourceRevision.objects.create(creator=revision,
-                                                                  source_type=death_country_source,
-                                                                  changeset=revision.changeset)
-
-                    death_province_sources = form.cleaned_data.get('death_province_source')
-                    DeathProvinceSourceRevision.objects.filter(creator=revision).delete()
-                    for death_province_source in death_province_sources:
-                        DeathProvinceSourceRevision.objects.create(creator=revision,
-                                                                   source_type=death_province_source,
-                                                                   changeset=revision.changeset)
-
-                    death_city_sources = form.cleaned_data.get('death_city_source')
-                    DeathCitySourceRevision.objects.filter(creator=revision).delete()
-                    for death_city_source in death_city_sources:
-                        DeathCitySourceRevision.objects.create(creator=revision,
-                                                               source_type=death_city_source,
-                                                               changeset=revision.changeset)
-
-                    portrait_sources = form.cleaned_data.get('portrait_source')
-                    PortraitSourceRevision.objects.filter(creator=revision).delete()
-                    for portrait_source in portrait_sources:
-                        PortraitSourceRevision.objects.create(creator=revision,
-                                                              source_type=portrait_source,
-                                                              changeset=revision.changeset)
-
-                    schools = [schools for schools in form.cleaned_data.get('schools')]
-                    CreatorSchoolDetailRevision.objects.filter(creator=revision).delete()
-
-                    for school in schools:
-                        CreatorSchoolDetailRevision.objects.create(creator=revision,
-                                                                   changeset=revision.changeset,
-                                                                   school=school)
-
-                    degrees = [degrees for degrees in form.cleaned_data.get('degrees')]
-                    CreatorDegreeDetailRevision.objects.filter(creator=revision).delete()
-
-                    for degree in degrees:
-                        CreatorDegreeDetailRevision.objects.create(creator=revision,
-                                                                   changeset=revision.changeset,
-                                                                   degree=degree)
-
-                    bio_sources = form.cleaned_data.get('bio_source')
-                    BioSourceRevision.objects.filter(creator=revision).delete()
-                    for bio_source in bio_sources:
-                        BioSourceRevision.objects.create(creator=revision,
-                                                         source_type=bio_source,
-                                                         changeset=revision.changeset)
-
-                elif revision.changeset.change_type == CTYPES['creator_membership']:
-                    revision.membership_source.clear()
-                    sources = form.cleaned_data.get('membership_source')
-                    for source in sources:
-                        revision.membership_source.add(source)
-
-                elif revision.changeset.change_type == CTYPES['creator_award']:
-                    revision.award_source.clear()
-                    sources = form.cleaned_data.get('award_source')
-                    for source in sources:
-                        revision.award_source.add(source)
-
-                elif revision.changeset.change_type == CTYPES['creator_artinfluence']:
-                    revision.influence_source.clear()
-                    sources = form.cleaned_data.get('influence_source')
-                    for source in sources:
-                        revision.influence_source.add(source)
-
-                elif revision.changeset.change_type == CTYPES['creator_noncomicwork']:
-                    revision.work_source.clear()
-                    sources = form.cleaned_data.get('work_source')
-                    for source in sources:
-                        revision.work_source.add(source)
-                else:
-                    form.save_m2m()
 
         if 'submit' in request.POST:
             return submit(request, revision.changeset.id)
@@ -1484,12 +1283,7 @@ def process(request, id):
 
     if 'submit' in request.POST:
         changeset = get_object_or_404(Changeset, id=id)
-        if changeset.inline() or changeset.change_type == CTYPES['creators'] \
-                or changeset.change_type == CTYPES['creator_membership']\
-                or changeset.change_type == CTYPES['creator_award']\
-                or changeset.change_type == CTYPES['creator_artinfluence']\
-                or changeset.change_type == CTYPES['creator_noncomicwork']:
-
+        if changeset.inline():
             revision = changeset.inline_revision()
             form_class = get_revision_form(revision, user=request.user)
             form = form_class(request.POST, instance=revision)
@@ -4117,11 +3911,6 @@ def show_queue(request, queue_name, state):
     changes = Changeset.objects.filter(**kwargs).select_related(
       'indexer__indexer', 'approver__indexer')
 
-    creators = changes.filter(change_type=CTYPES['creators'])
-    creator_memberships = changes.filter(change_type=CTYPES['creator_membership'])
-    creator_awards = changes.filter(change_type=CTYPES['creator_award'])
-    creator_artinfluences = changes.filter(change_type=CTYPES['creator_artinfluence'])
-    creator_noncomicworks = changes.filter(change_type=CTYPES['creator_noncomicwork'])
     publishers = changes.filter(change_type=CTYPES['publisher'])
     indicia_publishers = changes.filter(change_type=CTYPES['indicia_publisher'])
     brand_groups = changes.filter(change_type=CTYPES['brand_group'])
@@ -4147,36 +3936,6 @@ def show_queue(request, queue_name, state):
         'countries': countries,
         'country_names': country_names,
         'data': [
-          {
-            'object_name': 'Creators',
-            'object_type': 'creators',
-            'changesets': creators.order_by('modified', 'id')\
-              .annotate(country=Max('creatorrevisions__birth_country__id'))
-          },
-          {
-            'object_name': 'Memberships',
-            'object_type': 'creator_membership',
-            'changesets': creator_memberships.order_by('modified', 'id')\
-              .annotate(country=Max('creatormembershiprevisions__creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Awards',
-            'object_type': 'creator_award',
-            'changesets': creator_awards.order_by('modified', 'id')\
-              .annotate(country=Max('creatorawardrevisions__creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Art Influences',
-            'object_type': 'creator_artinfluence',
-            'changesets': creator_artinfluences.order_by('modified', 'id')\
-              .annotate(country=Max('creatorartinfluencerevisions__creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Non Comic Works',
-            'object_type': 'creator_noncomicwork',
-            'changesets': creator_noncomicworks.order_by('modified', 'id')\
-              .annotate(country=Max('creatornoncomicworkrevisions__creator__birth_country__id'))
-          },
           {
             'object_name': 'Publishers',
             'object_type': 'publisher',
@@ -4314,16 +4073,6 @@ def compare(request, id):
         revision = changeset.issuerevisions.all()[0]
     elif changeset.change_type == CTYPES['series_bond']:
         revision = changeset.seriesbondrevisions.all()[0]
-    elif changeset.change_type == CTYPES['creators']:
-        revision = changeset.creatorrevisions.all()[0]
-    elif changeset.change_type == CTYPES['creator_membership']:
-        revision = changeset.creatormembershiprevisions.all()[0]
-    elif changeset.change_type == CTYPES['creator_award']:
-        revision = changeset.creatorawardrevisions.all()[0]
-    elif changeset.change_type == CTYPES['creator_artinfluence']:
-        revision = changeset.creatorartinfluencerevisions.all()[0]
-    elif changeset.change_type == CTYPES['creator_noncomicwork']:
-        revision = changeset.creatornoncomicworkrevisions.all()[0]
     else:
         # never reached at the moment
         raise NotImplementedError
@@ -4570,16 +4319,6 @@ def preview(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     template = 'gcd/details/%s.html' % model_name
 
-    if 'creators' == model_name:
-        return show_creator(request, revision, True)
-    if 'creator_membership' == model_name:
-        return show_creator_membership(request, revision, True)
-    if 'creator_award' == model_name:
-        return show_creator_award(request, revision, True)
-    if 'creator_artinfluence' == model_name:
-        return show_creator_artinfluence(request, revision, True)
-    if 'creator_noncomicwork' == model_name:
-        return show_creator_noncomicwork(request, revision, True)
     if 'publisher' == model_name:
         return show_publisher(request, revision, True)
     if 'indicia_publisher' == model_name:
@@ -4692,325 +4431,3 @@ def download(request):
         'form': form,
       },
       context_instance=RequestContext(request))
-
-@permission_required('gcd.can_reserve')
-def add_creator(request, template_name='oi/creators/creators.html'):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-
-    if request.method == 'GET':
-        creator_form = CreatorRevisionForm()
-
-    elif request.method == 'POST':
-        if 'cancel' in request.POST:
-            return HttpResponseRedirect(reverse('add'))
-
-        creator_form = CreatorRevisionForm(
-            request.POST or None,
-            request.FILES or None,
-        )
-        if creator_form.is_valid():
-            changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                  change_type=CTYPES['creators'])
-            changeset.save()
-            revision = creator_form.save(commit=False)
-            revision.save_added_revision(changeset=changeset)
-            revision.save()
-
-            name_sources = creator_form.cleaned_data.get('name_source')
-            for name_source in name_sources:
-                NameSourceRevision.objects.create(creator=revision,
-                                                  source_type=name_source,
-                                                  changeset=changeset)
-
-            birth_year_sources = creator_form.cleaned_data.get('birth_year_source')
-            for birth_year_source in birth_year_sources:
-                BirthYearSourceRevision.objects.create(creator=revision,
-                                                       source_type=birth_year_source,
-                                                       changeset=changeset)
-
-            birth_month_sources = creator_form.cleaned_data.get('birth_month_source')
-            for birth_month_source in birth_month_sources:
-                BirthMonthSourceRevision.objects.create(creator=revision,
-                                                        source_type=birth_month_source,
-                                                        changeset=changeset)
-
-            birth_date_sources = creator_form.cleaned_data.get('birth_date_source')
-            for birth_date_source in birth_date_sources:
-                BirthDateSourceRevision.objects.create(creator=revision,
-                                                       source_type=birth_date_source,
-                                                       changeset=changeset)
-
-            death_year_sources = creator_form.cleaned_data.get('death_year_source')
-            for death_year_source in death_year_sources:
-                DeathYearSourceRevision.objects.create(creator=revision,
-                                                       source_type=death_year_source,
-                                                       changeset=changeset)
-
-            death_month_sources = creator_form.cleaned_data.get('death_month_source')
-            for death_month_source in death_month_sources:
-                DeathMonthSourceRevision.objects.create(creator=revision,
-                                                        source_type=death_month_source,
-                                                        changeset=changeset)
-
-            death_date_sources = creator_form.cleaned_data.get('death_date_source')
-            for death_date_source in death_date_sources:
-                DeathDateSourceRevision.objects.create(creator=revision,
-                                                       source_type=death_date_source,
-                                                       changeset=changeset)
-
-            birth_country_sources = creator_form.cleaned_data.get('birth_country_source')
-            for birth_country_source in birth_country_sources:
-                BirthCountrySourceRevision.objects.create(creator=revision,
-                                                          source_type=birth_country_source,
-                                                          changeset=changeset)
-
-            birth_province_sources = creator_form.cleaned_data.get('birth_province_source')
-            for birth_province_source in birth_province_sources:
-                BirthProvinceSourceRevision.objects.create(creator=revision,
-                                                           source_type=birth_province_source,
-                                                           changeset=changeset)
-
-            birth_city_sources = creator_form.cleaned_data.get('birth_city_source')
-            for birth_city_source in birth_city_sources:
-                BirthCitySourceRevision.objects.create(creator=revision,
-                                                       source_type=birth_city_source,
-                                                       changeset=changeset)
-
-            death_country_sources = creator_form.cleaned_data.get('death_country_source')
-            for death_country_source in death_country_sources:
-                DeathCountrySourceRevision.objects.create(creator=revision,
-                                                          source_type=death_country_source,
-                                                          changeset=changeset)
-
-            death_province_sources = creator_form.cleaned_data.get('death_province_source')
-            for death_province_source in death_province_sources:
-                DeathProvinceSourceRevision.objects.create(creator=revision,
-                                                           source_type=death_province_source,
-                                                           changeset=changeset)
-
-            death_city_sources = creator_form.cleaned_data.get('death_city_source')
-            for death_city_source in death_city_sources:
-                DeathCitySourceRevision.objects.create(creator=revision,
-                                                       source_type=death_city_source,
-                                                       changeset=changeset)
-
-            portrait_sources = creator_form.cleaned_data.get('portrait_source')
-            for portrait_source in portrait_sources:
-                PortraitSourceRevision.objects.create(creator=revision,
-                                                      source_type=portrait_source,
-                                                      changeset=changeset)
-
-            schools = creator_form.cleaned_data.get('schools')
-            for school in schools:
-                CreatorSchoolDetailRevision.objects.create(creator=revision,
-                                                           school=school,
-                                                           changeset=changeset)
-
-            degrees = creator_form.cleaned_data.get('degrees')
-            for degree in degrees:
-                CreatorDegreeDetailRevision.objects.create(creator=revision,
-                                                           degree=degree,
-                                                           changeset=changeset)
-
-            bio_sources = creator_form.cleaned_data.get('bio_source')
-            for bio_source in bio_sources:
-                BioSourceRevision.objects.create(creator=revision,
-                                                 source_type=bio_source,
-                                                 changeset=changeset)
-
-            return submit(request, changeset.id)
-
-    context = {}
-    context['creator_form'] = creator_form
-    context['mode'] = 'new'
-    return render(request, template_name, context)
-
-@permission_required('gcd.can_reserve')
-def add_creator_membership(request, creator_id, template_name='oi/creators/creator_memberships.html'):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-    try:
-        parent = Creator.objects.get(id=creator_id)
-        if parent.deleted or parent.pending_deletion():
-            return render_error(request, u'Cannot add Membership '
-                u'creators since "%s" is deleted or pending deletion.' % parent)
-
-        if request.method == 'GET':
-            membership_form = CreatorMembershipRevisionForm()
-
-        elif request.method == 'POST':
-            if 'cancel' in request.POST:
-                return HttpResponseRedirect(urlresolvers.reverse(
-                    'apps.gcd.views.details.creator',
-                    kwargs={ 'creators_id': creator_id }))
-
-            membership_form = CreatorMembershipRevisionForm(
-                request.POST or None,
-                request.FILES or None,
-            )
-            if membership_form.is_valid():
-                changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                      change_type=CTYPES['creator_membership'])
-                changeset.save()
-
-                revision = membership_form.save(commit=False)
-
-                revision.save_added_revision(changeset=changeset, parent=parent)
-                revision.save()
-
-                membership_sources = membership_form.cleaned_data.get('membership_source')
-                for membership_source in membership_sources:
-                    revision.membership_source.add(membership_source)
-                return submit(request, changeset.id)
-
-    except(Creator.DoesNotExist, Creator.MultipleObjectsReturned):
-        return render_error(request,
-          'Could not find creator for id ' + creator_id)
-
-    context = {}
-    context['membership_form'] = membership_form
-    context['mode'] = 'new'
-    return render(request, template_name, context)
-
-@permission_required('gcd.can_reserve')
-def add_creator_award(request, creator_id, template_name='oi/creators/creator_awards.html'):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-    try:
-        parent = Creator.objects.get(id=creator_id)
-        if parent.deleted or parent.pending_deletion():
-            return render_error(request, u'Cannot add Award '
-                u'creators since "%s" is deleted or pending deletion.' % parent)
-
-        if request.method == 'GET':
-            award_form = CreatorAwardRevisionForm()
-
-        elif request.method == 'POST':
-            if 'cancel' in request.POST:
-                return HttpResponseRedirect(urlresolvers.reverse(
-                    'apps.gcd.views.details.creator',
-                    kwargs={ 'creators_id': creator_id }))
-
-            award_form = CreatorAwardRevisionForm(
-                request.POST or None,
-                request.FILES or None,
-            )
-            if award_form.is_valid():
-                changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                      change_type=CTYPES['creator_award'])
-                changeset.save()
-
-                revision = award_form.save(commit=False)
-
-                revision.save_added_revision(changeset=changeset, parent=parent)
-                revision.save()
-
-                award_sources = award_form.cleaned_data.get('award_source')
-                for award_source in award_sources:
-                    revision.award_source.add(award_source)
-                return submit(request, changeset.id)
-
-    except(Creator.DoesNotExist, Creator.MultipleObjectsReturned):
-        return render_error(request,
-          'Could not find creator for id ' + creator_id)
-
-    context = {}
-    context['award_form'] = award_form
-    context['mode'] = 'new'
-    return render(request, template_name, context)
-
-@permission_required('gcd.can_reserve')
-def add_creator_artinfluence(request, creator_id, template_name='oi/creators/creator_artinfluences.html'):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-    try:
-        parent = Creator.objects.get(id=creator_id)
-        if parent.deleted or parent.pending_deletion():
-            return render_error(request, u'Cannot add Award '
-                u'creators since "%s" is deleted or pending deletion.' % parent)
-
-        if request.method == 'GET':
-            artinfluence_form = CreatorArtInfluenceRevisionForm()
-
-        elif request.method == 'POST':
-            if 'cancel' in request.POST:
-                return HttpResponseRedirect(urlresolvers.reverse(
-                    'apps.gcd.views.details.creator',
-                    kwargs={ 'creators_id': creator_id }))
-
-            artinfluence_form = CreatorArtInfluenceRevisionForm(
-                request.POST or None,
-                request.FILES or None,
-            )
-            if artinfluence_form.is_valid():
-                changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                      change_type=CTYPES['creator_artinfluence'])
-                changeset.save()
-
-                revision = artinfluence_form.save(commit=False)
-
-                revision.save_added_revision(changeset=changeset, parent=parent)
-                revision.save()
-
-                influence_sources = artinfluence_form.cleaned_data.get('influence_source')
-                for influence_source in influence_sources:
-                    revision.influence_source.add(influence_source)
-                return submit(request, changeset.id)
-
-    except(Creator.DoesNotExist, Creator.MultipleObjectsReturned):
-        return render_error(request,
-          'Could not find creator for id ' + creator_id)
-
-    context = {}
-    context['artinfluence_form'] = artinfluence_form
-    context['mode'] = 'new'
-    return render(request, template_name, context)
-
-@permission_required('gcd.can_reserve')
-def add_creator_noncomicwork(request, creator_id, template_name='oi/creators/creator_noncomic_works.html'):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-    try:
-        parent = Creator.objects.get(id=creator_id)
-        if parent.deleted or parent.pending_deletion():
-            return render_error(request, u'Cannot add Award '
-                u'creators since "%s" is deleted or pending deletion.' % parent)
-
-        if request.method == 'GET':
-            noncomicwork_form = CreatorNonComicWorkRevisionForm()
-
-        elif request.method == 'POST':
-            if 'cancel' in request.POST:
-                return HttpResponseRedirect(urlresolvers.reverse(
-                    'apps.gcd.views.details.creator',
-                    kwargs={ 'creators_id': creator_id }))
-
-            noncomicwork_form = CreatorNonComicWorkRevisionForm(
-                request.POST or None,
-                request.FILES or None,
-            )
-            if noncomicwork_form.is_valid():
-                changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                      change_type=CTYPES['creator_noncomicwork'])
-                changeset.save()
-
-                revision = noncomicwork_form.save(commit=False)
-
-                revision.save_added_revision(changeset=changeset, parent=parent)
-                revision.save()
-
-                work_sources = noncomicwork_form.cleaned_data.get('work_source')
-                for work_source in work_sources:
-                    revision.work_source.add(work_source)
-                return submit(request, changeset.id)
-
-    except(Creator.DoesNotExist, Creator.MultipleObjectsReturned):
-        return render_error(request,
-          'Could not find creator for id ' + creator_id)
-
-    context = {}
-    context['noncomicwork_form'] = noncomicwork_form
-    context['mode'] = 'new'
-    return render(request, template_name, context)
-
