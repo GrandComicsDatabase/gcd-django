@@ -262,7 +262,7 @@ def delete_item(request, item_id, collection_id):
 
     collection.items.remove(item)
     messages.success(request,
-                     _("Item removed from %s" % collection))
+                     _(u"Item removed from %s" % collection))
     if not item.collections.count():
         if item.acquisition_date:
             item.acquisition_date.delete()

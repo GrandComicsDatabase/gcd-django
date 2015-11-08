@@ -101,7 +101,7 @@
     {% endfor %}
     {% for plocation in purchase_locations %}
       purchase_locations[{{ plocation.id }}] = {name: "{{ plocation.name }}",
-        description: "{{ plocation.descrption }}"}
+        description: "{{ plocation.description }}"}
     {% endfor %}
     var set_location_for_edit = function(form, id, list){
       if (id) {

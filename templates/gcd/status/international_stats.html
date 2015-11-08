@@ -24,7 +24,7 @@ Statistics by {{ type }}, ordered by number of
 <div class="{% cycle 'stats_left' 'stats_right'%}">
         <h3 class="item_id">
         <div class='stats_content'>
-            Statistics for Comics {% if type == 'country' %} published {% endif %} in <a href="{% url "process_advanced_search" %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{% if type == 'country' %}country={{ object.code }}{% else %}language={{ object.code }}{% endif %}">{{ object }}</a>
+            Statistics for Comics {% if type == 'country' %} published in <img style="vertical-align:middle" src="{{ MEDIA_URL }}/img/gcd/flags/{{ object.code|lower }}.png" alt="{{ object }}">{% else %} in {% endif %} <a href="{% url "process_advanced_search" %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{{ type }}={{ object.code }}">{{ object }}</a>
         </div>
         </h3>
         <div class='stats_content'>

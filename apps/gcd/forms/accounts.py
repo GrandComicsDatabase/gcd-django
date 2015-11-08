@@ -41,17 +41,20 @@ class AccountForm(forms.Form):
       u'publicly displayed on the site.  Please see our '
       u'<a target="_blank" href="%s">Privacy Policy</a> '
       u'for more information.' % '/privacy/'))
-    
-    _name_help =(u'You must provide at least one name (first, last or both). ' 
-                 u'We prefer real names, but you do not have to use them. '
-                 u'If you choose a different name please do not take someone '
-                 u"else's real name and use common sense when choosing one. "
-                 u'Your contributions will be credited under the name(s) you '
-                 u'provide.')
+
+    _name_help =(
+      u"You must provide at least one name (first, last or both). "
+       "We prefer real names, but you do not have to use them. "
+       "While you can choose any user name, the name of people entering data "
+       "into the GCD is displayed publicly and should be consistent with the "
+       "GCD's objective of reputable research about comics.  We recommend "
+       "using your real name or a name similar to your real name. Please do "
+       "not choose a name which is likely to be considered offensive, copies "
+       "the name of a comics character, or impersonates another person.")
+
     first_name = forms.CharField(max_length=30, required=False,
                                  help_text=_name_help)
-    last_name = forms.CharField(max_length=30, required=False,
-                                help_text=_name_help)
+    last_name = forms.CharField(max_length=30, required=False)
     country = forms.ModelChoiceField(
         queryset=Country.objects.exclude(name='-- FIX ME --').order_by('name'),
         empty_label='--- Please Select a Country ---')
