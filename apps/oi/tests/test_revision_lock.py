@@ -13,11 +13,10 @@ def display_obj():
     """
     Generic test Display object.  Publisher has the least dependencies.
     """
-    country = Country(code='XZZ', name='Test Country')
-    country.save()
+    country, created = Country.objects.get_or_create(code='US')
 
-    pub = Publisher(name='Test Publisher', country=country)
-    pub.save()
+    pub, created = Publisher.objects.get_or_create(name='Test Publisher',
+                                                   country=country)
     return pub
 
 
