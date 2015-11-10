@@ -41,6 +41,30 @@
               {% endif %}
           {% endfor %}
 
+          <!--Creator's Names-->
+              {% if creator.cr_creator_names.all %}
+                  <hr>
+                  {% for creator_name in creator.cr_creator_names.all %}
+                    <h3>Name:{{ forloop.counter }}</h3>
+                    <p><strong>Name</strong> : {{creator_name.name}}</p>
+                    <p><strong>Type</strong> : {{creator_name.type}}</p>
+                    {% if creator_name.source.all %}
+                        <p><strong>sources</strong> :{% for source in creator_name.source.all %} {{source.type}},{% endfor %}</p>
+                    {% endif %}
+                  {% endfor %}
+
+              {% elif creator.creator_names.all %}
+                  <hr>
+                  {% for creator_name in creator.creator_names.all %}
+                    <h3>Name:{{ forloop.counter }}</h3>
+                    <p><strong>Name</strong> : {{creator_name.name}}</p>
+                    <p><strong>Type</strong> : {{creator_name.type}}</p>
+                    {% if creator_name.source.all %}
+                        <p><strong>sources</strong> :{% for source in creator_name.source.all %} {{source.type}},{% endfor %}</p>
+                    {% endif %}
+                  {% endfor %}
+              {% endif %}
+
           <!--Creator's Schools-->
           {% if creator.schools.all %}
               <hr>
@@ -116,7 +140,7 @@
              {% for membership in creator.membership_set.all %}
                 {% if not membership.deleted %}
                     <h3>Memberships:{{ forloop.counter }}</h3>
-                    <p>{{ forloop.counter}}.&nbsp<strong>Organization name</strong> : {{membership.organization_name}}</p>
+                    <p><strong>Organization name</strong> : {{membership.organization_name}}</p>
                     <p><strong>Membership type</strong> : {{membership.membership_type.type}}</p>
                     <p><strong>Membership begin year</strong> : {{membership.membership_begin_year}}</p>
                     <p><strong>Membership end year</strong> : {{membership.membership_end_year}}</p>

@@ -1,0 +1,4 @@
+{{ object.influence_name }}
+{{ object.creator.gcd_official_name }}
+{{ objects.creator.birth_country }}
+{{ objects.influence_link }}

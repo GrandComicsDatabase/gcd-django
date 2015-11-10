@@ -1,0 +1,3 @@
+{{ object.gcd_official_name }}
+{{ objects.birth_country }}
+{{ objects.birth_year }}

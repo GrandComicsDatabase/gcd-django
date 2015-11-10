@@ -352,3 +352,12 @@ register.filter(field_value)
 register.filter(show_diff)
 register.filter(compare_current_reprints)
 register.assignment_tag(diff_list)
+
+def is_in(value, sources):
+    for source in sources:
+        if str(source) == str(value):
+            return True
+    return False
+
+register.filter(is_in)
+

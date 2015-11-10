@@ -1,0 +1,4 @@
+{{ object.award_name }}
+{{ object.creator.gcd_official_name }}
+{{ objects.creator.birth_country }}
+{{ objects.award_year }}

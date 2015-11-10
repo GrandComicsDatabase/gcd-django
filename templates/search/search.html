@@ -1,5 +1,4 @@
 {% extends "gcd/base_view.html" %}
-
 {% load url from future %}
 {% load i18n %}
 {% load credits %}
@@ -24,6 +23,11 @@
             <option value="brand group" {% if 'facet_model_name_exact:brand group' in form.selected_facets %}selected{% endif %}> Publisher Brand Group </option>
             <option value="brand emblem" {% if 'facet_model_name_exact:brand emblem' in form.selected_facets %}selected{% endif %}> Publisher Brand Emblem </option>
             <option value="indicia publisher" {% if 'facet_model_name_exact:indicia publisher' in form.selected_facets %}selected{% endif %}> Indicia Publisher </option>
+            <option value="creator" {% if 'facet_model_name_exact:creator' in form.selected_facets %}selected{% endif %}> Creator </option>
+            <option value="creator membership" {% if 'facet_model_name_exact:creator membership' in form.selected_facets %}selected{% endif %}> Creator Membership</option>
+            <option value="creator artinfluence" {% if 'facet_model_name_exact:creator artinfluence' in form.selected_facets %}selected{% endif %}> Creator Artinfluence</option>
+            <option value="creator award" {% if 'facet_model_name_exact:creator award' in form.selected_facets %}selected{% endif %}> Creator Award</option>
+            <option value="creator noncomicwork" {% if 'facet_model_name_exact:creator noncomicwork' in form.selected_facets %}selected{% endif %}> Creator Noncomicwork </option>
         </select>
         <input type="submit" value="Search">
       </p>
@@ -139,6 +143,27 @@
                 <td><img {{ result.object.parent.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
                 :
                   <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
+
+            {% if result.model_name == 'creator' %}
+                <td>[CREATOR]</td>
+                <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.gcd_official_name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'membership' %}
+                <td>[CREATOR MEMBERSHIP]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.organization_name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'artinfluence' %}
+                <td>[CREATOR ART INFLUENCE]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.influence_name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'award' %}
+                <td>[CREATOR AWARD]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.award_name }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'noncomicwork' %}
+                <td>[CREATOR NONCOMICWORK]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.publication_title }}</a></td>
             {% endif %}
             </tr>
         {% endfor %}
