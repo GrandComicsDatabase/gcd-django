@@ -1,6 +1,7 @@
 from haystack import indexes
+from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
-    Brand, BrandGroup, STORY_TYPES
+    Brand, BrandGroup, STORY_TYPES, Creator, Membership, ArtInfluence, Award, NonComicWork
 
 DEFAULT_BOOST = 15.0
 
@@ -207,3 +208,104 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_facet_model_name(self, obj):
         return "brand group"
+
+
+class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/creator_text.txt')
+    gcd_official_name = indexes.EdgeNgramField(model_attr="gcd_official_name")
+    name = MultiValueField()
+    facet_model_name = indexes.CharField(faceted=True)
+
+    birth_year = indexes.IntegerField(model_attr="birth_year")
+    sort_name = indexes.CharField(model_attr="gcd_official_name",indexed=False)
+    country = indexes.CharField(model_attr='birth_country__code', indexed=False)
+
+    def get_model(self):
+        return Creator
+
+    def prepare_facet_model_name(self, obj):
+        return "creator"
+
+    def prepare_name(self, obj):
+        return [creator_name.pk for creator_name in obj.creator_names.all()]
+
+
+class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/creator_membership_text.txt')
+    name = indexes.CharField(model_attr="organization_name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    birth_year = indexes.IntegerField(model_attr="creator__birth_year")
+    sort_name = indexes.CharField(model_attr='organization_name', indexed=False)
+    country = indexes.CharField(model_attr='creator__birth_country__code', indexed=False)
+
+    def get_model(self):
+        return Membership
+
+    def prepare_facet_model_name(self, obj):
+        return "creator membership"
+
+
+class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/creator_artinfluence_text.txt')
+    name = indexes.CharField(model_attr="influence_name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    birth_year = indexes.IntegerField(model_attr="creator__birth_year")
+    sort_name = indexes.CharField(model_attr='influence_name', indexed=False)
+    country = indexes.CharField(model_attr='creator__birth_country__code', indexed=False)
+
+    def get_model(self):
+        return ArtInfluence
+
+    def prepare_facet_model_name(self, obj):
+        return "creator artinfluence"
+
+
+class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/creator_award_text.txt')
+    name = indexes.CharField(model_attr="award_name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    birth_year = indexes.IntegerField(model_attr="creator__birth_year")
+    sort_name = indexes.CharField(model_attr='award_name', indexed=False)
+    country = indexes.CharField(model_attr='creator__birth_country__code', indexed=False)
+
+    def get_model(self):
+        return Award
+
+    def prepare_facet_model_name(self, obj):
+        return "creator award"
+
+
+class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/creator_noncomicwork_text.txt')
+    name = indexes.CharField(model_attr="publication_title", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    birth_year = indexes.IntegerField(model_attr="creator__birth_year")
+    sort_name = indexes.CharField(model_attr='publication_title', indexed=False)
+    country = indexes.CharField(model_attr='creator__birth_country__code', indexed=False)
+
+    def get_model(self):
+        return NonComicWork
+
+    def prepare_facet_model_name(self, obj):
+        return "creator noncomicwork"
+
+

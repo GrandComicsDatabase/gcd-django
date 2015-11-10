@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import calendar
 import itertools
 import operator
 import re
@@ -5511,8 +5512,7 @@ class CreatorRevisionManager(RevisionManager):
 
     def _base_field_kwargs(self, instance):
         return {
-            'name': instance.name,
-            'name_type': instance.name_type,
+            'gcd_official_name': instance.gcd_official_name,
             'birth_year': instance.birth_year,
             'birth_year_uncertain': instance.birth_year_uncertain,
             'birth_month': instance.birth_month,
@@ -5567,9 +5567,10 @@ class CreatorRevisionManager(RevisionManager):
             **kwargs)
 
         revision.save()
-        name_sources = creator.creatornamesource.all()
-        for name_source in name_sources:
-            NameSourceRevision.objects.clone_revision(name_source,
+
+        name_details = creator.creator_names.all()
+        for name_detail in name_details:
+            CreatorNameDetailsRevision.objects.clone_revision(name_detail,
                                                       changeset=changeset)
 
         birth_year_sources = creator.creatorbirthyearsource.all()
@@ -5668,11 +5669,8 @@ class CreatorRevision(Revision):
     creator=models.ForeignKey('gcd.Creator',
                               null=True,
                               related_name='revisions')
-    name = models.CharField(max_length=255, db_index=True)
-    name_type = models.ForeignKey('gcd.NameType')
-    name_source = models.ManyToManyField('gcd.SourceType',
-                                         related_name='cr_namesource',
-                                         through='NameSourceRevision')
+
+    gcd_official_name = models.CharField(max_length=255, db_index=True)
     related_person = models.ManyToManyField(
         'self',
         through='NameRelationRevision',
@@ -5681,33 +5679,45 @@ class CreatorRevision(Revision):
     birth_year_uncertain = models.BooleanField(default=False)
     birth_year_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_birthyearsource',
-                                               through='BirthYearSourceRevision')
+                                               through='BirthYearSourceRevision',
+                                               null=True,
+                                               blank=True)
     birth_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, null=True, blank=True)
     birth_month_uncertain = models.BooleanField(default=False)
     birth_month_source = models.ManyToManyField('gcd.SourceType',
                                                 related_name='cr_birthmonthsource',
-                                                through='BirthMonthSourceRevision')
+                                                through='BirthMonthSourceRevision',
+                                                null=True,
+                                                blank=True)
     birth_date = models.PositiveSmallIntegerField(null=True, blank=True)
     birth_date_uncertain = models.BooleanField(default=False)
     birth_date_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_birthdatesource',
-                                               through='BirthDateSourceRevision')
-    death_year = models.PositiveSmallIntegerField(null=True, blank=True)
+                                               through='BirthDateSourceRevision',
+                                               null=True,
+                                               blank=True)
+    death_year = models.PositiveSmallIntegerField(null=True, blank=True,)
     death_year_uncertain = models.BooleanField(default=False)
     death_year_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_deathyearsource',
-                                               through='DeathYearSourceRevision')
+                                               through='DeathYearSourceRevision',
+                                               null=True,
+                                               blank=True)
     death_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, null=True, blank=True)
     death_month_uncertain = models.BooleanField(default=False)
     death_month_source = models.ManyToManyField('gcd.SourceType',
                                                 related_name='cr_deathmonthsource',
-                                                through='DeathMonthSourceRevision')
+                                                through='DeathMonthSourceRevision',
+                                                null=True,
+                                                blank=True)
     death_date = models.PositiveSmallIntegerField(null=True, blank=True)
     death_date_uncertain = models.BooleanField(default=False)
     death_date_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_deathdatesource',
-                                               through='DeathDateSourceRevision')
-    whos_who = models.URLField(default=None, blank=True, null=True)
+                                               through='DeathDateSourceRevision',
+                                               null=True,
+                                               blank=True)
+    whos_who = models.URLField(blank=True, null=True)
     birth_country = models.ForeignKey(
         'gcd.Country',
         related_name='cr_birth_country',
@@ -5716,17 +5726,23 @@ class CreatorRevision(Revision):
     birth_country_uncertain = models.BooleanField(default=False)
     birth_country_source = models.ManyToManyField('gcd.SourceType',
                                                   related_name='cr_birthcountrysource',
-                                                  through='BirthCountrySourceRevision')
+                                                  through='BirthCountrySourceRevision',
+                                                  null=True,
+                                                  blank=True)
     birth_province = models.CharField(max_length=50, blank=True, null=True)
     birth_province_uncertain = models.BooleanField(default=False)
     birth_province_source = models.ManyToManyField('gcd.SourceType',
                                                    related_name='cr_birthprovincesource',
-                                                   through='BirthProvinceSourceRevision')
+                                                   through='BirthProvinceSourceRevision',
+                                                   null=True,
+                                                   blank=True)
     birth_city = models.CharField(max_length=200, blank=True, null=True)
     birth_city_uncertain = models.BooleanField(default=False)
     birth_city_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_birthcitysource',
-                                               through='BirthCitySourceRevision')
+                                               through='BirthCitySourceRevision',
+                                               null=True,
+                                               blank=True)
     death_country = models.ForeignKey('gcd.Country',
                                       related_name='cr_death_country',
                                       blank=True,
@@ -5734,39 +5750,53 @@ class CreatorRevision(Revision):
     death_country_uncertain = models.BooleanField(default=False)
     death_country_source = models.ManyToManyField('gcd.SourceType',
                                                   related_name='cr_deathcountrysource',
-                                                  through='DeathCountrySourceRevision')
+                                                  through='DeathCountrySourceRevision',
+                                                  null=True,
+                                                  blank=True)
     death_province = models.CharField(max_length=50, blank=True, null=True)
     death_province_uncertain = models.BooleanField(default=False)
     death_province_source = models.ManyToManyField('gcd.SourceType',
                                                    related_name='cr_deathprovincesource',
-                                                   through='DeathProvinceSourceRevision')
+                                                   through='DeathProvinceSourceRevision',
+                                                   null=True,
+                                                   blank=True)
     death_city = models.CharField(max_length=200, blank=True, null=True)
     death_city_uncertain = models.BooleanField(default=False)
     death_city_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_deathcitysource',
-                                               through='DeathCitySourceRevision')
-    portrait = models.ImageField(upload_to=settings.PORTRAIT_DIR)
+                                               through='DeathCitySourceRevision',
+                                               null=True,
+                                               blank=True)
+    portrait = models.ImageField(upload_to=settings.PORTRAIT_DIR, null=True, blank=True)
     portrait_source = models.ManyToManyField('gcd.SourceType',
                                              related_name='cr_portraitsource',
-                                             through='PortraitSourceRevision')
+                                             through='PortraitSourceRevision',
+                                             null=True,
+                                             blank=True)
     schools = models.ManyToManyField('gcd.School',
                                      related_name='cr_schoolinformation',
-                                     through='CreatorSchoolDetailRevision')
+                                     through='CreatorSchoolDetailRevision',
+                                     null=True,
+                                     blank=True)
     degrees = models.ManyToManyField('gcd.Degree',
                                      related_name='cr_degreeinformation',
-                                     through='CreatorDegreeDetailRevision')
+                                     through='CreatorDegreeDetailRevision',
+                                     null=True,
+                                     blank=True)
     bio = models.TextField(blank=True, null=True)
     bio_source = models.ManyToManyField('gcd.SourceType',
                                         related_name='cr_biosource',
-                                        through='BioSourceRevision')
-    sample_scan = models.FileField(upload_to=settings.SAMPLE_SCAN_DIR)
+                                        through='BioSourceRevision',
+                                        null=True,
+                                        blank=True)
+    sample_scan = models.FileField(upload_to=settings.SAMPLE_SCAN_DIR, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
 
     def __unicode__(self):
-        return '%s' %(unicode(self.name))
+        return '%s' % unicode(self.gcd_official_name)
 
-    _base_field_list = ['name',
-                        'name_type',
+    _base_field_list = [
+                        'gcd_official_name',
                         'birth_year',
                         'birth_year_uncertain',
                         'birth_month',
@@ -5801,8 +5831,7 @@ class CreatorRevision(Revision):
 
     def _get_blank_values(self):
         return {
-            'name': '',
-            'name_type': None,
+            'gcd_official_name': '',
             'birth_year': None,
             'birth_year_uncertain': None,
             'birth_month': None,
@@ -5845,27 +5874,26 @@ class CreatorRevision(Revision):
 
     def get_text_fields(self):
         fields_dict = OrderedDict()
-        fields_dict['Name'] = self.name
-        fields_dict['Name Type'] = self.name_type.type
+        fields_dict['Gcd Official Name'] = self.gcd_official_name
         fields_dict['Birth Year Uncertain'] = self.birth_year
         fields_dict['Birth Year'] = self.birth_year_uncertain
-        fields_dict['Birth Month'] = calendar.month_name[self.birth_month]
+        fields_dict['Birth Month'] = calendar.month_name[self.birth_month] if self.birth_month else None
         fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
         fields_dict['Birth Date'] = self.birth_date
         fields_dict['Birth Date Uncertain'] = self.birth_date_uncertain
         fields_dict['Death Year'] = self.death_year
         fields_dict['Death Year Uncertain'] = self.death_year_uncertain
-        fields_dict['Death Month'] = calendar.month_name[self.death_month]
+        fields_dict['Death Month'] = calendar.month_name[self.death_month] if self.death_month else None
         fields_dict['Death Month Uncertain'] = self.death_month_uncertain
         fields_dict['Death Date'] = self.death_date
         fields_dict['Death Date Uncertain'] = self.death_date_uncertain
-        fields_dict['Birth Country'] = self.birth_country.name
+        fields_dict['Birth Country'] = self.birth_country.name if self.birth_country else None
         fields_dict['Birth Country Uncertain'] = self.birth_country_uncertain
         fields_dict['Birth Province'] = self.birth_province
         fields_dict['Birth Province Uncertain'] = self.birth_province_uncertain
         fields_dict['Birth City'] = self.birth_city
         fields_dict['Birth City Uncertain'] = self.birth_city_uncertain
-        fields_dict['Death Country'] = self.death_country.name
+        fields_dict['Death Country'] = self.death_country.name if self.death_country else None
         fields_dict['Death Country Uncertain'] = self.death_country_uncertain
         fields_dict['Death Province'] = self.death_province
         fields_dict['Death Province Uncertain'] = self.death_province_uncertain
@@ -5876,7 +5904,8 @@ class CreatorRevision(Revision):
         return fields_dict
 
     def description(self):
-        return '%s (%s)' % (self.name, self.name_type)
+        return '%s' % unicode(self.gcd_official_name)
+
 
     def _source(self):
         return self.creator
@@ -5915,8 +5944,7 @@ class CreatorRevision(Revision):
             ctr.save()
             return
 
-        ctr.name = self.name
-        ctr.name_type = self.name_type
+        ctr.gcd_official_name = self.gcd_official_name
         ctr.birth_year = self.birth_year
         ctr.birth_year_uncertain = self.birth_year_uncertain
         ctr.birth_month = self.birth_month
@@ -5951,12 +5979,15 @@ class CreatorRevision(Revision):
             ctr.reserved = False
         ctr.save()
 
-        NameSource.objects.filter(creator=ctr).delete()
-        name_sources  = self.cr_creatornamesource.all()
-        name_source_types = [ namesource.source_type for namesource in name_sources]
-        for name_source_type in name_source_types:
-            NameSource.objects.create(creator=ctr,
-                                      source_type=name_source_type)
+        CreatorNameDetails.objects.filter(creator=ctr).delete()
+        creator_name_details = self.cr_creator_names.all()
+        for creator_name_detail in creator_name_details:
+            creator_name_object = CreatorNameDetails.objects.create(creator=ctr,
+                                                                    name=creator_name_detail.name,
+                                                                    type=creator_name_detail.type)
+            sources = creator_name_detail.source.all()
+            for source in sources:
+                creator_name_object.source.add(source)
 
         BirthYearSource.objects.filter(creator=ctr).delete()
         birth_year_sources = self.cr_creatorbirthyearsource.all()
@@ -6072,6 +6103,7 @@ class CreatorRevision(Revision):
             self.creator = ctr
             self.save()
 
+
 class RelationTypeRevisionManager(RevisionManager):
 
     def clone_revision(self, relationtype, changeset):
@@ -6180,65 +6212,68 @@ class NameRelationRevision(Revision):
                                                 )
 
 
-class NameSourceRevisionManager(RevisionManager):
-    def clone_revision(self, namesource, changeset):
+class CreatorNameDetailsRevisionManager(RevisionManager):
+    def clone_revision(self, creatorname, changeset):
         """
         Given an existing NameSource instance, create a new revision based on it.
 
         This new revision will be where the replacement is stored.
         """
         return RevisionManager.clone_revision(self,
-                                              instance=namesource,
-                                              instance_class=NameSource,
+                                              instance=creatorname,
+                                              instance_class=CreatorNameDetails,
                                               changeset=changeset)
 
-    def _do_create_revision(self, namesource, changeset, **ignore):
+    def _do_create_revision(self, creatorname, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        revision = NameSourceRevision(
+        revision = CreatorNameDetailsRevision(
           # revision-specific fields:
           creator=changeset.revisions.next(),
           changeset=changeset,
-          source_type=namesource.source_type,
-
+          name=creatorname.name,
+          type=creatorname.type,
           # copied fields:
           )
 
         revision.save()
+
+        sources = creatorname.source.all()
+        for source in sources:
+            revision.source.add(source)
         return revision
 
 
-class NameSourceRevision(Revision):
+class CreatorNameDetailsRevision(Revision):
+    """
+    record of the creator's name
+    """
 
-    """
-    Indicates the various sources of names
-    Multiple Name sources could be checked per name.
-    """
     class Meta:
         #auto_created = True
         app_label = 'oi'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Name Source Revisions'
+        verbose_name_plural = 'Creator Name Detail Revisions'
 
-    objects = NameSourceRevisionManager()
-    name_source = models.ForeignKey('gcd.NameSource',
-                                    null=True,
-                                    related_name='cr_name_source')
+    objects = CreatorNameDetailsRevisionManager()
+    creator_name_detail = models.ForeignKey('gcd.CreatorNameDetails',
+                                              null=True,
+                                              related_name='cr_creator_name_details')
     creator = models.ForeignKey(CreatorRevision,
-                                related_name='cr_creatornamesource')
-    source_type = models.ForeignKey('gcd.SourceType',
-                                    related_name='cr_namesourcetype')
-    source_description = models.TextField(null=True, blank=True)
+                                related_name='cr_creator_names')
+    name = models.CharField(max_length=255, db_index=True)
+    description = models.TextField(null=True, blank=True)
+    type = models.ForeignKey('gcd.NameType', related_name='cr_nametypes', null=True, blank=True)
+    source = models.ManyToManyField('gcd.SourceType', related_name='cr_namesources', null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s(%s)' % (unicode(self.creator.gcd_official_name), unicode(self.name),unicode(self.type.type))
 
     def _source(self):
-        return self.name_source
+        return self.name
 
     def _source_name(self):
-        return 'name_source'
+        return 'creatorname'
 
 
 class BirthYearSourceRevisionManager(RevisionManager):
@@ -6292,7 +6327,7 @@ class BirthYearSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class BirthMonthSourceRevisionManager(RevisionManager):
@@ -6346,7 +6381,7 @@ class BirthMonthSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class BirthDateSourceRevisionManager(RevisionManager):
@@ -6400,7 +6435,7 @@ class BirthDateSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class DeathYearSourceRevisionManager(RevisionManager):
@@ -6454,7 +6489,7 @@ class DeathYearSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class DeathMonthSourceRevisionManager(RevisionManager):
@@ -6508,7 +6543,7 @@ class DeathMonthSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class DeathDateSourceRevisionManager(RevisionManager):
@@ -6562,7 +6597,7 @@ class DeathDateSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class BirthCountrySourceRevisionManager(RevisionManager):
@@ -6616,7 +6651,7 @@ class BirthCountrySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class BirthProvinceSourceRevisionManager(RevisionManager):
@@ -6670,7 +6705,7 @@ class BirthProvinceSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class BirthCitySourceRevisionManager(RevisionManager):
@@ -6724,7 +6759,7 @@ class BirthCitySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class DeathCountrySourceRevisionManager(RevisionManager):
@@ -6778,7 +6813,7 @@ class DeathCountrySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class DeathProvinceSourceRevisionManager(RevisionManager):
@@ -6832,7 +6867,7 @@ class DeathProvinceSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class DeathCitySourceRevisionManager(RevisionManager):
@@ -6886,7 +6921,7 @@ class DeathCitySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class PortraitSourceRevisionManager(RevisionManager):
@@ -6940,7 +6975,7 @@ class PortraitSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class BioSourceRevisionManager(RevisionManager):
@@ -6994,7 +7029,7 @@ class BioSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.source_type.type))
 
 
 class CreatorSchoolDetailRevisionManager(RevisionManager):
@@ -7051,10 +7086,12 @@ class CreatorSchoolDetailRevision(Revision):
     school_year_ended = models.PositiveSmallIntegerField(null=True, blank=True)
     school_year_ended_uncertain = models.BooleanField(default=False)
     school_source = models.ManyToManyField('gcd.SourceType',
-                                           related_name='cr_schoolsource')
+                                           related_name='cr_schoolsource',
+                                           null=True,
+                                           blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.school.school_name))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.school.school_name))
 
 
 class CreatorDegreeDetailRevisionManager(RevisionManager):
@@ -7113,7 +7150,7 @@ class CreatorDegreeDetailRevision(Revision):
     degree_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator.name), unicode(self.degree.degree_name))
+        return '%s - %s' % (unicode(self.creator.gcd_official_name), unicode(self.degree.degree_name))
 
 
 class CreatorMembershipRevisionManager(RevisionManager):
@@ -7181,14 +7218,17 @@ class CreatorMembershipRevision(Revision):
                                 related_name='cr_creator_membership')
     organization_name = models.CharField(max_length=200)
     membership_type = models.ForeignKey('gcd.MembershipType',
-                                        related_name='cr_membershiptype')
-
-    membership_begin_year = models.PositiveSmallIntegerField()
+                                        related_name='cr_membershiptype',
+                                        null=True,
+                                        blank=True)
+    membership_begin_year = models.PositiveSmallIntegerField(null=True, blank=True)
     membership_begin_year_uncertain = models.BooleanField(default=False)
-    membership_end_year = models.PositiveSmallIntegerField()
+    membership_end_year = models.PositiveSmallIntegerField(null=True, blank=True)
     membership_end_year_uncertain = models.BooleanField(default=False)
     membership_source = models.ManyToManyField('gcd.SourceType',
-                                           related_name='cr_membershipsource')
+                                               related_name='cr_membershipsource',
+                                               null=True,
+                                               blank=True)
 
     def __unicode__(self):
         return '%s' %(unicode(self.organization_name))
@@ -7325,7 +7365,10 @@ class CreatorAwardRevision(Revision):
     award_name = models.CharField(max_length=255)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
-    award_source = models.ManyToManyField('gcd.SourceType', related_name='cr_awardsource')
+    award_source = models.ManyToManyField('gcd.SourceType',
+                                          related_name='cr_awardsource',
+                                          null=True,
+                                          blank=True)
 
     def __unicode__(self):
         return '%s' %(unicode(self.award_name))
@@ -7460,7 +7503,10 @@ class CreatorArtInfluenceRevision(Revision):
                                        related_name='cr_influencelink')
     is_self_identify = models.BooleanField(default=False)
     self_identify_influences_doc = models.TextField(blank=True, null=True)
-    influence_source = models.ManyToManyField('gcd.SourceType', related_name='cr_influencesource')
+    influence_source = models.ManyToManyField('gcd.SourceType',
+                                              related_name='cr_influencesource',
+                                              null=True,
+                                              blank=True)
 
     def __unicode__(self):
         return '%s' %(unicode(self.influence_name))
@@ -7605,7 +7651,10 @@ class CreatorNonComicWorkRevision(Revision):
                                    null=True,
                                    blank=True,
                                    related_name='cr_workrole')
-    work_source = models.ManyToManyField('gcd.SourceType', related_name='cr_worksource')
+    work_source = models.ManyToManyField('gcd.SourceType',
+                                         related_name='cr_worksource',
+                                         null=True,
+                                         blank=True)
     work_notes = models.TextField(blank=True, null=True)
 
     def __unicode__(self):

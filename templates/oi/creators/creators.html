@@ -22,11 +22,95 @@ Adding Creator
             <h1>
                 {% ifequal mode "edit" %}Editing Creator{% endifequal %}
             </h1>
-            <table class="editing">
+            <table class="editing" style="padding-top: 10px;">
+                <input type="hidden" name="total_names" value="1" id="total_names">
+
+                <div class="gcd_official_name_div" style="padding-left: 42px; display: inline;">
+                    <label>GCD official name:</label>
+                    <input type="text" id="gcd_official_name" name="gcd_official_name" value="{{ revision.gcd_official_name }}" required> &nbsp;
+                </div>
+
+                <div class="name-div">
+                    <div class="name-details" style="padding-left: 113px; display: inline;">
+                        <label>Name:</label>
+                        <input type="text" id="name1" name="name1" required> &nbsp;
+
+                        <label>Type:</label>
+                        <select name="type1" id="type1" style="width: 130px;">
+                            {% for name_type in name_types %}
+                                <option {% if name_type.type == 'GCD Official' %} selected {% endif %} value='{{ name_type.id }}'>{{ name_type.type }}</option>
+                            {% endfor %}
+                        </select> &nbsp;
+
+                        <label>Source:</label>
+                        <select multiple style="vertical-align: middle;" name="sources1" id="sources1">
+                            {% for name_source in name_sources %}
+                                <option value='{{ name_source.id }}'>{{ name_source.type }}</option>
+                            {% endfor %}
+                        </select>&nbsp;
+                        <input type="button" id="add_name_divison_id" class="add_name_class" value="Add New" name="add_name_divison">
+                        <input type="button" id="remove_name_button" value="Remove" name="remove_this_name">`
+                        <br><br>
+                    </div>
+
+                </div>
+
                 {{creator_form.as_table}}
+
             </table>
+
             <input type="submit" value="Submit Creator" name="submit">
             <input type="submit" name="cancel" value="Cancel">
         </form>
     </div>
+
+<script src="{{ MEDIA_URL }}jquery/js/jquery.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        var name_type_dropdown = '';
+        {% for name_type in name_types %}
+            name_type_dropdown = name_type_dropdown + '<option value="{{ name_type.id }}">{{ name_type.type }}</option>';
+        {% endfor %}
+        var name_sources_dropdown = '';
+        {% for name_source in name_sources %}
+            name_sources_dropdown = name_sources_dropdown + '<option value="{{ name_source.id }}">{{ name_source.type }}</option>';
+        {% endfor %}
+
+        $(document).on("click", ".add_name_class", function(){
+            var total_names = parseInt($('#total_names').val());
+            var next_index = total_names + 1;
+            $('.name-div').append(
+                    '<div class="name-details" style="padding-left: 110px;display: inline;">' +
+                    ' <label>Name:</label>' +
+                    '<input type="text" id="name'+ next_index +'" name="name'+ next_index +'" required> &nbsp;&nbsp; ' +
+                    '<label>Type:</label>' +
+                    '<select name="type'+ next_index +'" id="type'+ next_index +'">'
+                    + name_type_dropdown +
+                    '</select> &nbsp;&nbsp;&nbsp;' +
+                    '<label>Sources:</label>' +
+                    '<select multiple name="sources'+ next_index +'" id="sources'+ next_index +'" style="vertical-align: middle;">'
+                    + name_sources_dropdown +
+                    '</select> &nbsp;' +
+                    '<input type="button" id="add_name_divison_id" class="add_name_class" value="Add New" name="add_new_name">&nbsp;'+
+                    '<input type="button" id="remove_name_button" value="Remove" name="remove_this_name">`'+
+                    '<br><br>'+
+                    '</div>');
+
+            $('#total_names').val(next_index);
+
+            if($('.gcd_official_name_div').has('#add_divison_id').length > 0){
+                $('.gcd_official_name_div').children('#add_divison_id').remove();
+            }
+        });
+        $(document).on("click", '#remove_name_button', function(){
+            $(this).closest('div').remove();
+
+            if($('.name-div').has('div').length == 0){
+                $('.gcd_official_name_div').append(
+                        '<input type="button" id="add_divison_id" class="add_name_class" value="Add New Names" name="add_new_name">')
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -455,6 +455,25 @@ def _display_edit_form(request, changeset, form, revision=None):
     else:
         template = 'oi/edit/revision.html'
 
+    if changeset.change_type == CTYPES['creators']:
+        name_types = NameType.objects.all()
+        name_sources = SourceType.objects.all()
+
+        response = oi_render_to_response(
+        template,
+        {
+            'changeset': changeset,
+            'revision': revision,
+            'form': form,
+            'states': states,
+            'settings': settings,
+            'CTYPES': CTYPES,
+            'name_types': name_types,
+            'name_sources': name_sources,
+        },
+          context_instance=RequestContext(request))
+        return response
+
     response = oi_render_to_response(
       template,
       {
@@ -572,12 +591,9 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
             if not (len(form.cleaned_data) == 1 and \
                                 'comments' in form.cleaned_data):
                 if revision.changeset.change_type == CTYPES['creators']:
-                    NameSourceRevision.objects.filter(creator=revision).delete()
-                    name_sources = form.cleaned_data.get('name_source')
-                    for name_source in name_sources:
-                        NameSourceRevision.objects.create(creator=revision,
-                                                          source_type=name_source,
-                                                          changeset=revision.changeset)
+
+                    revision.gcd_official_name = request.POST.get('gcd_official_name')
+                    revision.save()
 
                     birth_year_sources = form.cleaned_data.get('birth_year_source')
                     BirthYearSourceRevision.objects.filter(creator=revision).delete()
@@ -692,6 +708,24 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                         BioSourceRevision.objects.create(creator=revision,
                                                          source_type=bio_source,
                                                          changeset=revision.changeset)
+
+
+                    CreatorNameDetailsRevision.objects.filter(creator=revision).delete()
+                    total_creator_names = int(request.POST.get('total_names'))
+
+                    for i in range(1, total_creator_names + 1):
+                        if 'name'+ str(i) in request.POST:
+                            name = request.POST.get('name'+ str(i))
+                            type_id = request.POST.get('type'+ str(i))
+                            sources = request.POST.getlist('sources'+ str(i))
+
+                            type = NameType.objects.get(id=type_id)
+                            creatorname = CreatorNameDetailsRevision.objects.create(creator=revision,
+                                                                                   name=name,
+                                                                                   type=type,
+                                                                                   changeset=changeset)
+                            for source in sources:
+                                creatorname.source.add(source)
 
                 elif revision.changeset.change_type == CTYPES['creator_membership']:
                     revision.membership_source.clear()
@@ -4715,13 +4749,8 @@ def add_creator(request, template_name='oi/creators/creators.html'):
             changeset.save()
             revision = creator_form.save(commit=False)
             revision.save_added_revision(changeset=changeset)
+            revision.gcd_official_name = request.POST.get('gcd_official_name')
             revision.save()
-
-            name_sources = creator_form.cleaned_data.get('name_source')
-            for name_source in name_sources:
-                NameSourceRevision.objects.create(creator=revision,
-                                                  source_type=name_source,
-                                                  changeset=changeset)
 
             birth_year_sources = creator_form.cleaned_data.get('birth_year_source')
             for birth_year_source in birth_year_sources:
@@ -4819,10 +4848,28 @@ def add_creator(request, template_name='oi/creators/creators.html'):
                                                  source_type=bio_source,
                                                  changeset=changeset)
 
+            #Add gcd creator's other names
+            total_creator_names = int(request.POST.get('total_names'))
+            for i in range(1, total_creator_names + 1):
+                if 'name'+ str(i) in request.POST:
+                    name = request.POST.get('name'+ str(i))
+                    type_id = request.POST.get('type'+ str(i))
+                    sources = request.POST.getlist('sources'+ str(i))
+
+                    type = NameType.objects.get(id=type_id)
+                    creatorname = CreatorNameDetailsRevision.objects.create(creator=revision,
+                                                                           name=name,
+                                                                           type=type,
+                                                                           changeset=changeset)
+                    for source in sources:
+                        creatorname.source.add(source)
+
             return submit(request, changeset.id)
 
     context = {}
     context['creator_form'] = creator_form
+    context['name_types'] = NameType.objects.all()
+    context['name_sources'] = SourceType.objects.all()
     context['mode'] = 'new'
     return render(request, template_name, context)
 
