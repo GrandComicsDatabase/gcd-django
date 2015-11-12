@@ -96,12 +96,12 @@
     var locations = [];
     var purchase_locations = [];
     {% for location in locations %}
-        locations[{{ location.id }}] = {name: "{{ location.name }}",
-                                        description: "{{ location.description }}"}
+        locations[{{ location.id }}] = {name: "{{ location.name|escapejs }}",
+                                        description: "{{ location.description|escapejs }}"}
     {% endfor %}
     {% for plocation in purchase_locations %}
-      purchase_locations[{{ plocation.id }}] = {name: "{{ plocation.name }}",
-        description: "{{ plocation.description }}"}
+      purchase_locations[{{ plocation.id }}] = {name: "{{ plocation.name|escapejs }}",
+        description: "{{ plocation.description|escapejs }}"}
     {% endfor %}
     var set_location_for_edit = function(form, id, list){
       if (id) {

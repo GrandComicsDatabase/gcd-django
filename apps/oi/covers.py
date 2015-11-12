@@ -521,7 +521,7 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
               inks='?',
               colors='?',
               no_letters=True,
-              no_editor=True,
+              no_editing=True,
               sequence_number=0,
               page_count=2 if form.cleaned_data['is_wraparound'] else 1,
               )
