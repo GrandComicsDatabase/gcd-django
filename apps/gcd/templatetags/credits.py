@@ -14,7 +14,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue, Country, Language, Reprint
-from apps.oi.models import ReprintRevision, GENRES
+from apps.oi import models as oi_models
 from apps.gcd.models import StoryType, STORY_TYPES
 
 register = template.Library()
@@ -132,14 +132,17 @@ def show_credit(story, credit):
             genres = genres.replace('humor', 'humour')
             genres = genres.replace('sports', 'sport')
             genres = genres.replace('math & science', 'maths & science')
-        if language == 'en' or story.issue.series.language.code not in GENRES:
+        if language == 'en' or (story.issue.series.language.code not in
+                                oi_models.GENRES):
             story.genre = genres.replace('fantasy', 'fantasy-supernatural')
         else:
             display_genre = u''
             for genre in genres.split(';'):
                 genre = genre.strip()
-                if genre in GENRES['en']:
-                    translation = GENRES[language][GENRES['en'].index(genre)]
+                if genre in oi_models.GENRES['en']:
+                    translation = (oi_models.GENRES[language]
+                                                   [oi_models.GENRES['en']
+                                                   .index(genre)])
                 else:
                     translation = ''
                 if translation:
