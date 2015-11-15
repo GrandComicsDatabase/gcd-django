@@ -199,15 +199,21 @@ def export_collection(request, collection_id):
             export_data.append(unicode(item.signed))
         if collection.price_paid_used:
             export_data.append(u"%s %s" % (item.price_paid,
-                                           item.price_paid_currency.code) \
+                                           item.price_paid_currency.code
+                                             if item.price_paid_currency
+                                             else u'')
                                if item.price_paid else u'')
         if collection.market_value_used:
             export_data.append(u"%s %s" % (item.market_value,
-                                           item.market_value_currency.code) \
+                                           item.market_value_currency.code
+                                             if item.market_value_currency
+                                             else u'')
                                if item.market_value else u'')
         if collection.sell_price_used:
             export_data.append(u"%s %s" % (item.sell_price,
-                                           item.sell_price_currency.code) \
+                                           item.sell_price_currency.code
+                                             if item.sell_price_currency
+                                             else u'')
                                if item.sell_price else u'')
         writer.writerow(export_data)
 
