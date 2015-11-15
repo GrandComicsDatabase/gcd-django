@@ -4170,14 +4170,18 @@ def show_queue(request, queue_name, state):
     brand_groups = changes.filter(change_type=CTYPES['brand_group'])
     brands = changes.filter(change_type=CTYPES['brand'])
     brand_uses = changes.filter(change_type=CTYPES['brand_use'])
-    series = changes.filter(change_type=CTYPES['series'])
+    series = changes.filter(change_type=CTYPES['series'])\
+                    .prefetch_related('seriesrevisions__series')
     series_bonds = changes.filter(change_type=CTYPES['series_bond'])
     issue_adds = changes.filter(change_type=CTYPES['issue_add'])
     issues = changes.filter(change_type__in=[CTYPES['issue'],
                                              CTYPES['variant_add'],
-                                             CTYPES['two_issues']])
+                                             CTYPES['two_issues']])\
+                    .prefetch_related('issuerevisions__issue',
+                                      'issuerevisions__series')
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
-    covers = changes.filter(change_type=CTYPES['cover'])
+    covers = changes.filter(change_type=CTYPES['cover'])\
+                    .prefetch_related('coverrevisions__issue__series')
     images = changes.filter(change_type=CTYPES['image'])
     countries = dict(Country.objects.values_list('id', 'code'))
     country_names = dict(Country.objects.values_list('id', 'name'))
@@ -4648,12 +4652,17 @@ def mentoring(request):
     new_indexers = User.objects.filter(indexer__mentor=None) \
                                .filter(indexer__is_new=True) \
                                .filter(is_active=True) \
-                               .order_by('-date_joined')[:max_show_new]
+                               .order_by('-date_joined') \
+                               .select_related('indexer__country')[:max_show_new]
     my_mentees = User.objects.filter(indexer__mentor=request.user) \
-                             .filter(indexer__is_new=True)
+                             .filter(indexer__is_new=True) \
+                             .select_related('indexer__country')
     mentees = User.objects.exclude(indexer__mentor=None) \
                           .filter(indexer__is_new=True) \
-                          .exclude(indexer__mentor=request.user)
+                          .exclude(indexer__mentor=request.user) \
+                          .order_by('date_joined') \
+                          .select_related('indexer__mentor__indexer',
+                                          'indexer__country')
 
     return oi_render_to_response('oi/queues/mentoring.html',
       {

@@ -4,9 +4,6 @@
 {% load i18n %}
 {% load display %}
 {% load credits %}
-{% if MYCOMICS %}
-  {% load collecting %}
-{% endif %}
 
 {% block title %}
   GCD :: Issue :: {{ issue.short_name }}
@@ -143,24 +140,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
     <div id="control_rail">
       <div class="edit_box">
 {% if MYCOMICS %}
-        <div class="edit_header">
-          <div>my.comics.org</div>
-        </div>
-  {% if request.user.is_authenticated %}
-          {{ issue|show_have_want:request.user }}
-        <form method="POST" action="{% url "my_issue" issue_id=issue.id %}">
-            {% csrf_token %}
-          <div>
-            <input type="submit" name="confirm_selection" value="Add">
-            this issue to your 
-            <select name="collection_id">
-            {% for col_item in request.user.collector.ordered_collections %}
-              <option value="{{ col_item.id }}">{{ col_item.name }}
-            {% endfor %}
-            </select>
-          </div>
-        </form>
-  {% endif %}
+  {% include "mycomics/bits/issue_control.html" %}
 {% else %}
         <div class="edit_header">Editing
   {% if request.user.is_authenticated and not preview %}

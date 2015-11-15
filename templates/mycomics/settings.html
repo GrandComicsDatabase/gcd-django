@@ -1,8 +1,10 @@
 {% extends "mycomics/user_base.html" %}
 {% load i18n %}
 {% load bootstrap3 %}
+{% load url from future %}
 
 {% block modals %}
+  {{ block.super }}
   <script type="application/javascript">
     var selected_location;
   </script>
@@ -19,7 +21,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.removal_warning').hide()">{% trans "Cancel" %}</button>
-          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url delete_location %}'+selected_location">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url 'delete_location' %}'+selected_location">{% trans "Confirm" %}</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -37,7 +39,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.removal_warning').hide()">{% trans "Cancel" %}</button>
-          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url delete_purchase_location %}'+selected_location">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url "delete_purchase_location" %}'+selected_location">{% trans "Confirm" %}</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -50,7 +52,7 @@
           <h4 class="modal-title">{% trans "Edit Location" %}</h4>
         </div>
         <div class="modal-body">
-          <form id="editLocation" action="{% url edit_location %}" method="POST">
+          <form id="editLocation" action="{% url 'edit_location' %}" method="POST">
             {% csrf_token %}
             {% bootstrap_form location_form %}
           </form>
@@ -70,7 +72,7 @@
           <h4 class="modal-title">{% trans "Edit Purchase Location" %}</h4>
         </div>
         <div class="modal-body">
-          <form id="editPurchaseLocation" action="{% url edit_purchase_location %}" method="POST">
+          <form id="editPurchaseLocation" action="{% url 'edit_purchase_location' %}" method="POST">
             {% csrf_token %}
             {% bootstrap_form purchase_location_form %}
           </form>
@@ -94,12 +96,12 @@
     var locations = [];
     var purchase_locations = [];
     {% for location in locations %}
-        locations[{{ location.id }}] = {name: "{{ location.name }}",
-                                        description: "{{ location.description }}"}
+        locations[{{ location.id }}] = {name: "{{ location.name|escapejs }}",
+                                        description: "{{ location.description|escapejs }}"}
     {% endfor %}
     {% for plocation in purchase_locations %}
-      purchase_locations[{{ plocation.id }}] = {name: "{{ plocation.name }}",
-        description: "{{ plocation.descrption }}"}
+      purchase_locations[{{ plocation.id }}] = {name: "{{ plocation.name|escapejs }}",
+        description: "{{ plocation.description|escapejs }}"}
     {% endfor %}
     var set_location_for_edit = function(form, id, list){
       if (id) {

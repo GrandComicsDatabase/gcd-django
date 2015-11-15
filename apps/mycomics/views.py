@@ -8,6 +8,8 @@ from django.core import urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
@@ -225,8 +227,23 @@ def check_item_is_in_collection(request, item, collection):
         raise ErrorWithMessage("This item doesn't belong to given collection.")
 
 
+def check_item_is_not_in_collection(request, item, collection):
+    if item in collection.items.all():
+        raise ErrorWithMessage("This item already does belong to given "
+                               "collection.")
+
+
+def get_collection_for_owner(request, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+    if collection.collector.user != request.user:
+        return render_error(request,
+            'Only the owner of a collection can add issues to it.',
+            redirect=False)
+    return collection
+
+
 @login_required
-def delete_collection_item(request, item_id, collection_id):
+def delete_item(request, item_id, collection_id):
     if request.method != 'POST':
         raise ErrorWithMessage("This page may only be accessed through the "
                                "proper form.")
@@ -236,33 +253,81 @@ def delete_collection_item(request, item_id, collection_id):
 
     check_item_is_in_collection(request, item, collection)
 
-    position = collection.items.filter(issue__series__name__lte=
-                                         item.issue.series.name)\
-                               .exclude(issue__series__name=
-                                          item.issue.series.name,
+    position = collection.items.filter(issue__series__sort_name__lte=
+                                         item.issue.series.sort_name)\
+                               .exclude(issue__series__sort_name=
+                                          item.issue.series.sort_name,
                                         issue__sort_code__gt=
                                           item.issue.sort_code).count()
 
     collection.items.remove(item)
+    messages.success(request,
+                     _(u"Item removed from %s" % collection))
     if not item.collections.count():
         if item.acquisition_date:
             item.acquisition_date.delete()
         if item.sell_date:
             item.sell_date.delete()
         item.delete()
-    messages.success(request, _("Item removed from collection"))
+    else:
+        return HttpResponseRedirect(urlresolvers.reverse('view_item',
+                        kwargs={'item_id': item.id,
+                                'collection_id': item.collections.all()[0].id}))
+
     return HttpResponseRedirect(urlresolvers.reverse('view_collection',
                                   kwargs={'collection_id': collection_id}) + \
                                 "?page=%d" % (position/DEFAULT_PER_PAGE + 1))
 
 
+@login_required
+def move_item(request, item_id, collection_id):
+    if request.method != 'POST':
+        raise ErrorWithMessage("This page may only be accessed through the "
+                               "proper form.")
+    from_collection = get_object_or_404(Collection, id=collection_id)
+    item = get_item_for_collector(item_id, request.user.collector)
+    check_item_is_in_collection(request, item, from_collection)
+    collection_form = CollectionSelectForm(request.user.collector, None, request.POST)
+    if collection_form.is_valid():
+        to_collection_id = collection_form.cleaned_data['collection']
+        to_collection = get_object_or_404(Collection, id=to_collection_id)
+
+        check_item_is_in_collection(request, item, from_collection)
+        check_item_is_not_in_collection(request, item, to_collection)
+        if 'move' in request.POST:
+            from_collection.items.remove(item)
+            item.collections.add(to_collection)
+            messages.success(request, _("Item moved between collections"))
+            if to_collection.own_used and to_collection.own_default != None:
+                if to_collection.own_default != item.own:
+                    messages.warning(request, _("Own/want default for new "
+                                     "collection differs from item status."))
+            return HttpResponseRedirect(urlresolvers.reverse('view_item',
+                                    kwargs={'item_id': item_id,
+                                            'collection_id': to_collection_id}))
+        elif 'copy' in request.POST:
+            item.collections.add(to_collection)
+            messages.success(request, _("Item copied between collections"))
+            if to_collection.own_used and to_collection.own_default != None:
+                if to_collection.own_default != item.own:
+                    messages.warning(request, _("Own/want default for new "
+                                     "collection differs from item status."))
+        else:
+            messages.error(request, _("Item unchanged"))
+
+    return HttpResponseRedirect(urlresolvers.reverse('view_item',
+                                kwargs={'item_id': item_id,
+                                        'collection_id': collection_id}))
+
+
 def view_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
+    collector = collection.collector
     if request.user.is_authenticated() and \
-      collection.collector == request.user.collector:
+      collector == request.user.collector:
         item = get_item_for_collector(item_id, request.user.collector)
     elif collection.public == True:
-        item = get_item_for_collector(item_id, collection.collector)
+        item = get_item_for_collector(item_id, collector)
     elif not request.user.is_authenticated():
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     else:
@@ -270,12 +335,20 @@ def view_item(request, item_id, collection_id):
 
     check_item_is_in_collection(request, item, collection)
 
-    item_form = None
     sell_date_form = None
     acquisition_date_form = None
     if request.user.is_authenticated() and \
-      collection.collector == request.user.collector:
-        item_form = CollectionItemForm(request.user.collector, instance=item)
+      collector == request.user.collector:
+        initial = {}
+        if collector.default_currency:
+            if not item.price_paid_currency:
+                initial['price_paid_currency'] = collector.default_currency
+            if not item.sell_price_currency:
+                initial['sell_price_currency'] = collector.default_currency
+            if not item.market_value_currency:
+                initial['market_value_currency'] = collector.default_currency
+        item_form = CollectionItemForm(collector, instance=item,
+                                       initial=initial)
         if item.collections.filter(sell_date_used=True).exists():
             sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
             sell_date_form.fields['date'].label = _('Sell date')
@@ -283,12 +356,55 @@ def view_item(request, item_id, collection_id):
             acquisition_date_form = DateForm(instance=item.acquisition_date,
                                             prefix='acquisition_date')
             acquisition_date_form.fields['date'].label = _('Acquisition date')
+        collection_form = CollectionSelectForm(collector,
+                                        collections=item.collections.all())
+        other_collections = item.collections.exclude(id=collection.id)
+    else:
+        item_form = None
+        collection_form = None
+        other_collections = None
+
+    item_before = collection.items.filter(issue__series__sort_name__lte=
+                                            item.issue.series.sort_name)\
+                                  .exclude(issue__series__sort_name=
+                                             item.issue.series.sort_name,
+                                           issue__sort_code__gt=
+                                             item.issue.sort_code)\
+                                  .exclude(issue__series__sort_name=
+                                             item.issue.series.sort_name,
+                                           issue__sort_code=
+                                             item.issue.sort_code,
+                                           id__gte=item.id).reverse()
+
+    if item_before:
+        page = item_before.count()/DEFAULT_PER_PAGE + 1
+        item_before = item_before[0]
+    else:
+        page = 1
+    item_after = collection.items.filter(issue__series__sort_name__gte=
+                                           item.issue.series.sort_name)\
+                                 .exclude(issue__series__sort_name=
+                                            item.issue.series.sort_name,
+                                          issue__sort_code__lt=
+                                            item.issue.sort_code)\
+                                 .exclude(issue__series__sort_name=
+                                            item.issue.series.sort_name,
+                                          issue__sort_code=
+                                            item.issue.sort_code,
+                                          id__lte=item.id)
+    if item_after:
+        item_after = item_after[0]
 
     return render_to_response(COLLECTION_ITEM_TEMPLATE,
                               {'item': item, 'item_form': item_form,
+                               'item_before': item_before,
+                               'item_after': item_after,
+                               'page': page,
                                'collection': collection,
+                               'other_collections': other_collections,
                                'sell_date_form': sell_date_form,
-                               'acquisition_date_form': acquisition_date_form},
+                               'acquisition_date_form': acquisition_date_form,
+                               'collection_form': collection_form},
                               context_instance=RequestContext(request))
 
 
@@ -365,24 +481,32 @@ def save_item(request, item_id, collection_id):
 
 
 def add_issues_to_collection(request, collection_id, issues, redirect):
-    collection = get_object_or_404(Collection, id=collection_id)
-    if collection.collector.user != request.user:
-        return render_error(request,
-            'Only the owner of a collection can add issues to it.',
-            redirect=False)
+    collection = get_collection_for_owner(request, collection_id)
     for issue in issues:
         collected = CollectionItem.objects.create(issue=issue)
         collected.collections.add(collection)
+        if collection.own_used:
+            collected.own = collection.own_default
+            collected.save()
     return HttpResponseRedirect(redirect)
 
 
 @login_required
 def add_single_issue_to_collection(request, issue_id):
-    issue = Issue.objects.filter(id=issue_id)
-    return add_issues_to_collection(request, 
-        int(request.POST['collection_id']), issue,
-        urlresolvers.reverse('show_issue', 
-                            kwargs={'issue_id': issue_id}))
+    issue = Issue.objects.get(id=issue_id)
+    collection = get_collection_for_owner(request,
+                   collection_id=int(request.POST['collection_id']))
+    collected = CollectionItem.objects.create(issue=issue)
+    collected.collections.add(collection)
+    if collection.own_used:
+        collected.own = collection.own_default
+        collected.save()
+    messages.success(request, u"Issue <a href='%s'>%s</a> was added to your "
+                               "'%s' collection." % \
+                              (collected.get_absolute_url(collection),
+                               esc(issue), esc(collection.name)))
+    return HttpResponseRedirect(urlresolvers.reverse('show_issue',
+                                  kwargs={'issue_id': issue_id}))
 
 
 @login_required
@@ -420,8 +544,17 @@ def add_series_issues_to_collection(request, series_id):
         # add all issues (without variants) to the selected collection
         collection_id = int(request.POST['collection_id'])
         collection = get_object_or_404(Collection, id=collection_id)
-        messages.success(request, u"All issues added to your '%s' collection."\
-                                  % collection.name)
+        item_before = collection.items.filter(issue__series__sort_name__lt=
+                                              series.sort_name).reverse()
+
+        if item_before:
+            page = "?page=%d" % (item_before.count()/DEFAULT_PER_PAGE + 1)
+        else:
+            page = ""
+        messages.success(request, u"All issues added to your "
+                                   "<a href='%s%s'>%s</a> collection." % \
+                                   (collection.get_absolute_url(), page,
+                                    collection.name))
         return add_issues_to_collection(request, collection_id, issues,
           urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
     else:
