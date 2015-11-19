@@ -265,17 +265,22 @@ class OngoingReservation(models.Model):
 
 
 class PublisherRevisionManagerBase(RevisionManager):
+    @classmethod
+    def assignable_field_list(cls):
+        # order exactly as desired in compare page
+        return ['name',
+                'year_began',
+                'year_began_uncertain',
+                'year_ended',
+                'year_ended_uncertain',
+                'url',
+                'notes']
+
     def _base_field_kwargs(self, instance):
-        return {
-            'name': instance.name,
-            'year_began': instance.year_began,
-            'year_ended': instance.year_ended,
-            'year_began_uncertain': instance.year_began_uncertain,
-            'year_ended_uncertain': instance.year_ended_uncertain,
-            'notes': instance.notes,
-            'keywords': get_keywords(instance),
-            'url': instance.url,
-        }
+        kwargs = {f: getattr(instance, f)
+                  for f in self.assignable_field_list()}
+        kwargs['keywords'] = get_keywords(instance)
+        return kwargs
 
 
 class PublisherRevisionBase(Revision):
@@ -293,27 +298,24 @@ class PublisherRevisionBase(Revision):
     keywords = models.TextField(blank=True, default='')
     url = models.URLField(blank=True)
 
-    # order exactly as desired in compare page
-    # use list instead of set to control order
-    _base_field_list = ['name',
-                        'year_began',
-                        'year_began_uncertain',
-                        'year_ended',
-                        'year_ended_uncertain',
-                        'url',
-                        'notes',
-                        'keywords']
-
     def _assign_base_fields(self, target):
-        target.name = self.name
-        target.year_began = self.year_began
-        target.year_ended = self.year_ended
-        target.year_began_uncertain = self.year_began_uncertain
-        target.year_ended_uncertain = self.year_ended_uncertain
-        target.notes = self.notes
+        for field in PublisherRevisionManagerBase.assignable_field_list():
+            setattr(target, field, getattr(self, field))
         target.save()
         save_keywords(self, target)
-        target.url = self.url
+
+    @classmethod
+    def form_field_list(cls):
+        """
+        Ordered list of fields that should appear in the edit form.
+        """
+        # NOTE: This replaces the old _field_list() method, but I'm
+        #       not changing things in views.py and forms.py yet.
+
+        # Keywords are last on the compare page, so we can just append.
+        fields = list(PublisherRevisionManagerBase.assignable_field_list())
+        fields.append('keywords')
+        return fields
 
 
 class PublisherRevisionManager(PublisherRevisionManagerBase):
@@ -377,6 +379,13 @@ class PublisherRevision(PublisherRevisionBase):
 
     def _get_source_name(self):
         return 'publisher'
+
+    @classmethod
+    def form_field_list(cls):
+        fields = super(PublisherRevision, cls).form_field_list()
+        fields.insert(fields.index('url'), 'country')
+        fields.extend(('is_master', 'parent'))
+        return fields
 
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher

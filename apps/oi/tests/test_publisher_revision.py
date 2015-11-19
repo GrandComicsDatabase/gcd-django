@@ -23,6 +23,18 @@ PUBLISHER_ADD_VALUES = {
     'url': 'http://whatever.com',
 }
 
+PUBLISHER_FORM_FIELDS = ['name',
+                         'year_began',
+                         'year_began_uncertain',
+                         'year_ended',
+                         'year_ended_uncertain',
+                         'country',
+                         'url',
+                         'notes',
+                         'keywords',
+                         'is_master',
+                         'parent']
+
 
 @pytest.fixture
 def any_country():
@@ -94,3 +106,7 @@ def test_create_add_revision(any_country, any_changeset):
     keywords.sort()
     assert keywords == KEYWORDS
     assert pr.publisher.country == any_country
+
+
+def test_form_fields():
+    assert PublisherRevision.form_field_list() == PUBLISHER_FORM_FIELDS
