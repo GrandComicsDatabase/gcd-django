@@ -232,6 +232,15 @@ class Revision(models.Model):
     def _get_source_name(self):
         raise NotImplementedError
 
+    def commit_to_display(self):
+        """
+        Writes the changes from the revision back to the display object.
+
+        Revisions should handle their own dependencies on other revisions.
+        """
+        # TODO: Dependency mechanism.
+        raise NotImplementedError
+
 
 class OngoingReservation(models.Model):
     """
