@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import re
+
 from django.conf import settings
 from django.db import models
 from django.db.models import F
@@ -159,9 +161,27 @@ class RevisionManager(models.Manager):
     """
     Custom manager base class for revisions.
     """
+    @classmethod
+    def assignable_field_list(cls):
+        """
+        The list of fields that can simply be copied to or from the display.
+        """
+        raise NotImplementedError
 
-    def clone_revision(self, instance, instance_class,
-                       changeset, check=True):
+    def _assignable_field_kwargs(self, instance, with_keywords=True):
+        """
+        Creates a dictionary of assignable field values from an instance.
+
+        The instance is typically a display object, as there is usually
+        not an revision yet when this is called.
+        """
+        kwargs = {field: getattr(instance, field)
+                  for field in self.assignable_field_list()}
+        if with_keywords:
+            kwargs['keywords'] = get_keywords(instance)
+        return kwargs
+
+    def clone_revision(self, instance, changeset):
         """
         Given an existing instance, create a new revision based on it.
 
@@ -171,9 +191,12 @@ class RevisionManager(models.Manager):
         Entirely new publishers should be started by simply instantiating
         a new PublisherRevision directly.
         """
-        if not isinstance(instance, instance_class):
-            raise TypeError("Please supply a valid %s." % instance_class)
-
+        # At one point there was more to this method than just calling
+        # the private method, and there may be again in the future.
+        # TODO: Currently all of the child classes call the first argument
+        #       a different thing (after the object type).  This should
+        #       probably be changed to make them all the same- the argument
+        #       can be renamed in the method if needed.
         revision = self._do_create_revision(instance,
                                             changeset=changeset)
         return revision
@@ -245,6 +268,21 @@ class Revision(models.Model):
     def _get_source_name(self):
         raise NotImplementedError
 
+    def _copy_assignable_fields_to(self, target, with_keywords=True):
+        """
+        Used to copy fields from a revision to a display object.
+
+        At the time when this is called, the revision may not yet have
+        the display object set as self.source (in the case of a newly
+        added object), so the target of the copy is given as a parameter.
+        """
+        # Django does not allow self.objects, must go through class.
+        for field in type(self).objects.assignable_field_list():
+            setattr(target, field, getattr(self, field))
+        target.save()
+        if with_keywords:
+            save_keywords(self, target)
+
     def commit_to_display(self):
         """
         Writes the changes from the revision back to the display object.
@@ -289,12 +327,6 @@ class PublisherRevisionManagerBase(RevisionManager):
                 'url',
                 'notes']
 
-    def _base_field_kwargs(self, instance):
-        kwargs = {f: getattr(instance, f)
-                  for f in self.assignable_field_list()}
-        kwargs['keywords'] = get_keywords(instance)
-        return kwargs
-
 
 class PublisherRevisionBase(Revision):
     class Meta:
@@ -310,12 +342,6 @@ class PublisherRevisionBase(Revision):
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
     url = models.URLField(blank=True)
-
-    def _assign_base_fields(self, target):
-        for field in PublisherRevisionManagerBase.assignable_field_list():
-            setattr(target, field, getattr(self, field))
-        target.save()
-        save_keywords(self, target)
 
     @classmethod
     def form_field_list(cls):
@@ -336,25 +362,11 @@ class PublisherRevisionManager(PublisherRevisionManagerBase):
     Custom manager allowing the cloning of revisions from existing rows.
     """
 
-    def clone_revision(self, publisher, changeset):
-        """
-        Create a new revision based on a Publisher instance.
-
-        This new revision will be where the edits are made.
-        Entirely new publishers should be started by simply instantiating
-        a new PublisherRevision directly.
-        """
-        return PublisherRevisionManagerBase.clone_revision(
-            self,
-            instance=publisher,
-            instance_class=Publisher,
-            changeset=changeset)
-
     def _do_create_revision(self, publisher, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = self._base_field_kwargs(publisher)
+        kwargs = self._assignable_field_kwargs(publisher)
 
         revision = PublisherRevision(publisher=publisher,
                                      changeset=changeset,
@@ -415,7 +427,7 @@ class PublisherRevision(PublisherRevisionBase):
         pub.country = self.country
         pub.is_master = self.is_master
         pub.parent = self.parent
-        self._assign_base_fields(pub)
+        self._copy_assignable_fields_to(pub)
 
         if clear_reservation:
             pub.reserved = False
@@ -428,25 +440,11 @@ class PublisherRevision(PublisherRevisionBase):
 
 class IndiciaPublisherRevisionManager(PublisherRevisionManagerBase):
 
-    def clone_revision(self, indicia_publisher, changeset):
-        """
-        Create a new revision based on an IndiciaPublisher instance.
-
-        This new revision will be where the edits are made.
-        Entirely new publishers should be started by simply instantiating
-        a new IndiciaPublisherRevision directly.
-        """
-        return PublisherRevisionManagerBase.clone_revision(
-            self,
-            instance=indicia_publisher,
-            instance_class=IndiciaPublisher,
-            changeset=changeset)
-
     def _do_create_revision(self, indicia_publisher, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = self._base_field_kwargs(indicia_publisher)
+        kwargs = self._assignable_field_kwargs(indicia_publisher)
 
         revision = IndiciaPublisherRevision(
             indicia_publisher=indicia_publisher,
@@ -525,25 +523,11 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
 
 class BrandGroupRevisionManager(PublisherRevisionManagerBase):
 
-    def clone_revision(self, brand_group, changeset):
-        """
-        Create a new revision based on a BrandGroup instance.
-
-        This new revision will be where the edits are made.
-        Entirely new publishers should be started by simply instantiating
-        a new BrandGroupRevision directly.
-        """
-        return PublisherRevisionManagerBase.clone_revision(
-            self,
-            instance=brand_group,
-            instance_class=BrandGroup,
-            changeset=changeset)
-
     def _do_create_revision(self, brand_group, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = self._base_field_kwargs(brand_group)
+        kwargs = self._assignable_field_kwargs(brand_group)
 
         revision = BrandGroupRevision(brand_group=brand_group,
                                       changeset=changeset,
@@ -619,25 +603,11 @@ class BrandGroupRevision(PublisherRevisionBase):
 
 class BrandRevisionManager(PublisherRevisionManagerBase):
 
-    def clone_revision(self, brand, changeset):
-        """
-        Given an existing Brand instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        Entirely new brands should be started by simply instantiating
-        a new BrandRevision directly.
-        """
-        return PublisherRevisionManagerBase.clone_revision(
-            self,
-            instance=brand,
-            instance_class=Brand,
-            changeset=changeset)
-
     def _do_create_revision(self, brand, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        kwargs = self._base_field_kwargs(brand)
+        kwargs = self._assignable_field_kwargs(brand)
 
         revision = BrandRevision(brand=brand, changeset=changeset, **kwargs)
 
@@ -724,19 +694,6 @@ class BrandRevision(PublisherRevisionBase):
 
 
 class BrandUseRevisionManager(RevisionManager):
-
-    def clone_revision(self, brand_use, changeset):
-        """
-        Given an existing BrandUse instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        Entirely new publishers should be started by simply instantiating
-        a new BrandUseRevision directly.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=brand_use,
-                                              instance_class=BrandUse,
-                                              changeset=changeset)
 
     def _do_create_revision(self, brand_use, changeset, **ignore):
         """
@@ -834,17 +791,6 @@ class CoverRevisionManager(RevisionManager):
     """
     Custom manager allowing the cloning of revisions from existing rows.
     """
-
-    def clone_revision(self, cover, changeset):
-        """
-        Given an existing Cover instance, create a new revision based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=cover,
-                                              instance_class=Cover,
-                                              changeset=changeset)
 
     def _do_create_revision(self, cover, changeset, **ignore):
         """
@@ -977,21 +923,6 @@ class SeriesRevisionManager(RevisionManager):
     """
     Custom manager allowing the cloning of revisions from existing rows.
     """
-
-    def clone_revision(self, series, changeset):
-        """
-        Given an existing Series instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
-        Entirely new series should be started by simply instantiating
-        a new SeriesRevision directly.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=series,
-                                              instance_class=Series,
-                                              changeset=changeset)
 
     def _do_create_revision(self, series, changeset, **ignore):
         """
@@ -1329,17 +1260,6 @@ class SeriesRevision(Revision):
 
 class SeriesBondRevisionManager(RevisionManager):
 
-    def clone_revision(self, series_bond, changeset):
-        """
-        Create a new revision based on a SeriesBond instance.
-
-        This new revision will be where the edits are made.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=series_bond,
-                                              instance_class=SeriesBond,
-                                              changeset=changeset)
-
     def _do_create_revision(self, series_bond, changeset):
         """
         Helper delegate to do the class-specific work of clone_revision.
@@ -1432,21 +1352,6 @@ class SeriesBondRevision(Revision):
 
 
 class IssueRevisionManager(RevisionManager):
-
-    def clone_revision(self, issue, changeset):
-        """
-        Given an existing Issue instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
-        Entirely new issues should be started by simply instantiating
-        a new IssueRevision directly.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=issue,
-                                              instance_class=Issue,
-                                              changeset=changeset)
 
     def _do_create_revision(self, issue, changeset, **ignore):
         """
@@ -1906,21 +1811,6 @@ def get_story_field_list():
 
 class StoryRevisionManager(RevisionManager):
 
-    def clone_revision(self, story, changeset):
-        """
-        Given an existing Story instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
-        Entirely new stories should be started by simply instantiating
-        a new StoryRevision directly.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=story,
-                                              instance_class=Story,
-                                              changeset=changeset)
-
     def _do_create_revision(self, story, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
@@ -2116,17 +2006,6 @@ class StoryRevision(Revision):
 
 
 class ReprintRevisionManager(RevisionManager):
-
-    def clone_revision(self, reprint, changeset):
-        """
-        Given an existing Reprint instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=reprint,
-                                              instance_class=type(reprint),
-                                              changeset=changeset)
 
     def _do_create_revision(self, reprint, changeset):
         """
@@ -2377,17 +2256,6 @@ class Download(models.Model):
 
 
 class ImageRevisionManager(RevisionManager):
-
-    def clone_revision(self, image, changeset):
-        """
-        Given an existing Image instance, create a new revision based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=image,
-                                              instance_class=Image,
-                                              changeset=changeset)
 
     def _do_create_revision(self, image, changeset, **ignore):
         """

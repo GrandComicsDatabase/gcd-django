@@ -8,7 +8,7 @@ from apps.oi.models import SeriesRevision
 
 @pytest.mark.django_db
 def test_create_add_revision(any_added_series_rev, series_add_values,
-                             keywords, any_changeset):
+                             any_changeset):
     sr = any_added_series_rev
 
     for k, v in series_add_values.iteritems():
@@ -22,6 +22,12 @@ def test_create_add_revision(any_added_series_rev, series_add_values,
 
     assert sr.source is None
     assert sr.source_name == 'series'
+
+
+@pytest.mark.django_db
+def test_commit_added_revision(any_added_series_rev, series_add_values,
+                               any_changeset, keywords):
+    sr = any_added_series_rev
 
     # Simple version of this for mocking.  Real article testing elsewhere.
     sort_name = sr.name[sr.name.index(' ') + 1:]
@@ -64,6 +70,29 @@ def test_create_add_rev_no_leading_article(any_added_series_rev):
     assert remover.called is False
     assert sr.series.name == sr.name
     assert sr.series.sort_name == sr.name
+
+
+@pytest.mark.django_db
+def test_create_edit_revision(any_added_series, series_add_values,
+                              any_changeset):
+    # Simple version of this for mocking.  Real article testing elsewhere.
+    sort_name = any_added_series.name[any_added_series.name.index(' ') + 1:]
+    with mock.patch('apps.oi.models.remove_leading_article') as remover:
+        remover.return_value = sort_name
+        sr = SeriesRevision.objects.clone_revision(instance=any_added_series,
+                                                   changeset=any_changeset)
+
+    for k, v in series_add_values.iteritems():
+        assert getattr(sr, k) == v
+
+    assert sr.series is any_added_series
+
+    assert sr.reservation_requested is False
+    assert sr.changeset == any_changeset
+    assert sr.date_inferred is False
+
+    assert sr.source is any_added_series
+    assert sr.source_name == 'series'
 
 
 def test_form_fields(series_form_fields):

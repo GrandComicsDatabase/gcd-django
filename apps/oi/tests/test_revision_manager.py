@@ -18,15 +18,12 @@ def test_clone_revision_positive():
 
     test_object = 'any string'
     r = mgr.clone_revision(instance=test_object,
-                           instance_class=type(test_object),
                            changeset=changeset)
     mgr._do_create_revision.assert_called_once_with(test_object,
                                                     changeset=changeset)
     assert r is rev
 
 
-def test_clone_revision_wrong_class():
-    mgr = models.RevisionManager()
-    with pytest.raises(TypeError):
-        mgr.clone_revision('any string', type(42),
-                           changeset=mock.MagicMock(models.Changeset))
+def test_assignable_field_list():
+    with pytest.raises(NotImplementedError):
+        models.RevisionManager.assignable_field_list()

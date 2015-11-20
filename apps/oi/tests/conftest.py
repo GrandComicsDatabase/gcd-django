@@ -185,3 +185,10 @@ def any_added_series_rev(any_changeset, series_add_values):
                         **series_add_values)
     sr.save()
     return sr
+
+
+@pytest.fixture
+def any_added_series(any_added_series_rev):
+    # TODO: This leaves the changeset open, see any_added_series()
+    any_added_series_rev.commit_to_display()
+    return any_added_series_rev.series
