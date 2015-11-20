@@ -4,7 +4,7 @@ import pytest
 import mock
 
 from apps.gcd.models import Publisher
-from apps.oi.models import SeriesRevision
+from apps.oi.models import SeriesRevision, IssueRevision
 
 
 @pytest.mark.django_db
@@ -35,7 +35,8 @@ def test_commit_added_revision(any_added_series_rev, series_add_values,
     # Simple version of this for mocking.  Real article testing elsewhere.
     sort_name = sr.name[sr.name.index(' ') + 1:]
     with mock.patch('apps.oi.models.update_count') as updater, \
-            mock.patch('apps.oi.models.remove_leading_article') as remover:
+            mock.patch('apps.oi.models.remove_leading_article') as remover, \
+            mock.patch('apps.oi.models.IssueRevision') as ir_class:
         remover.return_value = sort_name
         sr.commit_to_display()
     assert updater.called_once_with('series', 1,
@@ -60,9 +61,11 @@ def test_commit_added_revision(any_added_series_rev, series_add_values,
     assert publisher.series_count == old_publisher_series_count + 1
     assert sr.series.issue_count == 0
 
+    assert ir_class.called == 0
+
 
 @pytest.mark.django_db
-def test_create_add_rev_no_leading_article(any_added_series_rev):
+def test_commit_add_rev_no_leading_article(any_added_series_rev):
     sr = any_added_series_rev
     sr.leading_article = False
     sr.save()
@@ -77,6 +80,70 @@ def test_create_add_rev_no_leading_article(any_added_series_rev):
     assert remover.called is False
     assert sr.series.name == sr.name
     assert sr.series.sort_name == sr.name
+
+
+@pytest.mark.django_db
+def test_commit_add_rev_singleton(any_added_series_rev):
+    sr = any_added_series_rev
+    sr.is_singleton = True
+    sr.save()
+
+    with mock.patch('apps.oi.models.update_count') as updater, \
+            mock.patch('apps.oi.models.IssueRevision') as ir_class:
+        ir = mock.MagicMock(spec=IssueRevision)
+        ir_class.return_value = ir
+
+        sr.commit_to_display()
+
+    assert updater.called_once_with('series', 1,
+                                    language=sr.language, country=sr.country)
+    ir_class.assert_called_once_with(changeset=sr.changeset,
+                                     after=None,
+                                     number='[nn]',
+                                     publication_date=sr.year_began)
+    assert ir.key_date == '%d-00-00' % sr.year_began
+    assert ir.series == sr.series
+    ir.save.assert_called_once_with()
+
+
+@pytest.mark.django_db
+def test_commit_add_rev_non_comics(any_added_series_rev):
+    sr = any_added_series_rev
+    sr.is_comics_publication = False
+    sr.save()
+
+    old_publisher_series_count = sr.publisher.series_count
+
+    with mock.patch('apps.oi.models.update_count') as updater:
+        sr.commit_to_display()
+
+    assert updater.called == 0
+    new_publisher = Publisher.objects.get(pk=sr.publisher.pk)
+    assert new_publisher.series_count == old_publisher_series_count
+
+
+@pytest.mark.django_db
+def test_commit_add_rev_non_comics_singleton(any_added_series_rev):
+    sr = any_added_series_rev
+    sr.is_comics_publication = False
+    sr.is_singleton = True
+
+    with mock.patch('apps.oi.models.update_count') as updater, \
+            mock.patch('apps.oi.models.IssueRevision') as ir_class:
+        ir = mock.MagicMock(spec=IssueRevision)
+        ir_class.return_value = ir
+
+        sr.commit_to_display()
+
+    assert updater.called == 0
+
+    ir_class.assert_called_once_with(changeset=sr.changeset,
+                                     after=None,
+                                     number='[nn]',
+                                     publication_date=sr.year_began)
+    assert ir.key_date == '%d-00-00' % sr.year_began
+    assert ir.series == sr.series
+    ir.save.assert_called_once_with()
 
 
 @pytest.mark.django_db
