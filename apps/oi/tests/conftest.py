@@ -4,9 +4,9 @@ import pytest
 
 from django.contrib.auth.models import User
 
-from apps.gcd.models import Country, Language, Indexer
+from apps.gcd.models import Country, Language, Indexer, SeriesPublicationType
 from apps.oi import states
-from apps.oi.models import PublisherRevision, Changeset, CTYPES
+from apps.oi.models import PublisherRevision, SeriesRevision, Changeset, CTYPES
 
 
 @pytest.fixture
@@ -96,3 +96,92 @@ def any_added_publisher_rev(any_country, any_changeset, publisher_add_values):
     pr = PublisherRevision(changeset=any_changeset, **publisher_add_values)
     pr.save()
     return pr
+
+
+@pytest.fixture
+def any_added_publisher(any_added_publisher_rev):
+    # TODO: This leaves the changeset open, in part because changeset
+    #       state transitions have not yet been implemented.  Will have
+    #       to figure out how to manage that as tests get more complex.
+    #       Right now nothing cares about changeset state.
+    any_added_publisher_rev.commit_to_display()
+    return any_added_publisher_rev.publisher
+
+
+@pytest.fixture
+def series_add_values(any_country, any_language,
+                      any_added_publisher, keywords):
+    series_pub_type = SeriesPublicationType.objects \
+                                           .get_or_create(name='magazine')[0]
+
+    return {
+        'name': 'The Test Series',
+        'color': 'full color',
+        'dimensions': '7" x 11"',
+        'paper_stock': 'newsprint',
+        'binding': 'saddle stitched',
+        'publishing_format': 'limited series',
+        'publication_type': series_pub_type,
+        'is_singleton': False,
+        'notes': 'blah blah whatever',
+        'year_began': 1990,
+        'year_ended': None,
+        'year_began_uncertain': False,
+        'year_ended_uncertain': False,
+        'is_current': True,
+        'publication_notes': 'more stuff goes here',
+        'has_barcode': True,
+        'has_indicia_frequency': True,
+        'has_isbn': True,
+        'has_volume': True,
+        'has_issue_title': True,
+        'has_rating': True,
+        'is_comics_publication': True,
+        'country': any_country,
+        'language': any_language,
+        'publisher': any_added_publisher,
+        'keywords': keywords['string'],
+    }
+
+
+@pytest.fixture
+def series_form_fields():
+    return [
+        'name',
+        'leading_article',
+        'imprint',
+        'format',
+        'color',
+        'dimensions',
+        'paper_stock',
+        'binding',
+        'publishing_format',
+        'publication_type',
+        'is_singleton',
+        'year_began',
+        'year_began_uncertain',
+        'year_ended',
+        'year_ended_uncertain',
+        'is_current',
+        'country',
+        'language',
+        'has_barcode',
+        'has_indicia_frequency',
+        'has_isbn',
+        'has_issue_title',
+        'has_volume',
+        'has_rating',
+        'is_comics_publication',
+        'tracking_notes',
+        'notes',
+        'keywords',
+        'publication_notes',
+    ]
+
+
+@pytest.fixture
+def any_added_series_rev(any_changeset, series_add_values):
+    sr = SeriesRevision(changeset=any_changeset, leading_article=True,
+                        **series_add_values)
+    sr.save()
+    return sr

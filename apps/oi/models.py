@@ -22,6 +22,7 @@ from apps.gcd.models.issue import INDEXED
 
 CTYPES = {
     'publisher': 1,
+    'series': 4,
 }
 
 
@@ -29,6 +30,18 @@ def update_count(*args, **kwargs):
     # Just a dummy for now, always mocked in test cases.
     # Will be re-added as cases expand to cover CountStats.
     pass
+
+
+def remove_leading_article(name):
+    '''
+    returns the name with the leading article (separated by "'"
+    or whitespace) removed
+    '''
+    article_match = re.match(r"\S?\w+['\s]\s*(.*)$", name, re.UNICODE)
+    if article_match:
+        return article_match.group(1)
+    else:
+        return name
 
 
 def get_keywords(source):
@@ -1077,6 +1090,9 @@ class SeriesRevision(Revision):
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
+    # TODO: what's a crossref field?  Was that a field in the old DB?
+    #       appears to be a stale comment of some sort.  The tracking
+    #       notes field was definitely used plenty.
     tracking_notes = models.TextField(blank=True)
 
     # Fields for handling the presence of certain issue fields
@@ -1108,6 +1124,14 @@ class SeriesRevision(Revision):
 
     def _get_source_name(self):
         return 'series'
+
+    @classmethod
+    def form_field_list(cls):
+        # TODO: The old _field_list() method has an instance check
+        #       having to do with a changed publisher.  I'm not quite
+        #       ready to give up on this being a classmethod, but
+        #       obviously that needs to be addressed.
+        return get_series_field_list() + [u'publication_notes']
 
     def _do_complete_added_revision(self, publisher):
         """
