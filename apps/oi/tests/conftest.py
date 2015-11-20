@@ -72,23 +72,6 @@ def publisher_add_values(any_country, keywords):
 
 
 @pytest.fixture
-def publisher_form_fields():
-    return [
-        'name',
-        'year_began',
-        'year_began_uncertain',
-        'year_ended',
-        'year_ended_uncertain',
-        'country',
-        'url',
-        'notes',
-        'keywords',
-        'is_master',
-        'parent',
-    ]
-
-
-@pytest.fixture
 def any_added_publisher_rev(any_country, any_changeset, publisher_add_values):
     """
     Returns a newly added publisher using values from any_publisher_add_values.
@@ -129,7 +112,6 @@ def series_add_values(any_country, any_language,
         'year_began_uncertain': False,
         'year_ended_uncertain': False,
         'is_current': True,
-        'publication_notes': 'more stuff goes here',
         'has_barcode': True,
         'has_indicia_frequency': True,
         'has_isbn': True,
@@ -142,41 +124,6 @@ def series_add_values(any_country, any_language,
         'publisher': any_added_publisher,
         'keywords': keywords['string'],
     }
-
-
-@pytest.fixture
-def series_form_fields():
-    return [
-        'name',
-        'leading_article',
-        'imprint',
-        'format',
-        'color',
-        'dimensions',
-        'paper_stock',
-        'binding',
-        'publishing_format',
-        'publication_type',
-        'is_singleton',
-        'year_began',
-        'year_began_uncertain',
-        'year_ended',
-        'year_ended_uncertain',
-        'is_current',
-        'country',
-        'language',
-        'has_barcode',
-        'has_indicia_frequency',
-        'has_isbn',
-        'has_issue_title',
-        'has_volume',
-        'has_rating',
-        'is_comics_publication',
-        'tracking_notes',
-        'notes',
-        'keywords',
-        'publication_notes',
-    ]
 
 
 @pytest.fixture

@@ -61,8 +61,3 @@ def test_create_edit_revision(any_added_publisher, publisher_add_values,
 
     assert pr.source is any_added_publisher
     assert pr.source_name == 'publisher'
-
-
-def test_form_fields(publisher_form_fields):
-    assert PublisherRevision.form_field_list() == \
-        publisher_form_fields

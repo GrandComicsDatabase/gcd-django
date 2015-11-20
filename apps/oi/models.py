@@ -343,19 +343,6 @@ class PublisherRevisionBase(Revision):
     keywords = models.TextField(blank=True, default='')
     url = models.URLField(blank=True)
 
-    @classmethod
-    def form_field_list(cls):
-        """
-        Ordered list of fields that should appear in the edit form.
-        """
-        # NOTE: This replaces the old _field_list() method, but I'm
-        #       not changing things in views.py and forms.py yet.
-
-        # Keywords are last on the compare page, so we can just append.
-        fields = list(PublisherRevisionManagerBase.assignable_field_list())
-        fields.append('keywords')
-        return fields
-
 
 class PublisherRevisionManager(PublisherRevisionManagerBase):
     """
@@ -404,13 +391,6 @@ class PublisherRevision(PublisherRevisionBase):
 
     def _get_source_name(self):
         return 'publisher'
-
-    @classmethod
-    def form_field_list(cls):
-        fields = super(PublisherRevision, cls).form_field_list()
-        fields.insert(fields.index('url'), 'country')
-        fields.extend(('is_master', 'parent'))
-        return fields
 
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
@@ -1055,14 +1035,6 @@ class SeriesRevision(Revision):
 
     def _get_source_name(self):
         return 'series'
-
-    @classmethod
-    def form_field_list(cls):
-        # TODO: The old _field_list() method has an instance check
-        #       having to do with a changed publisher.  I'm not quite
-        #       ready to give up on this being a classmethod, but
-        #       obviously that needs to be addressed.
-        return get_series_field_list() + [u'publication_notes']
 
     def _do_complete_added_revision(self, publisher):
         """

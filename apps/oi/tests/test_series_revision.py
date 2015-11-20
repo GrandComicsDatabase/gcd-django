@@ -3,6 +3,7 @@
 import pytest
 import mock
 
+from apps.gcd.models import Publisher
 from apps.oi.models import SeriesRevision
 
 
@@ -29,6 +30,8 @@ def test_commit_added_revision(any_added_series_rev, series_add_values,
                                any_changeset, keywords):
     sr = any_added_series_rev
 
+    old_publisher_series_count = sr.publisher.series_count
+
     # Simple version of this for mocking.  Real article testing elsewhere.
     sort_name = sr.name[sr.name.index(' ') + 1:]
     with mock.patch('apps.oi.models.update_count') as updater, \
@@ -51,6 +54,10 @@ def test_commit_added_revision(any_added_series_rev, series_add_values,
 
     assert remover.called_once_with(sr.name)
     assert sr.series.sort_name == sort_name
+
+    # This is needed to get an integer count instead of an F() object.
+    publisher = Publisher.objects.get(pk=sr.publisher.pk)
+    assert publisher.series_count == old_publisher_series_count + 1
     assert sr.series.issue_count == 0
 
 
@@ -93,8 +100,3 @@ def test_create_edit_revision(any_added_series, series_add_values,
 
     assert sr.source is any_added_series
     assert sr.source_name == 'series'
-
-
-def test_form_fields(series_form_fields):
-    # TODO: See TODO comment about the instance check for changed publisher.
-    assert SeriesRevision.form_field_list() == series_form_fields
