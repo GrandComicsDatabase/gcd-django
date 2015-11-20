@@ -3,84 +3,16 @@
 import pytest
 import mock
 
-from django.contrib.auth.models import User
-
-from apps.gcd.models import Country, Indexer
-from apps.oi import states
-from apps.oi.models import PublisherRevision, Changeset, CTYPES
-
-
-KEYWORDS = ['bar', 'foo']
-KEYWORD_STRING = '; '.join(KEYWORDS)
-
-PUBLISHER_ADD_VALUES = {
-    'name': 'Test Publisher',
-    'year_began': 1960,
-    'year_ended': None,
-    'year_began_uncertain': True,
-    'year_ended_uncertain': False,
-    'notes': 'publisher add notes',
-    'url': 'http://whatever.com',
-}
-
-PUBLISHER_FORM_FIELDS = ['name',
-                         'year_began',
-                         'year_began_uncertain',
-                         'year_ended',
-                         'year_ended_uncertain',
-                         'country',
-                         'url',
-                         'notes',
-                         'keywords',
-                         'is_master',
-                         'parent']
-
-
-@pytest.fixture
-def any_country():
-    c = Country.objects.get_or_create(code='XZZ', name='Test Country')
-    return c[0]
-
-
-@pytest.fixture
-def any_indexer(any_country):
-    indexer_user = User.objects.create_user('indexer',
-                                            first_name='Dexter',
-                                            last_name='Indexer',
-                                            email='noreply@comics.org',
-                                            password='indexer')
-    indexer = Indexer(user=indexer_user,
-                      country=any_country)
-    indexer.save()
-
-    # We actually want the User object here, but it should have an Indexer
-    # attached to act like a normal GCD user.  These tables get collapsed
-    # in later versions of Django anyway (no more separate Profile).
-    return indexer_user
-
-
-@pytest.fixture
-def any_changeset(any_indexer):
-    c = Changeset(state=states.OPEN,
-                  indexer=any_indexer,
-                  change_type=CTYPES['publisher'])
-    c.save()
-    return c
+from apps.oi.models import PublisherRevision
 
 
 @pytest.mark.django_db
-def test_create_add_revision(any_country, any_changeset):
-    assert any_changeset.id > 0
-    pr = PublisherRevision(changeset=any_changeset,
-                           country=any_country,
-                           keywords=KEYWORD_STRING,
-                           **PUBLISHER_ADD_VALUES)
-    pr.save()
+def test_create_add_revision(any_added_publisher_rev, publisher_add_values,
+                             any_changeset, keywords):
+    pr = any_added_publisher_rev
 
-    for k, v in PUBLISHER_ADD_VALUES.iteritems():
+    for k, v in publisher_add_values.iteritems():
         assert getattr(pr, k) == v
-    assert pr.keywords == KEYWORD_STRING
-    assert pr.country == any_country
     assert pr.publisher is None
 
     assert pr.changeset == any_changeset
@@ -96,17 +28,18 @@ def test_create_add_revision(any_country, any_changeset):
     assert pr.publisher is not None
     assert pr.source is pr.publisher
 
-    for k, v in PUBLISHER_ADD_VALUES.iteritems():
-        assert getattr(pr.publisher, k) == v
+    for k, v in publisher_add_values.iteritems():
+        if k == 'keywords':
+            pub_kws = [k for k in pr.publisher.keywords.names()]
+            pub_kws.sort()
+            assert pub_kws == keywords['list']
+        else:
+            assert getattr(pr.publisher, k) == v
     assert pr.publisher.brand_count == 0
     assert pr.publisher.series_count == 0
     assert pr.publisher.issue_count == 0
 
-    keywords = [k for k in pr.publisher.keywords.names()]
-    keywords.sort()
-    assert keywords == KEYWORDS
-    assert pr.publisher.country == any_country
 
-
-def test_form_fields():
-    assert PublisherRevision.form_field_list() == PUBLISHER_FORM_FIELDS
+def test_form_fields(publisher_form_fields):
+    assert PublisherRevision.form_field_list() == \
+        publisher_form_fields
