@@ -128,7 +128,7 @@
         {{ item.own|yesno:"I own this comic.<br>,I want this comic.<br>,"|safe }}
       {% endif %}
       {% if item.notes %}{{ item.notes }}<hr>{% endif %}
-      {% if item.keywords.count %}{% trans "Keywords: " %}{{ item|show_keywords }}<hr>{% endif %}
+      {% if item.keywords.count %}{% trans "Tags: " %}{{ item|show_keywords_comma }}<hr>{% endif %}
       {% if collection.location_used %}
         {% trans "Location: " %}{{ item.location|default:'-' }}<br>
       {% endif %}

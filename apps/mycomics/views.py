@@ -14,6 +14,7 @@ from django.utils.html import conditional_escape as esc
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
 from apps.gcd.views.alpha_pagination import AlphaPaginator
+from apps.gcd.templatetags.credits import show_keywords_comma
 from apps.gcd import ErrorWithMessage
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
@@ -165,6 +166,8 @@ def export_collection(request, collection_id):
         export_data.append("market value")
     if collection.sell_price_used:
         export_data.append("sell price")
+    export_data.append("description")
+    export_data.append("tags")
     writer.writerow(export_data)
 
     items = collection.items.all().order_by('issue__series',
@@ -215,6 +218,8 @@ def export_collection(request, collection_id):
                                              if item.sell_price_currency
                                              else u'')
                                if item.sell_price else u'')
+        export_data.append(unicode(item.notes))
+        export_data.append(unicode(show_keywords_comma(item)))
         writer.writerow(export_data)
 
     return response
