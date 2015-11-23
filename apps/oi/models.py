@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import re
-
 from django.conf import settings
 from django.db import models
 from django.db.models import F
@@ -15,6 +13,9 @@ from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
 
 from apps.oi import states
+from apps.oi.helpers import (
+    update_count, remove_leading_article, set_series_first_last,
+    validated_isbn, get_keywords, save_keywords, on_sale_date_as_string)
 
 # We should just from apps.gcd import models as gcd_models, but that's
 # a lot of little changes so for now tell flake8 noqa so it doesn't complain
@@ -26,39 +27,6 @@ CTYPES = {
     'publisher': 1,
     'series': 4,
 }
-
-
-def update_count(*args, **kwargs):
-    # Just a dummy for now, always mocked in test cases.
-    # Will be re-added as cases expand to cover CountStats.
-    pass
-
-
-def remove_leading_article(name):
-    '''
-    returns the name with the leading article (separated by "'"
-    or whitespace) removed
-    '''
-    article_match = re.match(r"\S?\w+['\s]\s*(.*)$", name, re.UNICODE)
-    if article_match:
-        return article_match.group(1)
-    else:
-        return name
-
-
-def get_keywords(source):
-    return u'; '.join(unicode(i) for i in source.keywords.all()
-                                                .order_by('name'))
-
-
-def save_keywords(revision, source):
-    if revision.keywords:
-        source.keywords.set(*[x.strip() for x in revision.keywords.split(';')])
-        revision.keywords = u'; '.join(
-            unicode(i) for i in source.keywords.all().order_by('name'))
-        revision.save()
-    else:
-        source.keywords.set()
 
 
 class Changeset(models.Model):
