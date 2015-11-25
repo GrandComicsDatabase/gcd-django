@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from .issue import Issue
 from django.db import models
-from issue import Issue
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 

@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.db import models
 
-from indexer import Indexer
-from issue import Issue
+from .indexer import Indexer
+from .issue import Issue
 
 class Reservation(models.Model):
     """

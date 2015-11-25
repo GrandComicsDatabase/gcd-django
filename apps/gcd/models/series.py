@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.db import models
 from django.core import urlresolvers
 from django.db.models import Count
@@ -11,6 +13,9 @@ from taggit.managers import TaggableManager
 from apps.gcd.models.country import Country
 from apps.gcd.models.language import Language
 from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
+from apps.gcd.models.story import Story
+from apps.gcd.models.issue import Issue, INDEXED
+from apps.gcd.models.cover import Cover
 from apps.gcd.models.seriesbond import SeriesRelativeBond
 
 # TODO: should not be importing oi app into gcd app, dependency should be
@@ -47,7 +52,8 @@ class Series(models.Model):
     binding = models.CharField(max_length=255, default=u'')
     publishing_format = models.CharField(max_length=255, default=u'')
 
-    publication_type = models.ForeignKey(SeriesPublicationType, null=True, blank=True)
+    publication_type = models.ForeignKey(SeriesPublicationType,
+                                         null=True, blank=True)
     notes = models.TextField()
     keywords = TaggableManager()
 
@@ -122,7 +128,6 @@ class Series(models.Model):
 
         Does *not* automatically call has_series_bonds.
         """
-        bonds = []
         bonds = [SeriesRelativeBond(self, b)
                  for b in self.to_series_bond.filter(**filter_args)]
         bonds.extend([SeriesRelativeBond(self, b)
@@ -218,15 +223,12 @@ class Series(models.Model):
             kwargs={'series_id': self.id } )
 
     def marked_scans_count(self):
-        from apps.gcd.models.cover import Cover
         return Cover.objects.filter(issue__series=self, marked=True).count()
 
     def scan_count(self):
-        from apps.gcd.models.cover import Cover
         return Cover.objects.filter(issue__series=self, deleted=False).count()
 
     def issues_without_covers(self):
-        from apps.gcd.models.issue import Issue
         issues = Issue.objects.filter(series=self).exclude(deleted=True)
         return issues.exclude(cover__isnull=False, cover__deleted=False).distinct()
 
@@ -234,7 +236,6 @@ class Series(models.Model):
         return self.issues_without_covers().count() + self.marked_scans_count()
 
     def issue_indexed_count(self):
-        from apps.gcd.models.issue import INDEXED
         return self.active_base_issues()\
                    .exclude(is_indexed=INDEXED['skeleton']).count()
 

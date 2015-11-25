@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.conf import settings
 from django.db import models
 from django.core import urlresolvers
 
-from issue import Issue
+from .issue import Issue
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.

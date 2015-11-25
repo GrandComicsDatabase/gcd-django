@@ -1,10 +1,10 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.db import models
 from django.core import urlresolvers
 
 from taggit.managers import TaggableManager
-
-from series import Series
-from issue import Issue
 
 STORY_TYPES = {
     'insert': 11,
@@ -85,7 +85,7 @@ class Story(models.Model):
     keywords = TaggableManager()
 
     # Fields from issue.
-    issue = models.ForeignKey(Issue)
+    issue = models.ForeignKey('Issue')
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)

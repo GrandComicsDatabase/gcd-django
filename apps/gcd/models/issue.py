@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from decimal import Decimal
 
 from django.db import models
@@ -11,9 +13,8 @@ from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
-from publisher import IndiciaPublisher, Brand
-from series import Series
-from image import Image
+from .publisher import IndiciaPublisher, Brand
+from .image import Image
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -82,7 +83,7 @@ class Issue(models.Model):
     keywords = TaggableManager()
 
     # Series and publisher links
-    series = models.ForeignKey(Series)
+    series = models.ForeignKey('Series')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
     image_resources = generic.GenericRelation(Image)

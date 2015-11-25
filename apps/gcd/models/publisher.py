@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.db import models
 from django.core import urlresolvers
 from country import Country
@@ -8,7 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from taggit.managers import TaggableManager
 
 from apps.oi import states
-from image import Image
+from .image import Image
 
 def _display_year(year, flag):
     if year:
