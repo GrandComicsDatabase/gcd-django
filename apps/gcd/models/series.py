@@ -158,6 +158,33 @@ class Series(models.Model):
         issues = issues.annotate(variant_count=Count('variant_set'))
         return issues
 
+    def active_non_base_variants(self):
+        return self.active_issues().exclude(variant_of=None)
+
+    def active_indexed_issues(self):
+        return self.active_issues().exclude(is_indexed=INDEXED['skeleton'])
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this series.
+
+        Includes a count for the series itself.
+
+        Non-comics publications return an empty dictionary as they do not
+        contribute to statistics.
+        """
+        if self.is_comics_publication:
+            return {
+                'series': 1,
+                'issues': self.active_issues().count(),
+                'variant issues': self.active_non_base_variants().count(),
+                'issue indexes': self.active_indexed_issues().count(),
+                'covers': self.scan_count(),
+                'stories': Story.objects.filter(issue__series=self) \
+                                        .exclude(deleted=True).count(),
+            }
+        return {}
+
     def ordered_brands(self):
         """
         Provide information on publisher's brands in the order they first

@@ -4,8 +4,12 @@ from __future__ import unicode_literals
 
 import itertools
 import mock
+import pytest
 
-from apps.gcd.models import Series
+from django.db.models import QuerySet, Count
+
+from apps.gcd.models import Series, Story
+from apps.gcd.models.issue import INDEXED
 
 # TODO: We really shouldn't be depending on the OI here.
 from apps.oi import states
@@ -130,3 +134,90 @@ def test_not_deletable_active_count():
         ir_mock.filter.return_value.count.return_value = 1
 
         assert s.deletable() is False
+
+
+@pytest.yield_fixture
+def issues_qs():
+    """
+    Provides a queryset mock for active_issues().exclude(...)
+    """
+    with mock.patch('%s.active_issues' % SERIES_PATH) as active_issues:
+        qs = mock.MagicMock(spec=QuerySet)
+        active_issues.return_value.exclude.return_value = qs
+        yield qs
+
+
+def test_active_base_issues(issues_qs):
+    s = Series()
+    assert s.active_base_issues() == issues_qs
+    s.active_issues.return_value.exclude.assert_called_once_with(
+        variant_of__series=s)
+
+
+def test_active_non_base_variants(issues_qs):
+    s = Series()
+    assert s.active_non_base_variants() == issues_qs
+    s.active_issues.return_value.exclude.assert_called_once_with(
+        variant_of=None)
+
+
+def test_active_indexed_issues(issues_qs):
+    s = Series()
+    assert s.active_indexed_issues() == issues_qs
+    s.active_issues.return_value.exclude.assert_called_once_with(
+        is_indexed=INDEXED['skeleton'])
+
+
+def test_active_base_issues_variant_count():
+    with mock.patch('%s.active_base_issues' % SERIES_PATH) as ab_issues, \
+            mock.patch('apps.gcd.models.series.Count') as count_class_mock:
+        count_mock = mock.MagicMock(spec=Count)
+        count_class_mock.return_value = count_mock
+        ab_issues.return_value.annotate.return_value = 100
+
+        s = Series()
+        assert s.active_base_issues_variant_count() == 100
+        s.active_base_issues.return_value.annotate.assert_called_once_with(
+            variant_count=count_mock)
+
+
+def test_counts_comics():
+    series_path = 'apps.gcd.models.series.Series'
+    issues_path = '%s.active_issues' % series_path
+    variants_path = '%s.active_non_base_variants' % series_path
+    indexes_path = '%s.active_indexed_issues' % series_path
+    cover_count_path = '%s.scan_count' % series_path
+
+    with mock.patch('apps.gcd.models.story.Story.objects'), \
+            mock.patch(issues_path) as is_mock, \
+            mock.patch(variants_path) as v_mock, \
+            mock.patch(indexes_path) as ix_mock, \
+            mock.patch(cover_count_path) as cc_mock:
+
+        is_mock.return_value.count.return_value = 30
+        v_mock.return_value.count.return_value = 20
+        ix_mock.return_value.count.return_value = 10
+        cc_mock.return_value = 15
+
+        Story.objects.filter.return_value \
+                     .exclude.return_value \
+                     .count.return_value = 100
+
+        s = Series(is_comics_publication=True)
+
+        assert s.stat_counts() == {
+            'series': 1,
+            'issues': 30,
+            'variant issues': 20,
+            'issue indexes': 10,
+            'covers': 15,
+            'stories': 100,
+        }
+        assert Story.objects.filter.called_once_with(issue__series=s)
+        assert Story.objects.filter.return_value.exclude.called_once_with(
+            deleted=True)
+
+
+def test_counts_non_comics():
+    s = Series(is_comics_publication=False)
+    assert s.stat_counts() == {}
