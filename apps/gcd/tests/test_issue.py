@@ -7,7 +7,8 @@ import pytest
 
 from django.db.models import QuerySet
 
-from apps.gcd.models import Series, Issue, Story
+from apps.gcd.models import Series, Issue, Story, Cover
+from apps.gcd.models.issue import INDEXED
 from apps.gcd.models.story import STORY_TYPES
 
 # TODO: We really shouldn't be depending on the OI here.
@@ -15,7 +16,71 @@ from apps.oi import states
 
 
 ISSUE_PATH = 'apps.gcd.models.issue.Issue'
-ANY_SERIES = Series(name='Test Series', year_began=1940)
+ANY_SERIES = Series(name='Test Series', year_began=1940,
+                    is_comics_publication=True)
+
+
+@pytest.yield_fixture
+def image_and_content_type():
+    """
+    Returns a 4-tuple of mocks for use in testing image properties.
+
+    Position 0: Mock Image.objects
+    Position 1: Mock Image query set, returned from Image.objects.filter
+    Position 2: Mock ContentType.objects
+    Position 3: Mock ContentType returned from
+                ContentType.objects.get_for_model
+    """
+    with mock.patch('apps.gcd.models.issue.Image.objects') as image_obj_mock, \
+            mock.patch('apps.gcd.models.issue.ContentType.objects') \
+            as ct_obj_mock:
+        image_qs = mock.MagicMock(spec=QuerySet)
+        image_obj_mock.filter.return_value = image_qs
+        ct_mock = mock.MagicMock()
+        ct_obj_mock.get_for_model.return_value = ct_mock
+        yield image_obj_mock, image_qs, ct_obj_mock, ct_mock
+
+
+def test_indicia_image(image_and_content_type):
+        image_obj_mock, image_qs, ct_obj_mock, ct_mock = image_and_content_type
+
+        i = Issue(number='1', series=ANY_SERIES)
+        img = i.indicia_image
+        assert img == image_qs.get.return_value
+        image_obj_mock.filter.assert_called_once_with(object_id=i.id,
+                                                      deleted=False,
+                                                      content_type=ct_mock,
+                                                      type__id=1)
+        image_qs.get.assert_called_once_with()
+
+
+def test_no_indicia_image(image_and_content_type):
+        image_obj_mock, image_qs, ct_obj_mock, ct_mock = image_and_content_type
+
+        image_obj_mock.filter.return_value = []
+        i = Issue(number='1', series=ANY_SERIES)
+        assert i.indicia_image is None
+
+
+def test_soo_image(image_and_content_type):
+        image_obj_mock, image_qs, ct_obj_mock, ct_mock = image_and_content_type
+
+        i = Issue(number='1', series=ANY_SERIES)
+        img = i.soo_image
+        assert img == image_qs.get.return_value
+        image_obj_mock.filter.assert_called_once_with(object_id=i.id,
+                                                      deleted=False,
+                                                      content_type=ct_mock,
+                                                      type__id=2)
+        image_qs.get.assert_called_once_with()
+
+
+def test_no_soo_image(image_and_content_type):
+        image_obj_mock, image_qs, ct_obj_mock, ct_mock = image_and_content_type
+
+        image_obj_mock.filter.return_value = []
+        i = Issue(number='1', series=ANY_SERIES)
+        assert i.soo_image is None
 
 
 def test_has_keywords():
@@ -255,3 +320,155 @@ def test_not_deletable_story_has_reprints(del_issue_mocks):
     del_issue_mocks['vs'].filter.assert_called_once_with(deleted=False)
     del_issue_mocks['as'].return_value[0].has_reprints.assert_called_once_with(
         notes=False)
+
+
+def test_active_stories():
+    with mock.patch('%s.story_set' % ISSUE_PATH) as ss_mock:
+        qs = mock.MagicMock(spec=QuerySet)
+        ss_mock.exclude.return_value = qs
+        i = Issue(number='1', series=ANY_SERIES)
+
+        active_stories = i.active_stories()
+        assert active_stories is qs
+        ss_mock.exclude.assert_called_once_with(deleted=True)
+
+
+def test_active_variants():
+    with mock.patch('%s.variant_set' % ISSUE_PATH) as vs_mock:
+        qs = mock.MagicMock(spec=QuerySet)
+        vs_mock.exclude.return_value = qs
+        i = Issue(number='1', series=ANY_SERIES)
+
+        active_variants = i.active_variants()
+        assert active_variants is qs
+        vs_mock.exclude.assert_called_once_with(deleted=True)
+
+
+def test_has_covers():
+    with mock.patch('%s.can_have_cover' % ISSUE_PATH) as cs_mock, \
+            mock.patch('%s.active_covers' % ISSUE_PATH) as ac_mock:
+
+        cs_mock.return_value = True
+        ac_mock.return_value.count.return_value = 1
+        i = Issue(number='1', series=ANY_SERIES)
+
+        assert i.has_covers()
+
+        ac_mock.return_value.count.return_value = 0
+
+        assert not i.has_covers()
+
+        cs_mock.return_value = False
+
+        assert not i.has_covers()
+
+        ac_mock.return_value.count.return_value = 1
+
+        assert not i.has_covers()
+
+
+def test_can_have_cover():
+    i = Issue(number='1', series=ANY_SERIES)
+    i.series.is_comics_publication = True
+    i.is_indexed = INDEXED['skeleton']
+
+    assert i.can_have_cover()
+
+    i.series.is_comics_publication = False
+
+    assert not i.can_have_cover()
+
+    i.is_indexed = INDEXED['full']
+
+    assert i.can_have_cover()
+
+    i.is_indexed = INDEXED['ten_percent']
+
+    assert i.can_have_cover()
+
+    i.is_indexed = INDEXED['partial']
+
+    assert not i.can_have_cover()
+
+
+def test_active_covers():
+    with mock.patch('%s.cover_set' % ISSUE_PATH) as cs_mock:
+        qs = mock.MagicMock(spec=QuerySet)
+        cs_mock.exclude.return_value = qs
+        i = Issue(number='1', series=ANY_SERIES)
+
+        active_covers = i.active_covers()
+        assert active_covers is qs
+        cs_mock.exclude.assert_called_once_with(deleted=True)
+
+
+def test_variant_covers_variant_of():
+    with mock.patch('apps.gcd.models.cover.Cover.objects') as cobj_mock, \
+            mock.patch('%s.variant_of' % ISSUE_PATH) as vo_mock:
+
+        vo_mock.variant_set.exclude.return_value \
+                           .exclude.return_value \
+                           .values_list.return_value = [1, 2]
+
+        cobj_qs_mock = mock.MagicMock()
+        cobj_mock.filter.return_value.exclude.return_value = cobj_qs_mock
+
+        ac_qs_mock = mock.MagicMock(spec=QuerySet)
+        vo_mock.active_covers.return_value = ac_qs_mock
+
+        i = Issue(number='1', series=ANY_SERIES)
+        vc = i.variant_covers()
+
+        vo_mock.variant_set.exclude.assert_called_once_with(id=i.id)
+        vo_mock.variant_set.exclude.return_value \
+                           .exclude.assert_called_once_with(deleted=True)
+        vo_mock.variant_set.exclude.return_value \
+                           .exclude.return_value \
+                           .values_list.assert_called_once_with('id',
+                                                                flat=True)
+        cobj_mock.filter.assert_called_once_with(issue__id__in=[1, 2])
+        cobj_mock.filter.return_value \
+                 .exclude.assert_called_once_with(deleted=True)
+        # __ior__ implements |=
+        cobj_qs_mock.__ior__.assert_called_once_with(ac_qs_mock)
+        assert vc == cobj_qs_mock.__ior__.return_value
+
+
+def test_variant_covers_base():
+    with mock.patch('apps.gcd.models.cover.Cover.objects') as cobj_mock, \
+            mock.patch('%s.variant_set' % ISSUE_PATH) as vs_mock:
+
+        vs_mock.exclude.return_value.values_list.return_value = [3, 4, 5]
+
+        cobj_qs_mock = mock.MagicMock()
+        cobj_mock.filter.return_value.exclude.return_value = cobj_qs_mock
+
+        i = Issue(variant_of=None, number='1', series=ANY_SERIES)
+        vc = i.variant_covers()
+
+        vs_mock.exclude.assert_called_once_with(deleted=True)
+        vs_mock.exclude.return_value \
+               .values_list.assert_called_once_with('id', flat=True)
+
+        cobj_mock.filter.assert_called_once_with(issue__id__in=[3, 4, 5])
+        cobj_mock.filter.return_value \
+                 .exclude.assert_called_once_with(deleted=True)
+        # __ior__ implements |=
+        assert not cobj_qs_mock.__ior__.called
+        assert vc == cobj_qs_mock
+
+
+def test_shown_covers():
+    with mock.patch('%s.active_covers' % ISSUE_PATH) as ac_mock, \
+            mock.patch('%s.variant_covers' % ISSUE_PATH) as vc_mock:
+
+        v1, v2, v3, v4, v5 = [mock.MagicMock(spec=Cover) for x in range(0, 5)]
+        # Should really be QuerySets and not lists, but close enough for
+        # unit testing purposes.
+        ac_mock.return_value = [v1, v2]
+        vc_mock.return_value = [v3, v4, v5]
+
+        i = Issue(number='1', series=ANY_SERIES)
+        first, second = i.shown_covers()
+        assert first == [v1, v2]
+        assert second == [v3, v4, v5]
