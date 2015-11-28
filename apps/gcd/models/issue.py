@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from django.db import models
 from django.core import urlresolvers
-from django.db.models import Sum, Count
+from django.db.models import Sum
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.utils.safestring import mark_safe
@@ -20,12 +20,14 @@ from .image import Image
 # the other way around.  Probably.
 from apps.oi import states
 
+
 INDEXED = {
     'skeleton': 0,
     'full': 1,
     'partial': 2,
     'ten_percent': 3,
 }
+
 
 def issue_descriptor(issue):
     if issue.number == '[nn]' and issue.series.is_singleton:
@@ -37,6 +39,7 @@ def issue_descriptor(issue):
     if issue.display_volume_with_number:
         return u'v%s#%s%s' % (issue.volume, issue.number, title)
     return issue.number + title
+
 
 class Issue(models.Model):
     class Meta:
@@ -50,7 +53,8 @@ class Issue(models.Model):
     no_title = models.BooleanField(default=False, db_index=True)
     volume = models.CharField(max_length=50, db_index=True)
     no_volume = models.BooleanField(default=False, db_index=True)
-    display_volume_with_number = models.BooleanField(default=False, db_index=True)
+    display_volume_with_number = models.BooleanField(default=False,
+                                                     db_index=True)
     isbn = models.CharField(max_length=32, db_index=True)
     no_isbn = models.BooleanField(default=False, db_index=True)
     valid_isbn = models.CharField(max_length=13, db_index=True)
@@ -73,7 +77,8 @@ class Issue(models.Model):
 
     # Price, page count and format fields
     price = models.CharField(max_length=255)
-    page_count = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+    page_count = models.DecimalField(max_digits=10, decimal_places=3,
+                                     null=True)
     page_count_uncertain = models.BooleanField(default=False)
 
     editing = models.TextField()
@@ -90,8 +95,11 @@ class Issue(models.Model):
 
     @property
     def indicia_image(self):
-        img = Image.objects.filter(object_id=self.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(self), type__id=1)
+        img = Image.objects.filter(
+            object_id=self.id,
+            deleted=False,
+            content_type=ContentType.objects.get_for_model(self),
+            type__id=1)
         if img:
             return img.get()
         else:
@@ -102,8 +110,11 @@ class Issue(models.Model):
 
     @property
     def soo_image(self):
-        img = Image.objects.filter(object_id=self.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(self), type__id=2)
+        img = Image.objects.filter(
+            object_id=self.id,
+            deleted=False,
+            content_type=ContentType.objects.get_for_model(self),
+            type__id=2)
         if img:
             return img.get()
         else:
@@ -152,18 +163,20 @@ class Issue(models.Model):
         return cover_story, stories
 
     def active_covers(self):
+        # TODO: Should this be returning a non-empty QuerySet
+        #       if not self.can_have_cover()?
         return self.cover_set.exclude(deleted=True)
 
     def variant_covers(self):
         """ returns the images from the variant issues """
-        from cover import Cover
+        from .cover import Cover
         if self.variant_of:
-            variant_issues = list(self.variant_of.variant_set\
-                                      .exclude(id=self.id)\
-                                      .exclude(deleted=True)\
+            variant_issues = list(self.variant_of.variant_set
+                                      .exclude(id=self.id)
+                                      .exclude(deleted=True)
                                       .values_list('id', flat=True))
         else:
-            variant_issues = list(self.variant_set.exclude(deleted=True)\
+            variant_issues = list(self.variant_set.exclude(deleted=True)
                                       .values_list('id', flat=True))
         variant_covers = Cover.objects.filter(issue__id__in=variant_issues)\
                                       .exclude(deleted=True)
@@ -184,7 +197,7 @@ class Issue(models.Model):
             return True
         else:
             return False
-        
+
     def has_keywords(self):
         return self.keywords.exists()
 
@@ -212,22 +225,25 @@ class Issue(models.Model):
         if not self.variant_of:
             is_indexed = INDEXED['skeleton']
             if self.page_count > 0:
-                total_count = self.active_stories()\
-                              .aggregate(Sum('page_count'))['page_count__sum']
-                if total_count > 0 and \
-                   total_count >= Decimal('0.4') * self.page_count:
+                total_count = \
+                    self.active_stories() \
+                        .aggregate(Sum('page_count'))['page_count__sum']
+                if (total_count > 0 and
+                        total_count >= Decimal('0.4') * self.page_count):
                     is_indexed = INDEXED['full']
-                elif total_count > 0 and \
-                   total_count >= Decimal('0.1') * self.page_count:
+                elif (total_count > 0 and
+                        total_count >= Decimal('0.1') * self.page_count):
                     is_indexed = INDEXED['ten_percent']
-            if is_indexed not in [INDEXED['full'], INDEXED['ten_percent']] and \
-              self.active_stories()\
-              .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
+
+            active_comic_stories = self.active_stories().filter(
+                type=StoryType.objects.get(name='comic story'))
+            if (is_indexed not in [INDEXED['full'], INDEXED['ten_percent']] and
+                    active_comic_stories .count() > 0):
                 is_indexed = INDEXED['partial']
 
             if is_indexed == INDEXED['full']:
-                if self.page_count_uncertain or self.active_stories()\
-                  .filter(page_count_uncertain=True).count() > 0:
+                if (self.page_count_uncertain or self.active_stories()
+                        .filter(page_count_uncertain=True).count() > 0):
                     is_indexed = INDEXED['partial']
 
             if self.is_indexed != is_indexed:
@@ -269,14 +285,15 @@ class Issue(models.Model):
     def has_reprints(self):
         from story import STORY_TYPES
         """Simplifies UI checks for conditionals.  notes and reprint fields"""
-        return self.from_reprints.count() or \
-               self.to_reprints.exclude(target__type__id=STORY_TYPES['promo']).count() or \
-               self.from_issue_reprints.count() or \
-               self.to_issue_reprints.count()
+        return (self.from_reprints.count() or
+                self.to_reprints.exclude(
+                    target__type__id=STORY_TYPES['promo']).count() or
+                self.from_issue_reprints.count() or
+                self.to_issue_reprints.count())
 
     def deletable(self):
-        if self.cover_revisions.filter(changeset__state__in=states.ACTIVE)\
-                                   .count() > 0:
+        if self.cover_revisions.filter(changeset__state__in=states.ACTIVE) \
+                               .count() > 0:
             return False
         if self.variant_set.filter(deleted=False).count() > 0:
             return False
@@ -297,7 +314,7 @@ class Issue(models.Model):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_issue',
-            kwargs={'issue_id': self.id } )
+            kwargs={'issue_id': self.id})
 
     def full_name(self, variant_name=True):
         if variant_name and self.variant_name:
@@ -310,7 +327,8 @@ class Issue(models.Model):
     def full_name_with_link(self, publisher=False):
         name_link = self.series.full_name_with_link(publisher)
         return mark_safe('%s <a href="%s">%s</a>' % (name_link,
-          self.get_absolute_url(), esc(self.display_number)))
+                                                     self.get_absolute_url(),
+                                                     esc(self.display_number)))
 
     def short_name(self):
         if self.variant_name:
@@ -326,4 +344,3 @@ class Issue(models.Model):
                                     self.variant_name)
         else:
             return u'%s %s' % (self.series, self.display_number)
-
