@@ -358,3 +358,105 @@ def test_update_init_country_no_language(mocks_for_update):
         mock.call(name='foo', language=None, country=ANY_COUNTRY)])
 
     _check_delta_applications(f_mock, cs_mocks, 1)
+
+
+@pytest.yield_fixture
+def mocks_for_update_all():
+    """
+    Returns a 3-tuple of mocks for testing update_all().
+
+    In order (on CountStatsManager): filter, init_stats, update_count
+        * CountStatsManager.
+    """
+    path = 'apps.gcd.models.countstats.CountStatsManager'
+    with mock.patch('%s.filter' % path) as filter_mock, \
+            mock.patch('%s.init_stats' % path) as is_mock, \
+            mock.patch('%s.update_count' % path) as uc_mock:
+
+        yield filter_mock, is_mock, uc_mock
+
+
+def test_update_all_language_only(mocks_for_update_all):
+    filter_mock, is_mock, uc_mock = mocks_for_update_all
+
+    CountStats.objects.update_all_counts(
+        {'foo': 1, 'bar': 5}, language=ANY_LANGUAGE)
+
+    assert is_mock.called is False
+    filter_mock.assert_called_once_with(language=ANY_LANGUAGE, country=None)
+    filter_mock.return_value.exists.assert_called_once_with()
+
+    uc_mock.assert_has_calls([
+        mock.call(field='foo', delta=1, language=ANY_LANGUAGE, country=None),
+        mock.call(field='bar', delta=5, language=ANY_LANGUAGE, country=None),
+    ])
+    assert uc_mock.call_count == 2
+
+
+def test_update_all_country_only(mocks_for_update_all):
+    filter_mock, is_mock, uc_mock = mocks_for_update_all
+
+    CountStats.objects.update_all_counts(
+        {'foo': 1, 'bar': 5}, country=ANY_COUNTRY)
+
+    assert is_mock.called is False
+    filter_mock.assert_called_once_with(language=None, country=ANY_COUNTRY)
+    filter_mock.return_value.exists.assert_called_once_with()
+
+    uc_mock.assert_has_calls([
+        mock.call(field='foo', delta=1, language=None, country=ANY_COUNTRY),
+        mock.call(field='bar', delta=5, language=None, country=ANY_COUNTRY),
+    ])
+    assert uc_mock.call_count == 2
+
+
+def test_update_all_init_both(mocks_for_update_all):
+    filter_mock, is_mock, uc_mock = mocks_for_update_all
+
+    filter_mock.return_value.exists.return_value = False
+
+    CountStats.objects.update_all_counts(
+        {'foo': 1, 'bar': 5}, country=ANY_COUNTRY, language=ANY_LANGUAGE)
+
+    filter_mock.assert_has_calls([mock.call(country=ANY_COUNTRY,
+                                            language=None),
+                                  mock.call(country=None,
+                                            language=ANY_LANGUAGE)],
+                                 any_order=True)
+    assert filter_mock.call_count == 2
+
+    is_mock.assert_has_calls([mock.call(country=ANY_COUNTRY),
+                              mock.call(language=ANY_LANGUAGE)],
+                             any_order=True)
+    assert is_mock.call_count == 2
+
+    uc_mock.assert_has_calls([
+        mock.call(field='foo', delta=1, language=None, country=None),
+        mock.call(field='bar', delta=5, language=None, country=None),
+    ])
+    assert uc_mock.call_count == 2
+
+
+def test_update_all_negate(mocks_for_update_all):
+    filter_mock, is_mock, uc_mock = mocks_for_update_all
+
+    CountStats.objects.update_all_counts({'foo': 1, 'bar': 5},
+                                         negate=True,
+                                         country=ANY_COUNTRY,
+                                         language=ANY_LANGUAGE)
+
+    filter_mock.assert_has_calls([mock.call(country=ANY_COUNTRY,
+                                            language=None),
+                                  mock.call(country=None,
+                                            language=ANY_LANGUAGE)],
+                                 any_order=True)
+    assert filter_mock.call_count == 2
+
+    assert not is_mock.called
+
+    uc_mock.assert_has_calls([
+        mock.call(field='foo', delta=-1,
+                  language=ANY_LANGUAGE, country=ANY_COUNTRY),
+        mock.call(field='bar', delta=-5,
+                  language=ANY_LANGUAGE, country=ANY_COUNTRY)])
+    assert uc_mock.call_count == 2

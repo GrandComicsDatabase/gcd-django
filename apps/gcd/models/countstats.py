@@ -98,6 +98,37 @@ class CountStatsManager(models.Manager):
             except CountStats.DoesNotExist:
                 self.init_stats(country=country)
 
+    def update_all_counts(self, deltas, negate=False,
+                          language=None, country=None):
+        """
+        Apply the deltas to the various statistices.
+
+        Language and country can both be updated at once.
+        The generic stats (with language and country both None) are always
+        updated.  If neither language nor country are passed, then only
+        the generic stats are updated.
+
+        By default, the deltas are added, but if negate=True, then the
+        deltas will be subtracted (by negating them before update).
+
+        If the language or country do not have stats yet, they will
+        be initialized and the deltas will not be applied to them.
+        """
+        if country and not self.filter(country=country,
+                                       language=None).exists():
+            self.init_stats(country=country)
+            country = None
+
+        if language and not self.filter(language=language,
+                                        country=None).exists():
+            self.init_stats(language=language)
+            language = None
+
+        for field in deltas:
+            delta = -deltas[field] if negate else deltas[field]
+            self.update_count(field=field, delta=delta,
+                              language=language, country=country)
+
 
 class CountStats(models.Model):
     """
