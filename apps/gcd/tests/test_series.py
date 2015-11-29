@@ -219,5 +219,16 @@ def test_counts_comics():
 
 
 def test_counts_non_comics():
-    s = Series(is_comics_publication=False)
-    assert s.stat_counts() == {}
+    with mock.patch('apps.gcd.models.story.Story.objects'), \
+            mock.patch('apps.gcd.models.series.Series.scan_count') as cc_mock:
+
+        cc_mock.return_value = 15
+        Story.objects.filter.return_value \
+                     .exclude.return_value \
+                     .count.return_value = 100
+
+        s = Series(is_comics_publication=False)
+        assert s.stat_counts() == {
+            'covers': 15,
+            'stories': 100,
+        }

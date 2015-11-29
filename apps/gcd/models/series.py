@@ -173,17 +173,18 @@ class Series(models.Model):
         Non-comics publications return an empty dictionary as they do not
         contribute to statistics.
         """
+        counts = {
+            'covers': self.scan_count(),
+            'stories': Story.objects.filter(issue__series=self) \
+                                    .exclude(deleted=True).count(),
+        }
         if self.is_comics_publication:
-            return {
-                'series': 1,
-                'issues': self.active_base_issues().count(),
-                'variant issues': self.active_non_base_variants().count(),
-                'issue indexes': self.active_indexed_issues().count(),
-                'covers': self.scan_count(),
-                'stories': Story.objects.filter(issue__series=self) \
-                                        .exclude(deleted=True).count(),
-            }
-        return {}
+            counts['series'] = 1
+            counts['issues'] = self.active_base_issues().count()
+            counts['variant issues'] = self.active_non_base_variants().count()
+            counts['issue indexes'] = self.active_indexed_issues().count()
+
+        return counts
 
     def ordered_brands(self):
         """
