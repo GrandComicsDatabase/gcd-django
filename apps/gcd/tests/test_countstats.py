@@ -211,3 +211,150 @@ def test_init_stats_neither(patched_filters):
             mock.call(name='issue indexes', count=INDEX_COUNT, **lc_args),
             mock.call(name='covers', count=COVER_COUNT, **lc_args),
             mock.call(name='stories', count=STORY_COUNT, **lc_args)])
+
+
+@pytest.yield_fixture
+def mocks_for_update():
+    """
+    Returns a 4-tuple of mocks for testing CountStatsManager.update().
+
+    In order, they are:
+        * CountStatsManager.get() which returns a mock from the list below
+        * CountStatsManager.init_stats()
+        * F() which returns a MagicMock(spec=int)
+        * The list of MagicMock(spec=CountStats) the get_mock uses.
+
+    Specifically, each call to the get_mock() will return the next
+    element of the list.  There are at most three such calls in update()
+    """
+
+    path = 'apps.gcd.models.countstats'
+    with mock.patch('%s.CountStatsManager.get' % path) as get_mock, \
+            mock.patch('%s.CountStatsManager.init_stats' % path) as is_mock, \
+            mock.patch('django.db.models.F') as f_mock:
+
+        cs_mocks = [mock.MagicMock(spec=CountStats) for x in range(0, 3)]
+        get_mock.side_effect = cs_mocks
+        f_mock.return_value = mock.MagicMock(spec=int)
+
+        yield get_mock, is_mock, f_mock, cs_mocks
+
+
+def _check_delta_applications(f_mock, cs_mocks, num_gets):
+    # You can't create a call object for __add__ calls because it tries
+    # to actually add the call object to whatever you pass in.
+    # But the full has_calls list for f_mock includes both the F()
+    # calls and the chained __add__ calls in it.
+    # So just check that we have three F('counts') and that the
+    # non-chained call count is 3, and then check __add__ directly
+    # on the result mock.
+    f_mock.assert_has_calls([mock.call('count') for x in range(0, num_gets)],
+                            any_order=True)
+    assert f_mock.call_count == num_gets
+
+    f_mock.return_value.__add__.assert_has_calls(
+        [mock.call(1) for x in range(0, num_gets)])
+    assert f_mock.return_value.__add__.call_count == num_gets
+
+    # Make sure we saved however many mocks we should have found
+    # from successful get() calls, and didn't save the rest.
+    for cs_mock in cs_mocks[:num_gets]:
+        cs_mock.save.assert_called_once_with()
+    for cs_mock in cs_mocks[num_gets:]:
+        assert cs_mock.save.call_count == 0
+
+
+def test_update_both(mocks_for_update):
+    get_mock, is_mock, f_mock, cs_mocks = mocks_for_update
+
+    CountStats.objects.update_count('foo', 1, country=ANY_COUNTRY,
+                                    language=ANY_LANGUAGE)
+    assert is_mock.call_count == 0
+
+    get_mock.assert_has_calls([
+        mock.call(name='foo', language=None, country=None),
+        mock.call(name='foo', language=ANY_LANGUAGE, country=None),
+        mock.call(name='foo', language=None, country=ANY_COUNTRY)])
+
+    _check_delta_applications(f_mock, cs_mocks, 3)
+
+
+def test_update_language(mocks_for_update):
+    get_mock, is_mock, f_mock, cs_mocks = mocks_for_update
+
+    CountStats.objects.update_count('foo', 1, language=ANY_LANGUAGE)
+    assert is_mock.call_count == 0
+
+    get_mock.assert_has_calls([
+        mock.call(name='foo', language=None, country=None),
+        mock.call(name='foo', language=ANY_LANGUAGE, country=None)])
+
+    _check_delta_applications(f_mock, cs_mocks, 2)
+
+
+def test_update_country(mocks_for_update):
+    get_mock, is_mock, f_mock, cs_mocks = mocks_for_update
+
+    CountStats.objects.update_count('foo', 1, country=ANY_COUNTRY)
+    assert is_mock.call_count == 0
+
+    get_mock.assert_has_calls([
+        mock.call(name='foo', language=None, country=None),
+        mock.call(name='foo', language=None, country=ANY_COUNTRY)])
+
+    _check_delta_applications(f_mock, cs_mocks, 2)
+
+
+def test_update_neither(mocks_for_update):
+    get_mock, is_mock, f_mock, cs_mocks = mocks_for_update
+
+    CountStats.objects.update_count('foo', 1)
+
+    get_mock.assert_called_once_with(name='foo', language=None, country=None)
+    _check_delta_applications(f_mock, cs_mocks, 1)
+
+
+def test_update_init_language_update_both(mocks_for_update):
+    get_mock, is_mock, f_mock, cs_mocks = mocks_for_update
+
+    cs_iter = iter(cs_mocks)
+
+    def fake_get(name=None, language=None, country=None):
+        if language:
+            raise CountStats.DoesNotExist
+        else:
+            return next(cs_iter)
+
+    get_mock.side_effect = fake_get
+    CountStats.objects.update_count('foo', 1, country=ANY_COUNTRY,
+                                    language=ANY_LANGUAGE)
+    is_mock.assert_called_once_with(language=ANY_LANGUAGE)
+
+    get_mock.assert_has_calls([
+        mock.call(name='foo', language=None, country=None),
+        mock.call(name='foo', language=ANY_LANGUAGE, country=None),
+        mock.call(name='foo', language=None, country=ANY_COUNTRY)])
+
+    _check_delta_applications(f_mock, cs_mocks, 2)
+
+
+def test_update_init_country_no_language(mocks_for_update):
+    get_mock, is_mock, f_mock, cs_mocks = mocks_for_update
+
+    cs_iter = iter(cs_mocks)
+
+    def fake_get(name=None, language=None, country=None):
+        if country:
+            raise CountStats.DoesNotExist
+        else:
+            return next(cs_iter)
+
+    get_mock.side_effect = fake_get
+    CountStats.objects.update_count('foo', 1, country=ANY_COUNTRY)
+    is_mock.assert_called_once_with(country=ANY_COUNTRY)
+
+    get_mock.assert_has_calls([
+        mock.call(name='foo', language=None, country=None),
+        mock.call(name='foo', language=None, country=ANY_COUNTRY)])
+
+    _check_delta_applications(f_mock, cs_mocks, 1)

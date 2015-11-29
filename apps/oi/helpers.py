@@ -3,37 +3,15 @@
 import re
 from stdnum import isbn
 
-from django.db.models import F
-
 from apps.gcd.models import CountStats
 
 
 def update_count(field, delta, language=None, country=None):
     '''
-    updates statistics, for all, per language, and per country
-    CountStats with language=None is for all languages
+    Forwards to CountStats.objects.update_count() until no longer needed.
     '''
-    stat = CountStats.objects.get(name=field, language=None, country=None)
-    stat.count = F('count') + delta
-    stat.save()
-
-    if language:
-        stat = CountStats.objects.filter(name=field, language=language)
-        if stat.count():
-            stat = stat[0]
-            stat.count = F('count') + delta
-            stat.save()
-        else:
-            CountStats.objects.init_stats(language=language)
-
-    if country:
-        stat = CountStats.objects.filter(name=field, country=country)
-        if stat.count():
-            stat = stat[0]
-            stat.count = F('count') + delta
-            stat.save()
-        else:
-            CountStats.objects.init_stats(country=country)
+    CountStats.objects.update_count(field, delta,
+                                    language=language, country=country)
 
 
 def set_series_first_last(series):

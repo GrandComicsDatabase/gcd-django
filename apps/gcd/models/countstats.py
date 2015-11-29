@@ -11,6 +11,7 @@ from apps.gcd.models.issue import Issue, INDEXED
 from apps.gcd.models.story import Story
 from apps.gcd.models.cover import Cover
 
+
 class CountStatsManager(models.Manager):
 
     def init_stats(self, language=None, country=None):
@@ -18,15 +19,15 @@ class CountStatsManager(models.Manager):
             raise ValueError('either country or language stats')
         self.filter(language=language, country=country).delete()
         if country:
-            kwargs = { 'country': country, 'deleted': False }
+            kwargs = {'country': country, 'deleted': False}
         else:
-            kwargs = { 'deleted': False }
+            kwargs = {'deleted': False}
 
         if language is None:
             self.create(name='publishers', country=country,
               count=Publisher.objects.filter(**kwargs).count())
             if not country:
-                self.create(name='brands', 
+                self.create(name='brands',
                   count=Brand.objects.filter(**kwargs).count())
             self.create(name='indicia publishers', country=country,
               count=IndiciaPublisher.objects.filter(**kwargs).count())
@@ -62,12 +63,41 @@ class CountStatsManager(models.Manager):
             kwargs['issue__series__country'] = kwargs['series__country']
             kwargs.pop('series__country')
         kwargs.pop('series__is_comics_publication')
-            
+
         self.create(name='covers', language=language, country=country,
           count=Cover.objects.filter(**kwargs).count())
 
         self.create(name='stories', language=language, country=country,
           count=Story.objects.filter(**kwargs).count())
+
+    def update_count(self, field, delta, language=None, country=None):
+        """
+        Updates a single statistic (generic, per language, and per country).
+
+        The generic statistic is always updated.  The language and/or
+        country statistics are updated if their respective parameters
+        are not None.
+        """
+        stat = self.get(name=field, language=None, country=None)
+        stat.count = models.F('count') + delta
+        stat.save()
+
+        if language:
+            try:
+                stat = self.get(name=field, language=language, country=None)
+                stat.count = models.F('count') + delta
+                stat.save()
+            except CountStats.DoesNotExist:
+                self.init_stats(language=language)
+
+        if country:
+            try:
+                stat = self.get(name=field, language=None, country=country)
+                stat.count = models.F('count') + delta
+                stat.save()
+            except CountStats.DoesNotExist:
+                self.init_stats(country=country)
+
 
 class CountStats(models.Model):
     """
@@ -89,4 +119,3 @@ class CountStats(models.Model):
 
     def __unicode__(self):
         return self.name + ": " + str(self.count)
-
