@@ -176,7 +176,7 @@ class Series(models.Model):
         if self.is_comics_publication:
             return {
                 'series': 1,
-                'issues': self.active_issues().count(),
+                'issues': self.active_base_issues().count(),
                 'variant issues': self.active_non_base_variants().count(),
                 'issue indexes': self.active_indexed_issues().count(),
                 'covers': self.scan_count(),

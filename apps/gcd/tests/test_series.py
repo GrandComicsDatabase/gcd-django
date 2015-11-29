@@ -183,7 +183,7 @@ def test_active_base_issues_variant_count():
 
 def test_counts_comics():
     series_path = 'apps.gcd.models.series.Series'
-    issues_path = '%s.active_issues' % series_path
+    issues_path = '%s.active_base_issues' % series_path
     variants_path = '%s.active_non_base_variants' % series_path
     indexes_path = '%s.active_indexed_issues' % series_path
     cover_count_path = '%s.scan_count' % series_path
