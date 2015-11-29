@@ -39,6 +39,10 @@ def test_add_revisions(mocked_coordinator, mock_revision_list):
 
 def test_commit_all(mocked_coordinator, mock_revision_list):
 
+    # This helper gives us a single mock that we can query
+    # for calls in order.  Otherwise the calls on the separate
+    # mocks would not include information on ordering with
+    # respect to each other.
     helper = mock.MagicMock()
     helper.first = mock_revision_list[0]
     helper.second = mock_revision_list[1]
@@ -46,15 +50,6 @@ def test_commit_all(mocked_coordinator, mock_revision_list):
 
     mocked_coordinator.commit_all_to_display()
 
-    # I've never figured out how to determing what "self" was for call
-    # objects or inside a side_effect fucntion.  Nor how to create equivalent
-    # call objects for calls to methods of attributes of a higher object,
-    # but these need to be attached to the higher object so that something
-    # records the call order, as that is the point of this test.
-    #
-    # So we just compare to the string format of the call objects as
-    # that is entirely predictable.
-    call_list = [unicode(c) for c in helper.method_calls]
-    assert call_list == ['call.first.commit_to_display()',
-                         'call.second.commit_to_display()',
-                         'call.third.commit_to_display()']
+    helper.assert_has_calls([mock.call.first.commit_to_display(),
+                             mock.call.second.commit_to_display(),
+                             mock.call.third.commit_to_display()])
