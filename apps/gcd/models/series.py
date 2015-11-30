@@ -173,6 +173,9 @@ class Series(models.Model):
         Non-comics publications return an empty dictionary as they do not
         contribute to statistics.
         """
+        if self.deleted:
+            return {}
+
         counts = {
             'covers': self.scan_count(),
             'stories': Story.objects.filter(issue__series=self) \

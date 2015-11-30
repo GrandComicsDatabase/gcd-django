@@ -232,3 +232,9 @@ def test_counts_non_comics():
             'covers': 15,
             'stories': 100,
         }
+
+
+def test_counts_deleted():
+    s = Series(is_comics_publication=True)
+    s.deleted = True
+    assert s.stat_counts() == {}
