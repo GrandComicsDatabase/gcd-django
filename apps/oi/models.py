@@ -236,6 +236,24 @@ class Revision(models.Model):
     def _get_source_name(self):
         raise NotImplementedError
 
+    @property
+    def added(self):
+        # TODO: Once the revision has been committed, this will
+        #       never be True.  Is it worth checking for a prior
+        #       revision?  One thought is to add previous/next
+        #       revision columns to make that check cheaper.
+        #       Needs to be revisited.
+        return not self.source and not self.deleted
+
+    @property
+    def edited(self):
+        """
+        True if this is neither an add nor a delete.
+
+        NOTE: This does not necessarily mean there have been any edits.
+        """
+        return self.source and not self.deleted
+
     def _copy_assignable_fields_to(self, target, with_keywords=True):
         """
         Used to copy fields from a revision to a display object.
