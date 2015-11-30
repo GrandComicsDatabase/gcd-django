@@ -3,8 +3,17 @@
 import pytest
 import mock
 
-from apps.gcd.models import Publisher
-from apps.oi.models import SeriesRevision, IssueRevision
+from apps.gcd.models import Publisher, Series, Country, Language
+from apps.oi.models import Changeset, SeriesRevision, IssueRevision
+
+
+COUNTRY_ONE = mock.MagicMock(spec=Country)
+COUNTRY_TWO = mock.MagicMock(spec=Country)
+LANGUAGE_ONE = mock.MagicMock(spec=Language)
+LANGUAGE_TWO = mock.MagicMock(spec=Language)
+PUBLISHER_ONE = mock.MagicMock(spec=Publisher)
+PUBLISHER_TWO = mock.MagicMock(spec=Publisher)
+NO_DB_CHANGESET = mock.MagicMock(spec=Changeset)
 
 
 @pytest.mark.django_db
@@ -167,3 +176,172 @@ def test_create_edit_revision(any_added_series, series_add_values,
 
     assert sr.source is any_added_series
     assert sr.source_name == 'series'
+
+
+@pytest.yield_fixture
+def patched_series_class():
+    """ Patches foreign keys to prevent database access. """
+    with mock.patch('apps.oi.models.Series.country'), \
+            mock.patch('apps.oi.models.Series.language'), \
+            mock.patch('apps.oi.models.Series.publisher'), \
+            mock.patch('apps.oi.models.SeriesRevision.changeset'), \
+            mock.patch('apps.oi.models.SeriesRevision.series'), \
+            mock.patch('apps.oi.models.SeriesRevision.country'), \
+            mock.patch('apps.oi.models.SeriesRevision.language'), \
+            mock.patch('apps.oi.models.SeriesRevision.publisher'):
+        yield
+
+
+def test_get_major_changes_all_change(patched_series_class):
+    old = Series(country=COUNTRY_ONE,
+                 language=LANGUAGE_ONE,
+                 publisher=PUBLISHER_ONE,
+                 is_comics_publication=True,
+                 is_current=True,
+                 is_singleton=False)
+    new = SeriesRevision(changeset=NO_DB_CHANGESET,
+                         series=old,
+                         country=COUNTRY_TWO,
+                         language=LANGUAGE_TWO,
+                         publisher=PUBLISHER_TWO,
+                         is_comics_publication=False,
+                         is_current=False,
+                         is_singleton=True)
+
+    c = new._get_major_changes()
+    assert c == {
+        'publisher changed': True,
+        'country changed': True,
+        'language changed': True,
+        'is comics changed': True,
+        'singleton changed': True,
+        'is current changed': True,
+        'to comics': False,
+        'from comics': True,
+        'to singleton': True,
+        'from singleton': False,
+        'to current': False,
+        'from current': True,
+        'old publisher': PUBLISHER_ONE,
+        'new publisher': PUBLISHER_TWO,
+        'old country': COUNTRY_ONE,
+        'new country': COUNTRY_TWO,
+        'old language': LANGUAGE_ONE,
+        'new language': LANGUAGE_TWO,
+        'changed': True,
+    }
+
+
+def test_get_major_changes_no_change(patched_series_class):
+    old = Series(country=COUNTRY_ONE,
+                 language=LANGUAGE_ONE,
+                 publisher=PUBLISHER_ONE,
+                 is_comics_publication=False,
+                 is_current=False,
+                 is_singleton=True)
+    new = SeriesRevision(changeset=NO_DB_CHANGESET,
+                         series=old,
+                         country=COUNTRY_ONE,
+                         language=LANGUAGE_ONE,
+                         publisher=PUBLISHER_ONE,
+                         is_comics_publication=False,
+                         is_current=False,
+                         is_singleton=True)
+
+    c = new._get_major_changes()
+    assert c == {
+        'publisher changed': False,
+        'country changed': False,
+        'language changed': False,
+        'is comics changed': False,
+        'singleton changed': False,
+        'is current changed': False,
+        'to comics': False,
+        'from comics': False,
+        'to singleton': False,
+        'from singleton': False,
+        'to current': False,
+        'from current': False,
+        'old publisher': PUBLISHER_ONE,
+        'new publisher': PUBLISHER_ONE,
+        'old country': COUNTRY_ONE,
+        'new country': COUNTRY_ONE,
+        'old language': LANGUAGE_ONE,
+        'new language': LANGUAGE_ONE,
+        'changed': False,
+    }
+
+
+def test_get_major_changes_added(patched_series_class):
+    new = SeriesRevision(changeset=NO_DB_CHANGESET,
+                         series=None,
+                         country=COUNTRY_TWO,
+                         language=LANGUAGE_TWO,
+                         publisher=PUBLISHER_TWO,
+                         is_comics_publication=True,
+                         is_current=True,
+                         is_singleton=False)
+
+    c = new._get_major_changes()
+    assert c == {
+        'publisher changed': True,
+        'country changed': True,
+        'language changed': True,
+        'is comics changed': True,
+        'singleton changed': True,
+        'is current changed': True,
+        'to comics': True,
+        'from comics': False,
+        'to singleton': False,
+        'from singleton': False,
+        'to current': True,
+        'from current': False,
+        'old publisher': None,
+        'new publisher': PUBLISHER_TWO,
+        'old country': None,
+        'new country': COUNTRY_TWO,
+        'old language': None,
+        'new language': LANGUAGE_TWO,
+        'changed': True,
+    }
+
+
+def test_get_major_changes_deleted(patched_series_class):
+    old = Series(country=COUNTRY_ONE,
+                 language=LANGUAGE_ONE,
+                 publisher=PUBLISHER_ONE,
+                 is_comics_publication=True,
+                 is_current=True,
+                 is_singleton=False)
+    new = SeriesRevision(changeset=NO_DB_CHANGESET,
+                         series=old,
+                         country=COUNTRY_ONE,
+                         language=LANGUAGE_ONE,
+                         publisher=PUBLISHER_ONE,
+                         is_comics_publication=True,
+                         is_current=True,
+                         is_singleton=False,
+                         deleted=True)
+
+    c = new._get_major_changes()
+    assert c == {
+        'publisher changed': True,
+        'country changed': True,
+        'language changed': True,
+        'is comics changed': True,
+        'singleton changed': True,
+        'is current changed': True,
+        'to comics': False,
+        'from comics': True,
+        'to singleton': False,
+        'from singleton': False,
+        'to current': False,
+        'from current': True,
+        'old publisher': PUBLISHER_ONE,
+        'new publisher': None,
+        'old country': COUNTRY_ONE,
+        'new country': None,
+        'old language': LANGUAGE_ONE,
+        'new language': None,
+        'changed': True,
+    }

@@ -269,6 +269,19 @@ class Revision(models.Model):
         if with_keywords:
             save_keywords(self, target)
 
+    def _get_major_changes(self):
+        """
+        Returns a dictionary for deciding what additional actions are needed.
+
+        Major changes are generally ones that require updating statistics
+        and/or cached counts in the display tables.  They may also require
+        other actions.
+
+        This method bundles up all of the flags and old vs new values
+        needed for easy conditionals and easy calls to update_all_counts().
+        """
+        raise NotImplementedError
+
     def commit_to_display(self):
         """
         Writes the changes from the revision back to the display object.
@@ -1028,6 +1041,64 @@ class SeriesRevision(Revision):
         series revision for adding a record before it can be saved.
         """
         self.publisher = publisher
+
+    def _get_major_changes(self):
+        """
+        Returns a dictionary for deciding what additional actions are needed.
+
+        For SeriesRevision, this is the usual country and language, plus
+        the parent (publisher) and the flags for being comics, current,
+        and/or singleton.
+
+        With the three flags, we usually want to know if we're changing
+        to or from a True value.  For the others, we'll need to make
+        adjustments using both the old and new objects, so we save both.
+        """
+        # Use old and new for value comparisons, use self for added/deleted.
+        old = self.series
+        new = self
+
+        if self.added or self.deleted:
+            c = {
+                'publisher changed': True,
+                'country changed': True,
+                'language changed': True,
+                'is comics changed': True,
+                'singleton changed': True,
+                'is current changed': True,
+            }
+        else:
+            c = {
+                'publisher changed': old.publisher != new.publisher,
+                'country changed': old.country != new.country,
+                'language changed': old.language != new.language,
+                'is comics changed': (old.is_comics_publication !=
+                                      new.is_comics_publication),
+                'singleton changed': old.is_singleton != new.is_singleton,
+                'is current changed': old.is_current != new.is_current,
+            }
+
+        c['to comics'] = (c['is comics changed'] and
+                          not self.deleted and new.is_comics_publication)
+        c['from comics'] = (c['is comics changed'] and
+                            not self.added and old.is_comics_publication)
+        c['to singleton'] = (c['singleton changed'] and
+                             not self.deleted and new.is_singleton)
+        c['from singleton'] = (c['singleton changed'] and
+                               not self.added and old.is_singleton)
+        c['to current'] = (c['is current changed'] and
+                           not self.deleted and new.is_current)
+        c['from current'] = (c['is current changed'] and
+                             not self.added and old.is_current)
+        c['changed'] = any(c.values())
+
+        c['old publisher'] = None if self.added else old.publisher
+        c['new publisher'] = None if self.deleted else new.publisher
+        c['old country'] = None if self.added else old.country
+        c['new country'] = None if self.deleted else new.country
+        c['old language'] = None if self.added else old.language
+        c['new language'] = None if self.deleted else new.language
+        return c
 
     def commit_to_display(self, clear_reservation=True):
         series = self.series

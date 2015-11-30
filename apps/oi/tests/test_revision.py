@@ -66,3 +66,18 @@ def test_not_edited_because_deleted(source_mock):
     edited = rev.edited
     source_mock.__nonzero__.assert_called_once_with()
     assert not edited
+
+
+def test_get_major_changes():
+    with pytest.raises(NotImplementedError):
+        models.Revision()._get_major_changes()
+
+
+def test_get_source():
+    with pytest.raises(NotImplementedError):
+        models.Revision()._get_source()
+
+
+def test_get_source_name():
+    with pytest.raises(NotImplementedError):
+        models.Revision()._get_source_name()
