@@ -282,6 +282,26 @@ class Revision(models.Model):
         """
         raise NotImplementedError
 
+    def _adjust_stats(self, changes, old_counts, new_counts):
+        """
+        Handles universal statistics updating.
+
+        Child classes should call this with super() before proceeding
+        to adjust counts stored in their display objects.
+        """
+        if (old_counts != new_counts or
+                changes.get('country changed', False) or
+                changes.get('language changed', False)):
+            CountStats.objects.update_all_counts(
+                old_counts,
+                country=changes.get('old country', None),
+                language=changes.get('old language', None),
+                negate=True)
+            CountStats.objects.update_all_counts(
+                new_counts,
+                country=changes.get('new country', None),
+                language=changes.get('new language', None))
+
     def commit_to_display(self):
         """
         Writes the changes from the revision back to the display object.
