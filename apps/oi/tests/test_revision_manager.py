@@ -8,22 +8,27 @@ import pytest
 from apps.oi import models
 
 
+# Make a non-abstract class that acts like a Revision, but can have
+# a manager, i.e. DummyRevision.objects.
+class DummyRevision(models.Revision):
+    pass
+
+
 def test_clone_revision_positive():
-    mgr = models.RevisionManager()
-    mgr._do_create_revision = mock.Mock()
+    DummyRevision.objects._do_create_revision = mock.Mock()
 
     rev = mock.MagicMock(spec=models.Revision)
-    mgr._do_create_revision.return_value = rev
+    DummyRevision.objects._do_create_revision.return_value = rev
     changeset = mock.MagicMock(spec=models.Changeset)
 
     test_object = 'any string'
-    r = mgr.clone_revision(instance=test_object,
-                           changeset=changeset)
-    mgr._do_create_revision.assert_called_once_with(test_object,
-                                                    changeset=changeset)
+    r = DummyRevision.objects.clone_revision(instance=test_object,
+                                             changeset=changeset)
+    DummyRevision.objects._do_create_revision.assert_called_once_with(
+        test_object, changeset=changeset)
     assert r is rev
 
 
 def test_assignable_field_list():
     with pytest.raises(NotImplementedError):
-        models.RevisionManager.assignable_field_list()
+        DummyRevision.objects.assignable_field_list()

@@ -129,8 +129,7 @@ class RevisionManager(models.Manager):
     """
     Custom manager base class for revisions.
     """
-    @classmethod
-    def assignable_field_list(cls):
+    def assignable_field_list(self):
         """
         The list of fields that can simply be copied to or from the display.
         """
@@ -191,6 +190,8 @@ class Revision(models.Model):
     """
     class Meta:
         abstract = True
+
+    objects = RevisionManager()
 
     changeset = models.ForeignKey(Changeset, related_name='%(class)ss')
 
@@ -335,8 +336,7 @@ class OngoingReservation(models.Model):
 
 
 class PublisherRevisionManagerBase(RevisionManager):
-    @classmethod
-    def assignable_field_list(cls):
+    def assignable_field_list(self):
         # order exactly as desired in compare page
         return ['name',
                 'year_began',
