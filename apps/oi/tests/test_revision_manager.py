@@ -32,3 +32,8 @@ def test_clone_revision_positive():
 def test_assignable_field_list():
     with pytest.raises(NotImplementedError):
         DummyRevision.objects.assignable_field_list()
+
+
+def test_deprecated_field_list():
+    with pytest.raises(NotImplementedError):
+        DummyRevision.objects.deprecated_field_list()

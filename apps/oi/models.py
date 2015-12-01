@@ -135,6 +135,17 @@ class RevisionManager(models.Manager):
         """
         raise NotImplementedError
 
+    def deprecated_field_list(self):
+        """
+        The list of fields that should not be allowed in new objects.
+
+        They should also appear in assignable_field_list if they are
+        assignable, as they should still be propagated back and forth
+        to revisions unless/until they are dropped from the display
+        table entirely.
+        """
+        raise NotImplementedError
+
     def _assignable_field_kwargs(self, instance, with_keywords=True):
         """
         Creates a dictionary of assignable field values from an instance.
@@ -337,14 +348,16 @@ class OngoingReservation(models.Model):
 
 class PublisherRevisionManagerBase(RevisionManager):
     def assignable_field_list(self):
-        # order exactly as desired in compare page
         return ['name',
                 'year_began',
                 'year_began_uncertain',
                 'year_ended',
                 'year_ended_uncertain',
                 'url',
-                'notes']
+                'notes'] + self.deprecated_field_list()
+
+    def deprecated_field_list(self):
+        return []
 
 
 class PublisherRevisionBase(Revision):
@@ -367,6 +380,12 @@ class PublisherRevisionManager(PublisherRevisionManagerBase):
     """
     Custom manager allowing the cloning of revisions from existing rows.
     """
+    def assignable_field_list(self):
+        return super(PublisherRevisionManager,
+                     self).assignable_field_list() + ['country']
+
+    def deprecated_field_list(self):
+        return ['parent', 'is_master']
 
     def _do_create_revision(self, publisher, changeset, **ignore):
         """
@@ -376,9 +395,6 @@ class PublisherRevisionManager(PublisherRevisionManagerBase):
 
         revision = PublisherRevision(publisher=publisher,
                                      changeset=changeset,
-                                     country=publisher.country,
-                                     is_master=publisher.is_master,
-                                     parent=publisher.parent,
                                      **kwargs)
 
         revision.save()
@@ -423,9 +439,6 @@ class PublisherRevision(PublisherRevisionBase):
             pub.delete()
             return
 
-        pub.country = self.country
-        pub.is_master = self.is_master
-        pub.parent = self.parent
         self._copy_assignable_fields_to(pub)
 
         if clear_reservation:
@@ -968,6 +981,41 @@ class SeriesRevisionManager(RevisionManager):
 
         revision.save()
         return revision
+
+    def assignable_field_list(self):
+        return [
+            'name',
+            'color',
+            'dimensions',
+            'paper_stock',
+            'binding',
+            'publishing_format',
+            'publication_type',
+            'notes',
+            'year_began',
+            'year_began_uncertain',
+            'year_ended',
+            'year_ended_uncertain',
+            'is_current',
+            'has_barcode',
+            'has_indicia_frequency',
+            'has_isbn',
+            'has_issue_title',
+            'has_volume',
+            'has_rating',
+            'is_comics_publication',
+            'is_singleton',
+            'country',
+            'language',
+            'publisher',
+        ] + self.deprecated_field_list()
+
+    def deprecated_field_list(self):
+        return [
+            'format',
+            'tracking_notes',
+            'publishing_notes',
+        ]
 
 
 def get_series_field_list():
