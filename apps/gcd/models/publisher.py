@@ -2,9 +2,9 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.db.models import F
 from django.core import urlresolvers
 from country import Country
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 
@@ -47,6 +47,24 @@ class BasePublisher(models.Model):
         self.deleted = True
         self.reserved = False
         self.save()
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+
+        Most classes derived from this base class only have an issue
+        count, so a default implementation is provided here.
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.iteritems():
+                deltas[k] = -v
+
+        if 'issues' in deltas:
+            self.issue_count = F('issue_count') + deltas['issues']
 
     def __unicode__(self):
         return self.name
@@ -119,6 +137,32 @@ class Publisher(BasePublisher):
     def pending_deletion(self):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,
                                      deleted=True).count() == 1
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.iteritems():
+                deltas[k] = -v
+
+        if 'imprints' in deltas:
+            raise ValueError(
+                "Imprints are deprecated and not present in active data.")
+
+        if 'brands' in deltas:
+            self.brand_count = F('brand_count') + deltas['brands']
+        if 'indicia publishers' in deltas:
+            self.indicia_publisher_count = (F('indicia_publisher_count') +
+                                            deltas['indicia publishers'])
+        if 'series' in deltas:
+            self.series_count = F('series_count') + deltas['series']
+        if 'issues' in deltas:
+            self.issue_count = F('issue_count') + deltas['issues']
 
     def __unicode__(self):
         return self.name

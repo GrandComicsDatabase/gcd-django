@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.db.models import F
 from django.core import urlresolvers
 from django.db.models import Count
 from django.template.defaultfilters import pluralize
@@ -68,6 +69,8 @@ class Series(models.Model):
       related_name='first_issue_series_set')
     last_issue = models.ForeignKey('Issue', null=True,
       related_name='last_issue_series_set')
+
+    # TODO: Pubisher cached counts default to 0.  This probably should too?
     issue_count = models.IntegerField()
 
     # Publication notes may be merged with regular notes in the near future.
@@ -209,6 +212,23 @@ class Series(models.Model):
             counts['issue indexes'] = self.active_indexed_issues().count()
 
         return counts
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+
+        In the case of series, there is only one local count (for issues).
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.iteritems():
+                deltas[k] = -v
+
+        if 'issues' in deltas:
+            self.issue_count = F('issue_count') + deltas['issues']
 
     def ordered_brands(self):
         """

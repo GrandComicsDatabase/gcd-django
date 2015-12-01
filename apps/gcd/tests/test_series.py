@@ -17,6 +17,13 @@ from apps.oi import states
 
 SERIES_PATH = 'apps.gcd.models.series.Series'
 
+# Exact count/delta numbers not significant.
+# For use with update_cached_counts testing.
+ISSUE_COUNT = 40
+DELTAS = {
+    'issues': 4,
+}
+
 
 def test_has_keywords():
     with mock.patch('%s.keywords' % SERIES_PATH) as kw_mock:
@@ -239,3 +246,34 @@ def test_counts_deleted():
     s = Series(is_comics_publication=True)
     s.deleted = True
     assert s.stat_counts() == {}
+
+
+@pytest.yield_fixture
+def f_mock():
+    with mock.patch('apps.gcd.models.series.F') as f_mock:
+
+        # Normally, F() results in a lazy evaluation object, but
+        # for testing we'll just have it return a number.
+        f_mock.return_value = ISSUE_COUNT
+        yield f_mock
+
+
+def test_update_cached_counts_none(f_mock):
+    s = Series(issue_count=0)
+    s.update_cached_counts({})
+
+    assert s.issue_count == 0
+
+
+def test_update_cached_counts_add(f_mock):
+    s = Series(issue_count=0)
+    s.update_cached_counts(DELTAS)
+
+    assert s.issue_count == ISSUE_COUNT + DELTAS['issues']
+
+
+def test_update_cached_counts_subtract(f_mock):
+    s = Series(issue_count=0)
+    s.update_cached_counts(DELTAS, negate=True)
+
+    assert s.issue_count == ISSUE_COUNT - DELTAS['issues']
