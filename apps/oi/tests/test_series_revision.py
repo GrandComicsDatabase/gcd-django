@@ -107,11 +107,11 @@ def test_commit_add_rev_singleton(any_added_series_rev):
     assert updater.called_once_with('series', 1,
                                     language=sr.language, country=sr.country)
     ir_class.assert_called_once_with(changeset=sr.changeset,
+                                     series=sr.series,
                                      after=None,
                                      number='[nn]',
                                      publication_date=sr.year_began)
     assert ir.key_date == '%d-00-00' % sr.year_began
-    assert ir.series == sr.series
     ir.save.assert_called_once_with()
 
 
@@ -147,11 +147,11 @@ def test_commit_add_rev_non_comics_singleton(any_added_series_rev):
     assert updater.called == 0
 
     ir_class.assert_called_once_with(changeset=sr.changeset,
+                                     series=sr.series,
                                      after=None,
                                      number='[nn]',
                                      publication_date=sr.year_began)
     assert ir.key_date == '%d-00-00' % sr.year_began
-    assert ir.series == sr.series
     ir.save.assert_called_once_with()
 
 

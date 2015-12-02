@@ -63,9 +63,13 @@ class BasePublisher(models.Model):
             for k, v in deltas.iteritems():
                 deltas[k] = -v
 
-        if 'issues' in deltas:
-            # TODO: Reconsider use of F() objects due to undesired behavior
-            #       if multiple F() objects are used on a field before saving.
+        # TODO: Reconsider use of F() objects due to undesired behavior
+        #       if multiple F() objects are used on a field before saving.
+        #
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('issues', 0):
             self.issue_count = F('issue_count') + deltas['issues']
 
     def __unicode__(self):
@@ -156,14 +160,17 @@ class Publisher(BasePublisher):
             raise ValueError(
                 "Imprints are deprecated and not present in active data.")
 
-        if 'brands' in deltas:
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('brands', 0):
             self.brand_count = F('brand_count') + deltas['brands']
-        if 'indicia publishers' in deltas:
+        if deltas.get('indicia publishers', 0):
             self.indicia_publisher_count = (F('indicia_publisher_count') +
                                             deltas['indicia publishers'])
-        if 'series' in deltas:
+        if deltas.get('series', 0):
             self.series_count = F('series_count') + deltas['series']
-        if 'issues' in deltas:
+        if deltas.get('issues', 0):
             self.issue_count = F('issue_count') + deltas['issues']
 
     def __unicode__(self):

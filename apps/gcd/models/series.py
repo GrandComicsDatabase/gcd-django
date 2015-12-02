@@ -227,7 +227,10 @@ class Series(models.Model):
             for k, v in deltas.iteritems():
                 deltas[k] = -v
 
-        if 'issues' in deltas:
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('issues', 0):
             self.issue_count = F('issue_count') + deltas['issues']
 
     def ordered_brands(self):

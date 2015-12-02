@@ -1014,7 +1014,7 @@ class SeriesRevisionManager(RevisionManager):
     def deprecated_field_list(self):
         return [
             'format',
-            'publishing_notes',
+            'publication_notes',
         ]
 
 
@@ -1179,11 +1179,13 @@ class SeriesRevision(Revision):
         super(SeriesRevision, self)._adjust_stats(changes,
                                                   old_counts, new_counts)
         if changes['publisher changed']:
-            changes['old publisher'].update_cached_counts(old_counts,
-                                                          negate=True)
-            changes['old publisher'].save()
-            changes['new publisher'].update_cached_counts(new_counts)
-            changes['new publisher'].save()
+            if changes['old publisher']:
+                changes['old publisher'].update_cached_counts(old_counts,
+                                                              negate=True)
+                changes['old publisher'].save()
+            if changes['new publisher']:
+                changes['new publisher'].update_cached_counts(new_counts)
+                changes['new publisher'].save()
 
         if old_counts != new_counts:
             # TODO: Is this simpler, or would it be better to just
@@ -1202,190 +1204,65 @@ class SeriesRevision(Revision):
             self.series.save()
 
     def commit_to_display(self, clear_reservation=True):
-        series = self.series
-        if series is None:
-            series = Series(issue_count=0)
-            if self.is_comics_publication:
-                self.publisher.series_count = F('series_count') + 1
-                if not self.is_singleton:
-                    # if save also happens in IssueRevision gets twice +1
-                    self.publisher.save()
-                update_count('series', 1, language=self.language,
-                             country=self.country)
-            if self.is_singleton:
-                issue_revision = IssueRevision(
-                    changeset=self.changeset,
-                    after=None,
-                    number='[nn]',
-                    publication_date=self.year_began)
-                if len(unicode(self.year_began)) == 4:
-                    issue_revision.key_date = '%d-00-00' % self.year_began
+        changes = self._get_major_changes()
 
-        elif self.deleted:
-            if series.is_comics_publication:
-                self.publisher.series_count = F('series_count') - 1
-                # TODO: implement when/if we allow series deletions along
-                # with all their issues
-                # self.publisher.issue_count -= series.issue_count
-                self.publisher.save()
-            series.delete()
-            if series.is_comics_publication:
-                update_count('series', -1, language=series.language,
-                             country=series.country)
-            reservation = self.source.get_ongoing_reservation()
-            if reservation:
-                reservation.delete()
-            return
+        # Handle deletion of the singleton issue before getting the
+        # series stat counts to avoid double-counting the deletion.
+        if self.deleted and self.series.is_singleton:
+            issue_revision = IssueRevisionManager.clone_revision(
+                instance=self.series.issues[0], changeset=changeset)
+            issue_revision.deleted = True
+            issue_revision.save()
+            issue_revision.commit_to_display()
+
+        old_counts = {} if self.added else self.series.stat_counts()
+
+        if self.deleted:
+            self.series.delete()
         else:
-            if self.publisher != self.series.publisher and \
-               series.is_comics_publication:
-                self.publisher.issue_count = (F('issue_count') +
-                                              series.issue_count)
-                self.publisher.series_count = F('series_count') + 1
-                self.publisher.save()
-                self.series.publisher.issue_count = (F('issue_count') -
-                                                     series.issue_count)
-                self.series.publisher.series_count = F('series_count') - 1
-                self.series.publisher.save()
+            if self.added:
+                # TODO: In the current implementation, self.added won't
+                #       work properly after this point.
+                self.series = Series(issue_count=0)
 
-        series.name = self.name
-        if self.leading_article:
-            series.sort_name = remove_leading_article(self.name)
-        else:
-            series.sort_name = self.name
-        series.format = self.format
-        series.color = self.color
-        series.dimensions = self.dimensions
-        series.paper_stock = self.paper_stock
-        series.binding = self.binding
-        series.publishing_format = self.publishing_format
-        series.notes = self.notes
-        series.is_singleton = self.is_singleton
-        series.publication_type = self.publication_type
+            self._copy_assignable_fields_to(self.series)
 
-        series.year_began = self.year_began
-        series.year_ended = self.year_ended
-        series.year_began_uncertain = self.year_began_uncertain
-        series.year_ended_uncertain = self.year_ended_uncertain
-        series.is_current = self.is_current
-        series.has_barcode = self.has_barcode
-        series.has_indicia_frequency = self.has_indicia_frequency
-        series.has_isbn = self.has_isbn
-        series.has_issue_title = self.has_issue_title
-        series.has_volume = self.has_volume
-        series.has_rating = self.has_rating
+            if self.leading_article:
+                self.series.sort_name = remove_leading_article(self.name)
+            else:
+                self.series.sort_name = self.name
 
-        reservation = series.get_ongoing_reservation()
-        if (not self.is_current and
-                reservation and
-                self.previous() and self.previous().is_current):
+        if changes['from current']:
+            reservation = self.series.get_ongoing_reservation()
             reservation.delete()
 
-        series.publication_notes = self.publication_notes
-        series.tracking_notes = self.tracking_notes
-
-        # a new series has language_id None
-        if series.language_id is None:
-            if series.issue_count:
-                raise NotImplementedError("New series can't have issues!")
-
-        else:
-            if series.is_comics_publication != self.is_comics_publication:
-                if series.is_comics_publication:
-                    count = -1
-                else:
-                    count = +1
-                update_count('series', count, language=series.language,
-                             country=series.country)
-                if series.issue_count:
-                    update_count('issues', count*series.issue_count,
-                                 language=series.language,
-                                 country=series.country)
-                variant_issues = Issue.objects \
-                    .filter(series=series, deleted=False) \
-                    .exclude(variant_of=None)\
-                    .count()
-                update_count('variant issues', count*variant_issues,
-                             language=series.language, country=series.country)
-                issue_indexes = Issue.objects \
-                    .filter(series=series, deleted=False) \
-                    .exclude(is_indexed=INDEXED['skeleton']) \
-                    .count()
-                update_count('issue indexes', count*issue_indexes,
-                             language=series.language, country=series.country)
-
-            if ((series.language != self.language or
-                 series.country != self.country) and
-                    self.is_comics_publication):
-                update_count('series', -1,
-                             language=series.language,
-                             country=series.country)
-                update_count('series', 1,
-                             language=self.language,
-                             country=self.country)
-                if series.issue_count:
-                    update_count('issues', -series.issue_count,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('issues', series.issue_count,
-                                 language=self.language,
-                                 country=self.country)
-                    variant_issues = Issue.objects \
-                        .filter(series=series, deleted=False) \
-                        .exclude(variant_of=None) \
-                        .count()
-                    update_count('variant issues', -variant_issues,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('variant issues', variant_issues,
-                                 language=self.language,
-                                 country=self.country)
-                    issue_indexes = \
-                        Issue.objects.filter(series=series, deleted=False) \
-                                     .exclude(is_indexed=INDEXED['skeleton']) \
-                                     .count()
-                    update_count('issue indexes', -issue_indexes,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('issue indexes', issue_indexes,
-                                 language=self.language,
-                                 country=self.country)
-                    story_count = Story.objects \
-                                       .filter(issue__series=series,
-                                               deleted=False) \
-                                       .count()
-                    update_count('stories', -story_count,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('stories', story_count,
-                                 language=self.language,
-                                 country=self.country)
-                    update_count('covers', -series.scan_count(),
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('covers', series.scan_count(),
-                                 language=self.language, country=self.country)
-        series.country = self.country
-        series.language = self.language
-        series.publisher = self.publisher
-        if series.is_comics_publication != self.is_comics_publication:
-            series.has_gallery = (self.is_comics_publication and
-                                  series.scan_count())
-        series.is_comics_publication = self.is_comics_publication
+        if changes['to comics']:
+            # TODO: But don't we count covers for some non-comics?
+            self.series.has_gallery = bool(self.series.scan_count())
 
         if clear_reservation:
-            series.reserved = False
+            self.series.reserved = False
 
-        series.save()
-        save_keywords(self, series)
-        series.save()
-        if self.series is None:
-            self.series = series
-            self.save()
-            if self.is_singleton:
-                issue_revision.series = series
-                issue_revision.save()
-                issue_revision.commit_to_display()
+        self.series.save()
+
+        new_counts = self.series.stat_counts()
+        self._adjust_stats(changes, old_counts, new_counts)
+
+        # Handle adding the singleton issue last, to avoid double-counting
+        # the addition in statistics.
+        if changes['to singleton'] and self.series.issue_count == 0:
+            issue_revision = IssueRevision(changeset=self.changeset,
+                                           series=self.series,
+                                           after=None,
+                                           number='[nn]',
+                                           publication_date=self.year_began)
+            # TODO: Do we accept non-four-diget year_begans?
+            #       Do we still have year 0 in there some places?
+            #       Can we just zero-pad shorter years with %04d?
+            if len(unicode(self.year_began)) == 4:
+                issue_revision.key_date = '%d-00-00' % self.year_began
+            issue_revision.save()
+            issue_revision.commit_to_display()
 
 
 class SeriesBondRevisionManager(RevisionManager):
