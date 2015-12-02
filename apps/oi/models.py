@@ -936,52 +936,6 @@ class SeriesRevisionManager(RevisionManager):
     Custom manager allowing the cloning of revisions from existing rows.
     """
 
-    def _do_create_revision(self, series, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = SeriesRevision(
-            # revision-specific fields:
-            series=series,
-            changeset=changeset,
-
-            # copied fields:
-            name=series.name,
-            leading_article=series.name != series.sort_name,
-            format=series.format,
-            color=series.color,
-            dimensions=series.dimensions,
-            paper_stock=series.paper_stock,
-            binding=series.binding,
-            publishing_format=series.publishing_format,
-            publication_type=series.publication_type,
-            is_singleton=series.is_singleton,
-            notes=series.notes,
-            keywords=get_keywords(series),
-            year_began=series.year_began,
-            year_ended=series.year_ended,
-            year_began_uncertain=series.year_began_uncertain,
-            year_ended_uncertain=series.year_ended_uncertain,
-            is_current=series.is_current,
-
-            publication_notes=series.publication_notes,
-            tracking_notes=series.tracking_notes,
-
-            has_barcode=series.has_barcode,
-            has_indicia_frequency=series.has_indicia_frequency,
-            has_isbn=series.has_isbn,
-            has_volume=series.has_volume,
-            has_issue_title=series.has_issue_title,
-            has_rating=series.has_rating,
-            is_comics_publication=series.is_comics_publication,
-
-            country=series.country,
-            language=series.language,
-            publisher=series.publisher)
-
-        revision.save()
-        return revision
-
     def assignable_field_list(self):
         return [
             'name',
@@ -1016,6 +970,20 @@ class SeriesRevisionManager(RevisionManager):
             'format',
             'publication_notes',
         ]
+
+    def _do_create_revision(self, series, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        kwargs = self._assignable_field_kwargs(series)
+
+        revision = SeriesRevision(
+            series=series,
+            changeset=changeset,
+            leading_article=(series.name != series.sort_name),
+            **kwargs)
+        revision.save()
+        return revision
 
 
 def get_series_field_list():
