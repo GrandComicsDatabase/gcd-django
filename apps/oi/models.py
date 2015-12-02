@@ -1168,6 +1168,39 @@ class SeriesRevision(Revision):
         c['new language'] = None if self.deleted else new.language
         return c
 
+    def _adjust_stats(self, changes, old_counts, new_counts):
+        """
+        Handles all statistics and cached count updates for SeriesRevs.
+
+        Does not take special account of the issue revision associated
+        with a singleton series.  When adding or deleting such a revision,
+        the caller must arrange it so as not to be counted twice.
+        """
+        super(SeriesRevision, self)._adjust_stats(changes,
+                                                  old_counts, new_counts)
+        if changes['publisher changed']:
+            changes['old publisher'].update_cached_counts(old_counts,
+                                                          negate=True)
+            changes['old publisher'].save()
+            changes['new publisher'].update_cached_counts(new_counts)
+            changes['new publisher'].save()
+
+        if old_counts != new_counts:
+            # TODO: Is this simpler, or would it be better to just
+            #       always run old w/negate followed by new, and
+            #       stack up the F() objects?  Need to look into
+            #       F() object details more.
+            keys = set(old_counts.keys()).union(new_counts.keys())
+            deltas = {k: new_counts.get(k, 0) - old_counts.get(k, 0)
+                      for k in keys}
+
+            if not changes['publisher changed']:
+                self.series.publisher.update_cached_counts(deltas)
+                self.series.publisher.save()
+
+            self.series.update_cached_counts(deltas)
+            self.series.save()
+
     def commit_to_display(self, clear_reservation=True):
         series = self.series
         if series is None:
