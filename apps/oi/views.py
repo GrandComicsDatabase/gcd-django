@@ -458,7 +458,12 @@ def _display_edit_form(request, changeset, form, revision=None):
     if changeset.change_type == CTYPES['creators']:
         name_types = NameType.objects.all()
         name_sources = SourceType.objects.all()
-
+        other_name_details = []
+        for creator_names in revision.cr_creator_names.all():
+            if creator_names.type.type == settings.GCD_OFFICIAL_NAME_FIELDNAME:
+                official_name_details = {'name':creator_names.name, 'type':creator_names.type.type, 'sources':creator_names.source.all()}
+            else:
+                other_name_details.append({'name':creator_names.name, 'type':creator_names.type.type, 'sources':creator_names.source.all()})
         response = oi_render_to_response(
         template,
         {
@@ -470,6 +475,8 @@ def _display_edit_form(request, changeset, form, revision=None):
             'CTYPES': CTYPES,
             'name_types': name_types,
             'name_sources': name_sources,
+            'official_name_details': official_name_details,
+            'other_name_details': other_name_details,
         },
           context_instance=RequestContext(request))
         return response
@@ -712,7 +719,23 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
 
                     total_creator_names = int(request.POST.get('total_names'))
 
+                    #Update Creator's GCD Official Name
+                    gcd_official_name = request.POST.get('gcd_official_name')
+                    gcd_official_name_type_id = request.POST.get('gcd_official_type')
+                    gcd_official_name_sources = request.POST.getlist('gcd_official_sources')
+                    gcd_official_name_type = NameType.objects.get(id=gcd_official_name_type_id)
+
+                    creatorname = CreatorNameDetailsRevision.objects.get(creator=revision,type=gcd_official_name_type)
+                    creatorname.name = gcd_official_name
+                    creatorname.save()
+
+                    creatorname.source.clear()
+                    for source in gcd_official_name_sources:
+                        creatorname.source.add(source)
+
+                    #Update Creator's Other Names
                     updated_creator_name_list = []
+                    updated_creator_name_list.append(creatorname.id)
                     for i in range(1, total_creator_names + 1):
                         if 'name'+ str(i) in request.POST:
                             name = request.POST.get('name'+ str(i))
@@ -732,9 +755,8 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                             creatorname.source.clear()
                             for source in sources:
                                 creatorname.source.add(source)
-
                             updated_creator_name_list.append(creatorname.id)
-                    CreatorNameDetailsRevision.objects.exclude(creator=revision, id__in=updated_creator_name_list).delete()
+                    CreatorNameDetailsRevision.objects.filter(creator=revision).exclude(id__in=updated_creator_name_list).delete()
 
                 elif revision.changeset.change_type == CTYPES['creator_membership']:
                     revision.membership_source.clear()
@@ -1535,7 +1557,7 @@ def process(request, id):
 
             revision = changeset.inline_revision()
             form_class = get_revision_form(revision, user=request.user)
-            form = form_class(request.POST, instance=revision)
+            form = form_class(request.POST, request.FILES, instance=revision)
             return _save(request, form, changeset_id=id)
         else:
             return submit(request, id)
@@ -4857,6 +4879,19 @@ def add_creator(request, template_name='oi/creators/creators.html'):
                                                  source_type=bio_source,
                                                  changeset=changeset)
 
+            #Add Gcd Creator's Official Name
+            gcd_official_name = request.POST.get('gcd_official_name')
+            gcd_official_name_type_id = request.POST.get('gcd_official_type')
+            gcd_official_name_sources = request.POST.getlist('gcd_official_sources')
+
+            gcd_official_name_type = NameType.objects.get(id=gcd_official_name_type_id)
+            creatorname = CreatorNameDetailsRevision.objects.create(creator=revision,
+                                                                   name=gcd_official_name,
+                                                                   type=gcd_official_name_type,
+                                                                   changeset=changeset)
+            for source in gcd_official_name_sources:
+                creatorname.source.add(source)
+
             #Add gcd creator's other names
             total_creator_names = int(request.POST.get('total_names'))
             for i in range(1, total_creator_names + 1):
@@ -4879,6 +4914,7 @@ def add_creator(request, template_name='oi/creators/creators.html'):
     context['creator_form'] = creator_form
     context['name_types'] = NameType.objects.all()
     context['name_sources'] = SourceType.objects.all()
+    context['gcd_official_name_field'] = settings.GCD_OFFICIAL_NAME_FIELDNAME
     context['mode'] = 'new'
     return render(request, template_name, context)
 
