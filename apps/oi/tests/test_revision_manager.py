@@ -5,13 +5,8 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
+from .conftest import DummyRevision
 from apps.oi import models
-
-
-# Make a non-abstract class that acts like a Revision, but can have
-# a manager, i.e. DummyRevision.objects.
-class DummyRevision(models.Revision):
-    pass
 
 
 def test_clone_revision_positive():

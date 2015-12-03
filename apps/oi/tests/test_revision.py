@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
+from .conftest import DummyRevision
 from apps.gcd.models import Country, Language
-from apps.oi import models
 
 
 @pytest.yield_fixture
@@ -20,14 +20,14 @@ def source_mock():
 def test_added(source_mock):
     source_mock.__nonzero__.return_value = False
 
-    rev = models.Revision()
+    rev = DummyRevision()
     added = rev.added
     source_mock.__nonzero__.assert_called_once_with()
     assert added
 
 
 def test_not_added_because_source(source_mock):
-    rev = models.Revision()
+    rev = DummyRevision()
     added = rev.added
     source_mock.__nonzero__.assert_called_once_with()
     assert not added
@@ -38,14 +38,14 @@ def test_not_added_because_deleted(source_mock):
     # not read as added anyway.
     source_mock.__nonzero__.return_value = False
 
-    rev = models.Revision(deleted=True)
+    rev = DummyRevision(deleted=True)
     added = rev.added
     source_mock.__nonzero__.assert_called_once_with()
     assert not added
 
 
 def test_edited(source_mock):
-    rev = models.Revision()
+    rev = DummyRevision()
     edited = rev.edited
     source_mock.__nonzero__.assert_called_once_with()
     assert edited
@@ -56,14 +56,14 @@ def test_not_edited_because_no_source(source_mock):
     # definitely not an edit.
     source_mock.__nonzero__.return_value = False
 
-    rev = models.Revision(deleted=True)
+    rev = DummyRevision(deleted=True)
     edited = rev.edited
     source_mock.__nonzero__.assert_called_once_with()
     assert not edited
 
 
 def test_not_edited_because_deleted(source_mock):
-    rev = models.Revision(deleted=True)
+    rev = DummyRevision(deleted=True)
     edited = rev.edited
     source_mock.__nonzero__.assert_called_once_with()
     assert not edited
@@ -71,17 +71,17 @@ def test_not_edited_because_deleted(source_mock):
 
 def test_get_major_changes():
     with pytest.raises(NotImplementedError):
-        models.Revision()._get_major_changes()
+        DummyRevision()._get_major_changes()
 
 
 def test_get_source():
     with pytest.raises(NotImplementedError):
-        models.Revision()._get_source()
+        DummyRevision()._get_source()
 
 
 def test_get_source_name():
     with pytest.raises(NotImplementedError):
-        models.Revision()._get_source_name()
+        DummyRevision()._get_source_name()
 
 
 @pytest.yield_fixture
@@ -92,7 +92,7 @@ def mock_update_all():
 
 
 def test_adjust_stats_neither(mock_update_all):
-    rev = models.Revision()
+    rev = DummyRevision()
 
     old_counts = {'foo': 1}
     new_counts = {'foo': 2}
@@ -106,7 +106,7 @@ def test_adjust_stats_neither(mock_update_all):
 
 
 def test_adjust_stats_both(mock_update_all):
-    rev = models.Revision()
+    rev = DummyRevision()
 
     old_counts = {'foo': 1}
     new_counts = {'foo': 2}

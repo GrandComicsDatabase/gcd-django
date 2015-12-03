@@ -205,15 +205,21 @@ class Revision(models.Model):
     objects = RevisionManager()
 
     changeset = models.ForeignKey(Changeset, related_name='%(class)ss')
+    previous_revision = models.OneToOneField('self', null=True,
+                                             related_name='next_revision')
 
-    """
-    If true, this revision deletes the object in question.  Other fields
-    should not contain changes but should instead be a record of the object
-    at the time of deletion and therefore match the previous revision.
-    If changes are present, then they were never actually published and
-    should be ignored in terms of history.
-    """
+    # If True, this revision deletes the object in question.  Other fields
+    # should not contain changes but should instead be a record of the object
+    # at the time of deletion and therefore match the previous revision.
+    # If changes are present, then they were never actually published and
+    # should be ignored in terms of history.
     deleted = models.BooleanField(default=False, db_index=True)
+
+    # If True, this revision has been committed back to the display tables.
+    # If False, this revision will never be committed.
+    # If None, this revision is still active, and may or may not be committed
+    # at some point in the future.
+    committed = models.NullBooleanField(default=None, db_index=True)
 
     comments = generic.GenericRelation(ChangesetComment,
                                        content_type_field='content_type',
@@ -1291,9 +1297,6 @@ class SeriesBondRevision(Revision):
                                   related_name='bond_revisions')
     notes = models.TextField(max_length=255, default='', blank=True)
 
-    previous_revision = models.OneToOneField('self', null=True,
-                                             related_name='next_revision')
-
     def _get_source(self):
         return self.series_bond
 
@@ -2088,9 +2091,6 @@ class ReprintRevision(Revision):
 
     in_type = models.IntegerField(db_index=True, null=True)
     out_type = models.IntegerField(db_index=True, null=True)
-
-    previous_revision = models.OneToOneField('self', null=True,
-                                             related_name='next_revision')
 
     def _get_source(self):
         if self.deleted and self.changeset.state == states.APPROVED:
