@@ -9,64 +9,94 @@ from .conftest import DummyRevision
 from apps.gcd.models import Country, Language
 
 
-@pytest.yield_fixture
-def source_mock():
-    """ Patches the source property, by default evaluates as True. """
-    with mock.patch('apps.oi.models.Revision.source') as source_mock:
-        source_mock.__nonzero__.return_value = True
-        yield source_mock
-
-
-def test_added(source_mock):
-    source_mock.__nonzero__.return_value = False
-
+def test_added():
     rev = DummyRevision()
     added = rev.added
-    source_mock.__nonzero__.assert_called_once_with()
     assert added
 
 
-def test_not_added_because_source(source_mock):
+def test_added_committed():
     rev = DummyRevision()
+    rev.committed = True
     added = rev.added
-    source_mock.__nonzero__.assert_called_once_with()
+    assert added
+
+
+def test_not_added_because_previous_revision():
+    rev = DummyRevision()
+    rev.previous_revision = DummyRevision()
+    added = rev.added
     assert not added
 
 
-def test_not_added_because_deleted(source_mock):
-    # No source plus deleted doesn't make sense, but should
-    # not read as added anyway.
-    source_mock.__nonzero__.return_value = False
-
-    rev = DummyRevision(deleted=True)
+def test_not_added_because_discarded():
+    rev = DummyRevision()
+    rev.committed = False
     added = rev.added
-    source_mock.__nonzero__.assert_called_once_with()
     assert not added
 
 
-def test_edited(source_mock):
+def test_added_with_source():
+    # We should no longer be checking for source.  This test is only here
+    # to test that we have not regressed to the prior implementation.
+    with mock.patch('apps.oi.models.Revision.source') as source_mock:
+        rev = DummyRevision()
+        added = rev.added
+        assert not source_mock.__nonzero__.called
+        assert added
+
+
+def test_edited():
     rev = DummyRevision()
+    rev.previous_revision = DummyRevision()
     edited = rev.edited
-    source_mock.__nonzero__.assert_called_once_with()
     assert edited
 
 
-def test_not_edited_because_no_source(source_mock):
-    # No source plus deleted doesn't make sense, but
-    # definitely not an edit.
-    source_mock.__nonzero__.return_value = False
+def test_edited_committed():
+    rev = DummyRevision()
+    rev.previous_revision = DummyRevision()
+    rev.committed = True
+    edited = rev.edited
+    assert edited
 
+
+def test_not_edited_because_added():
     rev = DummyRevision(deleted=True)
     edited = rev.edited
-    source_mock.__nonzero__.assert_called_once_with()
     assert not edited
 
 
-def test_not_edited_because_deleted(source_mock):
+def test_not_edited_because_deleted():
     rev = DummyRevision(deleted=True)
     edited = rev.edited
-    source_mock.__nonzero__.assert_called_once_with()
     assert not edited
+
+
+def test_not_edited_because_discarded():
+    rev = DummyRevision()
+    rev.previous_revision = DummyRevision()
+    rev.committed = False
+    edited = rev.edited
+    assert not edited
+
+
+def test_committed():
+    rev = DummyRevision(committed=True)
+    assert not rev.open
+    assert not rev.discarded
+
+
+def test_discarded():
+    rev = DummyRevision(committed=False)
+    assert not rev.open
+    assert rev.discarded
+
+
+def test_open():
+    rev = DummyRevision(committed=None)
+    assert rev.open
+    assert not rev.discarded
 
 
 def test_get_major_changes():

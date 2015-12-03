@@ -256,21 +256,33 @@ class Revision(models.Model):
 
     @property
     def added(self):
-        # TODO: Once the revision has been committed, this will
-        #       never be True.  Is it worth checking for a prior
-        #       revision?  One thought is to add previous/next
-        #       revision columns to make that check cheaper.
-        #       Needs to be revisited.
-        return not self.source and not self.deleted
+        """
+        True if this is an open or committed add.
+        """
+        return not self.previous_revision and self.committed is not False
 
     @property
     def edited(self):
         """
-        True if this is neither an add nor a delete.
+        True if this open or committed and neither an add nor a delete.
 
         NOTE: This does not necessarily mean there have been any edits.
         """
-        return self.source and not self.deleted
+        return self.previous_revision and not (self.deleted or self.discarded)
+
+    @property
+    def discarded(self):
+        """
+        For symmetry with committed and open.
+        """
+        return self.committed is False
+
+    @property
+    def open(self):
+        """
+        For symmetry with committed and discarded.
+        """
+        return self.committed is None
 
     def _copy_assignable_fields_to(self, target, with_keywords=True):
         """
@@ -1195,8 +1207,6 @@ class SeriesRevision(Revision):
             self.series.delete()
         else:
             if self.added:
-                # TODO: In the current implementation, self.added won't
-                #       work properly after this point.
                 self.series = Series(issue_count=0)
                 self.save()
 

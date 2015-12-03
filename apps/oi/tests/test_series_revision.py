@@ -3,6 +3,7 @@
 import pytest
 import mock
 
+from .conftest import DummyRevision
 from apps.gcd.models import Publisher, Series, Country, Language
 from apps.oi.models import Changeset, SeriesRevision, IssueRevision
 
@@ -183,7 +184,8 @@ def test_create_edit_revision(any_added_series, series_add_values,
 @pytest.yield_fixture
 def patched_series_class():
     """ Patches foreign keys to prevent database access. """
-    with mock.patch('apps.oi.models.Series.country'), \
+    with mock.patch('apps.oi.models.SeriesRevision.previous_revision') as pr, \
+            mock.patch('apps.oi.models.Series.country'), \
             mock.patch('apps.oi.models.Series.language'), \
             mock.patch('apps.oi.models.Series.publisher'), \
             mock.patch('apps.oi.models.SeriesRevision.changeset'), \
@@ -191,6 +193,9 @@ def patched_series_class():
             mock.patch('apps.oi.models.SeriesRevision.country'), \
             mock.patch('apps.oi.models.SeriesRevision.language'), \
             mock.patch('apps.oi.models.SeriesRevision.publisher'):
+        # previous_revision needs to read as False by default so that the
+        # Revision.added property behaves normally be default.
+        pr.__nonzero__.return_value = False
         yield
 
 
@@ -208,7 +213,8 @@ def test_get_major_changes_all_change(patched_series_class):
                          publisher=PUBLISHER_TWO,
                          is_comics_publication=False,
                          is_current=False,
-                         is_singleton=True)
+                         is_singleton=True,
+                         previous_revision=DummyRevision())
 
     c = new._get_major_changes()
     assert c == {
@@ -248,7 +254,8 @@ def test_get_major_changes_no_change(patched_series_class):
                          publisher=PUBLISHER_ONE,
                          is_comics_publication=False,
                          is_current=False,
-                         is_singleton=True)
+                         is_singleton=True,
+                         previous_revision=DummyRevision())
 
     c = new._get_major_changes()
     assert c == {
@@ -283,7 +290,6 @@ def test_get_major_changes_added(patched_series_class):
                          is_comics_publication=True,
                          is_current=True,
                          is_singleton=False)
-
     c = new._get_major_changes()
     assert c == {
         'publisher changed': True,
@@ -323,6 +329,7 @@ def test_get_major_changes_deleted(patched_series_class):
                          is_comics_publication=True,
                          is_current=True,
                          is_singleton=False,
+                         previous_revision=DummyRevision(),
                          deleted=True)
 
     c = new._get_major_changes()
