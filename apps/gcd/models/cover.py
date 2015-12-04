@@ -11,9 +11,11 @@ from .issue import Issue
 # the other way around.  Probably.
 from apps.oi import states
 
+
 ZOOM_SMALL = 1
 ZOOM_MEDIUM = 2
 ZOOM_LARGE = 4
+
 
 class Cover(models.Model):
     class Meta:
@@ -49,32 +51,37 @@ class Cover(models.Model):
         return self.issue.sort_code
 
     def base_dir(self):
-        return settings.MEDIA_ROOT + settings.COVERS_DIR + \
-          str(int(self.id/1000))
+        return (settings.MEDIA_ROOT + settings.COVERS_DIR +
+                str(int(self.id/1000)))
 
     def get_absolute_url(self):
-        return urlresolvers.reverse('issue_cover_view', 
-                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
+        return urlresolvers.reverse(
+            'issue_cover_view',
+            kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE})
 
     def get_base_url(self):
-        return settings.IMAGE_SERVER_URL + settings.COVERS_DIR + \
-          str(int(self.id/1000))
+        return (settings.IMAGE_SERVER_URL + settings.COVERS_DIR +
+                str(int(self.id / 1000)))
 
     def get_status_url(self):
         if self.marked:
             return urlresolvers.reverse(
                 'replace_cover',
-                kwargs={'cover_id': self.id} )
+                kwargs={'cover_id': self.id})
         else:
             return urlresolvers.reverse(
-                'issue_cover_view', 
-                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
+                'issue_cover_view',
+                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE})
 
     def get_cover_status(self):
-        import logging
         if self.marked:
             return 4
         return 3
+
+    def stat_counts(self):
+        return {
+            'covers': 1,
+        }
 
     def delete(self):
         self.deleted = True
@@ -83,7 +90,8 @@ class Cover(models.Model):
         self.save()
 
     def deletable(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+        return (self.revisions.filter(changeset__state__in=states.ACTIVE)
+                              .count() == 0)
 
     def __unicode__(self):
         return u'%s %s cover' % (self.issue.series, self.issue.display_number)

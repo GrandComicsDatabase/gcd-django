@@ -198,6 +198,28 @@ class Issue(models.Model):
         else:
             return False
 
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this issue.
+
+        Includes counts for the issue itself.
+
+        Non-comics publications return statistics only for stories and covers,
+        as non-comics issues do not count towards stats.
+        """
+        counts = {
+            'stories': self.active_stories().count(),
+            'covers': self.active_covers().count(),
+        }
+        if self.series.is_comics_publication:
+            if self.variant_of_id:
+                counts['variant issues'] = 1
+            else:
+                counts['issues'] = 1
+            if self.is_indexed != INDEXED['skeleton']:
+                counts['issue indexes'] = 1
+        return counts
+
     def has_keywords(self):
         return self.keywords.exists()
 
