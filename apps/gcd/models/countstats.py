@@ -113,6 +113,9 @@ class CountStatsManager(models.Manager):
 
         If the language or country do not have stats yet, they will
         be initialized and the deltas will not be applied to them.
+        As this should be called after the changes have been committed
+        back to the display (which is needed to get the deltas),
+        the stats initialization will include the latest changes.
         """
         if country and not self.filter(country=country,
                                        language=None).exists():
