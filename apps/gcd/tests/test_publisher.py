@@ -5,7 +5,9 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
-from apps.gcd.models import Publisher, BrandGroup, Brand, IndiciaPublisher
+from django.db.models import query
+from apps.gcd.models import (
+    Publisher, BrandGroup, Brand, BrandUse, IndiciaPublisher)
 
 
 BRAND_COUNT = 10
@@ -106,3 +108,16 @@ def test_base_update_cached_counts_subtract(derived_class, f_mock):
     dc.update_cached_counts(DELTAS, negate=True)
 
     assert dc.issue_count == ISSUE_COUNT - DELTAS['issues']
+
+
+def test_brand_use_active_issues():
+    with mock.patch('apps.gcd.models.publisher.BrandUse.emblem') as em_mock:
+        mock_qs = mock.MagicMock(query.QuerySet)
+        em_mock.issue_set.exclude.return_value.filter.return_value = mock_qs
+
+        bu = BrandUse(publisher=Publisher())
+        ai = bu.active_issues()
+        assert ai is mock_qs
+        em_mock.issue_set.exclude.assert_called_once_with(deleted=True)
+        em_mock.issue_set.exclude.return_value.filter.assert_called_once_with(
+            issue__series__publisher=bu.publisher)

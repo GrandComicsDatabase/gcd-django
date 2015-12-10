@@ -13,11 +13,13 @@ from taggit.managers import TaggableManager
 from apps.oi import states
 from .image import Image
 
+
 def _display_year(year, flag):
     if year:
         return str(year) + (u' ?' if flag else u'')
     else:
         return '?'
+
 
 class BasePublisher(models.Model):
     class Meta:
@@ -75,6 +77,7 @@ class BasePublisher(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class Publisher(BasePublisher):
     class Meta:
         ordering = ['name']
@@ -108,12 +111,13 @@ class Publisher(BasePublisher):
     def active_brand_emblems_no_pending(self):
         """
         Active brands, not including those with pending deletes.
-        Used in some cases where we don't want someone to add to a brand that is
-        in the process of being deleted.
+        Used in some cases where we don't want someone to add to a brand
+        that is in the process of being deleted.
         """
         # TODO: check for pending brand_use deletes
-        return self.active_brand_emblems().exclude(revisions__deleted=True,
-          revisions__changeset__state__in=states.ACTIVE).distinct()
+        return self.active_brand_emblems().exclude(
+            revisions__deleted=True,
+            revisions__changeset__state__in=states.ACTIVE).distinct()
 
     def active_indicia_publishers(self):
         return self.indiciapublisher_set.exclude(deleted=True)
@@ -121,11 +125,12 @@ class Publisher(BasePublisher):
     def active_indicia_publishers_no_pending(self):
         """
         Active indicia publishers, not including those with pending deletes.
-        Used in some cases where we don't want someone to add to an ind pub that is
-        in the process of being deleted.
+        Used in some cases where we don't want someone to add to an ind pub
+        that is in the process of being deleted.
         """
-        return self.active_indicia_publishers().exclude(revisions__deleted=True,
-          revisions__changeset__state__in=states.ACTIVE)
+        return self.active_indicia_publishers().exclude(
+            revisions__deleted=True,
+            revisions__changeset__state__in=states.ACTIVE)
 
     def active_series(self):
         return self.series_set.exclude(deleted=True)
@@ -134,11 +139,11 @@ class Publisher(BasePublisher):
         # TODO: check for issue_count instead of series_count. Check for added
         # issue skeletons. Also delete series and not just brands, ind pubs,
         # and imprints.
-        active = { 'changeset__state__in': states.ACTIVE }
-        return self.series_count == 0 and \
-          self.series_revisions.filter(**active).count() == 0 and \
-          self.brand_revisions.filter(**active).count() == 0 and \
-          self.indicia_publisher_revisions.filter(**active).count() == 0
+        active = {'changeset__state__in': states.ACTIVE}
+        return (self.series_count == 0 and
+                self.series_revisions.filter(**active).count() == 0 and
+                self.brand_revisions.filter(**active).count() == 0 and
+                self.indicia_publisher_revisions.filter(**active).count() == 0)
 
     def pending_deletion(self):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,
@@ -179,7 +184,7 @@ class Publisher(BasePublisher):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_publisher',
-            kwargs={'publisher_id': self.id } )
+            kwargs={'publisher_id': self.id})
 
     def get_official_url(self):
         """
@@ -194,6 +199,7 @@ class Publisher(BasePublisher):
     def get_full_name(self):
         return self.name
 
+
 class IndiciaPublisher(BasePublisher):
     class Meta:
         db_table = 'gcd_indicia_publisher'
@@ -207,7 +213,8 @@ class IndiciaPublisher(BasePublisher):
     issue_count = models.IntegerField(default=0)
 
     def deletable(self):
-        active = self.issue_revisions.filter(changeset__state__in=states.ACTIVE)
+        active = self.issue_revisions \
+                     .filter(changeset__state__in=states.ACTIVE)
         return self.issue_count == 0 and active.count() == 0
 
     def active_issues(self):
@@ -216,10 +223,11 @@ class IndiciaPublisher(BasePublisher):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_indicia_publisher',
-            kwargs={'indicia_publisher_id': self.id } )
+            kwargs={'indicia_publisher_id': self.id})
 
     def __unicode__(self):
         return self.name
+
 
 class BrandGroup(BasePublisher):
     class Meta:
@@ -232,9 +240,10 @@ class BrandGroup(BasePublisher):
     issue_count = models.IntegerField(default=0)
 
     def deletable(self):
-        return self.active_emblems().count() == 0 and \
-            self.brand_revisions.filter(changeset__state__in=states.ACTIVE)\
-                                .count() == 0
+        return (self.active_emblems().count() == 0 and
+                self.brand_revisions
+                    .filter(changeset__state__in=states.ACTIVE)
+                    .count() == 0)
 
     def active_emblems(self):
         return self.brand_set.exclude(deleted=True)
@@ -248,7 +257,7 @@ class BrandGroup(BasePublisher):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_brand_group',
-            kwargs={'brand_group_id': self.id } )
+            kwargs={'brand_group_id': self.id})
 
     def pending_deletion(self):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,
@@ -276,18 +285,20 @@ class Brand(BasePublisher):
 
     @property
     def emblem(self):
-        img = Image.objects.filter(object_id=self.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(self), type__id=3)
+        img = Image.objects.filter(
+            object_id=self.id, deleted=False, type__id=3,
+            content_type=ContentType.objects.get_for_model(self))
         if img:
             return img.get()
         else:
             return None
 
     def deletable(self):
-        return self.issue_count == 0 and \
-          self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
-                              .count() == 0 and \
-          self.in_use.filter(reserved=True).count() == 0
+        return (self.issue_count == 0 and
+                self.issue_revisions
+                    .filter(changeset__state__in=states.ACTIVE)
+                    .count() == 0 and
+                self.in_use.filter(reserved=True).count() == 0)
 
     def pending_deletion(self):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,
@@ -302,13 +313,14 @@ class Brand(BasePublisher):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_brand',
-            kwargs={'brand_id': self.id } )
+            kwargs={'brand_id': self.id})
 
     def full_name(self):
         return unicode(self)
 
     def __unicode__(self):
         return self.name
+
 
 class BrandUse(models.Model):
     class Meta:
@@ -338,16 +350,17 @@ class BrandUse(models.Model):
         return True
 
     def active_issues(self):
-        return self.emblem.issue_set.exclude(deleted=True)\
-          .filter(issue__series__publisher=publisher)
+        return self.emblem.issue_set.exclude(deleted=True) \
+                   .filter(issue__series__publisher=self.publisher)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_brand',
-            kwargs={'brand_id': self.emblem.id } )
+            kwargs={'brand_id': self.emblem.id})
 
     def __unicode__(self):
-        return u'emblem %s was used from %s to %s by %s.' % (self.emblem,
-          _display_year(self.year_began, self.year_began_uncertain),
-          _display_year(self.year_ended, self.year_ended_uncertain),
-          self.publisher)
+        return u'emblem %s was used from %s to %s by %s.' % (
+            self.emblem,
+            _display_year(self.year_began, self.year_began_uncertain),
+            _display_year(self.year_ended, self.year_ended_uncertain),
+            self.publisher)
