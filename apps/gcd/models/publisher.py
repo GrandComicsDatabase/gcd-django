@@ -178,6 +178,20 @@ class Publisher(BasePublisher):
         if deltas.get('issues', 0):
             self.issue_count = F('issue_count') + deltas['issues']
 
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this publisher.
+
+        Includes a count for the publisher itself.
+        """
+        # Currently, we do not allow any stat-affecting operations on
+        # publishers that have series, indicia publishers, or brands attached.
+        assert (not self.series_set.exists() and
+                not self.indiciapublisher_set.exists() and
+                not self.brand_set.exists())
+
+        return {'publishers': 1}
+
     def __unicode__(self):
         return self.name
 
@@ -219,6 +233,18 @@ class IndiciaPublisher(BasePublisher):
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this indicia publisher.
+
+        Includes a count for the indicia publisher itself.
+        """
+        # Currently, we do not allow any stat-affecting operations
+        # on indicia publishers that have issues attached.
+        assert not self.issue_set.exists()
+
+        return {'indicia publishers': 1}
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -309,6 +335,18 @@ class Brand(BasePublisher):
 
     def group_parents(self):
         return self.group.values_list('parent', flat=True)
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this brand.
+
+        Includes a count for the brand itself.
+        """
+        # Currently, we do not allow any stat-affecting operations
+        # on brands that have issues attached.
+        assert not self.issue_set.exists()
+
+        return {'brands': 1}
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
