@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
 
+
 class RecentIndexedIssueManager(models.Manager):
     """
     Custom manager to allow specialized object creation.
@@ -15,8 +16,8 @@ class RecentIndexedIssueManager(models.Manager):
             self.create(issue=issue, language=None)
             count = international.count()
             if count > settings.RECENTS_COUNT:
-                for recent in international.order_by('created')\
-                                [:count - settings.RECENTS_COUNT]:
+                extra = count - settings.RECENTS_COUNT
+                for recent in international.order_by('created')[:extra]:
                     recent.delete()
 
         local = self.filter(language=issue.series.language)
@@ -24,9 +25,10 @@ class RecentIndexedIssueManager(models.Manager):
             self.create(issue=issue, language=issue.series.language)
             count = local.count()
             if count > settings.RECENTS_COUNT:
-                for recent in local.order_by('created')\
-                                [:count - settings.RECENTS_COUNT]:
-                    recent.delete()         
+                extra = count - settings.RECENTS_COUNT
+                for recent in local.order_by('created')[:extra]:
+                    recent.delete()
+
 
 class RecentIndexedIssue(models.Model):
     """
@@ -42,4 +44,3 @@ class RecentIndexedIssue(models.Model):
     issue = models.ForeignKey('Issue')
     language = models.ForeignKey('Language', null=True, db_index=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
-

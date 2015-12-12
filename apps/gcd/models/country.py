@@ -4,9 +4,11 @@ from __future__ import unicode_literals
 
 from django.db import models
 
+
 class CountryManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
+
 
 class Country(models.Model):
     class Meta:
@@ -29,4 +31,3 @@ class Country(models.Model):
 
     def __unicode__(self):
         return self.name
-
