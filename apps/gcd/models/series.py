@@ -70,11 +70,7 @@ class Series(models.Model):
     last_issue = models.ForeignKey('Issue', null=True,
       related_name='last_issue_series_set')
 
-    # TODO: Pubisher cached counts default to 0.  This probably should too?
-    issue_count = models.IntegerField()
-
-    # Publication notes may be merged with regular notes in the near future.
-    publication_notes = models.TextField()
+    issue_count = models.IntegerField(default=0)
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.

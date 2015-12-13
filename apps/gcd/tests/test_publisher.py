@@ -79,12 +79,6 @@ def test_update_cached_counts_subtract(f_mock):
     assert p.issue_count == ISSUE_COUNT - DELTAS['issues']
 
 
-def test_update_cached_counts_imprints():
-    p = Publisher()
-    with pytest.raises(ValueError):
-        p.update_cached_counts({'imprints': 1})
-
-
 @pytest.mark.parametrize("derived_class",
                          [BrandGroup, Brand, IndiciaPublisher])
 def test_base_update_cached_counts_none(derived_class, f_mock):

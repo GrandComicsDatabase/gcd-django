@@ -402,9 +402,6 @@ class PublisherRevisionManager(PublisherRevisionManagerBase):
         return super(PublisherRevisionManager,
                      self).assignable_field_list() + ['country']
 
-    def deprecated_field_list(self):
-        return ['parent', 'is_master']
-
     def _do_create_revision(self, publisher, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
@@ -448,9 +445,7 @@ class PublisherRevision(PublisherRevisionBase):
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
         if pub is None:
-            pub = Publisher(imprint_count=0,
-                            series_count=0,
-                            issue_count=0)
+            pub = Publisher()
             update_count('publishers', 1, country=self.country)
         elif self.deleted:
             update_count('publishers', -1, country=pub.country)
@@ -986,7 +981,6 @@ class SeriesRevisionManager(RevisionManager):
     def deprecated_field_list(self):
         return [
             'format',
-            'publication_notes',
         ]
 
     def _do_create_revision(self, series, changeset, **ignore):

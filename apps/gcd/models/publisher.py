@@ -86,17 +86,10 @@ class Publisher(BasePublisher):
     country = models.ForeignKey(Country)
 
     # Cached counts.
-    imprint_count = models.IntegerField(default=0)
     brand_count = models.IntegerField(default=0, db_index=True)
     indicia_publisher_count = models.IntegerField(default=0, db_index=True)
     series_count = models.IntegerField(default=0)
     issue_count = models.IntegerField(default=0)
-
-    # Deprecated fields about relating publishers/imprints to each other
-    # Probably can be removed from model definition
-    is_master = models.BooleanField(default=False, db_index=True)
-    parent = models.ForeignKey('self', null=True,
-                               related_name='imprint_set')
 
     def active_brand_groups(self):
         return self.brandgroup_set.exclude(deleted=True)
@@ -137,8 +130,7 @@ class Publisher(BasePublisher):
 
     def deletable(self):
         # TODO: check for issue_count instead of series_count. Check for added
-        # issue skeletons. Also delete series and not just brands, ind pubs,
-        # and imprints.
+        # issue skeletons. Also delete series and not just brands, ind pubs.
         active = {'changeset__state__in': states.ACTIVE}
         return (self.series_count == 0 and
                 self.series_revisions.filter(**active).count() == 0 and
@@ -160,10 +152,6 @@ class Publisher(BasePublisher):
             deltas = deltas.copy()
             for k, v in deltas.iteritems():
                 deltas[k] = -v
-
-        if 'imprints' in deltas:
-            raise ValueError(
-                "Imprints are deprecated and not present in active data.")
 
         # Don't apply F() if delta is 0, because we don't want
         # a lazy evaluation F-object result in a count field
@@ -301,8 +289,6 @@ class Brand(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    # TODO parent will be removed after the introduction of two layer scheme
-    parent = models.ForeignKey(Publisher, blank=True, null=True)
     group = models.ManyToManyField(BrandGroup, blank=True,
                                    db_table='gcd_brand_emblem_group')
     issue_count = models.IntegerField(default=0)
