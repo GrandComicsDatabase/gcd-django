@@ -128,16 +128,16 @@ def test_brand_use_active_issues():
 @pytest.yield_fixture
 def pub_child_set_mocks():
     p = '%s.Publisher' % PATH
-    with mock.patch('%s.indiciapublisher_set' % p) as ips_mock, \
-            mock.patch('%s.brand_set' % p) as bs_mock, \
-            mock.patch('%s.series_set' % p) as ss_mock:
-        ips_mock.exists.return_value = False
-        bs_mock.exists.return_value = False
-        ss_mock.exists.return_value = False
+    with mock.patch('%s.active_indicia_publishers' % p) as ip_mock, \
+            mock.patch('%s.active_brand_emblems' % p) as be_mock, \
+            mock.patch('%s.active_series' % p) as s_mock:
+        ip_mock.return_value.exists.return_value = False
+        be_mock.return_value.exists.return_value = False
+        s_mock.return_value.exists.return_value = False
 
-        yield {'indiciapublisher_set': ips_mock,
-               'brand_set': bs_mock,
-               'series_set': ss_mock}
+        yield {'indicia_publishers': ip_mock,
+               'brand_emblems': be_mock,
+               'series': s_mock}
 
 
 def test_publisher_stat_counts(pub_child_set_mocks):
@@ -146,36 +146,36 @@ def test_publisher_stat_counts(pub_child_set_mocks):
 
 
 @pytest.mark.parametrize("mock_set",
-                         ['indiciapublisher_set', 'brand_set', 'series_set'])
+                         ['indicia_publishers', 'brand_emblems', 'series'])
 def test_publisher_stat_counts_errors(pub_child_set_mocks, mock_set):
-    pub_child_set_mocks[mock_set].exists.return_value = True
+    pub_child_set_mocks[mock_set].return_value.exists.return_value = True
     with pytest.raises(AssertionError):
         Publisher().stat_counts()
 
 
 def test_ipub_stat_counts():
-    with mock.patch('%s.IndiciaPublisher.issue_set' % PATH) as is_mock:
-        is_mock.exists.return_value = False
+    with mock.patch('%s.IndiciaPublisher.active_issues' % PATH) as is_mock:
+        is_mock.return_value.exists.return_value = False
         counts = IndiciaPublisher().stat_counts()
         assert counts == {'indicia publishers': 1}
 
 
 def test_ipub_stat_counts_issues():
-    with mock.patch('%s.IndiciaPublisher.issue_set' % PATH) as is_mock:
-        is_mock.exists.return_value = True
+    with mock.patch('%s.IndiciaPublisher.active_issues' % PATH) as is_mock:
+        is_mock.return_value.exists.return_value = True
         with pytest.raises(AssertionError):
             IndiciaPublisher().stat_counts()
 
 
 def test_brand_stat_counts():
-    with mock.patch('%s.Brand.issue_set' % PATH) as is_mock:
-        is_mock.exists.return_value = False
+    with mock.patch('%s.Brand.active_issues' % PATH) as is_mock:
+        is_mock.return_value.exists.return_value = False
         counts = Brand().stat_counts()
         assert counts == {'brands': 1}
 
 
 def test_brand_stat_counts_issues():
-    with mock.patch('%s.Brand.issue_set' % PATH) as is_mock:
-        is_mock.exists.return_value = True
+    with mock.patch('%s.Brand.active_issues' % PATH) as is_mock:
+        is_mock.return_value.exists.return_value = True
         with pytest.raises(AssertionError):
             Brand().stat_counts()

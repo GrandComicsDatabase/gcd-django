@@ -186,9 +186,9 @@ class Publisher(BasePublisher):
         """
         # Currently, we do not allow any stat-affecting operations on
         # publishers that have series, indicia publishers, or brands attached.
-        assert (not self.series_set.exists() and
-                not self.indiciapublisher_set.exists() and
-                not self.brand_set.exists())
+        assert (not self.active_series().exists() and
+                not self.active_indicia_publishers().exists() and
+                not self.active_brand_emblems().exists())
 
         return {'publishers': 1}
 
@@ -242,7 +242,7 @@ class IndiciaPublisher(BasePublisher):
         """
         # Currently, we do not allow any stat-affecting operations
         # on indicia publishers that have issues attached.
-        assert not self.issue_set.exists()
+        assert not self.active_issues().exists()
 
         return {'indicia publishers': 1}
 
@@ -344,7 +344,7 @@ class Brand(BasePublisher):
         """
         # Currently, we do not allow any stat-affecting operations
         # on brands that have issues attached.
-        assert not self.issue_set.exists()
+        assert not self.active_issues().exists()
 
         return {'brands': 1}
 
