@@ -991,6 +991,7 @@ class SeriesRevisionManager(RevisionManager):
             'binding',
             'publishing_format',
             'publication_type',
+            'tracking_notes',
             'notes',
             'year_began',
             'year_began_uncertain',
@@ -1013,7 +1014,6 @@ class SeriesRevisionManager(RevisionManager):
     def deprecated_field_list(self):
         return [
             'format',
-            'tracking_notes',
             'publishing_notes',
         ]
 
