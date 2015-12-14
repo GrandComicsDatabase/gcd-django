@@ -151,6 +151,16 @@ class Series(models.Model):
         return self.issue_set.exclude(deleted=True)
 
     def active_base_issues(self):
+        """
+        All base issues, plus variants whose base is not in this series.
+
+        For the purpose of ensuring that each logical issue has
+        a representative in a list, logical issues that do not have
+        a base issue in this series need to be represented by a variant.
+        """
+        # TODO:  What happens if there are two variants in this series
+        #        of the same logical issue that has its base in a
+        #        different series?
         return self.active_issues().exclude(variant_of__series=self)
 
     def active_base_issues_variant_count(self):
@@ -159,6 +169,13 @@ class Series(models.Model):
         return issues
 
     def active_non_base_variants(self):
+        """
+        All non-base variants, including those with a base in another series.
+
+        We want to be able to count all variant records related to this series,
+        so we leave in the variants with bases in other series, as they can
+        be further filtered out in cases where they are not desirable.
+        """
         return self.active_issues().exclude(variant_of=None)
 
     def active_indexed_issues(self):
@@ -183,7 +200,10 @@ class Series(models.Model):
         }
         if self.is_comics_publication:
             counts['series'] = 1
-            counts['issues'] = self.active_base_issues().count()
+            # Need to filter out variants of bases in other series, which
+            # are considered "base issues" with respect to this series.
+            counts['issues'] = self.active_base_issues() \
+                                   .filter(variant_of=None).count()
             counts['variant issues'] = self.active_non_base_variants().count()
             counts['issue indexes'] = self.active_indexed_issues().count()
 

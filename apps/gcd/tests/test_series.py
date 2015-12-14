@@ -194,7 +194,7 @@ def test_counts_comics():
             mock.patch(indexes_path) as ix_mock, \
             mock.patch(cover_count_path) as cc_mock:
 
-        is_mock.return_value.count.return_value = 30
+        is_mock.return_value.filter.return_value.count.return_value = 30
         v_mock.return_value.count.return_value = 20
         ix_mock.return_value.count.return_value = 10
         cc_mock.return_value = 15
@@ -216,6 +216,7 @@ def test_counts_comics():
         assert Story.objects.filter.called_once_with(issue__series=s)
         assert Story.objects.filter.return_value.exclude.called_once_with(
             deleted=True)
+        is_mock.return_value.filter.assert_called_once_with(variant_of=None)
 
 
 def test_counts_non_comics():
