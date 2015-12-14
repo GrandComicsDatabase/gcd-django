@@ -64,6 +64,8 @@ class BasePublisher(models.Model):
                 deltas[k] = -v
 
         if 'issues' in deltas:
+            # TODO: Reconsider use of F() objects due to undesired behavior
+            #       if multiple F() objects are used on a field before saving.
             self.issue_count = F('issue_count') + deltas['issues']
 
     def __unicode__(self):
