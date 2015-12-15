@@ -7,8 +7,9 @@ from django.contrib.auth.models import User
 from apps.gcd.models import Country, Language, Indexer, SeriesPublicationType
 from apps.oi import states
 from apps.oi.models import (
-    Revision, PublisherRevision, BrandGroupRevision, BrandRevision,
-    BrandUseRevision, SeriesRevision, Changeset, CTYPES)
+    Revision, PublisherRevision, IndiciaPublisherRevision,
+    BrandGroupRevision, BrandRevision, BrandUseRevision,
+    SeriesRevision, Changeset, CTYPES)
 
 
 # Make a non-abstract class that acts like a Revision, but con be
@@ -119,6 +120,21 @@ def indicia_publisher_add_values(any_country, any_added_publisher, keywords):
         'is_surrogate': True,
         'parent': any_added_publisher,
     }
+
+
+@pytest.fixture
+def any_added_indicia_publisher_rev(indicia_publisher_add_values,
+                                    any_changeset):
+    ipr = IndiciaPublisherRevision(changeset=any_changeset,
+                                   **indicia_publisher_add_values)
+    ipr.save()
+    return ipr
+
+
+@pytest.fixture
+def any_added_indicia_publisher(any_added_indicia_publisher_rev):
+    any_added_indicia_publisher_rev.commit_to_display()
+    return any_added_indicia_publisher_rev.indicia_publisher
 
 
 @pytest.fixture
