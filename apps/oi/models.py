@@ -535,7 +535,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         ipub.is_surrogate = self.is_surrogate
         ipub.country = self.country
         ipub.parent = self.parent
-        self._assign_base_fields(ipub)
+        self._copy_assignable_fields_to(ipub)
 
         if clear_reservation:
             ipub.reserved = False
@@ -605,7 +605,7 @@ class BrandGroupRevision(PublisherRevisionBase):
             return
 
         brand_group.parent = self.parent
-        self._assign_base_fields(brand_group)
+        self._copy_assignable_fields_to(brand_group)
 
         if clear_reservation:
             brand_group.reserved = False
@@ -658,6 +658,12 @@ class BrandRevision(PublisherRevisionBase):
     group = models.ManyToManyField('gcd.BrandGroup', blank=False,
                                    related_name='brand_revisions')
 
+    @property
+    def issue_count(self):
+        if self.brand is None:
+            return 0
+        return self.brand.issue_count
+
     def _get_source(self):
         return self.brand
 
@@ -676,7 +682,7 @@ class BrandRevision(PublisherRevisionBase):
             return
 
         brand.parent = self.parent
-        self._assign_base_fields(brand)
+        self._copy_assignable_fields_to(brand)
 
         if clear_reservation:
             brand.reserved = False
