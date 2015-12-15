@@ -1224,6 +1224,7 @@ class SeriesRevision(Revision):
                 # TODO: In the current implementation, self.added won't
                 #       work properly after this point.
                 self.series = Series(issue_count=0)
+                self.save()
 
             self._copy_assignable_fields_to(self.series)
 

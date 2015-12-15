@@ -45,11 +45,13 @@ def test_commit_added_revision(any_added_series_rev, series_add_values,
     sort_name = sr.name[sr.name.index(' ') + 1:]
     with mock.patch('apps.oi.models.update_count') as updater, \
             mock.patch('apps.oi.models.remove_leading_article') as remover, \
-            mock.patch('apps.oi.models.IssueRevision') as ir_class:
+            mock.patch('apps.oi.models.IssueRevision') as ir_class, \
+            mock.patch('apps.oi.models.SeriesRevision.save') as save:
         remover.return_value = sort_name
         sr.commit_to_display()
     assert updater.called_once_with('series', 1,
                                     language=sr.language, country=sr.country)
+    assert save.called_once_with()
 
     assert sr.series is not None
     assert sr.source is sr.series
