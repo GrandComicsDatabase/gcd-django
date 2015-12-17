@@ -30,7 +30,8 @@ def migrate_prev_committed(apps, schema_editor):
                 source_name = '%s%s' % (source_name, char.lower())
 
         m = apps.get_model("oi", model)
-        for r in m.objects.order_by('id').prefetch_related('changeset'):
+        for r in m.objects.order_by('created', 'id') \
+                          .prefetch_related('changeset'):
             # Two models already have previous_revision set.
             if (model not in ('SeriesBondRevision', 'ReprintRevision') and
                     r.changeset.state != states.DISCARDED):
@@ -45,7 +46,7 @@ def migrate_prev_committed(apps, schema_editor):
                 prev = m.objects.filter(**{source_name:
                                            getattr(r, source_name)}) \
                                 .filter(committed=True, id__lt=r.id) \
-                                .order_by('-id')
+                                .order_by('-created', '-id')
                 if prev.exists():
                     r.previous_revision = prev[0]
 
