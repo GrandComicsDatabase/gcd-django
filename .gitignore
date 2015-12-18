@@ -20,3 +20,5 @@ settings_local.py
 .idea
 *.iml
 .reviewboardrc
+.cache
+pytest.ini
