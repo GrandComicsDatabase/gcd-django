@@ -187,8 +187,9 @@ class Series(models.Model):
 
         Includes a count for the series itself.
 
-        Non-comics publications return an empty dictionary as they do not
-        contribute to statistics.
+        Non-comics publications do not return series and issue
+        counts as they do not contribute those types of statistics.
+        Story and cover statistics are tracked for all publications.
         """
         if self.deleted:
             return {}
