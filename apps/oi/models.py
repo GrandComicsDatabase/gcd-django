@@ -196,7 +196,7 @@ class Revision(models.Model):
     This holds the data while it is being edited, and remains in the table
     as a history of each given edit, including those that are discarded.
 
-    A state column trackes the progress of the revision, which should
+    A state column tracks the progress of the revision, which should
     eventually end in either the APPROVED or DISCARDED state.
     """
     class Meta:
@@ -242,7 +242,7 @@ class Revision(models.Model):
     @source.setter
     def source(self, value):
         """
-        Used wth source_class by base revision code to create new objects.
+        Used with source_class by base revision code to create new objects.
         """
         raise NotImplementedError
 
@@ -338,14 +338,99 @@ class Revision(models.Model):
                 country=changes.get('new country', None),
                 language=changes.get('new language', None))
 
-    def commit_to_display(self):
+    def _pre_commit_check(self):
+        """ Runs sanity checks before anything else in commit_to_display. """
+        pass
+
+    def _pre_stats_measurement(self, changes):
+        """
+        Runs before the old stat counts are collected.
+
+        Typically this is used when a dependent revision must be created
+        or otherwise handled outside of the stats measurements to avoid
+        double-counting.  For instance creating and committing a revision
+        to delete a dependent object.
+        """
+        pass
+
+    def _post_create_for_add(self, changes):
+        """
+        Runs after a new object is created during an add.
+
+        This is where things like adding many-to-many objects can be done.
+        """
+        pass
+
+    def _post_assign_fields(self, changes):
+        """
+        Runs once the added or edited display object is set up.
+
+        Fields that can't be copied directly are handled here.
+        Not run for deletions.
+        """
+        pass
+
+    def _pre_save_object(self, changes):
+        """
+        Runs just before the display object is saved.
+
+        This is where additional processing related to the major changes,
+        such as conditional field adjustments, can be done.
+        """
+        pass
+
+    def _post_save_object(self, changes):
+        """
+        Runs just after the display object is saved.
+
+        Typically used to handle many-to-many fields.
+        """
+        pass
+
+    def _post_adjust_stats(self, changes):
+        """
+        Runs at the very end of commit_to_display().
+
+        Typically this is used when a dependent revision must be created
+        or otherwise handled outside of the stats measurements to avoid
+        double-counting.  For instance, creating and committing a revision
+        to add or update a dependent object.
+        """
+        pass
+
+    def commit_to_display(self, clear_reservation=True):
         """
         Writes the changes from the revision back to the display object.
 
         Revisions should handle their own dependencies on other revisions.
         """
-        # TODO: Dependency mechanism.
-        raise NotImplementedError
+        self._pre_commit_check()
+        changes = self._get_major_changes()
+
+        self._pre_stats_measurement(changes)
+        old_stats = {} if self.added else self.source.stat_counts()
+
+        if self.deleted:
+            self.source.delete()
+        else:
+            if self.added:
+                self.source = self.source_class()
+                self.save()
+                self._post_create_for_add(changes)
+
+            self._copy_assignable_fields_to(self.source)
+            self._post_assign_fields(changes)
+
+        if clear_reservation:
+            self.source.reserved = False
+
+        self._pre_save_object(changes)
+        self.source.save()
+        self._post_save_object(changes)
+
+        new_stats = self.source.stat_counts()
+        self._adjust_stats(changes, old_stats, new_stats)
+        self._post_adjust_stats(changes)
 
 
 class OngoingReservation(models.Model):
@@ -1317,7 +1402,7 @@ class SeriesRevision(Revision):
                                            after=None,
                                            number='[nn]',
                                            publication_date=self.year_began)
-            # TODO: Do we accept non-four-diget year_begans?
+            # TODO: Do we accept non-four-digit year_begans?
             #       Do we still have year 0 in there some places?
             #       Can we just zero-pad shorter years with %04d?
             if len(unicode(self.year_began)) == 4:
@@ -1501,7 +1586,7 @@ class IssueRevision(Revision):
     issue = models.ForeignKey(Issue, null=True, related_name='revisions')
 
     # If not null, insert or move the issue after the given issue
-    # when saving back the the DB. If null, place at the beginning of
+    # when saving back the DB. If null, place at the beginning of
     # the series.
     after = models.ForeignKey(
         Issue, null=True, blank=True, related_name='after_revisions',
