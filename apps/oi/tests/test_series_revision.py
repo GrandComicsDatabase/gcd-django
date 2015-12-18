@@ -4,9 +4,12 @@ import pytest
 import mock
 
 from .conftest import DummyRevision
-from apps.gcd.models import Publisher, Series, Country, Language
-from apps.oi.models import Changeset, SeriesRevision
+from apps.gcd.models import Publisher, Series, Issue, Country, Language
+from apps.oi.models import Changeset, SeriesRevision, IssueRevision
 
+SERIES = 'apps.gcd.models.series.Series'
+SREV = 'apps.oi.models.SeriesRevision'
+IREV = 'apps.oi.models.IssueRevision'
 
 COUNTRY_ONE = mock.MagicMock(spec=Country)
 COUNTRY_TWO = mock.MagicMock(spec=Country)
@@ -20,15 +23,15 @@ NO_DB_CHANGESET = mock.MagicMock(spec=Changeset)
 @pytest.yield_fixture
 def patched_series_class():
     """ Patches foreign keys to prevent database access. """
-    with mock.patch('apps.oi.models.SeriesRevision.previous_revision') as pr, \
+    with mock.patch('%s.previous_revision' % SREV) as pr, \
             mock.patch('apps.oi.models.Series.country'), \
             mock.patch('apps.oi.models.Series.language'), \
             mock.patch('apps.oi.models.Series.publisher'), \
-            mock.patch('apps.oi.models.SeriesRevision.changeset'), \
-            mock.patch('apps.oi.models.SeriesRevision.series'), \
-            mock.patch('apps.oi.models.SeriesRevision.country'), \
-            mock.patch('apps.oi.models.SeriesRevision.language'), \
-            mock.patch('apps.oi.models.SeriesRevision.publisher'):
+            mock.patch('%s.changeset' % SREV), \
+            mock.patch('%s.series' % SREV), \
+            mock.patch('%s.country' % SREV), \
+            mock.patch('%s.language' % SREV), \
+            mock.patch('%s.publisher' % SREV):
         # previous_revision needs to read as False by default so that the
         # Revision.added property behaves normally be default.
         pr.__nonzero__.return_value = False
@@ -204,12 +207,12 @@ def series_and_revision():
     # the mock call state to be changed.
     old_pub = mock.MagicMock()
     new_pub = mock.MagicMock()
-    with mock.patch('apps.gcd.models.series.Series.update_cached_counts'), \
-            mock.patch('apps.gcd.models.series.Series.publisher'), \
-            mock.patch('apps.gcd.models.series.Series.save'), \
+    with mock.patch('%s.update_cached_counts' % SERIES), \
+            mock.patch('%s.publisher' % SERIES), \
+            mock.patch('%s.save' % SERIES), \
             mock.patch('apps.gcd.models.publisher.Publisher.save'), \
-            mock.patch('apps.oi.models.SeriesRevision.changeset'), \
-            mock.patch('apps.oi.models.SeriesRevision.publisher'), \
+            mock.patch('%s.changeset' % SREV), \
+            mock.patch('%s.publisher' % SREV), \
             mock.patch('apps.oi.models.Revision._adjust_stats') as super_mock:
         s = Series(publisher=old_pub)
 
@@ -270,3 +273,127 @@ def test_adjust_stats_no_changes(series_and_revision):
 
     assert not s.update_cached_counts.called
     assert not s.save.called
+
+
+def test_pre_stats_measurement_deleted_singleton():
+    ir_mock = mock.MagicMock()
+    with mock.patch('%sManager.clone_revision' % IREV,
+                    return_value=ir_mock,
+                    spec=IssueRevision), \
+            mock.patch('%s.series' % SREV), \
+            mock.patch('%s.save' % SREV), \
+            mock.patch('%s.commit_to_display' % SREV):
+        s = SeriesRevision(changeset=Changeset(),
+                           previous_revision=SeriesRevision())
+        s.deleted = True
+        s.series.is_singleton = True
+
+        i = Issue()
+        s.series.issue_set.__getitem__.side_effect = (
+            lambda x: i if x == 0 else None)
+
+        s._pre_stats_measurement({})
+
+        IssueRevision.objects.clone_revision.assert_called_once_with(
+            instance=i, changeset=s.changeset)
+        assert ir_mock.deleted is True
+        ir_mock.save.assert_called_once_with()
+        ir_mock.commit_to_display.assert_called_once_with()
+
+
+@pytest.mark.parametrize('is_singleton, deleted',
+                         [(False, True), (True, False), (False, False)])
+def test_pre_stats_measurement_deleted_no_issue_revision(is_singleton,
+                                                         deleted):
+    with mock.patch('apps.oi.models.IssueRevisionManager.clone_revision') \
+            as cr_mock:
+        SeriesRevision(series=Series(), previous_revision=SeriesRevision(),
+                       is_singleton=is_singleton, deleted=deleted)
+        assert not cr_mock.called
+
+
+@pytest.mark.parametrize('leading_article, name, sort_name',
+                         [(True, 'The Test Series', 'Test Series'),
+                          (False, 'The Test Series', 'The Test Series')])
+def test_post_assign_fields_leading_article(leading_article, name, sort_name):
+    s = Series(name=name)
+    sr = SeriesRevision(leading_article=leading_article, name=name, series=s)
+    sr._post_assign_fields({})
+    assert s.sort_name == sort_name
+
+
+@pytest.yield_fixture
+def pre_save_mocks():
+    with mock.patch('%s.get_ongoing_reservation' % SERIES) as get_ongoing, \
+            mock.patch('%s.scan_count' % SERIES) as scan_count:
+        yield SeriesRevision(series=Series()), get_ongoing, scan_count
+
+
+def test_pre_save_object_from_current(pre_save_mocks):
+    sr, get_ongoing_mock, scan_count_mock = pre_save_mocks
+
+    sr._pre_save_object({'from current': True, 'to comics': False})
+
+    get_ongoing_mock.assert_called_once_with()
+    get_ongoing_mock.return_value.delete.assert_called_once_with()
+    assert scan_count_mock.called is False
+
+
+@pytest.mark.parametrize('scan_count, has_gallery', [(42, True), (0, False)])
+def test_pre_save_object_to_comics(pre_save_mocks, scan_count, has_gallery):
+    sr, get_ongoing_mock, scan_count_mock = pre_save_mocks
+    scan_count_mock.return_value = scan_count
+
+    sr._pre_save_object({'from current': False, 'to comics': True})
+
+    assert get_ongoing_mock.called is False
+    scan_count_mock.assert_called_once_with()
+    assert sr.series.has_gallery is has_gallery
+
+
+def test_pre_save_object_neither(pre_save_mocks):
+    sr, get_ongoing_mock, scan_count_mock = pre_save_mocks
+
+    sr._pre_save_object({'from current': False, 'to comics': False})
+
+    assert get_ongoing_mock.called is False
+    assert scan_count_mock.called is False
+
+
+@pytest.mark.parametrize('year_began, key_date',
+                         [(1990, '1990-00-00'), (0, '')])
+def test_post_adjust_stats_to_singleton(year_began, key_date):
+    with mock.patch('%s.save' % IREV) as save_mock, \
+            mock.patch('%s.commit_to_display' % IREV) as commit_mock:
+        # Make the IssueRevision that would be returned by the patched
+        # constructor call.  Only patch the methods for this.
+        s = Series()
+        c = Changeset()
+        ir_params = {
+            'changeset': c,
+            'series': s,
+            'after': None,
+            'number': '[nn]',
+            'publication_date': year_began,
+        }
+        ir = IssueRevision(**ir_params)
+
+        with mock.patch(IREV) as ir_class_mock:
+            # Now patch the IssueRevision constructor itself.
+            ir_class_mock.return_value = ir
+            sr = SeriesRevision(changeset=c, series=s, is_singleton=True,
+                                year_began=year_began)
+
+            sr._post_adjust_stats({'to singleton': True})
+
+            ir_class_mock.assert_called_once_with(**ir_params)
+            assert ir.key_date == key_date
+            save_mock.assert_called_once_with()
+            commit_mock.assert_called_once_with()
+
+
+def test_post_adjust_stats_no_singleton():
+        with mock.patch(IREV) as ir_class_mock:
+            sr = SeriesRevision()
+            sr._post_adjust_stats({'to singleton': False})
+            assert ir_class_mock.called is False

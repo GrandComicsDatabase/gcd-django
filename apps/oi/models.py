@@ -1339,9 +1339,8 @@ class SeriesRevision(Revision):
             #       always run old w/negate followed by new, and
             #       stack up the F() objects?  Need to look into
             #       F() object details more.
-            keys = set(old_counts.keys()).union(new_counts.keys())
             deltas = {k: new_counts.get(k, 0) - old_counts.get(k, 0)
-                      for k in keys}
+                      for k in old_counts.viewkeys() | new_counts.viewkeys()}
 
             if not changes['publisher changed']:
                 self.series.publisher.update_cached_counts(deltas)
@@ -1350,34 +1349,23 @@ class SeriesRevision(Revision):
             self.series.update_cached_counts(deltas)
             self.series.save()
 
-    def commit_to_display(self, clear_reservation=True):
-        changes = self._get_major_changes()
-
+    def _pre_stats_measurement(self, changes):
         # Handle deletion of the singleton issue before getting the
         # series stat counts to avoid double-counting the deletion.
         if self.deleted and self.series.is_singleton:
             issue_revision = IssueRevisionManager.clone_revision(
-                instance=self.series.issues[0], changeset=changeset)
+                instance=self.series.issue_set[0], changeset=self.changeset)
             issue_revision.deleted = True
             issue_revision.save()
             issue_revision.commit_to_display()
 
-        old_counts = {} if self.added else self.series.stat_counts()
-
-        if self.deleted:
-            self.series.delete()
+    def _post_assign_fields(self, changes):
+        if self.leading_article:
+            self.series.sort_name = remove_leading_article(self.name)
         else:
-            if self.added:
-                self.series = Series(issue_count=0)
-                self.save()
+            self.series.sort_name = self.name
 
-            self._copy_assignable_fields_to(self.series)
-
-            if self.leading_article:
-                self.series.sort_name = remove_leading_article(self.name)
-            else:
-                self.series.sort_name = self.name
-
+    def _pre_save_object(self, changes):
         if changes['from current']:
             reservation = self.series.get_ongoing_reservation()
             reservation.delete()
@@ -1386,14 +1374,7 @@ class SeriesRevision(Revision):
             # TODO: But don't we count covers for some non-comics?
             self.series.has_gallery = bool(self.series.scan_count())
 
-        if clear_reservation:
-            self.series.reserved = False
-
-        self.series.save()
-
-        new_counts = self.series.stat_counts()
-        self._adjust_stats(changes, old_counts, new_counts)
-
+    def _post_adjust_stats(self, changes):
         # Handle adding the singleton issue last, to avoid double-counting
         # the addition in statistics.
         if changes['to singleton'] and self.series.issue_count == 0:
@@ -1402,9 +1383,10 @@ class SeriesRevision(Revision):
                                            after=None,
                                            number='[nn]',
                                            publication_date=self.year_began)
-            # TODO: Do we accept non-four-digit year_begans?
-            #       Do we still have year 0 in there some places?
-            #       Can we just zero-pad shorter years with %04d?
+            # We assume that a non-four-digit year is a typo of some
+            # sort, and do not propagate it.  The approval process
+            # should catch that sort of thing.
+            # TODO: Consider a validator on year_began?
             if len(unicode(self.year_began)) == 4:
                 issue_revision.key_date = '%d-00-00' % self.year_began
             issue_revision.save()
