@@ -277,6 +277,18 @@ class BrandGroup(BasePublisher):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,
                                      deleted=True).count() == 1
 
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this brand group.
+
+        Brand groups themselves are not currently counted.
+        """
+        # Currently, we do not allow any stat-affecting operations
+        # on brand groups that have issues attached.
+        assert not self.active_issues().exists()
+
+        return {'brands': self.active_emblems().count()}
+
     def full_name(self):
         return unicode(self)
 

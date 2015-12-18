@@ -161,6 +161,22 @@ def test_ipub_stat_counts_issues():
             IndiciaPublisher().stat_counts()
 
 
+def test_brand_group_stat_counts():
+    with mock.patch('%s.BrandGroup.active_issues' % PATH) as is_mock, \
+            mock.patch('%s.BrandGroup.active_emblems' % PATH) as em_mock:
+        is_mock.return_value.exists.return_value = False
+        em_mock.return_value.count.return_value = 42
+        counts = BrandGroup().stat_counts()
+        assert counts == {'brands': 42}
+
+
+def test_brand_group_stat_counts_issues():
+    with mock.patch('%s.BrandGroup.active_issues' % PATH) as is_mock:
+        is_mock.return_value.exists.return_value = True
+        with pytest.raises(AssertionError):
+            BrandGroup().stat_counts()
+
+
 def test_brand_stat_counts():
     with mock.patch('%s.Brand.active_issues' % PATH) as is_mock:
         is_mock.return_value.exists.return_value = False
