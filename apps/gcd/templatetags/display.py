@@ -350,6 +350,8 @@ def field_name(field):
         return u'Indicia Publisher Not Printed'
     elif field == 'title_inferred':
         return u'Unofficial Title?'
+    elif field == 'cr_creator_names':
+        return u'Creator Names'
     else:
         return title(field.replace('_', ' '))
 

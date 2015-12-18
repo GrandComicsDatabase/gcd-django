@@ -1348,8 +1348,12 @@ class Revision(models.Model):
             if type(new) == unicode:
                 field_changed = old.strip() != new.strip()
             elif isinstance(old, Manager):
-                old = old.all().values_list('id', flat=True)
-                new = new.all().values_list('id', flat=True)
+                if field_name == 'cr_creator_names':
+                    old = old.all().values_list('name', flat=True)
+                    new = new.all().values_list('name', flat=True)
+                else:
+                    old = old.all().values_list('id', flat=True)
+                    new = new.all().values_list('id', flat=True)
                 field_changed = set(old) != set(new)
             else:
                 field_changed = old != new
@@ -5797,6 +5801,7 @@ class CreatorRevision(Revision):
 
     _base_field_list = [
                         'gcd_official_name',
+                        'cr_creator_names',
                         'birth_year',
                         'birth_year_uncertain',
                         'birth_month',
@@ -5832,6 +5837,7 @@ class CreatorRevision(Revision):
     def _get_blank_values(self):
         return {
             'gcd_official_name': '',
+            'cr_creator_names': '',
             'birth_year': None,
             'birth_year_uncertain': None,
             'birth_month': None,
