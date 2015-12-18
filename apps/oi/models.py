@@ -99,7 +99,7 @@ class ChangesetComment(models.Model):
 
 class RevisionLock(models.Model):
     """
-    Indicates that a particular Changeset has a partocular row locked.
+    Indicates that a particular Changeset has a particular row locked.
 
     In order to have an active Revision for a given row, a Changeset
     must hold a lock on it.  Rows in this table represent locks,
