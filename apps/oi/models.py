@@ -243,6 +243,17 @@ class Revision(models.Model):
     def _get_source(self):
         raise NotImplementedError
 
+    @source.setter
+    def source(self, value):
+        """
+        Used wth source_class by base revision code to create new objects.
+        """
+        # Call separate method for polymorphism
+        return self._set_source(value)
+
+    def _set_source(self, value):
+        raise NotImplementedError
+
     @property
     def source_name(self):
         """
@@ -436,8 +447,13 @@ class PublisherRevision(PublisherRevisionBase):
 
     date_inferred = models.BooleanField(default=False)
 
+    source_class = Publisher
+
     def _get_source(self):
         return self.publisher
+
+    def _set_source(self, value):
+        self.publisher = value
 
     def _get_source_name(self):
         return 'publisher'
@@ -502,8 +518,13 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
                                null=True, blank=True, db_index=True,
                                related_name='indicia_publisher_revisions')
 
+    source_class = IndiciaPublisher
+
     def _get_source(self):
         return self.indicia_publisher
+
+    def _set_source(self, value):
+        self.indicia_publisher = value
 
     def _get_source_name(self):
         return 'indicia_publisher'
@@ -511,7 +532,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     def _do_complete_added_revision(self, parent):
         """
         Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
+        indicia publisher revision for adding a record before it can be saved.
         """
         self.parent = parent
 
@@ -577,8 +598,13 @@ class BrandGroupRevision(PublisherRevisionBase):
                                null=True, blank=True, db_index=True,
                                related_name='brand_group_revisions')
 
+    source_class = BrandGroup
+
     def _get_source(self):
         return self.brand_group
+
+    def _set_source(self, value):
+        self.brand_group = value
 
     def _get_source_name(self):
         return 'brand_group'
@@ -658,6 +684,8 @@ class BrandRevision(PublisherRevisionBase):
     group = models.ManyToManyField('gcd.BrandGroup', blank=False,
                                    related_name='brand_revisions')
 
+    source_class = Brand
+
     @property
     def issue_count(self):
         if self.brand is None:
@@ -666,6 +694,9 @@ class BrandRevision(PublisherRevisionBase):
 
     def _get_source(self):
         return self.brand
+
+    def _set_source(self, value):
+        self.brand = value
 
     def _get_source_name(self):
         return 'brand'
@@ -775,8 +806,13 @@ class BrandUseRevision(Revision):
     year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(max_length=255, blank=True)
 
+    source_class = BrandUse
+
     def _get_source(self):
         return self.brand_use
+
+    def _set_source(self, value):
+        self.brand_use = value
 
     def _get_source_name(self):
         return 'brand_use'
@@ -859,8 +895,13 @@ class CoverRevision(Revision):
 
     file_source = models.CharField(max_length=255, null=True)
 
+    source_class = Cover
+
     def _get_source(self):
         return self.cover
+
+    def _set_source(self, value):
+        self.cover = value
 
     def _get_source_name(self):
         return 'cover'
@@ -1083,8 +1124,13 @@ class SeriesRevision(Revision):
                                 related_name='imprint_series_revisions')
     date_inferred = models.BooleanField(default=False)
 
+    source_class = Series
+
     def _get_source(self):
         return self.series
+
+    def _set_source(self, value):
+        self.series = value
 
     def _get_source_name(self):
         return 'series'
@@ -1307,8 +1353,13 @@ class SeriesBondRevision(Revision):
                                   related_name='bond_revisions')
     notes = models.TextField(max_length=255, default='', blank=True)
 
+    source_class = SeriesBond
+
     def _get_source(self):
         return self.series_bond
+
+    def _set_source(self, value):
+        self.series_bond = value
 
     def _get_source_name(self):
         return 'series_bond'
@@ -1495,8 +1546,13 @@ class IssueRevision(Revision):
 
     date_inferred = models.BooleanField(default=False)
 
+    source_class = Issue
+
     def _get_source(self):
         return self.issue
+
+    def _set_source(self, value):
+        self.issue = value
 
     def _get_source_name(self):
         return 'issue'
@@ -1891,8 +1947,13 @@ class StoryRevision(Revision):
     issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
     date_inferred = models.BooleanField(default=False)
 
+    source_class = Story
+
     def _get_source(self):
         return self.story
+
+    def _set_source(self, value):
+        self.story = value
 
     def _get_source_name(self):
         return 'story'
@@ -2102,6 +2163,8 @@ class ReprintRevision(Revision):
     in_type = models.IntegerField(db_index=True, null=True)
     out_type = models.IntegerField(db_index=True, null=True)
 
+    # TODO: Figure out source_class.  Maybe it needs to be a property?
+
     def _get_source(self):
         if self.deleted and self.changeset.state == states.APPROVED:
             return None
@@ -2127,6 +2190,9 @@ class ReprintRevision(Revision):
             return self.issue_reprint
         # TODO is None the right return ? Maybe placeholder object ?
         return None
+
+    def _set_source(self, value):
+        raise NotImplementedError
 
     def _get_source_name(self):
         return 'reprint'
@@ -2285,8 +2351,13 @@ class ImageRevision(Revision):
     marked = models.BooleanField(default=False)
     is_replacement = models.BooleanField(default=False)
 
+    source_class = Image
+
     def _get_source(self):
         return self.image
+
+    def _set_source(self, value):
+        self.image = value
 
     def _get_source_name(self):
         return 'image'
