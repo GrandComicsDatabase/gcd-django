@@ -106,12 +106,22 @@ def test_get_major_changes():
 
 def test_get_source():
     with pytest.raises(NotImplementedError):
-        DummyRevision()._get_source()
+        DummyRevision().source
+
+
+def test_set_source():
+    with pytest.raises(NotImplementedError):
+        DummyRevision().source = object()
+
+
+def test_get_source_class():
+    with pytest.raises(NotImplementedError):
+        DummyRevision().source_class
 
 
 def test_get_source_name():
     with pytest.raises(NotImplementedError):
-        DummyRevision()._get_source_name()
+        DummyRevision().source_name
 
 
 @pytest.yield_fixture
