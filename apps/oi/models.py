@@ -259,7 +259,7 @@ class Revision(models.Model):
         """
         True if this is an open or committed add.
         """
-        return not self.previous_revision and self.committed is not False
+        return not self.previous_revision and not self.discarded
 
     @property
     def edited(self):
