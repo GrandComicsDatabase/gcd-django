@@ -2,7 +2,11 @@
 
 <select name="type" size="1">
   {% if USE_ELASTICSEARCH %}
-    <option value={{ selected|default:""|current_search:"haystack" }}> Everything </option>
+    {% if MYCOMICS %}
+      <option value={{ selected|default:""|current_search:"mycomics_haystack" }}> Everything </option>
+    {% else %}
+      <option value={{ selected|default:""|current_search:"haystack" }}> Everything </option>
+    {% endif %}
   {% endif %}
     <option value={{ selected|default:""|current_search:"series" }}> Series Name </option>
   {% if USE_ELASTICSEARCH %}

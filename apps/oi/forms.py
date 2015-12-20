@@ -1114,7 +1114,7 @@ class IssueRevisionForm(forms.ModelForm):
         }
 
     comments = _get_comments_form_field()
-    turned_off_help = forms.CharField(widget=HiddenInput)
+    turned_off_help = forms.CharField(widget=HiddenInput, required=False)
     on_sale_date_help = forms.CharField(widget=HiddenInputWithHelp,
                                         required=False, label='',
       help_text='The on-sale (shipping) date can be entered in two ways: '
