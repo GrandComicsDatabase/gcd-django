@@ -16,6 +16,7 @@
 <form method="POST" action="{% url "my_issue" issue_id=issue.id %}">
   {% csrf_token %}
   <div>
+    {% comment %}TODO: figure out a how to have this translated {% endcomment %}
     <input type="submit" name="confirm_selection" value="Add">
     this issue to your 
     <select name="collection_id">

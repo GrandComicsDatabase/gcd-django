@@ -89,9 +89,10 @@ class CollectionItemForm(ModelForm):
 class CollectionSelectForm(Form):
     collection = ChoiceField()
 
-    def __init__(self, collector, collections=None, *args, **kwargs):
+    def __init__(self, collector, excluded_collections=None, *args, **kwargs):
         super(CollectionSelectForm, self).__init__(*args, **kwargs)
         choices = [(collection.id, collection) for collection in collector.ordered_collections()]
-        if collections:
-            choices[:] = [choice for choice in choices if choice[1] not in collections]
-        self.fields['collection'].choices = [collection for collection in choices]
+        if excluded_collections:
+            choices[:] = [choice for choice in choices \
+                             if choice[1] not in excluded_collections]
+        self.fields['collection'].choices = choices

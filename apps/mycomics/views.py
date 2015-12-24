@@ -247,10 +247,10 @@ def check_item_is_not_in_collection(request, item, collection):
 def get_collection_for_owner(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     if collection.collector.user != request.user:
-        return render_error(request,
+        return None, render_error(request,
             'Only the owner of a collection can add issues to it.',
             redirect=False)
-    return collection
+    return collection, None
 
 
 @login_required
@@ -298,12 +298,12 @@ def move_item(request, item_id, collection_id):
     from_collection = get_object_or_404(Collection, id=collection_id)
     item = get_item_for_collector(item_id, request.user.collector)
     check_item_is_in_collection(request, item, from_collection)
-    collection_form = CollectionSelectForm(request.user.collector, None, request.POST)
+    collection_form = CollectionSelectForm(request.user.collector, None,
+                                           request.POST)
     if collection_form.is_valid():
         to_collection_id = collection_form.cleaned_data['collection']
         to_collection = get_object_or_404(Collection, id=to_collection_id)
 
-        check_item_is_in_collection(request, item, from_collection)
         check_item_is_not_in_collection(request, item, to_collection)
         if 'move' in request.POST:
             from_collection.items.remove(item)
@@ -325,6 +325,8 @@ def move_item(request, item_id, collection_id):
                                      "collection differs from item status."))
         else:
             messages.error(request, _("Item unchanged"))
+    else:
+        messages.error(request, _("Item unchanged"))
 
     return HttpResponseRedirect(urlresolvers.reverse('view_item',
                                 kwargs={'item_id': item_id,
@@ -368,13 +370,14 @@ def view_item(request, item_id, collection_id):
                                             prefix='acquisition_date')
             acquisition_date_form.fields['date'].label = _('Acquisition date')
         collection_form = CollectionSelectForm(collector,
-                                        collections=item.collections.all())
+                            excluded_collections=item.collections.all())
         other_collections = item.collections.exclude(id=collection.id)
     else:
         item_form = None
         collection_form = None
         other_collections = None
 
+    # TODO with django1.6 use first/last here
     item_before = collection.items.filter(issue__series__sort_name__lte=
                                             item.issue.series.sort_name)\
                                   .exclude(issue__series__sort_name=
@@ -491,27 +494,33 @@ def save_item(request, item_id, collection_id):
     raise Http404
 
 
+def create_collection_item(issue, collection):
+    collected = CollectionItem.objects.create(issue=issue)
+    collected.collections.add(collection)
+    if collection.own_used:
+        collected.own = collection.own_default
+        collected.save()
+    return collected
+
+
 def add_issues_to_collection(request, collection_id, issues, redirect):
-    collection = get_collection_for_owner(request, collection_id)
+    collection, error_return = get_collection_for_owner(request,
+                                                        collection_id)
+    if not collection:
+        return error_return
     for issue in issues:
-        collected = CollectionItem.objects.create(issue=issue)
-        collected.collections.add(collection)
-        if collection.own_used:
-            collected.own = collection.own_default
-            collected.save()
+        collected = create_collection_item(issue, collection)
     return HttpResponseRedirect(redirect)
 
 
 @login_required
 def add_single_issue_to_collection(request, issue_id):
     issue = Issue.objects.get(id=issue_id)
-    collection = get_collection_for_owner(request,
+    collection, error_return = get_collection_for_owner(request,
                    collection_id=int(request.POST['collection_id']))
-    collected = CollectionItem.objects.create(issue=issue)
-    collected.collections.add(collection)
-    if collection.own_used:
-        collected.own = collection.own_default
-        collected.save()
+    if not collection:
+        return error_return
+    collected = create_collection_item(issue, collection)
     messages.success(request, u"Issue <a href='%s'>%s</a> was added to your "
                                "'%s' collection." % \
                               (collected.get_absolute_url(collection),
