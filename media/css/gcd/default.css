@@ -589,11 +589,7 @@ div.ongoing_status form {
 
 /* Fix "Selection" column width to avoid jumping when heading is changed dynamically */
 .select_heading {
-    width: 7em;
-}
-
-.select_heading :link {
-    color: white;
+    width: 8em;
 }
 
 /* For form error messages, which usually need div positioning */
