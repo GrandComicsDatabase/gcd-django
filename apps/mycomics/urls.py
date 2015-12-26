@@ -62,4 +62,6 @@ urlpatterns = patterns('',
     url(r'^purchase_location/delete/(?:(?P<location_id>\d+)?)$',
         mycomics_views.delete_purchase_location,
         name='delete_purchase_location'),
+
+    url(r'^import_items/$', mycomics_views.import_items, name='import_items'),
 )

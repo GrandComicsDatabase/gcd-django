@@ -31,4 +31,13 @@ to add to a collection.
     </select>
   </div>
 </form>
+<form class="changeset" method="POST" enctype="multipart/form-data"
+        action="{% url "my_series_issues" series_id=series.id %}">
+{% csrf_token %}
+  <div>
+    Select file: <input type="file" name="import_my_issues_to_series">
+    <input type="submit" name="import_issues" value="Import issues">
+  </div>
+</form>
+
 {% endif %}

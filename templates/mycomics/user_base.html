@@ -18,6 +18,11 @@
             <ul>
               <li>Comics are organized in collections. Initally two collections exist, but more can be created using the "Add new"-button on the main page.</li>
               <li>To add comics to a collection search inside the database using the top search box, or the other search operations, e.g. the <a href="{% url "advanced_search" %}">advanced search</a>. You can select and add comics from search results, from the series page, and from the individual issue pages. </li>
+              <li>One can import existing collection data in two ways
+              <ul>
+                <li>a list of issue numbers per series, one number per line
+                <li>a cvs-file where each line consists of series name, issue number, publisher name (optional), language code (optional)
+              </ul>
               <li>You can add a comic several times to a collection, e.g. if you have several copies, or if you want a second copy.</li>
               <li>You can also delete or move a comic from a collection.</li>
               <li>A collection has several settings which control what additional information can be stored about a comic in that collection. You can store information about

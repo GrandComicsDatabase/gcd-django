@@ -1,4 +1,6 @@
 import csv
+import os
+import tempfile
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -19,7 +21,7 @@ from apps.gcd import ErrorWithMessage
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 
-from apps.oi.import_export import UnicodeWriter
+from apps.oi.import_export import UnicodeReader, UnicodeWriter
 
 from apps.select.views import store_select_data
 
@@ -557,10 +559,70 @@ def add_selected_issues_to_collection(request, data):
 
 
 @login_required
+def select_issues_from_preselection(request, issues, cancel):
+    data = {'issue': True,
+            'allowed_selects': ['issue',],
+            'return': add_selected_issues_to_collection,
+            'cancel': cancel}
+    select_key = store_select_data(request, None, data)
+    context = {'select_key': select_key,
+            'multiple_selects': True,
+            'item_name': 'issue',
+            'plural_suffix': 's',
+            'no_bulk_edit': True,
+            'all_pre_selected': True,
+            'heading': 'Issues'
+    }
+    return paginate_response(request, issues,
+                            'gcd/search/issue_list.html', context,
+                            per_page=issues.count())
+
+
+@login_required
+def import_items(request):
+    if 'import_my_issues' in request.FILES:
+        # real file to be able to use pythons Universal Newline Support
+        tmpfile_handle, tmpfile_name = tempfile.mkstemp(".mycomics_import")
+        for chunk in request.FILES['import_my_issues'].chunks():
+            os.write(tmpfile_handle, chunk)
+        os.close(tmpfile_handle)
+        tmpfile = open(tmpfile_name, 'U')
+        upload = UnicodeReader(tmpfile)
+        issues = Issue.objects.none()
+        for line in upload:
+            if len(line) >= 2:
+                series = line[0].strip()
+                number = line[1].strip().lstrip('#')
+                if series != '' and number != '':
+                    issue = Issue.objects.filter(\
+                                          series__name__icontains=series,
+                                          number=number)
+                else:
+                    issue = Issue.objects.none()
+            if len(line) >= 3:
+                publisher = line[2].strip()
+                if publisher != '':
+                    issue = issue.filter(
+                            series__publisher__name__icontains=publisher)
+            if len(line) >= 4:
+                language_code = line[3].strip()
+                if language_code != '':
+                    issue = issue.filter(
+                            series__language__code__iexact=language_code)
+            issues = issues | issue
+        issues = issues.distinct()
+        tmpfile.close()
+        os.remove(tmpfile_name)
+        cancel = HttpResponseRedirect(urlresolvers\
+                                      .reverse('collections_list'))
+        return select_issues_from_preselection(request, issues, cancel)
+
+
+@login_required
 def add_series_issues_to_collection(request, series_id):
     series = get_object_or_404(Series, id=series_id)
-    issues = series.active_base_issues()
     if 'confirm_selection' in request.POST:
+        issues = series.active_base_issues()
         # add all issues (without variants) to the selected collection
         collection_id = int(request.POST['collection_id'])
         collection = get_object_or_404(Collection, id=collection_id)
@@ -578,29 +640,38 @@ def add_series_issues_to_collection(request, series_id):
         return add_issues_to_collection(request, collection_id, issues,
           urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
     else:
-        # allow user to choose which issues to add to the selected collection
-        if request.GET['which_issues'] == 'all_issues':
-            issues = series.active_issues()
-        elif request.GET['which_issues'] == 'variant_issues':
-            issues = series.active_issues().exclude(variant_of=None)
-        data = {'issue': True,
-                'allowed_selects': ['issue',],
-                'return': add_selected_issues_to_collection,
-                'cancel': HttpResponseRedirect(urlresolvers\
-                            .reverse('show_series',
-                                     kwargs={'series_id': series_id}))}
-        select_key = store_select_data(request, None, data)
-        context = {'select_key': select_key,
-                'multiple_selects': True,
-                'item_name': 'issue',
-                'plural_suffix': 's',
-                'no_bulk_edit': True,
-                'all_pre_selected': True,
-                'heading': 'Issues'
-            }
-        return paginate_response(request, issues,
-                                 'gcd/search/issue_list.html', context,
-                                 per_page=issues.count())
+        issues = None
+        if 'import_my_issues_to_series' in request.FILES:
+            # real file to be able to use pythons Universal Newline Support
+            tmpfile_handle, tmpfile_name = tempfile.mkstemp(".mycomics_import")
+            for chunk in request.FILES['import_my_issues_to_series'].chunks():
+                os.write(tmpfile_handle, chunk)
+            os.close(tmpfile_handle)
+            tmpfile = open(tmpfile_name, 'U')
+            issue_numbers = []
+            for line in tmpfile:
+                issue_numbers.append(line.strip(' \n').lstrip('#'))
+            issues = Issue.objects.filter(series__id=series_id,
+                                          number__in=issue_numbers)
+            issues = issues.distinct()
+            tmpfile.close()
+            os.remove(tmpfile_name)
+        elif 'which_issues' in request.GET:
+            # allow user to choose which issues to add to the selected collection
+            if request.GET['which_issues'] == 'base_issues':
+                issues = series.active_base_issues()
+            elif request.GET['which_issues'] == 'all_issues':
+                issues = series.active_issues()
+            elif request.GET['which_issues'] == 'variant_issues':
+                issues = series.active_issues().exclude(variant_of=None)
+        if issues:
+            cancel = HttpResponseRedirect(urlresolvers.reverse('show_series',
+                                          kwargs={'series_id': series_id}))
+            return select_issues_from_preselection(request, issues, cancel)
+        else:
+            messages.warning(request, 'no corresponding issues found')
+            return HttpResponseRedirect(urlresolvers.reverse('show_series',
+                                        kwargs={'series_id': series_id}))
 
 
 @login_required
