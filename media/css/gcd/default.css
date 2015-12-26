@@ -27,6 +27,13 @@ body {
     margin-bottom: 1em;
 }
 
+#special_banner {
+    font-size: 1.4em;
+    background-color: #EE7;
+    margin-bottom: 0em;
+    padding: 0.3em 0.3em 0.3em 0.3em;
+}
+
 #preview_banner {
     font-weight: bold;
     background-color: orange;
@@ -693,9 +700,29 @@ a.link_info_left:hover span
     color: white;
 }
 
+.my_comics_cross_link {
+    margin-bottom: 0.5em;
+    padding: .4em;
+    background-color: #A9302A;
+    text-align: center;
+}
+
+.www_comics_cross_link {
+    margin-bottom: 0.5em;
+    padding: .4em;
+    background-color: #66E;
+    text-align: center;
+}
+
+.my_comics_cross_link a, .www_comics_cross_link a {
+    color: white;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
 .change_history {
     font-family: Helvetica, Arial, Verdana, sans-serif;
-    margin-bottom: 1em;
+    margin-bottom: 0.5em;
     padding: .4em;
     background-color: #444;
     text-align: center

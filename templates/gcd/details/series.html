@@ -234,6 +234,17 @@
     {% endif %} <!-- not preview -->
   {% endif %} <!-- MYCOMICS -->
       </div>
+{% if not preview %}
+  {% if MYCOMICS %}
+      <div class="www_comics_cross_link">
+        <a href="http://www.comics.org{% url "show_series" series_id=series.id %}">Series at www.comics.org</a>
+      </div>
+  {% else %}
+      <div class="my_comics_cross_link">
+        <a href="http://my.comics.org{% url "show_series" series_id=series.id %}">Series at my.comics.org</a>
+      </div>
+  {% endif %}
+{% endif %}
       <div class="change_history">
   {% if preview %}
         <a href="{% url "change_history" model_name='series' id=series.source.id %}">Change History</a>
