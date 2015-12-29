@@ -15,6 +15,7 @@ from django.utils.encoding import force_unicode
 from django.utils.html import escape, conditional_escape
 
 from apps.oi.models import *
+from apps.oi.helpers import *  # Keep things loading during refactor
 from apps.gcd.models import *
 from apps.gcd.models.seriesbond import BOND_TRACKING
 from apps.gcd.models.story import NON_OPTIONAL_TYPES, STORY_TYPES

@@ -879,11 +879,6 @@ class BrandUseRevisionManager(RevisionManager):
         return revision
 
 
-def get_brand_use_field_list():
-    return ['year_began', 'year_began_uncertain',
-            'year_ended', 'year_ended_uncertain', 'notes']
-
-
 class BrandUseRevision(Revision):
     class Meta:
         db_table = 'oi_brand_use_revision'
@@ -1155,17 +1150,6 @@ class SeriesRevisionManager(RevisionManager):
         return revision
 
 
-def get_series_field_list():
-    return ['name', 'leading_article', 'imprint', 'format', 'color',
-            'dimensions', 'paper_stock', 'binding', 'publishing_format',
-            'publication_type', 'is_singleton', 'year_began',
-            'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
-            'is_current', 'country', 'language', 'has_barcode',
-            'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'has_volume', 'has_rating', 'is_comics_publication',
-            'tracking_notes', 'notes', 'keywords']
-
-
 class SeriesRevision(Revision):
     class Meta:
         db_table = 'oi_series_revision'
@@ -1422,10 +1406,6 @@ class SeriesBondRevisionManager(RevisionManager):
         return revision
 
 
-def get_series_bond_field_list():
-    return ['bond_type', 'notes']
-
-
 class SeriesBondRevision(Revision):
     class Meta:
         db_table = 'oi_series_bond_revision'
@@ -1544,18 +1524,6 @@ class IssueRevisionManager(RevisionManager):
 
         revision.save()
         return revision
-
-
-def get_issue_field_list():
-    return ['number', 'title', 'no_title',
-            'volume', 'no_volume', 'display_volume_with_number',
-            'indicia_publisher', 'indicia_pub_not_printed',
-            'brand', 'no_brand', 'publication_date', 'year_on_sale',
-            'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
-            'key_date', 'indicia_frequency', 'no_indicia_frequency', 'price',
-            'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-            'isbn', 'no_isbn', 'barcode', 'no_barcode', 'rating', 'no_rating',
-            'notes', 'keywords']
 
 
 class IssueRevision(Revision):
@@ -1952,15 +1920,6 @@ class IssueRevision(Revision):
             self._check_first_last()
 
 
-def get_story_field_list():
-    return ['sequence_number', 'title', 'title_inferred', 'type',
-            'feature', 'genre', 'job_number',
-            'script', 'no_script', 'pencils', 'no_pencils', 'inks',
-            'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
-            'editing', 'no_editing', 'page_count', 'page_count_uncertain',
-            'characters', 'synopsis', 'reprint_notes', 'notes', 'keywords']
-
-
 class StoryRevisionManager(RevisionManager):
 
     def _do_create_revision(self, story, changeset, **ignore):
@@ -2226,10 +2185,6 @@ class ReprintRevisionManager(RevisionManager):
         revision.notes = reprint.notes
         revision.save()
         return revision
-
-
-def get_reprint_field_list():
-    return ['notes']
 
 
 class ReprintRevision(Revision):
