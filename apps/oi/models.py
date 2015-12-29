@@ -290,6 +290,103 @@ class Revision(models.Model):
         """
         return self.committed is None
 
+    # ##### Field declarations and methods for creating revisions.
+
+    @classmethod
+    def _assignable_fields(cls):
+        """
+        The set of fields that can simply be copied to or from the data object.
+
+        All fields should appear either her or in _non_assignable_fields(),
+        even if they appear in other sets.
+        """
+        return frozenset()
+
+    @classmethod
+    def _non_assignable_fields(cls):
+        """
+        The set of fields that cannot be copied directly to/from data object.
+
+        All fields should appear either her or in _assignable_fields(),
+        even if they appear in other sets.
+        """
+        return frozenset()
+
+    @classmethod
+    def _conditional_fields(cls):
+        """
+        A dictionary of fields mapped to their conditions.
+
+        The conditions are stored as a tuple of field names that can
+        be applied to an instance to get the value.
+        For instance, ('series', 'has_isbn') would mean that you
+        could get the value by looking at revision.series.has_isbn
+        """
+        return {}
+
+    @classmethod
+    def _deprecated_fields(cls):
+        """
+        The set of fields that should not be allowed in new objects.
+
+        These fields are still present in both the data object and revision
+        tables, and should therefore be copied out of the data objects in
+        case old values are still present and need to be preserved until
+        they can be migrated.  But new values should not be allowed.
+        """
+        return frozenset()
+
+    @classmethod
+    def _parent_fields(cls):
+        """
+        The set of parent-ish objects that this rev may need to update.
+
+        This should include parent chains up to the root object(s) that
+        need updating, for instance an issue should include its publisher
+        by way of the series foreign key (as opposed to publishers found
+        through other links, which are either duplicate or should be
+        ignored.
+
+        Elements of the set are tuples to allow for multiple parent levels.
+        """
+        return frozenset()
+
+    @classmethod
+    def _many_to_many_fields(cls):
+        """
+        The set of many to many fields that may be changed during edits.
+
+        The links for these many-to-many fields are changed along with
+        this revision, rather than having revisions of their own.
+        """
+        return frozenset()
+
+    @classmethod
+    def _major_flags(cls):
+        """
+        The set of flags that require further processing upon commit.
+        """
+        return frozenset()
+
+    def _pre_initial_save(self):
+        """
+        Called just before saving to the database to handle unusual fields.
+
+        Note that if there is a source data object , it will already be set.
+        """
+        pass
+
+    def _post_m2m_add(self):
+        """
+        Called after initial save to database and m2m population.
+
+        This is for handling unusual fields that require the revision to
+        already exist in the database.
+        """
+        pass
+
+    # ##### Change description and methods for saving to the data object.
+
     def _copy_assignable_fields_to(self, target, with_keywords=True):
         """
         Used to copy fields from a revision to a display object.

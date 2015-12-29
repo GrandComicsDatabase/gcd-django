@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
+from apps.oi.models import Revision
 from apps.oi.tests.conftest import DummyRevision
 from apps.gcd.models import Country, Language
 
@@ -316,3 +317,39 @@ def test_commit_edited_dont_clear(patched_dummy):
     assert d.source.stat_counts.call_count == 2
     d._adjust_stats.assert_called_once_with(changes, stats[0], stats[1])
     d._post_adjust_stats.assert_called_once_with(changes)
+
+
+def test_assignable_fields():
+    assert Revision._assignable_fields() == frozenset()
+
+
+def test_non_assignable_fields():
+    assert Revision._non_assignable_fields() == frozenset()
+
+
+def test_conditional_fields():
+    assert Revision._conditional_fields() == {}
+
+
+def test_parent_fields():
+    assert Revision._parent_fields() == frozenset()
+
+
+def test_many_to_many_fields():
+    assert Revision._many_to_many_fields() == frozenset()
+
+
+def test_major_flags():
+    assert Revision._major_flags() == frozenset()
+
+
+def test_deprecated_fields():
+    assert Revision._deprecated_fields() == frozenset()
+
+
+def test_pre_initial_save():
+    assert DummyRevision()._pre_initial_save() is None
+
+
+def test_post_m2m_add():
+    assert DummyRevision()._post_m2m_add() is None
