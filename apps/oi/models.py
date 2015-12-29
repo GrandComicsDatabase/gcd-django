@@ -592,6 +592,20 @@ class PublisherRevisionBase(Revision):
     keywords = models.TextField(blank=True, default='')
     url = models.URLField(blank=True)
 
+    @classmethod
+    def _assignable_fields(cls):
+        return frozenset({'name',
+                          'year_began',
+                          'year_began_uncertain',
+                          'year_ended',
+                          'year_ended_uncertain',
+                          'url',
+                          'notes'})
+
+    @classmethod
+    def _non_assignable_fields(cls):
+        return frozenset({'keywords'})
+
 
 class PublisherRevisionManager(PublisherRevisionManagerBase):
     """
@@ -650,6 +664,11 @@ class PublisherRevision(PublisherRevisionBase):
     @property
     def source_name(self):
         return 'publisher'
+
+    @classmethod
+    def _assignable_fields(cls):
+        return (frozenset({'country'}) |
+                super(PublisherRevision, cls)._assignable_fields())
 
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
@@ -726,6 +745,15 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     @property
     def source_name(self):
         return 'indicia_publisher'
+
+    @classmethod
+    def _assignable_fields(cls):
+        return (frozenset({'country', 'parent', 'is_surrogate'}) |
+                super(IndiciaPublisherRevision, cls)._assignable_fields())
+
+    @classmethod
+    def _parent_fields(cls):
+        return frozenset({('parent',)})
 
     def _do_complete_added_revision(self, parent):
         """
@@ -811,6 +839,15 @@ class BrandGroupRevision(PublisherRevisionBase):
     @property
     def source_name(self):
         return 'brand_group'
+
+    @classmethod
+    def _assignable_fields(cls):
+        return (frozenset({'parent'}) |
+                super(BrandGroupRevision, cls)._assignable_fields())
+
+    @classmethod
+    def _parent_fields(cls):
+        return frozenset({('parent',)})
 
     def _do_complete_added_revision(self, parent):
         """
@@ -908,6 +945,14 @@ class BrandRevision(PublisherRevisionBase):
     @property
     def source_name(self):
         return 'brand'
+
+    @classmethod
+    def _non_assignable_fields(cls):
+        return frozenset({'keywords', 'group'})
+
+    @classmethod
+    def _many_to_many_fields(cls):
+        return frozenset({'group'})
 
     def commit_to_display(self, clear_reservation=True):
         brand = self.brand
@@ -1025,6 +1070,22 @@ class BrandUseRevision(Revision):
     def source_name(self):
         return 'brand_use'
 
+    @classmethod
+    def _assignable_fields(cls):
+        # Note that while 'publisher' and 'emblem' are arguably
+        # parent-like, we do not also put them in _parent_fields()
+        # as there are no stats or cached counts involved in
+        # the relations.
+        return frozenset({
+            'emblem',
+            'publisher',
+            'year_began',
+            'year_ended',
+            'year_began_uncertain',
+            'year_ended_uncertain',
+            'notes',
+        })
+
     def _do_complete_added_revision(self, emblem, publisher):
         """
         Do the necessary processing to complete the fields of a new
@@ -1118,6 +1179,16 @@ class CoverRevision(Revision):
     @property
     def source_name(self):
         return 'cover'
+
+    @classmethod
+    def _assignable_fields(cls):
+        # TODO: most of these are not copied from data obj, but are
+        #       set in other ways while processing revision.  How to
+        #       best handle that?  Is it harmful or overly wasteful
+        #       to copy them?
+        return frozenset({'issue',
+                          'marked',
+                          'file_source'})
 
     def commit_to_display(self, clear_reservation=True):
         # the file handling is in the view/covers code
@@ -1342,6 +1413,57 @@ class SeriesRevision(Revision):
     def source_name(self):
         return 'series'
 
+    @classmethod
+    def _assignable_fields(cls):
+        return frozenset({
+            'name',
+            'color',
+            'dimensions',
+            'paper_stock',
+            'binding',
+            'publishing_format',
+            'publication_type',
+            'tracking_notes',
+            'notes',
+            'year_began',
+            'year_began_uncertain',
+            'year_ended',
+            'year_ended_uncertain',
+            'is_current',
+            'has_barcode',
+            'has_indicia_frequency',
+            'has_isbn',
+            'has_issue_title',
+            'has_volume',
+            'has_rating',
+            'is_comics_publication',
+            'is_singleton',
+            'country',
+            'language',
+            'publisher',
+            'format',
+        })
+
+    @classmethod
+    def _non_assignable_fields(cls):
+        return frozenset({'keywords', 'sort_name'})
+
+    @classmethod
+    def _parent_fields(cls):
+        return frozenset({('publisher',)})
+
+    @classmethod
+    def _major_flags(self):
+        return frozenset({
+            'is_comics_publication',
+            'is_current',
+            'is_singleton',
+        })
+
+    @classmethod
+    def _deprecated_fields(cls):
+        return frozenset({'format'})
+
     def _do_complete_added_revision(self, publisher):
         """
         Do the necessary processing to complete the fields of a new
@@ -1554,6 +1676,17 @@ class SeriesBondRevision(Revision):
     def source_name(self):
         return 'series_bond'
 
+    @classmethod
+    def _assignable_fields(cls):
+        return frozenset({
+            'origin',
+            'origin_issue',
+            'target',
+            'target_issue',
+            'bond_type',
+            'notes',
+        })
+
     def commit_to_display(self, clear_reservation=True):
         series_bond = self.series_bond
         if self.deleted:
@@ -1739,6 +1872,85 @@ class IssueRevision(Revision):
     @property
     def source_name(self):
         return 'issue'
+
+    @classmethod
+    def _assignable_fields(cls):
+        return frozenset({
+            'number',
+            'title',
+            'no_title',
+            'volume',
+            'no_volume',
+            'display_volume_with_number',
+            'publication_date',
+            'key_date',
+            'on_sale_date_uncertain',
+            'price',
+            'indicia_frequency',
+            'no_indicia_frequency',
+            'series',
+            'indicia_publisher',
+            'indicia_pub_not_printed',
+            'brand',
+            'no_brand',
+            'page_count',
+            'page_count_uncertain',
+            'editing',
+            'no_editing',
+            'variant_of',
+            'variant_name',
+            'barcode',
+            'no_barcode',
+            'isbn',
+            'no_isbn',
+            'rating',
+            'no_rating',
+            'notes',
+        })
+
+    @classmethod
+    def _non_assignable_fields(cls):
+        return frozenset({
+            'keywords',
+            'on_sale_date',
+            'valid_isbn',
+            'sort_code',
+        })
+
+    @classmethod
+    def _conditional_fields(cls):
+        has_title = ('series', 'has_issue_title')
+        has_barcode = ('series', 'has_barcode')
+        has_isbn = ('series', 'has_isbn')
+        has_volume = ('series', 'has_volume')
+        return {
+            'title': has_title,
+            'no_title': has_title,
+            'barcode': has_barcode,
+            'no_barcode': has_barcode,
+            'isbn': has_isbn,
+            'no_isbn': has_isbn,
+            'valid_isbn': has_isbn,
+            'volume': has_volume,
+            'no_volume': has_volume,
+            'display_volume_with_issue': has_volume,
+        }
+
+    @classmethod
+    def _parent_fields(cls):
+        # There are several routes to a publisher object, but
+        # if there are differences, it is the publisher of the series
+        # that should get the count adjustments.
+        #
+        # In the case of brand groups, we return the many-to-many
+        # set and let the calling code handle single vs multiple objects.
+        return frozenset({
+            ('series',),
+            ('series', 'publisher'),
+            ('indicia_publisher',),
+            ('brand',),
+            ('brand', 'group'),
+        })
 
     def _do_complete_added_revision(self, series, variant_of=None):
         """
@@ -2136,6 +2348,42 @@ class StoryRevision(Revision):
     @property
     def source_name(self):
         return 'story'
+
+    @classmethod
+    def _assignable_fields(cls):
+        return frozenset({
+            'title',
+            'title_inferred',
+            'feature',
+            'type',
+            'sequence_number',
+            'page_count',
+            'page_count_uncertain',
+            'script',
+            'no_script',
+            'pencils',
+            'no_pencils',
+            'inks',
+            'no_inks',
+            'colors',
+            'no_colors',
+            'letters',
+            'no_letters',
+            'editing',
+            'no_editing',
+            'job_number',
+            'genre',
+            'characters',
+            'synopsis',
+            'reprint_notes',
+            'notes',
+        })
+
+    @classmethod
+    def _non_assignable_fields(cls):
+        return frozenset({
+            'keywords',
+        })
 
     def _do_complete_added_revision(self, issue):
         """
@@ -2548,6 +2796,21 @@ class ImageRevision(Revision):
     @property
     def source_name(self):
         return 'image'
+
+    @classmethod
+    def _assignable_fields(cls):
+        return frozenset({
+            'content_type',
+            'object_id',
+            'type',
+        })
+
+    @classmethod
+    def _non_assignable_fields(cls):
+        return frozenset({
+            'image_file',
+            'marked',
+        })
 
     def commit_to_display(self, clear_reservation=True):
         image = self.image
