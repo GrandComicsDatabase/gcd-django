@@ -129,56 +129,6 @@ class RevisionManager(models.Manager):
     """
     Custom manager base class for revisions.
     """
-    def assignable_field_list(self):
-        """
-        The list of fields that can simply be copied to or from the display.
-        """
-        raise NotImplementedError
-
-    def deprecated_field_list(self):
-        """
-        The list of fields that should not be allowed in new objects.
-
-        They should also appear in assignable_field_list if they are
-        assignable, as they should still be propagated back and forth
-        to revisions unless/until they are dropped from the display
-        table entirely.
-        """
-        raise NotImplementedError
-
-    def _assignable_field_kwargs(self, instance, with_keywords=True):
-        """
-        Creates a dictionary of assignable field values from an instance.
-
-        The instance is typically a display object, as there is usually
-        not an revision yet when this is called.
-        """
-        kwargs = {field: getattr(instance, field)
-                  for field in self.assignable_field_list()}
-        if with_keywords:
-            kwargs['keywords'] = get_keywords(instance)
-        return kwargs
-
-    def clone_revision(self, instance, changeset):
-        """
-        Given an existing instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
-        Entirely new publishers should be started by simply instantiating
-        a new PublisherRevision directly.
-        """
-        # At one point there was more to this method than just calling
-        # the private method, and there may be again in the future.
-        # TODO: Currently all of the child classes call the first argument
-        #       a different thing (after the object type).  This should
-        #       probably be changed to make them all the same- the argument
-        #       can be renamed in the method if needed.
-        revision = self._do_create_revision(instance,
-                                            changeset=changeset)
-        return revision
-
     def active(self):
         """
         For use on the revisions relation from display objects
@@ -396,22 +346,54 @@ class Revision(models.Model):
         """
         pass
 
+    @classmethod
+    def clone(cls, data_object, changeset):
+        """
+        Given an existing data object, create a new revision based on it.
+
+        This new revision will be where the edits are made.
+
+        Entirely new data objects should be started by simply instantiating
+        a new revision of the approparite type directly.
+        """
+        # We start with all assignable fields, since we want to copy
+        # old values even for deprecated fields.
+        rev_kwargs = {field: getattr(data_object, field)
+                      for field in cls._assignable_fields()}
+
+        # Keywords are not assignable but behave the same way whenever
+        # they are present, so handle them here.
+        if 'keywords' in cls._non_assignable_fields():
+            rev_kwargs['keywords'] = get_keywords(data_object)
+
+        # Instantiate the revision.  Since we do not know the exact
+        # field name for the data_object, set it through the source property.
+        revision = cls(changeset=changeset, **rev_kwargs)
+
+        if data_object:
+            revision.source = data_object
+
+            # Link to the previous revision for this data object.
+            # It is an error not to have a previous revision for
+            # a pre-existing data object.
+            previous_revision = type(revision).objects.get(
+                next_revision=None,
+                changeset__state=states.APPROVED,
+                **{revision.source_name: data_object})
+            revision.previous_revision = previous_revision
+
+        revision._pre_initial_save()
+        revision.save()
+
+        # Populate all of the many to many relations that don't use
+        # their own separate revision classes.
+        for m2m in revision._many_to_many_fields():
+            getattr(revision, m2m).add(*list(getattr(data_object, m2m).all()))
+        revision._post_m2m_add()
+
+        return revision
+
     # ##### Change description and methods for saving to the data object.
-
-    def _copy_assignable_fields_to(self, target, with_keywords=True):
-        """
-        Used to copy fields from a revision to a display object.
-
-        At the time when this is called, the revision may not yet have
-        the display object set as self.source (in the case of a newly
-        added object), so the target of the copy is given as a parameter.
-        """
-        # Django does not allow self.objects, must go through class.
-        for field in type(self).objects.assignable_field_list():
-            setattr(target, field, getattr(self, field))
-        target.save()
-        if with_keywords:
-            save_keywords(self, target)
 
     def _get_major_changes(self):
         """
@@ -506,6 +488,37 @@ class Revision(models.Model):
         """
         pass
 
+    def _copy_fields_to(self, target, changes=None):
+        """
+        Used to copy fields from a revision to a display object.
+
+        At the time when this is called, the revision may not yet have
+        the display object set as self.source (in the case of a newly
+        added object), so the target of the copy is given as a parameter.
+        """
+        # TODO: Make "changes" required once more of the refactor is done.
+        if changes is None:
+            changes = {}
+
+        c = self._conditional_fields()
+        for field in self._assignable_fields():
+            # If conditional, apply getattr until we produce the flag
+            # value and only assign the field if that flag is True.
+            if (field not in c or reduce(getattr, c[field], self)):
+                setattr(target, field, getattr(self, field))
+
+        target.save()
+
+        # Keywords can't be copied directly, but always behave the same
+        # if they are present.
+        if 'keywords' in self._non_assignable_fields():
+            save_keywords(self, target)
+
+        for m2m in self._many_to_many_fields():
+            m2m_set = getattr(target, m2m)
+            m2m_set.remove(*changes.get('removed %s' % m2m, {}))
+            m2m_set.add(*changes.get('added %s' % m2m, {}))
+
     def commit_to_display(self, clear_reservation=True):
         """
         Writes the changes from the revision back to the display object.
@@ -523,10 +536,9 @@ class Revision(models.Model):
         else:
             if self.added:
                 self.source = self.source_class()
-                self.save()
                 self._post_create_for_add(changes)
 
-            self._copy_assignable_fields_to(self.source)
+            self._copy_fields_to(self.source, changes)
             self._post_assign_fields(changes)
 
         if clear_reservation:
@@ -534,6 +546,17 @@ class Revision(models.Model):
 
         self._pre_save_object(changes)
         self.source.save()
+        if self.added:
+            # Reset the source because now it has a database id,
+            # which we must save.  Just saving the added source while
+            # it is attached does not update the revision with the newly
+            # created source id from the database.
+            #
+            # We do this because it is easier for all other code if it
+            # only works with self.source, no matter whether it is
+            # an add, edit, or delete.
+            self.source = self.source
+            self.save()
         self._post_save_object(changes)
 
         new_stats = self.source.stat_counts()
@@ -561,20 +584,6 @@ class OngoingReservation(models.Model):
     The creation timestamp for this reservation.
     """
     created = models.DateTimeField(auto_now_add=True, db_index=True)
-
-
-class PublisherRevisionManagerBase(RevisionManager):
-    def assignable_field_list(self):
-        return ['name',
-                'year_began',
-                'year_began_uncertain',
-                'year_ended',
-                'year_ended_uncertain',
-                'url',
-                'notes'] + self.deprecated_field_list()
-
-    def deprecated_field_list(self):
-        return []
 
 
 class PublisherRevisionBase(Revision):
@@ -607,34 +616,12 @@ class PublisherRevisionBase(Revision):
         return frozenset({'keywords'})
 
 
-class PublisherRevisionManager(PublisherRevisionManagerBase):
-    """
-    Custom manager allowing the cloning of revisions from existing rows.
-    """
-    def assignable_field_list(self):
-        return super(PublisherRevisionManager,
-                     self).assignable_field_list() + ['country']
-
-    def _do_create_revision(self, publisher, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._assignable_field_kwargs(publisher)
-
-        revision = PublisherRevision(publisher=publisher,
-                                     changeset=changeset,
-                                     **kwargs)
-
-        revision.save()
-        return revision
-
-
 class PublisherRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_publisher_revision'
         ordering = ['-created', '-id']
 
-    objects = PublisherRevisionManager()
+    objects = RevisionManager()
 
     publisher = models.ForeignKey('gcd.Publisher', null=True,
                                   related_name='revisions')
@@ -680,7 +667,7 @@ class PublisherRevision(PublisherRevisionBase):
             pub.delete()
             return
 
-        self._copy_assignable_fields_to(pub)
+        self._copy_fields_to(pub)
 
         if clear_reservation:
             pub.reserved = False
@@ -691,32 +678,12 @@ class PublisherRevision(PublisherRevisionBase):
             self.save()
 
 
-class IndiciaPublisherRevisionManager(PublisherRevisionManagerBase):
-
-    def _do_create_revision(self, indicia_publisher, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._assignable_field_kwargs(indicia_publisher)
-
-        revision = IndiciaPublisherRevision(
-            indicia_publisher=indicia_publisher,
-            changeset=changeset,
-            is_surrogate=indicia_publisher.is_surrogate,
-            country=indicia_publisher.country,
-            parent=indicia_publisher.parent,
-            **kwargs)
-
-        revision.save()
-        return revision
-
-
 class IndiciaPublisherRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_indicia_publisher_revision'
         ordering = ['-created', '-id']
 
-    objects = IndiciaPublisherRevisionManager()
+    objects = RevisionManager()
 
     indicia_publisher = models.ForeignKey('gcd.IndiciaPublisher', null=True,
                                           related_name='revisions')
@@ -782,7 +749,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         ipub.is_surrogate = self.is_surrogate
         ipub.country = self.country
         ipub.parent = self.parent
-        self._copy_assignable_fields_to(ipub)
+        self._copy_fields_to(ipub)
 
         if clear_reservation:
             ipub.reserved = False
@@ -793,29 +760,12 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             self.save()
 
 
-class BrandGroupRevisionManager(PublisherRevisionManagerBase):
-
-    def _do_create_revision(self, brand_group, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._assignable_field_kwargs(brand_group)
-
-        revision = BrandGroupRevision(brand_group=brand_group,
-                                      changeset=changeset,
-                                      parent=brand_group.parent,
-                                      **kwargs)
-
-        revision.save()
-        return revision
-
-
 class BrandGroupRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_brand_group_revision'
         ordering = ['-created', '-id']
 
-    objects = BrandGroupRevisionManager()
+    objects = RevisionManager()
 
     brand_group = models.ForeignKey('gcd.BrandGroup', null=True,
                                     related_name='revisions')
@@ -871,7 +821,7 @@ class BrandGroupRevision(PublisherRevisionBase):
             return
 
         brand_group.parent = self.parent
-        self._copy_assignable_fields_to(brand_group)
+        self._copy_fields_to(brand_group)
 
         if clear_reservation:
             brand_group.reserved = False
@@ -892,29 +842,12 @@ class BrandGroupRevision(PublisherRevisionBase):
             brand_revision.commit_to_display()
 
 
-class BrandRevisionManager(PublisherRevisionManagerBase):
-
-    def _do_create_revision(self, brand, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._assignable_field_kwargs(brand)
-
-        revision = BrandRevision(brand=brand, changeset=changeset, **kwargs)
-
-        revision.save()
-        if brand.group.count():
-            revision.group.add(*list(brand.group.all().values_list('id',
-                                                                   flat=True)))
-        return revision
-
-
 class BrandRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_brand_revision'
         ordering = ['-created', '-id']
 
-    objects = BrandRevisionManager()
+    objects = RevisionManager()
 
     brand = models.ForeignKey('gcd.Brand', null=True, related_name='revisions')
     # parent needs to be kept for old revisions
@@ -966,7 +899,7 @@ class BrandRevision(PublisherRevisionBase):
             return
 
         brand.parent = self.parent
-        self._copy_assignable_fields_to(brand)
+        self._copy_fields_to(brand)
 
         if clear_reservation:
             brand.reserved = False
@@ -1008,36 +941,12 @@ class BrandRevision(PublisherRevisionBase):
             use.commit_to_display()
 
 
-class BrandUseRevisionManager(RevisionManager):
-
-    def _do_create_revision(self, brand_use, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = BrandUseRevision(
-            # revision-specific fields:
-            brand_use=brand_use,
-            changeset=changeset,
-
-            # copied fields:
-            emblem=brand_use.emblem,
-            publisher=brand_use.publisher,
-            year_began=brand_use.year_began,
-            year_ended=brand_use.year_ended,
-            year_began_uncertain=brand_use.year_began_uncertain,
-            year_ended_uncertain=brand_use.year_ended_uncertain,
-            notes=brand_use.notes)
-
-        revision.save()
-        return revision
-
-
 class BrandUseRevision(Revision):
     class Meta:
         db_table = 'oi_brand_use_revision'
         ordering = ['-created', '-id']
 
-    objects = BrandUseRevisionManager()
+    objects = RevisionManager()
 
     brand_use = models.ForeignKey('gcd.BrandUse', null=True,
                                   related_name='revisions')
@@ -1123,33 +1032,12 @@ class BrandUseRevision(Revision):
             self.save()
 
 
-class CoverRevisionManager(RevisionManager):
-    """
-    Custom manager allowing the cloning of revisions from existing rows.
-    """
-
-    def _do_create_revision(self, cover, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = CoverRevision(
-            # revision-specific fields:
-            cover=cover,
-            changeset=changeset,
-
-            # copied fields:
-            issue=cover.issue)
-
-        revision.save()
-        return revision
-
-
 class CoverRevision(Revision):
     class Meta:
         db_table = 'oi_cover_revision'
         ordering = ['-created', '-id']
 
-    objects = CoverRevisionManager()
+    objects = RevisionManager()
 
     cover = models.ForeignKey(Cover, null=True, related_name='revisions')
     issue = models.ForeignKey(Issue, related_name='cover_revisions')
@@ -1275,66 +1163,12 @@ class CoverRevision(Revision):
             cover.save()
 
 
-class SeriesRevisionManager(RevisionManager):
-    """
-    Custom manager allowing the cloning of revisions from existing rows.
-    """
-
-    def assignable_field_list(self):
-        return [
-            'name',
-            'color',
-            'dimensions',
-            'paper_stock',
-            'binding',
-            'publishing_format',
-            'publication_type',
-            'tracking_notes',
-            'notes',
-            'year_began',
-            'year_began_uncertain',
-            'year_ended',
-            'year_ended_uncertain',
-            'is_current',
-            'has_barcode',
-            'has_indicia_frequency',
-            'has_isbn',
-            'has_issue_title',
-            'has_volume',
-            'has_rating',
-            'is_comics_publication',
-            'is_singleton',
-            'country',
-            'language',
-            'publisher',
-        ] + self.deprecated_field_list()
-
-    def deprecated_field_list(self):
-        return [
-            'format',
-        ]
-
-    def _do_create_revision(self, series, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._assignable_field_kwargs(series)
-
-        revision = SeriesRevision(
-            series=series,
-            changeset=changeset,
-            leading_article=(series.name != series.sort_name),
-            **kwargs)
-        revision.save()
-        return revision
-
-
 class SeriesRevision(Revision):
     class Meta:
         db_table = 'oi_series_revision'
         ordering = ['-created', '-id']
 
-    objects = SeriesRevisionManager()
+    objects = RevisionManager()
 
     series = models.ForeignKey(Series, null=True, related_name='revisions')
 
@@ -1567,7 +1401,7 @@ class SeriesRevision(Revision):
         # Handle deletion of the singleton issue before getting the
         # series stat counts to avoid double-counting the deletion.
         if self.deleted and self.series.is_singleton:
-            issue_revision = IssueRevisionManager.clone_revision(
+            issue_revision = IssueRevision.clone(
                 instance=self.series.issue_set[0], changeset=self.changeset)
             issue_revision.deleted = True
             issue_revision.save()
@@ -1607,42 +1441,13 @@ class SeriesRevision(Revision):
             issue_revision.commit_to_display()
 
 
-class SeriesBondRevisionManager(RevisionManager):
-
-    def _do_create_revision(self, series_bond, changeset):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = SeriesBondRevision(
-            # revision-specific fields:
-            series_bond=series_bond,
-            changeset=changeset,
-
-            # copied fields:
-            origin=series_bond.origin,
-            origin_issue=series_bond.origin_issue,
-            target=series_bond.target,
-            target_issue=series_bond.target_issue,
-            bond_type=series_bond.bond_type,
-            notes=series_bond.notes)
-
-        revision.save()
-        previous_revision = SeriesBondRevision.objects.get(
-            series_bond=series_bond,
-            next_revision=None,
-            changeset__state=states.APPROVED)
-        revision.previous_revision = previous_revision
-        revision.save()
-        return revision
-
-
 class SeriesBondRevision(Revision):
     class Meta:
         db_table = 'oi_series_bond_revision'
         ordering = ['-created', '-id']
         get_latest_by = "created"
 
-    objects = SeriesBondRevisionManager()
+    objects = RevisionManager()
 
     series_bond = models.ForeignKey(SeriesBond, null=True,
                                     related_name='revisions')
@@ -1714,65 +1519,12 @@ class SeriesBondRevision(Revision):
             self.save()
 
 
-class IssueRevisionManager(RevisionManager):
-
-    def _do_create_revision(self, issue, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = IssueRevision(
-            # revision-specific fields:
-            issue=issue,
-            changeset=changeset,
-
-            # copied fields:
-            number=issue.number,
-            title=issue.title,
-            no_title=issue.no_title,
-            volume=issue.volume,
-            no_volume=issue.no_volume,
-            display_volume_with_number=issue.display_volume_with_number,
-            publication_date=issue.publication_date,
-            key_date=issue.key_date,
-            on_sale_date_uncertain=issue.on_sale_date_uncertain,
-            price=issue.price,
-            indicia_frequency=issue.indicia_frequency,
-            no_indicia_frequency=issue.no_indicia_frequency,
-            series=issue.series,
-            indicia_publisher=issue.indicia_publisher,
-            indicia_pub_not_printed=issue.indicia_pub_not_printed,
-            brand=issue.brand,
-            no_brand=issue.no_brand,
-            page_count=issue.page_count,
-            page_count_uncertain=issue.page_count_uncertain,
-            editing=issue.editing,
-            no_editing=issue.no_editing,
-            barcode=issue.barcode,
-            no_barcode=issue.no_barcode,
-            isbn=issue.isbn,
-            no_isbn=issue.no_isbn,
-            variant_of=issue.variant_of,
-            variant_name=issue.variant_name,
-            rating=issue.rating,
-            no_rating=issue.no_rating,
-            notes=issue.notes,
-            keywords=get_keywords(issue))
-
-        if issue.on_sale_date:
-            (revision.year_on_sale,
-             revision.month_on_sale,
-             revision.day_on_sale) = on_sale_date_fields(issue.on_sale_date)
-
-        revision.save()
-        return revision
-
-
 class IssueRevision(Revision):
     class Meta:
         db_table = 'oi_issue_revision'
         ordering = ['-created', '-id']
 
-    objects = IssueRevisionManager()
+    objects = RevisionManager()
 
     issue = models.ForeignKey(Issue, null=True, related_name='revisions')
 
@@ -1951,6 +1703,12 @@ class IssueRevision(Revision):
     @classmethod
     def _parent_many_to_many_fields(cls):
         return frozenset({('brand', 'group')})
+
+    def _pre_initial_save(self):
+        if self.issue.on_sale_date:
+            (self.year_on_sale,
+             self.month_on_sale,
+             self.day_on_sale) = on_sale_date_fields(self.issue.on_sale_date)
 
     def _do_complete_added_revision(self, series, variant_of=None):
         """
@@ -2240,60 +1998,12 @@ class IssueRevision(Revision):
             self._check_first_last()
 
 
-class StoryRevisionManager(RevisionManager):
-
-    def _do_create_revision(self, story, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = StoryRevision(
-            # revision-specific fields:
-            story=story,
-            changeset=changeset,
-
-            # copied fields:
-            title=story.title,
-            title_inferred=story.title_inferred,
-            feature=story.feature,
-            page_count=story.page_count,
-            page_count_uncertain=story.page_count_uncertain,
-
-            script=story.script,
-            pencils=story.pencils,
-            inks=story.inks,
-            colors=story.colors,
-            letters=story.letters,
-            editing=story.editing,
-
-            no_script=story.no_script,
-            no_pencils=story.no_pencils,
-            no_inks=story.no_inks,
-            no_colors=story.no_colors,
-            no_letters=story.no_letters,
-            no_editing=story.no_editing,
-
-            notes=story.notes,
-            keywords=get_keywords(story),
-            synopsis=story.synopsis,
-            characters=story.characters,
-            reprint_notes=story.reprint_notes,
-            genre=story.genre,
-            type=story.type,
-            job_number=story.job_number,
-            sequence_number=story.sequence_number,
-
-            issue=story.issue)
-
-        revision.save()
-        return revision
-
-
 class StoryRevision(Revision):
     class Meta:
         db_table = 'oi_story_revision'
         ordering = ['-created', '-id']
 
-    objects = StoryRevisionManager()
+    objects = RevisionManager()
 
     story = models.ForeignKey(Story, null=True,
                               related_name='revisions')
@@ -2543,6 +2253,10 @@ class ReprintRevisionManager(RevisionManager):
         return revision
 
 
+def get_reprint_field_list():
+    return ['notes']
+
+
 class ReprintRevision(Revision):
     """
     One Revision Class for all four types of reprints.
@@ -2737,32 +2451,12 @@ class Download(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
 
-class ImageRevisionManager(RevisionManager):
-
-    def _do_create_revision(self, image, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = ImageRevision(
-            # revision-specific fields:
-            image=image,
-            changeset=changeset,
-
-            # copied fields:
-            content_type=image.content_type,
-            object_id=image.object_id,
-            type=image.type)
-
-        revision.save()
-        return revision
-
-
 class ImageRevision(Revision):
     class Meta:
         db_table = 'oi_image_revision'
         ordering = ['created']
 
-    objects = ImageRevisionManager()
+    objects = RevisionManager()
 
     image = models.ForeignKey(Image, null=True, related_name='revisions')
 

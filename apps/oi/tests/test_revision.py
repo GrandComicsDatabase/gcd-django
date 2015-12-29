@@ -174,7 +174,7 @@ def test_adjust_stats_both(mock_update_all):
 @pytest.yield_fixture
 def patched_dummy():
     p = 'apps.oi.tests.conftest.Revision'
-    with mock.patch('%s._copy_assignable_fields_to' % p), \
+    with mock.patch('%s._copy_fields_to' % p), \
             mock.patch('%s._pre_commit_check' % p), \
             mock.patch('%s._pre_stats_measurement' % p), \
             mock.patch('%s._post_create_for_add' % p), \
@@ -225,7 +225,7 @@ def test_commit_added(patched_dummy):
     d.save.assert_called_once_with()
     d._post_create_for_add.assert_called_once_with(changes)
 
-    d._copy_assignable_fields_to.assert_called_once_with(d.source)
+    d._copy_fields_to.assert_called_once_with(d.source, changes)
     d._post_assign_fields.assert_called_once_with(changes)
 
     assert d.source.reserved is False
@@ -262,7 +262,7 @@ def test_commit_deleted(patched_dummy):
     assert mock.call(data_obj) not in source.calls
     assert d.save.called is False
     assert d._post_create_for_add.called is False
-    assert d._copy_assignable_fields_to.called is False
+    assert d._copy_fields_to.called is False
     assert d._post_assign_fields.called is False
 
     assert d.source.reserved is False
@@ -304,7 +304,7 @@ def test_commit_edited_dont_clear(patched_dummy):
     assert mock.call(data_obj) not in source.calls
     assert d.save.called is False
     assert d._post_create_for_add.called is False
-    d._copy_assignable_fields_to.assert_called_once_with(d.source)
+    d._copy_fields_to.assert_called_once_with(d.source, changes)
     d._post_assign_fields.assert_called_once_with(changes)
 
     assert d.source.reserved is True

@@ -8,14 +8,14 @@ from apps.oi.models import PublisherRevision
 
 @pytest.mark.django_db
 def test_create_add_revision(any_added_publisher_rev, publisher_add_values,
-                             any_changeset, keywords):
+                             any_adding_changeset, keywords):
     pr = any_added_publisher_rev
 
     for k, v in publisher_add_values.iteritems():
         assert getattr(pr, k) == v
     assert pr.publisher is None
 
-    assert pr.changeset == any_changeset
+    assert pr.changeset == any_adding_changeset
     assert pr.date_inferred is False
 
     assert pr.source is None
@@ -47,16 +47,16 @@ def test_commit_added_revision(any_added_publisher_rev, publisher_add_values,
 
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_publisher, publisher_add_values,
-                              any_changeset, keywords):
-    pr = PublisherRevision.objects.clone_revision(
-        instance=any_added_publisher,
-        changeset=any_changeset)
+                              any_editing_changeset, keywords):
+    pr = PublisherRevision.clone(
+        data_object=any_added_publisher,
+        changeset=any_editing_changeset)
 
     for k, v in publisher_add_values.iteritems():
         assert getattr(pr, k) == v
     assert pr.publisher is any_added_publisher
 
-    assert pr.changeset == any_changeset
+    assert pr.changeset == any_editing_changeset
     assert pr.date_inferred is False
 
     assert pr.source is any_added_publisher

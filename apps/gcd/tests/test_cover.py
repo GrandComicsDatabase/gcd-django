@@ -11,7 +11,7 @@ from apps.gcd.models import Cover, Issue, Series
 from apps.oi import states
 
 
-FILTER_PATH = 'apps.oi.models.CoverRevisionManager.filter'
+FILTER_PATH = 'apps.oi.models.RevisionManager.filter'
 
 
 @pytest.fixture

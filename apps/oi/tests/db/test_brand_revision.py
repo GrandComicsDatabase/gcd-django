@@ -9,7 +9,7 @@ from apps.oi.models import BrandRevision
 @pytest.mark.django_db
 def test_create_add_revision(any_added_brand_rev, brand_add_values,
                              any_added_brand_group1,
-                             any_changeset, keywords):
+                             any_adding_changeset, keywords):
     br = any_added_brand_rev
 
     for k, v in brand_add_values.iteritems():
@@ -18,7 +18,7 @@ def test_create_add_revision(any_added_brand_rev, brand_add_values,
     assert groups == [any_added_brand_group1]
     assert br.brand is None
 
-    assert br.changeset == any_changeset
+    assert br.changeset == any_adding_changeset
 
     assert br.source is None
     assert br.source_name == 'brand'
@@ -51,10 +51,10 @@ def test_commit_added_revision(any_added_brand_rev, brand_add_values,
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_brand, brand_add_values,
                               any_added_brand_group1,
-                              any_changeset, keywords):
-    br = BrandRevision.objects.clone_revision(
-        instance=any_added_brand,
-        changeset=any_changeset)
+                              any_editing_changeset, keywords):
+    br = BrandRevision.clone(
+        data_object=any_added_brand,
+        changeset=any_editing_changeset)
 
     for k, v in brand_add_values.iteritems():
         assert getattr(br, k) == v
@@ -62,7 +62,7 @@ def test_create_edit_revision(any_added_brand, brand_add_values,
     groups = list(br.group.order_by('id'))
     assert groups == [any_added_brand_group1]
 
-    assert br.changeset == any_changeset
+    assert br.changeset == any_editing_changeset
 
     assert br.source is any_added_brand
     assert br.source_name == 'brand'

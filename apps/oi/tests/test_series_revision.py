@@ -277,7 +277,7 @@ def test_adjust_stats_no_changes(series_and_revision):
 
 def test_pre_stats_measurement_deleted_singleton():
     ir_mock = mock.MagicMock()
-    with mock.patch('%sManager.clone_revision' % IREV,
+    with mock.patch('%s.clone' % IREV,
                     return_value=ir_mock,
                     spec=IssueRevision), \
             mock.patch('%s.series' % SREV), \
@@ -294,7 +294,7 @@ def test_pre_stats_measurement_deleted_singleton():
 
         s._pre_stats_measurement({})
 
-        IssueRevision.objects.clone_revision.assert_called_once_with(
+        IssueRevision.clone.assert_called_once_with(
             instance=i, changeset=s.changeset)
         assert ir_mock.deleted is True
         ir_mock.save.assert_called_once_with()
@@ -305,7 +305,7 @@ def test_pre_stats_measurement_deleted_singleton():
                          [(False, True), (True, False), (False, False)])
 def test_pre_stats_measurement_deleted_no_issue_revision(is_singleton,
                                                          deleted):
-    with mock.patch('apps.oi.models.IssueRevisionManager.clone_revision') \
+    with mock.patch('apps.oi.models.IssueRevision.clone') \
             as cr_mock:
         SeriesRevision(series=Series(), previous_revision=SeriesRevision(),
                        is_singleton=is_singleton, deleted=deleted)

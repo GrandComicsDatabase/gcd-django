@@ -9,7 +9,7 @@ from apps.oi.models import SeriesRevision, IssueRevision
 
 @pytest.mark.django_db
 def test_create_add_revision(any_added_series_rev, series_add_values,
-                             any_changeset):
+                             any_adding_changeset):
     sr = any_added_series_rev
 
     for k, v in series_add_values.iteritems():
@@ -18,7 +18,7 @@ def test_create_add_revision(any_added_series_rev, series_add_values,
     assert sr.series is None
 
     assert sr.reservation_requested is False
-    assert sr.changeset == any_changeset
+    assert sr.changeset == any_adding_changeset
     assert sr.date_inferred is False
 
     assert sr.source is None
@@ -27,7 +27,7 @@ def test_create_add_revision(any_added_series_rev, series_add_values,
 
 @pytest.mark.django_db
 def test_commit_added_revision(any_added_series_rev, series_add_values,
-                               any_changeset, keywords):
+                               any_adding_changeset, keywords):
     sr = any_added_series_rev
 
     old_publisher_series_count = sr.publisher.series_count
@@ -150,13 +150,13 @@ def test_commit_add_rev_non_comics_singleton(any_added_series_rev):
 
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_series, series_add_values,
-                              any_changeset):
+                              any_editing_changeset):
     # Simple version of this for mocking.  Real article testing elsewhere.
     sort_name = any_added_series.name[any_added_series.name.index(' ') + 1:]
     with mock.patch('apps.oi.models.remove_leading_article') as remover:
         remover.return_value = sort_name
-        sr = SeriesRevision.objects.clone_revision(instance=any_added_series,
-                                                   changeset=any_changeset)
+        sr = SeriesRevision.clone(data_object=any_added_series,
+                                  changeset=any_editing_changeset)
 
     for k, v in series_add_values.iteritems():
         assert getattr(sr, k) == v
@@ -164,7 +164,7 @@ def test_create_edit_revision(any_added_series, series_add_values,
     assert sr.series is any_added_series
 
     assert sr.reservation_requested is False
-    assert sr.changeset == any_changeset
+    assert sr.changeset == any_editing_changeset
     assert sr.date_inferred is False
 
     assert sr.source is any_added_series

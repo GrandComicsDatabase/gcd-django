@@ -9,14 +9,14 @@ from apps.oi.models import IndiciaPublisherRevision
 @pytest.mark.django_db
 def test_create_add_revision(any_added_indicia_publisher_rev,
                              indicia_publisher_add_values,
-                             any_changeset, keywords):
+                             any_adding_changeset, keywords):
     ipr = any_added_indicia_publisher_rev
 
     for k, v in indicia_publisher_add_values.iteritems():
         assert getattr(ipr, k) == v
     assert ipr.indicia_publisher is None
 
-    assert ipr.changeset == any_changeset
+    assert ipr.changeset == any_adding_changeset
 
     assert ipr.source is None
     assert ipr.source_name == 'indicia_publisher'
@@ -47,16 +47,16 @@ def test_commit_added_revision(any_added_indicia_publisher_rev,
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_indicia_publisher,
                               indicia_publisher_add_values,
-                              any_changeset, keywords):
-    ipr = IndiciaPublisherRevision.objects.clone_revision(
-        instance=any_added_indicia_publisher,
-        changeset=any_changeset)
+                              any_editing_changeset, keywords):
+    ipr = IndiciaPublisherRevision.clone(
+        data_object=any_added_indicia_publisher,
+        changeset=any_editing_changeset)
 
     for k, v in indicia_publisher_add_values.iteritems():
         assert getattr(ipr, k) == v
     assert ipr.indicia_publisher is any_added_indicia_publisher
 
-    assert ipr.changeset == any_changeset
+    assert ipr.changeset == any_editing_changeset
 
     assert ipr.source is any_added_indicia_publisher
     assert ipr.source_name == 'indicia_publisher'

@@ -9,14 +9,14 @@ from apps.oi.models import BrandGroupRevision
 @pytest.mark.django_db
 def test_create_add_revision(any_added_brand_group_rev1,
                              brand_group_add_values,
-                             any_changeset, keywords):
+                             any_adding_changeset, keywords):
     bgr = any_added_brand_group_rev1
 
     for k, v in brand_group_add_values.iteritems():
         assert getattr(bgr, k) == v
     assert bgr.brand_group is None
 
-    assert bgr.changeset == any_changeset
+    assert bgr.changeset == any_adding_changeset
 
     assert bgr.source is None
     assert bgr.source_name == 'brand_group'
@@ -46,16 +46,16 @@ def test_commit_added_revision(any_added_brand_group_rev1,
 
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_brand_group1, brand_group_add_values,
-                              any_changeset, keywords):
-    bgr = BrandGroupRevision.objects.clone_revision(
-        instance=any_added_brand_group1,
-        changeset=any_changeset)
+                              any_editing_changeset, keywords):
+    bgr = BrandGroupRevision.clone(
+        data_object=any_added_brand_group1,
+        changeset=any_editing_changeset)
 
     for k, v in brand_group_add_values.iteritems():
         assert getattr(bgr, k) == v
     assert bgr.brand_group is any_added_brand_group1
 
-    assert bgr.changeset == any_changeset
+    assert bgr.changeset == any_editing_changeset
 
     assert bgr.source is any_added_brand_group1
     assert bgr.source_name == 'brand_group'
