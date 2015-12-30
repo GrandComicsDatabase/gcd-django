@@ -352,6 +352,17 @@ class Revision(models.Model):
         return frozenset()
 
     @classmethod
+    def _parent_many_to_many_fields(cls):
+        """
+        Same as _parent_fields but for parents that can be multiple.
+
+        An example would be brand groups in the form of issue.brand.group.
+        Currently, having many-to-many relation in the middle of a chain
+        of attributes is not supported.
+        """
+        return frozenset()
+
+    @classmethod
     def _many_to_many_fields(cls):
         """
         The set of many to many fields that may be changed during edits.

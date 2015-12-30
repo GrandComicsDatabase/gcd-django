@@ -335,6 +335,10 @@ def test_parent_fields():
     assert Revision._parent_fields() == frozenset()
 
 
+def test_parent_many_to_many_fields():
+    assert Revision._parent_many_to_many_fields() == frozenset()
+
+
 def test_many_to_many_fields():
     assert Revision._many_to_many_fields() == frozenset()
 
