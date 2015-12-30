@@ -1941,16 +1941,16 @@ class IssueRevision(Revision):
         # There are several routes to a publisher object, but
         # if there are differences, it is the publisher of the series
         # that should get the count adjustments.
-        #
-        # In the case of brand groups, we return the many-to-many
-        # set and let the calling code handle single vs multiple objects.
         return frozenset({
             ('series',),
             ('series', 'publisher'),
             ('indicia_publisher',),
             ('brand',),
-            ('brand', 'group'),
         })
+
+    @classmethod
+    def _parent_many_to_many_fields(cls):
+        return frozenset({('brand', 'group')})
 
     def _do_complete_added_revision(self, series, variant_of=None):
         """
