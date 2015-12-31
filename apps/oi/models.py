@@ -297,7 +297,7 @@ class Revision(models.Model):
         """
         The set of fields that can simply be copied to or from the data object.
 
-        All fields should appear either her or in _non_assignable_fields(),
+        All fields should appear either here or in _non_assignable_fields(),
         even if they appear in other sets.
         """
         return frozenset()
@@ -307,7 +307,7 @@ class Revision(models.Model):
         """
         The set of fields that cannot be copied directly to/from data object.
 
-        All fields should appear either her or in _assignable_fields(),
+        All fields should appear either here or in _assignable_fields(),
         even if they appear in other sets.
         """
         return frozenset()
