@@ -14,7 +14,7 @@ from django.utils.html import conditional_escape as esc
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import render_error, ResponsePaginator, paginate_response
 from apps.gcd.views.alpha_pagination import AlphaPaginator
-from apps.gcd import ErrorWithMessage
+from apps.gcd.errors import ErrorWithMessage
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 
