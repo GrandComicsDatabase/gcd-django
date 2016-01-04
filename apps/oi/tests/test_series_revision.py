@@ -3,7 +3,6 @@
 import pytest
 import mock
 
-from .conftest import DummyRevision
 from apps.gcd.models import Publisher, Series, Issue, Country, Language
 from apps.oi.models import Changeset, SeriesRevision, IssueRevision
 
@@ -53,7 +52,7 @@ def test_get_major_changes_all_change(patched_series_class):
                          is_comics_publication=False,
                          is_current=False,
                          is_singleton=True,
-                         previous_revision=DummyRevision())
+                         previous_revision=SeriesRevision())
 
     c = new._get_major_changes()
     assert c == {
@@ -94,7 +93,7 @@ def test_get_major_changes_no_change(patched_series_class):
                          is_comics_publication=False,
                          is_current=False,
                          is_singleton=True,
-                         previous_revision=DummyRevision())
+                         previous_revision=SeriesRevision())
 
     c = new._get_major_changes()
     assert c == {
@@ -168,7 +167,7 @@ def test_get_major_changes_deleted(patched_series_class):
                          is_comics_publication=True,
                          is_current=True,
                          is_singleton=False,
-                         previous_revision=DummyRevision(),
+                         previous_revision=SeriesRevision(),
                          deleted=True)
 
     c = new._get_major_changes()

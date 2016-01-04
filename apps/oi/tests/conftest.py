@@ -7,20 +7,9 @@ from django.contrib.auth.models import User
 from apps.gcd.models import Country, Language, Indexer, SeriesPublicationType
 from apps.oi import states
 from apps.oi.models import (
-    Revision, PublisherRevision, IndiciaPublisherRevision,
+    PublisherRevision, IndiciaPublisherRevision,
     BrandGroupRevision, BrandRevision, BrandUseRevision,
     SeriesRevision, Changeset, CTYPES)
-
-
-# Make a non-abstract class that acts like a Revision, but con be
-# instantiated (otherwise the OneToOneField has problems) and can
-# have a manager, i.e. DummyRevision.objects.
-#
-# This needs to be in conftests.py even though it's trivial because
-# if it is repeated in different test files, Django thinks there
-# are duplicate models being declared.
-class DummyRevision(Revision):
-    pass
 
 
 @pytest.fixture
