@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.db import models
 from django.core import urlresolvers
 from django.db.models import Sum
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes import fields as generic_fields
 from django.contrib.contenttypes.models import ContentType
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -91,7 +91,7 @@ class Issue(models.Model):
     series = models.ForeignKey('Series')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
-    image_resources = generic.GenericRelation(Image)
+    image_resources = generic_fields.GenericRelation(Image)
 
     @property
     def indicia_image(self):

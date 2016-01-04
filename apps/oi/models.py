@@ -6,7 +6,7 @@ from django.db.models import F
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes import fields as generic_fields
 from django.core.validators import RegexValidator
 
 from imagekit.models import ImageSpecField
@@ -90,7 +90,7 @@ class ChangesetComment(models.Model):
 
     content_type = models.ForeignKey(content_models.ContentType, null=True)
     revision_id = models.IntegerField(db_index=True, null=True)
-    revision = generic.GenericForeignKey('content_type', 'revision_id')
+    revision = generic_fields.GenericForeignKey('content_type', 'revision_id')
 
     old_state = models.IntegerField()
     new_state = models.IntegerField()
@@ -122,7 +122,8 @@ class RevisionLock(models.Model):
 
     content_type = models.ForeignKey(content_models.ContentType)
     object_id = models.IntegerField(db_index=True)
-    locked_object = generic.GenericForeignKey('content_type', 'object_id')
+    locked_object = generic_fields.GenericForeignKey('content_type',
+                                                     'object_id')
 
 
 class RevisionManager(models.Manager):
@@ -171,9 +172,10 @@ class Revision(models.Model):
     # at some point in the future.
     committed = models.NullBooleanField(default=None, db_index=True)
 
-    comments = generic.GenericRelation(ChangesetComment,
-                                       content_type_field='content_type',
-                                       object_id_field='revision_id')
+    comments = generic_fields.GenericRelation(
+        ChangesetComment,
+        content_type_field='content_type',
+        object_id_field='revision_id')
 
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
@@ -2462,14 +2464,14 @@ class ImageRevision(Revision):
 
     content_type = models.ForeignKey(content_models.ContentType, null=True)
     object_id = models.PositiveIntegerField(db_index=True, null=True)
-    object = generic.GenericForeignKey('content_type', 'object_id')
+    object = generic_fields.GenericForeignKey('content_type', 'object_id')
 
     type = models.ForeignKey(ImageType)
 
     image_file = models.ImageField(upload_to='%s/%%m_%%Y' %
                                              settings.NEW_GENERIC_IMAGE_DIR)
     scaled_image = ImageSpecField([ResizeToFit(width=400)],
-                                  image_field='image_file',
+                                  source='image_file',
                                   format='JPEG', options={'quality': 90})
 
     marked = models.BooleanField(default=False)

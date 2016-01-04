@@ -5,7 +5,7 @@ from django.db import models
 from django.db.models import F
 from django.core import urlresolvers
 from country import Country
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes import fields as generic_fields
 from django.contrib.contenttypes.models import ContentType
 
 from taggit.managers import TaggableManager
@@ -305,7 +305,7 @@ class Brand(BasePublisher):
                                    db_table='gcd_brand_emblem_group')
     issue_count = models.IntegerField(default=0)
 
-    image_resources = generic.GenericRelation(Image)
+    image_resources = generic_fields.GenericRelation(Image)
 
     @property
     def emblem(self):

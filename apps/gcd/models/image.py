@@ -8,7 +8,7 @@ from string import capitalize
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes import models as content_models
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes import fields as generic_fields
 from django.core import urlresolvers
 
 from imagekit.models import ImageSpecField
@@ -40,18 +40,18 @@ class Image(models.Model):
 
     content_type = models.ForeignKey(content_models.ContentType, null=True)
     object_id = models.PositiveIntegerField(db_index=True, null=True)
-    object = generic.GenericForeignKey('content_type', 'object_id')
+    object = generic_fields.GenericForeignKey('content_type', 'object_id')
 
     type = models.ForeignKey(ImageType)
 
     image_file = models.ImageField(upload_to=get_generic_image_path)
     scaled_image = ImageSpecField([ResizeToFit(width=400),],
-                                  image_field='image_file',format='JPEG',
+                                  source='image_file',format='JPEG',
                                   options={'quality': 90})
     thumbnail = ImageSpecField([ResizeToFit(height=50),],
-                               image_field='image_file', format='JPEG',
+                               source='image_file', format='JPEG',
                                options={'quality': 90})
-    icon = ImageSpecField([ResizeToFit(height=30),], image_field='image_file',
+    icon = ImageSpecField([ResizeToFit(height=30),], source='image_file',
                           format='JPEG', options={'quality': 90})
 
     marked = models.BooleanField(default=False)
