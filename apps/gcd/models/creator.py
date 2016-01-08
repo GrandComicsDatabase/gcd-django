@@ -4,9 +4,12 @@ import datetime
 import calendar
 from django.core import urlresolvers
 from django.db import models
-from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+
+from apps.gcd.models import Image
 from apps.gcd.models.country import Country
 from apps.oi import states
+from django.contrib.contenttypes import generic
 
 MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1,13)]
 
@@ -148,14 +151,14 @@ class Creator(models.Model):
     death_city = models.CharField(max_length=200, blank=True, null=True)
     death_city_uncertain = models.BooleanField(default=False)
     death_city_source = models.ManyToManyField(SourceType, related_name='deathcitysource', through='DeathCitySource', null=True, blank=True)
-    portrait = models.ImageField(upload_to=settings.PORTRAIT_DIR, null=True, blank=True)
+    portrait = generic.GenericRelation(Image, related_name='creator_portrait')
     portrait_source = models.ManyToManyField(SourceType, related_name='portraitsource', through='PortraitSource', null=True, blank=True)
     schools = models.ManyToManyField('School', related_name='schoolinformation', through='CreatorSchoolDetail', null=True, blank=True)
     degrees = models.ManyToManyField('Degree', related_name='degreeinformation', through='CreatorDegreeDetail', null=True, blank=True)
     # creators roles
     bio = models.TextField(blank=True, null=True)
     bio_source = models.ManyToManyField(SourceType, related_name='biosource', through='BioSource', null=True, blank=True)
-    sample_scan = models.FileField(upload_to=settings.SAMPLE_SCAN_DIR, null=True, blank=True)
+    sample_scan = generic.GenericRelation(Image, related_name='creator_sample_scan')
     notes = models.TextField(blank=True, null=True)
 
     # Fields related to change management.
@@ -168,16 +171,31 @@ class Creator(models.Model):
     def __unicode__(self):
         return '%s' % unicode(self.gcd_official_name)
 
+    def _portrait(self):
+        img = Image.objects.filter(object_id=self.id, deleted=False,
+          content_type = ContentType.objects.get_for_model(self), type__id=4)
+        if img:
+            return img.get()
+        else:
+            return None
+    portrait = property(_portrait)
+
+    def _samplescan(self):
+        img = Image.objects.filter(object_id=self.id, deleted=False,
+          content_type = ContentType.objects.get_for_model(self), type__id=5)
+        if img:
+            return img.get()
+        else:
+            return None
+    samplescan = property(_samplescan)
+
+    def full_name(self):
+        return unicode(self)
+
     def get_link_fields(self):
         links_dict = {}
         links_dict['Whos Who'] = self.whos_who
         return links_dict
-
-    def get_file_fields(self):
-        files_dict = OrderedDict()
-        files_dict['Portrait'] = self.portrait
-        files_dict['Sample Scan'] = self.sample_scan
-        return files_dict
 
     def get_text_fields(self):
         fields_dict = OrderedDict()

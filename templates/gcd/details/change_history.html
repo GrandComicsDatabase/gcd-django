@@ -188,5 +188,31 @@ should include a comment explaining the deletion.
 </div>
 {% endif %}
 
+{% if description = "Creators" and object.portrait %}
+<div>
+  <table class="listing">
+    <tr>
+      <th colspan="2">Change History For Creator portrait image</th>
+    </tr>
+  {% with model_name='image' object=object.portrait %}
+    {% include "gcd/bits/change_history_link.html" %}
+  {% endwith %}
+  </table>
+</div>
+{% endif %}
+
+{% if description = "Creators" and object.samplescan %}
+<div>
+  <table class="listing">
+    <tr>
+      <th colspan="2">Change History For Sample scan</th>
+    </tr>
+  {% with model_name='image' object=object.samplescan %}
+    {% include "gcd/bits/change_history_link.html" %}
+  {% endwith %}
+  </table>
+</div>
+{% endif %}
+
 {% endblock %}
 

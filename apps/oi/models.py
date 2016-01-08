@@ -5544,8 +5544,6 @@ class CreatorRevisionManager(RevisionManager):
             'death_city_uncertain': instance.death_city_uncertain,
             'bio': instance.bio,
             'notes': instance.notes,
-            'portrait': instance.portrait,
-            'sample_scan': instance.sample_scan
         }
 
     def clone_revision(self, creator, changeset):
@@ -5771,7 +5769,6 @@ class CreatorRevision(Revision):
                                                through='DeathCitySourceRevision',
                                                null=True,
                                                blank=True)
-    portrait = models.ImageField(upload_to=settings.PORTRAIT_DIR, null=True, blank=True)
     portrait_source = models.ManyToManyField('gcd.SourceType',
                                              related_name='cr_portraitsource',
                                              through='PortraitSourceRevision',
@@ -5793,7 +5790,6 @@ class CreatorRevision(Revision):
                                         through='BioSourceRevision',
                                         null=True,
                                         blank=True)
-    sample_scan = models.FileField(upload_to=settings.SAMPLE_SCAN_DIR, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
 
     def __unicode__(self):
@@ -5871,12 +5867,6 @@ class CreatorRevision(Revision):
         links_dict = {}
         links_dict['Whos Who'] = self.whos_who
         return links_dict
-
-    def get_file_fields(self):
-        files_dict = {}
-        files_dict['Portrait'] = self.portrait
-        files_dict['Sample Scan'] = self.sample_scan
-        return files_dict
 
     def get_text_fields(self):
         fields_dict = OrderedDict()
@@ -5976,9 +5966,7 @@ class CreatorRevision(Revision):
         ctr.death_province_uncertain = self.death_province_uncertain
         ctr.death_city = self.death_city
         ctr.death_city_uncertain = self.death_city_uncertain
-        ctr.portrait = self.portrait
         ctr.bio = self.bio
-        ctr.sample_scan = self.sample_scan
         ctr.notes = self.notes
 
         if clear_reservation:
