@@ -34,7 +34,7 @@
             <h4 class="modal-title">{% trans "Import Issues Into A Collection" %}</h4>
           </div>
           <div class="modal-body">
-            Select file: <input type="file" name="import_my_issues">
+            {% trans "Select file:" %} <input type="file" name="import_my_issues">
           {% csrf_token %}
           </div>
           <div class="modal-body">
