@@ -66,7 +66,8 @@ def creator_membership(request, creator_membership_id):
     creator_membership = get_object_or_404(Membership, id=creator_membership_id)
     if creator_membership.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'creator_membership', 'id': creator_membership_id}))
+            kwargs={'model_name': 'creator_membership',
+                    'id': creator_membership_id}))
 
     return show_creator_membership(request, creator_membership)
 
@@ -79,18 +80,22 @@ def creator_award(request, creator_award_id):
     return show_creator_award(request, creator_award)
 
 def creator_artinfluence(request, creator_artinfluence_id):
-    creator_artinfluence = get_object_or_404(ArtInfluence, id=creator_artinfluence_id)
+    creator_artinfluence = get_object_or_404(ArtInfluence,
+                                             id=creator_artinfluence_id)
     if creator_artinfluence.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'creator_artinfluence', 'id': creator_artinfluence_id}))
+          kwargs={'model_name': 'creator_artinfluence',
+                  'id': creator_artinfluence_id}))
 
     return show_creator_artinfluence(request, creator_artinfluence)
 
 def creator_noncomicwork(request, creator_noncomicwork_id):
-    creator_noncomicwork = get_object_or_404(NonComicWork, id=creator_noncomicwork_id)
+    creator_noncomicwork = get_object_or_404(NonComicWork,
+                                             id=creator_noncomicwork_id)
     if creator_noncomicwork.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'creator_noncomicwork', 'id': creator_noncomicwork_id}))
+          kwargs={'model_name': 'creator_noncomicwork',
+                  'id': creator_noncomicwork_id}))
 
     return show_creator_noncomicwork(request, creator_noncomicwork)
 
@@ -111,7 +116,7 @@ def show_creator_membership(request, creator_membership, preview=False):
             'error_subject': creator_membership,
             'preview': preview}
     return paginate_response(request, creator_membership_series,
-                                 'gcd/details/creator_membership_details.html', vars)
+                            'gcd/details/creator_membership_details.html', vars)
 
 def show_creator_award(request, creator_award, preview=False):
     creator_award_series = []
@@ -129,7 +134,7 @@ def show_creator_artinfluence(request, creator_artinfluence, preview=False):
             'error_subject': creator_artinfluence,
             'preview': preview}
     return paginate_response(request, creator_artinfluence_series,
-                                 'gcd/details/creator_artinfluence_details.html', vars)
+                        'gcd/details/creator_artinfluence_details.html', vars)
 
 def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
     creator_noncomicwork_series = []
@@ -138,7 +143,7 @@ def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
             'error_subject': creator_noncomicwork,
             'preview': preview}
     return paginate_response(request, creator_noncomicwork_series,
-                                 'gcd/details/creator_noncomicwork_details.html', vars)
+                        'gcd/details/creator_noncomicwork_details.html', vars)
 
 def publisher(request, publisher_id):
     """
@@ -415,7 +420,12 @@ def series_details(request, series_id, by_date=False):
     issues_left_over = []
     bad_key_dates = []
     if by_date:
-        no_key_date_q = Q(key_date__isnull=True) | Q(key_date='')
+        no_key_date_q = Q(key_date__isnull=True
+
+
+
+
+) | Q(key_date='')
         with_key_dates = series.active_issues().exclude(no_key_date_q)
 
         prev_year = None

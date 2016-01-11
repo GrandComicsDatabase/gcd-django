@@ -5513,7 +5513,6 @@ class ImageRevision(Revision):
 
 
 class CreatorRevisionManager(RevisionManager):
-
     def _base_field_kwargs(self, instance):
         return {
             'gcd_official_name': instance.gcd_official_name,
@@ -5563,17 +5562,17 @@ class CreatorRevisionManager(RevisionManager):
         """
         kwargs = self._base_field_kwargs(creator)
         revision = CreatorRevision(
-          # revision-specific fields:
-            creator=creator,
-            changeset=changeset,
-            **kwargs)
+                # revision-specific fields:
+                creator=creator,
+                changeset=changeset,
+                **kwargs)
 
         revision.save()
 
         name_details = creator.creator_names.all()
         for name_detail in name_details:
             CreatorNameDetailsRevision.objects.clone_revision(name_detail,
-                                                      changeset=changeset)
+                                                              changeset=changeset)
 
         birth_year_sources = creator.creatorbirthyearsource.all()
         for birth_year_source in birth_year_sources:
@@ -5598,7 +5597,7 @@ class CreatorRevisionManager(RevisionManager):
         death_month_sources = creator.creatordeathmonthsource.all()
         for death_month_source in death_month_sources:
             DeathMonthSourceRevision.objects.clone_revision(death_month_source,
-                                                             changeset=changeset)
+                                                            changeset=changeset)
 
         death_date_sources = creator.creatordeathdatesource.all()
         for death_date_source in death_date_sources:
@@ -5607,13 +5606,15 @@ class CreatorRevisionManager(RevisionManager):
 
         birth_country_sources = creator.creatorbirthcountrysource.all()
         for birth_country_source in birth_country_sources:
-            BirthCountrySourceRevision.objects.clone_revision(birth_country_source,
-                                                              changeset=changeset)
+            BirthCountrySourceRevision.objects.clone_revision(
+                    birth_country_source,
+                    changeset=changeset)
 
         birth_province_sources = creator.creatorbirthprovincesource.all()
         for birth_province_source in birth_province_sources:
-            BirthProvinceSourceRevision.objects.clone_revision(birth_province_source,
-                                                               changeset=changeset)
+            BirthProvinceSourceRevision.objects.clone_revision(
+                    birth_province_source,
+                    changeset=changeset)
 
         birth_city_sources = creator.creatorbirthcitysource.all()
         for birth_city_source in birth_city_sources:
@@ -5622,13 +5623,15 @@ class CreatorRevisionManager(RevisionManager):
 
         death_country_sources = creator.creatordeathcountrysource.all()
         for death_country_source in death_country_sources:
-            DeathCountrySourceRevision.objects.clone_revision(death_country_source,
-                                                               changeset=changeset)
+            DeathCountrySourceRevision.objects.clone_revision(
+                    death_country_source,
+                    changeset=changeset)
 
         death_province_sources = creator.creatordeathprovincesource.all()
         for death_province_source in death_province_sources:
-            DeathProvinceSourceRevision.objects.clone_revision(death_province_source,
-                                                                changeset=changeset)
+            DeathProvinceSourceRevision.objects.clone_revision(
+                    death_province_source,
+                    changeset=changeset)
 
         death_city_sources = creator.creatordeathcitysource.all()
         for death_city_source in death_city_sources:
@@ -5638,20 +5641,24 @@ class CreatorRevisionManager(RevisionManager):
         portrait_sources = creator.creatorportraitsource.all()
         for portrait_source in portrait_sources:
             PortraitSourceRevision.objects.clone_revision(portrait_source,
-                                                           changeset=changeset)
+                                                          changeset=changeset)
 
-        school_list = [schools.school for schools in creator.creator_school.all()]
+        school_list = [schools.school for schools in
+                       creator.creator_school.all()]
         for school in creator.creator_school.all():
             CreatorSchoolDetailRevision.objects.clone_revision(school,
                                                                changeset=changeset)
 
-        CreatorSchoolDetailRevision.objects.exclude(school__in=school_list).delete()
+        CreatorSchoolDetailRevision.objects.exclude(
+                school__in=school_list).delete()
 
-        degree_list = [degrees.degree for degrees in creator.creator_degree.all()]
+        degree_list = [degrees.degree for degrees in
+                       creator.creator_degree.all()]
         for degree in creator.creator_degree.all():
             CreatorDegreeDetailRevision.objects.clone_revision(degree,
                                                                changeset=changeset)
-        CreatorDegreeDetailRevision.objects.exclude(degree__in=degree_list).delete()
+        CreatorDegreeDetailRevision.objects.exclude(
+                degree__in=degree_list).delete()
 
         bio_sources = creator.creatorbiosource.all()
         for bio_source in bio_sources:
@@ -5668,15 +5675,15 @@ class CreatorRevision(Revision):
 
     objects = CreatorRevisionManager()
 
-    creator=models.ForeignKey('gcd.Creator',
-                              null=True,
-                              related_name='revisions')
+    creator = models.ForeignKey('gcd.Creator',
+                                null=True,
+                                related_name='revisions')
 
     gcd_official_name = models.CharField(max_length=255, db_index=True)
     related_person = models.ManyToManyField(
-        'self',
-        through='NameRelationRevision',
-        symmetrical=False)
+            'self',
+            through='NameRelationRevision',
+            symmetrical=False)
     birth_year = models.PositiveSmallIntegerField(null=True, blank=True)
     birth_year_uncertain = models.BooleanField(default=False)
     birth_year_source = models.ManyToManyField('gcd.SourceType',
@@ -5684,7 +5691,8 @@ class CreatorRevision(Revision):
                                                through='BirthYearSourceRevision',
                                                null=True,
                                                blank=True)
-    birth_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, null=True, blank=True)
+    birth_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES,
+                                                   null=True, blank=True)
     birth_month_uncertain = models.BooleanField(default=False)
     birth_month_source = models.ManyToManyField('gcd.SourceType',
                                                 related_name='cr_birthmonthsource',
@@ -5698,14 +5706,15 @@ class CreatorRevision(Revision):
                                                through='BirthDateSourceRevision',
                                                null=True,
                                                blank=True)
-    death_year = models.PositiveSmallIntegerField(null=True, blank=True,)
+    death_year = models.PositiveSmallIntegerField(null=True, blank=True, )
     death_year_uncertain = models.BooleanField(default=False)
     death_year_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_deathyearsource',
                                                through='DeathYearSourceRevision',
                                                null=True,
                                                blank=True)
-    death_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES, null=True, blank=True)
+    death_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES,
+                                                   null=True, blank=True)
     death_month_uncertain = models.BooleanField(default=False)
     death_month_source = models.ManyToManyField('gcd.SourceType',
                                                 related_name='cr_deathmonthsource',
@@ -5721,10 +5730,10 @@ class CreatorRevision(Revision):
                                                blank=True)
     whos_who = models.URLField(blank=True, null=True)
     birth_country = models.ForeignKey(
-        'gcd.Country',
-        related_name='cr_birth_country',
-        blank=True,
-        null=True)
+            'gcd.Country',
+            related_name='cr_birth_country',
+            blank=True,
+            null=True)
     birth_country_uncertain = models.BooleanField(default=False)
     birth_country_source = models.ManyToManyField('gcd.SourceType',
                                                   related_name='cr_birthcountrysource',
@@ -5796,36 +5805,36 @@ class CreatorRevision(Revision):
         return '%s' % unicode(self.gcd_official_name)
 
     _base_field_list = [
-                        'gcd_official_name',
-                        'cr_creator_names',
-                        'birth_year',
-                        'birth_year_uncertain',
-                        'birth_month',
-                        'birth_month_uncertain',
-                        'birth_date',
-                        'birth_date_uncertain',
-                        'death_year',
-                        'death_year_uncertain',
-                        'death_month',
-                        'death_month_uncertain',
-                        'death_date',
-                        'death_date_uncertain',
-                        'whos_who',
-                        'birth_country',
-                        'birth_country_uncertain',
-                        'birth_province',
-                        'birth_province_uncertain',
-                        'birth_city',
-                        'birth_city_uncertain',
-                        'death_country',
-                        'death_country_uncertain',
-                        'death_province',
-                        'death_province_uncertain',
-                        'death_city',
-                        'death_city_uncertain',
-                        'bio',
-                        'notes',
-                    ]
+        'gcd_official_name',
+        'cr_creator_names',
+        'birth_year',
+        'birth_year_uncertain',
+        'birth_month',
+        'birth_month_uncertain',
+        'birth_date',
+        'birth_date_uncertain',
+        'death_year',
+        'death_year_uncertain',
+        'death_month',
+        'death_month_uncertain',
+        'death_date',
+        'death_date_uncertain',
+        'whos_who',
+        'birth_country',
+        'birth_country_uncertain',
+        'birth_province',
+        'birth_province_uncertain',
+        'birth_city',
+        'birth_city_uncertain',
+        'death_country',
+        'death_country_uncertain',
+        'death_province',
+        'death_province_uncertain',
+        'death_city',
+        'death_city_uncertain',
+        'bio',
+        'notes',
+    ]
 
     def _field_list(self):
         return self._base_field_list
@@ -5840,7 +5849,7 @@ class CreatorRevision(Revision):
             'birth_month_uncertain': None,
             'birth_date': None,
             'birth_date_uncertain': None,
-            'death_year':None ,
+            'death_year': None,
             'death_year_uncertain': None,
             'death_month': None,
             'death_month_uncertain': None,
@@ -5873,23 +5882,29 @@ class CreatorRevision(Revision):
         fields_dict['GCD Official Name'] = self.gcd_official_name
         fields_dict['Birth Year Uncertain'] = self.birth_year
         fields_dict['Birth Year'] = self.birth_year_uncertain
-        fields_dict['Birth Month'] = calendar.month_name[self.birth_month] if self.birth_month else None
+        fields_dict['Birth Month'] = calendar.month_name[
+            self.birth_month] if self.birth_month else None
         fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
         fields_dict['Birth Date'] = self.birth_date
         fields_dict['Birth Date Uncertain'] = self.birth_date_uncertain
         fields_dict['Death Year'] = self.death_year
         fields_dict['Death Year Uncertain'] = self.death_year_uncertain
-        fields_dict['Death Month'] = calendar.month_name[self.death_month] if self.death_month else None
+        fields_dict['Death Month'] = calendar.month_name[
+            self.death_month] if self.death_month else None
         fields_dict['Death Month Uncertain'] = self.death_month_uncertain
         fields_dict['Death Date'] = self.death_date
         fields_dict['Death Date Uncertain'] = self.death_date_uncertain
-        fields_dict['Birth Country'] = self.birth_country.name if self.birth_country else None
+        fields_dict[
+            'Birth Country'] = self.birth_country.name if self.birth_country \
+            else None
         fields_dict['Birth Country Uncertain'] = self.birth_country_uncertain
         fields_dict['Birth Province'] = self.birth_province
         fields_dict['Birth Province Uncertain'] = self.birth_province_uncertain
         fields_dict['Birth City'] = self.birth_city
         fields_dict['Birth City Uncertain'] = self.birth_city_uncertain
-        fields_dict['Death Country'] = self.death_country.name if self.death_country else None
+        fields_dict[
+            'Death Country'] = self.death_country.name if self.death_country \
+            else None
         fields_dict['Death Country Uncertain'] = self.death_country_uncertain
         fields_dict['Death Province'] = self.death_province
         fields_dict['Death Province Uncertain'] = self.death_province_uncertain
@@ -5901,7 +5916,6 @@ class CreatorRevision(Revision):
 
     def description(self):
         return '%s' % unicode(self.gcd_official_name)
-
 
     def _source(self):
         return self.creator
@@ -5976,9 +5990,11 @@ class CreatorRevision(Revision):
         creator_name_details = self.cr_creator_names.all()
         updated_creator_name_list = []
         for creator_name_detail in creator_name_details:
-            creator_name_object, created = CreatorNameDetails.objects.get_or_create(creator=ctr,
-                                                                           name=creator_name_detail.name,
-                                                                           type=creator_name_detail.type)
+            creator_name_object, created = \
+                CreatorNameDetails.objects.get_or_create(
+                        creator=ctr,
+                        name=creator_name_detail.name,
+                        type=creator_name_detail.type)
 
             creator_name_object.source.clear()
             sources = creator_name_detail.source.all()
@@ -5986,114 +6002,135 @@ class CreatorRevision(Revision):
                 creator_name_object.source.add(source)
 
             updated_creator_name_list.append(creator_name_object.id)
-        CreatorNameDetails.objects.exclude(creator=ctr, id__in=updated_creator_name_list).delete()
+        CreatorNameDetails.objects.exclude(creator=ctr,
+                                           id__in=updated_creator_name_list).delete()
 
         BirthYearSource.objects.filter(creator=ctr).delete()
         birth_year_sources = self.cr_creatorbirthyearsource.all()
-        birth_year_source_types = [ birth_year_source.source_type for birth_year_source in birth_year_sources]
+        birth_year_source_types = [birth_year_source.source_type for
+                                   birth_year_source in birth_year_sources]
         for birth_year_source_type in birth_year_source_types:
             BirthYearSource.objects.create(creator=ctr,
                                            source_type=birth_year_source_type)
 
         BirthMonthSource.objects.filter(creator=ctr).delete()
         birth_month_sources = self.cr_creatorbirthmonthsource.all()
-        birth_month_source_types = [ birth_month_source.source_type for birth_month_source in birth_month_sources]
+        birth_month_source_types = [birth_month_source.source_type for
+                                    birth_month_source in birth_month_sources]
         for birth_month_source_type in birth_month_source_types:
             BirthMonthSource.objects.create(creator=ctr,
                                             source_type=birth_month_source_type)
 
         BirthDateSource.objects.filter(creator=ctr).delete()
         birth_date_sources = self.cr_creatorbirthdatesource.all()
-        birth_date_source_types = [ birth_date_source.source_type for birth_date_source in birth_date_sources]
+        birth_date_source_types = [birth_date_source.source_type for
+                                   birth_date_source in birth_date_sources]
         for birth_date_source_type in birth_date_source_types:
             BirthDateSource.objects.create(creator=ctr,
                                            source_type=birth_date_source_type)
 
         DeathYearSource.objects.filter(creator=ctr).delete()
         death_year_sources = self.cr_creatordeathyearsource.all()
-        death_year_source_types = [ death_year_source.source_type for death_year_source in death_year_sources]
+        death_year_source_types = [death_year_source.source_type for
+                                   death_year_source in death_year_sources]
         for death_year_source_type in death_year_source_types:
-            DeathYearSource.objects.create(creator=ctr, source_type=death_year_source_type)
+            DeathYearSource.objects.create(creator=ctr,
+                                           source_type=death_year_source_type)
 
         DeathMonthSource.objects.filter(creator=ctr).delete()
         death_month_sources = self.cr_creatordeathmonthsource.all()
-        death_month_source_types = [ death_month_source.source_type for death_month_source in death_month_sources]
+        death_month_source_types = [death_month_source.source_type for
+                                    death_month_source in death_month_sources]
         for death_month_source_type in death_month_source_types:
             DeathMonthSource.objects.create(creator=ctr,
                                             source_type=death_month_source_type)
 
         DeathDateSource.objects.filter(creator=ctr).delete()
         death_date_sources = self.cr_creatordeathdatesource.all()
-        death_date_source_types = [ death_date_source.source_type for death_date_source in death_date_sources]
+        death_date_source_types = [death_date_source.source_type for
+                                   death_date_source in death_date_sources]
         for death_date_source_type in death_date_source_types:
             DeathDateSource.objects.create(creator=ctr,
                                            source_type=death_date_source_type)
 
         BirthCountrySource.objects.filter(creator=ctr).delete()
         birth_country_sources = self.cr_creatorbirthcountrysource.all()
-        birth_country_source_types = [ birth_country_source.source_type for birth_country_source in birth_country_sources]
+        birth_country_source_types = [birth_country_source.source_type for
+                                      birth_country_source in
+                                      birth_country_sources]
         for birth_country_source_type in birth_country_source_types:
             BirthCountrySource.objects.create(creator=ctr,
                                               source_type=birth_country_source_type)
 
         BirthProvinceSource.objects.filter(creator=ctr).delete()
         birth_province_sources = self.cr_creatorbirthprovincesource.all()
-        birth_province_source_types = [ birth_province_source.source_type for birth_province_source in birth_province_sources]
+        birth_province_source_types = [birth_province_source.source_type for
+                                       birth_province_source in
+                                       birth_province_sources]
         for birth_province_source_type in birth_province_source_types:
             BirthProvinceSource.objects.create(creator=ctr,
                                                source_type=birth_province_source_type)
 
         BirthCitySource.objects.filter(creator=ctr).delete()
         birth_city_sources = self.cr_creatorbirthcitysource.all()
-        birth_city_source_types = [ birth_city_source.source_type for birth_city_source in birth_city_sources]
+        birth_city_source_types = [birth_city_source.source_type for
+                                   birth_city_source in birth_city_sources]
         for birth_city_source_type in birth_city_source_types:
             BirthCitySource.objects.create(creator=ctr,
                                            source_type=birth_city_source_type)
 
         DeathCountrySource.objects.filter(creator=ctr).delete()
         death_country_sources = self.cr_creatordeathcountrysource.all()
-        death_country_source_types = [ death_country_source.source_type for death_country_source in death_country_sources]
+        death_country_source_types = [death_country_source.source_type for
+                                      death_country_source in
+                                      death_country_sources]
         for death_country_source_type in death_country_source_types:
             DeathCountrySource.objects.create(creator=ctr,
                                               source_type=death_country_source_type)
 
         DeathProvinceSource.objects.filter(creator=ctr).delete()
         death_province_sources = self.cr_creatordeathprovincesource.all()
-        death_province_source_types = [ death_province_source.source_type for death_province_source in death_province_sources]
+        death_province_source_types = [death_province_source.source_type for
+                                       death_province_source in
+                                       death_province_sources]
         for death_province_source_type in death_province_source_types:
-            DeathProvinceSource.objects.create(creator=ctr, source_type=death_province_source_type)
+            DeathProvinceSource.objects.create(creator=ctr,
+                                               source_type=death_province_source_type)
 
         DeathCitySource.objects.filter(creator=ctr).delete()
         death_city_sources = self.cr_creatordeathcitysource.all()
-        death_city_source_types = [ death_city_source.source_type for death_city_source in death_city_sources]
+        death_city_source_types = [death_city_source.source_type for
+                                   death_city_source in death_city_sources]
         for death_city_source_type in death_city_source_types:
             DeathCitySource.objects.create(creator=ctr,
                                            source_type=death_city_source_type)
 
         PortraitSource.objects.filter(creator=ctr).delete()
         portrait_sources = self.cr_creatorportraitsource.all()
-        portrait_source_types = [ portrait_source.source_type for portrait_source in portrait_sources]
+        portrait_source_types = [portrait_source.source_type for portrait_source
+                                 in portrait_sources]
         for portrait_source_type in portrait_source_types:
             PortraitSource.objects.create(creator=ctr,
                                           source_type=portrait_source_type)
 
         CreatorSchoolDetail.objects.filter(creator=ctr).delete()
         schools = self.cr_creator_school.all()
-        school_list = [ school_object.school for school_object in schools]
+        school_list = [school_object.school for school_object in schools]
         for school in school_list:
             CreatorSchoolDetail.objects.create(creator=ctr,
                                                school=school)
 
         CreatorDegreeDetail.objects.filter(creator=ctr).delete()
         degrees = self.cr_creator_degree.all()
-        degree_list = [ degree_object.degree for degree_object in degrees]
+        degree_list = [degree_object.degree for degree_object in degrees]
         for degree in degree_list:
             CreatorDegreeDetail.objects.create(creator=ctr,
                                                degree=degree)
 
         BioSource.objects.filter(creator=ctr).delete()
         bio_sources = self.cr_creatorbiosource.all()
-        bio_source_types = [ bio_source.source_type for bio_source in bio_sources]
+        bio_source_types = [bio_source.source_type for bio_source in
+                            bio_sources]
         for bio_source_type in bio_source_types:
             BioSource.objects.create(creator=ctr,
                                      source_type=bio_source_type)
@@ -6104,10 +6141,10 @@ class CreatorRevision(Revision):
 
 
 class RelationTypeRevisionManager(RevisionManager):
-
     def clone_revision(self, relationtype, changeset):
         """
-        Given an existing RelationType instance, create a new revision based on it.
+        Given an existing RelationType instance, create a new revision based
+        on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6121,22 +6158,22 @@ class RelationTypeRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = RelationTypeRevision(
-          # revision-specific fields:
-          creator=relationtype,
-          changeset=changeset,
+                # revision-specific fields:
+                creator=relationtype,
+                changeset=changeset,
 
-          # copied fields:
-          )
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class RelationTypeRevision(Revision):
-
     """
     The type of relation between two creators.
     """
+
     class Meta:
         app_label = 'oi'
         ordering = ('type',)
@@ -6153,10 +6190,10 @@ class RelationTypeRevision(Revision):
 
 
 class NameRelationRevisionManager(RevisionManager):
-
     def clone_revision(self, namerelation, changeset):
         """
-        Given an existing NameRelation instance, create a new revision based on it.
+        Given an existing NameRelation instance, create a new revision based
+        on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6170,22 +6207,23 @@ class NameRelationRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = NameRelationRevision(
-          # revision-specific fields:
-          creator=namerelation,
-          changeset=changeset,
+                # revision-specific fields:
+                creator=namerelation,
+                changeset=changeset,
 
-          # copied fields:
-          )
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class NameRelationRevision(Revision):
+    """
+    Relations between creators to relate any GCD Official name to any other
+    name.
+    """
 
-    """
-    Relations between creators to relate any GCD Official name to any other name.
-    """
     class Meta:
         db_table = 'oi_namerelation_revision'
         ordering = ('gcd_official_name', 'rel_type', 'to_name')
@@ -6196,8 +6234,8 @@ class NameRelationRevision(Revision):
                                       null=True,
                                       related_name='cr_name_relation')
     gcd_official_name = models.ForeignKey(
-        CreatorRevision,
-        related_name='creator_revise_gcd_official_name')
+            CreatorRevision,
+            related_name='creator_revise_gcd_official_name')
     to_name = models.ForeignKey(CreatorRevision,
                                 related_name='creator_revise_to_name')
     rel_type = models.ForeignKey(RelationTypeRevision,
@@ -6206,7 +6244,8 @@ class NameRelationRevision(Revision):
 
     def __unicode__(self):
         return '%s >Name_Relation< %s :: %s' % (unicode(self.gcd_official_name),
-                                                unicode(self.to_name), unicode(self.rel_type)
+                                                unicode(self.to_name),
+                                                unicode(self.rel_type)
 
                                                 )
 
@@ -6214,7 +6253,8 @@ class NameRelationRevision(Revision):
 class CreatorNameDetailsRevisionManager(RevisionManager):
     def clone_revision(self, creatorname, changeset):
         """
-        Given an existing NameSource instance, create a new revision based on it.
+        Given an existing NameSource instance, create a new revision based on
+        it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6228,13 +6268,13 @@ class CreatorNameDetailsRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = CreatorNameDetailsRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          name=creatorname.name,
-          type=creatorname.type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                name=creatorname.name,
+                type=creatorname.type,
+                # copied fields:
+        )
 
         revision.save()
 
@@ -6250,23 +6290,27 @@ class CreatorNameDetailsRevision(Revision):
     """
 
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         verbose_name_plural = 'Creator Name Detail Revisions'
 
     objects = CreatorNameDetailsRevisionManager()
     creator_name_detail = models.ForeignKey('gcd.CreatorNameDetails',
-                                              null=True,
-                                              related_name='cr_creator_name_details')
+                                            null=True,
+                                            related_name='cr_creator_name_details')
     creator = models.ForeignKey(CreatorRevision,
                                 related_name='cr_creator_names')
     name = models.CharField(max_length=255, db_index=True)
     description = models.TextField(null=True, blank=True)
-    type = models.ForeignKey('gcd.NameType', related_name='cr_nametypes', null=True, blank=True)
-    source = models.ManyToManyField('gcd.SourceType', related_name='cr_namesources', null=True, blank=True)
+    type = models.ForeignKey('gcd.NameType', related_name='cr_nametypes',
+                             null=True, blank=True)
+    source = models.ManyToManyField('gcd.SourceType',
+                                    related_name='cr_namesources', null=True,
+                                    blank=True)
 
     def __unicode__(self):
-        return '%s - %s(%s)' % (unicode(self.creator), unicode(self.name),unicode(self.type.type))
+        return '%s - %s(%s)' % (
+            unicode(self.creator), unicode(self.name), unicode(self.type.type))
 
     def _source(self):
         return self.name
@@ -6276,10 +6320,10 @@ class CreatorNameDetailsRevision(Revision):
 
 
 class BirthYearSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, birthyearsource, changeset):
         """
-        Given an existing BirthYearSource instance, create a new revision based on it.
+        Given an existing BirthYearSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6293,24 +6337,24 @@ class BirthYearSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = BirthYearSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=birthyearsource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=birthyearsource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class BirthYearSourceRevision(Revision):
-
     """
     Indicates the various sources of birthyear
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Birth Year Source Revisions'
@@ -6326,14 +6370,15 @@ class BirthYearSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthMonthSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, birthmonthsource, changeset):
         """
-        Given an existing BirthMonthSource instance, create a new revision based on it.
+        Given an existing BirthMonthSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6347,24 +6392,24 @@ class BirthMonthSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = BirthMonthSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=birthmonthsource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=birthmonthsource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class BirthMonthSourceRevision(Revision):
-
     """
     Indicates the various sources of birthmonth
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Birth Month Source Revisions'
@@ -6380,14 +6425,15 @@ class BirthMonthSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthDateSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, birthdatesource, changeset):
         """
-        Given an existing BirthDateSource instance, create a new revision based on it.
+        Given an existing BirthDateSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6401,24 +6447,24 @@ class BirthDateSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = BirthDateSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=birthdatesource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=birthdatesource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class BirthDateSourceRevision(Revision):
-
     """
     Indicates the various sources of birthdate
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Birth Date Source Revisions'
@@ -6434,14 +6480,15 @@ class BirthDateSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathYearSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, deathyearsource, changeset):
         """
-        Given an existing DeathYearSource instance, create a new revision based on it.
+        Given an existing DeathYearSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6455,24 +6502,24 @@ class DeathYearSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = DeathYearSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=deathyearsource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=deathyearsource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class DeathYearSourceRevision(Revision):
-
     """
     Indicates the various sources of deathyear
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Death Year Source Revisions'
@@ -6488,14 +6535,15 @@ class DeathYearSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathMonthSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, deathmonthsource, changeset):
         """
-        Given an existing DeathMonthSource instance, create a new revision based on it.
+        Given an existing DeathMonthSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6509,24 +6557,24 @@ class DeathMonthSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = DeathMonthSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=deathmonthsource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=deathmonthsource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class DeathMonthSourceRevision(Revision):
-
     """
     Indicates the various sources of deathmonth
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Death Month Source Revisions'
@@ -6542,14 +6590,15 @@ class DeathMonthSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathDateSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, deathdeathsource, changeset):
         """
-        Given an existing DeathDateSource instance, create a new revision based on it.
+        Given an existing DeathDateSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6563,24 +6612,24 @@ class DeathDateSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = DeathDateSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=deathdeathsource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=deathdeathsource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class DeathDateSourceRevision(Revision):
-
     """
     Indicates the various sources of deathdate
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Death Date Source Revisions'
@@ -6596,14 +6645,15 @@ class DeathDateSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthCountrySourceRevisionManager(RevisionManager):
-
     def clone_revision(self, birthcountrysource, changeset):
         """
-        Given an existing BirthCountrySource instance, create a new revision based on it.
+        Given an existing BirthCountrySource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6617,24 +6667,24 @@ class BirthCountrySourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = BirthCountrySourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=birthcountrysource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=birthcountrysource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class BirthCountrySourceRevision(Revision):
-
     """
     Indicates the various sources of birthcountry
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Birth Country Source Revisions'
@@ -6650,14 +6700,15 @@ class BirthCountrySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthProvinceSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, birthprovincesource, changeset):
         """
-        Given an existing BirthProvinceSource instance, create a new revision based on it.
+        Given an existing BirthProvinceSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6671,24 +6722,24 @@ class BirthProvinceSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = BirthProvinceSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=birthprovincesource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=birthprovincesource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class BirthProvinceSourceRevision(Revision):
-
     """
     Indicates the various sources of birthprovince
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Birth Province Source Revisions'
@@ -6704,14 +6755,15 @@ class BirthProvinceSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class BirthCitySourceRevisionManager(RevisionManager):
-
     def clone_revision(self, birthcitysource, changeset):
         """
-        Given an existing BirthCitySource instance, create a new revision based on it.
+        Given an existing BirthCitySource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6725,24 +6777,24 @@ class BirthCitySourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = BirthCitySourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=birthcitysource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=birthcitysource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class BirthCitySourceRevision(Revision):
-
     """
     Indicates the various sources of birthcity
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Birth City Source Revisions'
@@ -6758,14 +6810,15 @@ class BirthCitySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathCountrySourceRevisionManager(RevisionManager):
-
     def clone_revision(self, deathcountrysource, changeset):
         """
-        Given an existing DeathCountrySource instance, create a new revision based on it.
+        Given an existing DeathCountrySource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6779,24 +6832,24 @@ class DeathCountrySourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = DeathCountrySourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=deathcountrysource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=deathcountrysource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class DeathCountrySourceRevision(Revision):
-
     """
     Indicates the various sources of deathcountry
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Death Country Source Revisions'
@@ -6812,14 +6865,15 @@ class DeathCountrySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathProvinceSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, deathprovincesource, changeset):
         """
-        Given an existing DeathProvinceSource instance, create a new revision based on it.
+        Given an existing DeathProvinceSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6833,24 +6887,24 @@ class DeathProvinceSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = DeathProvinceSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=deathprovincesource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=deathprovincesource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class DeathProvinceSourceRevision(Revision):
-
     """
     Indicates the various sources of deathprovince
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Death Province Source Revisions'
@@ -6866,14 +6920,15 @@ class DeathProvinceSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class DeathCitySourceRevisionManager(RevisionManager):
-
     def clone_revision(self, deathcitysource, changeset):
         """
-        Given an existing DeathCitySource instance, create a new revision based on it.
+        Given an existing DeathCitySource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6887,24 +6942,24 @@ class DeathCitySourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = DeathCitySourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=deathcitysource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=deathcitysource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class DeathCitySourceRevision(Revision):
-
     """
     Indicates the various sources of deathcity
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Death City Source Revisions'
@@ -6920,14 +6975,15 @@ class DeathCitySourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class PortraitSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, portraitsource, changeset):
         """
-        Given an existing PortraitSource instance, create a new revision based on it.
+        Given an existing PortraitSource instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -6941,24 +6997,24 @@ class PortraitSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = PortraitSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=portraitsource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=portraitsource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class PortraitSourceRevision(Revision):
-
     """
     Indicates the various sources of portrait
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Portrait Source Revisions'
@@ -6974,11 +7030,11 @@ class PortraitSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class BioSourceRevisionManager(RevisionManager):
-
     def clone_revision(self, biosource, changeset):
         """
         Given an existing BioSource instance, create a new revision based on it.
@@ -6995,24 +7051,24 @@ class BioSourceRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = BioSourceRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          source_type=biosource.source_type,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                source_type=biosource.source_type,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class BioSourceRevision(Revision):
-
     """
     Indicates the various sources of bio
     """
+
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('source_description',)
         verbose_name_plural = 'Bio Source Revisions'
@@ -7028,14 +7084,15 @@ class BioSourceRevision(Revision):
     source_description = models.TextField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.source_type.type))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.source_type.type))
 
 
 class CreatorSchoolDetailRevisionManager(RevisionManager):
-
     def clone_revision(self, createschooldetail, changeset):
         """
-        Given an existing CreatorSchoolDetail instance, create a new revision based on it.
+        Given an existing CreatorSchoolDetail instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -7049,25 +7106,24 @@ class CreatorSchoolDetailRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = CreatorSchoolDetailRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          school=createschooldetail.school,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                school=createschooldetail.school,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class CreatorSchoolDetailRevision(Revision):
-
     """
     record the schools creators attended
     """
 
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('school_year_began', 'school_year_ended')
         verbose_name_plural = 'Creator School Detail Revisions'
@@ -7090,14 +7146,15 @@ class CreatorSchoolDetailRevision(Revision):
                                            blank=True)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.school.school_name))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.school.school_name))
 
 
 class CreatorDegreeDetailRevisionManager(RevisionManager):
-
     def clone_revision(self, createdegreedetail, changeset):
         """
-        Given an existing CreatorDegreeDetail instance, create a new revision based on it.
+        Given an existing CreatorDegreeDetail instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -7111,25 +7168,24 @@ class CreatorDegreeDetailRevisionManager(RevisionManager):
         Helper delegate to do the class-specific work of clone_revision.
         """
         revision = CreatorDegreeDetailRevision(
-          # revision-specific fields:
-          creator=changeset.revisions.next(),
-          changeset=changeset,
-          degree=createdegreedetail.degree,
-          # copied fields:
-          )
+                # revision-specific fields:
+                creator=changeset.revisions.next(),
+                changeset=changeset,
+                degree=createdegreedetail.degree,
+                # copied fields:
+        )
 
         revision.save()
         return revision
 
 
 class CreatorDegreeDetailRevision(Revision):
-
     """
     record the degrees creators received
     """
 
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('degree_year',)
         verbose_name_plural = 'Creator Degree Detail Revisions'
@@ -7149,25 +7205,27 @@ class CreatorDegreeDetailRevision(Revision):
     degree_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator), unicode(self.degree.degree_name))
+        return '%s - %s' % (
+            unicode(self.creator), unicode(self.degree.degree_name))
 
 
 class CreatorMembershipRevisionManager(RevisionManager):
-
     def _base_field_kwargs(self, instance):
         return {
             'organization_name': instance.organization_name,
             'membership_type': instance.membership_type,
             'membership_begin_year': instance.membership_begin_year,
-            'membership_begin_year_uncertain': instance.membership_begin_year_uncertain,
+            'membership_begin_year_uncertain':
+                instance.membership_begin_year_uncertain,
             'membership_end_year': instance.membership_end_year,
-            'membership_end_year_uncertain': instance.membership_end_year_uncertain,
+            'membership_end_year_uncertain':
+                instance.membership_end_year_uncertain,
         }
-
 
     def clone_revision(self, creatormembership, changeset):
         """
-        Given an existing CreatorDegreeDetail instance, create a new revision based on it.
+        Given an existing CreatorDegreeDetail instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -7182,12 +7240,12 @@ class CreatorMembershipRevisionManager(RevisionManager):
         """
         kwargs = self._base_field_kwargs(creatormembership)
         revision = CreatorMembershipRevision(
-          # revision-specific fields:
-          creator_membership=creatormembership,
-          creator=creatormembership.creator,
-          changeset=changeset,
-          **kwargs
-          )
+                # revision-specific fields:
+                creator_membership=creatormembership,
+                creator=creatormembership.creator,
+                changeset=changeset,
+                **kwargs
+        )
 
         revision.save()
 
@@ -7198,21 +7256,20 @@ class CreatorMembershipRevisionManager(RevisionManager):
 
 
 class CreatorMembershipRevision(Revision):
-
     """
     record the membership of creator
     """
 
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('membership_begin_year',)
         verbose_name_plural = 'Creator Membership Revisions'
 
     objects = CreatorMembershipRevisionManager()
     creator_membership = models.ForeignKey('gcd.Membership',
-                                              null=True,
-                                              related_name='revisions')
+                                           null=True,
+                                           related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
                                 related_name='cr_creator_membership')
     organization_name = models.CharField(max_length=200)
@@ -7220,9 +7277,11 @@ class CreatorMembershipRevision(Revision):
                                         related_name='cr_membershiptype',
                                         null=True,
                                         blank=True)
-    membership_begin_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    membership_begin_year = models.PositiveSmallIntegerField(null=True,
+                                                             blank=True)
     membership_begin_year_uncertain = models.BooleanField(default=False)
-    membership_end_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    membership_end_year = models.PositiveSmallIntegerField(null=True,
+                                                           blank=True)
     membership_end_year_uncertain = models.BooleanField(default=False)
     membership_source = models.ManyToManyField('gcd.SourceType',
                                                related_name='cr_membershipsource',
@@ -7230,13 +7289,13 @@ class CreatorMembershipRevision(Revision):
                                                blank=True)
 
     def __unicode__(self):
-        return '%s' %(unicode(self.organization_name))
+        return '%s' % (unicode(self.organization_name))
 
     _base_field_list = ['organization_name',
                         'membership_type',
                         'membership_begin_year',
                         'membership_end_year',
-                    ]
+                        ]
 
     def _field_list(self):
         return self._base_field_list
@@ -7281,7 +7340,8 @@ class CreatorMembershipRevision(Revision):
         ctm.organization_name = self.organization_name
         ctm.membership_type = self.membership_type
         ctm.membership_begin_year = self.membership_begin_year
-        ctm.membership_begin_year_uncertain = self.membership_begin_year_uncertain
+        ctm.membership_begin_year_uncertain = \
+            self.membership_begin_year_uncertain
         ctm.membership_end_year = self.membership_end_year
         ctm.membership_end_year_uncertain = self.membership_end_year_uncertain
         ctm.membership_begin_year = self.membership_begin_year
@@ -7311,10 +7371,10 @@ class CreatorAwardRevisionManager(RevisionManager):
             'award_year_uncertain': instance.award_year_uncertain,
         }
 
-
     def clone_revision(self, creatoraward, changeset):
         """
-        Given an existing CreatorDegreeDetail instance, create a new revision based on it.
+        Given an existing CreatorDegreeDetail instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -7329,12 +7389,12 @@ class CreatorAwardRevisionManager(RevisionManager):
         """
         kwargs = self._base_field_kwargs(creatoraward)
         revision = CreatorAwardRevision(
-          # revision-specific fields:
-          creator_award=creatoraward,
-          creator=creatoraward.creator,
-          changeset=changeset,
-          **kwargs
-          )
+                # revision-specific fields:
+                creator_award=creatoraward,
+                creator=creatoraward.creator,
+                changeset=changeset,
+                **kwargs
+        )
 
         revision.save()
 
@@ -7343,22 +7403,22 @@ class CreatorAwardRevisionManager(RevisionManager):
             revision.award_source.add(source)
         return revision
 
-class CreatorAwardRevision(Revision):
 
+class CreatorAwardRevision(Revision):
     """
     record the awards of creator
     """
 
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         ordering = ('award_year',)
         verbose_name_plural = 'Creator Award Revisions'
 
     objects = CreatorAwardRevisionManager()
     creator_award = models.ForeignKey('gcd.Award',
-                                              null=True,
-                                              related_name='revisions')
+                                      null=True,
+                                      related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
                                 related_name='cr_creator_award')
     award_name = models.CharField(max_length=255)
@@ -7370,12 +7430,12 @@ class CreatorAwardRevision(Revision):
                                           blank=True)
 
     def __unicode__(self):
-        return '%s' %(unicode(self.award_name))
+        return '%s' % (unicode(self.award_name))
 
     _base_field_list = ['award_name',
                         'award_year',
                         'award_year_uncertain',
-                    ]
+                        ]
 
     def _field_list(self):
         return self._base_field_list
@@ -7442,13 +7502,14 @@ class CreatorArtInfluenceRevisionManager(RevisionManager):
             'influence_name': instance.influence_name,
             'influence_link': instance.influence_link,
             'is_self_identify': instance.is_self_identify,
-            'self_identify_influences_doc': instance.self_identify_influences_doc,
+            'self_identify_influences_doc':
+                instance.self_identify_influences_doc,
         }
-
 
     def clone_revision(self, creatorartinfluence, changeset):
         """
-        Given an existing CreatorDegreeDetail instance, create a new revision based on it.
+        Given an existing CreatorDegreeDetail instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -7463,12 +7524,12 @@ class CreatorArtInfluenceRevisionManager(RevisionManager):
         """
         kwargs = self._base_field_kwargs(creatorartinfluence)
         revision = CreatorArtInfluenceRevision(
-          # revision-specific fields:
-          creator_artinfluence=creatorartinfluence,
-          creator=creatorartinfluence.creator,
-          changeset=changeset,
-          **kwargs
-          )
+                # revision-specific fields:
+                creator_artinfluence=creatorartinfluence,
+                creator=creatorartinfluence.creator,
+                changeset=changeset,
+                **kwargs
+        )
 
         revision.save()
 
@@ -7479,20 +7540,19 @@ class CreatorArtInfluenceRevisionManager(RevisionManager):
 
 
 class CreatorArtInfluenceRevision(Revision):
-
     """
     record the art influences of creator
     """
 
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         verbose_name_plural = 'Creator Art Influence Revisions'
 
     objects = CreatorArtInfluenceRevisionManager()
     creator_artinfluence = models.ForeignKey('gcd.ArtInfluence',
-                                              null=True,
-                                              related_name='revisions')
+                                             null=True,
+                                             related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
                                 related_name='cr_creator_artinfluence')
     influence_name = models.CharField(max_length=200)
@@ -7508,13 +7568,13 @@ class CreatorArtInfluenceRevision(Revision):
                                               blank=True)
 
     def __unicode__(self):
-        return '%s' %(unicode(self.influence_name))
+        return '%s' % (unicode(self.influence_name))
 
     _base_field_list = ['influence_name',
                         'influence_link',
                         'is_self_identify',
                         'self_identify_influences_doc',
-                    ]
+                        ]
 
     def _field_list(self):
         return self._base_field_list
@@ -7589,10 +7649,10 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
             'work_notes': instance.work_notes,
         }
 
-
     def clone_revision(self, creatornoncomicwork, changeset):
         """
-        Given an existing CreatorDegreeDetail instance, create a new revision based on it.
+        Given an existing CreatorDegreeDetail instance, create a new revision
+        based on it.
 
         This new revision will be where the replacement is stored.
         """
@@ -7607,12 +7667,12 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
         """
         kwargs = self._base_field_kwargs(creatornoncomicwork)
         revision = CreatorNonComicWorkRevision(
-          # revision-specific fields:
-          creator_noncomicwork=creatornoncomicwork,
-          creator=creatornoncomicwork.creator,
-          changeset=changeset,
-          **kwargs
-          )
+                # revision-specific fields:
+                creator_noncomicwork=creatornoncomicwork,
+                creator=creatornoncomicwork.creator,
+                changeset=changeset,
+                **kwargs
+        )
 
         revision.save()
 
@@ -7623,33 +7683,32 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
 
 
 class CreatorNonComicWorkRevision(Revision):
-
     """
     record the art influences of creator
     """
 
     class Meta:
-        #auto_created = True
+        # auto_created = True
         app_label = 'oi'
         verbose_name_plural = 'Creator NonComicWork Revisions'
 
     objects = CreatorNonComicWorkRevisionManager()
     creator_noncomicwork = models.ForeignKey('gcd.NonComicWork',
-                                              null=True,
-                                              related_name='revisions')
+                                             null=True,
+                                             related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
                                 related_name='cr_creator_noncomicwork')
     work_type = models.ForeignKey('gcd.NonComicWorkType',
-                                   null=True,
-                                   blank=True,
-                                   related_name='cr_worktype')
+                                  null=True,
+                                  blank=True,
+                                  related_name='cr_worktype')
     publication_title = models.CharField(max_length=200)
     employer_name = models.CharField(max_length=200, null=True, blank=True)
     work_title = models.CharField(max_length=255, blank=True, null=True)
     work_role = models.ForeignKey('gcd.NonComicWorkRole',
-                                   null=True,
-                                   blank=True,
-                                   related_name='cr_workrole')
+                                  null=True,
+                                  blank=True,
+                                  related_name='cr_workrole')
     work_source = models.ManyToManyField('gcd.SourceType',
                                          related_name='cr_worksource',
                                          null=True,
@@ -7657,7 +7716,7 @@ class CreatorNonComicWorkRevision(Revision):
     work_notes = models.TextField(blank=True, null=True)
 
     def __unicode__(self):
-        return '%s' %(unicode(self.publication_title))
+        return '%s' % (unicode(self.publication_title))
 
     _base_field_list = ['work_type',
                         'publication_title',
@@ -7665,7 +7724,7 @@ class CreatorNonComicWorkRevision(Revision):
                         'work_title',
                         'work_role',
                         'work_notes',
-                    ]
+                        ]
 
     def _field_list(self):
         return self._base_field_list
@@ -7731,9 +7790,3 @@ class CreatorNonComicWorkRevision(Revision):
         if self.creator_noncomicwork is None:
             return "/creator_noncomicwork/revision/%i/preview" % self.id
         return self.creator_noncomicwork.get_absolute_url()
-
-
-
-
-
-
