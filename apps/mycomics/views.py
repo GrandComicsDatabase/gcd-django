@@ -538,6 +538,9 @@ def add_selected_issues_to_collection(request, data):
     if 'story' in selections:
         issues |= Issue.objects.filter(story__id__in=selections['story'])
     issues = issues.distinct()
+    if not issues.count():
+        raise ErrorWithMessage("No issues were selected.")
+
     if 'confirm_selection' in request.POST:
         collection_id = int(request.POST['collection_id'])
         return add_issues_to_collection(request,
@@ -590,6 +593,7 @@ def import_items(request):
         upload = UnicodeReader(tmpfile)
         issues = Issue.objects.none()
         for line in upload:
+            issue = Issue.objects.none()
             if len(line) >= 2:
                 series = line[0].strip()
                 number = line[1].strip().lstrip('#')
