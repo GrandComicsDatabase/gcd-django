@@ -57,6 +57,19 @@ def is_default_collection(collection):
       collection == collection.collector.default_have_collection)
 
 
+@register.filter
+def collection_status(issue, user):
+    items = item_collections(issue, user)
+    if items.count() == 0:
+        return "collection_status_empty"
+    if items.count() >= 2:
+        return "collection_status_several"
+    if items[0].own:
+        return "collection_status_own"
+    if items[0].own == False:
+        return "collection_status_want"
+    return "collection_status_collected"
+
 register.filter(show_have_want)
 register.filter(show_cover_tag)
 register.filter(show_cover_tag_medium)

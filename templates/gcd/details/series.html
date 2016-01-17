@@ -265,6 +265,11 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 {% endif %}
 
 {% if series.active_issues.count %}
+  {% if MYCOMICS %}
+<h3> Collection Status </h3>
+    {% include 'mycomics/bits/series_collection_status.html' %}
+  {% endif %}
+
 <h3> Index Status </h3>
 
   {% include "gcd/bits/status_tables.html" %}
