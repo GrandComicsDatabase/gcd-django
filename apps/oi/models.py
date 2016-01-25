@@ -242,7 +242,8 @@ class Revision(models.Model):
         """
         return self.committed is None
 
-    # ##### Field declarations and methods for creating revisions.
+    # ##################################################################
+    # Field declarations and methods for creating revisions.
 
     @classmethod
     def _assignable_fields(cls):
@@ -395,7 +396,8 @@ class Revision(models.Model):
 
         return revision
 
-    # ##### Change description and methods for saving to the data object.
+    # ##################################################################
+    # Description of changes, and methods for saving to the data object.
 
     def _get_major_changes(self):
         """
