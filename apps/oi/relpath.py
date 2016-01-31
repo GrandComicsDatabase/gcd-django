@@ -79,7 +79,7 @@ class RelPath(object):
         """
         if not isinstance(instance, self._model_classes[0]):
             raise ValueError("'%s' is not an instance of '%s'" %
-                             (instance, self._model_class))
+                             (instance, self._model_classes[0]))
         if empty:
             if self._many_valued:
                 return self._fields[-1].rel.model.objects.none()
@@ -89,6 +89,33 @@ class RelPath(object):
         if self._many_valued:
             return values[-1].all()
         return values[-1]
+
+    def set_value(self, instance, value):
+        """
+        Updates the value pointed to by this path on the given instance.
+
+        This handles both single- and many-valued relations.  In the case
+        of a many-valued relation, value can be a QuerySet or other iterable
+        """
+        if not isinstance(instance, self._model_classes[0]):
+            raise ValueError("'%s' is not an instance of '%s'" %
+                             (instance, self._model_classes[0]))
+        # We want to change the final value.  So do that by applying
+        # the final name to the next-to-last value with setattr.
+        # If there is only one name/field/value, the "second to last value"
+        # is the instance itself.
+        #
+        # As of Django 1.9, assigning to a many-to-many relation is the
+        # same as using the set() method to update the relation.
+        values = self._expand(instance)
+        values.insert(0, instance)
+
+        # We want values[-2] as the object on which we set the attribute.
+        # values[-1] is the value that we are replacing, and is named
+        # by self._names[-1].  Insering the instance at the beginning of the
+        # values list returned from _expand() ensures that there is always
+        # an existing values[-2]
+        setattr(values[-2], self._names[-1], value)
 
     def _expand(self, instance):
         """

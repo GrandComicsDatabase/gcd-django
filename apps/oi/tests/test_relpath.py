@@ -166,3 +166,33 @@ def test_get_value_multi_empty(multi_isinstance_passes, instance):
 
     value = multi_isinstance_passes.get_value(instance, empty=True)
     assert value == empty_queryset
+
+
+def test_get_value_instance_check(single_relpath, instance):
+    # Need to make sure there is an actual type and not a mock object
+    single_relpath._model_classes[0] = models.Model
+    with pytest.raises(ValueError) as excinfo:
+        single_relpath.get_value(instance)
+    assert 'is not an instance of' in unicode(excinfo.value)
+
+
+def test_set_value_single(single_isinstance_passes, instance):
+    value = mock.MagicMock()
+    with mock.patch('apps.oi.relpath.setattr') as setattr_mock:
+        single_isinstance_passes.set_value(instance, value)
+        setattr_mock.assert_called_once_with(instance, 'foo', value)
+
+
+def test_set_value_multiple(multi_isinstance_passes, instance):
+    value = [mock.MagicMock(), mock.MagicMock(), mock.MagicMock()]
+    with mock.patch('apps.oi.relpath.setattr') as setattr_mock:
+        multi_isinstance_passes.set_value(instance, value)
+        setattr_mock.assert_called_once_with(instance.foo, 'bar', value)
+
+
+def test_set_value_instance_check(multi_relpath, instance):
+    # Need to make sure there is an actual type and not a mock object
+    multi_relpath._model_classes[0] = models.Model
+    with pytest.raises(ValueError) as excinfo:
+        multi_relpath.set_value(instance, [1, 2, 3])
+    assert 'is not an instance of' in unicode(excinfo.value)
