@@ -106,3 +106,63 @@ def test_init_no_field_names():
     with pytest.raises(TypeError) as excinfo:
         RelPath(models.Model)
     assert "At least one field name is required" in unicode(excinfo.value)
+
+
+@pytest.fixture
+def instance():
+    instance = mock.MagicMock()
+    foo = mock.MagicMock()
+    bar = mock.MagicMock()
+
+    bar.all.return_value = mock.MagicMock(spec=models.QuerySet)
+    foo.bar = bar
+    instance.foo = foo
+    return instance
+
+
+@pytest.fixture
+def single_isinstance_passes(single_relpath):
+    # Make sure that the isinstance() check passes by setting the relevant
+    # class to object.  _model_classes is not otherwise used by get/set_value()
+    single_relpath._model_classes[0] = object
+    return single_relpath
+
+
+@pytest.fixture
+def multi_isinstance_passes(multi_relpath):
+    # Make sure that the isinstance() check passes by setting the relevant
+    # class to object.  _model_classes is not otherwise used by get/set_value()
+    multi_relpath._model_classes[0] = object
+    return multi_relpath
+
+
+def test_expand(multi_relpath, instance):
+    values = multi_relpath._expand(instance)
+    assert values == [instance.foo, instance.foo.bar]
+
+
+def test_get_value_single(single_isinstance_passes, instance):
+    value = single_isinstance_passes.get_value(instance)
+    assert value == instance.foo
+
+
+def test_get_value_single_empty(single_isinstance_passes, instance):
+    value = single_isinstance_passes.get_value(instance, empty=True)
+    assert value is None
+
+
+def test_get_value_multi(multi_isinstance_passes, instance):
+    value = multi_isinstance_passes.get_value(instance)
+    assert value == instance.foo.bar.all.return_value
+
+
+def test_get_value_multi_empty(multi_isinstance_passes, instance):
+    # For the empty multi-value, we get a queryset using only the
+    # fields, in case there is actually no related object present
+    # in the instance.
+    empty_queryset = mock.MagicMock(spec=models.QuerySet)
+    multi_isinstance_passes._fields[-1].rel.model.objects.none.return_value = \
+        empty_queryset
+
+    value = multi_isinstance_passes.get_value(instance, empty=True)
+    assert value == empty_queryset

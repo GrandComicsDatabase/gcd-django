@@ -64,3 +64,45 @@ class RelPath(object):
         ManyToManyField on the Brand class.
         """
         return self._fields[-1]
+
+    def get_value(self, instance, empty=False):
+        """
+        Returns the value of the relation pointed to by the path.
+
+        If empty is true, just return the appropriate empty value even
+        if the instance has values.  This is used to handle newly added
+        and deleted instances.  If we are using this RelPath with a data
+        object, we will not be able to determine add/delete from the instance.
+
+        A single-valued relation will result in a single value returned,
+        while a many-valued relation will result in a queryset.
+        """
+        if not isinstance(instance, self._model_classes[0]):
+            raise ValueError("'%s' is not an instance of '%s'" %
+                             (instance, self._model_class))
+        if empty:
+            if self._many_valued:
+                return self._fields[-1].rel.model.objects.none()
+            return None
+
+        values = self._expand(instance)
+        if self._many_valued:
+            return values[-1].all()
+        return values[-1]
+
+    def _expand(self, instance):
+        """
+        Produces a list of values matching self._names for the instance.
+
+        The returned values list has the following property:
+
+        values[i] == getattr(values[i-1], self._names[i])
+
+        with the passed in instance serving as values[0-1].
+        """
+        current_object = instance
+        values = []
+        for name in self._names:
+            current_object = getattr(current_object, name)
+            values.append(current_object)
+        return values
