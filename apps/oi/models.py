@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 from django.conf import settings
 from django.db import models
 from django.db.models import F
+from django.db.models.fields import Field, related
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes.models import ContentType
@@ -11,6 +13,7 @@ from django.core.validators import RegexValidator
 
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
+from taggit.managers import TaggableManager
 
 from apps.oi import states
 from apps.oi.helpers import (
@@ -182,6 +185,18 @@ class Revision(models.Model):
 
     is_changed = False
 
+    # These are initialized on first use- see the corresponding classmethods.
+    # Set to None as an empty iterable is a valid possible value.
+    _regular_fields = None
+    _irregular_fields = None
+    _single_value_fields = None
+    _multi_value_fields = None
+
+    # Child classes must set these properly.  Unlike source, they cannot be
+    # instance properties because they are needed during revision construction.
+    source_name = NotImplemented
+    source_class = NotImplemented
+
     @property
     def source(self):
         """
@@ -195,20 +210,6 @@ class Revision(models.Model):
     def source(self, value):
         """
         Used with source_class by base revision code to create new objects.
-        """
-        raise NotImplementedError
-
-    @property
-    def source_class(self):
-        """
-        Used by base revision code to create new source objects.
-        """
-        raise NotImplementedError
-
-    @property
-    def source_name(self):
-        """
-        Used to key lookups in various shared view methods.
         """
         raise NotImplementedError
 
@@ -244,6 +245,136 @@ class Revision(models.Model):
 
     # ##################################################################
     # Field declarations and methods for creating revisions.
+
+    @classmethod
+    def _classify_fields(cls):
+        """
+        Populates the regular and irregular field dictionaries.
+
+        This should be called at most once during the life of the class.
+        It relies on the excluded field set to filter out irrelevant fields.
+        """
+        # NOTE: As of Django 1.9, reverse relations show up in the list
+        #       of fields, but are not actually Field instances.  Since
+        #       we don't want them anyway, use this to filter them out.
+        #
+        #       In a future release of Django this will change, but should
+        #       be covered in the release notes.  And presumably there
+        #       will be a different reliable way to filter them out.
+        excluded = cls._get_excluded_field_names()
+        data_fields = {
+            f.get_attname(): f
+            for f in cls.source_class._meta.get_fields()
+            if isinstance(f, Field) and f.get_attname() not in excluded
+        }
+        rev_fields = {
+            f.get_attname(): f
+            for f in cls._meta.get_fields()
+            if isinstance(f, Field) and f.get_attname() not in excluded
+        }
+        cls._regular_fields = {}
+        cls._irregular_fields = {}
+        cls._single_value_fields = {}
+        cls._multi_value_fields = {}
+
+        for name, data_field in data_fields.iteritems():
+            # Note that ForeignKeys and OneToOneFields show up under the
+            # attribute name for the actual key ('parent_id' instead of
+            # 'parent'), so strip the _id off for more convenient use.
+            # You can still pass the 'parent' form to _meta.get_field().
+            # TODO: Is there a more reliable way to do this?  Cannot
+            #       seem to find anything in the Django 1.9 API.
+            key_name = name
+            if ((data_field.many_to_one or data_field.one_to_one) and
+                    name.endswith('_id')):
+                # If these aren't the same we have no idea what's going
+                # on, so an AssertionError is appropriate.
+                assert cls.source_class._meta.get_field(key_name) == data_field
+                key_name = name[:-len('_id')]
+
+            if name not in rev_fields:
+                # No corresponding revision field, so it can't be regular.
+                cls._irregular_fields[key_name] = data_field
+                continue
+
+            # The internal type is the field type i.e. CharField or ForeignKey.
+            rev_field = rev_fields[name]
+            rev_ftype = rev_field.get_internal_type()
+            data_ftype = data_field.get_internal_type()
+            rev_target = (rev_field.target_field.get_attname()
+                          if isinstance(rev_field, related.RelatedField)
+                          else None)
+            data_target = (data_field.target_field.get_attname()
+                           if isinstance(data_field, related.RelatedField)
+                           else None)
+
+            if rev_ftype == data_ftype and rev_target == data_target:
+                # Non-relational fields have a .rel of None.  While we should
+                # never have identically named foreign keys that point to
+                # different things, it's better to check than assume.
+                #
+                # Most of these fields can be copied, including ManyToMany
+                # fields, although ManyToMany fields may need to be treated
+                # differently in other ways, so we track them separately
+                # as well.
+                if name == 'x':
+                    assert False
+                cls._regular_fields[key_name] = data_field
+
+                if data_field.many_to_many or data_field.one_to_many:
+                    cls._multi_value_fields[key_name] = data_field
+                else:
+                    cls._single_value_fields[key_name] = data_field
+
+            elif isinstance(data_field,
+                            TaggableManager) and name == 'keywords':
+                # Keywords are regular but not assignable in the same way
+                # as single- or multi-value fields as the keywords are
+                # stored as a single string in revisions.
+                cls._regular_fields[key_name] = data_field
+
+            else:
+                # There's some mismatch, so we don't know how to handle this.
+                cls._irregular_fields[key_name] = data_field
+
+    @classmethod
+    def _get_excluded_field_names(cls):
+        """
+        Field names that appear to be regular fields but should be ignored.
+
+        Any data object field that has a matching (name, type, and if
+        relevant related type) field on the revision that should *NOT*
+        be copied back and forth should be included here.
+
+        It is not necessary to include non-matching fields here, whether
+        they affect revision field values or not.
+
+        Fields listed here may or may not be present on any given data object,
+        but if they are present they should be omitted from automatic
+        classification.
+
+        Subclasses may add to this set, but should never remove fields from it.
+
+        Deprecated fields should NOT be included, as they should continue
+        to be copied back and forth until the data is all removed, at
+        which point the field should be dropped from the data object.
+        """
+        # Not all data objects have all of these, but since this
+        # is just used in set subtractions, that is safe to do.
+        # All of these fields are common to multiple revision types.
+        #
+        # id, created, and modified are automatic columns
+        # tagged_items is the reverse relation for 'keywords'
+        # image_resources are handled through their own ImageRevisions
+        return frozenset({
+            'id',
+            'created',
+            'modified',
+            'deleted',
+            'reserved',
+            'tagged_items',
+            'image_resources',
+        })
 
     @classmethod
     def _assignable_fields(cls):
@@ -640,6 +771,9 @@ class PublisherRevision(PublisherRevisionBase):
 
     date_inferred = models.BooleanField(default=False)
 
+    source_name = 'publisher'
+    source_class = Publisher
+
     @property
     def source(self):
         return self.publisher
@@ -647,14 +781,6 @@ class PublisherRevision(PublisherRevisionBase):
     @source.setter
     def source(self, value):
         self.publisher = value
-
-    @property
-    def source_class(self):
-        return Publisher
-
-    @property
-    def source_name(self):
-        return 'publisher'
 
     @classmethod
     def _assignable_fields(cls):
@@ -701,6 +827,9 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
                                null=True, blank=True, db_index=True,
                                related_name='indicia_publisher_revisions')
 
+    source_name = 'indicia_publisher'
+    source_class = IndiciaPublisher
+
     @property
     def source(self):
         return self.indicia_publisher
@@ -708,14 +837,6 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
     @source.setter
     def source(self, value):
         self.indicia_publisher = value
-
-    @property
-    def source_class(self):
-        return IndiciaPublisher
-
-    @property
-    def source_name(self):
-        return 'indicia_publisher'
 
     @classmethod
     def _assignable_fields(cls):
@@ -778,6 +899,9 @@ class BrandGroupRevision(PublisherRevisionBase):
                                null=True, blank=True, db_index=True,
                                related_name='brand_group_revisions')
 
+    source_name = 'brand_group'
+    source_class = BrandGroup
+
     @property
     def source(self):
         return self.brand_group
@@ -785,14 +909,6 @@ class BrandGroupRevision(PublisherRevisionBase):
     @source.setter
     def source(self, value):
         self.brand_group = value
-
-    @property
-    def source_class(self):
-        return BrandGroup
-
-    @property
-    def source_name(self):
-        return 'brand_group'
 
     @classmethod
     def _assignable_fields(cls):
@@ -861,11 +977,8 @@ class BrandRevision(PublisherRevisionBase):
     group = models.ManyToManyField('gcd.BrandGroup', blank=False,
                                    related_name='brand_revisions')
 
-    @property
-    def issue_count(self):
-        if self.brand is None:
-            return 0
-        return self.brand.issue_count
+    source_name = 'brand'
+    source_class = Brand
 
     @property
     def source(self):
@@ -876,12 +989,10 @@ class BrandRevision(PublisherRevisionBase):
         self.brand = value
 
     @property
-    def source_class(self):
-        return Brand
-
-    @property
-    def source_name(self):
-        return 'brand'
+    def issue_count(self):
+        if self.brand is None:
+            return 0
+        return self.brand.issue_count
 
     @classmethod
     def _non_assignable_fields(cls):
@@ -967,6 +1078,9 @@ class BrandUseRevision(Revision):
     year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(max_length=255, blank=True)
 
+    source_name = 'brand_use'
+    source_class = BrandUse
+
     @property
     def source(self):
         return self.brand_use
@@ -974,14 +1088,6 @@ class BrandUseRevision(Revision):
     @source.setter
     def source(self, value):
         self.brand_use = value
-
-    @property
-    def source_class(self):
-        return BrandUse
-
-    @property
-    def source_name(self):
-        return 'brand_use'
 
     @classmethod
     def _assignable_fields(cls):
@@ -1056,6 +1162,9 @@ class CoverRevision(Revision):
 
     file_source = models.CharField(max_length=255, null=True)
 
+    source_name = 'cover'
+    source_class = Cover
+
     @property
     def source(self):
         return self.cover
@@ -1064,13 +1173,18 @@ class CoverRevision(Revision):
     def source(self, value):
         self.cover = value
 
-    @property
-    def source_class(self):
-        return Cover
-
-    @property
-    def source_name(self):
-        return 'cover'
+    @classmethod
+    def _get_excluded_field_names(cls):
+        return frozenset(
+            super(CoverRevision, cls)._get_excluded_field_names() |
+            {
+                'is_wraparound',
+                'front_left',
+                'front_right',
+                'front_top',
+                'front_bottom',
+            }
+        )
 
     @classmethod
     def _assignable_fields(cls):
@@ -1235,6 +1349,9 @@ class SeriesRevision(Revision):
                                 related_name='imprint_series_revisions')
     date_inferred = models.BooleanField(default=False)
 
+    source_name = 'series'
+    source_class = Series
+
     @property
     def source(self):
         return self.series
@@ -1243,13 +1360,12 @@ class SeriesRevision(Revision):
     def source(self, value):
         self.series = value
 
-    @property
-    def source_class(self):
-        return Series
-
-    @property
-    def source_name(self):
-        return 'series'
+    @classmethod
+    def _get_excluded_field_names(cls):
+        return frozenset(
+            super(SeriesRevision, cls)._get_excluded_field_names() |
+            {'open_reserve', 'publication_dates'}
+        )
 
     @classmethod
     def _assignable_fields(cls):
@@ -1469,6 +1585,9 @@ class SeriesBondRevision(Revision):
                                   related_name='bond_revisions')
     notes = models.TextField(max_length=255, default='', blank=True)
 
+    source_name = 'series_bond'
+    source_class = SeriesBond
+
     @property
     def source(self):
         return self.series_bond
@@ -1476,14 +1595,6 @@ class SeriesBondRevision(Revision):
     @source.setter
     def source(self, value):
         self.series_bond = value
-
-    @property
-    def source_class(self):
-        return SeriesBond
-
-    @property
-    def source_name(self):
-        return 'series_bond'
 
     @classmethod
     def _assignable_fields(cls):
@@ -1613,6 +1724,9 @@ class IssueRevision(Revision):
 
     date_inferred = models.BooleanField(default=False)
 
+    source_name = 'issue'
+    source_class = Issue
+
     @property
     def source(self):
         return self.issue
@@ -1620,14 +1734,6 @@ class IssueRevision(Revision):
     @source.setter
     def source(self, value):
         self.issue = value
-
-    @property
-    def source_class(self):
-        return Issue
-
-    @property
-    def source_name(self):
-        return 'issue'
 
     @classmethod
     def _assignable_fields(cls):
@@ -2047,6 +2153,9 @@ class StoryRevision(Revision):
     issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
     date_inferred = models.BooleanField(default=False)
 
+    source_name = 'story'
+    source_class = Story
+
     @property
     def source(self):
         return self.story
@@ -2054,14 +2163,6 @@ class StoryRevision(Revision):
     @source.setter
     def source(self, value):
         self.story = value
-
-    @property
-    def source_class(self):
-        return Story
-
-    @property
-    def source_name(self):
-        return 'story'
 
     @classmethod
     def _assignable_fields(cls):
@@ -2479,6 +2580,9 @@ class ImageRevision(Revision):
     marked = models.BooleanField(default=False)
     is_replacement = models.BooleanField(default=False)
 
+    source_name = 'image'
+    source_class = Image
+
     @property
     def source(self):
         return self.image
@@ -2487,13 +2591,12 @@ class ImageRevision(Revision):
     def source(self, value):
         self.image = value
 
-    @property
-    def source_class(self):
-        return Image
-
-    @property
-    def source_name(self):
-        return 'image'
+    @classmethod
+    def _get_excluded_field_names(cls):
+        return frozenset(
+            super(ImageRevision, cls)._get_excluded_field_names() |
+            {'image_file', 'scaled_image', 'marked'}
+        )
 
     @classmethod
     def _assignable_fields(cls):

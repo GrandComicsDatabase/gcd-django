@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import pytest
 import mock
 
 from apps.gcd.models import Publisher, Series, Issue, Country, Language
-from apps.oi.models import Changeset, SeriesRevision, IssueRevision
+from apps.oi.models import Changeset, Revision, SeriesRevision, IssueRevision
 
 SERIES = 'apps.gcd.models.series.Series'
 SREV = 'apps.oi.models.SeriesRevision'
@@ -17,6 +18,13 @@ LANGUAGE_TWO = mock.MagicMock(spec=Language)
 PUBLISHER_ONE = mock.MagicMock(spec=Publisher)
 PUBLISHER_TWO = mock.MagicMock(spec=Publisher)
 NO_DB_CHANGESET = mock.MagicMock(spec=Changeset)
+
+
+def test_excluded_fields():
+    assert SeriesRevision._get_excluded_field_names() == {
+        'open_reserve',
+        'publication_dates',
+    } | Revision._get_excluded_field_names()
 
 
 @pytest.yield_fixture

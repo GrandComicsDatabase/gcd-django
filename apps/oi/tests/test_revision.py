@@ -5,20 +5,100 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
-from apps.oi.models import Revision
+from django.db import models
+
+from apps.oi.models import Revision, RevisionManager
 from apps.gcd.models import Country, Language
 
+from taggit.managers import TaggableManager
 
-# Make a non-abstract class that acts like a Revision, but con be
+
+# Make a non-abstract classes that act like Revisions, but con be
 # instantiated (otherwise the OneToOneField has problems) and can
 # have a manager, i.e. DummyRevision.objects.
 #
-# This should not be needed in other test modules as they should
+# These should not be needed in other test modules as they should
 # all instantiate the proper concrete revision, even if they are
 # not saving it to the database.
+
+# Make some dummy data objects to correspond to the dummy revisions.
+# These need to go first so that we can set source_class for the revisions.
+class Dummy(models.Model):
+    class Meta:
+        app_label = 'gcd'
+
+    i = models.IntegerField()
+    f = models.ForeignKey('gcd.OtherDummy')
+    o = models.OneToOneField('gcd.OtherDummy')
+    m = models.ManyToManyField('gcd.OtherDummy')
+    x = models.BooleanField()           # type mismatch with revision
+    c = models.CharField()              # Not present in Revision
+    keywords = TaggableManager()        # keywords must be called 'keywords'
+    deleted = models.BooleanField()     # excluded field
+
+
+class OtherDummy(models.Model):
+    class Meta:
+        app_label = 'gcd'
+
+
 class DummyRevision(Revision):
     class Meta:
         app_label = 'oi'
+
+    # Note that the 'deleted' excluded field is defined in Revision.
+    i = models.IntegerField()
+    f = models.ForeignKey('oi.OtherDummyRevision')
+    o = models.OneToOneField('oi.OtherDummyRevision')
+    m = models.ManyToManyField('oi.OtherDummyRevision')
+    x = models.CharField()              # type mismatch with data object
+    b = models.BooleanField()           # Not present on data object
+    keywords = models.TextField()       # keywords field on revision is text
+
+    source_name = 'Dummy'
+    source_class = Dummy
+
+
+# Make another dummy that we can put on the other end of relations.
+class OtherDummyRevision(Revision):
+    class Meta:
+        app_label = 'oi'
+
+    source_name = 'OtherDummy'
+    source_class = OtherDummy
+
+
+def test_for_correct_manager():
+    assert isinstance(DummyRevision.objects, RevisionManager)
+
+
+def test_revision_init():
+    rev = DummyRevision()
+    assert rev.is_changed is False
+    assert rev._regular_fields is None
+    assert rev._irregular_fields is None
+    assert rev._single_value_fields is None
+    assert rev._multi_value_fields is None
+
+
+def test_classify_fields():
+    meta = Dummy._meta
+    i = meta.get_field('i')
+    f = meta.get_field('f')
+    o = meta.get_field('o')
+    m = meta.get_field('m')
+    x = meta.get_field('x')
+    c = meta.get_field('c')
+    k = meta.get_field('keywords')
+
+    rev = DummyRevision()
+    rev._classify_fields()
+
+    assert rev._regular_fields == {'i': i, 'f': f, 'o': o, 'm': m,
+                                   'keywords': k}
+    assert rev._irregular_fields == {'c': c, 'x': x}
+    assert rev._single_value_fields == {'i': i, 'f': f, 'o': o}
+    assert rev._multi_value_fields == {'m': m}
 
 
 def test_added():
@@ -126,14 +206,14 @@ def test_set_source():
         DummyRevision().source = object()
 
 
-def test_get_source_class():
-    with pytest.raises(NotImplementedError):
-        DummyRevision().source_class
+def test_source_class():
+    assert Revision.source_class is NotImplemented
+    assert DummyRevision.source_class is Dummy
 
 
-def test_get_source_name():
-    with pytest.raises(NotImplementedError):
-        DummyRevision().source_name
+def test_source_name():
+    assert Revision.source_name is NotImplemented
+    assert DummyRevision.source_name == 'Dummy'
 
 
 @pytest.yield_fixture
@@ -197,26 +277,23 @@ def patched_dummy():
             mock.patch('%s._adjust_stats' % p), \
             mock.patch('%s.save' % p), \
             mock.patch('%s.source' % p,
-                       new_callable=mock.PropertyMock) as s_mock, \
-            mock.patch('%s.source_class' % p,
-                       new_callable=mock.PropertyMock) as sc_mock:
+                       new_callable=mock.PropertyMock) as s_mock:
 
         changes = {'does not matter': True}
         gmc_mock.return_value = changes
 
         data_obj = mock.MagicMock()
         data_obj.reserved = True
-        sc_mock.return_value.return_value = data_obj
 
         # Since our definition of added is based on previous_revision, we can
         # get away with source always returning the mocked data object.
         s_mock.return_value = data_obj
 
-        yield DummyRevision(), s_mock, sc_mock, data_obj, changes
+        yield DummyRevision(), s_mock, data_obj, changes
 
 
 def test_commit_added(patched_dummy):
-    d, source, source_class, data_obj, changes = patched_dummy
+    d, source, data_obj, changes = patched_dummy
 
     # Stats are only called on the thing returned from source after it is set.
     stats = {'whatever': 42}
@@ -231,7 +308,6 @@ def test_commit_added(patched_dummy):
     assert d.source.delete.called is False
 
     # We should have written the data_obj to source, among many read calls.
-    source_class.assert_called_once_with()
     source.assert_any_call(data_obj)
     d.save.assert_called_once_with()
     d._post_create_for_add.assert_called_once_with(changes)
@@ -251,7 +327,7 @@ def test_commit_added(patched_dummy):
 
 
 def test_commit_deleted(patched_dummy):
-    d, source, source_class, data_obj, changes = patched_dummy
+    d, source, data_obj, changes = patched_dummy
 
     # Set up a pre-existing data obj, and then mark it as deleted.
     # Stats will be fetched twice in this scenario.
@@ -269,7 +345,6 @@ def test_commit_deleted(patched_dummy):
     d.source.delete.assert_called_once_with()
 
     # Make sure we never re-assigned to source or did other add/edit stuff.
-    assert source_class.called is False
     assert mock.call(data_obj) not in source.calls
     assert d.save.called is False
     assert d._post_create_for_add.called is False
@@ -289,7 +364,7 @@ def test_commit_deleted(patched_dummy):
 
 
 def test_commit_edited_dont_clear(patched_dummy):
-    d, source, source_class, data_obj, changes = patched_dummy
+    d, source, data_obj, changes = patched_dummy
 
     # Set up a pre-existing data obj, making this an edit.
     # Stats will be called twice in this scenario.
@@ -311,7 +386,6 @@ def test_commit_edited_dont_clear(patched_dummy):
     assert d.source.delete.called is False
 
     # Make sure we never re-assigned to source, but do copy fields for edit.
-    assert source_class.called is False
     assert mock.call(data_obj) not in source.calls
     assert d.save.called is False
     assert d._post_create_for_add.called is False
@@ -328,6 +402,18 @@ def test_commit_edited_dont_clear(patched_dummy):
     assert d.source.stat_counts.call_count == 2
     d._adjust_stats.assert_called_once_with(changes, stats[0], stats[1])
     d._post_adjust_stats.assert_called_once_with(changes)
+
+
+def test_excluded_fields():
+    assert DummyRevision._get_excluded_field_names() == frozenset({
+        'id',
+        'created',
+        'modified',
+        'deleted',
+        'reserved',
+        'tagged_items',
+        'image_resources',
+    })
 
 
 def test_assignable_fields():
