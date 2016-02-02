@@ -15,7 +15,7 @@ from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
 from taggit.managers import TaggableManager
 
-from apps.oi import states
+from apps.oi import states, relpath
 from apps.oi.helpers import (
     update_count, remove_leading_article, set_series_first_last,
     validated_isbn, get_keywords, save_keywords, on_sale_date_as_string)
@@ -561,6 +561,42 @@ class Revision(models.Model):
     # ##################################################################
     # Description of changes, and methods for saving to the data object.
 
+    def _check_major_change(self, attrs):
+        """
+        Fill out the changes structure for a single attribute tuple.
+        """
+        old, new = self.source, self
+        changes = {}
+
+        # The name of the last foreign key is the name used for
+        # tracking changes.  Except 'parent' is tracked as 'publisher'
+        # for historical reasons.  Eventually we will likely switch
+        # the 'parent' database fields to 'publisher'.
+        name = 'publisher' if attrs[-1] == 'parent' else attrs[-1]
+
+        old_rp = relpath.RelPath(self.source_class, *attrs)
+        new_rp = relpath.RelPath(type(self), *attrs)
+
+        old_value = old_rp.get_value(old, empty=self.added)
+        new_value = new_rp.get_value(new, empty=self.deleted)
+
+        changed = '%s changed' % name
+        if self.added or self.deleted:
+            changes[changed] = True
+        else:
+            changes[changed] = old_value != new_value
+
+        changes['old %s' % name] = old_value
+        changes['new %s' % name] = new_value
+
+        # Use attrs[-1] in case we renamed the field.
+        if (self._meta.get_field(attrs[-1]).get_internal_type() in
+                ('BooleanField', 'NullBooleanField')):
+            changes['to %s' % name] = (not old_value) and new_value
+            changes['from %s' % name] = old_value and (not new_value)
+
+        return changes
+
     def _get_major_changes(self):
         """
         Returns a dictionary for deciding what additional actions are needed.
@@ -572,7 +608,12 @@ class Revision(models.Model):
         This method bundles up all of the flags and old vs new values
         needed for easy conditionals and easy calls to update_all_counts().
         """
-        raise NotImplementedError
+        changes = {}
+        for name_tuple in (self._get_parent_field_tuples() |
+                           self._get_major_flag_field_tuples()):
+            changes.update(self._check_major_change(name_tuple))
+
+        return changes
 
     def _adjust_stats(self, changes, old_counts, new_counts):
         """

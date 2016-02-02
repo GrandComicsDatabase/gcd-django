@@ -28,6 +28,7 @@ class Dummy(models.Model):
         app_label = 'gcd'
 
     i = models.IntegerField()
+    b = models.BooleanField()
     f = models.ForeignKey('gcd.OtherDummy')
     o = models.OneToOneField('gcd.OtherDummy')
     m = models.ManyToManyField('gcd.OtherDummy')
@@ -41,28 +42,51 @@ class OtherDummy(models.Model):
     class Meta:
         app_label = 'gcd'
 
+    name = models.CharField()
+
 
 class DummyRevision(Revision):
     class Meta:
         app_label = 'oi'
 
+    dummy = models.ForeignKey('gcd.Dummy', null=True)
+
     # Note that the 'deleted' excluded field is defined in Revision.
     i = models.IntegerField()
-    f = models.ForeignKey('oi.OtherDummyRevision')
-    o = models.OneToOneField('oi.OtherDummyRevision')
-    m = models.ManyToManyField('oi.OtherDummyRevision')
+    b = models.BooleanField()
+    f = models.ForeignKey('gcd.OtherDummy')
+    o = models.OneToOneField('gcd.OtherDummy')
+    m = models.ManyToManyField('gcd.OtherDummy')
     x = models.CharField()              # type mismatch with data object
-    b = models.BooleanField()           # Not present on data object
+    y = models.BooleanField()           # Not present on data object
     keywords = models.TextField()       # keywords field on revision is text
 
     source_name = 'Dummy'
     source_class = Dummy
+
+    @property
+    def source(self):
+        return self.dummy
+
+    @source.setter
+    def source(self, value):
+        self.dummy = value
+
+    @classmethod
+    def _get_parent_field_tuples(cls):
+        return {('f',), ('o',), ('m',)}
+
+    @classmethod
+    def _get_major_flag_field_tuples(cls):
+        return {('b',)}
 
 
 # Make another dummy that we can put on the other end of relations.
 class OtherDummyRevision(Revision):
     class Meta:
         app_label = 'oi'
+
+    name = models.CharField()
 
     source_name = 'OtherDummy'
     source_class = OtherDummy
@@ -84,6 +108,7 @@ def test_revision_init():
 def test_classify_fields():
     meta = Dummy._meta
     i = meta.get_field('i')
+    b = meta.get_field('b')
     f = meta.get_field('f')
     o = meta.get_field('o')
     m = meta.get_field('m')
@@ -94,10 +119,10 @@ def test_classify_fields():
     rev = DummyRevision()
     rev._classify_fields()
 
-    assert rev._regular_fields == {'i': i, 'f': f, 'o': o, 'm': m,
+    assert rev._regular_fields == {'i': i, 'b': b, 'f': f, 'o': o, 'm': m,
                                    'keywords': k}
     assert rev._irregular_fields == {'c': c, 'x': x}
-    assert rev._single_value_fields == {'i': i, 'f': f, 'o': o}
+    assert rev._single_value_fields == {'i': i, 'b': b, 'f': f, 'o': o}
     assert rev._multi_value_fields == {'m': m}
 
 
@@ -249,19 +274,14 @@ def test_open():
     assert not rev.discarded
 
 
-def test_get_major_changes():
-    with pytest.raises(NotImplementedError):
-        DummyRevision()._get_major_changes()
-
-
 def test_get_source():
     with pytest.raises(NotImplementedError):
-        DummyRevision().source
+        OtherDummyRevision().source
 
 
 def test_set_source():
     with pytest.raises(NotImplementedError):
-        DummyRevision().source = object()
+        OtherDummyRevision().source = object()
 
 
 def test_source_class():
@@ -272,6 +292,100 @@ def test_source_class():
 def test_source_name():
     assert Revision.source_name is NotImplemented
     assert DummyRevision.source_name == 'Dummy'
+
+
+def test_get_major_changes():
+    p = 'apps.oi.models.Revision._check_major_change'
+    with mock.patch(p) as check_mock:
+        # Make sure we return a valid dict.  Contents would be irrelevant.
+        check_mock.side_effect = lambda tup: {}
+        rev = DummyRevision()
+
+        changes = rev._get_major_changes()
+
+        assert changes == {}
+        check_mock.assert_has_calls(
+            [
+                mock.call(('f',)),
+                mock.call(('o',)),
+                mock.call(('m',)),
+                mock.call(('b',)),
+            ],
+            any_order=True,
+        )
+        assert check_mock.call_count == 4
+
+
+def test_check_major_change_non_boolean():
+    data = Dummy(i=1)
+    rev = DummyRevision(dummy=data, i=2, previous_revision=DummyRevision())
+
+    changes = rev._check_major_change(('i',))
+
+    assert changes == {
+        'i changed': True,
+        'old i': 1,
+        'new i': 2,
+    }
+
+
+def test_check_major_change_non_boolean_added():
+    with mock.patch('apps.oi.models.Revision.previous_revision'):
+        rev = DummyRevision(i=2)
+
+        changes = rev._check_major_change(('i',))
+
+        assert changes == {
+            'i changed': True,
+            'old i': None,
+            'new i': 2,
+        }
+
+
+def test_check_major_change_boolean():
+    data = Dummy(b=True)
+    rev = DummyRevision(dummy=data, b=False, previous_revision=DummyRevision())
+
+    changes = rev._check_major_change(('b',))
+
+    assert changes == {
+        'b changed': True,
+        'old b': True,
+        'new b': False,
+        'to b': False,
+        'from b': True,
+    }
+
+
+def test_check_major_change_boolean_deleted():
+    data = Dummy(b=True)
+    rev = DummyRevision(dummy=data, b=False, previous_revision=DummyRevision())
+    rev.deleted = True
+
+    changes = rev._check_major_change(('b',))
+
+    assert changes == {
+        'b changed': True,
+        'old b': True,
+        'new b': None,
+        'to b': False,
+        'from b': True,
+    }
+
+
+def test_check_major_change_no_changes():
+    data = Dummy(b=True)
+    rev = DummyRevision(dummy=data, b=True, previous_revision=DummyRevision())
+
+    changes = rev._check_major_change(('b',))
+
+    assert changes == {
+        'b changed': False,
+        'old b': True,
+        'new b': True,
+        'to b': False,
+        'from b': False,
+    }
 
 
 @pytest.yield_fixture
@@ -347,7 +461,7 @@ def patched_dummy():
         # get away with source always returning the mocked data object.
         s_mock.return_value = data_obj
 
-        yield DummyRevision(), s_mock, data_obj, changes
+        yield OtherDummyRevision(), s_mock, data_obj, changes
 
 
 def test_commit_added(patched_dummy):
@@ -389,7 +503,7 @@ def test_commit_deleted(patched_dummy):
 
     # Set up a pre-existing data obj, and then mark it as deleted.
     # Stats will be fetched twice in this scenario.
-    d.previous_revision = DummyRevision()
+    d.previous_revision = OtherDummyRevision()
     stats = ({'whatever': 42}, {'whatever': 100, 'other': 2})
     data_obj.stat_counts.side_effect = stats
     d.deleted = True
@@ -426,7 +540,7 @@ def test_commit_edited_dont_clear(patched_dummy):
 
     # Set up a pre-existing data obj, making this an edit.
     # Stats will be called twice in this scenario.
-    d.previous_revision = DummyRevision()
+    d.previous_revision = OtherDummyRevision()
     stats = ({'whatever': 42}, {'whatever': 100, 'other': 2})
     data_obj.stat_counts.side_effect = stats
 
