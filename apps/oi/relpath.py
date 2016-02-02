@@ -77,13 +77,16 @@ class RelPath(object):
         A single-valued relation will result in a single value returned,
         while a many-valued relation will result in a queryset.
         """
-        if not isinstance(instance, self._model_classes[0]):
-            raise ValueError("'%s' is not an instance of '%s'" %
-                             (instance, self._model_classes[0]))
         if empty:
             if self._many_valued:
                 return self._fields[-1].rel.model.objects.none()
             return None
+
+        # Check after the check for empty, because if we are empty we may
+        # have None for the instance, and we won't use the instance anyway.
+        if not isinstance(instance, self._model_classes[0]):
+            raise ValueError("'%s' is not an instance of '%s'" %
+                             (instance, self._model_classes[0]))
 
         values = self._expand(instance)
         if self._many_valued:

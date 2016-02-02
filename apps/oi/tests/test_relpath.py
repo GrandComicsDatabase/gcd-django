@@ -147,7 +147,8 @@ def test_get_value_single(single_isinstance_passes, instance):
 
 
 def test_get_value_single_empty(single_isinstance_passes, instance):
-    value = single_isinstance_passes.get_value(instance, empty=True)
+    # Also ensure that an instance of None works with empty=True
+    value = single_isinstance_passes.get_value(None, empty=True)
     assert value is None
 
 
