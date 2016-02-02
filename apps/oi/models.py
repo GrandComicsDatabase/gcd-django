@@ -152,6 +152,14 @@ class Revision(models.Model):
 
     A state column tracks the progress of the revision, which should
     eventually end in either the APPROVED or DISCARDED state.
+
+    Various classmethods exist to get information about the revision fields
+    so that they can be handled generically.  All of these method names
+    start with _get and end with a suffix indicating the return value:
+
+    fields:       a dictionary mapping field attribute names to field objects
+    field_names:  a set of field attribute names
+    field_tuples: a set of tuples of attribute names that may cross relations
     """
     class Meta:
         abstract = True
@@ -254,6 +262,10 @@ class Revision(models.Model):
         This should be called at most once during the life of the class.
         It relies on the excluded field set to filter out irrelevant fields.
         """
+        if cls._regular_fields is not None:
+            # Already classified.
+            return
+
         # NOTE: As of Django 1.9, reverse relations show up in the list
         #       of fields, but are not actually Field instances.  Since
         #       we don't want them anyway, use this to filter them out.
@@ -375,41 +387,9 @@ class Revision(models.Model):
         })
 
     @classmethod
-    def _assignable_fields(cls):
+    def _get_deprecated_field_names(cls):
         """
-        The set of fields that can simply be copied to or from the data object.
-
-        All fields should appear either here or in _non_assignable_fields(),
-        even if they appear in other sets.
-        """
-        return frozenset()
-
-    @classmethod
-    def _non_assignable_fields(cls):
-        """
-        The set of fields that cannot be copied directly to/from data object.
-
-        All fields should appear either here or in _assignable_fields(),
-        even if they appear in other sets.
-        """
-        return frozenset()
-
-    @classmethod
-    def _conditional_fields(cls):
-        """
-        A dictionary of fields mapped to their conditions.
-
-        The conditions are stored as a tuple of field names that can
-        be applied to an instance to get the value.
-        For instance, ('series', 'has_isbn') would mean that you
-        could get the value by looking at revision.series.has_isbn
-        """
-        return {}
-
-    @classmethod
-    def _deprecated_fields(cls):
-        """
-        The set of fields that should not be allowed in new objects.
+        The set of field names that should not be allowed in new objects.
 
         These fields are still present in both the data object and revision
         tables, and should therefore be copied out of the data objects in
@@ -419,53 +399,106 @@ class Revision(models.Model):
         return frozenset()
 
     @classmethod
-    def _parent_fields(cls):
+    def _get_regular_fields(cls):
         """
-        The set of parent-ish objects that this rev may need to update.
+        Data fields that can be predictably transferred to and from revisions.
 
-        This should include parent chains up to the root object(s) that
+        For most fields, this just means copying the value.  For a few
+        such as keywords, there is a different but standard way of transferring
+        the values.  For ManyToManyFields, the add/remove/set/clear methods
+        can be used.
+        """
+        cls._classify_fields()
+        return cls._regular_fields
+
+    @classmethod
+    def _get_irregular_fields(cls):
+        """
+        Data object fields that cannot be handled by generic revision code.
+
+        These fields either don't exist on the revision, or they do not
+        match types and we do not understand the mismatch as a well-known
+        special case (i.e. keywords as CharField vs TaggableManager).
+        """
+        cls._classify_fields()
+        return cls._irregular_fields
+
+    @classmethod
+    def _get_single_value_fields(cls):
+        """
+        The subset of regular fields that have a single value.
+        """
+        cls._classify_fields()
+        return cls._single_value_fields
+
+    @classmethod
+    def _get_multi_value_fields(cls):
+        """
+        The subset of regular fields that have a queryset value.
+        """
+        cls._classify_fields()
+        return cls._multi_value_fields
+
+    @classmethod
+    def _get_conditional_field_tuple_mapping(cls):
+        """
+        A dictionary of field names mapped to their conditions.
+
+        The conditions are stored as a tuple of field names that can
+        be applied to an instance to get the value.
+        For example, ('series', 'has_isbn') would mean that you
+        could get the value by looking at revision.series.has_isbn
+        """
+        return {}
+
+    @classmethod
+    def _get_parent_field_tuples(cls):
+        """
+        The set of parent-ish objects that this revision may need to update.
+
+        This should include parent chains up to the root data object(s) that
         need updating, for instance an issue should include its publisher
         by way of the series foreign key (as opposed to publishers found
         through other links, which are either duplicate or should be
         ignored.
 
         Elements of the set are tuples to allow for multiple parent levels.
+        ForeignKey, ManyToManyField, and OneToOneField are all valid
+        field types for this method.
+
+        Note that if multiple parents along a path require updating, then
+        each level of parent must be included.  In the issue example,
+        ('series',) and ('series', 'publisher') must both be included.
+
+        This allows for the case where an intermediate object does not
+        require updating.
         """
         return frozenset()
 
     @classmethod
-    def _parent_many_to_many_fields(cls):
-        """
-        Same as _parent_fields but for parents that can be multiple.
-
-        An example would be brand groups in the form of issue.brand.group.
-        Currently, having many-to-many relation in the middle of a chain
-        of attributes is not supported.
-        """
-        return frozenset()
-
-    @classmethod
-    def _many_to_many_fields(cls):
-        """
-        The set of many to many fields that may be changed during edits.
-
-        The links for these many-to-many fields are changed along with
-        this revision, rather than having revisions of their own.
-        """
-        return frozenset()
-
-    @classmethod
-    def _major_flags(cls):
+    def _get_major_flag_field_tuples(cls):
         """
         The set of flags that require further processing upon commit.
+
+        These are stored as tuples in the same way as
+        _get_parent_field_tuples().
         """
         return frozenset()
+
+    @classmethod
+    def _get_stats_category_field_names(cls):
+        """
+        These fields, when present, determine CountStats categories to update.
+
+        There is currently no need to ever override this method.
+        """
+        return frozenset({'country', 'language'})
 
     def _pre_initial_save(self):
         """
         Called just before saving to the database to handle unusual fields.
 
-        Note that if there is a source data object , it will already be set.
+        Note that if there is a source data object, it will already be set.
         """
         pass
 
@@ -491,11 +524,11 @@ class Revision(models.Model):
         # We start with all assignable fields, since we want to copy
         # old values even for deprecated fields.
         rev_kwargs = {field: getattr(data_object, field)
-                      for field in cls._assignable_fields()}
+                      for field in cls._get_single_value_fields().keys()}
 
         # Keywords are not assignable but behave the same way whenever
         # they are present, so handle them here.
-        if 'keywords' in cls._non_assignable_fields():
+        if 'keywords' in cls._get_regular_fields():
             rev_kwargs['keywords'] = get_keywords(data_object)
 
         # Instantiate the revision.  Since we do not know the exact
@@ -519,7 +552,7 @@ class Revision(models.Model):
 
         # Populate all of the many to many relations that don't use
         # their own separate revision classes.
-        for m2m in revision._many_to_many_fields():
+        for m2m in revision._get_multi_value_fields().keys():
             getattr(revision, m2m).add(*list(getattr(data_object, m2m).all()))
         revision._post_m2m_add()
 
@@ -633,8 +666,8 @@ class Revision(models.Model):
         if changes is None:
             changes = {}
 
-        c = self._conditional_fields()
-        for field in self._assignable_fields():
+        c = self._get_conditional_field_tuple_mapping()
+        for field in self._get_single_value_fields().keys():
             # If conditional, apply getattr until we produce the flag
             # value and only assign the field if that flag is True.
             if (field not in c or reduce(getattr, c[field], self)):
@@ -644,10 +677,10 @@ class Revision(models.Model):
 
         # Keywords can't be copied directly, but always behave the same
         # if they are present.
-        if 'keywords' in self._non_assignable_fields():
+        if 'keywords' in self._get_regular_fields():
             save_keywords(self, target)
 
-        for m2m in self._many_to_many_fields():
+        for m2m in self._get_multi_value_fields().keys():
             m2m_set = getattr(target, m2m)
             m2m_set.remove(*changes.get('removed %s' % m2m, {}))
             m2m_set.add(*changes.get('added %s' % m2m, {}))
@@ -734,20 +767,6 @@ class PublisherRevisionBase(Revision):
     keywords = models.TextField(blank=True, default='')
     url = models.URLField(blank=True)
 
-    @classmethod
-    def _assignable_fields(cls):
-        return frozenset({'name',
-                          'year_began',
-                          'year_began_uncertain',
-                          'year_ended',
-                          'year_ended_uncertain',
-                          'url',
-                          'notes'})
-
-    @classmethod
-    def _non_assignable_fields(cls):
-        return frozenset({'keywords'})
-
 
 class PublisherRevision(PublisherRevisionBase):
     class Meta:
@@ -779,11 +798,6 @@ class PublisherRevision(PublisherRevisionBase):
     @source.setter
     def source(self, value):
         self.publisher = value
-
-    @classmethod
-    def _assignable_fields(cls):
-        return (frozenset({'country'}) |
-                super(PublisherRevision, cls)._assignable_fields())
 
     def commit_to_display(self, clear_reservation=True):
         pub = self.publisher
@@ -837,12 +851,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         self.indicia_publisher = value
 
     @classmethod
-    def _assignable_fields(cls):
-        return (frozenset({'country', 'parent', 'is_surrogate'}) |
-                super(IndiciaPublisherRevision, cls)._assignable_fields())
-
-    @classmethod
-    def _parent_fields(cls):
+    def _get_parent_field_tuples(cls):
         return frozenset({('parent',)})
 
     def _do_complete_added_revision(self, parent):
@@ -909,12 +918,7 @@ class BrandGroupRevision(PublisherRevisionBase):
         self.brand_group = value
 
     @classmethod
-    def _assignable_fields(cls):
-        return (frozenset({'parent'}) |
-                super(BrandGroupRevision, cls)._assignable_fields())
-
-    @classmethod
-    def _parent_fields(cls):
+    def _get_parent_field_tuples(cls):
         return frozenset({('parent',)})
 
     def _do_complete_added_revision(self, parent):
@@ -991,14 +995,6 @@ class BrandRevision(PublisherRevisionBase):
         if self.brand is None:
             return 0
         return self.brand.issue_count
-
-    @classmethod
-    def _non_assignable_fields(cls):
-        return frozenset({'keywords', 'group'})
-
-    @classmethod
-    def _many_to_many_fields(cls):
-        return frozenset({'group'})
 
     def commit_to_display(self, clear_reservation=True):
         brand = self.brand
@@ -1087,22 +1083,6 @@ class BrandUseRevision(Revision):
     def source(self, value):
         self.brand_use = value
 
-    @classmethod
-    def _assignable_fields(cls):
-        # Note that while 'publisher' and 'emblem' are arguably
-        # parent-like, we do not also put them in _parent_fields()
-        # as there are no stats or cached counts involved in
-        # the relations.
-        return frozenset({
-            'emblem',
-            'publisher',
-            'year_began',
-            'year_ended',
-            'year_began_uncertain',
-            'year_ended_uncertain',
-            'notes',
-        })
-
     def _do_complete_added_revision(self, emblem, publisher):
         """
         Do the necessary processing to complete the fields of a new
@@ -1183,16 +1163,6 @@ class CoverRevision(Revision):
                 'front_bottom',
             }
         )
-
-    @classmethod
-    def _assignable_fields(cls):
-        # TODO: most of these are not copied from data obj, but are
-        #       set in other ways while processing revision.  How to
-        #       best handle that?  Is it harmful or overly wasteful
-        #       to copy them?
-        return frozenset({'issue',
-                          'marked',
-                          'file_source'})
 
     def commit_to_display(self, clear_reservation=True):
         # the file handling is in the view/covers code
@@ -1366,46 +1336,11 @@ class SeriesRevision(Revision):
         )
 
     @classmethod
-    def _assignable_fields(cls):
-        return frozenset({
-            'name',
-            'color',
-            'dimensions',
-            'paper_stock',
-            'binding',
-            'publishing_format',
-            'publication_type',
-            'tracking_notes',
-            'notes',
-            'year_began',
-            'year_began_uncertain',
-            'year_ended',
-            'year_ended_uncertain',
-            'is_current',
-            'has_barcode',
-            'has_indicia_frequency',
-            'has_isbn',
-            'has_issue_title',
-            'has_volume',
-            'has_rating',
-            'is_comics_publication',
-            'is_singleton',
-            'country',
-            'language',
-            'publisher',
-            'format',
-        })
-
-    @classmethod
-    def _non_assignable_fields(cls):
-        return frozenset({'keywords', 'sort_name'})
-
-    @classmethod
-    def _parent_fields(cls):
+    def _get_parent_field_tuples(cls):
         return frozenset({('publisher',)})
 
     @classmethod
-    def _major_flags(self):
+    def _get_major_flag_field_tuples(self):
         return frozenset({
             'is_comics_publication',
             'is_current',
@@ -1413,7 +1348,7 @@ class SeriesRevision(Revision):
         })
 
     @classmethod
-    def _deprecated_fields(cls):
+    def _get_deprecated_field_names(cls):
         return frozenset({'format'})
 
     def _do_complete_added_revision(self, publisher):
@@ -1594,17 +1529,6 @@ class SeriesBondRevision(Revision):
     def source(self, value):
         self.series_bond = value
 
-    @classmethod
-    def _assignable_fields(cls):
-        return frozenset({
-            'origin',
-            'origin_issue',
-            'target',
-            'target_issue',
-            'bond_type',
-            'notes',
-        })
-
     def commit_to_display(self, clear_reservation=True):
         series_bond = self.series_bond
         if self.deleted:
@@ -1734,51 +1658,7 @@ class IssueRevision(Revision):
         self.issue = value
 
     @classmethod
-    def _assignable_fields(cls):
-        return frozenset({
-            'number',
-            'title',
-            'no_title',
-            'volume',
-            'no_volume',
-            'display_volume_with_number',
-            'publication_date',
-            'key_date',
-            'on_sale_date_uncertain',
-            'price',
-            'indicia_frequency',
-            'no_indicia_frequency',
-            'series',
-            'indicia_publisher',
-            'indicia_pub_not_printed',
-            'brand',
-            'no_brand',
-            'page_count',
-            'page_count_uncertain',
-            'editing',
-            'no_editing',
-            'variant_of',
-            'variant_name',
-            'barcode',
-            'no_barcode',
-            'isbn',
-            'no_isbn',
-            'rating',
-            'no_rating',
-            'notes',
-        })
-
-    @classmethod
-    def _non_assignable_fields(cls):
-        return frozenset({
-            'keywords',
-            'on_sale_date',
-            'valid_isbn',
-            'sort_code',
-        })
-
-    @classmethod
-    def _conditional_fields(cls):
+    def _get_conditional_field_tuple_mapping(cls):
         has_title = ('series', 'has_issue_title')
         has_barcode = ('series', 'has_barcode')
         has_isbn = ('series', 'has_isbn')
@@ -1797,7 +1677,7 @@ class IssueRevision(Revision):
         }
 
     @classmethod
-    def _parent_fields(cls):
+    def _get_parent_field_tuples(cls):
         # There are several routes to a publisher object, but
         # if there are differences, it is the publisher of the series
         # that should get the count adjustments.
@@ -1806,11 +1686,8 @@ class IssueRevision(Revision):
             ('series', 'publisher'),
             ('indicia_publisher',),
             ('brand',),
+            ('brand', 'group'),
         })
-
-    @classmethod
-    def _parent_many_to_many_fields(cls):
-        return frozenset({('brand', 'group')})
 
     def _pre_initial_save(self):
         if self.issue.on_sale_date:
@@ -2161,42 +2038,6 @@ class StoryRevision(Revision):
     @source.setter
     def source(self, value):
         self.story = value
-
-    @classmethod
-    def _assignable_fields(cls):
-        return frozenset({
-            'title',
-            'title_inferred',
-            'feature',
-            'type',
-            'sequence_number',
-            'page_count',
-            'page_count_uncertain',
-            'script',
-            'no_script',
-            'pencils',
-            'no_pencils',
-            'inks',
-            'no_inks',
-            'colors',
-            'no_colors',
-            'letters',
-            'no_letters',
-            'editing',
-            'no_editing',
-            'job_number',
-            'genre',
-            'characters',
-            'synopsis',
-            'reprint_notes',
-            'notes',
-        })
-
-    @classmethod
-    def _non_assignable_fields(cls):
-        return frozenset({
-            'keywords',
-        })
 
     def _do_complete_added_revision(self, issue):
         """
@@ -2595,21 +2436,6 @@ class ImageRevision(Revision):
             super(ImageRevision, cls)._get_excluded_field_names() |
             {'image_file', 'scaled_image', 'marked'}
         )
-
-    @classmethod
-    def _assignable_fields(cls):
-        return frozenset({
-            'content_type',
-            'object_id',
-            'type',
-        })
-
-    @classmethod
-    def _non_assignable_fields(cls):
-        return frozenset({
-            'image_file',
-            'marked',
-        })
 
     def commit_to_display(self, clear_reservation=True):
         image = self.image

@@ -101,6 +101,64 @@ def test_classify_fields():
     assert rev._multi_value_fields == {'m': m}
 
 
+def test_second_classify_fields():
+    rev = DummyRevision()
+    rev._classify_fields()
+    rev._get_excluded_field_names = mock.MagicMock()
+    rev._get_excluded_field_names.return_value = set()
+
+    rev._classify_fields()
+
+    # The first thing _classify_fields() does if it decides it needs
+    # to run the whole classification is get the excluded field names.
+    # So if this was not called, then the check for already having been
+    # classified worked.
+    assert not rev._get_excluded_field_names.called
+
+
+@pytest.mark.parametrize('method', (Revision._get_regular_fields,
+                                    Revision._get_irregular_fields,
+                                    Revision._get_single_value_fields,
+                                    Revision._get_multi_value_fields))
+def test_classifying_methods(method):
+    with mock.patch('apps.oi.models.Revision._classify_fields') as cl_mock:
+        method()
+        cl_mock.assert_called_once_with()
+
+
+def test_excluded_fields():
+    assert Revision._get_excluded_field_names() == frozenset({
+        'id',
+        'created',
+        'modified',
+        'deleted',
+        'reserved',
+        'tagged_items',
+        'image_resources',
+    })
+
+
+def test_conditional_fields():
+    assert Revision._get_conditional_field_tuple_mapping() == {}
+
+
+def test_parent_fields():
+    assert Revision._get_parent_field_tuples() == frozenset()
+
+
+def test_major_flags():
+    assert Revision._get_major_flag_field_tuples() == frozenset()
+
+
+def test_get_stats_category_field_names():
+    assert Revision._get_stats_category_field_names() == {'country',
+                                                          'language'}
+
+
+def test_deprecated_fields():
+    assert Revision._get_deprecated_field_names() == frozenset()
+
+
 def test_added():
     rev = DummyRevision()
     added = rev.added
@@ -402,50 +460,6 @@ def test_commit_edited_dont_clear(patched_dummy):
     assert d.source.stat_counts.call_count == 2
     d._adjust_stats.assert_called_once_with(changes, stats[0], stats[1])
     d._post_adjust_stats.assert_called_once_with(changes)
-
-
-def test_excluded_fields():
-    assert DummyRevision._get_excluded_field_names() == frozenset({
-        'id',
-        'created',
-        'modified',
-        'deleted',
-        'reserved',
-        'tagged_items',
-        'image_resources',
-    })
-
-
-def test_assignable_fields():
-    assert DummyRevision._assignable_fields() == frozenset()
-
-
-def test_non_assignable_fields():
-    assert DummyRevision._non_assignable_fields() == frozenset()
-
-
-def test_conditional_fields():
-    assert DummyRevision._conditional_fields() == {}
-
-
-def test_parent_fields():
-    assert DummyRevision._parent_fields() == frozenset()
-
-
-def test_parent_many_to_many_fields():
-    assert DummyRevision._parent_many_to_many_fields() == frozenset()
-
-
-def test_many_to_many_fields():
-    assert DummyRevision._many_to_many_fields() == frozenset()
-
-
-def test_major_flags():
-    assert DummyRevision._major_flags() == frozenset()
-
-
-def test_deprecated_fields():
-    assert DummyRevision._deprecated_fields() == frozenset()
 
 
 def test_pre_initial_save():
