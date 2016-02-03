@@ -81,11 +81,12 @@ class DummyRevision(Revision):
         return {('b',)}
 
 
-# Make another dummy that we can put on the other end of relations.
+# A revision with a source but no parent / conditional / etc. fields declared.
 class OtherDummyRevision(Revision):
     class Meta:
         app_label = 'oi'
 
+    other_dummy = models.ForeignKey(OtherDummy, null=True)
     name = models.CharField()
 
     source_name = 'OtherDummy'
@@ -412,13 +413,14 @@ def test_check_major_change_no_changes():
 
 @pytest.yield_fixture
 def mock_update_all():
-    with mock.patch('apps.oi.models.CountStats.objects.update_all_counts') \
+    with mock.patch(
+            'apps.oi.models.CountStats.objects.update_all_counts') \
             as uac_mock:
         yield uac_mock
 
 
 def test_adjust_stats_neither(mock_update_all):
-    rev = DummyRevision()
+    rev = OtherDummyRevision(other_dummy=OtherDummy())
 
     old_counts = {'foo': 1}
     new_counts = {'foo': 2}
@@ -432,7 +434,8 @@ def test_adjust_stats_neither(mock_update_all):
 
 
 def test_adjust_stats_both(mock_update_all):
-    rev = DummyRevision()
+    # Don't set a source- this way we can just fake the country/language stuff.
+    rev = OtherDummyRevision()
 
     old_counts = {'foo': 1}
     new_counts = {'foo': 2}

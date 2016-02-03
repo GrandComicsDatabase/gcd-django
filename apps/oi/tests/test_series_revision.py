@@ -7,6 +7,7 @@ import mock
 from apps.gcd.models import Publisher, Series, Issue, Country, Language
 from apps.oi.models import Changeset, Revision, SeriesRevision, IssueRevision
 
+CSTATS = 'apps.gcd.models.countstats.CountStats'
 SERIES = 'apps.gcd.models.series.Series'
 SREV = 'apps.oi.models.SeriesRevision'
 IREV = 'apps.oi.models.IssueRevision'
@@ -205,7 +206,7 @@ def test_get_major_changes_deleted(patched_series_class):
 @pytest.yield_fixture
 def series_and_revision():
     """
-    Tuple of series, series revision, and mock of Revision._adjust_stats()
+    Tuple of series, series revision, and a mock of update_all_counts.
 
     For use with _adjust_stats() testing.  The series and series revision
     are connected but not saved, and database access is patched.
@@ -220,17 +221,17 @@ def series_and_revision():
             mock.patch('apps.gcd.models.publisher.Publisher.save'), \
             mock.patch('%s.changeset' % SREV), \
             mock.patch('%s.publisher' % SREV), \
-            mock.patch('apps.oi.models.Revision._adjust_stats') as super_mock:
+            mock.patch('%s.objects.update_all_counts' % CSTATS) as uac_mock:
         s = Series(publisher=old_pub)
 
         rev = SeriesRevision(changeset=mock.MagicMock(),
                              series=s,
                              publisher=new_pub)
-        yield s, rev, super_mock
+        yield s, rev, uac_mock
 
 
 def test_adjust_stats_pub_changed(series_and_revision):
-    s, rev, super_mock = series_and_revision
+    s, rev, uac_mock = series_and_revision
     changes = {
         'publisher changed': True,
         'old publisher': s.publisher,
@@ -238,8 +239,6 @@ def test_adjust_stats_pub_changed(series_and_revision):
     }
 
     rev._adjust_stats(changes, {'issues': 20}, {'issues': 5})
-
-    super_mock.assert_called_once_with(changes, {'issues': 20}, {'issues': 5})
 
     s.publisher.update_cached_counts.assert_called_once_with({'issues': 20},
                                                              negate=True)
@@ -253,12 +252,16 @@ def test_adjust_stats_pub_changed(series_and_revision):
 
 
 def test_adjust_stats_only_counts_changed(series_and_revision):
-    s, rev, super_mock = series_and_revision
-    changes = {'publisher changed': False}
+    s, rev, uac_mock = series_and_revision
+    # un-change the publisher.  Easier than writing another fixture.
+    rev.publisher = s.publisher
+    changes = {
+        'publisher changed': False,
+        'old publisher': s.publisher,
+        'new publisher': rev.publisher,
+    }
 
     rev._adjust_stats(changes, {'issues': 20}, {'issues': 5})
-
-    super_mock.assert_called_once_with(changes, {'issues': 20}, {'issues': 5})
 
     s.publisher.update_cached_counts.assert_called_once_with({'issues': -15})
     s.publisher.save.assert_called_once_with()
@@ -268,12 +271,16 @@ def test_adjust_stats_only_counts_changed(series_and_revision):
 
 
 def test_adjust_stats_no_changes(series_and_revision):
-    s, rev, super_mock = series_and_revision
-    changes = {'publisher changed': False}
+    s, rev, uac_mock = series_and_revision
+    # un-change the publisher.  Easier than writing another fixture.
+    rev.publisher = s.publisher
+    changes = {
+        'publisher changed': False,
+        'old publisher': s.publisher,
+        'new publisher': rev.publisher,
+    }
 
     rev._adjust_stats(changes, {'issues': 10}, {'issues': 10})
-
-    super_mock.assert_called_once_with(changes, {'issues': 10}, {'issues': 10})
 
     assert not s.publisher.update_cached_counts.called
     assert not s.publisher.save.called
