@@ -24,6 +24,7 @@ from .seriesbond import SeriesRelativeBond
 # the other way around.  Probably.
 from apps.oi import states
 
+
 class SeriesPublicationType(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -35,6 +36,7 @@ class SeriesPublicationType(models.Model):
 
     def __unicode__(self):
         return self.name
+
 
 class Series(GcdData):
     class Meta:
@@ -67,9 +69,9 @@ class Series(GcdData):
     publication_dates = models.CharField(max_length=255)
 
     first_issue = models.ForeignKey('Issue', null=True,
-      related_name='first_issue_series_set')
+                                    related_name='first_issue_series_set')
     last_issue = models.ForeignKey('Issue', null=True,
-      related_name='last_issue_series_set')
+                                   related_name='last_issue_series_set')
 
     issue_count = models.IntegerField(default=0)
 
@@ -126,7 +128,8 @@ class Series(GcdData):
         return bonds
 
     def deletable(self):
-        active = self.issue_revisions.filter(changeset__state__in=states.ACTIVE)
+        active = self.issue_revisions \
+                     .filter(changeset__state__in=states.ACTIVE)
         return self.issue_count == 0 and active.count() == 0
 
     def pending_deletion(self):
@@ -182,7 +185,7 @@ class Series(GcdData):
 
         counts = {
             'covers': self.scan_count(),
-            'stories': Story.objects.filter(issue__series=self) \
+            'stories': Story.objects.filter(issue__series=self)
                                     .exclude(deleted=True).count(),
         }
         if self.is_comics_publication:
@@ -222,11 +225,13 @@ class Series(GcdData):
         appear within the series.  Returned as a list so that the UI can check
         the length of the list and the contents with only one DB call.
         """
-        return list(Brand.objects.filter(issue__series=self,
-                                         issue__deleted=False)\
-          .annotate(first_by_brand=models.Min('issue__sort_code'),
-                    used_issue_count=models.Count('issue'))\
-          .order_by('first_by_brand'))
+        return list(
+            Brand.objects
+                 .filter(issue__series=self, issue__deleted=False)
+                 .annotate(first_by_brand=models.Min('issue__sort_code'),
+                           used_issue_count=models.Count('issue'))
+                 .order_by('first_by_brand')
+        )
 
     def brand_info_counts(self):
         """
@@ -234,9 +239,10 @@ class Series(GcdData):
         """
 
         # There really should be a way to do this in one annotate clause, but I
-        # can't figure it out and the ORM may just not do it.  The SQL would be:
-        # SELECT (brand_id IS NULL AND no_brand = 0) AS unknown, COUNT(*)
-        #   FROM gcd_issue WHERE series_id=x GROUP BY unknown;
+        # can't figure it out and the ORM may just not do it.
+        # The SQL would be:
+        #     SELECT (brand_id IS NULL AND no_brand = 0) AS unknown, COUNT(*)
+        #       FROM gcd_issue WHERE series_id=x GROUP BY unknown;
         # replacing x with the series id of course.
         return {
             'no_brand': self.active_issues().filter(no_brand=True).count(),
@@ -250,11 +256,15 @@ class Series(GcdData):
         appear within the series.  Returned as a list so that the UI can check
         the length of the list and the contents with only one DB call.
         """
-        return list(IndiciaPublisher.objects.filter(issue__series=self,
-                                                    issue__deleted=False)\
-          .annotate(first_by_ind_pub=models.Min('issue__sort_code'),
-                    used_issue_count=models.Count('issue'))\
-          .order_by('first_by_ind_pub'))
+        return list(
+            # flake8 insists on not indenting the continuations by 4 further
+            # spaces, and the annotate line is to long to align with .objects.
+            IndiciaPublisher.objects
+            .filter(issue__series=self, issue__deleted=False)
+            .annotate(first_by_ind_pub=models.Min('issue__sort_code'),
+                      used_issue_count=models.Count('issue'))
+            .order_by('first_by_ind_pub')
+        )
 
     def indicia_publisher_info_counts(self):
         """
@@ -262,8 +272,9 @@ class Series(GcdData):
         with brand_info_counts which actually does return two counts.
         """
         return {
-            'unknown': self.active_issues().filter(indicia_publisher__isnull=True)\
-                                           .count(),
+            'unknown': self.active_issues()
+                           .filter(indicia_publisher__isnull=True)
+                           .count(),
         }
 
     def get_ongoing_reservation(self):
@@ -278,7 +289,7 @@ class Series(GcdData):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_series',
-            kwargs={'series_id': self.id } )
+            kwargs={'series_id': self.id})
 
     def marked_scans_count(self):
         return Cover.objects.filter(issue__series=self, marked=True).count()
@@ -288,7 +299,8 @@ class Series(GcdData):
 
     def issues_without_covers(self):
         issues = Issue.objects.filter(series=self).exclude(deleted=True)
-        return issues.exclude(cover__isnull=False, cover__deleted=False).distinct()
+        return issues.exclude(cover__isnull=False, cover__deleted=False)\
+                     .distinct()
 
     def scan_needed_count(self):
         return self.issues_without_covers().count() + self.marked_scans_count()
@@ -303,61 +315,71 @@ class Series(GcdData):
     def display_publication_dates(self):
         if self.issue_count == 0:
             return u'%s%s' % (unicode(self.year_began),
-                  self._date_uncertain(self.year_began_uncertain))
+                              self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:
             if self.first_issue.publication_date:
                 return self.first_issue.publication_date
             else:
-                return u'%s%s' % (unicode(self.year_began),
-                  self._date_uncertain(self.year_began_uncertain))
+                return u'%s%s' % (
+                    unicode(self.year_began),
+                    self._date_uncertain(self.year_began_uncertain))
         else:
             if self.first_issue.publication_date:
                 date = u'%s - ' % self.first_issue.publication_date
             else:
-                date = u'%s%s - ' % (self.year_began,
-              self._date_uncertain(self.year_began_uncertain))
+                date = u'%s%s - ' % (
+                    self.year_began,
+                    self._date_uncertain(self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
-                date += u'%s%s' % (unicode(self.year_ended),
-                  self._date_uncertain(self.year_ended_uncertain))
+                date += u'%s%s' % (
+                    unicode(self.year_ended),
+                    self._date_uncertain(self.year_ended_uncertain))
             else:
                 date += u'?'
             return date
 
     def search_result_name(self):
         if self.issue_count <= 1 and not self.is_current:
-            date = u'%s%s' % (unicode(self.year_began),
-              self._date_uncertain(self.year_began_uncertain))
+            date = u'%s%s' % (
+                unicode(self.year_began),
+                self._date_uncertain(self.year_began_uncertain))
         else:
-            date = u'%s%s - ' % (self.year_began,
-              self._date_uncertain(self.year_began_uncertain))
+            date = u'%s%s - ' % (
+                self.year_began,
+                self._date_uncertain(self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.year_ended:
-                date += u'%s%s' % (unicode(self.year_ended),
-                  self._date_uncertain(self.year_ended_uncertain))
+                date += u'%s%s' % (
+                    unicode(self.year_ended),
+                    self._date_uncertain(self.year_ended_uncertain))
             else:
                 date += u'?'
 
         if self.is_singleton:
             issues = ''
         else:
-            issues = '%d issue%s in' % (self.issue_count, 
+            issues = '%d issue%s in' % (self.issue_count,
                                         pluralize(self.issue_count))
 
         return '%s (%s) %s %s' % (self.name, self.publisher, issues, date)
 
     def full_name(self):
-        return '%s (%s, %s%s series)' % (self.name, self.publisher,
-          self.year_began, self._date_uncertain(self.year_began_uncertain))
+        return '%s (%s, %s%s series)' % (
+            self.name,
+            self.publisher,
+            self.year_began,
+            self._date_uncertain(self.year_began_uncertain))
 
     def full_name_with_link(self, publisher=False):
         if publisher:
-            name_link = '<a href="%s">%s</a> (<a href="%s">%s</a>, %s%s series)' \
-              % (self.get_absolute_url(), esc(self.name),
+            name_link = \
+                '<a href="%s">%s</a> (<a href="%s">%s</a>, %s%s series)' % \
+                (self.get_absolute_url(), esc(self.name),
                  self.publisher.get_absolute_url(), self.publisher,
                  self.year_began,
                  self._date_uncertain(self.year_began_uncertain))
@@ -367,5 +389,7 @@ class Series(GcdData):
         return mark_safe(name_link)
 
     def __unicode__(self):
-        return '%s (%s%s series)' % (self.name, self.year_began,
-          self._date_uncertain(self.year_began_uncertain))
+        return '%s (%s%s series)' % (
+            self.name,
+            self.year_began,
+            self._date_uncertain(self.year_began_uncertain))
