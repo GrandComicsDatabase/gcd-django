@@ -13,6 +13,7 @@ from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
+from .gcddata import GcdData
 from .publisher import IndiciaPublisher, Brand
 from .image import Image
 
@@ -41,7 +42,7 @@ def issue_descriptor(issue):
     return issue.number + title
 
 
-class Issue(models.Model):
+class Issue(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['series', 'sort_code']
@@ -123,14 +124,6 @@ class Issue(models.Model):
     # In production, this is a tinyint(1) because the set of numbers
     # is very small.  But syncdb produces an int(11).
     is_indexed = models.IntegerField(default=0, db_index=True)
-
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True, db_index=True)
-
-    deleted = models.BooleanField(default=False, db_index=True)
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
@@ -298,11 +291,6 @@ class Issue(models.Model):
             next_issue = later_issues[0]
 
         return [prev_issue, next_issue]
-
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
 
     def has_reprints(self):
         from story import STORY_TYPES

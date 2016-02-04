@@ -14,7 +14,9 @@ from django.core import urlresolvers
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
 
+from .gcddata import GcdData
 from apps.oi import states
+
 
 class ImageType(models.Model):
     class Meta:
@@ -28,12 +30,16 @@ class ImageType(models.Model):
     def __unicode__(self):
         return self.name
 
+
 # we need to save the model instance first without a file to get an id and
 # then save the file
 def get_generic_image_path(instance, filename):
-    return os.path.join(settings.GENERIC_IMAGE_DIR, str(int(instance.id/1000)), filename)
+    return os.path.join(settings.GENERIC_IMAGE_DIR,
+                        str(int(instance.id/1000)),
+                        filename)
 
-class Image(models.Model):
+
+class Image(GcdData):
     class Meta:
         app_label = 'gcd'
         db_table = 'gcd_image'
@@ -45,31 +51,24 @@ class Image(models.Model):
     type = models.ForeignKey(ImageType)
 
     image_file = models.ImageField(upload_to=get_generic_image_path)
-    scaled_image = ImageSpecField([ResizeToFit(width=400),],
-                                  source='image_file',format='JPEG',
+    scaled_image = ImageSpecField([ResizeToFit(width=400)],
+                                  source='image_file',
+                                  format='JPEG',
                                   options={'quality': 90})
-    thumbnail = ImageSpecField([ResizeToFit(height=50),],
-                               source='image_file', format='JPEG',
+    thumbnail = ImageSpecField([ResizeToFit(height=50)],
+                               source='image_file',
+                               format='JPEG',
                                options={'quality': 90})
-    icon = ImageSpecField([ResizeToFit(height=30),], source='image_file',
-                          format='JPEG', options={'quality': 90})
+    icon = ImageSpecField([ResizeToFit(height=30)],
+                          source='image_file',
+                          format='JPEG',
+                          options={'quality': 90})
 
     marked = models.BooleanField(default=False)
 
-    # Fields related to change management.
-    created = models.DateTimeField(auto_now_add=True, null=True)
-    modified = models.DateTimeField(auto_now=True, null=True)
-
-    reserved = models.BooleanField(default=False, db_index=True)
-    deleted = models.BooleanField(default=False, db_index=True)
-
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
-
     def deletable(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
+        return self.revisions.filter(changeset__state__in=states.ACTIVE)\
+                             .count() == 0
 
     def description(self):
         return u'%s for %s' % (self.type.description, unicode(self.object))
@@ -79,14 +78,15 @@ class Image(models.Model):
                                               .get(name='Issue'):
             return urlresolvers.reverse(
                 'issue_images',
-                kwargs={'issue_id': self.object.id } )
+                kwargs={'issue_id': self.object.id})
         elif self.content_type == content_models.ContentType.objects\
                                                 .get(name='Brand'):
             return urlresolvers.reverse(
                 'show_brand',
-                kwargs={'brand_id': self.object.id } )
+                kwargs={'brand_id': self.object.id})
         else:
             return ''
 
     def __unicode__(self):
-        return u'%s: %s' % (unicode(self.object), capitalize(self.type.description))
+        return u'%s: %s' % (unicode(self.object),
+                            capitalize(self.type.description))

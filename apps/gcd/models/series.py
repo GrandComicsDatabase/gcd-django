@@ -11,13 +11,14 @@ from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
-from apps.gcd.models.country import Country
-from apps.gcd.models.language import Language
-from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
-from apps.gcd.models.story import Story
-from apps.gcd.models.issue import Issue, INDEXED
-from apps.gcd.models.cover import Cover
-from apps.gcd.models.seriesbond import SeriesRelativeBond
+from .gcddata import GcdData
+from .country import Country
+from .language import Language
+from .publisher import Publisher, Brand, IndiciaPublisher
+from .story import Story
+from .issue import Issue, INDEXED
+from .cover import Cover
+from .seriesbond import SeriesRelativeBond
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -35,7 +36,7 @@ class SeriesPublicationType(models.Model):
     def __unicode__(self):
         return self.name
 
-class Series(models.Model):
+class Series(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['sort_name', 'year_began']
@@ -90,10 +91,7 @@ class Series(models.Model):
     # Fields related to cover image galleries.
     has_gallery = models.BooleanField(default=False, db_index=True)
 
-    # Fields related to indexing activities.
-    # Only "reserved" is in active use.  "open_reserve" is a legacy field
-    # used only by migration scripts.
-    reserved = models.BooleanField(default=False, db_index=True)
+    # "open_reserve" is a legacy field used only by migration scripts.
     open_reserve = models.IntegerField(null=True)
 
     # Country and Language info.
@@ -102,12 +100,6 @@ class Series(models.Model):
 
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher)
-
-    # Fields related to change management.
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-
-    deleted = models.BooleanField(default=False, db_index=True)
 
     def has_keywords(self):
         return self.keywords.exists()
@@ -132,11 +124,6 @@ class Series(models.Model):
         bonds.extend([SeriesRelativeBond(self, b)
                       for b in self.from_series_bond.filter(**filter_args)])
         return bonds
-
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
 
     def deletable(self):
         active = self.issue_revisions.filter(changeset__state__in=states.ACTIVE)

@@ -11,6 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from taggit.managers import TaggableManager
 
 from apps.oi import states
+from .gcddata import GcdData
 from .image import Image
 
 
@@ -21,7 +22,7 @@ def _display_year(year, flag):
         return '?'
 
 
-class BasePublisher(models.Model):
+class BasePublisher(GcdData):
     class Meta:
         abstract = True
 
@@ -35,20 +36,8 @@ class BasePublisher(models.Model):
     keywords = TaggableManager()
     url = models.URLField(max_length=255, blank=True, default=u'')
 
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-
-    deleted = models.BooleanField(default=False, db_index=True)
-
     def has_keywords(self):
         return self.keywords.exists()
-
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
 
     def update_cached_counts(self, deltas, negate=False):
         """

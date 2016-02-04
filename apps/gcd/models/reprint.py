@@ -2,20 +2,18 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from .gcddata import GcdLink
 from .story import Story
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-class Reprint(models.Model):
+class Reprint(GcdLink):
     class Meta:
         app_label = 'gcd'
                     
     origin = models.ForeignKey(Story, related_name='to_reprints')
     target = models.ForeignKey(Story, related_name='from_reprints')
     notes = models.TextField(max_length=255)
-
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
 
     @property
     def origin_sort(self):

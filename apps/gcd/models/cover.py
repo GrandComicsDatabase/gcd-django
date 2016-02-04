@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.core import urlresolvers
 
+from .gcddata import GcdData
 from .issue import Issue
 
 # TODO: should not be importing oi app into gcd app, dependency should be
@@ -17,7 +18,7 @@ ZOOM_MEDIUM = 2
 ZOOM_LARGE = 4
 
 
-class Cover(models.Model):
+class Cover(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['issue']
@@ -39,12 +40,7 @@ class Cover(models.Model):
     front_top = models.IntegerField(null=True, blank=True, default=0)
 
     # Fields related to change management.
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True, db_index=True)
     last_upload = models.DateTimeField(null=True, db_index=True)
-
-    reserved = models.BooleanField(default=False, db_index=True)
-    deleted = models.BooleanField(default=False, db_index=True)
 
     @property
     def sort_code(self):

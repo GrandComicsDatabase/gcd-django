@@ -4,7 +4,10 @@ from __future__ import unicode_literals
 from django.db import models
 from functools import total_ordering
 
+from .gcddata import GcdLink
+
 BOND_TRACKING = {1, 2, 3}
+
 
 class SeriesBondType(models.Model):
     class Meta:
@@ -20,7 +23,8 @@ class SeriesBondType(models.Model):
     def __unicode__(self):
         return self.description
 
-class SeriesBond(models.Model):
+
+class SeriesBond(GcdLink):
     class Meta:
         app_label = 'gcd'
         db_table = 'gcd_series_bond'
@@ -35,18 +39,6 @@ class SeriesBond(models.Model):
     # we don't use modelforms to edit seriesbonds, no blank=True needed
     notes = models.TextField(max_length=255)
 
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-
-    @property
-    def modified(self):
-        return self.revisions.filter(changeset__state=5).latest().modified
-    
-    # we check for deleted in the oi for models, so set to False
-    deleted = False
-    def deletable(self):
-        return True
-
     def __unicode__(self):
         if self.origin_issue:
             object_string = u'%s' % self.origin_issue
@@ -57,6 +49,7 @@ class SeriesBond(models.Model):
         else:
             object_string += u' continues at %s' % self.target
         return object_string
+
 
 @total_ordering
 class SeriesRelativeBond(object):
@@ -80,7 +73,7 @@ class SeriesRelativeBond(object):
 
     Since the main reason for this class is to deal with bonds within
     a series, and the primary differentiator is the issue, this
-    class also defaults bond targets to the first issue and bond origins        
+    class also defaults bond targets to the first issue and bond origins
     to the last issue.  This can be overridden.
     """
 
@@ -133,10 +126,12 @@ class SeriesRelativeBond(object):
         if not isinstance(other, SeriesRelativeBond):
             return NotImplemented
 
-        return bool(self.near_issue == other.near_issue and
-                    self.far_issue == self.far_issue and
-                    self.bond.bond_type == other.bond.bond_type and
-                    self._directional_sort_code == other._directional_sort_code)
+        return bool(
+            self.near_issue == other.near_issue and
+            self.far_issue == self.far_issue and
+            self.bond.bond_type == other.bond.bond_type and
+            self._directional_sort_code == other._directional_sort_code
+        )
 
     def __lt__(self, other):
         # The order of things tried is:

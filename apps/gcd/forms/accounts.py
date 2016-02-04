@@ -8,7 +8,7 @@ import re
 from datetime import date, timedelta
 
 from django import forms
-from django.forms.util import ErrorList
+from django.forms.utils import ErrorList
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm
 from django.conf import settings

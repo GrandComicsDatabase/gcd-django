@@ -146,14 +146,16 @@ def delete(request, id, model_name):
 
     return reserve(request, id, model_name, True)
 
-@transaction.autocommit
+# TODO: Replace with new transaction model.
+# @transaction.autocommit
 def _is_reservable(model_name, id):
     # returns number of objects which got reserved, so 1 if successful
     # with django 1.3 we can do this in reserve() using a with statement
     return DISPLAY_CLASSES[model_name].objects.filter(id=id,
                     reserved=False).update(reserved=True)
 
-@transaction.autocommit
+# TODO: Replace with new transaction model.
+# @transaction.autocommit
 def _unreserve(display_obj):
     display_obj.reserved = False
     display_obj.save()
@@ -517,6 +519,11 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
             # and the text 'field' is called that as well.
             if not (len(form.cleaned_data) == 1 and \
                                 'comments' in form.cleaned_data):
+                # TODO: The body of this if statement got sliced off
+                #       somehow, apparently as the result of first merging
+                #       in and then stripping out the creators2 code.
+                #       Need to fix, obviously, just putting in 'pass' for now.
+                pass
 
         if 'submit' in request.POST:
             return submit(request, revision.changeset.id)

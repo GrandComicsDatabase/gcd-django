@@ -6,6 +6,8 @@ from django.core import urlresolvers
 
 from taggit.managers import TaggableManager
 
+from .gcddata import GcdData
+
 STORY_TYPES = {
     'insert': 11,
     'promo': 16,
@@ -46,7 +48,7 @@ class StoryType(models.Model):
     def __unicode__(self):
         return self.name
 
-class Story(models.Model):
+class Story(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['sequence_number']
@@ -86,18 +88,6 @@ class Story(models.Model):
 
     # Fields from issue.
     issue = models.ForeignKey('Issue')
-
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True, db_index=True)
-
-    deleted = models.BooleanField(default=False, db_index=True)
-
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
 
     def has_credits(self):
         """Simplifies UI checks for conditionals.  Credit fields.
