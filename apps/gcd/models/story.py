@@ -27,9 +27,11 @@ AD_TYPES = [2, 16]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
 
+
 class StoryTypeManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
+
 
 class StoryType(models.Model):
     class Meta:
@@ -47,6 +49,7 @@ class StoryType(models.Model):
 
     def __unicode__(self):
         return self.name
+
 
 class Story(GcdData):
     class Meta:
@@ -90,33 +93,36 @@ class Story(GcdData):
     issue = models.ForeignKey('Issue')
 
     def has_credits(self):
-        """Simplifies UI checks for conditionals.  Credit fields.
-        Note that the editor field does not apply to the special cover story."""
-        return self.script or \
-               self.pencils or \
-               self.inks or \
-               self.colors or \
-               self.letters or \
-               self.editing or \
-               self.job_number
+        """
+        Simplifies UI checks for conditionals.  Credit fields.
+
+        Note that the editor field does not apply to the special cover story.
+        """
+        return (self.script or
+                self.pencils or
+                self.inks or
+                self.colors or
+                self.letters or
+                self.editing or
+                self.job_number)
 
     def has_keywords(self):
         return self.keywords.exists()
 
     def has_content(self):
         """Simplifies UI checks for conditionals.  Content fields"""
-        return self.genre or \
-               self.characters or \
-               self.synopsis or \
-               self.keywords.exists() or \
-               self.has_reprints()
-               
+        return (self.genre or
+                self.characters or
+                self.synopsis or
+                self.keywords.exists() or
+                self.has_reprints())
+
     def has_reprints(self, notes=True):
-        return (notes and self.reprint_notes) or \
-               self.from_reprints.count() or \
-               self.to_reprints.count() or \
-               self.from_issue_reprints.count() or \
-               self.to_issue_reprints.count()
+        return ((notes and self.reprint_notes) or
+                self.from_reprints.count() or
+                self.to_reprints.count() or
+                self.from_issue_reprints.count() or
+                self.to_issue_reprints.count())
 
     @property
     def reprint_needs_inspection(self):
@@ -139,8 +145,7 @@ class Story(GcdData):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_issue',
-            kwargs={'issue_id': self.issue_id } ) + "#%d" % self.id
+            kwargs={'issue_id': self.issue_id}) + "#%d" % self.id
 
     def __unicode__(self):
         return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
-
