@@ -1342,9 +1342,9 @@ class SeriesRevision(Revision):
     @classmethod
     def _get_major_flag_field_tuples(self):
         return frozenset({
-            'is_comics_publication',
-            'is_current',
-            'is_singleton',
+            ('is_comics_publication',),
+            ('is_current',),
+            ('is_singleton',),
         })
 
     @classmethod
