@@ -586,14 +586,16 @@ class Revision(models.Model):
         else:
             changes[changed] = old_value != new_value
 
-        changes['old %s' % name] = old_value
-        changes['new %s' % name] = new_value
-
         # Use attrs[-1] in case we renamed the field.
         if (self._meta.get_field(attrs[-1]).get_internal_type() in
                 ('BooleanField', 'NullBooleanField')):
-            changes['to %s' % name] = (not old_value) and new_value
-            changes['from %s' % name] = old_value and (not new_value)
+            # Without the bool(), if old_value or new_value are None,
+            # then the changes entry can end up as None.
+            changes['to %s' % name] = bool((not old_value) and new_value)
+            changes['from %s' % name] = bool(old_value and (not new_value))
+        else:
+            changes['old %s' % name] = old_value
+            changes['new %s' % name] = new_value
 
         return changes
 
@@ -609,8 +611,14 @@ class Revision(models.Model):
         needed for easy conditionals and easy calls to update_all_counts().
         """
         changes = {}
+        stats_parent_field_tuples = {
+            (name,) for name in self._get_stats_category_field_names()
+            if hasattr(self, name)
+        }
+
         for name_tuple in (self._get_parent_field_tuples() |
-                           self._get_major_flag_field_tuples()):
+                           self._get_major_flag_field_tuples() |
+                           stats_parent_field_tuples):
             changes.update(self._check_major_change(name_tuple))
 
         return changes
@@ -764,6 +772,13 @@ class Revision(models.Model):
             # an add, edit, or delete.
             self.source = self.source
             self.save()
+
+        for multi in self._get_multi_value_fields():
+            old_rp = relpath.RelPath(type(self), multi)
+            new_rp = relpath.RelPath(type(self.source), multi)
+
+            new_rp.set_value(self.source, old_rp.get_value(self))
+
         self._post_save_object(changes)
 
         new_stats = self.source.stat_counts()

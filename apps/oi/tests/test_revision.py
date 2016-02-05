@@ -91,6 +91,34 @@ class OtherDummyRevision(Revision):
     source_name = 'OtherDummy'
     source_class = OtherDummy
 
+    @property
+    def source(self):
+        return self.other_dummy
+
+    @source.setter
+    def source(self, value):
+        self.other_dummy = value
+
+
+# Simplest possible revision that has a source class defined.
+class SimpleSource(models.Model):
+    class Meta:
+        app_label = 'gcd'
+
+
+class SimpleSourceRevision(Revision):
+    class Meta:
+        app_label = 'oi'
+
+    source_class = SimpleSource
+
+
+# The simplest possible revision, without a source hooked up.
+# Used to test the non-overridden abstract base methods.
+class SimplestRevision(Revision):
+    class Meta:
+        app_label = 'oi'
+
 
 def test_for_correct_manager():
     assert isinstance(DummyRevision.objects, RevisionManager)
@@ -276,12 +304,12 @@ def test_open():
 
 def test_get_source():
     with pytest.raises(NotImplementedError):
-        OtherDummyRevision().source
+        SimplestRevision().source
 
 
 def test_set_source():
     with pytest.raises(NotImplementedError):
-        OtherDummyRevision().source = object()
+        SimplestRevision().source = object()
 
 
 def test_source_class():
@@ -350,8 +378,6 @@ def test_check_major_change_boolean():
 
     assert changes == {
         'b changed': True,
-        'old b': True,
-        'new b': False,
         'to b': False,
         'from b': True,
     }
@@ -366,8 +392,6 @@ def test_check_major_change_boolean_deleted():
 
     assert changes == {
         'b changed': True,
-        'old b': True,
-        'new b': None,
         'to b': False,
         'from b': True,
     }
@@ -381,8 +405,6 @@ def test_check_major_change_no_changes():
 
     assert changes == {
         'b changed': False,
-        'old b': True,
-        'new b': True,
         'to b': False,
         'from b': False,
     }
@@ -460,8 +482,9 @@ def patched_dummy():
         # Since our definition of added is based on previous_revision, we can
         # get away with source always returning the mocked data object.
         s_mock.return_value = data_obj
+        rev = SimpleSourceRevision()
 
-        yield OtherDummyRevision(), s_mock, data_obj, changes
+        yield rev, s_mock, data_obj, changes
 
 
 def test_commit_added(patched_dummy):
@@ -503,7 +526,7 @@ def test_commit_deleted(patched_dummy):
 
     # Set up a pre-existing data obj, and then mark it as deleted.
     # Stats will be fetched twice in this scenario.
-    d.previous_revision = OtherDummyRevision()
+    d.previous_revision = SimpleSourceRevision()
     stats = ({'whatever': 42}, {'whatever': 100, 'other': 2})
     data_obj.stat_counts.side_effect = stats
     d.deleted = True
@@ -540,7 +563,7 @@ def test_commit_edited_dont_clear(patched_dummy):
 
     # Set up a pre-existing data obj, making this an edit.
     # Stats will be called twice in this scenario.
-    d.previous_revision = OtherDummyRevision()
+    d.previous_revision = SimpleSourceRevision()
     stats = ({'whatever': 42}, {'whatever': 100, 'other': 2})
     data_obj.stat_counts.side_effect = stats
 
