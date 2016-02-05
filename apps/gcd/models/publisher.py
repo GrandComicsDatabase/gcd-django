@@ -383,6 +383,14 @@ class BrandUse(models.Model):
             'show_brand',
             kwargs={'brand_id': self.emblem.id})
 
+    # TODO: Resolve the question of BrandUse's base class and then remove this.
+    def stat_counts(self):
+        return {}
+
+    # TODO: Resolve the question of BrandUse's base class and then remove this.
+    def update_cahced_counts(self, deltas, negate=False):
+        pass
+
     def __unicode__(self):
         return u'emblem %s was used from %s to %s by %s.' % (
             self.emblem,
