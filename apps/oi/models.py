@@ -896,26 +896,6 @@ class PublisherRevision(PublisherRevisionBase):
     def source(self, value):
         self.publisher = value
 
-    def commit_to_display(self, clear_reservation=True):
-        pub = self.publisher
-        if pub is None:
-            pub = Publisher()
-            update_count('publishers', 1, country=self.country)
-        elif self.deleted:
-            update_count('publishers', -1, country=pub.country)
-            pub.delete()
-            return
-
-        self._copy_fields_to(pub)
-
-        if clear_reservation:
-            pub.reserved = False
-
-        pub.save()
-        if self.publisher is None:
-            self.publisher = pub
-            self.save()
-
 
 class IndiciaPublisherRevision(PublisherRevisionBase):
     class Meta:
@@ -958,36 +938,6 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         """
         self.parent = parent
 
-    def commit_to_display(self, clear_reservation=True):
-        ipub = self.indicia_publisher
-        if ipub is None:
-            ipub = IndiciaPublisher()
-            self.parent.indicia_publisher_count = \
-                F('indicia_publisher_count') + 1
-            self.parent.save()
-            update_count('indicia publishers', 1, country=self.country)
-
-        elif self.deleted:
-            self.parent.indicia_publisher_count = \
-                F('indicia_publisher_count') - 1
-            self.parent.save()
-            update_count('indicia publishers', -1, country=ipub.country)
-            ipub.delete()
-            return
-
-        ipub.is_surrogate = self.is_surrogate
-        ipub.country = self.country
-        ipub.parent = self.parent
-        self._copy_fields_to(ipub)
-
-        if clear_reservation:
-            ipub.reserved = False
-
-        ipub.save()
-        if self.indicia_publisher is None:
-            self.indicia_publisher = ipub
-            self.save()
-
 
 class BrandGroupRevision(PublisherRevisionBase):
     class Meta:
@@ -1025,30 +975,8 @@ class BrandGroupRevision(PublisherRevisionBase):
         """
         self.parent = parent
 
-    def commit_to_display(self, clear_reservation=True):
-        brand_group = self.brand_group
-        # TODO global stats for brand groups ?
-        if brand_group is None:
-            brand_group = BrandGroup()
-            self.parent.brand_count = F('brand_count') + 1
-            self.parent.save()
-
-        elif self.deleted:
-            self.parent.brand_count = F('brand_count') - 1
-            self.parent.save()
-            brand_group.delete()
-            return
-
-        brand_group.parent = self.parent
-        self._copy_fields_to(brand_group)
-
-        if clear_reservation:
-            brand_group.reserved = False
-
-        brand_group.save()
-        if self.brand_group is None:
-            self.brand_group = brand_group
-            self.save()
+    def _post_adjust_stats(self, changes):
+        if self.added:
             brand_revision = BrandRevision(
                 changeset=self.changeset,
                 name=self.name,
@@ -1093,48 +1021,12 @@ class BrandRevision(PublisherRevisionBase):
             return 0
         return self.brand.issue_count
 
-    def commit_to_display(self, clear_reservation=True):
-        brand = self.brand
-        if brand is None:
-            brand = Brand()
-            update_count('brands', 1)
-
-        elif self.deleted:
-            update_count('brands', -1)
-            brand.delete()
-            return
-
-        brand.parent = self.parent
-        self._copy_fields_to(brand)
-
-        if clear_reservation:
-            brand.reserved = False
-
-        brand_groups = brand.group.all().values_list('id', flat=True)
-        revision_groups = self.group.all().values_list('id', flat=True)
-        if set(brand_groups) != set(revision_groups):
-            for group in brand.group.all():
-                if group.id not in revision_groups:
-                    group.issue_count = F('issue_count') - self.issue_count
-                group.save()
-            for group in self.group.all():
-                if group.id not in brand_groups:
-                    group.issue_count = F('issue_count') + self.issue_count
-                group.save()
-
-        brand.save()
-        brand.group.clear()
-        if self.group.count():
-            brand.group.add(*list(self.group.all().values_list('id',
-                                                               flat=True)))
-        if self.brand is None:
-            self.brand = brand
-            self.save()
-
-            if brand.group.count() != 1:
+    def _post_adjust_stats(self, changes):
+        if self.added:
+            if self.brand.group.count() != 1:
                 raise NotImplementedError
 
-            group = brand.group.get()
+            group = self.brand.group.get()
             use = BrandUseRevision(
                 changeset=self.changeset,
                 emblem=self.brand,
@@ -1187,34 +1079,6 @@ class BrandUseRevision(Revision):
         """
         self.publisher = publisher
         self.emblem = emblem
-
-    def commit_to_display(self, clear_reservation=True):
-        brand_use = self.brand_use
-        if brand_use is None:
-            brand_use = BrandUse()
-            brand_use.emblem = self.emblem
-        elif self.deleted:
-            brand_use = self.brand_use
-            for revision in brand_use.revisions.all():
-                setattr(revision, 'brand_use', None)
-                revision.save()
-            brand_use.delete()
-            return
-
-        brand_use.publisher = self.publisher
-        brand_use.year_began = self.year_began
-        brand_use.year_ended = self.year_ended
-        brand_use.year_began_uncertain = self.year_began_uncertain
-        brand_use.year_ended_uncertain = self.year_ended_uncertain
-        brand_use.notes = self.notes
-
-        if clear_reservation:
-            brand_use.reserved = False
-
-        brand_use.save()
-        if self.brand_use is None:
-            self.brand_use = brand_use
-            self.save()
 
 
 class CoverRevision(Revision):
@@ -1455,64 +1319,6 @@ class SeriesRevision(Revision):
         """
         self.publisher = publisher
 
-    def _get_major_changes(self):
-        """
-        Returns a dictionary for deciding what additional actions are needed.
-
-        For SeriesRevision, this is the usual country and language, plus
-        the parent (publisher) and the flags for being comics, current,
-        and/or singleton.
-
-        With the three flags, we usually want to know if we're changing
-        to or from a True value.  For the others, we'll need to make
-        adjustments using both the old and new objects, so we save both.
-        """
-        # Use old and new for value comparisons, use self for added/deleted.
-        old = self.series
-        new = self
-
-        if self.added or self.deleted:
-            c = {
-                'publisher changed': True,
-                'country changed': True,
-                'language changed': True,
-                'is comics changed': True,
-                'singleton changed': True,
-                'is current changed': True,
-            }
-        else:
-            c = {
-                'publisher changed': old.publisher != new.publisher,
-                'country changed': old.country != new.country,
-                'language changed': old.language != new.language,
-                'is comics changed': (old.is_comics_publication !=
-                                      new.is_comics_publication),
-                'singleton changed': old.is_singleton != new.is_singleton,
-                'is current changed': old.is_current != new.is_current,
-            }
-
-        c['to comics'] = (c['is comics changed'] and
-                          not self.deleted and new.is_comics_publication)
-        c['from comics'] = (c['is comics changed'] and
-                            not self.added and old.is_comics_publication)
-        c['to singleton'] = (c['singleton changed'] and
-                             not self.deleted and new.is_singleton)
-        c['from singleton'] = (c['singleton changed'] and
-                               not self.added and old.is_singleton)
-        c['to current'] = (c['is current changed'] and
-                           not self.deleted and new.is_current)
-        c['from current'] = (c['is current changed'] and
-                             not self.added and old.is_current)
-        c['changed'] = any(c.values())
-
-        c['old publisher'] = None if self.added else old.publisher
-        c['new publisher'] = None if self.deleted else new.publisher
-        c['old country'] = None if self.added else old.country
-        c['new country'] = None if self.deleted else new.country
-        c['old language'] = None if self.added else old.language
-        c['new language'] = None if self.deleted else new.language
-        return c
-
     def _pre_stats_measurement(self, changes):
         # Handle deletion of the singleton issue before getting the
         # series stat counts to avoid double-counting the deletion.
@@ -1530,18 +1336,18 @@ class SeriesRevision(Revision):
             self.series.sort_name = self.name
 
     def _pre_save_object(self, changes):
-        if changes['from current']:
+        if changes['from is_current']:
             reservation = self.series.get_ongoing_reservation()
             reservation.delete()
 
-        if changes['to comics']:
+        if changes['to is_comics_publication']:
             # TODO: But don't we count covers for some non-comics?
             self.series.has_gallery = bool(self.series.scan_count())
 
     def _post_adjust_stats(self, changes):
         # Handle adding the singleton issue last, to avoid double-counting
         # the addition in statistics.
-        if changes['to singleton'] and self.series.issue_count == 0:
+        if changes['to is_singleton'] and self.series.issue_count == 0:
             issue_revision = IssueRevision(changeset=self.changeset,
                                            series=self.series,
                                            after=None,

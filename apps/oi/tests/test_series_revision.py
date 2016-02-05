@@ -68,22 +68,21 @@ def test_get_major_changes_all_change(patched_series_class):
         'publisher changed': True,
         'country changed': True,
         'language changed': True,
-        'is comics changed': True,
-        'singleton changed': True,
-        'is current changed': True,
-        'to comics': False,
-        'from comics': True,
-        'to singleton': True,
-        'from singleton': False,
-        'to current': False,
-        'from current': True,
+        'is_comics_publication changed': True,
+        'is_singleton changed': True,
+        'is_current changed': True,
+        'to is_comics_publication': False,
+        'from is_comics_publication': True,
+        'to is_singleton': True,
+        'from is_singleton': False,
+        'to is_current': False,
+        'from is_current': True,
         'old publisher': PUBLISHER_ONE,
         'new publisher': PUBLISHER_TWO,
         'old country': COUNTRY_ONE,
         'new country': COUNTRY_TWO,
         'old language': LANGUAGE_ONE,
         'new language': LANGUAGE_TWO,
-        'changed': True,
     }
 
 
@@ -109,22 +108,21 @@ def test_get_major_changes_no_change(patched_series_class):
         'publisher changed': False,
         'country changed': False,
         'language changed': False,
-        'is comics changed': False,
-        'singleton changed': False,
-        'is current changed': False,
-        'to comics': False,
-        'from comics': False,
-        'to singleton': False,
-        'from singleton': False,
-        'to current': False,
-        'from current': False,
+        'is_comics_publication changed': False,
+        'is_singleton changed': False,
+        'is_current changed': False,
+        'to is_comics_publication': False,
+        'from is_comics_publication': False,
+        'to is_singleton': False,
+        'from is_singleton': False,
+        'to is_current': False,
+        'from is_current': False,
         'old publisher': PUBLISHER_ONE,
         'new publisher': PUBLISHER_ONE,
         'old country': COUNTRY_ONE,
         'new country': COUNTRY_ONE,
         'old language': LANGUAGE_ONE,
         'new language': LANGUAGE_ONE,
-        'changed': False,
     }
 
 
@@ -142,22 +140,21 @@ def test_get_major_changes_added(patched_series_class):
         'publisher changed': True,
         'country changed': True,
         'language changed': True,
-        'is comics changed': True,
-        'singleton changed': True,
-        'is current changed': True,
-        'to comics': True,
-        'from comics': False,
-        'to singleton': False,
-        'from singleton': False,
-        'to current': True,
-        'from current': False,
+        'is_comics_publication changed': True,
+        'is_singleton changed': True,
+        'is_current changed': True,
+        'to is_comics_publication': True,
+        'from is_comics_publication': False,
+        'to is_singleton': False,
+        'from is_singleton': False,
+        'to is_current': True,
+        'from is_current': False,
         'old publisher': None,
         'new publisher': PUBLISHER_TWO,
         'old country': None,
         'new country': COUNTRY_TWO,
         'old language': None,
         'new language': LANGUAGE_TWO,
-        'changed': True,
     }
 
 
@@ -184,22 +181,21 @@ def test_get_major_changes_deleted(patched_series_class):
         'publisher changed': True,
         'country changed': True,
         'language changed': True,
-        'is comics changed': True,
-        'singleton changed': True,
-        'is current changed': True,
-        'to comics': False,
-        'from comics': True,
-        'to singleton': False,
-        'from singleton': False,
-        'to current': False,
-        'from current': True,
+        'is_comics_publication changed': True,
+        'is_singleton changed': True,
+        'is_current changed': True,
+        'to is_comics_publication': False,
+        'from is_comics_publication': True,
+        'to is_singleton': False,
+        'from is_singleton': False,
+        'to is_current': False,
+        'from is_current': True,
         'old publisher': PUBLISHER_ONE,
         'new publisher': None,
         'old country': COUNTRY_ONE,
         'new country': None,
         'old language': LANGUAGE_ONE,
         'new language': None,
-        'changed': True,
     }
 
 
@@ -346,7 +342,10 @@ def pre_save_mocks():
 def test_pre_save_object_from_current(pre_save_mocks):
     sr, get_ongoing_mock, scan_count_mock = pre_save_mocks
 
-    sr._pre_save_object({'from current': True, 'to comics': False})
+    sr._pre_save_object({
+        'from is_current': True,
+        'to is_comics_publication': False,
+    })
 
     get_ongoing_mock.assert_called_once_with()
     get_ongoing_mock.return_value.delete.assert_called_once_with()
@@ -358,7 +357,10 @@ def test_pre_save_object_to_comics(pre_save_mocks, scan_count, has_gallery):
     sr, get_ongoing_mock, scan_count_mock = pre_save_mocks
     scan_count_mock.return_value = scan_count
 
-    sr._pre_save_object({'from current': False, 'to comics': True})
+    sr._pre_save_object({
+        'from is_current': False,
+        'to is_comics_publication': True,
+    })
 
     assert get_ongoing_mock.called is False
     scan_count_mock.assert_called_once_with()
@@ -368,7 +370,10 @@ def test_pre_save_object_to_comics(pre_save_mocks, scan_count, has_gallery):
 def test_pre_save_object_neither(pre_save_mocks):
     sr, get_ongoing_mock, scan_count_mock = pre_save_mocks
 
-    sr._pre_save_object({'from current': False, 'to comics': False})
+    sr._pre_save_object({
+        'from is_current': False,
+        'to is_comics_publication': False,
+    })
 
     assert get_ongoing_mock.called is False
     assert scan_count_mock.called is False
@@ -398,7 +403,7 @@ def test_post_adjust_stats_to_singleton(year_began, key_date):
             sr = SeriesRevision(changeset=c, series=s, is_singleton=True,
                                 year_began=year_began)
 
-            sr._post_adjust_stats({'to singleton': True})
+            sr._post_adjust_stats({'to is_singleton': True})
 
             ir_class_mock.assert_called_once_with(**ir_params)
             assert ir.key_date == key_date
@@ -409,5 +414,5 @@ def test_post_adjust_stats_to_singleton(year_began, key_date):
 def test_post_adjust_stats_no_singleton():
         with mock.patch(IREV) as ir_class_mock:
             sr = SeriesRevision()
-            sr._post_adjust_stats({'to singleton': False})
+            sr._post_adjust_stats({'to is_singleton': False})
             assert ir_class_mock.called is False
