@@ -699,6 +699,12 @@ class Revision(models.Model):
         """
         pass
 
+    def _pre_delete(self, changes):
+        """
+        Runs just before the data object is deleted in a deletion revision.
+        """
+        pass
+
     def _post_create_for_add(self, changes):
         """
         Runs after a new object is created during an add.
@@ -788,6 +794,7 @@ class Revision(models.Model):
         old_stats = {} if self.added else self.source.stat_counts()
 
         if self.deleted:
+            self._pre_delete(changes)
             self.source.delete()
         else:
             if self.added:
@@ -847,6 +854,25 @@ class OngoingReservation(models.Model):
     The creation timestamp for this reservation.
     """
     created = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
+class LinkRevision(Revision):
+    """
+    Revision base class for use with GcdLink data objects.
+
+    Unlike regular data objects, these objects are truly deleted from
+    the database when they are no longer needed, which requires additional
+    handling in the revisions.
+    """
+    class Meta:
+        abstract = True
+
+    def _pre_delete(self, changes):
+        for revision in self.source.revisions.all():
+            # Unhook the revisions because the data link object
+            # will be truly deleted, not just marked inactive.
+            revision.series_bond_id = None
+            revision.save()
 
 
 class PublisherRevisionBase(Revision):
@@ -1363,7 +1389,7 @@ class SeriesRevision(Revision):
             issue_revision.commit_to_display()
 
 
-class SeriesBondRevision(Revision):
+class SeriesBondRevision(LinkRevision):
     class Meta:
         db_table = 'oi_series_bond_revision'
         ordering = ['-created', '-id']
@@ -1397,32 +1423,6 @@ class SeriesBondRevision(Revision):
     @source.setter
     def source(self, value):
         self.series_bond = value
-
-    def commit_to_display(self, clear_reservation=True):
-        series_bond = self.series_bond
-        if self.deleted:
-            for revision in series_bond.revisions.all():
-                setattr(revision, "series_bond_id", None)
-                revision.save()
-            series_bond.delete()
-            return
-
-        if series_bond is None:
-            series_bond = SeriesBond()
-        series_bond.origin = self.origin
-        series_bond.origin_issue = self.origin_issue
-        series_bond.target = self.target
-        series_bond.target_issue = self.target_issue
-        series_bond.notes = self.notes
-        series_bond.bond_type = self.bond_type
-
-        if clear_reservation:
-            series_bond.reserved = False
-
-        series_bond.save()
-        if self.series_bond is None:
-            self.series_bond = series_bond
-            self.save()
 
 
 class IssueRevision(Revision):

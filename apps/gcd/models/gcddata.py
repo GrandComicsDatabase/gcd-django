@@ -4,30 +4,13 @@ from __future__ import unicode_literals
 from django.db import models
 
 
-class GcdData(models.Model):
+class GcdBase(models.Model):
     """
-    Base class for all data objects in the gcd app.
-
-    A data object is a type of object that can be edited using the
-    Changeset/Revision workflow in the 'oi' app, and persists in
-    the 'gcd' app table even after deletion.
+    Base class for base classes.  Ensures consistent interface.
     """
     class Meta:
         app_label = 'gcd'
         abstract = True
-
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True, db_index=True)
-
-    deleted = models.BooleanField(default=False, db_index=True)
-
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
 
     def stat_counts(self):
         """
@@ -62,7 +45,33 @@ class GcdData(models.Model):
         pass
 
 
-class GcdLink(models.Model):
+class GcdData(GcdBase):
+    """
+    Base class for all data objects in the gcd app.
+
+    A data object is a type of object that can be edited using the
+    Changeset/Revision workflow in the 'oi' app, and persists in
+    the 'gcd' app table even after deletion.
+    """
+    class Meta:
+        app_label = 'gcd'
+        abstract = True
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True, db_index=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
+
+
+class GcdLink(GcdBase):
     """
     Base class for link objects connection two data objects.
 

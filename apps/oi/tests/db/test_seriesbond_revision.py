@@ -60,7 +60,7 @@ def test_create_edit_revision(any_added_series_bond, series_bond_add_values,
 
 @pytest.mark.django_db
 def test_delete_series_bond(any_added_series_bond, any_deleting_changeset,
-                            any_added_series_bond_rev, series_bond_add_values):
+                            any_added_series_bond_rev):
     sbr = SeriesBondRevision.clone(data_object=any_added_series_bond,
                                    changeset=any_deleting_changeset)
 
