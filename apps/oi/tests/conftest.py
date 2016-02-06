@@ -4,12 +4,13 @@ import pytest
 
 from django.contrib.auth.models import User
 
-from apps.gcd.models import Country, Language, Indexer, SeriesPublicationType
+from apps.gcd.models import (
+    Country, Language, Indexer, SeriesPublicationType, SeriesBondType)
 from apps.oi import states
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision,
     BrandGroupRevision, BrandRevision, BrandUseRevision,
-    SeriesRevision, Changeset, CTYPES)
+    SeriesRevision, SeriesBondRevision, Changeset, CTYPES)
 
 
 @pytest.fixture
@@ -49,7 +50,7 @@ def any_adding_changeset(any_indexer):
     # TODO: A better strategy for dealing with changesets in fixtures.
     c = Changeset(state=states.OPEN,
                   indexer=any_indexer,
-                  change_type=CTYPES['publisher'])
+                  change_type=CTYPES['publisher'])  # CTYPE is arbitrary
     c.save()
     return c
 
@@ -62,7 +63,20 @@ def any_editing_changeset(any_indexer):
     # TODO: A better strategy for dealing with changesets in fixtures.
     c = Changeset(state=states.OPEN,
                   indexer=any_indexer,
-                  change_type=CTYPES['publisher'])
+                  change_type=CTYPES['publisher'])  # CTYPE is arbitrary
+    c.save()
+    return c
+
+
+@pytest.fixture
+def any_deleting_changeset(any_indexer):
+    """
+    Use this when deleting an already-added object.
+    """
+    # TODO: A better strategy for dealing with changesets in fixtures.
+    c = Changeset(state=states.OPEN,
+                  indexer=any_indexer,
+                  change_type=CTYPES['publisher'])  # CTYPE is arbitrary
     c.save()
     return c
 
@@ -328,3 +342,43 @@ def any_added_series(any_added_series_rev):
     any_added_series_rev.changeset.state = states.APPROVED
     any_added_series_rev.changeset.save()
     return any_added_series_rev.series
+
+
+@pytest.fixture
+def series_bond_add_values(series_add_values, any_adding_changeset):
+    # This does series-only bonds, issue-level bonds to be added later.
+    origin_series_values = series_add_values.copy()
+    origin_series_values['name'] = 'Origin Series'
+    origin_rev = SeriesRevision.objects.create(changeset=any_adding_changeset,
+                                               **origin_series_values)
+    origin_rev.commit_to_display()
+
+    target_series_values = series_add_values.copy()
+    target_series_values['name'] = 'Target Series'
+    target_rev = SeriesRevision.objects.create(changeset=any_adding_changeset,
+                                               **target_series_values)
+    target_rev.commit_to_display()
+
+    any_bond_type = SeriesBondType.objects.get_or_create(name='any type')[0]
+    return {
+        'origin': origin_rev.source,
+        'target': target_rev.source,
+        'bond_type': any_bond_type,
+        'notes': 'blah blah wahtever',
+    }
+
+
+@pytest.fixture
+def any_added_series_bond_rev(series_bond_add_values, any_adding_changeset):
+    sbr = SeriesBondRevision(changeset=any_adding_changeset,
+                             **series_bond_add_values)
+    sbr.save()
+    return sbr
+
+
+@pytest.fixture
+def any_added_series_bond(any_added_series_bond_rev):
+    any_added_series_bond_rev.commit_to_display()
+    any_added_series_bond_rev.changeset.state = states.APPROVED
+    any_added_series_bond_rev.changeset.save()
+    return any_added_series_bond_rev.series_bond
