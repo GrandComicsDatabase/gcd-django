@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import pytest
 
@@ -10,7 +11,7 @@ from apps.oi import states
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision,
     BrandGroupRevision, BrandRevision, BrandUseRevision,
-    SeriesRevision, SeriesBondRevision, Changeset, CTYPES)
+    SeriesRevision, SeriesBondRevision, IssueRevision, Changeset, CTYPES)
 
 
 @pytest.fixture
@@ -382,3 +383,68 @@ def any_added_series_bond(any_added_series_bond_rev):
     any_added_series_bond_rev.changeset.state = states.APPROVED
     any_added_series_bond_rev.changeset.save()
     return any_added_series_bond_rev.series_bond
+
+
+@pytest.fixture
+def issue_add_values(any_adding_changeset, any_country, any_language,
+                     any_added_publisher, any_added_indicia_publisher,
+                     any_added_brand, keywords):
+    """
+    Add values for a pretty basic issue.  All conditional fields are turned
+    on because turning them off produces some strange behavior.
+    See https://github.com/GrandComicsDatabase/gcd-django/issues/116
+    """
+    series_pub_type = SeriesPublicationType.objects \
+                                           .get_or_create(name='magazine')[0]
+    series_rev = SeriesRevision.objects.create(
+        changeset=any_adding_changeset,
+        name='Series for Issues',
+        year_began=1939,
+        publication_type=series_pub_type,
+        is_comics_publication=True,
+        country=any_country,
+        language=any_language,
+        publisher=any_added_publisher,
+        has_volume=True,
+        has_issue_title=True,
+        has_indicia_frequency=True,
+        has_barcode=True,
+        has_isbn=True,
+        has_rating=True,
+    )
+    series_rev.commit_to_display()
+
+    return {
+        'number': '42',
+        'no_title': True,
+        'no_volume': True,
+        'series': series_rev.series,
+        'indicia_publisher': any_added_indicia_publisher,
+        'brand': any_added_brand,
+        'publication_date': 'January 1947',
+        'key_date': '1947-01-00',
+        'no_isbn': True,
+        'no_barcode': True,
+        'no_rating': True,
+        'indicia_frequency': 'monthly',
+        'price': '0.10 USD',
+        'page_count': 64,
+        'editing': 'Some One',
+        'notes': 'These notes are fascinating',
+        'keywords': keywords['string'],
+    }
+
+
+@pytest.fixture
+def any_added_issue_rev(any_adding_changeset, issue_add_values):
+    rev = IssueRevision(changeset=any_adding_changeset, **issue_add_values)
+    rev.save()
+    return rev
+
+
+@pytest.fixture
+def any_added_issue(any_added_issue_rev):
+    any_added_issue_rev.commit_to_display()
+    any_added_issue_rev.changeset.state = states.APPROVED
+    any_added_issue_rev.changeset.save()
+    return any_added_issue_rev.issue

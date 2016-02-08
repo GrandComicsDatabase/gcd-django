@@ -1851,6 +1851,9 @@ class IssueRevision(Revision):
             set_series_first_last(check_series_order)
             self._check_first_last()
 
+    def _check_first_last(self):
+        set_series_first_last(self.series)
+
 
 class StoryRevision(Revision):
     class Meta:
