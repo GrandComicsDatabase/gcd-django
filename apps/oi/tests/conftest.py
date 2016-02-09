@@ -6,7 +6,7 @@ import pytest
 from django.contrib.auth.models import User
 
 from apps.gcd.models import (
-    Country, Language, Indexer, SeriesPublicationType, SeriesBondType)
+    Country, Language, Indexer, SeriesPublicationType, SeriesBondType, Issue)
 from apps.oi import states
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision,
@@ -78,6 +78,19 @@ def any_deleting_changeset(any_indexer):
     c = Changeset(state=states.OPEN,
                   indexer=any_indexer,
                   change_type=CTYPES['publisher'])  # CTYPE is arbitrary
+    c.save()
+    return c
+
+
+@pytest.fixture
+def any_variant_adding_changeset(any_indexer):
+    """
+    Use this when adding a varaint.
+    """
+    # TODO: A better strategy for dealing with changesets in fixtures.
+    c = Changeset(state=states.OPEN,
+                  indexer=any_indexer,
+                  change_type=CTYPES['variant_add'])
     c.save()
     return c
 
@@ -448,3 +461,30 @@ def any_added_issue(any_added_issue_rev):
     any_added_issue_rev.changeset.state = states.APPROVED
     any_added_issue_rev.changeset.save()
     return any_added_issue_rev.issue
+
+
+@pytest.fixture
+def variant_add_values(any_added_issue):
+    return {
+        'variant_of': any_added_issue,
+        'variant_name': 'varied variant',
+        'series': any_added_issue.series,
+        'indicia_publisher': any_added_issue.indicia_publisher,
+        'brand': any_added_issue.brand,
+    }
+
+
+@pytest.fixture
+def any_added_variant_rev(any_variant_adding_changeset, variant_add_values):
+    rev = IssueRevision(changeset=any_variant_adding_changeset,
+                        **variant_add_values)
+    rev.save()
+    return IssueRevision.objects.get(pk=rev.pk)
+
+
+@pytest.fixture
+def any_added_variant(any_added_variant_rev):
+    any_added_variant_rev.commit_to_display()
+    any_added_variant_rev.changeset.state = states.APPROVED
+    any_added_variant_rev.changeset.save()
+    return Issue.objects.get(pk=any_added_variant_rev.issue.pk)

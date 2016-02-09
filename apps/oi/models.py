@@ -29,6 +29,7 @@ from apps.gcd.models.issue import INDEXED
 CTYPES = {
     'publisher': 1,
     'series': 4,
+    'variant_add': 9,
 }
 
 
