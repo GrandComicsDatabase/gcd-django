@@ -352,6 +352,9 @@ except ImportError:
 # Code dependent on debug or maintenance flag states.
 #################################################################################
 
+#GCD Official name field name in NameType model
+GCD_OFFICIAL_NAME_FIELDNAME = 'GCD Official'
+
 if READ_ONLY or NO_OI:
     MIDDLEWARE_CLASSES += \
       ('apps.middleware.read_only.ReadOnlyMiddleware',)

@@ -243,7 +243,8 @@ class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable
 
     birth_year = indexes.IntegerField(model_attr="creator__birth_year")
     sort_name = indexes.CharField(model_attr='organization_name', indexed=False)
-    country = indexes.CharField(model_attr='creator__birth_country__code', indexed=False)
+    country = indexes.CharField(model_attr='creator__birth_country__code',
+                                indexed=False)
 
     def get_model(self):
         return Membership
@@ -262,7 +263,8 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
 
     birth_year = indexes.IntegerField(model_attr="creator__birth_year")
     sort_name = indexes.CharField(model_attr='influence_name', indexed=False)
-    country = indexes.CharField(model_attr='creator__birth_country__code', indexed=False)
+    country = indexes.CharField(model_attr='creator__birth_country__code',
+                                indexed=False)
 
     def get_model(self):
         return ArtInfluence
@@ -281,7 +283,8 @@ class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     birth_year = indexes.IntegerField(model_attr="creator__birth_year")
     sort_name = indexes.CharField(model_attr='award_name', indexed=False)
-    country = indexes.CharField(model_attr='creator__birth_country__code', indexed=False)
+    country = indexes.CharField(model_attr='creator__birth_country__code',
+                                indexed=False)
 
     def get_model(self):
         return Award
@@ -300,7 +303,8 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
 
     birth_year = indexes.IntegerField(model_attr="creator__birth_year")
     sort_name = indexes.CharField(model_attr='publication_title', indexed=False)
-    country = indexes.CharField(model_attr='creator__birth_country__code', indexed=False)
+    country = indexes.CharField(model_attr='creator__birth_country__code',
+                                indexed=False)
 
     def get_model(self):
         return NonComicWork

@@ -177,6 +177,11 @@ def field_value(revision, field):
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
         return ''
+
+    elif field == 'cr_creator_names':
+        creator_names = ", ".join(revision.cr_creator_names.all().values_list('name', flat=True))
+        return creator_names
+
     return value
 
 @register.assignment_tag
