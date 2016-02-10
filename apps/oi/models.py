@@ -30,14 +30,17 @@ from apps.gcd.models.issue import INDEXED
 # TODO: CTYPES and ACTION_* are going away at some point.
 CTYPES = {
     'publisher': 1,
+    'issue_add': 5,
+    'issue_bulk': 8,
     'series': 4,
     'variant_add': 9,
+    'two_issues': 10,
 }
+
 
 ACTION_ADD = 'add'
 ACTION_DELETE = 'delete'
 ACTION_MODIFY = 'modify'
-
 
 
 class Changeset(models.Model):
