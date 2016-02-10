@@ -220,8 +220,8 @@ def test_counts_comics():
             'covers': 15,
             'stories': 100,
         }
-        assert Story.objects.filter.called_once_with(issue__series=s)
-        assert Story.objects.filter.return_value.exclude.called_once_with(
+        Story.objects.filter.assert_called_once_with(issue__series=s)
+        Story.objects.filter.return_value.exclude.assert_called_once_with(
             deleted=True)
         is_mock.return_value.filter.assert_called_once_with(variant_of=None)
 
