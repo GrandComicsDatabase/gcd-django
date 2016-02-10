@@ -92,7 +92,13 @@ class Issue(GcdData):
     series = models.ForeignKey('Series')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
+    brand = models.ForeignKey(Brand, null=True)
+    no_brand = models.BooleanField(default=False, db_index=True)
     image_resources = generic_fields.GenericRelation(Image)
+
+    # In production, this is a tinyint(1) because the set of numbers
+    # is very small.  But syncdb produces an int(11).
+    is_indexed = models.IntegerField(default=0, db_index=True)
 
     @property
     def indicia_image(self):
@@ -106,9 +112,6 @@ class Issue(GcdData):
         else:
             return None
 
-    brand = models.ForeignKey(Brand, null=True)
-    no_brand = models.BooleanField(default=False, db_index=True)
-
     @property
     def soo_image(self):
         img = Image.objects.filter(
@@ -120,10 +123,6 @@ class Issue(GcdData):
             return img.get()
         else:
             return None
-
-    # In production, this is a tinyint(1) because the set of numbers
-    # is very small.  But syncdb produces an int(11).
-    is_indexed = models.IntegerField(default=0, db_index=True)
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)

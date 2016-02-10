@@ -74,6 +74,23 @@ def on_sale_date_as_string(issue):
     return date
 
 
+def on_sale_date_fields(on_sale_date):
+    year_string = on_sale_date[:4].strip('?')
+    if year_string:
+        year = int(year_string)
+    else:
+        year = None
+    month = None
+    day = None
+    if len(on_sale_date) > 4:
+        month_string = on_sale_date[5:7].strip('?')
+        if month_string:
+            month = int(month_string)
+        if len(on_sale_date) > 7:
+            day = int(on_sale_date[8:10].strip('?'))
+    return year, month, day
+
+
 def get_keywords(source):
     return u'; '.join(unicode(i) for i in source.keywords.all()
                                                 .order_by('name'))

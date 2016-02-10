@@ -18,7 +18,8 @@ from taggit.managers import TaggableManager
 from apps.oi import states, relpath
 from apps.oi.helpers import (
     update_count, remove_leading_article, set_series_first_last,
-    validated_isbn, get_keywords, save_keywords, on_sale_date_as_string)
+    validated_isbn, get_keywords, save_keywords, on_sale_date_as_string,
+    on_sale_date_fields)
 
 # We should just from apps.gcd import models as gcd_models, but that's
 # a lot of little changes so for now tell flake8 noqa so it doesn't complain
@@ -26,11 +27,17 @@ from apps.gcd.models import *  # noqa
 from apps.gcd.models.issue import INDEXED
 
 
+# TODO: CTYPES and ACTION_* are going away at some point.
 CTYPES = {
     'publisher': 1,
     'series': 4,
     'variant_add': 9,
 }
+
+ACTION_ADD = 'add'
+ACTION_DELETE = 'delete'
+ACTION_MODIFY = 'modify'
+
 
 
 class Changeset(models.Model):
@@ -58,6 +65,11 @@ class Changeset(models.Model):
 
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     modified = models.DateTimeField(auto_now=True, db_index=True)
+
+    # TODO: This is just here so we can mock it in unit tests of old code.
+    #       It will go away along with CTYPES.
+    def changeset_action(self):
+        raise NotImplementedError
 
 
 class ChangesetComment(models.Model):
@@ -1533,6 +1545,7 @@ class IssueRevision(Revision):
         has_barcode = ('series', 'has_barcode')
         has_isbn = ('series', 'has_isbn')
         has_volume = ('series', 'has_volume')
+        has_ind_freq = ('series', 'has_indicia_frequency')
         return {
             'title': has_title,
             'no_title': has_title,
@@ -1544,6 +1557,8 @@ class IssueRevision(Revision):
             'volume': has_volume,
             'no_volume': has_volume,
             'display_volume_with_issue': has_volume,
+            'indicia_frequency': has_ind_freq,
+            'no_indicia_frequency': has_ind_freq,
         }
 
     @classmethod
