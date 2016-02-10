@@ -83,6 +83,8 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
     old_ind_pub_issue_count = rev.indicia_publisher.issue_count
     old_brand_issue_count = rev.brand.issue_count
     old_publisher_issue_count = rev.series.publisher.issue_count
+    old_brand_group_counts = {group.pk: group.issue_count
+                              for group in rev.brand.group.all()}
 
     with mock.patch('apps.oi.helpers.CountStats.objects.update_count') \
             as updater_mock:
@@ -112,6 +114,9 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
     assert s.issue_count == old_series_issue_count + 1
     assert s.publisher.issue_count == old_publisher_issue_count + 1
     assert rev.issue.brand.issue_count == old_brand_issue_count + 1
+    assert {
+        group.pk: group.issue_count for group in rev.issue.brand.group.all()
+    } == {k: v + 1 for k, v in old_brand_group_counts.iteritems()}
     assert rev.issue.indicia_publisher.issue_count == \
         old_ind_pub_issue_count + 1
 
@@ -125,6 +130,8 @@ def test_commit_variant_added_revision(any_added_variant_rev,
     old_series_issue_count = rev.series.issue_count
     old_ind_pub_issue_count = rev.indicia_publisher.issue_count
     old_brand_issue_count = rev.brand.issue_count
+    old_brand_group_counts = {group.pk: group.issue_count
+                              for group in rev.brand.group.all()}
     old_publisher_issue_count = rev.series.publisher.issue_count
 
     with mock.patch('apps.oi.helpers.CountStats.objects.update_count') \
@@ -151,6 +158,8 @@ def test_commit_variant_added_revision(any_added_variant_rev,
     assert s.issue_count == old_series_issue_count
     assert s.publisher.issue_count == old_publisher_issue_count
     assert rev.issue.brand.issue_count == old_brand_issue_count
+    assert {group.pk: group.issue_count
+            for group in rev.issue.brand.group.all()} == old_brand_group_counts
     assert rev.issue.indicia_publisher.issue_count == old_ind_pub_issue_count
 
 
@@ -201,6 +210,8 @@ def test_delete_issue(any_added_issue, any_deleting_changeset,
     old_series_issue_count = rev.series.issue_count
     old_ind_pub_issue_count = rev.indicia_publisher.issue_count
     old_brand_issue_count = rev.brand.issue_count
+    old_brand_group_counts = {group.pk: group.issue_count
+                              for group in rev.brand.group.all()}
     old_publisher_issue_count = rev.series.publisher.issue_count
 
     rev.commit_to_display()
@@ -218,6 +229,9 @@ def test_delete_issue(any_added_issue, any_deleting_changeset,
     assert s.issue_count == old_series_issue_count - 1
     assert s.publisher.issue_count == old_publisher_issue_count - 1
     assert rev.issue.brand.issue_count == old_brand_issue_count - 1
+    assert {
+        group.pk: group.issue_count for group in rev.issue.brand.group.all()
+    } == {k: v - 1 for k, v in old_brand_group_counts.iteritems()}
     assert rev.issue.indicia_publisher.issue_count == \
         old_ind_pub_issue_count - 1
 
@@ -239,6 +253,8 @@ def test_delete_variant(any_added_variant, any_deleting_changeset,
     old_series_issue_count = rev.series.issue_count
     old_ind_pub_issue_count = rev.indicia_publisher.issue_count
     old_brand_issue_count = rev.brand.issue_count
+    old_brand_group_counts = {group.pk: group.issue_count
+                              for group in rev.brand.group.all()}
     old_publisher_issue_count = rev.series.publisher.issue_count
 
     rev.commit_to_display()
@@ -257,6 +273,8 @@ def test_delete_variant(any_added_variant, any_deleting_changeset,
     assert s.issue_count == old_series_issue_count
     assert s.publisher.issue_count == old_publisher_issue_count
     assert rev.issue.brand.issue_count == old_brand_issue_count
+    assert {group.pk: group.issue_count
+            for group in rev.issue.brand.group.all()} == old_brand_group_counts
     assert rev.issue.indicia_publisher.issue_count == old_ind_pub_issue_count
 
 
@@ -284,6 +302,8 @@ def test_noncomics_counts(any_added_series_rev,
     old_series_issue_count = i_rev.series.issue_count
     old_ind_pub_issue_count = i_rev.indicia_publisher.issue_count
     old_brand_issue_count = i_rev.brand.issue_count
+    old_brand_group_counts = {group.pk: group.issue_count
+                              for group in i_rev.brand.group.all()}
     old_publisher_issue_count = i_rev.series.publisher.issue_count
 
     with mock.patch('apps.oi.helpers.CountStats.objects.update_count') \
@@ -302,6 +322,9 @@ def test_noncomics_counts(any_added_series_rev,
     assert s.issue_count == old_series_issue_count + 1
     assert s.publisher.issue_count == old_publisher_issue_count
     assert i_rev.issue.brand.issue_count == old_brand_issue_count
+    assert {
+        group.pk: group.issue_count for group in i_rev.issue.brand.group.all()
+    } == old_brand_group_counts
     assert i_rev.issue.indicia_publisher.issue_count == old_ind_pub_issue_count
 
     # Now do it all again with a variant added to the new issue.
@@ -318,6 +341,8 @@ def test_noncomics_counts(any_added_series_rev,
     old_series_issue_count = v_rev.series.issue_count
     old_ind_pub_issue_count = v_rev.indicia_publisher.issue_count
     old_brand_issue_count = v_rev.brand.issue_count
+    old_brand_group_counts = {group.pk: group.issue_count
+                              for group in v_rev.brand.group.all()}
     old_publisher_issue_count = v_rev.series.publisher.issue_count
 
     with mock.patch('apps.oi.helpers.CountStats.objects.update_count') \
@@ -336,6 +361,10 @@ def test_noncomics_counts(any_added_series_rev,
     assert s.issue_count == old_series_issue_count
     assert s.publisher.issue_count == old_publisher_issue_count
     assert v_rev.issue.brand.issue_count == old_brand_issue_count
+    assert {
+        group.pk: group.issue_count
+        for group in v_rev.issue.brand.group.all()
+    } == old_brand_group_counts
     assert v_rev.issue.indicia_publisher.issue_count == old_ind_pub_issue_count
 
     # Now delete the variant, should still have the same counts.
@@ -357,6 +386,8 @@ def test_noncomics_counts(any_added_series_rev,
     assert s.issue_count == old_series_issue_count
     assert s.publisher.issue_count == old_publisher_issue_count
     assert i.brand.issue_count == old_brand_issue_count
+    assert {group.pk: group.issue_count
+            for group in i.brand.group.all()} == old_brand_group_counts
     assert i.indicia_publisher.issue_count == old_ind_pub_issue_count
 
     # Finally, delete the base issue, check for only series.issue_count
@@ -381,4 +412,6 @@ def test_noncomics_counts(any_added_series_rev,
     assert s.issue_count == old_series_issue_count - 1
     assert s.publisher.issue_count == old_publisher_issue_count
     assert i.brand.issue_count == old_brand_issue_count
+    assert {group.pk: group.issue_count
+            for group in i.brand.group.all()} == old_brand_group_counts
     assert i.indicia_publisher.issue_count == old_ind_pub_issue_count
