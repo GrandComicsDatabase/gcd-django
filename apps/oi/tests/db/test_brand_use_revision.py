@@ -10,45 +10,48 @@ from apps.oi.models import BrandUseRevision
 def test_create_add_revision(any_added_brand_use_rev,
                              brand_use_add_values,
                              any_adding_changeset):
-    bur = any_added_brand_use_rev
+    rev = any_added_brand_use_rev
 
     for k, v in brand_use_add_values.iteritems():
-        assert getattr(bur, k) == v
-    assert bur.brand_use is None
+        assert getattr(rev, k) == v
+    assert rev.brand_use is None
 
-    assert bur.changeset == any_adding_changeset
+    assert rev.changeset == any_adding_changeset
 
-    assert bur.source is None
-    assert bur.source_name == 'brand_use'
+    assert rev.source is None
+    assert rev.source_name == 'brand_use'
 
 
 @pytest.mark.django_db
 def test_commit_added_revision(any_added_brand_use_rev,
                                brand_use_add_values):
-    bur = any_added_brand_use_rev
-    with mock.patch('apps.oi.models.update_count') as updater:
-        bur.commit_to_display()
-    assert updater.called_once_with('brand_uses', 1)
+    rev = any_added_brand_use_rev
+    update_all = 'apps.oi.models.CountStats.objects.update_all_counts'
+    with mock.patch(update_all) as updater:
+        rev.commit_to_display()
 
-    assert bur.brand_use is not None
-    assert bur.source is bur.brand_use
+    # We do not currently track statistics for brand uses.
+    assert not updater.called
+
+    assert rev.brand_use is not None
+    assert rev.source is rev.brand_use
 
     for k, v in brand_use_add_values.iteritems():
-        assert getattr(bur.brand_use, k) == v
+        assert getattr(rev.brand_use, k) == v
 
 
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_brand_use, brand_use_add_values,
                               any_editing_changeset):
-    bur = BrandUseRevision.clone(
+    rev = BrandUseRevision.clone(
         data_object=any_added_brand_use,
         changeset=any_editing_changeset)
 
     for k, v in brand_use_add_values.iteritems():
-        assert getattr(bur, k) == v
-    assert bur.brand_use is any_added_brand_use
+        assert getattr(rev, k) == v
+    assert rev.brand_use is any_added_brand_use
 
-    assert bur.changeset == any_editing_changeset
+    assert rev.changeset == any_editing_changeset
 
-    assert bur.source is any_added_brand_use
-    assert bur.source_name == 'brand_use'
+    assert rev.source is any_added_brand_use
+    assert rev.source_name == 'brand_use'

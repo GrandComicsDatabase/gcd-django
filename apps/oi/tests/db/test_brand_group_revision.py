@@ -10,52 +10,62 @@ from apps.oi.models import BrandGroupRevision
 def test_create_add_revision(any_added_brand_group_rev1,
                              brand_group_add_values,
                              any_adding_changeset, keywords):
-    bgr = any_added_brand_group_rev1
+    rev = any_added_brand_group_rev1
 
     for k, v in brand_group_add_values.iteritems():
-        assert getattr(bgr, k) == v
-    assert bgr.brand_group is None
+        assert getattr(rev, k) == v
+    assert rev.brand_group is None
 
-    assert bgr.changeset == any_adding_changeset
+    assert rev.changeset == any_adding_changeset
 
-    assert bgr.source is None
-    assert bgr.source_name == 'brand_group'
+    assert rev.source is None
+    assert rev.source_name == 'brand_group'
 
 
 @pytest.mark.django_db
 def test_commit_added_revision(any_added_brand_group_rev1,
                                brand_group_add_values,
                                keywords):
-    bgr = any_added_brand_group_rev1
-    with mock.patch('apps.oi.models.update_count') as updater:
-        bgr.commit_to_display()
-    assert updater.called_once_with('brand_groups', 1)
+    rev = any_added_brand_group_rev1
+    update_all = 'apps.oi.models.CountStats.objects.update_all_counts'
+    with mock.patch(update_all) as updater:
+        rev.commit_to_display()
 
-    assert bgr.brand_group is not None
-    assert bgr.source is bgr.brand_group
+    updater.assert_has_calls([
+        # These first two are from the BrandGroup itself.
+        mock.call({}, language=None, country=None, negate=True),
+        mock.call({'brands': 0}, language=None, country=None),
+        # These last two are from the automatically added Brand.
+        mock.call({}, language=None, country=None, negate=True),
+        mock.call({'brands': 1}, language=None, country=None),
+    ])
+    assert updater.call_count == 4
+
+    assert rev.brand_group is not None
+    assert rev.source is rev.brand_group
 
     for k, v in brand_group_add_values.iteritems():
         if k == 'keywords':
-            pub_kws = [k for k in bgr.brand_group.keywords.names()]
+            pub_kws = [k for k in rev.brand_group.keywords.names()]
             pub_kws.sort()
             assert pub_kws == keywords['list']
         else:
-            assert getattr(bgr.brand_group, k) == v
-    assert bgr.brand_group.issue_count == 0
+            assert getattr(rev.brand_group, k) == v
+    assert rev.brand_group.issue_count == 0
 
 
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_brand_group1, brand_group_add_values,
                               any_editing_changeset, keywords):
-    bgr = BrandGroupRevision.clone(
+    rev = BrandGroupRevision.clone(
         data_object=any_added_brand_group1,
         changeset=any_editing_changeset)
 
     for k, v in brand_group_add_values.iteritems():
-        assert getattr(bgr, k) == v
-    assert bgr.brand_group is any_added_brand_group1
+        assert getattr(rev, k) == v
+    assert rev.brand_group is any_added_brand_group1
 
-    assert bgr.changeset == any_editing_changeset
+    assert rev.changeset == any_editing_changeset
 
-    assert bgr.source is any_added_brand_group1
-    assert bgr.source_name == 'brand_group'
+    assert rev.source is any_added_brand_group1
+    assert rev.source_name == 'brand_group'

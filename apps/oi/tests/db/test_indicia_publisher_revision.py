@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import pytest
 import mock
@@ -10,53 +11,60 @@ from apps.oi.models import IndiciaPublisherRevision
 def test_create_add_revision(any_added_indicia_publisher_rev,
                              indicia_publisher_add_values,
                              any_adding_changeset, keywords):
-    ipr = any_added_indicia_publisher_rev
+    rev = any_added_indicia_publisher_rev
 
     for k, v in indicia_publisher_add_values.iteritems():
-        assert getattr(ipr, k) == v
-    assert ipr.indicia_publisher is None
+        assert getattr(rev, k) == v
+    assert rev.indicia_publisher is None
 
-    assert ipr.changeset == any_adding_changeset
+    assert rev.changeset == any_adding_changeset
 
-    assert ipr.source is None
-    assert ipr.source_name == 'indicia_publisher'
+    assert rev.source is None
+    assert rev.source_name == 'indicia_publisher'
 
 
 @pytest.mark.django_db
 def test_commit_added_revision(any_added_indicia_publisher_rev,
                                indicia_publisher_add_values,
                                keywords):
-    ipr = any_added_indicia_publisher_rev
-    with mock.patch('apps.oi.models.update_count') as updater:
-        ipr.commit_to_display()
-    assert updater.called_once_with('indicia_publishers', 1, ipr.country)
+    rev = any_added_indicia_publisher_rev
+    update_all = 'apps.oi.models.CountStats.objects.update_all_counts'
+    with mock.patch(update_all) as updater:
+        rev.commit_to_display()
 
-    assert ipr.indicia_publisher is not None
-    assert ipr.source is ipr.indicia_publisher
+    updater.assert_has_calls([
+        mock.call({}, country=None, language=None, negate=True),
+        mock.call({u'indicia publishers': 1},
+                  country=rev.indicia_publisher.country, language=None),
+    ])
+    assert updater.call_count == 2
+
+    assert rev.indicia_publisher is not None
+    assert rev.source is rev.indicia_publisher
 
     for k, v in indicia_publisher_add_values.iteritems():
         if k == 'keywords':
-            pub_kws = [k for k in ipr.indicia_publisher.keywords.names()]
+            pub_kws = [k for k in rev.indicia_publisher.keywords.names()]
             pub_kws.sort()
             assert pub_kws == keywords['list']
         else:
-            assert getattr(ipr.indicia_publisher, k) == v
-    assert ipr.indicia_publisher.issue_count == 0
+            assert getattr(rev.indicia_publisher, k) == v
+    assert rev.indicia_publisher.issue_count == 0
 
 
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_indicia_publisher,
                               indicia_publisher_add_values,
                               any_editing_changeset, keywords):
-    ipr = IndiciaPublisherRevision.clone(
+    rev = IndiciaPublisherRevision.clone(
         data_object=any_added_indicia_publisher,
         changeset=any_editing_changeset)
 
     for k, v in indicia_publisher_add_values.iteritems():
-        assert getattr(ipr, k) == v
-    assert ipr.indicia_publisher is any_added_indicia_publisher
+        assert getattr(rev, k) == v
+    assert rev.indicia_publisher is any_added_indicia_publisher
 
-    assert ipr.changeset == any_editing_changeset
+    assert rev.changeset == any_editing_changeset
 
-    assert ipr.source is any_added_indicia_publisher
-    assert ipr.source_name == 'indicia_publisher'
+    assert rev.source is any_added_indicia_publisher
+    assert rev.source_name == 'indicia_publisher'
