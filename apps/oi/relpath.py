@@ -54,6 +54,10 @@ class RelPath(object):
         last = self._fields[-1]
         self._many_valued = last.many_to_many or last.one_to_many
 
+    @property
+    def many_valued(self):
+        return self._many_valued
+
     def get_field(self):
         """
         Returns the field object for the last relation in the sequence.

@@ -683,22 +683,39 @@ class Revision(models.Model):
         # But switch 'parent' to 'publisher' (historical reasons).
         parent = (
             'publisher' if parent_tuple[-1] == 'parent' else parent_tuple[-1])
+
         changed = changes['%s changed' % parent]
         old_value = changes['old %s' % parent]
         new_value = changes['new %s' % parent]
 
+        many = relpath.RelPath(type(self), *parent_tuple).many_valued
         if changed:
             if old_value:
-                old_value.update_cached_counts(old_counts, negate=True)
-                old_value.save()
+                if many:
+                    for v in old_value:
+                        v.update_cached_counts(old_counts, negate=True)
+                        v.save()
+                else:
+                    old_value.update_cached_counts(old_counts, negate=True)
+                    old_value.save()
             if new_value:
-                new_value.update_cached_counts(new_counts)
-                new_value.save()
+                if many:
+                    for v in new_value:
+                        v.update_cached_counts(new_counts)
+                        v.save()
+                else:
+                    new_value.update_cached_counts(new_counts)
+                    new_value.save()
 
         elif old_counts != new_counts:
             # Doesn't matter whether we use old or new as they are the same.
-            new_value.update_cached_counts(deltas)
-            new_value.save()
+            if many:
+                for v in new_value:
+                    v.update_cached_counts(deltas)
+                    v.save()
+            else:
+                new_value.update_cached_counts(deltas)
+                new_value.save()
 
     def _pre_commit_check(self):
         """ Runs sanity checks before anything else in commit_to_display. """
