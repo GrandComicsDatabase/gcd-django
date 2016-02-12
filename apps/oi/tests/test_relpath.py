@@ -5,7 +5,7 @@ import mock
 import pytest
 
 from django.db import models
-from django.db.models import options
+from django.db.models import options, fields
 from django.db.models.fields import related
 
 from apps.oi.relpath import RelPath
@@ -13,13 +13,22 @@ from apps.oi.relpath import RelPath
 
 @pytest.fixture
 def classes_and_fields():
-    starting_model_class = mock.MagicMock(spec=type(models.Model))
+
+    # The 'objects' class member is some sort of weird magic thing
+    # in Django, so when using MagicMock(spec=type(models.Model))
+    # the mock library thinks it violates the spec.  Add on a data
+    # member here and use this subclass as the spec so that the
+    # mock spec code stops freaking out.
+    class FakeObjectsModelType(type(models.Model)):
+        objects = mock.MagicMock()
+
+    starting_model_class = mock.MagicMock(spec=FakeObjectsModelType)
     starting_model_class._meta = mock.MagicMock(spec=options.Options)
 
-    foo_model_class = mock.MagicMock(spec=type(models.Model))
+    foo_model_class = mock.MagicMock(spec=FakeObjectsModelType)
     foo_model_class._meta = mock.MagicMock(spec=options.Options)
 
-    bar_model_class = mock.MagicMock(spec=type(models.Model))
+    bar_model_class = mock.MagicMock(spec=FakeObjectsModelType)
     bar_model_class._meta = mock.MagicMock(spec=options.Options)
 
     single_value_field = mock.MagicMock(spec=related.ForeignKey)
@@ -30,19 +39,27 @@ def classes_and_fields():
     multi_value_field.many_to_many = True
     multi_value_field.one_to_many = False
 
+    non_relational_field = mock.MagicMock(spec=fields.Field)
+    non_relational_field.one_to_one = None
+    non_relational_field.one_to_many = None
+    non_relational_field.many_to_many = None
+    non_relational_field.many_to_one = None
+
     return (starting_model_class, foo_model_class, bar_model_class,
-            single_value_field, multi_value_field)
+            single_value_field, multi_value_field, non_relational_field)
 
 
 @pytest.fixture
 def class_and_field_setup(classes_and_fields):
-    (starting_model_class, foo_model_class, bar_model_class,
-     single_value_field, multi_value_field) = classes_and_fields
+    (
+        starting_model_class, foo_model_class, bar_model_class,
+        single_value_field, multi_value_field, non_relational_field,
+    ) = classes_and_fields
 
     starting_model_class._meta.get_field.return_value = single_value_field
-    single_value_field.model = foo_model_class
+    single_value_field.rel.model = foo_model_class
     foo_model_class._meta.get_field.return_value = multi_value_field
-    multi_value_field.model = bar_model_class
+    multi_value_field.rel.model = bar_model_class
 
     return (starting_model_class, foo_model_class, bar_model_class,
             single_value_field, multi_value_field)
@@ -65,6 +82,7 @@ def test_init_and_get_field_single(single_relpath, class_and_field_setup):
     starting_model_class._meta.get_field.assert_called_once_with('foo')
 
     assert single_relpath._names == ('foo',)
+    assert single_relpath._first_model_class == starting_model_class
     assert single_relpath._model_classes == [foo_model_class]
     assert single_relpath._fields == [single_value_field]
     assert single_relpath._many_valued is False
@@ -80,6 +98,7 @@ def test_init_and_get_field_terminal_multi(multi_relpath,
     foo_model_class._meta.get_field.assert_called_once_with('bar')
 
     assert multi_relpath._names == ('foo', 'bar')
+    assert multi_relpath._first_model_class == starting_model_class
     assert multi_relpath._model_classes == [foo_model_class, bar_model_class]
     assert multi_relpath._fields == [single_value_field, multi_value_field]
     assert multi_relpath._many_valued is True
@@ -87,19 +106,53 @@ def test_init_and_get_field_terminal_multi(multi_relpath,
 
 
 def test_init_prefix_multi(classes_and_fields):
-    (starting_model_class, foo_model_class, bar_model_class,
-     single_value_field, multi_value_field) = classes_and_fields
+    (
+        starting_model_class, foo_model_class, bar_model_class,
+        single_value_field, multi_value_field, non_relational_field,
+    ) = classes_and_fields
 
     starting_model_class._meta.get_field.return_value = multi_value_field
-    multi_value_field.model = foo_model_class
+    multi_value_field.rel.model = foo_model_class
     foo_model_class._meta.get_field.return_value = single_value_field
-    single_value_field.model = bar_model_class
+    single_value_field.rel.model = bar_model_class
 
     with pytest.raises(ValueError) as excinfo:
         RelPath(starting_model_class, 'foo', 'bar')
 
     assert ("Many-valued relations cannot appear before the end of the path" in
             unicode(excinfo.value))
+
+
+def test_init_non_rel(classes_and_fields):
+    (
+        starting_model_class, foo_model_class, bar_model_class,
+        single_value_field, multi_value_field, non_relational_field,
+    ) = classes_and_fields
+
+    starting_model_class._meta.get_field.return_value = non_relational_field
+
+    nonrel_relpath = RelPath(starting_model_class, 'nonrel')
+
+    assert nonrel_relpath._names == ('nonrel',)
+    assert nonrel_relpath._first_model_class == starting_model_class
+    assert nonrel_relpath._model_classes == []
+    assert nonrel_relpath._fields == [non_relational_field]
+    assert nonrel_relpath._many_valued is False
+    assert nonrel_relpath.get_field() == non_relational_field
+
+
+def test_init_prefix_non_rel(classes_and_fields):
+    (
+        starting_model_class, foo_model_class, bar_model_class,
+        single_value_field, multi_value_field, non_relational_field,
+    ) = classes_and_fields
+
+    starting_model_class._meta.get_field.return_value = non_relational_field
+
+    with pytest.raises(ValueError) as excinfo:
+        RelPath(starting_model_class, 'nonrel', 'doesntmatter')
+
+    assert "non-relational field" in unicode(excinfo.value)
 
 
 def test_init_no_field_names():
@@ -124,7 +177,7 @@ def instance():
 def single_isinstance_passes(single_relpath):
     # Make sure that the isinstance() check passes by setting the relevant
     # class to object.  _model_classes is not otherwise used by get/set_value()
-    single_relpath._model_classes[0] = object
+    single_relpath._first_model_class = object
     return single_relpath
 
 
@@ -132,7 +185,7 @@ def single_isinstance_passes(single_relpath):
 def multi_isinstance_passes(multi_relpath):
     # Make sure that the isinstance() check passes by setting the relevant
     # class to object.  _model_classes is not otherwise used by get/set_value()
-    multi_relpath._model_classes[0] = object
+    multi_relpath._first_model_class = object
     return multi_relpath
 
 
@@ -171,7 +224,7 @@ def test_get_value_multi_empty(multi_isinstance_passes, instance):
 
 def test_get_value_instance_check(single_relpath, instance):
     # Need to make sure there is an actual type and not a mock object
-    single_relpath._model_classes[0] = models.Model
+    single_relpath._first_model_class = models.Model
     with pytest.raises(ValueError) as excinfo:
         single_relpath.get_value(instance)
     assert 'is not an instance of' in unicode(excinfo.value)
@@ -193,7 +246,7 @@ def test_set_value_multiple(multi_isinstance_passes, instance):
 
 def test_set_value_instance_check(multi_relpath, instance):
     # Need to make sure there is an actual type and not a mock object
-    multi_relpath._model_classes[0] = models.Model
+    multi_relpath._first_model_class = models.Model
     with pytest.raises(ValueError) as excinfo:
         multi_relpath.set_value(instance, [1, 2, 3])
     assert 'is not an instance of' in unicode(excinfo.value)

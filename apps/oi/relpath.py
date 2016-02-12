@@ -47,12 +47,20 @@ class RelPath(object):
                 # that we don't currently need anyway.
                 raise ValueError("Many-valued relations cannot appear before "
                                  "the end of the path")
-            cls = field.model
+
             self._fields.append(field)
-            self._model_classes.append(cls)
+            if any((field.one_to_one, field.one_to_many,
+                   field.many_to_many, field.many_to_one)):
+                cls = field.rel.model
+                self._model_classes.append(cls)
+            elif i != last_i:
+                # We have further to go, but can't because the current
+                # field does not represent a relation.  This is an error.
+                raise ValueError("Only the last element of the path may be "
+                                 "a non-relational field")
 
         last = self._fields[-1]
-        self._many_valued = last.many_to_many or last.one_to_many
+        self._many_valued = bool(last.many_to_many or last.one_to_many)
 
     @property
     def many_valued(self):
@@ -88,9 +96,9 @@ class RelPath(object):
 
         # Check after the check for empty, because if we are empty we may
         # have None for the instance, and we won't use the instance anyway.
-        if not isinstance(instance, self._model_classes[0]):
+        if not isinstance(instance, self._first_model_class):
             raise ValueError("'%s' is not an instance of '%s'" %
-                             (instance, self._model_classes[0]))
+                             (instance, self._first_model_class))
 
         values = self._expand(instance)
         if self._many_valued:
@@ -104,9 +112,9 @@ class RelPath(object):
         This handles both single- and many-valued relations.  In the case
         of a many-valued relation, value can be a QuerySet or other iterable
         """
-        if not isinstance(instance, self._model_classes[0]):
+        if not isinstance(instance, self._first_model_class):
             raise ValueError("'%s' is not an instance of '%s'" %
-                             (instance, self._model_classes[0]))
+                             (instance, self._first_model_class))
         # We want to change the final value.  So do that by applying
         # the final name to the next-to-last value with setattr.
         # If there is only one name/field/value, the "second to last value"
