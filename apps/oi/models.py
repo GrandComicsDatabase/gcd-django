@@ -664,13 +664,11 @@ class Revision(models.Model):
             for k in old_counts.viewkeys() | new_counts.viewkeys()
         }
 
-        for parent_tuple in self._get_parent_field_tuples():
-            self._adjust_parent_counts(parent_tuple, changes, deltas,
-                                       old_counts, new_counts)
+        if any(deltas.values()):
+            for parent_tuple in self._get_parent_field_tuples():
+                self._adjust_parent_counts(parent_tuple, changes, deltas,
+                                           old_counts, new_counts)
 
-        # TODO: Remove hasattr when GcdData base class handles it.
-        if (old_counts != new_counts) and hasattr(self.source,
-                                                  'update_cached_counts'):
             self.source.update_cached_counts(deltas)
             self.source.save()
 
@@ -865,6 +863,33 @@ class Revision(models.Model):
         new_stats = self.source.stat_counts()
         self._adjust_stats(changes, old_stats, new_stats)
         self._post_adjust_stats(changes)
+
+    def __unicode__(self):
+        """
+        String representation for debugging purposes only.
+
+        No UI should rely on this representation being suitable for end users.
+        """
+        # It's possible to add and delete something at the same time,
+        # although we don't currently allow it.  In theory one could
+        # edit and delete, although we don't even have any way to indicate
+        # that currently.
+        action = []
+        if self.added:
+            action.append('adding')
+        if self.edited:
+            action.append('editing')
+        if self.deleted:
+            action.append('deleting')
+
+        return '%r %s %s %r (%r) change %r' % (
+            self.id,
+            ' & '.join(action),
+            self.source_class.__name__,
+            self.source,
+            None if self.source is None else self.source.id,
+            None if self.changeset_id is None else self.changeset_id,
+        )
 
 
 class OngoingReservation(models.Model):

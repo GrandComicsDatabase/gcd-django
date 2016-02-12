@@ -5,120 +5,12 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
-from django.db import models
-
 from apps.oi.models import Revision, RevisionManager
 from apps.gcd.models import Country, Language
 
-from taggit.managers import TaggableManager
-
-
-# Make a non-abstract classes that act like Revisions, but con be
-# instantiated (otherwise the OneToOneField has problems) and can
-# have a manager, i.e. DummyRevision.objects.
-#
-# These should not be needed in other test modules as they should
-# all instantiate the proper concrete revision, even if they are
-# not saving it to the database.
-
-# Make some dummy data objects to correspond to the dummy revisions.
-# These need to go first so that we can set source_class for the revisions.
-class Dummy(models.Model):
-    class Meta:
-        app_label = 'gcd'
-
-    i = models.IntegerField()
-    b = models.BooleanField()
-    f = models.ForeignKey('gcd.OtherDummy')
-    o = models.OneToOneField('gcd.OtherDummy')
-    m = models.ManyToManyField('gcd.OtherDummy')
-    x = models.BooleanField()           # type mismatch with revision
-    c = models.CharField()              # Not present in Revision
-    keywords = TaggableManager()        # keywords must be called 'keywords'
-    deleted = models.BooleanField()     # excluded field
-
-
-class OtherDummy(models.Model):
-    class Meta:
-        app_label = 'gcd'
-
-    name = models.CharField()
-
-
-class DummyRevision(Revision):
-    class Meta:
-        app_label = 'oi'
-
-    dummy = models.ForeignKey('gcd.Dummy', null=True)
-
-    # Note that the 'deleted' excluded field is defined in Revision.
-    i = models.IntegerField()
-    b = models.BooleanField()
-    f = models.ForeignKey('gcd.OtherDummy')
-    o = models.OneToOneField('gcd.OtherDummy')
-    m = models.ManyToManyField('gcd.OtherDummy')
-    x = models.CharField()              # type mismatch with data object
-    y = models.BooleanField()           # Not present on data object
-    keywords = models.TextField()       # keywords field on revision is text
-
-    source_name = 'Dummy'
-    source_class = Dummy
-
-    @property
-    def source(self):
-        return self.dummy
-
-    @source.setter
-    def source(self, value):
-        self.dummy = value
-
-    @classmethod
-    def _get_parent_field_tuples(cls):
-        return {('f',), ('o',), ('m',)}
-
-    @classmethod
-    def _get_major_flag_field_tuples(cls):
-        return {('b',)}
-
-
-# A revision with a source but no parent / conditional / etc. fields declared.
-class OtherDummyRevision(Revision):
-    class Meta:
-        app_label = 'oi'
-
-    other_dummy = models.ForeignKey(OtherDummy, null=True)
-    name = models.CharField()
-
-    source_name = 'OtherDummy'
-    source_class = OtherDummy
-
-    @property
-    def source(self):
-        return self.other_dummy
-
-    @source.setter
-    def source(self, value):
-        self.other_dummy = value
-
-
-# Simplest possible revision that has a source class defined.
-class SimpleSource(models.Model):
-    class Meta:
-        app_label = 'gcd'
-
-
-class SimpleSourceRevision(Revision):
-    class Meta:
-        app_label = 'oi'
-
-    source_class = SimpleSource
-
-
-# The simplest possible revision, without a source hooked up.
-# Used to test the non-overridden abstract base methods.
-class SimplestRevision(Revision):
-    class Meta:
-        app_label = 'oi'
+from .conftest import (
+    Dummy, DummyRevision, OtherDummy, OtherDummyRevision,
+    SimpleSourceRevision, SimplestRevision)
 
 
 def test_for_correct_manager():
@@ -419,8 +311,23 @@ def mock_update_all():
         yield uac_mock
 
 
-def test_adjust_stats_neither(mock_update_all):
-    rev = OtherDummyRevision(other_dummy=OtherDummy())
+@pytest.yield_fixture
+def patched_other_dummy():
+    # Don't set a source- this way we can just fake the country/language stuff.
+    # Note that OtherDummy.save must be patched before
+    # OtherDummyRevision.other_dummy, as the new OtherDummy value must be
+    # constructed under the patch.
+    with mock.patch('apps.oi.tests.conftest.OtherDummy.save'), \
+            mock.patch('apps.oi.tests.conftest.OtherDummyRevision.other_dummy',
+                       new=OtherDummy()):
+        # revision.other_dummy is mocked, so no need to set it in constructor.
+        # attempting to set it without mocking triggers a database operation,
+        # even if the object is never saved.
+        yield OtherDummyRevision()
+
+
+def test_adjust_stats_neither(mock_update_all, patched_other_dummy):
+    rev = patched_other_dummy
 
     old_counts = {'foo': 1}
     new_counts = {'foo': 2}
@@ -431,11 +338,11 @@ def test_adjust_stats_neither(mock_update_all):
         mock.call(old_counts, country=None, language=None, negate=True),
         mock.call(new_counts, country=None, language=None)])
     assert mock_update_all.call_count == 2
+    rev.source.save.assert_called_once_with()
 
 
-def test_adjust_stats_both(mock_update_all):
-    # Don't set a source- this way we can just fake the country/language stuff.
-    rev = OtherDummyRevision()
+def test_adjust_stats_both(mock_update_all, patched_other_dummy):
+    rev = patched_other_dummy
 
     old_counts = {'foo': 1}
     new_counts = {'foo': 2}
@@ -457,6 +364,116 @@ def test_adjust_stats_both(mock_update_all):
         mock.call(new_counts, country=changes['new country'],
                   language=changes['new language'])])
     assert mock_update_all.call_count == 2
+    rev.source.save.assert_called_once_with()
+
+
+def test_adjust_parent_counts_single(patched_other_dummy):
+    rev = patched_other_dummy
+    with mock.patch('apps.oi.relpath.RelPath.many_valued', new=False), \
+            mock.patch('apps.oi.relpath.RelPath.__init__', return_value=None):
+
+        old_value = mock.MagicMock()
+        new_value = mock.MagicMock()
+        deltas = {'issues': 1}
+        old_counts = {'issues': 10}
+        new_counts = {'issues': 11}
+
+        rev._adjust_parent_counts(
+            ('foo',),
+            {'foo changed': True, 'old foo': old_value, 'new foo': new_value},
+            deltas, old_counts, new_counts,
+        )
+
+        old_value.update_cached_counts.assert_called_once_with(old_counts,
+                                                               negate=True)
+        old_value.save.assert_called_once_with()
+        new_value.update_cached_counts.assert_called_once_with(new_counts)
+        new_value.save.assert_called_once_with()
+
+
+def test_adjust_parent_counts_single_no_change(patched_other_dummy):
+    rev = patched_other_dummy
+    with mock.patch('apps.oi.relpath.RelPath.many_valued', new=False), \
+            mock.patch('apps.oi.relpath.RelPath.__init__', return_value=None):
+
+        # Values don't change, only counts.
+        old_value = mock.MagicMock()
+        new_value = old_value
+
+        deltas = {'issues': 1}
+        old_counts = {'issues': 10}
+        new_counts = {'issues': 11}
+
+        rev._adjust_parent_counts(
+            ('foo',),
+            {'foo changed': False, 'old foo': old_value, 'new foo': new_value},
+            deltas, old_counts, new_counts,
+        )
+
+        new_value.update_cached_counts.assert_called_once_with(deltas)
+        new_value.save.assert_called_once_with()
+
+
+def test_adjust_parent_counts_multi(patched_other_dummy):
+    rev = patched_other_dummy
+    with mock.patch('apps.oi.relpath.RelPath.many_valued', new=True), \
+            mock.patch('apps.oi.relpath.RelPath.__init__', return_value=None):
+
+        a, b, c, d = (mock.MagicMock(), mock.MagicMock(),
+                      mock.MagicMock(), mock.MagicMock())
+        old_value = {a, b, c}
+        new_value = {d, b}
+        deltas = {'issues': 1}
+        old_counts = {'issues': 10}
+        new_counts = {'issues': 11}
+
+        rev._adjust_parent_counts(
+            ('foo',),
+            {'foo changed': True, 'old foo': old_value, 'new foo': new_value},
+            deltas, old_counts, new_counts,
+        )
+
+        for o in old_value - new_value:
+            o.update_cached_counts.assert_called_once_with(old_counts,
+                                                           negate=True)
+            o.save.assert_called_once_with()
+
+        for n in new_value - old_value:
+            n.update_cached_counts.assert_called_once_with(new_counts)
+            n.save.assert_called_once_with()
+
+        for i in new_value & old_value:
+            i.update_cached_counts.assert_has_calls([
+                mock.call(old_counts, negate=True),
+                mock.call(new_counts),
+            ])
+            assert i.update_cached_counts.call_count == 2
+
+            i.save.assert_has_calls([mock.call(), mock.call()])
+            assert i.save.call_count == 2
+
+
+def test_adjust_parent_counts_multi_no_change(patched_other_dummy):
+    rev = patched_other_dummy
+    with mock.patch('apps.oi.relpath.RelPath.many_valued', new=True), \
+            mock.patch('apps.oi.relpath.RelPath.__init__', return_value=None):
+
+        a, b, c = (mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        old_value = frozenset({a, b, c})
+        new_value = frozenset({a, b, c})
+        deltas = {'issues': 1}
+        old_counts = {'issues': 10}
+        new_counts = {'issues': 11}
+
+        rev._adjust_parent_counts(
+            ('foo',),
+            {'foo changed': False, 'old foo': old_value, 'new foo': new_value},
+            deltas, old_counts, new_counts,
+        )
+
+        for v in new_value:
+            v.update_cached_counts.assert_called_once_with(deltas)
+            v.save.assert_called_once_with()
 
 
 @pytest.yield_fixture
