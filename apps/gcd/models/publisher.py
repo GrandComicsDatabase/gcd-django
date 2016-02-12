@@ -388,7 +388,7 @@ class BrandUse(models.Model):
         return {}
 
     # TODO: Resolve the question of BrandUse's base class and then remove this.
-    def update_cahced_counts(self, deltas, negate=False):
+    def update_cached_counts(self, deltas, negate=False):
         pass
 
     def __unicode__(self):
