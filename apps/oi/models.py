@@ -317,8 +317,6 @@ class Revision(models.Model):
                 # fields, although ManyToMany fields may need to be treated
                 # differently in other ways, so we track them separately
                 # as well.
-                if name == 'x':
-                    assert False
                 cls._regular_fields[key_name] = data_field
 
                 if data_field.many_to_many or data_field.one_to_many:
