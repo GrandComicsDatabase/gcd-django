@@ -8,7 +8,7 @@ import pytest
 
 from django.db.models import QuerySet, Count
 
-from apps.gcd.models import Series, Story
+from apps.gcd.models import Series, Issue, Story
 from apps.gcd.models.issue import INDEXED
 
 # TODO: We really shouldn't be depending on the OI here.
@@ -277,3 +277,64 @@ def test_update_cached_counts_subtract(f_mock):
     s.update_cached_counts(DELTAS, negate=True)
 
     assert s.issue_count == ISSUE_COUNT - DELTAS['issues']
+
+
+def test_set_first_last_issues_empty():
+    with mock.patch('apps.gcd.models.series.Series.save'), \
+            mock.patch('apps.gcd.models.series.models.QuerySet.order_by') \
+            as order_mock, \
+            mock.patch('apps.gcd.models.issue.Issue.series'):
+
+        # Create some issues that are set as first/last even though no longer
+        # attached to the series.
+        i1 = Issue(number='1', sort_code=0)
+        i2 = Issue(number='2', sort_code=1)
+        issue_list = [i1, i2]
+        s = Series(issue_count=0, first_issue=i1, last_issue=i2)
+
+        # Ensure that the active issues list is empty (i1 & i2 not attached).
+        def index_faker(index):
+            return issue_list[index]
+
+        qs = mock.MagicMock(spec=QuerySet)
+        qs.count.return_value = 0
+        qs.__getitem__.side_effect = index_faker
+
+        order_mock.return_value = qs
+
+        s.set_first_last_issues()
+
+        assert s.first_issue is None
+        assert s.last_issue is None
+        s.save.assert_called_once_with()
+
+
+def test_set_first_last_issues_nonempty():
+    with mock.patch('apps.gcd.models.series.Series.save'), \
+            mock.patch('apps.gcd.models.series.models.QuerySet.order_by') \
+            as order_mock, \
+            mock.patch('apps.gcd.models.issue.Issue.series'):
+
+        s = Series(issue_count=0)
+
+        # Create some issues attached to the series (but not first/last).
+        i1 = Issue(number='1', sort_code=0, series=s)
+        i2 = Issue(number='2', sort_code=1, series=s)
+        issue_list = [i1, i2]
+
+        # Ensure that the active issues list is empty (i1 & i2 not attached).
+        def index_faker(index):
+            return issue_list[index]
+
+        qs = mock.MagicMock(spec=QuerySet)
+        qs.count.return_value = 2
+        qs.__getitem__.side_effect = index_faker
+        qs.__iter__.return_value = iter(issue_list)
+
+        order_mock.return_value = qs
+
+        s.set_first_last_issues()
+
+        assert s.first_issue is i1
+        assert s.last_issue is i2
+        s.save.assert_called_once_with()

@@ -170,6 +170,16 @@ class Series(GcdData):
     def active_indexed_issues(self):
         return self.active_issues().exclude(is_indexed=INDEXED['skeleton'])
 
+    def set_first_last_issues(self):
+        issues = self.active_issues().order_by('sort_code')
+        if issues.count() == 0:
+            self.first_issue = None
+            self.last_issue = None
+        else:
+            self.first_issue = issues[0]
+            self.last_issue = issues[len(issues) - 1]
+        self.save()
+
     def stat_counts(self):
         """
         Returns all count values relevant to this series.
