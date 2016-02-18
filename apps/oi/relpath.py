@@ -8,7 +8,8 @@ class RelPath(object):
 
     Successivly applying each attribute to an instance will result in a
     related object.  i.e. applying ('series', 'publisher') to an issue
-    will result in issue_instance.series.publisher an instance, of Publisher.
+    will result in issue_instance.series.publisher, which is an instance
+    of class Publisher.
 
     Successivly applying each attribute to a class with get_field will
     result in the field implementing the last step of the relation.
@@ -42,7 +43,7 @@ class RelPath(object):
             field = cls._meta.get_field(self._names[i])
             if i != last_i and (field.many_to_many or field.one_to_many):
                 # Supporting internal many-valued fields would get us into
-                # wierd set-of-sets (and set-of-set-of-sets, etc.) situations
+                # weird set-of-sets (and set-of-set-of-sets, etc.) situations
                 # that we don't currently need anyway.
                 raise ValueError("Many-valued relations cannot appear before "
                                  "the end of the path")
