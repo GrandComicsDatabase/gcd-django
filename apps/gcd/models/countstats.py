@@ -134,9 +134,11 @@ class CountStatsManager(models.Manager):
             language = None
 
         for field in deltas:
-            delta = -deltas[field] if negate else deltas[field]
-            self.update_count(field=field, delta=delta,
-                              language=language, country=country)
+            # 'series issues' apply only to the Series object, not CountStats.
+            if field != 'series issues' and deltas[field]:
+                delta = -deltas[field] if negate else deltas[field]
+                self.update_count(field=field, delta=delta,
+                                  language=language, country=country)
 
 
 class CountStats(models.Model):

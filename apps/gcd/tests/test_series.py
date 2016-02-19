@@ -21,7 +21,9 @@ SERIES_PATH = 'apps.gcd.models.series.Series'
 # For use with update_cached_counts testing.
 ISSUE_COUNT = 40
 DELTAS = {
-    'issues': 4,
+    # Issues should be ignored, only series issues should be relevant.
+    'issues': 999,
+    'series issues': 4,
 }
 
 
@@ -269,14 +271,14 @@ def test_update_cached_counts_add(f_mock):
     s = Series(issue_count=0)
     s.update_cached_counts(DELTAS)
 
-    assert s.issue_count == ISSUE_COUNT + DELTAS['issues']
+    assert s.issue_count == ISSUE_COUNT + DELTAS['series issues']
 
 
 def test_update_cached_counts_subtract(f_mock):
     s = Series(issue_count=0)
     s.update_cached_counts(DELTAS, negate=True)
 
-    assert s.issue_count == ISSUE_COUNT - DELTAS['issues']
+    assert s.issue_count == ISSUE_COUNT - DELTAS['series issues']
 
 
 def test_set_first_last_issues_empty():

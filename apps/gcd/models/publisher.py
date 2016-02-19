@@ -161,6 +161,9 @@ class Publisher(BasePublisher):
 
         Includes a count for the publisher itself.
         """
+        if self.deleted:
+            return {}
+
         # Currently, we do not allow any stat-affecting operations on
         # publishers that have series, indicia publishers, or brands attached.
         assert (not self.active_series().exists() and
@@ -217,6 +220,9 @@ class IndiciaPublisher(BasePublisher):
 
         Includes a count for the indicia publisher itself.
         """
+        if self.deleted:
+            return {}
+
         # Currently, we do not allow any stat-affecting operations
         # on indicia publishers that have issues attached.
         assert not self.active_issues().exists()
@@ -272,6 +278,9 @@ class BrandGroup(BasePublisher):
 
         Brand groups themselves are not currently counted.
         """
+        if self.deleted:
+            return {}
+
         # Currently, we do not allow any stat-affecting operations
         # on brand groups that have issues attached.
         assert not self.active_issues().exists()
@@ -329,6 +338,9 @@ class Brand(BasePublisher):
 
         Includes a count for the brand itself.
         """
+        if self.deleted:
+            return {}
+
         # Currently, we do not allow any stat-affecting operations
         # on brands that have issues attached.
         assert not self.active_issues().exists()

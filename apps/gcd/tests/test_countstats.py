@@ -380,7 +380,11 @@ def test_update_all_language_only(mocks_for_update_all):
     filter_mock, is_mock, uc_mock = mocks_for_update_all
 
     CountStats.objects.update_all_counts(
-        {'foo': 1, 'bar': 5}, language=ANY_LANGUAGE)
+        # Note that 'series issues' is special and should be ignored.
+        # It is used by Series in local cached counts, but CountStats
+        # will sometimes see it.  We only need to test this in one
+        # case, arbitrarily choosing this one (language_only).
+        {'foo': 1, 'bar': 5, 'series issues': 100}, language=ANY_LANGUAGE)
 
     assert is_mock.called is False
     filter_mock.assert_called_once_with(language=ANY_LANGUAGE, country=None)

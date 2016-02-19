@@ -1,0 +1,16 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
+import pytest
+
+from apps.gcd.models import Story, Issue, Series
+
+
+@pytest.mark.parametrize('is_comics, deleted',
+                         [(True, True), (True, False),
+                          (False, True), (False, False)])
+def test_stat_counts(is_comics, deleted):
+    story = Story(issue=Issue(series=Series(is_comics_publication=True)))
+    story.deleted = deleted
+    assert story.stat_counts() == {} if deleted else {'stories': 1}

@@ -30,6 +30,12 @@ def count_one():
     return one
 
 
+@pytest.fixture
+def cover():
+    return Cover(issue=Issue(series=Series(name='n', year_began=2000,
+                                           is_comics_publication=True)))
+
+
 def test_deletable(count_zero, count_one):
     with mock.patch(FILTER_PATH) as f:
         # Make filter return 0 only if deletable calls with correct kwargs.
@@ -50,15 +56,17 @@ def test_not_deletable(count_zero, count_one):
         assert not Cover().deletable()
 
 
-def test_stat_counts_commics():
-    c = Cover(issue=Issue(series=Series(name='n', year_began=2000,
-                                        is_comics_publication=True)))
-    assert c.stat_counts() == {'covers': 1}
+def test_stat_counts_comics(cover):
+    assert cover.stat_counts() == {'covers': 1}
 
 
-def test_stat_counts_non_commics():
+def test_stat_counts_non_comics(cover):
     # As many stats are collected on only comics publications, ensure
     # that covers are always collected.
-    c = Cover(issue=Issue(series=Series(name='n', year_began=2000,
-                                        is_comics_publication=False)))
-    assert c.stat_counts() == {'covers': 1}
+    cover.issue.series.is_comics_publication = False
+    assert cover.stat_counts() == {'covers': 1}
+
+
+def test_stat_counts_deleted(cover):
+    cover.deleted = True
+    assert cover.stat_counts() == {}

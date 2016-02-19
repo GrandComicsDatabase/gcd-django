@@ -501,6 +501,7 @@ def test_stat_counts_base_skeleton(any_series, stat_count_mocks):
     counts = i.stat_counts()
     assert counts == {
         'issues': 1,
+        'series issues': 1,
         'covers': 0,
         'stories': 0,
     }
@@ -517,6 +518,7 @@ def test_stat_counts_base_indexed_covers_stories(any_series, stat_count_mocks):
     counts = i.stat_counts()
     assert counts == {
         'issues': 1,
+        'series issues': 1,
         'issue indexes': 1,
         'covers': 2,
         'stories': 10,
@@ -548,6 +550,13 @@ def test_stat_counts_non_comics(any_series, stat_count_mocks):
               series=any_series)
     counts = i.stat_counts()
     assert counts == {
+        'series issues': 1,
         'covers': 2,
         'stories': 10,
     }
+
+
+def test_stat_counts_deleted(any_series):
+    i = Issue(number='1', series=any_series)
+    i.deleted = True
+    assert i.stat_counts() == {}

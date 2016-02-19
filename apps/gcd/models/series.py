@@ -217,6 +217,10 @@ class Series(GcdData):
         methods, and also expected by CountStats.update_all_counts().
 
         In the case of series, there is only one local count (for issues).
+        Note that we use 'series issues' rather than 'issues' for this
+        count, because the series issue count tracks all non-variant issues,
+        while all other issue counts ignore issues that are part of
+        series that are not comics publications.
         """
         if negate:
             deltas = deltas.copy()
@@ -226,8 +230,8 @@ class Series(GcdData):
         # Don't apply F() if delta is 0, because we don't want
         # a lazy evaluation F-object result in a count field
         # if we don't absolutely need it.
-        if deltas.get('issues', 0):
-            self.issue_count = F('issue_count') + deltas['issues']
+        if deltas.get('series issues', 0):
+            self.issue_count = F('issue_count') + deltas['series issues']
 
     def ordered_brands(self):
         """

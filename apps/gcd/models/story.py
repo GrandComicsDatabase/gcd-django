@@ -92,6 +92,14 @@ class Story(GcdData):
     # Fields from issue.
     issue = models.ForeignKey('Issue')
 
+    def stat_counts(self):
+        if self.deleted:
+            return {}
+
+        return {
+            'stories': 1,
+        }
+
     def has_credits(self):
         """
         Simplifies UI checks for conditionals.  Credit fields.

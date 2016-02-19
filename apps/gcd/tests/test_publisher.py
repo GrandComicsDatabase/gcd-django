@@ -189,3 +189,11 @@ def test_brand_stat_counts_issues():
         is_mock.return_value.exists.return_value = True
         with pytest.raises(AssertionError):
             Brand().stat_counts()
+
+
+@pytest.mark.parametrize("derived_class",
+                         [Publisher, BrandGroup, Brand, IndiciaPublisher])
+def test_stat_counts_deleted(derived_class):
+    obj = derived_class()
+    obj.deleted = True
+    assert obj.stat_counts() == {}

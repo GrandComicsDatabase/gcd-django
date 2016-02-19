@@ -75,6 +75,9 @@ class Cover(GcdData):
         return 3
 
     def stat_counts(self):
+        if self.deleted:
+            return {}
+
         return {
             'covers': 1,
         }

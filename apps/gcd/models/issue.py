@@ -198,11 +198,23 @@ class Issue(GcdData):
 
         Non-comics publications return statistics only for stories and covers,
         as non-comics issues do not count towards stats.
+
+        Note that we have a special value "series issues", because non-variant
+        issues are counted differently with respect to series than in general.
+        A series always counts its own non-variant issues, even when the series
+        is not a comics publication.
         """
+        if self.deleted:
+            return {}
+
         counts = {
             'stories': self.active_stories().count(),
             'covers': self.active_covers().count(),
         }
+
+        if not self.variant_of_id:
+            counts['series issues'] = 1
+
         if self.series.is_comics_publication:
             if self.variant_of_id:
                 counts['variant issues'] = 1
