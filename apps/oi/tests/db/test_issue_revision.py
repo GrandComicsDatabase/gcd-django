@@ -88,8 +88,6 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
 def test_commit_variant_added_revision(any_added_variant_rev,
                                        variant_add_values,
                                        any_adding_changeset, keywords):
-    # any_added_variant_rev.save()
-    # rev = IssueRevision.objects.get(pk=any_added_variant_rev.pk)
     rev = any_added_variant_rev
 
     old_series_issue_count = rev.series.issue_count
