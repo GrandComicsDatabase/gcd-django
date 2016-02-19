@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.db import models
 from django.db.models import F
-from django.db.models.fields import Field, related
+from django.db.models.fields import Field, related, FieldDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes.models import ContentType
@@ -502,13 +502,24 @@ class Revision(models.Model):
         return frozenset()
 
     @classmethod
-    def _get_stats_category_field_names(cls):
+    def _get_stats_category_field_tuples(cls):
         """
         These fields, when present, determine CountStats categories to update.
 
-        There is currently no need to ever override this method.
+        This implementation works for any class that does not have to get
+        these fields from a parent object.
         """
-        return frozenset({'country', 'language'})
+        stats_tuples = set()
+        for name in ('country', 'language'):
+            try:
+                # We just call get_field to see if it raises, so we
+                # ignore the return value.
+                cls._meta.get_field(name)
+                stats_tuples.add((name,))
+            except FieldDoesNotExist:
+                pass
+
+        return stats_tuples
 
     def _pre_initial_save(self):
         """
@@ -636,14 +647,9 @@ class Revision(models.Model):
         needed for easy conditionals and easy calls to update_all_counts().
         """
         changes = {}
-        stats_parent_field_tuples = {
-            (name,) for name in self._get_stats_category_field_names()
-            if hasattr(self, name)
-        }
-
         for name_tuple in (self._get_parent_field_tuples() |
                            self._get_major_flag_field_tuples() |
-                           stats_parent_field_tuples):
+                           self._get_stats_category_field_tuples()):
             changes.update(self._check_major_change(name_tuple))
 
         return changes
@@ -1218,6 +1224,11 @@ class CoverRevision(Revision):
             }
         )
 
+    @classmethod
+    def _get_stats_category_field_tuples(cls):
+        return frozenset({('issue', 'series', 'country',),
+                          ('issue', 'series', 'language',)})
+
     def commit_to_display(self, clear_reservation=True):
         # the file handling is in the view/covers code
         cover = self.cover
@@ -1592,6 +1603,10 @@ class IssueRevision(Revision):
     @source.setter
     def source(self, value):
         self.issue = value
+
+    @classmethod
+    def _get_stats_category_field_tuples(cls):
+        return frozenset({('series', 'country',), ('series', 'language',)})
 
     @classmethod
     def _get_conditional_field_tuple_mapping(cls):
@@ -1980,6 +1995,11 @@ class StoryRevision(Revision):
     @source.setter
     def source(self, value):
         self.story = value
+
+    @classmethod
+    def _get_stats_category_field_tuples(cls):
+        return frozenset({('issue', 'series', 'country',),
+                          ('issue', 'series', 'language',)})
 
     def _do_complete_added_revision(self, issue):
         """

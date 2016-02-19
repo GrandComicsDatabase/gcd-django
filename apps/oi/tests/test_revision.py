@@ -96,9 +96,8 @@ def test_major_flags():
     assert Revision._get_major_flag_field_tuples() == frozenset()
 
 
-def test_get_stats_category_field_names():
-    assert Revision._get_stats_category_field_names() == {'country',
-                                                          'language'}
+def test_stats_category_field_tuples():
+    assert Revision._get_stats_category_field_tuples() == set()
 
 
 def test_deprecated_fields():

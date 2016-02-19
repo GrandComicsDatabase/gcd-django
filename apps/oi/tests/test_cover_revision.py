@@ -12,3 +12,10 @@ def test_excluded_fields():
         'front_top',
         'front_bottom',
     } | Revision._get_excluded_field_names()
+
+
+def test_stats_category_field_tuples():
+    assert CoverRevision._get_stats_category_field_tuples() == {
+        ('issue', 'series', 'country'),
+        ('issue', 'series', 'language'),
+    }

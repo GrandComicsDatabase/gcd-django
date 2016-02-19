@@ -96,6 +96,13 @@ def test_parent_field_tuples():
     }
 
 
+def test_stats_category_field_tuples():
+    assert IssueRevision._get_stats_category_field_tuples() == {
+        ('series', 'country'),
+        ('series', 'language'),
+    }
+
+
 def test_pre_initial_save_with_date():
     rev = IssueRevision(issue=Issue(on_sale_date='2016-01-31'))
     rev._pre_initial_save()
