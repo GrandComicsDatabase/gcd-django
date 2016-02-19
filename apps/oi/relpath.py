@@ -42,15 +42,15 @@ class RelPath(object):
         for i in xrange(0, len(self._names)):
             field = cls._meta.get_field(self._names[i])
             if i != last_i and (field.many_to_many or field.one_to_many):
-                # Supporting internal many-valued fields would get us into
-                # weird set-of-sets (and set-of-set-of-sets, etc.) situations
+                # Supporting internal multi-valued fields would get us into
+                # wierd set-of-sets (and set-of-set-of-sets, etc.) situations
                 # that we don't currently need anyway.
                 raise ValueError("Many-valued relations cannot appear before "
                                  "the end of the path")
 
             self._fields.append(field)
             if any((field.one_to_one, field.one_to_many,
-                   field.many_to_many, field.many_to_one)):
+                    field.many_to_many, field.many_to_one)):
                 cls = field.rel.model
                 self._model_classes.append(cls)
             elif i != last_i:
@@ -60,11 +60,23 @@ class RelPath(object):
                                  "a non-relational field")
 
         last = self._fields[-1]
-        self._many_valued = bool(last.many_to_many or last.one_to_many)
+        self._multi_valued = bool(last.many_to_many or last.one_to_many)
 
     @property
-    def many_valued(self):
-        return self._many_valued
+    def multi_valued(self):
+        return self._multi_valued
+
+    @property
+    def boolean_valued(self):
+        return self.get_field().get_internal_type() in ('BooleanField',
+                                                        'NullBooleanField')
+
+    def get_empty_value(self, field=None):
+        if field is None:
+            field = self._fields[-1]
+        if field.many_to_many or field.one_to_many:
+            return field.rel.model.objects.none()
+        return None
 
     def get_field(self):
         """
@@ -84,15 +96,17 @@ class RelPath(object):
         If empty is true, just return the appropriate empty value even
         if the instance has values.  This is used to handle newly added
         and deleted instances.  If we are using this RelPath with a data
-        object, we will not be able to determine add/delete from the instance.
+        object, we will not be able to determine add/delete from the instance,
+        so the caller needs to tell us to treat it as empty.
+
+        For a simple instance of None or intermediate field values of None,
+        we will get the correct result whether empty is True or False.
 
         A single-valued relation will result in a single value returned,
-        while a many-valued relation will result in a queryset.
+        while a multi-valued relation will result in a queryset.
         """
         if empty:
-            if self._many_valued:
-                return self._fields[-1].rel.model.objects.none()
-            return None
+            return self.get_empty_value()
 
         # Check after the check for empty, because if we are empty we may
         # have None for the instance, and we won't use the instance anyway.
@@ -101,7 +115,7 @@ class RelPath(object):
                              (instance, self._first_model_class))
 
         values = self._expand(instance)
-        if self._many_valued:
+        if self._multi_valued:
             return values[-1].all()
         return values[-1]
 
@@ -109,8 +123,8 @@ class RelPath(object):
         """
         Updates the value pointed to by this path on the given instance.
 
-        This handles both single- and many-valued relations.  In the case
-        of a many-valued relation, value can be a QuerySet or other iterable
+        This handles both single- and multi-valued relations.  In the case
+        of a multi-valued relation, value can be a QuerySet or other iterable
         """
         if not isinstance(instance, self._first_model_class):
             raise ValueError("'%s' is not an instance of '%s'" %
@@ -144,7 +158,17 @@ class RelPath(object):
         """
         current_object = instance
         values = []
-        for name in self._names:
-            current_object = getattr(current_object, name)
-            values.append(current_object)
+        for name, i in zip(self._names, xrange(0, len(self._names))):
+            try:
+                current_object = getattr(current_object, name)
+                values.append(current_object)
+            except AttributeError:
+                values.append(self.get_empty_value(field=self._fields[i]))
         return values
+
+    def __unicode__(self):
+        return '%s.%s' % (self._first_model_class.__name__,
+                          '.'.join(self._names))
+
+    def __repr__(self):
+        return '<RelPath: %s>' % self

@@ -85,8 +85,10 @@ def test_init_and_get_field_single(single_relpath, class_and_field_setup):
     assert single_relpath._first_model_class == starting_model_class
     assert single_relpath._model_classes == [foo_model_class]
     assert single_relpath._fields == [single_value_field]
-    assert single_relpath._many_valued is False
+    assert single_relpath.multi_valued is False
+    assert single_relpath.boolean_valued is False
     assert single_relpath.get_field() == single_value_field
+    assert single_relpath.get_empty_value() is None
 
 
 def test_init_and_get_field_terminal_multi(multi_relpath,
@@ -101,8 +103,10 @@ def test_init_and_get_field_terminal_multi(multi_relpath,
     assert multi_relpath._first_model_class == starting_model_class
     assert multi_relpath._model_classes == [foo_model_class, bar_model_class]
     assert multi_relpath._fields == [single_value_field, multi_value_field]
-    assert multi_relpath._many_valued is True
+    assert multi_relpath.multi_valued is True
+    assert multi_relpath.boolean_valued is False
     assert multi_relpath.get_field() == multi_value_field
+    assert len(multi_relpath.get_empty_value()) == 0
 
 
 def test_init_prefix_multi(classes_and_fields):
@@ -137,7 +141,7 @@ def test_init_non_rel(classes_and_fields):
     assert nonrel_relpath._first_model_class == starting_model_class
     assert nonrel_relpath._model_classes == []
     assert nonrel_relpath._fields == [non_relational_field]
-    assert nonrel_relpath._many_valued is False
+    assert nonrel_relpath._multi_valued is False
     assert nonrel_relpath.get_field() == non_relational_field
 
 
@@ -159,6 +163,28 @@ def test_init_no_field_names():
     with pytest.raises(TypeError) as excinfo:
         RelPath(models.Model)
     assert "At least one field name is required" in unicode(excinfo.value)
+
+
+def test_empty_with_field(single_relpath, multi_relpath,
+                          class_and_field_setup):
+    (starting_model_class, foo_model_class, bar_model_class,
+     single_value_field, multi_value_field) = class_and_field_setup
+
+    assert single_relpath.get_empty_value(field=single_value_field) is None
+    assert len(single_relpath.get_empty_value(field=multi_value_field)) == 0
+    assert multi_relpath.get_empty_value(field=single_value_field) is None
+    assert len(multi_relpath.get_empty_value(field=multi_value_field)) == 0
+
+
+@pytest.mark.parametrize('field', ['BooleanField', 'NullBooleanField'])
+def test_boolean_field(field, class_and_field_setup):
+    (starting_model_class, foo_model_class, bar_model_class,
+     single_value_field, multi_value_field) = class_and_field_setup
+
+    with mock.patch('apps.oi.relpath.RelPath.get_field') as get_field_mock:
+        get_field_mock.return_value.get_internal_type.return_value = field
+        rp = RelPath(starting_model_class, 'foo')
+        assert rp.boolean_valued is True
 
 
 @pytest.fixture
@@ -219,6 +245,22 @@ def test_get_value_multi_empty(multi_isinstance_passes, instance):
         empty_queryset
 
     value = multi_isinstance_passes.get_value(instance, empty=True)
+    assert value == empty_queryset
+
+
+def test_get_value_all_none_or_empty(multi_isinstance_passes):
+    # In this case, we want to get a proper empty value on an existing
+    # instance, even if the value of the first field in the chain is None,
+    # and we don't know in advance to ask for an empty value.
+    #
+    # The intermediate field results are not accessible in the public interface
+    # so we don't check them specifically, just the final value.
+    empty_queryset = mock.MagicMock(spec=models.QuerySet)
+    stored_last_field = multi_isinstance_passes.get_field()
+    stored_last_field.rel.model.objects.none \
+                     .return_value.all.return_value = empty_queryset
+
+    value = multi_isinstance_passes.get_value(None)
     assert value == empty_queryset
 
 

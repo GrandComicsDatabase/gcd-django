@@ -599,14 +599,23 @@ class Revision(models.Model):
         changed = '%s changed' % name
         if self.added or self.deleted:
             changes[changed] = True
+        elif old_rp.multi_valued:
+            # Different QuerySet objects are never equal, even if they
+            # express the same queries and have the same evaluation state.
+            # So use sets for determining changes.
+            changes[changed] = set(old_value) != set(new_value)
         else:
             changes[changed] = old_value != new_value
 
-        # Use attrs[-1] in case we renamed the field.
-        if (self._meta.get_field(attrs[-1]).get_internal_type() in
-                ('BooleanField', 'NullBooleanField')):
-            # Without the bool(), if old_value or new_value are None,
-            # then the changes entry can end up as None.
+        if old_rp.boolean_valued:
+            # We only care about the direction of change for booleans.
+            # At this time, it is sufficient to treat None for a NullBoolean
+            # as False.  This can produce a "changed" (False to or from None)
+            # in which both "to" and "from" are False.  Strange but OK.
+            #
+            # Without the bool(), if old_value (for from) or new_value
+            # (for to) are None, then the changes would be set to None
+            # instead of True or False.
             changes['to %s' % name] = bool((not old_value) and new_value)
             changes['from %s' % name] = bool(old_value and (not new_value))
         else:
@@ -686,10 +695,10 @@ class Revision(models.Model):
         old_value = changes['old %s' % parent]
         new_value = changes['new %s' % parent]
 
-        many = relpath.RelPath(type(self), *parent_tuple).many_valued
+        multi = relpath.RelPath(type(self), *parent_tuple).multi_valued
         if changed:
             if old_value:
-                if many:
+                if multi:
                     for v in old_value:
                         v.update_cached_counts(old_counts, negate=True)
                         v.save()
@@ -697,7 +706,7 @@ class Revision(models.Model):
                     old_value.update_cached_counts(old_counts, negate=True)
                     old_value.save()
             if new_value:
-                if many:
+                if multi:
                     for v in new_value:
                         v.update_cached_counts(new_counts)
                         v.save()
@@ -707,7 +716,7 @@ class Revision(models.Model):
 
         elif old_counts != new_counts:
             # Doesn't matter whether we use old or new as they are the same.
-            if many:
+            if multi:
                 for v in new_value:
                     v.update_cached_counts(deltas)
                     v.save()

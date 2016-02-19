@@ -369,7 +369,7 @@ def test_adjust_stats_both(mock_update_all, patched_other_dummy):
 
 def test_adjust_parent_counts_single(patched_other_dummy):
     rev = patched_other_dummy
-    with mock.patch('apps.oi.relpath.RelPath.many_valued', new=False), \
+    with mock.patch('apps.oi.relpath.RelPath.multi_valued', new=False), \
             mock.patch('apps.oi.relpath.RelPath.__init__', return_value=None):
 
         old_value = mock.MagicMock()
@@ -393,7 +393,7 @@ def test_adjust_parent_counts_single(patched_other_dummy):
 
 def test_adjust_parent_counts_single_no_change(patched_other_dummy):
     rev = patched_other_dummy
-    with mock.patch('apps.oi.relpath.RelPath.many_valued', new=False), \
+    with mock.patch('apps.oi.relpath.RelPath.multi_valued', new=False), \
             mock.patch('apps.oi.relpath.RelPath.__init__', return_value=None):
 
         # Values don't change, only counts.
@@ -416,7 +416,7 @@ def test_adjust_parent_counts_single_no_change(patched_other_dummy):
 
 def test_adjust_parent_counts_multi(patched_other_dummy):
     rev = patched_other_dummy
-    with mock.patch('apps.oi.relpath.RelPath.many_valued', new=True), \
+    with mock.patch('apps.oi.relpath.RelPath.multi_valued', new=True), \
             mock.patch('apps.oi.relpath.RelPath.__init__', return_value=None):
 
         a, b, c, d = (mock.MagicMock(), mock.MagicMock(),
@@ -455,7 +455,7 @@ def test_adjust_parent_counts_multi(patched_other_dummy):
 
 def test_adjust_parent_counts_multi_no_change(patched_other_dummy):
     rev = patched_other_dummy
-    with mock.patch('apps.oi.relpath.RelPath.many_valued', new=True), \
+    with mock.patch('apps.oi.relpath.RelPath.multi_valued', new=True), \
             mock.patch('apps.oi.relpath.RelPath.__init__', return_value=None):
 
         a, b, c = (mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
