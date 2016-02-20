@@ -1,6 +1,6 @@
-import csv
 import os
 import tempfile
+from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -10,7 +10,6 @@ from django.core import urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
-from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.gcd.models import Issue, Series
@@ -27,7 +26,7 @@ from apps.select.views import store_select_data
 
 from apps.mycomics.forms import *
 from apps.stddata.forms import DateForm
-from apps.mycomics.models import Collection, CollectionItem
+from apps.mycomics.models import Collection, CollectionItem, Subscription
 
 from django.contrib import messages
 from django.utils.translation import ugettext as _
@@ -37,6 +36,7 @@ COLLECTION_TEMPLATE='mycomics/collection.html'
 COLLECTION_LIST_TEMPLATE='mycomics/collections.html'
 COLLECTION_FORM_TEMPLATE='mycomics/collection_form.html'
 COLLECTION_ITEM_TEMPLATE='mycomics/collection_item.html'
+COLLECTION_SUBSCRIPTIONS_TEMPLATE='mycomics/collection_subscriptions.html'
 MESSAGE_TEMPLATE='mycomics/message.html'
 SETTINGS_TEMPLATE='mycomics/settings.html'
 DEFAULT_PER_PAGE=25
@@ -132,6 +132,7 @@ def delete_collection(request, collection_id):
     CollectionItem.objects.filter(collections=None).delete()
     messages.success(request, _('Collection deleted.'))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
+
 
 @login_required
 def export_collection(request, collection_id):
@@ -505,13 +506,16 @@ def create_collection_item(issue, collection):
     return collected
 
 
-def add_issues_to_collection(request, collection_id, issues, redirect):
+def add_issues_to_collection(request, collection_id, issues, redirect,
+                             post_process_selection=None):
     collection, error_return = get_collection_for_owner(request,
                                                         collection_id)
     if not collection:
         return error_return
     for issue in issues:
         collected = create_collection_item(issue, collection)
+        if post_process_selection:
+            post_process_selection(collected)
     return HttpResponseRedirect(redirect)
 
 
@@ -541,13 +545,21 @@ def add_selected_issues_to_collection(request, data):
     if not issues.count():
         raise ErrorWithMessage("No issues were selected.")
 
+    if 'post_process_selection' in data:
+        post_process_selection = data['post_process_selection']
+    else:
+        post_process_selection = None
     if 'confirm_selection' in request.POST:
         collection_id = int(request.POST['collection_id'])
         return add_issues_to_collection(request,
           collection_id, issues, urlresolvers.reverse('view_collection',
-                                 kwargs={'collection_id': collection_id}))
+                                 kwargs={'collection_id': collection_id}),
+          post_process_selection=post_process_selection)
     else:
-        collection_list = request.user.collector.ordered_collections()
+        if 'collection_list' in data:
+            collection_list = data['collection_list']
+        else:
+            collection_list = request.user.collector.ordered_collections()
         context = {
                 'item_name': 'issue',
                 'plural_suffix': 's',
@@ -562,11 +574,19 @@ def add_selected_issues_to_collection(request, data):
 
 
 @login_required
-def select_issues_from_preselection(request, issues, cancel):
+def select_issues_from_preselection(request, issues, cancel,
+                                    post_process_selection=None,
+                                    collection_list=None):
+    if not issues.count():
+        raise ErrorWithMessage("No issues to select from.")
     data = {'issue': True,
             'allowed_selects': ['issue',],
             'return': add_selected_issues_to_collection,
             'cancel': cancel}
+    if post_process_selection:
+        data['post_process_selection'] = post_process_selection
+    if collection_list:
+        data['collection_list'] = collection_list
     select_key = store_select_data(request, None, data)
     context = {'select_key': select_key,
             'multiple_selects': True,
@@ -668,14 +688,98 @@ def add_series_issues_to_collection(request, series_id):
                 issues = series.active_issues()
             elif request.GET['which_issues'] == 'variant_issues':
                 issues = series.active_issues().exclude(variant_of=None)
-        if issues:
-            cancel = HttpResponseRedirect(urlresolvers.reverse('show_series',
+        return_url = HttpResponseRedirect(urlresolvers.reverse('show_series',
                                           kwargs={'series_id': series_id}))
-            return select_issues_from_preselection(request, issues, cancel)
+        if issues:
+            return select_issues_from_preselection(request, issues, return_url)
         else:
             messages.warning(request, 'no corresponding issues found')
-            return HttpResponseRedirect(urlresolvers.reverse('show_series',
-                                        kwargs={'series_id': series_id}))
+            return return_url
+
+
+def post_process_subscription(item):
+    # set last_pulled of a subscription to today for those series
+    # for which at least one issue was added to the collection
+    subscription = item.issue.series.subscription_set\
+                                    .get(collection=item.collections.get())
+    subscription.last_pulled = datetime.today()
+    subscription.save()
+
+
+@login_required
+def subscriptions_collection(request, collection_id):
+    collection, error_return = get_collection_for_owner(request,
+                               collection_id=collection_id)
+    if not collection:
+        return error_return
+    subscriptions = collection.subscriptions.order_by('series__sort_name')
+    return render_to_response(COLLECTION_SUBSCRIPTIONS_TEMPLATE,
+                              {'collection': collection,
+                               'subscriptions': subscriptions,
+                               'collection_list': request.user.collector\
+                                                  .ordered_collections()},
+                              context_instance=RequestContext(request))
+
+
+@login_required
+def subscribed_into_collection(request, collection_id):
+    collection, error_return = get_collection_for_owner(request,
+                               collection_id=collection_id)
+    if not collection:
+        return error_return
+    issues = Issue.objects.none()
+    for subscription in collection.subscriptions.all():
+        new_issues = subscription.series.active_issues()\
+                                 .filter(created__gte=subscription.last_pulled)
+        issues |= new_issues
+    return_url = HttpResponseRedirect(
+      urlresolvers.reverse('subscriptions_collection',
+                           kwargs={'collection_id': collection_id}))
+    if issues:
+        return select_issues_from_preselection(request, issues, return_url,
+          post_process_selection=post_process_subscription,
+          collection_list=[collection])
+    else:
+        messages.warning(request, 'No new issues for subscribed series found.')
+        return return_url
+
+
+@login_required
+def subscribe_series(request, series_id):
+    series = get_object_or_404(Series, id=series_id)
+    collection_id = int(request.POST['collection_id'])
+    collection, error_return = get_collection_for_owner(request,
+                               collection_id=collection_id)
+    if not collection:
+        return error_return
+    subscription = Subscription.objects.filter(series=series,
+                                               collection=collection)
+    if subscription.exists():
+        messages.error(request, _('Series %s is already subscribed for the '
+                         'collection %s.' % (series, collection)))
+    elif series.is_current:
+        subscription = Subscription.objects.create(series=series,
+                       collection=collection, last_pulled=datetime.today())
+        messages.success(request, _('Series %s is now subscribed for the '
+                           'collection %s.' % (series, collection)))
+    else:
+        messages.error(request, _('Selected series is not ongoing.'))
+
+    return HttpResponseRedirect(urlresolvers.reverse('show_series',
+                                kwargs={'series_id': series_id}))
+
+
+@login_required
+def unsubscribe_series(request, subscription_id):
+    subscription = get_object_or_404(Subscription, id=subscription_id)
+    if subscription.collection.collector.user != request.user:
+        return render_error(request,
+            'Only the owner of a collection can unsubscribe series.',
+            redirect=False)
+    subscription.delete()
+    return HttpResponseRedirect(
+             urlresolvers.reverse('subscriptions_collection',
+               kwargs={'collection_id': subscription.collection.id}))
 
 
 @login_required

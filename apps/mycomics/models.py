@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django.core import urlresolvers
 
-from apps.gcd.models import Issue, Language
+from apps.gcd.models import Issue, Language, Series
 from apps.stddata.models import Currency, Date
 from taggit.managers import TaggableManager
 
@@ -124,6 +124,18 @@ class Collection(models.Model):
 
     def __unicode__(self):
         return unicode(self.name)
+
+
+class Subscription(models.Model):
+    """Class to record the subscription of a particular series in user's
+    collection."""
+
+    class Meta:
+        db_table = 'mycomics_subscriptions'
+
+    collection = models.ForeignKey(Collection, related_name="subscriptions")
+    series = models.ForeignKey(Series)
+    last_pulled = models.DateTimeField()
 
 
 class Location(models.Model):
