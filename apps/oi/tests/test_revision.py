@@ -107,28 +107,28 @@ def test_deprecated_fields():
 def test_added():
     rev = DummyRevision()
     added = rev.added
-    assert added
+    assert added is True
 
 
 def test_added_committed():
     rev = DummyRevision()
     rev.committed = True
     added = rev.added
-    assert added
+    assert added is True
 
 
 def test_not_added_because_previous_revision():
     rev = DummyRevision()
     rev.previous_revision = DummyRevision()
     added = rev.added
-    assert not added
+    assert added is False
 
 
 def test_not_added_because_discarded():
     rev = DummyRevision()
     rev.committed = False
     added = rev.added
-    assert not added
+    assert added is False
 
 
 def test_added_with_source():
@@ -138,14 +138,14 @@ def test_added_with_source():
         rev = DummyRevision()
         added = rev.added
         assert not source_mock.__nonzero__.called
-        assert added
+        assert added is True
 
 
 def test_edited():
     rev = DummyRevision()
     rev.previous_revision = DummyRevision()
     edited = rev.edited
-    assert edited
+    assert edited is True
 
 
 def test_edited_committed():
@@ -153,19 +153,19 @@ def test_edited_committed():
     rev.previous_revision = DummyRevision()
     rev.committed = True
     edited = rev.edited
-    assert edited
+    assert edited is True
 
 
 def test_not_edited_because_added():
     rev = DummyRevision(deleted=True)
     edited = rev.edited
-    assert not edited
+    assert edited is False
 
 
 def test_not_edited_because_deleted():
     rev = DummyRevision(deleted=True)
     edited = rev.edited
-    assert not edited
+    assert edited is False
 
 
 def test_not_edited_because_discarded():
@@ -173,25 +173,25 @@ def test_not_edited_because_discarded():
     rev.previous_revision = DummyRevision()
     rev.committed = False
     edited = rev.edited
-    assert not edited
+    assert edited is False
 
 
 def test_committed():
     rev = DummyRevision(committed=True)
-    assert not rev.open
-    assert not rev.discarded
+    assert rev.open is False
+    assert rev.discarded is False
 
 
 def test_discarded():
     rev = DummyRevision(committed=False)
-    assert not rev.open
-    assert rev.discarded
+    assert rev.open is False
+    assert rev.discarded is True
 
 
 def test_open():
     rev = DummyRevision(committed=None)
-    assert rev.open
-    assert not rev.discarded
+    assert rev.open is True
+    assert rev.discarded is False
 
 
 def test_get_source():

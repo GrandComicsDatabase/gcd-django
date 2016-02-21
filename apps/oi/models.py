@@ -251,7 +251,8 @@ class Revision(models.Model):
 
         NOTE: This does not necessarily mean there have been any edits.
         """
-        return self.previous_revision and not (self.deleted or self.discarded)
+        return bool(self.previous_revision and not
+                    (self.deleted or self.discarded))
 
     @property
     def discarded(self):
@@ -815,18 +816,6 @@ class Revision(models.Model):
             if (field not in c or reduce(getattr, c[field], self)):
                 setattr(target, field, getattr(self, field))
 
-        target.save()
-
-        # Keywords can't be copied directly, but always behave the same
-        # if they are present.
-        if 'keywords' in self._get_regular_fields():
-            save_keywords(self, target)
-
-        for m2m in self._get_multi_value_fields().keys():
-            m2m_set = getattr(target, m2m)
-            m2m_set.remove(*changes.get('removed %s' % m2m, {}))
-            m2m_set.add(*changes.get('added %s' % m2m, {}))
-
     def commit_to_display(self, clear_reservation=True):
         """
         Writes the changes from the revision back to the display object.
@@ -855,6 +844,7 @@ class Revision(models.Model):
 
         self._pre_save_object(changes)
         self.source.save()
+
         if self.added:
             # Reset the source because now it has a database id,
             # which we must save.  Just saving the added source while
@@ -866,6 +856,11 @@ class Revision(models.Model):
             # an add, edit, or delete.
             self.source = self.source
             self.save()
+
+        # Keywords must be handled post-save for added objects, and
+        # are safe to handle here for other types of revisions.
+        if 'keywords' in self._get_regular_fields():
+            save_keywords(self, self.source)
 
         for multi in self._get_multi_value_fields():
             old_rp = relpath.RelPath(type(self), multi)
