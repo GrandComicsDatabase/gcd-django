@@ -8,6 +8,20 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding model 'BirthProvinceSourceRevision'
+        db.create_table('oi_birthprovincesourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='birthprovincesourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('birth_province_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_birth_province_source', null=True, to=orm['gcd.BirthProvinceSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthprovincesource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthprovincesourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['BirthProvinceSourceRevision'])
+
         # Adding model 'CreatorNonComicWorkRevision'
         db.create_table('oi_creatornoncomicworkrevision', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -45,10 +59,10 @@ class Migration(SchemaMigration):
             ('creator_membership', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Membership'])),
             ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creator_membership', to=orm['gcd.Creator'])),
             ('organization_name', self.gf('django.db.models.fields.CharField')(max_length=200)),
-            ('membership_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_membershiptype', to=orm['gcd.MembershipType'])),
-            ('membership_begin_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
+            ('membership_type', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='cr_membershiptype', null=True, to=orm['gcd.MembershipType'])),
+            ('membership_begin_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
             ('membership_begin_year_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('membership_end_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
+            ('membership_end_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
             ('membership_end_year_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
         ))
         db.send_create_signal('oi', ['CreatorMembershipRevision'])
@@ -61,6 +75,20 @@ class Migration(SchemaMigration):
             ('sourcetype', models.ForeignKey(orm['gcd.sourcetype'], null=False))
         ))
         db.create_unique(m2m_table_name, ['creatormembershiprevision_id', 'sourcetype_id'])
+
+        # Adding model 'BioSourceRevision'
+        db.create_table('oi_biosourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='biosourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('bio_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_bio_source', null=True, to=orm['gcd.BioSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbiosource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbiosourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['BioSourceRevision'])
 
         # Adding model 'CreatorArtInfluenceRevision'
         db.create_table('oi_creatorartinfluencerevision', (
@@ -87,6 +115,48 @@ class Migration(SchemaMigration):
         ))
         db.create_unique(m2m_table_name, ['creatorartinfluencerevision_id', 'sourcetype_id'])
 
+        # Adding model 'BirthCountrySourceRevision'
+        db.create_table('oi_birthcountrysourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='birthcountrysourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('birth_country_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_birth_country_source', null=True, to=orm['gcd.BirthCountrySource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthcountrysource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthcountrysourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['BirthCountrySourceRevision'])
+
+        # Adding model 'BirthDateSourceRevision'
+        db.create_table('oi_birthdatesourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='birthdatesourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('birth_date_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_birth_date_source', null=True, to=orm['gcd.BirthDateSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthdatesource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthdatesourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['BirthDateSourceRevision'])
+
+        # Adding model 'BirthYearSourceRevision'
+        db.create_table('oi_birthyearsourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='birthyearsourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('birth_year_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_birth_year_source', null=True, to=orm['gcd.BirthYearSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthyearsource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthyearsourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['BirthYearSourceRevision'])
+
         # Adding model 'CreatorAwardRevision'
         db.create_table('oi_creatorawardrevision', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
@@ -111,8 +181,269 @@ class Migration(SchemaMigration):
         ))
         db.create_unique(m2m_table_name, ['creatorawardrevision_id', 'sourcetype_id'])
 
+        # Adding model 'RelationTypeRevision'
+        db.create_table('oi_relationtyperevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='relationtyperevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('relation_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_relation_type', null=True, to=orm['gcd.RelationType'])),
+            ('type', self.gf('django.db.models.fields.CharField')(max_length=50)),
+        ))
+        db.send_create_signal('oi', ['RelationTypeRevision'])
+
+        # Adding model 'NameRelationRevision'
+        db.create_table('oi_namerelation_revision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='namerelationrevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('name_relation', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_name_relation', null=True, to=orm['gcd.NameRelation'])),
+            ('gcd_official_name', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creator_revise_gcd_official_name', to=orm['oi.CreatorRevision'])),
+            ('to_name', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creator_revise_to_name', to=orm['oi.CreatorRevision'])),
+            ('rel_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creator_revise_relation_type', to=orm['oi.RelationTypeRevision'])),
+            ('rel_source', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['NameRelationRevision'])
+
+        # Adding model 'DeathCountrySourceRevision'
+        db.create_table('oi_deathcountrysourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='deathcountrysourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('death_country_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_death_country_source', null=True, to=orm['gcd.DeathCountrySource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathcountrysource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathcountrysourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['DeathCountrySourceRevision'])
+
+        # Adding model 'DeathProvinceSourceRevision'
+        db.create_table('oi_deathprovincesourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='deathprovincesourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('death_province_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_death_province_source', null=True, to=orm['gcd.DeathProvinceSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathprovincesource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathprovincesourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['DeathProvinceSourceRevision'])
+
+        # Adding model 'CreatorNameDetailsRevision'
+        db.create_table('oi_creatornamedetailsrevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creatornamedetailsrevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('creator_name_detail', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creator_name_details', null=True, to=orm['gcd.CreatorNameDetails'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creator_names', to=orm['oi.CreatorRevision'])),
+            ('name', self.gf('django.db.models.fields.CharField')(max_length=255, db_index=True)),
+            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+            ('type', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='cr_nametypes', null=True, to=orm['gcd.NameType'])),
+        ))
+        db.send_create_signal('oi', ['CreatorNameDetailsRevision'])
+
+        # Adding M2M table for field source on 'CreatorNameDetailsRevision'
+        m2m_table_name = db.shorten_name('oi_creatornamedetailsrevision_source')
+        db.create_table(m2m_table_name, (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('creatornamedetailsrevision', models.ForeignKey(orm['oi.creatornamedetailsrevision'], null=False)),
+            ('sourcetype', models.ForeignKey(orm['gcd.sourcetype'], null=False))
+        ))
+        db.create_unique(m2m_table_name, ['creatornamedetailsrevision_id', 'sourcetype_id'])
+
+        # Adding model 'DeathDateSourceRevision'
+        db.create_table('oi_deathdatesourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='deathdatesourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('death_date_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_death_date_source', null=True, to=orm['gcd.DeathDateSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathdatesource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathdatesourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['DeathDateSourceRevision'])
+
+        # Adding model 'DeathYearSourceRevision'
+        db.create_table('oi_deathyearsourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='deathyearsourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('death_year_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_death_year_source', null=True, to=orm['gcd.DeathYearSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathyearsource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathyearsourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['DeathYearSourceRevision'])
+
+        # Adding model 'PortraitSourceRevision'
+        db.create_table('oi_portraitsourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='portraitsourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('portrait_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_portrait_source', null=True, to=orm['gcd.PortraitSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorportraitsource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorportraitsourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['PortraitSourceRevision'])
+
+        # Adding model 'DeathCitySourceRevision'
+        db.create_table('oi_deathcitysourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='deathcitysourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('death_city_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_death_city_source', null=True, to=orm['gcd.DeathCitySource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathcitysource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathcitysourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['DeathCitySourceRevision'])
+
+        # Adding model 'CreatorSchoolDetailRevision'
+        db.create_table('oi_creatorschooldetailrevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creatorschooldetailrevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('creator_school_detail', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creator_school_detail', null=True, to=orm['gcd.CreatorSchoolDetail'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creator_school', to=orm['oi.CreatorRevision'])),
+            ('school', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_school_details', to=orm['gcd.School'])),
+            ('school_year_began', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('school_year_began_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('school_year_ended', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('school_year_ended_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+        ))
+        db.send_create_signal('oi', ['CreatorSchoolDetailRevision'])
+
+        # Adding M2M table for field school_source on 'CreatorSchoolDetailRevision'
+        m2m_table_name = db.shorten_name('oi_creatorschooldetailrevision_school_source')
+        db.create_table(m2m_table_name, (
+            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
+            ('creatorschooldetailrevision', models.ForeignKey(orm['oi.creatorschooldetailrevision'], null=False)),
+            ('sourcetype', models.ForeignKey(orm['gcd.sourcetype'], null=False))
+        ))
+        db.create_unique(m2m_table_name, ['creatorschooldetailrevision_id', 'sourcetype_id'])
+
+        # Adding model 'CreatorDegreeDetailRevision'
+        db.create_table('oi_creatordegreedetailrevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creatordegreedetailrevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('creater_degree_detail', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creater_degree_detail', null=True, to=orm['gcd.CreatorDegreeDetail'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creator_degree', to=orm['oi.CreatorRevision'])),
+            ('school', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_schooldetails', null=True, to=orm['gcd.School'])),
+            ('degree', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_degreedetails', to=orm['gcd.Degree'])),
+            ('degree_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('degree_year_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+        ))
+        db.send_create_signal('oi', ['CreatorDegreeDetailRevision'])
+
+        # Adding model 'BirthMonthSourceRevision'
+        db.create_table('oi_birthmonthsourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='birthmonthsourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('birth_month_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_birth_month_source', null=True, to=orm['gcd.BirthMonthSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthmonthsource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthmonthsourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['BirthMonthSourceRevision'])
+
+        # Adding model 'DeathMonthSourceRevision'
+        db.create_table('oi_deathmonthsourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='deathmonthsourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('death_month_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_death_month_source', null=True, to=orm['gcd.DeathMonthSource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathmonthsource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatordeathmonthsourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['DeathMonthSourceRevision'])
+
+        # Adding model 'CreatorRevision'
+        db.create_table('oi_creator_revision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creatorrevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Creator'])),
+            ('gcd_official_name', self.gf('django.db.models.fields.CharField')(max_length=255, db_index=True)),
+            ('birth_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('birth_year_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('birth_month', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('birth_month_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('birth_date', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('birth_date_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('death_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('death_year_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('death_month', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('death_month_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('death_date', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
+            ('death_date_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('whos_who', self.gf('django.db.models.fields.URLField')(max_length=200, null=True, blank=True)),
+            ('birth_country', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='cr_birth_country', null=True, to=orm['gcd.Country'])),
+            ('birth_country_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('birth_province', self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True)),
+            ('birth_province_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('birth_city', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
+            ('birth_city_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('death_country', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='cr_death_country', null=True, to=orm['gcd.Country'])),
+            ('death_country_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('death_province', self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True)),
+            ('death_province_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('death_city', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
+            ('death_city_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('bio', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+            ('notes', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['CreatorRevision'])
+
+        # Adding model 'BirthCitySourceRevision'
+        db.create_table('oi_birthcitysourcerevision', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='birthcitysourcerevisions', to=orm['oi.Changeset'])),
+            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
+            ('birth_city_source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_birth_city_source', null=True, to=orm['gcd.BirthCitySource'])),
+            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthcitysource', to=orm['oi.CreatorRevision'])),
+            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cr_creatorbirthcitysourcetype', to=orm['gcd.SourceType'])),
+            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+        ))
+        db.send_create_signal('oi', ['BirthCitySourceRevision'])
+
 
     def backwards(self, orm):
+        # Deleting model 'BirthProvinceSourceRevision'
+        db.delete_table('oi_birthprovincesourcerevision')
+
         # Deleting model 'CreatorNonComicWorkRevision'
         db.delete_table('oi_creatornoncomicworkrevision')
 
@@ -125,17 +456,80 @@ class Migration(SchemaMigration):
         # Removing M2M table for field membership_source on 'CreatorMembershipRevision'
         db.delete_table(db.shorten_name('oi_creatormembershiprevision_membership_source'))
 
+        # Deleting model 'BioSourceRevision'
+        db.delete_table('oi_biosourcerevision')
+
         # Deleting model 'CreatorArtInfluenceRevision'
         db.delete_table('oi_creatorartinfluencerevision')
 
         # Removing M2M table for field influence_source on 'CreatorArtInfluenceRevision'
         db.delete_table(db.shorten_name('oi_creatorartinfluencerevision_influence_source'))
 
+        # Deleting model 'BirthCountrySourceRevision'
+        db.delete_table('oi_birthcountrysourcerevision')
+
+        # Deleting model 'BirthDateSourceRevision'
+        db.delete_table('oi_birthdatesourcerevision')
+
+        # Deleting model 'BirthYearSourceRevision'
+        db.delete_table('oi_birthyearsourcerevision')
+
         # Deleting model 'CreatorAwardRevision'
         db.delete_table('oi_creatorawardrevision')
 
         # Removing M2M table for field award_source on 'CreatorAwardRevision'
         db.delete_table(db.shorten_name('oi_creatorawardrevision_award_source'))
+
+        # Deleting model 'RelationTypeRevision'
+        db.delete_table('oi_relationtyperevision')
+
+        # Deleting model 'NameRelationRevision'
+        db.delete_table('oi_namerelation_revision')
+
+        # Deleting model 'DeathCountrySourceRevision'
+        db.delete_table('oi_deathcountrysourcerevision')
+
+        # Deleting model 'DeathProvinceSourceRevision'
+        db.delete_table('oi_deathprovincesourcerevision')
+
+        # Deleting model 'CreatorNameDetailsRevision'
+        db.delete_table('oi_creatornamedetailsrevision')
+
+        # Removing M2M table for field source on 'CreatorNameDetailsRevision'
+        db.delete_table(db.shorten_name('oi_creatornamedetailsrevision_source'))
+
+        # Deleting model 'DeathDateSourceRevision'
+        db.delete_table('oi_deathdatesourcerevision')
+
+        # Deleting model 'DeathYearSourceRevision'
+        db.delete_table('oi_deathyearsourcerevision')
+
+        # Deleting model 'PortraitSourceRevision'
+        db.delete_table('oi_portraitsourcerevision')
+
+        # Deleting model 'DeathCitySourceRevision'
+        db.delete_table('oi_deathcitysourcerevision')
+
+        # Deleting model 'CreatorSchoolDetailRevision'
+        db.delete_table('oi_creatorschooldetailrevision')
+
+        # Removing M2M table for field school_source on 'CreatorSchoolDetailRevision'
+        db.delete_table(db.shorten_name('oi_creatorschooldetailrevision_school_source'))
+
+        # Deleting model 'CreatorDegreeDetailRevision'
+        db.delete_table('oi_creatordegreedetailrevision')
+
+        # Deleting model 'BirthMonthSourceRevision'
+        db.delete_table('oi_birthmonthsourcerevision')
+
+        # Deleting model 'DeathMonthSourceRevision'
+        db.delete_table('oi_deathmonthsourcerevision')
+
+        # Deleting model 'CreatorRevision'
+        db.delete_table('oi_creator_revision')
+
+        # Deleting model 'BirthCitySourceRevision'
+        db.delete_table('oi_birthcitysourcerevision')
 
 
     models = {
@@ -177,29 +571,29 @@ class Migration(SchemaMigration):
         },
         'gcd.artinfluence': {
             'Meta': {'object_name': 'ArtInfluence'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Creator']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'influence_link': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'exist_influencer'", 'null': 'True', 'to': "orm['gcd.Creator']"}),
             'influence_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'influence_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'influencesource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'influence_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'influencesource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'is_self_identify': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'self_identify_influences_doc': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
         },
         'gcd.award': {
             'Meta': {'ordering': "('award_year',)", 'object_name': 'Award'},
             'award_name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'award_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'awardsource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'award_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'awardsource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'award_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'award_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Creator']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
         },
         'gcd.biosource': {
@@ -324,61 +718,57 @@ class Migration(SchemaMigration):
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
         },
         'gcd.creator': {
-            'Meta': {'ordering': "('name',)", 'object_name': 'Creator'},
+            'Meta': {'ordering': "('created',)", 'object_name': 'Creator'},
             'bio': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'bio_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'biosource'", 'symmetrical': 'False', 'through': "orm['gcd.BioSource']", 'to': "orm['gcd.SourceType']"}),
+            'bio_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'biosource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.BioSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'birth_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthcitysource'", 'symmetrical': 'False', 'through': "orm['gcd.BirthCitySource']", 'to': "orm['gcd.SourceType']"}),
+            'birth_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthcitysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.BirthCitySource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_city_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_country': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'birth_country'", 'null': 'True', 'to': "orm['gcd.Country']"}),
-            'birth_country_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthcountrysource'", 'symmetrical': 'False', 'through': "orm['gcd.BirthCountrySource']", 'to': "orm['gcd.SourceType']"}),
+            'birth_country_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthcountrysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.BirthCountrySource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_country_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_date': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'birth_date_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthdatesource'", 'symmetrical': 'False', 'through': "orm['gcd.BirthDateSource']", 'to': "orm['gcd.SourceType']"}),
+            'birth_date_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthdatesource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.BirthDateSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_date_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_month': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'birth_month_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthmonthsource'", 'symmetrical': 'False', 'through': "orm['gcd.BirthMonthSource']", 'to': "orm['gcd.SourceType']"}),
+            'birth_month_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthmonthsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.BirthMonthSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_month_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_province': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
-            'birth_province_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthprovincesource'", 'symmetrical': 'False', 'through': "orm['gcd.BirthProvinceSource']", 'to': "orm['gcd.SourceType']"}),
+            'birth_province_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthprovincesource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.BirthProvinceSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_province_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'birth_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthyearsource'", 'symmetrical': 'False', 'through': "orm['gcd.BirthYearSource']", 'to': "orm['gcd.SourceType']"}),
+            'birth_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthyearsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.BirthYearSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'death_city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'death_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathcitysource'", 'symmetrical': 'False', 'through': "orm['gcd.DeathCitySource']", 'to': "orm['gcd.SourceType']"}),
+            'death_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathcitysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.DeathCitySource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_city_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_country': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'death_country'", 'null': 'True', 'to': "orm['gcd.Country']"}),
-            'death_country_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathcountrysource'", 'symmetrical': 'False', 'through': "orm['gcd.DeathCountrySource']", 'to': "orm['gcd.SourceType']"}),
+            'death_country_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathcountrysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.DeathCountrySource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_country_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_date': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'death_date_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathdatesource'", 'symmetrical': 'False', 'through': "orm['gcd.DeathDateSource']", 'to': "orm['gcd.SourceType']"}),
+            'death_date_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathdatesource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.DeathDateSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_date_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_month': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'death_month_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathmonthsource'", 'symmetrical': 'False', 'through': "orm['gcd.DeathMonthSource']", 'to': "orm['gcd.SourceType']"}),
+            'death_month_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathmonthsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.DeathMonthSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_month_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_province': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
-            'death_province_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathprovincesource'", 'symmetrical': 'False', 'through': "orm['gcd.DeathProvinceSource']", 'to': "orm['gcd.SourceType']"}),
+            'death_province_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathprovincesource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.DeathProvinceSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_province_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'death_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathyearsource'", 'symmetrical': 'False', 'through': "orm['gcd.DeathYearSource']", 'to': "orm['gcd.SourceType']"}),
+            'death_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathyearsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.DeathYearSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'degrees': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'degreeinformation'", 'symmetrical': 'False', 'through': "orm['gcd.CreatorDegreeDetail']", 'to': "orm['gcd.Degree']"}),
+            'degrees': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'degreeinformation'", 'to': "orm['gcd.Degree']", 'through': "orm['gcd.CreatorDegreeDetail']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'gcd_official_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'name_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'namesource'", 'symmetrical': 'False', 'through': "orm['gcd.NameSource']", 'to': "orm['gcd.SourceType']"}),
-            'name_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.NameType']"}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'portrait': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'portrait_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'portraitsource'", 'symmetrical': 'False', 'through': "orm['gcd.PortraitSource']", 'to': "orm['gcd.SourceType']"}),
+            'portrait_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'portraitsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.PortraitSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'related_person': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['gcd.Creator']", 'through': "orm['gcd.NameRelation']", 'symmetrical': 'False'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'sample_scan': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
-            'schools': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'schoolinformation'", 'symmetrical': 'False', 'through': "orm['gcd.CreatorSchoolDetail']", 'to': "orm['gcd.School']"}),
-            'whos_who': ('django.db.models.fields.URLField', [], {'default': 'None', 'max_length': '200', 'null': 'True', 'blank': 'True'})
+            'schools': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'schoolinformation'", 'to': "orm['gcd.School']", 'through': "orm['gcd.CreatorSchoolDetail']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
+            'whos_who': ('django.db.models.fields.URLField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
         },
         'gcd.creatordegreedetail': {
             'Meta': {'ordering': "('degree_year',)", 'object_name': 'CreatorDegreeDetail'},
@@ -387,14 +777,23 @@ class Migration(SchemaMigration):
             'degree_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'degree_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'school': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'schooldetails'", 'null': 'True', 'to': "orm['gcd.School']"})
+            'school': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'schooldetails'", 'null': 'True', 'to': "orm['gcd.School']"})
+        },
+        'gcd.creatornamedetails': {
+            'Meta': {'ordering': "('type',)", 'object_name': 'CreatorNameDetails'},
+            'creator': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creator_names'", 'to': "orm['gcd.Creator']"}),
+            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'namesources'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'type': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'nametypes'", 'null': 'True', 'to': "orm['gcd.NameType']"})
         },
         'gcd.creatorschooldetail': {
             'Meta': {'ordering': "('school_year_began', 'school_year_ended')", 'object_name': 'CreatorSchoolDetail'},
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creator_school'", 'to': "orm['gcd.Creator']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'school': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'school_details'", 'to': "orm['gcd.School']"}),
-            'school_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'schoolsource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'school_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'schoolsource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'school_year_began': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'school_year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'school_year_ended': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -544,17 +943,17 @@ class Migration(SchemaMigration):
         },
         'gcd.membership': {
             'Meta': {'ordering': "('membership_type',)", 'object_name': 'Membership'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Creator']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'membership_begin_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'membership_begin_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'membership_begin_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'membership_end_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'membership_end_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'membership_end_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'membership_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'membershipsource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
-            'membership_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.MembershipType']"}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'membership_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'membershipsource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'membership_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.MembershipType']", 'null': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'organization_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
         },
@@ -565,18 +964,11 @@ class Migration(SchemaMigration):
         },
         'gcd.namerelation': {
             'Meta': {'ordering': "('gcd_official_name', 'rel_type', 'to_name')", 'object_name': 'NameRelation'},
-            'gcd_official_name': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'gcd_official_name'", 'to': "orm['gcd.Creator']"}),
+            'gcd_official_name': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creator_gcd_official_name'", 'to': "orm['gcd.Creator']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'rel_source': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['gcd.SourceType']", 'symmetrical': 'False'}),
+            'rel_source': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['gcd.SourceType']", 'null': 'True', 'symmetrical': 'False'}),
             'rel_type': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'relation_type'", 'to': "orm['gcd.RelationType']"}),
             'to_name': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_name'", 'to': "orm['gcd.Creator']"})
-        },
-        'gcd.namesource': {
-            'Meta': {'ordering': "('source_description',)", 'object_name': 'NameSource'},
-            'creator': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creatornamesource'", 'to': "orm['gcd.Creator']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'source_description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'source_type': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'namesourcetype'", 'to': "orm['gcd.SourceType']"})
         },
         'gcd.nametype': {
             'Meta': {'ordering': "('type',)", 'object_name': 'NameType'},
@@ -586,17 +978,17 @@ class Migration(SchemaMigration):
         },
         'gcd.noncomicwork': {
             'Meta': {'ordering': "('publication_title', 'employer_name', 'work_type')", 'object_name': 'NonComicWork'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Creator']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'employer_name': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 9, 30, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'publication_title': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'work_notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'work_role': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.NonComicWorkRole']"}),
-            'work_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'worksource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'work_role': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.NonComicWorkRole']", 'null': 'True'}),
+            'work_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'worksource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'work_title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'work_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.NonComicWorkType']"})
         },
@@ -977,7 +1369,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'influence_link': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'cr_influencelink'", 'null': 'True', 'to': "orm['gcd.Creator']"}),
             'influence_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
-            'influence_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_influencesource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'influence_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'cr_influencesource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'is_self_identify': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
             'self_identify_influences_doc': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
@@ -985,7 +1377,7 @@ class Migration(SchemaMigration):
         'oi.creatorawardrevision': {
             'Meta': {'ordering': "('award_year',)", 'object_name': 'CreatorAwardRevision'},
             'award_name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'award_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_awardsource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'award_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'cr_awardsource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'award_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'award_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creatorawardrevisions'", 'to': "orm['oi.Changeset']"}),
@@ -1018,14 +1410,28 @@ class Migration(SchemaMigration):
             'creator_membership': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Membership']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'membership_begin_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'membership_begin_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'membership_begin_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'membership_end_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
+            'membership_end_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'membership_end_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'membership_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_membershipsource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
-            'membership_type': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'cr_membershiptype'", 'to': "orm['gcd.MembershipType']"}),
+            'membership_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'cr_membershipsource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'membership_type': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'cr_membershiptype'", 'null': 'True', 'to': "orm['gcd.MembershipType']"}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
             'organization_name': ('django.db.models.fields.CharField', [], {'max_length': '200'})
+        },
+        'oi.creatornamedetailsrevision': {
+            'Meta': {'object_name': 'CreatorNameDetailsRevision'},
+            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creatornamedetailsrevisions'", 'to': "orm['oi.Changeset']"}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
+            'creator': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'cr_creator_names'", 'to': "orm['oi.CreatorRevision']"}),
+            'creator_name_detail': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'cr_creator_name_details'", 'null': 'True', 'to': "orm['gcd.CreatorNameDetails']"}),
+            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'cr_namesources'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'type': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'cr_nametypes'", 'null': 'True', 'to': "orm['gcd.NameType']"})
         },
         'oi.creatornoncomicworkrevision': {
             'Meta': {'object_name': 'CreatorNonComicWorkRevision'},
@@ -1040,67 +1446,63 @@ class Migration(SchemaMigration):
             'publication_title': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'work_notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'work_role': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'cr_workrole'", 'null': 'True', 'to': "orm['gcd.NonComicWorkRole']"}),
-            'work_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_worksource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'work_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'cr_worksource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'work_title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True', 'blank': 'True'}),
             'work_type': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'cr_worktype'", 'null': 'True', 'to': "orm['gcd.NonComicWorkType']"})
         },
         'oi.creatorrevision': {
             'Meta': {'ordering': "['created']", 'object_name': 'CreatorRevision', 'db_table': "'oi_creator_revision'"},
             'bio': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'bio_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_biosource'", 'symmetrical': 'False', 'through': "orm['oi.BioSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'bio_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_biosource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.BioSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'birth_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthcitysource'", 'symmetrical': 'False', 'through': "orm['oi.BirthCitySourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'birth_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthcitysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.BirthCitySourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_city_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_country': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'cr_birth_country'", 'null': 'True', 'to': "orm['gcd.Country']"}),
-            'birth_country_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthcountrysource'", 'symmetrical': 'False', 'through': "orm['oi.BirthCountrySourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'birth_country_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthcountrysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.BirthCountrySourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_country_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_date': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'birth_date_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthdatesource'", 'symmetrical': 'False', 'through': "orm['oi.BirthDateSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'birth_date_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthdatesource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.BirthDateSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_date_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_month': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'birth_month_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthmonthsource'", 'symmetrical': 'False', 'through': "orm['oi.BirthMonthSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'birth_month_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthmonthsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.BirthMonthSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_month_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_province': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
-            'birth_province_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthprovincesource'", 'symmetrical': 'False', 'through': "orm['oi.BirthProvinceSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'birth_province_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthprovincesource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.BirthProvinceSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_province_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'birth_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'birth_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthyearsource'", 'symmetrical': 'False', 'through': "orm['oi.BirthYearSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'birth_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_birthyearsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.BirthYearSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creatorrevisions'", 'to': "orm['oi.Changeset']"}),
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Creator']"}),
             'death_city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
-            'death_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathcitysource'", 'symmetrical': 'False', 'through': "orm['oi.DeathCitySourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'death_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathcitysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.DeathCitySourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_city_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_country': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'cr_death_country'", 'null': 'True', 'to': "orm['gcd.Country']"}),
-            'death_country_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathcountrysource'", 'symmetrical': 'False', 'through': "orm['oi.DeathCountrySourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'death_country_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathcountrysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.DeathCountrySourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_country_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_date': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'death_date_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathdatesource'", 'symmetrical': 'False', 'through': "orm['oi.DeathDateSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'death_date_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathdatesource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.DeathDateSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_date_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_month': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'death_month_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathmonthsource'", 'symmetrical': 'False', 'through': "orm['oi.DeathMonthSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'death_month_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathmonthsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.DeathMonthSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_month_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_province': ('django.db.models.fields.CharField', [], {'max_length': '50', 'null': 'True', 'blank': 'True'}),
-            'death_province_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathprovincesource'", 'symmetrical': 'False', 'through': "orm['oi.DeathProvinceSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'death_province_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathprovincesource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.DeathProvinceSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_province_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'death_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'death_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathyearsource'", 'symmetrical': 'False', 'through': "orm['oi.DeathYearSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'death_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_deathyearsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.DeathYearSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'degrees': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_degreeinformation'", 'symmetrical': 'False', 'through': "orm['oi.CreatorDegreeDetailRevision']", 'to': "orm['gcd.Degree']"}),
+            'degrees': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_degreeinformation'", 'to': "orm['gcd.Degree']", 'through': "orm['oi.CreatorDegreeDetailRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'gcd_official_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'name_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_namesource'", 'symmetrical': 'False', 'through': "orm['oi.NameSourceRevision']", 'to': "orm['gcd.SourceType']"}),
-            'name_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.NameType']"}),
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'portrait': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'portrait_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_portraitsource'", 'symmetrical': 'False', 'through': "orm['oi.PortraitSourceRevision']", 'to': "orm['gcd.SourceType']"}),
+            'portrait_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_portraitsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['oi.PortraitSourceRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'related_person': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['oi.CreatorRevision']", 'through': "orm['oi.NameRelationRevision']", 'symmetrical': 'False'}),
-            'sample_scan': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
-            'schools': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_schoolinformation'", 'symmetrical': 'False', 'through': "orm['oi.CreatorSchoolDetailRevision']", 'to': "orm['gcd.School']"}),
-            'whos_who': ('django.db.models.fields.URLField', [], {'default': 'None', 'max_length': '200', 'null': 'True', 'blank': 'True'})
+            'schools': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_schoolinformation'", 'to': "orm['gcd.School']", 'through': "orm['oi.CreatorSchoolDetailRevision']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
+            'whos_who': ('django.db.models.fields.URLField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
         },
         'oi.creatorschooldetailrevision': {
             'Meta': {'ordering': "('school_year_began', 'school_year_ended')", 'object_name': 'CreatorSchoolDetailRevision'},
@@ -1112,7 +1514,7 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
             'school': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'cr_school_details'", 'to': "orm['gcd.School']"}),
-            'school_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'cr_schoolsource'", 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
+            'school_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'cr_schoolsource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'school_year_began': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'school_year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'school_year_ended': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
@@ -1291,18 +1693,6 @@ class Migration(SchemaMigration):
             'rel_source': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'rel_type': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creator_revise_relation_type'", 'to': "orm['oi.RelationTypeRevision']"}),
             'to_name': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'creator_revise_to_name'", 'to': "orm['oi.CreatorRevision']"})
-        },
-        'oi.namesourcerevision': {
-            'Meta': {'ordering': "('source_description',)", 'object_name': 'NameSourceRevision'},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'namesourcerevisions'", 'to': "orm['oi.Changeset']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'creator': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'cr_creatornamesource'", 'to': "orm['oi.CreatorRevision']"}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'name_source': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'cr_name_source'", 'null': 'True', 'to': "orm['gcd.NameSource']"}),
-            'source_description': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'source_type': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'cr_namesourcetype'", 'to': "orm['gcd.SourceType']"})
         },
         'oi.ongoingreservation': {
             'Meta': {'object_name': 'OngoingReservation', 'db_table': "'oi_ongoing_reservation'"},

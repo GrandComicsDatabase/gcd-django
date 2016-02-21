@@ -1,112 +1,29 @@
 # -*- coding: utf-8 -*-
 from south.utils import datetime_utils as datetime
 from south.db import db
-from south.v2 import SchemaMigration
+from south.v2 import DataMigration
 from django.db import models
 
-
-class Migration(SchemaMigration):
+class Migration(DataMigration):
 
     def forwards(self, orm):
-        # Deleting model 'NameSource'
-        db.delete_table('gcd_namesource')
+        "Write your forwards methods here."
+        # Note: Don't use "from appname.models import ModelName". 
+        # Use orm.ModelName to refer to models in this application,
+        # and orm['appname.ModelName'] for models in other applications.
+        from django.core.management import call_command
+        call_command('loaddata', 'degree')
+        call_command('loaddata', 'school')
+        call_command('loaddata', 'relationtype')
+        call_command('loaddata', 'membershiptype')
+        call_command('loaddata', 'nametype')
+        call_command('loaddata', 'noncomicworkrole')
+        call_command('loaddata', 'noncomicworktype')
+        call_command('loaddata', 'sourcetype')
 
-        # Adding model 'CreatorNameDetails'
-        db.create_table('gcd_creatornamedetails', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255, db_index=True)),
-            ('description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creator_names', to=orm['gcd.Creator'])),
-            ('type', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='nametypes', null=True, to=orm['gcd.NameType'])),
-        ))
-        db.send_create_signal('gcd', ['CreatorNameDetails'])
-
-        # Adding M2M table for field source on 'CreatorNameDetails'
-        m2m_table_name = db.shorten_name('gcd_creatornamedetails_source')
-        db.create_table(m2m_table_name, (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('creatornamedetails', models.ForeignKey(orm['gcd.creatornamedetails'], null=False)),
-            ('sourcetype', models.ForeignKey(orm['gcd.sourcetype'], null=False))
-        ))
-        db.create_unique(m2m_table_name, ['creatornamedetails_id', 'sourcetype_id'])
-
-
-        # Changing field 'Membership.membership_type'
-        db.alter_column('gcd_membership', 'membership_type_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['gcd.MembershipType'], null=True))
-
-        # Changing field 'Membership.membership_begin_year'
-        db.alter_column('gcd_membership', 'membership_begin_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True))
-
-        # Changing field 'Membership.membership_end_year'
-        db.alter_column('gcd_membership', 'membership_end_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True))
-        # Deleting field 'Creator.name'
-        db.delete_column('gcd_creator', 'name')
-
-        # Deleting field 'Creator.name_type'
-        db.delete_column('gcd_creator', 'name_type_id')
-
-        # Adding field 'Creator.gcd_official_name'
-        db.add_column('gcd_creator', 'gcd_official_name',
-                      self.gf('django.db.models.fields.CharField')(default=None, max_length=255, db_index=True),
-                      keep_default=False)
-
-
-        # Changing field 'Creator.sample_scan'
-        db.alter_column('gcd_creator', 'sample_scan', self.gf('django.db.models.fields.files.FileField')(max_length=100, null=True))
-
-        # Changing field 'Creator.portrait'
-        db.alter_column('gcd_creator', 'portrait', self.gf('django.db.models.fields.files.ImageField')(max_length=100, null=True))
-
-        # Changing field 'NonComicWork.work_role'
-        db.alter_column('gcd_noncomicwork', 'work_role_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['gcd.NonComicWorkRole'], null=True))
 
     def backwards(self, orm):
-        # Adding model 'NameSource'
-        db.create_table('gcd_namesource', (
-            ('source_type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='namesourcetype', to=orm['gcd.SourceType'])),
-            ('source_description', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('creator', self.gf('django.db.models.fields.related.ForeignKey')(related_name='creatornamesource', to=orm['gcd.Creator'])),
-        ))
-        db.send_create_signal('gcd', ['NameSource'])
-
-        # Deleting model 'CreatorNameDetails'
-        db.delete_table('gcd_creatornamedetails')
-
-        # Removing M2M table for field source on 'CreatorNameDetails'
-        db.delete_table(db.shorten_name('gcd_creatornamedetails_source'))
-
-
-        # Changing field 'Membership.membership_type'
-        db.alter_column('gcd_membership', 'membership_type_id', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['gcd.MembershipType']))
-
-        # Changing field 'Membership.membership_begin_year'
-        db.alter_column('gcd_membership', 'membership_begin_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=None))
-
-        # Changing field 'Membership.membership_end_year'
-        db.alter_column('gcd_membership', 'membership_end_year', self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=None))
-        # Adding field 'Creator.name'
-        db.add_column('gcd_creator', 'name',
-                      self.gf('django.db.models.fields.CharField')(default=None, max_length=255, db_index=True),
-                      keep_default=False)
-
-        # Adding field 'Creator.name_type'
-        db.add_column('gcd_creator', 'name_type',
-                      self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['gcd.NameType']),
-                      keep_default=False)
-
-        # Deleting field 'Creator.gcd_official_name'
-        db.delete_column('gcd_creator', 'gcd_official_name')
-
-
-        # Changing field 'Creator.sample_scan'
-        db.alter_column('gcd_creator', 'sample_scan', self.gf('django.db.models.fields.files.FileField')(default=None, max_length=100))
-
-        # Changing field 'Creator.portrait'
-        db.alter_column('gcd_creator', 'portrait', self.gf('django.db.models.fields.files.ImageField')(default=None, max_length=100))
-
-        # Changing field 'NonComicWork.work_role'
-        db.alter_column('gcd_noncomicwork', 'work_role_id', self.gf('django.db.models.fields.related.ForeignKey')(default=None, to=orm['gcd.NonComicWorkRole']))
+        "Write your backwards methods here."
 
     models = {
         'auth.group': {
@@ -147,7 +64,7 @@ class Migration(SchemaMigration):
         },
         'gcd.artinfluence': {
             'Meta': {'object_name': 'ArtInfluence'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Creator']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -155,7 +72,7 @@ class Migration(SchemaMigration):
             'influence_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'influence_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'influencesource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'is_self_identify': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'self_identify_influences_doc': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
         },
@@ -165,11 +82,11 @@ class Migration(SchemaMigration):
             'award_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'awardsource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'award_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'award_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Creator']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
         },
         'gcd.biosource': {
@@ -323,7 +240,7 @@ class Migration(SchemaMigration):
             'birth_year': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
             'birth_year_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'birthyearsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.BirthYearSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'birth_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'death_city': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'death_city_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'deathcitysource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.DeathCitySource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'death_city_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
@@ -346,13 +263,11 @@ class Migration(SchemaMigration):
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'gcd_official_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'portrait': ('django.db.models.fields.files.ImageField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'portrait_source': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'portraitsource'", 'to': "orm['gcd.SourceType']", 'through': "orm['gcd.PortraitSource']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'related_person': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['gcd.Creator']", 'through': "orm['gcd.NameRelation']", 'symmetrical': 'False'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'sample_scan': ('django.db.models.fields.files.FileField', [], {'max_length': '100', 'null': 'True', 'blank': 'True'}),
             'schools': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'schoolinformation'", 'to': "orm['gcd.School']", 'through': "orm['gcd.CreatorSchoolDetail']", 'blank': 'True', 'symmetrical': 'False', 'null': 'True'}),
             'whos_who': ('django.db.models.fields.URLField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'})
         },
@@ -575,7 +490,7 @@ class Migration(SchemaMigration):
         },
         'gcd.membership': {
             'Meta': {'ordering': "('membership_type',)", 'object_name': 'Membership'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Creator']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -585,7 +500,7 @@ class Migration(SchemaMigration):
             'membership_end_year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'membership_source': ('django.db.models.fields.related.ManyToManyField', [], {'blank': 'True', 'related_name': "'membershipsource'", 'null': 'True', 'symmetrical': 'False', 'to': "orm['gcd.SourceType']"}),
             'membership_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.MembershipType']", 'null': 'True', 'blank': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'organization_name': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
         },
@@ -619,12 +534,12 @@ class Migration(SchemaMigration):
         },
         'gcd.noncomicwork': {
             'Meta': {'ordering': "('publication_title', 'employer_name', 'work_type')", 'object_name': 'NonComicWork'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now_add': 'True', 'blank': 'True'}),
             'creator': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Creator']"}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'employer_name': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2015, 11, 4, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2016, 2, 21, 0, 0)', 'auto_now': 'True', 'blank': 'True'}),
             'publication_title': ('django.db.models.fields.CharField', [], {'max_length': '200'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'work_notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
@@ -863,3 +778,4 @@ class Migration(SchemaMigration):
     }
 
     complete_apps = ['gcd']
+    symmetrical = True
