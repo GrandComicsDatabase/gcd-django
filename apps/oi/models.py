@@ -1599,6 +1599,13 @@ class IssueRevision(Revision):
     def source(self, value):
         self.issue = value
 
+    @property
+    def series_changed(self):
+        """ True if the series changed and this is neither add nor delete. """
+        return ((not self.deleted) and
+                (self.previous_revision is not None) and
+                self.previous_revision.series != self.series)
+
     @classmethod
     def _get_stats_category_field_tuples(cls):
         return frozenset({('series', 'country',), ('series', 'language',)})
@@ -1652,6 +1659,27 @@ class IssueRevision(Revision):
         self.series = series
         if variant_of:
             self.variant_of = variant_of
+
+    def _same_series_revisions(self):
+        return self.changeset.issuerevisions.filter(series=self.series)
+
+    def _same_series_open_with_after(self):
+        return self._same_series_revisions().filter(after__isnull=False,
+                                                    committed=None)
+
+    def _open_prereq_revisions(self):
+        # Adds and moves go first to last, deletes last to first.
+        sort = '-revision_sort_code' if self.deleted else 'revision_sort_code'
+        return self._same_series_revisions().exclude(id=self.id) \
+                                            .filter(committed=None) \
+                                            .order_by(sort)
+
+    def _committed_prereq_revisions(self):
+        # We pop off of open prereqs and push onto committed, so reverse sort.
+        sort = 'revision_sort_code' if self.deleted else '-revision_sort_code'
+        return self._same_series_revisions().exclude(id=self.id) \
+                                            .filter(committed=True) \
+                                            .order_by(sort)
 
     def _post_commit_to_display(self):
         if self.changeset.changeset_action() == ACTION_MODIFY and \

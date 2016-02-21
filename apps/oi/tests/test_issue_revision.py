@@ -2,12 +2,15 @@
 from __future__ import unicode_literals
 
 import mock
+import pytest
 
-from apps.gcd.models import Issue, INDEXED
+from apps.gcd.models import Series, Issue, INDEXED
 from apps.oi.models import Changeset, Revision, IssueRevision
 
 RECENT = 'apps.gcd.models.recent.RecentIndexedIssue.objects.update_recents'
 ACTION = 'apps.oi.models.Changeset.changeset_action'
+CSET = 'apps.oi.models.Changeset'
+IREV = 'apps.oi.models.IssueRevision'
 
 
 def test_excluded_fields():
@@ -103,6 +106,27 @@ def test_stats_category_field_tuples():
     }
 
 
+# Some parameter combinations are omitted because they make no sense.
+@pytest.mark.parametrize('deleted, has_prev, changed',
+                         [(False, False, False),
+                          (False, True, True),
+                          (False, True, False),
+                          (True, True, False)])
+def test_series_changed(deleted, has_prev, changed):
+    s1 = Series(name='One')
+    s2 = Series(name='Two') if changed else s1
+    with mock.patch('%s.previous_revision' % IREV,
+                    new_callable=mock.PropertyMock) as prev_mock:
+        rev = IssueRevision(series=s2)
+        rev.deleted = deleted
+        if has_prev:
+            prev_mock.return_value = IssueRevision(series=s1)
+        else:
+            prev_mock.return_value = None
+        sc = rev.series_changed
+        assert sc is changed
+
+
 def test_pre_initial_save_with_date():
     rev = IssueRevision(issue=Issue(on_sale_date='2016-01-31'))
     rev._pre_initial_save()
@@ -156,3 +180,75 @@ def test_post_commit_to_display_skeleton():
         rev._post_commit_to_display()
 
         assert not recent_mock.called
+
+
+def test_same_series_revisions():
+    with mock.patch('%s.issuerevisions' % CSET) as irevs_mock:
+        series = Series()
+        ss_revs = mock.MagicMock()
+        irevs_mock.filter.return_value = ss_revs
+        rev = IssueRevision(changeset=Changeset(), series=series)
+
+        assert rev._same_series_revisions() == ss_revs
+        irevs_mock.filter.assert_called_once_with(series=series)
+
+
+def test_same_series_open_with_after():
+    with mock.patch('%s._same_series_revisions' % IREV) as ssrevs_mock:
+        ssowa_revs = mock.MagicMock()
+        ssrevs_mock.return_value.filter.return_value = ssowa_revs
+        rev = IssueRevision()
+
+        assert rev._same_series_open_with_after() == ssowa_revs
+        ssrevs_mock.return_value.filter.assert_called_once_with(
+            after__isnull=False, committed=None)
+
+
+@pytest.mark.parametrize('deleted', (True, False))
+def test_open_prereq_revisions(deleted):
+    if deleted:
+        # Sort prereqs from last to first- delete from end of series back.
+        sort = '-revision_sort_code'
+    else:
+        # Add or move from first to last, so that each "after" is in place.
+        sort = 'revision_sort_code'
+
+    with mock.patch('%s._same_series_revisions' % IREV) as ssrevs_mock:
+        op_revs = mock.MagicMock()
+        ssrevs_mock.return_value.exclude.return_value \
+                                .filter.return_value \
+                                .order_by.return_value = op_revs
+        rev = IssueRevision()
+        rev.id = 1234
+        rev.deleted = deleted
+
+        assert rev._open_prereq_revisions() == op_revs
+        ssrevs_mock.return_value.exclude.assert_has_calls([
+            mock.call(id=1234),
+            mock.call().filter(committed=None),
+            mock.call().filter().order_by(sort)])
+
+
+@pytest.mark.parametrize('deleted', (True, False))
+def test_committed_prereq_revisions(deleted):
+    # We sort commited reversed from open so that we effectively append
+    # to committed as we commit each revision as we walk through open.
+    if deleted:
+        sort = 'revision_sort_code'
+    else:
+        sort = '-revision_sort_code'
+
+    with mock.patch('%s._same_series_revisions' % IREV) as ssrevs_mock:
+        c_revs = mock.MagicMock()
+        ssrevs_mock.return_value.exclude.return_value \
+                                .filter.return_value \
+                                .order_by.return_value = c_revs
+        rev = IssueRevision()
+        rev.id = 1234
+        rev.deleted = deleted
+
+        assert rev._committed_prereq_revisions() == c_revs
+        ssrevs_mock.return_value.exclude.assert_has_calls([
+            mock.call(id=1234),
+            mock.call().filter(committed=True),
+            mock.call().filter().order_by(sort)])
