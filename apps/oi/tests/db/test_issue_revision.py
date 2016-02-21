@@ -45,13 +45,14 @@ def test_create_add_variant_revision(any_added_variant_rev, variant_add_values,
 
 @pytest.mark.django_db
 def test_create_add_more(any_added_issue, any_indexer):
-    c = Changeset.objects.create(indexer=any_indexer,
-                                 state=states.OPEN,
-                                 change_type=CTYPES['issue_add'])
+    c1 = Changeset.objects.create(indexer=any_indexer,
+                                  state=states.OPEN,
+                                  change_type=CTYPES['issue_add'])
     any_added_issue = Issue.objects.get(pk=any_added_issue.pk)
 
     # With after=None, should insert the issue at the beginning.
-    rev1 = IssueRevision(changeset=c, series=any_added_issue.series)
+    rev1 = IssueRevision(changeset=c1, series=any_added_issue.series)
+    rev1.save()
     rev1.commit_to_display()
 
     # It's necessary to re-fetch (not just refresh) the various issues
@@ -61,8 +62,12 @@ def test_create_add_more(any_added_issue, any_indexer):
 
     assert issue1.sort_code < original_issue.sort_code
 
-    rev2 = IssueRevision(changeset=c, series=any_added_issue.series,
+    c2 = Changeset.objects.create(indexer=any_indexer,
+                                  state=states.OPEN,
+                                  change_type=CTYPES['issue_add'])
+    rev2 = IssueRevision(changeset=c2, series=any_added_issue.series,
                          after=rev1.issue)
+    rev2.save()
     rev2.commit_to_display()
 
     # Again, re-fetch all the things.
@@ -391,8 +396,12 @@ def test_noncomics_counts(any_added_series_rev,
     assert i.indicia_publisher.issue_count == old_ind_pub_issue_count
 
     # Finally, delete the base issue, check for only series.issue_count
+    deleting_variant_changeset = Changeset(
+        state=states.OPEN, change_type=0,
+        indexer=any_deleting_changeset.indexer)
+    deleting_variant_changeset.save()
     del_i_rev = IssueRevision.clone(
-        changeset=any_deleting_changeset,
+        changeset=deleting_variant_changeset,
         data_object=Issue.objects.get(pk=i_rev.issue.pk))
 
     del_i_rev.deleted = True
