@@ -1681,6 +1681,32 @@ class IssueRevision(Revision):
                                             .filter(committed=True) \
                                             .order_by(sort)
 
+    def _pre_commit_check(self):
+        # If any other issue from this series has been committed, we have
+        # already gone through this logic, so skip it.
+        if self._same_series_revisions().filter(committed=True).exists():
+            return
+
+        # Verify that we have at most one uncommitted revision with this
+        # series that has a non-null 'after' field.  This means that for now
+        # we can only support one contiguous run of added/moved issues per
+        # series.
+        after = self._same_series_open_with_after()
+        if after.count() > 1:
+            raise ValueError(
+                ("%s, %s: Only one IssueRevision per series within a "
+                 "changeset can have 'after' set.  All others are assumed "
+                 "to follow it based on the 'revision_sort_code' field.") %
+                (self.changeset, self))
+        if after.exists() and (after.first() !=
+                               self._same_series_revisions()
+                                   .order_by('revision_sort_code')
+                                   .first()):
+            raise ValueError(
+                ("%s, %s: The IssueRevision that specifies an 'after' must "
+                 "have the lowest revision_sort_code.") %
+                (self.changeset, after.first()))
+
     def _post_commit_to_display(self):
         if self.changeset.changeset_action() == ACTION_MODIFY and \
            self.issue.is_indexed != INDEXED['skeleton']:

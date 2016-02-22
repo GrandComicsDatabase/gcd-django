@@ -143,6 +143,107 @@ def test_pre_initial_save_no_date():
     assert rev.day_on_sale is None
 
 
+@pytest.yield_fixture
+def pre_commit_rev():
+    with mock.patch('%s._same_series_revisions' % IREV), \
+            mock.patch('%s._same_series_open_with_after' % IREV):
+        s = Series(name='Some Series')
+        i = Issue(number='1', series=s)
+        rev = IssueRevision(
+            changeset=Changeset(),
+            issue=i,
+            series=s,
+            previous_revision=IssueRevision(changeset=Changeset(), issue=i))
+        yield rev
+
+
+def test_pre_commit_check_success(pre_commit_rev):
+    pre_commit_rev._same_series_revisions.return_value \
+                  .filter.return_value \
+                  .exists.return_value = False
+    pre_commit_rev._same_series_open_with_after.return_value \
+                  .count.return_value = 1
+
+    first_rev_mock = mock.MagicMock(spec=IssueRevision)
+
+    pre_commit_rev._same_series_open_with_after.return_value \
+                  .first.return_value = first_rev_mock
+    pre_commit_rev._same_series_revisions.return_value \
+                  .order_by.return_value \
+                  .first.return_value = first_rev_mock
+
+    pre_commit_rev._pre_commit_check()
+
+    # Since we cover all of the main calls here, these aren't
+    # checked in any of the exception-raising cases.
+    pre_commit_rev._same_series_revisions.assert_has_calls([
+        mock.call(),
+        mock.call().filter(committed=True),
+        mock.call().filter().exists(),
+        mock.call(),
+        mock.call().order_by('revision_sort_code'),
+        mock.call().order_by().first()])
+
+    # Note that the __nonzero__ call represents the result of exists()
+    # being evaluated in a boolean expression.  __nonzero__ is the method
+    # used to evaluate truthiness.  I wouldn't bother to check for it
+    # but the only options are to include it, or to make the assertion
+    # order-insensitive which is too loose of a check.
+    pre_commit_rev._same_series_open_with_after.assert_has_calls([
+        mock.call(),
+        mock.call().count(),
+        mock.call().exists(),
+        mock.call().exists().__nonzero__(),
+        mock.call().first()])
+
+
+def test_pre_commit_check_already_checked(pre_commit_rev):
+    pre_commit_rev._same_series_revisions.return_value \
+                  .filter.return_value \
+                  .exists.return_value = True
+
+    pre_commit_rev._pre_commit_check()
+
+    # This is the next thing we would call if we failed to bail out.
+    assert not pre_commit_rev._same_series_open_with_after.called
+
+
+def test_pre_commit_check_too_many_afters(pre_commit_rev):
+    pre_commit_rev._same_series_revisions.return_value \
+                  .filter.return_value \
+                  .exists.return_value = False
+    pre_commit_rev._same_series_open_with_after.return_value \
+                  .count.return_value = 2
+    with pytest.raises(ValueError) as excinfo:
+        pre_commit_rev._pre_commit_check()
+
+    assert ("Only one IssueRevision per series within a changeset can have "
+            "'after' set.") in unicode(excinfo.value)
+
+
+def test_pre_commit_check_after_not_first(pre_commit_rev):
+    pre_commit_rev._same_series_revisions.return_value \
+                  .filter.return_value \
+                  .exists.return_value = False
+    pre_commit_rev._same_series_open_with_after.return_value \
+                  .count.return_value = 1
+
+    after_rev_mock = mock.MagicMock(spec=IssueRevision)
+    lowest_sort_mock = mock.MagicMock(spec=IssueRevision)
+
+    pre_commit_rev._same_series_open_with_after.return_value \
+                  .first.return_value = after_rev_mock
+    pre_commit_rev._same_series_revisions.return_value \
+                  .order_by.return_value \
+                  .first.return_value = lowest_sort_mock
+
+    with pytest.raises(ValueError) as excinfo:
+        pre_commit_rev._pre_commit_check()
+
+    assert ("The IssueRevision that specifies an 'after' must have "
+            "the lowest revision_sort_code.") in unicode(excinfo.value)
+
+
 def test_post_commit_to_display():
     from apps.oi.models import ACTION_MODIFY
 
