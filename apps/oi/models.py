@@ -1711,6 +1711,57 @@ class IssueRevision(Revision):
                  "have the lowest revision_sort_code.") %
                 (self.changeset, after.first()))
 
+    def _ensure_sort_code_space(self):
+        first_rev = self._same_series_open_with_after().first()
+        after_code = -1 if first_rev is None else first_rev.after.sort_code
+
+        # Include deleted issues due to unique constraint on sort_code.
+        later_issues = Issue.objects.filter(
+            series=self.series,
+            sort_code__gt=after_code).order_by('-sort_code')
+
+        if not later_issues.exists():
+            # We're appending to the series, no space needed.
+            return
+
+        num_issues = self._same_series_revisions().count()
+        if later_issues.first().sort_code - after_code >= num_issues:
+            # Someone else already made space here.
+            return
+
+        for later_issue in later_issues:
+            later_issue.sort_code += num_issues
+            later_issue.save()
+
+    def _pre_stats_measurement(self, changes):
+        if self.edited and not self.series_changed:
+            # order of revision commit doesn't matter, as we do issue
+            # sort_cod reorderings separately from the main editing
+            # workflow, at least for now.
+            return
+
+        if not self.deleted:
+            self._ensure_sort_code_space()
+
+        current_prereq_qs = self._open_prereq_revisions().all()
+        current_prereq_count = current_prereq_qs.count()
+        while current_prereq_count:
+            current_prereq_qs.first().commit_to_display()
+            # Always eval a new queryset as committing may cause other commits.
+            # Calling all() produces an identical but unevaluated queryset.
+            current_prereq_qs = current_prereq_qs.all()
+            new_prereq_count = current_prereq_qs.count()
+
+            if new_prereq_count >= current_prereq_count:
+                # We should never *gain* revisions- even if we create
+                # revisions during a commit, those newly created revisions
+                # should themselves be committed before the other commit
+                # completes.  Prevent infinite loops by raising.
+                raise RuntimeError("Committing revisions did not reduce the "
+                                   "number of uncommitted revisions!")
+
+            current_prereq_count = new_prereq_count
+
     def _post_commit_to_display(self):
         if self.changeset.changeset_action() == ACTION_MODIFY and \
            self.issue.is_indexed != INDEXED['skeleton']:

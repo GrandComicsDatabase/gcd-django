@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
+from django.db import models
+
 from apps.gcd.models import Series, Issue, INDEXED
 from apps.oi.models import Changeset, Revision, IssueRevision
 
@@ -242,6 +244,243 @@ def test_pre_commit_check_after_not_first(pre_commit_rev):
 
     assert ("The IssueRevision that specifies an 'after' must have "
             "the lowest revision_sort_code.") in unicode(excinfo.value)
+
+
+@pytest.yield_fixture
+def multiple_issue_revs():
+    with mock.patch('apps.oi.models.Issue.objects') as obj_mock, \
+            mock.patch('%s._same_series_revisions' % IREV) as same_mock, \
+            mock.patch('%s._same_series_open_with_after' % IREV) as after_mock:
+
+        same_mock.return_value.filter.return_value.exists.return_value = False
+
+        s = Series(name='Some Series')
+        # Issues already created, so they have sort codes.
+        i1 = Issue(number='1', series=s, sort_code=0)
+        i4 = Issue(number='4', series=s, sort_code=1)
+        i5 = Issue(number='5', series=s, sort_code=2)
+        i1.save = mock.MagicMock()
+        i4.save = mock.MagicMock()
+        i5.save = mock.MagicMock()
+
+        # Issues being created, no sort codes yet.
+        i2 = Issue(number='2', series=s)
+        i3 = Issue(number='3', series=s)
+
+        c = Changeset()
+        rev2 = IssueRevision(changeset=c, issue=i2, series=s,
+                             revision_sort_code=2)
+        rev3 = IssueRevision(changeset=c, issue=i3, series=s,
+                             revision_sort_code=3)
+
+        yield ((i1, i2, i3, i4, i5), (rev2, rev3),
+               after_mock, obj_mock, same_mock)
+
+
+def _set_up_sort_code_query_sets(revision_list, later_issue_list,
+                                 same_mock, obj_mock):
+
+    # Use lambda with side effect to get a new iter() result each time.
+    same_mock.return_value = mock.MagicMock(spec=models.QuerySet)
+    same_mock.return_value.__iter__.side_effect = lambda: iter(revision_list)
+    same_mock.return_value.count.return_value = len(revision_list)
+
+    later_mock = mock.MagicMock(spec=models.QuerySet)
+    later_mock.exists.return_value = bool(later_issue_list)
+    later_mock.count.return_value = len(later_issue_list)
+    try:
+        later_mock.first.return_value = later_issue_list[0]
+    except IndexError:
+        later_mock.first.return_value = None
+    later_mock.__iter__.side_effect = lambda: iter(later_issue_list)
+    obj_mock.filter.return_value.order_by.return_value = later_mock
+
+
+def test_ensure_sort_code_space_no_after(multiple_issue_revs):
+    ((i1, i2, i3, i4, i5), (rev2, rev3),
+     after_mock, obj_mock, same_mock) = multiple_issue_revs
+
+    after_mock.return_value.first.return_value = None
+
+    # With no "after" issue, we insert at the beginning, so i1 ends up
+    # being a later issue in this test case.
+    _set_up_sort_code_query_sets([rev2, rev3], [i1, i4, i5],
+                                 same_mock, obj_mock)
+
+    rev3._ensure_sort_code_space()
+
+    assert i1.sort_code == 2
+    i1.save.assert_called_once_with()
+    assert i4.sort_code == 3
+    i4.save.assert_called_once_with()
+    assert i5.sort_code == 4
+    i5.save.assert_called_once_with()
+
+
+def test_ensure_sort_code_space_with_after(multiple_issue_revs):
+    ((i1, i2, i3, i4, i5), (rev2, rev3),
+     after_mock, obj_mock, same_mock) = multiple_issue_revs
+
+    rev2.after = i1
+    after_mock.return_value.first.return_value = rev2
+
+    _set_up_sort_code_query_sets([rev2, rev3], [i4, i5], same_mock, obj_mock)
+
+    rev3._ensure_sort_code_space()
+
+    assert i1.sort_code == 0
+    assert not i1.save.called
+
+    assert i4.sort_code == 3
+    i4.save.assert_called_once_with()
+    assert i5.sort_code == 4
+    i5.save.assert_called_once_with()
+
+
+def test_ensure_sort_code_space_append_to_series(multiple_issue_revs):
+    ((i1, i2, i3, i4, i5), (rev2, rev3),
+     after_mock, obj_mock, same_mock) = multiple_issue_revs
+
+    # In this case, we want an append so there are no later issues.
+    _set_up_sort_code_query_sets([rev2, rev3], [], same_mock, obj_mock)
+
+    # It shouldn't matter which rev we use because the values are all mocked,
+    # Use rev2 because we use rev3 everywhere else.
+    rev2._ensure_sort_code_space()
+
+    # This would be the next method called, but we should return early instead.
+    assert not same_mock.return_value.count.called
+
+
+def test_ensure_sort_code_space_already_ensured(multiple_issue_revs):
+    ((i1, i2, i3, i4, i5), (rev2, rev3),
+     after_mock, obj_mock, same_mock) = multiple_issue_revs
+
+    rev2.after = i1
+    after_mock.return_value.first.return_value = rev2
+    rev_list = [rev2, rev3]
+
+    # Bump the sort codes up to where they would be if we've already
+    # checked for this through another revision.
+    # This test case is otherwise identical to the with_after test case.
+    i4.sort_code = i4.sort_code + len(rev_list)
+    i5.sort_code = i5.sort_code + len(rev_list)
+
+    _set_up_sort_code_query_sets(rev_list, [i4, i5], same_mock, obj_mock)
+
+    rev3._ensure_sort_code_space()
+
+    # This is the for loop that we should skip and return early instead.
+    assert (
+        not obj_mock.filter.return_value.order_by.return_value.__iter__.called)
+
+
+def test_pre_stats_measurement_non_move_edit():
+    with mock.patch('%s.edited' % IREV,
+                    new_callable=mock.PropertyMock) as edited_mock, \
+            mock.patch('%s.series_changed' % IREV,
+                       new_callable=mock.PropertyMock) as moved_mock, \
+            mock.patch('%s._ensure_sort_code_space' % IREV) as sort_mock, \
+            mock.patch('%s._open_prereq_revisions' % IREV) as open_mock:
+
+        edited_mock.return_value = True
+        moved_mock.return_value = False
+        rev = IssueRevision(deleted=False)
+
+        rev._pre_stats_measurement({})
+
+        # We should have returned back out immediately, no further calls.
+        assert not sort_mock.called
+        assert not open_mock.called
+
+
+@pytest.yield_fixture
+def multiple_issue_revs_pre_stats(multiple_issue_revs):
+    # While multiple_issue_revs has a few things the pre_stats_measurement
+    # tests don't need, those things are harmless, and otherwise the
+    # set-up is useful.
+    (issues, revs, after_mock, obj_mock, same_mock) = multiple_issue_revs
+    with mock.patch('%s.edited' % IREV,
+                    new_callable=mock.PropertyMock) as edited_mock, \
+            mock.patch('%s.series_changed' % IREV,
+                       new_callable=mock.PropertyMock) as moved_mock, \
+            mock.patch('%s._ensure_sort_code_space' % IREV) as sort_mock, \
+            mock.patch('%s._open_prereq_revisions' % IREV) as open_mock:
+
+        # We currenlty only use this fixture for added/deleted revisions.
+        edited_mock.return_value = False
+        moved_mock.return_value = False
+
+        yield (issues, revs, after_mock, obj_mock, same_mock,
+               sort_mock, open_mock)
+
+
+def _set_up_prereqs(prereq_list_list, open_mock):
+    last_all_mock = open_mock.return_value.all
+    for prereq_list in prereq_list_list:
+        mock_qs = mock.MagicMock(spec=models.QuerySet)
+        mock_qs.count.return_value = len(prereq_list)
+        try:
+            mock_qs.first.return_value = prereq_list[0]
+        except IndexError:
+            mock_qs.first.return_value = None
+        mock_qs.__iter__.side_effect = lambda: iter(prereq_list)
+
+        # Just keep appending these to successive calls to all() as
+        # we call all() each time through the loop to refresh.
+        last_all_mock.return_value = mock_qs
+        last_all_mock = last_all_mock.return_value.all
+
+
+def test_pre_stats_measurement_added(multiple_issue_revs_pre_stats):
+    ((i1, i2, i3, i4, i5), (rev2, rev3),
+     after_mock, obj_mock, same_mock,
+     sort_mock, open_mock) = multiple_issue_revs_pre_stats
+
+    rev2.commit_to_display = mock.MagicMock()
+    rev3.commit_to_display = mock.MagicMock()
+    _set_up_prereqs([[rev2], []], open_mock)
+    rev3._pre_stats_measurement({})
+
+    sort_mock.assert_called_once_with()
+    rev2.commit_to_display.assert_called_once_with()
+    assert not rev3.commit_to_display.called
+
+
+def test_pre_stats_measurement_exit_infinite_loop(
+        multiple_issue_revs_pre_stats):
+    ((i1, i2, i3, i4, i5), (rev2, rev3),
+     after_mock, obj_mock, same_mock,
+     sort_mock, open_mock) = multiple_issue_revs_pre_stats
+
+    # Also check the special delete condition as it happens well before
+    # the part where we test for the infinite loop.
+    rev2.deleted = True
+    rev3.deleted = True
+
+    # Deletes work last to first for revs.
+    _set_up_sort_code_query_sets([rev3, rev2], [i4, i5], same_mock, obj_mock)
+
+    # Two trips through the loop should trigger the exception.
+    # The prereq_list is the same both times, as the point is to exit
+    # if we fail to reduce the list each time through the loop.
+    rev3.commit_to_display = mock.MagicMock()
+    prereq_list = [rev3]
+    _set_up_prereqs([prereq_list, prereq_list], open_mock)
+
+    # Now chain them up for successive calls to all().
+    # mock_querysets[0].all.return_value = mock_querysets[1]
+    # open_mock.return_value.all.return_value = mock_querysets[0]
+
+    with pytest.raises(RuntimeError) as excinfo:
+        # Deletes work last to first, so rev3 is a prereq of rev2.
+        rev2._pre_stats_measurement({})
+
+    assert "did not reduce" in unicode(excinfo.value)
+
+    # As a delete, we should not have messed with sort_codes.
+    assert not sort_mock.called
+    rev3.commit_to_display.assert_called_once_with()
 
 
 def test_post_commit_to_display():
