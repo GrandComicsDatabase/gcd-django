@@ -269,9 +269,9 @@ def multiple_issue_revs():
 
         c = Changeset()
         rev2 = IssueRevision(changeset=c, issue=i2, series=s,
-                             revision_sort_code=2)
+                             revision_sort_code=1)
         rev3 = IssueRevision(changeset=c, issue=i3, series=s,
-                             revision_sort_code=3)
+                             revision_sort_code=2)
 
         yield ((i1, i2, i3, i4, i5), (rev2, rev3),
                after_mock, obj_mock, same_mock)
@@ -307,13 +307,25 @@ def test_ensure_sort_code_space_no_after(multiple_issue_revs):
     _set_up_sort_code_query_sets([rev2, rev3], [i1, i4, i5],
                                  same_mock, obj_mock)
 
+    # Make a gap of 1 in the sort codes where we need 2.  This would have
+    # caught an off-by-one bug in how we look for gaps that was not caught
+    # until the database round trip tests.  Do it this way to catch possible
+    # future regressions.
+    i1.sort_code += 1
+    i4.sort_code += 1
+    i5.sort_code += 1
+
     rev3._ensure_sort_code_space()
 
-    assert i1.sort_code == 2
+    # We still add the same amount to sort codes even though part of the gap
+    # was already present.  This is because the specific sort code values
+    # don't matter, and always adding the same amount makes the code simpler.
+    # So these end up one higher than necessary, which is correct.
+    assert i1.sort_code == 3
     i1.save.assert_called_once_with()
-    assert i4.sort_code == 3
+    assert i4.sort_code == 4
     i4.save.assert_called_once_with()
-    assert i5.sort_code == 4
+    assert i5.sort_code == 5
     i5.save.assert_called_once_with()
 
 

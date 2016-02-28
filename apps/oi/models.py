@@ -1725,7 +1725,7 @@ class IssueRevision(Revision):
             return
 
         num_issues = self._same_series_revisions().count()
-        if later_issues.first().sort_code - after_code >= num_issues:
+        if later_issues.first().sort_code - after_code > num_issues:
             # Someone else already made space here.
             return
 
