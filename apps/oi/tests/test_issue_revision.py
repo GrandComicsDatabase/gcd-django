@@ -7,12 +7,15 @@ import pytest
 from django.db import models
 
 from apps.gcd.models import Series, Issue, INDEXED
-from apps.oi.models import Changeset, Revision, IssueRevision
+from apps.oi.models import Changeset, Revision, IssueRevision, StoryRevision
 
 RECENT = 'apps.gcd.models.recent.RecentIndexedIssue.objects.update_recents'
+SAVE = 'django.db.models.Model.save'
 ACTION = 'apps.oi.models.Changeset.changeset_action'
 CSET = 'apps.oi.models.Changeset'
 IREV = 'apps.oi.models.IssueRevision'
+ISSUE = 'apps.gcd.models.series.Issue'
+SERIES = 'apps.gcd.models.series.Series'
 
 
 def test_excluded_fields():
@@ -495,43 +498,198 @@ def test_pre_stats_measurement_exit_infinite_loop(
     rev3.commit_to_display.assert_called_once_with()
 
 
-def test_post_commit_to_display():
-    from apps.oi.models import ACTION_MODIFY
+@pytest.yield_fixture
+def patch_for_optional_move():
+    with mock.patch('%s.set_first_last_issues' % SERIES), \
+            mock.patch('%s.scan_count' % SERIES), \
+            mock.patch('%s.active_covers' % ISSUE), \
+            mock.patch('%s.series_changed' % IREV,
+                       new_callable=mock.PropertyMock) as moved_mock, \
+            mock.patch(SAVE):
+        yield moved_mock
 
-    with mock.patch(RECENT) as recent_mock, mock.patch(ACTION) as action_mock:
-        action_mock.return_value = ACTION_MODIFY
+
+def test_post_save_no_series_changed(patch_for_optional_move):
+    patch_for_optional_move.return_value = False
+
+    s = Series(name="Test Series")
+    i = Issue(series=s)
+    rev = IssueRevision(changeset=Changeset(),
+                        issue=i,
+                        series=s,
+                        previous_revision=IssueRevision(issue=i, series=s))
+
+    rev._post_save_object({})
+
+    # If we fail the check, there will be two calls here instead of one.
+    s.set_first_last_issues.assert_called_once_with()
+
+
+@pytest.yield_fixture
+def patch_for_move(patch_for_optional_move):
+    patch_for_optional_move.return_value = True
+
+    old = Series(name="Old Test Series")
+    new = Series(name="New Test Series")
+    i = Issue(series=old)
+
+    rev = IssueRevision(changeset=Changeset(),
+                        issue=i,
+                        series=new,
+                        previous_revision=IssueRevision(issue=i, series=old))
+
+    # Need to track these calls independently, so replace class-level mock
+    # with instance-level mocks.
+    old.save = mock.MagicMock()
+    new.save = mock.MagicMock()
+    old.set_first_last_issues = mock.MagicMock()
+    new.set_first_last_issues = mock.MagicMock()
+
+    yield rev, i, old, new
+
+
+@pytest.mark.parametrize('has_gallery, count', [(True, 1), (False, 0)])
+def test_post_save_no_gallery_change(patch_for_move, has_gallery, count):
+    rev, i, old, new = patch_for_move
+
+    # We have a gallery, so scan count just needs to not be zero.
+    old.has_gallery = True
+    old.scan_count.return_value = 1
+
+    # Parametrize on the two different ways the new series gallery can change.
+    i.active_covers.return_value.count.return_value = count
+    new.has_gallery = has_gallery
+
+    rev._post_save_object({})
+
+    old.set_first_last_issues.assert_called_once_with()
+    new.set_first_last_issues.assert_called_once_with()
+
+    # Make sure these did not change
+    assert old.has_gallery is True
+    assert new.has_gallery is has_gallery
+
+    # These would have been called in set_first_last_issues(), but should
+    # not have been called in the main flow of the method.
+    assert not old.save.called
+    assert not new.save.called
+
+
+def test_post_save_new_gains_gallery(patch_for_move):
+    rev, i, old, new = patch_for_move
+
+    # New did not have a gallery, but there is a cover with the issue.
+    new.has_gallery = False
+    i.active_covers.return_value.count.return_value = 1
+
+    # Set scan count so we don't think old lost a gallery.
+    old.has_gallery = True
+    old.scan_count.return_value = 1
+
+    rev._post_save_object({})
+
+    old.set_first_last_issues.assert_called_once_with()
+    new.set_first_last_issues.assert_called_once_with()
+
+    assert old.has_gallery is True
+    assert new.has_gallery is True
+
+    assert not old.save.called
+    new.save.assert_called_once_with()
+
+
+@pytest.mark.parametrize('has_gallery, count', [(True, 1), (False, 0)])
+def test_post_save_old_loses_gallery(patch_for_move, has_gallery, count):
+    rev, i, old, new = patch_for_move
+
+    # Set old has having had a gallery, but now has no scans.
+    old.has_gallery = True
+    old.scan_count.return_value = 0
+
+    # New either already had a gallery or the issue had no scans.
+    new.has_gallery = has_gallery
+    i.active_covers.return_value.count.return_value = count
+
+    rev._post_save_object({})
+
+    old.set_first_last_issues.assert_called_once_with()
+    new.set_first_last_issues.assert_called_once_with()
+
+    assert old.has_gallery is False
+    assert new.has_gallery is has_gallery
+
+    old.save.assert_called_once_with()
+    assert not new.save.called
+
+
+@pytest.fixture
+def story_revs():
+    return [mock.MagicMock(spec=StoryRevision),
+            mock.MagicMock(spec=StoryRevision)]
+
+
+@pytest.yield_fixture
+def patched_edit(story_revs):
+    with mock.patch(RECENT) as recent_mock, mock.patch(SAVE), \
+            mock.patch('%s.storyrevisions' % CSET) as story_mock:
+        story_mock.filter.return_value = story_revs
+        ish = Issue(is_indexed=INDEXED['full'])
+        prev = IssueRevision(changeset=Changeset(), issue=ish)
+        rev = IssueRevision(changeset=Changeset(),
+                            previous_revision=prev,
+                            issue=ish)
+        yield (rev, recent_mock)
+
+
+def test_post_adjust_stats_add(story_revs):
+    with mock.patch(RECENT) as recent_mock, mock.patch(SAVE), \
+            mock.patch('%s.storyrevisions' % CSET) as story_mock:
+        story_mock.filter.return_value = story_revs
         rev = IssueRevision(changeset=Changeset(),
                             issue=Issue(is_indexed=INDEXED['full']))
 
-        rev._post_commit_to_display()
+        rev._post_adjust_stats({})
+
+        for story in story_revs:
+            assert story.issue == rev.issue
+            story.save.assert_called_once_with()
 
         recent_mock.assert_called_once_with(rev.issue)
 
 
-def test_post_commit_to_display_not_a_modify():
-    from apps.oi.models import ACTION_ADD
+def test_post_adjust_stats_edit(patched_edit, story_revs):
+    rev, recent_mock = patched_edit
+    rev._post_adjust_stats({})
 
-    with mock.patch(RECENT) as recent_mock, mock.patch(ACTION) as action_mock:
-        action_mock.return_value = ACTION_ADD
-        rev = IssueRevision(changeset=Changeset(),
-                            issue=Issue(is_indexed=INDEXED['full']))
+    for story in story_revs:
+        assert story.issue == rev.issue
+        story.save.assert_called_once_with()
 
-        rev._post_commit_to_display()
-
-        assert not recent_mock.called
+    recent_mock.assert_called_once_with(rev.issue)
 
 
-def test_post_commit_to_display_skeleton():
-    from apps.oi.models import ACTION_MODIFY
+def test_post_adjust_stats_delete(patched_edit, story_revs):
+    rev, recent_mock = patched_edit
+    rev.deleted = True
+    rev._post_adjust_stats({})
 
-    with mock.patch(RECENT) as recent_mock, mock.patch(ACTION) as action_mock:
-        action_mock.return_value = ACTION_MODIFY
-        rev = IssueRevision(changeset=Changeset(),
-                            issue=Issue(is_indexed=INDEXED['skeleton']))
+    for story in story_revs:
+        assert story.issue == rev.issue
+        story.save.assert_called_once_with()
 
-        rev._post_commit_to_display()
+    assert not recent_mock.called
 
-        assert not recent_mock.called
+
+def test_post_adjust_stats_skeleton(patched_edit, story_revs):
+    rev, recent_mock = patched_edit
+    rev.issue.is_indexed = INDEXED['skeleton']
+    rev._post_adjust_stats({})
+
+    for story in story_revs:
+        assert story.issue == rev.issue
+        story.save.assert_called_once_with()
+
+    assert not recent_mock.called
 
 
 def test_same_series_revisions():

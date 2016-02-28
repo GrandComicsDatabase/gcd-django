@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from django.conf import settings
 from django.db import models
-from django.db.models import F
 from django.db.models.fields import Field, related, FieldDoesNotExist
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
@@ -17,7 +16,7 @@ from taggit.managers import TaggableManager
 
 from apps.oi import states, relpath
 from apps.oi.helpers import (
-    update_count, remove_leading_article, set_series_first_last,
+    update_count, remove_leading_article,
     validated_isbn, get_keywords, save_keywords, on_sale_date_as_string,
     on_sale_date_fields)
 
@@ -1762,286 +1761,58 @@ class IssueRevision(Revision):
 
             current_prereq_count = new_prereq_count
 
-    def _post_commit_to_display(self):
-        if self.changeset.changeset_action() == ACTION_MODIFY and \
-           self.issue.is_indexed != INDEXED['skeleton']:
-            RecentIndexedIssue.objects.update_recents(self.issue)
-
-    def commit_to_display(self, clear_reservation=True, space_count=1):
-        issue = self.issue
-        check_series_order = None
-
-        if issue is None:
-            if self.after is None:
-                after_code = -1
-            else:
-                after_code = self.after.sort_code
-
-            # sort_codes tend to be sequential, so just always increment them
-            # out of the way.
-            later_issues = Issue.objects.filter(
-                series=self.series,
-                sort_code__gt=after_code).order_by('-sort_code')
-
-            # Make space for the issue(s) being added.  The changeset will
-            # pass a larger number or zero in order to make all necessary
-            # space for a multiple add on the first pass, and then not
-            # have to update this for the remaining issues.
-            if space_count > 0:
-                # Unique constraint prevents us from doing this:
-                # later_issues.update(sort_code=F('sort_code') + space_count)
-                # which is vastly more efficient.  TODO: revisit.
-                for later_issue in later_issues:
-                    later_issue.sort_code += space_count
-                    later_issue.save()
-
-            issue = Issue(sort_code=after_code + 1)
-            if self.variant_of:
-                if self.series.is_comics_publication:
-                    update_count('variant issues', 1,
-                                 language=self.series.language,
-                                 country=self.series.country)
-            else:
-                self.series.issue_count = F('issue_count') + 1
-                # do NOT save the series here, it gets saved later in
-                # self._check_first_last(), if we save here as well
-                # the issue_count goes up by 2
-                if self.series.is_comics_publication:
-                    self.series.publisher.issue_count = F('issue_count') + 1
-                    self.series.publisher.save()
-                    if self.brand:
-                        self.brand.issue_count = F('issue_count') + 1
-                        self.brand.save()
-                        for group in self.brand.group.all():
-                            group.issue_count = F('issue_count') + 1
-                            group.save()
-                    if self.indicia_publisher:
-                        self.indicia_publisher.issue_count = \
-                            F('issue_count') + 1
-                        self.indicia_publisher.save()
-                    update_count('issues', 1, language=self.series.language,
-                                 country=self.series.country)
-
-        elif self.deleted:
-            if self.variant_of:
-                if self.series.is_comics_publication:
-                    update_count('variant issues', -1,
-                                 language=self.series.language,
-                                 country=self.series.country)
-            else:
-                self.series.issue_count = F('issue_count') - 1
-                # do NOT save the series here, it gets saved later in
-                # self._check_first_last(), if we save here as well
-                # the issue_count goes down by 2
-                if self.series.is_comics_publication:
-                    self.series.publisher.issue_count = F('issue_count') - 1
-                    self.series.publisher.save()
-                    if self.brand:
-                        self.brand.issue_count = F('issue_count') - 1
-                        self.brand.save()
-                        for group in self.brand.group.all():
-                            group.issue_count = F('issue_count') - 1
-                            group.save()
-                    if self.indicia_publisher:
-                        self.indicia_publisher.issue_count = \
-                            F('issue_count') - 1
-                        self.indicia_publisher.save()
-                    update_count('issues', -1, language=issue.series.language,
-                                 country=issue.series.country)
-            issue.delete()
-            self._check_first_last()
-            return
-
-        else:
-            if not self.variant_of and self.series.is_comics_publication:
-                if self.brand != issue.brand:
-                    if self.brand:
-                        self.brand.issue_count = F('issue_count') + 1
-                        self.brand.save()
-                        for group in self.brand.group.all():
-                            group.issue_count = F('issue_count') + 1
-                            group.save()
-                    if issue.brand:
-                        issue.brand.issue_count = F('issue_count') - 1
-                        issue.brand.save()
-                        for group in issue.brand.group.all():
-                            group.issue_count = F('issue_count') - 1
-                            group.save()
-                if self.indicia_publisher != issue.indicia_publisher:
-                    if self.indicia_publisher:
-                        self.indicia_publisher.issue_count = \
-                            F('issue_count') + 1
-                        self.indicia_publisher.save()
-                    if issue.indicia_publisher:
-                        issue.indicia_publisher.issue_count = \
-                            F('issue_count') - 1
-                        issue.indicia_publisher.save()
-            if self.series != issue.series:
-                if self.series.issue_count:
-                    # move to the end of the new series
-                    issue.sort_code = (self.series.active_issues()
-                                                  .latest('sort_code')
-                                                  .sort_code) + 1
-                else:
-                    issue.sort_code = 0
-                # update counts
-                if self.variant_of:
-                    if self.series.language != issue.series.language or \
-                       self.series.country != issue.series.country:
-                        if self.series.is_comics_publication:
-                            update_count('variant issues', 1,
-                                         language=self.series.language,
-                                         country=self.series.country)
-                        if issue.series.is_comics_publication:
-                            update_count('variant issues', -1,
-                                         language=issue.series.language,
-                                         country=issue.series.country)
-                else:
-                    self.series.issue_count = F('issue_count') + 1
-                    issue.series.issue_count = F('issue_count') - 1
-                    if self.series.publisher != issue.series.publisher:
-                        if self.series.is_comics_publication:
-                            if self.series.publisher:
-                                self.series.publisher.issue_count = \
-                                    F('issue_count') + 1
-                                self.series.publisher.save()
-                        if issue.series.is_comics_publication:
-                            if issue.series.publisher:
-                                issue.series.publisher.issue_count = \
-                                    F('issue_count') - 1
-                                issue.series.publisher.save()
-                    if self.series.language != issue.series.language or \
-                       self.series.country != issue.series.country:
-                        if self.series.is_comics_publication:
-                            update_count('issues', 1,
-                                         language=self.series.language,
-                                         country=self.series.country)
-                        if issue.series.is_comics_publication:
-                            update_count('issues', -1,
-                                         language=issue.series.language,
-                                         country=issue.series.country)
-                        story_count = self.issue.active_stories().count()
-                        update_count('stories', story_count,
-                                     language=self.series.language,
-                                     country=self.series.country)
-                        update_count('stories', -story_count,
-                                     language=issue.series.language,
-                                     country=issue.series.country)
-                        cover_count = self.issue.active_covers().count()
-                        update_count('covers', cover_count,
-                                     language=self.series.language,
-                                     country=self.series.country)
-                        update_count('covers', -cover_count,
-                                     language=issue.series.language,
-                                     country=issue.series.country)
-
-                check_series_order = issue.series
-                # new series might have gallery after move
-                # do NOT save the series here, it gets saved later
-                if self.series.has_gallery is False:
-                    if issue.active_covers().count():
-                        self.series.has_gallery = True
-                # old series might have lost gallery after move
-                if issue.series.scan_count() == \
-                   issue.active_covers().count():
-                    issue.series.has_gallery = False
-
-        issue.number = self.number
-        # only if the series has_field is True write to issue
-        if self.series.has_issue_title:
-            issue.title = self.title
-            issue.no_title = self.no_title
-        # handle case when series has_field changes during lifetime
-        # of issue changeset, then changeset resets to issue data
-        else:
-            self.title = issue.title
-            self.no_title = issue.no_title
-            self.save()
-
-        if self.series.has_volume:
-            issue.volume = self.volume
-            issue.no_volume = self.no_volume
-            issue.display_volume_with_number = self.display_volume_with_number
-        else:
-            self.volume = issue.volume
-            self.no_volume = issue.no_volume
-            self.display_volume_with_number = issue.display_volume_with_number
-            self.save()
-
-        issue.variant_of = self.variant_of
-        issue.variant_name = self.variant_name
-
-        issue.publication_date = self.publication_date
-        issue.key_date = self.key_date
-        issue.on_sale_date = on_sale_date_as_string(self)
-        issue.on_sale_date_uncertain = self.on_sale_date_uncertain
-
-        if self.series.has_indicia_frequency:
-            issue.indicia_frequency = self.indicia_frequency
-            issue.no_indicia_frequency = self.no_indicia_frequency
-        else:
-            self.indicia_frequency = issue.indicia_frequency
-            self.no_indicia_frequency = issue.no_indicia_frequency
-            self.save()
-
-        issue.price = self.price
-        issue.page_count = self.page_count
-        issue.page_count_uncertain = self.page_count_uncertain
-
-        issue.editing = self.editing
-        issue.no_editing = self.no_editing
-        issue.notes = self.notes
-        issue.series = self.series
-        issue.indicia_publisher = self.indicia_publisher
-        issue.indicia_pub_not_printed = self.indicia_pub_not_printed
-        issue.brand = self.brand
-        issue.no_brand = self.no_brand
+    def _post_assign_fields(self, changes):
+        self.issue.on_sale_date = on_sale_date_as_string(self)
 
         if self.series.has_isbn:
-            issue.isbn = self.isbn
-            issue.no_isbn = self.no_isbn
-            issue.valid_isbn = validated_isbn(issue.isbn)
-        else:
-            self.isbn = issue.isbn
-            self.no_isbn = issue.no_isbn
-            self.save()
+            self.issue.valid_isbn = validated_isbn(self.issue.isbn)
 
-        if self.series.has_barcode:
-            issue.barcode = self.barcode
-            issue.no_barcode = self.no_barcode
-        else:
-            self.barcode = issue.barcode
-            self.no_barcode = issue.no_barcode
-            self.save()
+        # TODO: Support adding base + variant by adding a variant_of_rev
+        #       field to IssueRevision and setting variant_of to the
+        #       committed issue of the variant_of_rev field automatically,
+        #       committing the variant_of_rev if necessary.
+        #       Idea may be good for other new dependent object situations.
+        if self.added or self.series_changed:
+            if not self.after:
+                # If we're handling a run of issues, this is the
+                # previous issue in the run, if any.
+                committed = self._committed_prereq_revisions().first()
+                if committed:
+                    self.after = committed.issue
 
-        if self.series.has_rating:
-            issue.rating = self.rating
-            issue.no_rating = self.no_rating
-        else:
-            self.rating = issue.rating
-            self.no_rating = issue.no_rating
-            self.save()
+            if self.after:
+                self.issue.sort_code = self.after.sort_code + 1
+            else:
+                self.issue.sort_code = 0
 
-        if clear_reservation:
-            issue.reserved = False
+    def _post_save_object(self, changes):
+        # These all need for the data objects to be committed, (or just
+        # read better that way) but don't affect stats one way or the other.
+        self.series.set_first_last_issues()
+        if self.series_changed:
+            old_series = self.previous_revision.series
+            old_series.set_first_last_issues()
 
-        issue.save()
-        save_keywords(self, issue)
-        issue.save()
-        if self.issue is None:
-            self.issue = issue
-            self.save()
-            self._check_first_last()
-            for story in self.changeset.storyrevisions.filter(issue=None):
-                story.issue = issue
-                story.save()
+            # new series might have gallery after move
+            if not self.series.has_gallery and \
+               self.issue.active_covers().count():
+                self.series.has_gallery = True
+                self.series.save()
 
-        if check_series_order:
-            set_series_first_last(check_series_order)
-            self._check_first_last()
+            # old series might have lost gallery after move
+            if old_series.scan_count() == 0:
+                old_series.has_gallery = False
+                old_series.save()
 
-    def _check_first_last(self):
-        set_series_first_last(self.series)
+    def _post_adjust_stats(self, changes):
+        # These story revisions will handle their own stats when committed.
+        # They will also update the issue's is_indexed field.
+        for story in self.changeset.storyrevisions.filter(issue=None):
+            story.issue = self.issue
+            story.save()
+
+        if not self.deleted and self.issue.is_indexed != INDEXED['skeleton']:
+            RecentIndexedIssue.objects.update_recents(self.issue)
 
 
 class StoryRevision(Revision):

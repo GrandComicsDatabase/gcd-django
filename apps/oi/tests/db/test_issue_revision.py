@@ -95,7 +95,7 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
             as updater_mock:
         rev.commit_to_display()
 
-    updater_mock.assert_called_once_with('issues', 1,
+    updater_mock.assert_called_once_with(field='issues', delta=1,
                                          language=rev.series.language,
                                          country=rev.series.country)
     assert rev.issue is not None
@@ -143,7 +143,7 @@ def test_commit_variant_added_revision(any_added_variant_rev,
             as updater_mock:
         rev.commit_to_display()
 
-    updater_mock.assert_called_once_with('variant issues', 1,
+    updater_mock.assert_called_once_with(field='variant issues', delta=1,
                                          language=rev.series.language,
                                          country=rev.series.country)
     assert rev.issue is not None

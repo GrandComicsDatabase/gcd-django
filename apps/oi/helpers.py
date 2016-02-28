@@ -14,20 +14,6 @@ def update_count(field, delta, language=None, country=None):
                                     language=language, country=country)
 
 
-def set_series_first_last(series):
-    '''
-    set first_issue and last_issue for given series
-    '''
-    issues = series.active_issues().order_by('sort_code')
-    if issues.count() == 0:
-        series.first_issue = None
-        series.last_issue = None
-    else:
-        series.first_issue = issues[0]
-        series.last_issue = issues[len(issues) - 1]
-    series.save()
-
-
 def validated_isbn(entered_isbn):
     '''
     returns ISBN10 or ISBN13 if valid ISBN, empty string otherwiese
