@@ -12,6 +12,27 @@ class GcdBase(models.Model):
         app_label = 'gcd'
         abstract = True
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True, db_index=True)
+
+    def deletable(self):
+        return not (self.revisions.active_set().exists() or
+                    self.has_dependents())
+
+    def has_dependents(self):
+        """
+        Checks for objects that depend on this object in database terms.
+
+        This should include checks for open revisions of child objects,
+        but not for revisions of this object, which can already be
+        easily checked and are automatically included in the deletable()
+        implementation.
+        """
+        return False
+
     def stat_counts(self):
         """
         Returns all count values relevant to this data object.
@@ -57,12 +78,6 @@ class GcdData(GcdBase):
         app_label = 'gcd'
         abstract = True
 
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True, db_index=True)
-
     deleted = models.BooleanField(default=False, db_index=True)
 
     def delete(self):
@@ -76,24 +91,12 @@ class GcdLink(GcdBase):
     Base class for link objects connection two data objects.
 
     These are edited with Revisions, but do not persist in the
-    database upon deletion.  And we don't care as much about
-    when they were created or modified.
+    database upon deletion, and therefore need neither a "deleted"
+    column nor an override of the delete() method.
     """
     class Meta:
         app_label = 'gcd'
         abstract = True
-
-    reserved = models.BooleanField(default=False, db_index=True)
-
-    @property
-    def modified(self):
-        # TODO: Fix hardcoded dependency on oi state value 5.
-        #       Should we just add a modified column?  It is
-        #       handled automatically anyway.
-        return self.revisions.filter(changeset__state=5).latest().modified
-
-    # we check for deleted in the oi for models, so set to False
-    deleted = False
 
     def deletable(self):
         return True

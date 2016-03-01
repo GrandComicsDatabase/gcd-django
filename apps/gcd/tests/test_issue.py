@@ -7,15 +7,14 @@ import pytest
 
 from django.db.models import QuerySet
 
-from apps.gcd.models import Series, Issue, Story, Cover
+from apps.gcd.models import Series, Issue, Cover
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.models.story import STORY_TYPES
 
-# TODO: We really shouldn't be depending on the OI here.
-from apps.oi import states
-
 
 ISSUE_PATH = 'apps.gcd.models.issue.Issue'
+STORY_PATH = 'apps.gcd.models.story.Story'
+REVMGR_PATH = 'apps.oi.models.RevisionManager'
 
 
 @pytest.fixture
@@ -126,16 +125,14 @@ def test_other_variants():
 
 
 def test_can_upload_variants(any_series):
-    with mock.patch('%s.revisions' % ISSUE_PATH) as rev_mock, \
+    with mock.patch('%s.active_set' % REVMGR_PATH) as rev_mock, \
             mock.patch('%s.has_covers' % ISSUE_PATH) as hc_mock:
         hc_mock.return_value = True
-        rev_mock.filter.return_value.count.return_value = 0
+        rev_mock.return_value.filter.return_value.exists.return_value = False
         i = Issue(number='1', series=any_series)
 
         can_upload_variants = i.can_upload_variants()
-        assert bool(can_upload_variants) is True
-        rev_mock.filter.assert_called_once_with(
-            changeset__state__in=states.ACTIVE, deleted=True)
+        assert can_upload_variants is True
 
 
 def test_cant_upload_variants_no_covers(any_series):
@@ -144,20 +141,18 @@ def test_cant_upload_variants_no_covers(any_series):
         i = Issue(number='1', series=any_series)
 
         can_upload_variants = i.can_upload_variants()
-        assert bool(can_upload_variants) is False
+        assert can_upload_variants is False
 
 
 def test_cant_upload_variants_active_revisions(any_series):
-    with mock.patch('%s.revisions' % ISSUE_PATH) as rev_mock, \
+    with mock.patch('%s.active_set' % REVMGR_PATH) as rev_mock, \
             mock.patch('%s.has_covers' % ISSUE_PATH) as hc_mock:
         hc_mock.return_value = True
-        rev_mock.filter.return_value.count.return_value = 1
+        rev_mock.return_value.exists.return_value = True
         i = Issue(number='1', series=any_series)
 
         can_upload_variants = i.can_upload_variants()
-        assert bool(can_upload_variants) is False
-        rev_mock.filter.assert_called_once_with(
-            changeset__state__in=states.ACTIVE, deleted=True)
+        assert can_upload_variants is False
 
 
 @pytest.yield_fixture
@@ -174,10 +169,10 @@ def re_issue_mocks():
             'fir': fir_mock,
             'tir': tir_mock,
         }
-        mocks['fr'].count.return_value = 0
-        mocks['tr'].exclude.return_value.count.return_value = 0
-        mocks['fir'].count.return_value = 0
-        mocks['tir'].count.return_value = 0
+        mocks['fr'].exists.return_value = False
+        mocks['tr'].exclude.return_value.exists.return_value = False
+        mocks['fir'].exists.return_value = False
+        mocks['tir'].exists.return_value = False
 
         yield mocks
 
@@ -185,39 +180,39 @@ def re_issue_mocks():
 def test_no_reprints(any_series, re_issue_mocks):
     i = Issue(number='1', series=any_series)
     has_reprints = i.has_reprints()
-    assert bool(has_reprints) is False
+    assert has_reprints is False
     re_issue_mocks['tr'].exclude.assert_called_once_with(
         target__type__id=STORY_TYPES['promo'])
 
 
 def test_has_from_reprints(any_series, re_issue_mocks):
     i = Issue(number='1', series=any_series)
-    re_issue_mocks['fr'].count.return_value = 1
+    re_issue_mocks['fr'].exists.return_value = True
     has_reprints = i.has_reprints()
-    assert bool(has_reprints) is True
+    assert has_reprints is True
 
 
 def test_has_to_reprints(any_series, re_issue_mocks):
     i = Issue(number='1', series=any_series)
-    re_issue_mocks['tr'].exclude.return_value.count.return_value = 1
+    re_issue_mocks['tr'].exclude.return_value.exists.return_value = True
     has_reprints = i.has_reprints()
-    assert bool(has_reprints) is True
+    assert has_reprints is True
     re_issue_mocks['tr'].exclude.assert_called_once_with(
         target__type__id=STORY_TYPES['promo'])
 
 
 def test_has_from_issue_reprints(any_series, re_issue_mocks):
     i = Issue(number='1', series=any_series)
-    re_issue_mocks['fir'].count.return_value = 1
+    re_issue_mocks['fir'].exists.return_value = True
     has_reprints = i.has_reprints()
-    assert bool(has_reprints) is True
+    assert has_reprints is True
 
 
 def test_has_to_issue_reprints(any_series, re_issue_mocks):
     i = Issue(number='1', series=any_series)
-    re_issue_mocks['tir'].count.return_value = 1
+    re_issue_mocks['tir'].exists.return_value = True
     has_reprints = i.has_reprints()
-    assert bool(has_reprints) is True
+    assert has_reprints is True
 
 
 def test_delete():
@@ -235,96 +230,94 @@ def test_delete():
 @pytest.yield_fixture
 def del_issue_mocks():
     """ Dict of mocks of things needed for deletability testing. """
-    with mock.patch('%s.cover_revisions' % ISSUE_PATH) as cr_mock, \
-            mock.patch('%s.variant_set' % ISSUE_PATH) as vs_mock, \
-            mock.patch('%s.has_reprints' % ISSUE_PATH) as hr_mock, \
-            mock.patch('%s.active_stories' % ISSUE_PATH) as as_mock:
+    with mock.patch('%s.has_reprints' % ISSUE_PATH) as issue_hr_mock, \
+            mock.patch('%s.active_stories' % ISSUE_PATH) as as_mock, \
+            mock.patch('%s.origin_reprint_revisions' %
+                       ISSUE_PATH) as issue_or_mock, \
+            mock.patch('%s.target_reprint_revisions' %
+                       ISSUE_PATH) as issue_tr_mock, \
+            mock.patch('%s.has_variants' % ISSUE_PATH) as hv_mock, \
+            mock.patch('%s.variant_revisions' % ISSUE_PATH) as vr_mock:
+
+        # Not using spec=Story, b/c Django models do weird dynamic field
+        # stuff with reverse relations that confuses mock's spec system.
+        # These tests don't rely on the spec functionality anyway.
+        story = mock.MagicMock()
         mocks = {
-            'cr': cr_mock,
-            'vs': vs_mock,
-            'hr': hr_mock,
+            'hv': hv_mock,
+            'vr': vr_mock,
             'as': as_mock,
+            'issue_hr': issue_hr_mock,
+            'story_hr': story.has_reprints,
+            'issue_or': issue_or_mock,
+            'issue_tr': issue_tr_mock,
+            'story_or': story.origin_reprint_revisions,
+            'story_tr': story.target_reprint_revisions,
         }
-        mocks['cr'].filter.return_value.count.return_value = 0
-        mocks['vs'].filter.return_value.count.return_value = 0
-        mocks['hr'].return_value = False
-        mocks['as'].return_value = [mock.MagicMock(spec=Story)]
-        mocks['as'].return_value[0].has_reprints.return_value = False
+        mocks['hv'].return_value = False
+        mocks['vr'].active_set.return_value.exists.return_value = False
+        mocks['as'].return_value = [story]
+        mocks['issue_hr'].return_value = False
+        mocks['story_hr'].return_value = False
+        mocks['issue_or'].active_set.return_value.exists.return_value = False
+        mocks['issue_tr'].active_set.return_value.exists.return_value = False
+        mocks['story_or'].active_set.return_value.exists.return_value = False
+        mocks['story_tr'].active_set.return_value.exists.return_value = False
 
         yield mocks
 
 
-def test_deletable(any_series, del_issue_mocks):
+def test_has_no_dependents(any_series, del_issue_mocks):
     i = Issue(number='1', series=any_series)
 
-    is_deletable = i.deletable()
-    assert is_deletable is True
-    del_issue_mocks['cr'].filter.assert_called_once_with(
-        changeset__state__in=states.ACTIVE)
-    del_issue_mocks['vs'].filter.assert_called_once_with(deleted=False)
-    del_issue_mocks['as'].return_value[0].has_reprints.assert_called_once_with(
-        notes=False)
+    has_dependents = i.has_dependents()
+    assert has_dependents is False
+
+    # For this basic positive test case only, check that the right calls
+    # were made.  We don't need to do this every time, as from this point
+    # on, all we change are return values so clearly things still get called.
+    del_issue_mocks['hv'].assert_called_once_with()
+    del_issue_mocks['issue_hr'].assert_called_once_with()
+    del_issue_mocks['story_hr'].assert_called_once_with(notes=False)
+    del_issue_mocks['issue_or'].active_set.return_value \
+                               .exists.assert_called_once_with()
+    del_issue_mocks['issue_tr'].active_set.return_value \
+                               .exists.assert_called_once_with()
+    del_issue_mocks['story_or'].active_set.return_value \
+                               .exists.assert_called_once_with()
+    del_issue_mocks['story_tr'].active_set.return_value \
+                               .exists.assert_called_once_with()
 
 
-def test_deletable_no_stories(any_series, del_issue_mocks):
+def test_has_no_dependents_no_stories(any_series, del_issue_mocks):
     del_issue_mocks['as'].return_value = []
 
     i = Issue(number='1', series=any_series)
 
-    is_deletable = i.deletable()
-    assert is_deletable is True
-    del_issue_mocks['cr'].filter.assert_called_once_with(
-        changeset__state__in=states.ACTIVE)
-    del_issue_mocks['vs'].filter.assert_called_once_with(deleted=False)
+    has_dependents = i.has_dependents()
+    assert has_dependents is False
 
 
-def test_not_deletable_cover_revisions(any_series, del_issue_mocks):
-    del_issue_mocks['cr'].filter.return_value.count.return_value = 1
+@pytest.mark.parametrize('which_exists', ['hv', 'issue_hr', 'story_hr'])
+def test_has_dependents_variant_set(any_series, del_issue_mocks, which_exists):
+    del_issue_mocks[which_exists].return_value = True
 
     i = Issue(number='1', series=any_series)
 
-    is_deletable = i.deletable()
-    assert is_deletable is False
-    del_issue_mocks['cr'].filter.assert_called_once_with(
-        changeset__state__in=states.ACTIVE)
+    has_dependents = i.has_dependents()
+    assert has_dependents is True
 
 
-def test_not_deletable_variant_set(any_series, del_issue_mocks):
-    del_issue_mocks['vs'].filter.return_value.count.return_value = 1
-
+@pytest.mark.parametrize('which_exists', ['issue_or', 'issue_tr',
+                                          'story_or', 'story_tr', 'vr'])
+def test_has_dependents_has_revisions(any_series, del_issue_mocks,
+                                      which_exists):
+    del_issue_mocks[which_exists].active_set.return_value \
+                                 .exists.return_value = True
     i = Issue(number='1', series=any_series)
 
-    is_deletable = i.deletable()
-    assert is_deletable is False
-    del_issue_mocks['cr'].filter.assert_called_once_with(
-        changeset__state__in=states.ACTIVE)
-    del_issue_mocks['vs'].filter.assert_called_once_with(deleted=False)
-
-
-def test_not_deletable_has_reprints(any_series, del_issue_mocks):
-    del_issue_mocks['hr'].return_value = True
-
-    i = Issue(number='1', series=any_series)
-
-    is_deletable = i.deletable()
-    assert is_deletable is False
-    del_issue_mocks['cr'].filter.assert_called_once_with(
-        changeset__state__in=states.ACTIVE)
-    del_issue_mocks['vs'].filter.assert_called_once_with(deleted=False)
-
-
-def test_not_deletable_story_has_reprints(any_series, del_issue_mocks):
-    del_issue_mocks['as'].return_value[0].has_reprints.return_value = True
-
-    i = Issue(number='1', series=any_series)
-
-    is_deletable = i.deletable()
-    assert is_deletable is False
-    del_issue_mocks['cr'].filter.assert_called_once_with(
-        changeset__state__in=states.ACTIVE)
-    del_issue_mocks['vs'].filter.assert_called_once_with(deleted=False)
-    del_issue_mocks['as'].return_value[0].has_reprints.assert_called_once_with(
-        notes=False)
+    has_dependents = i.has_dependents()
+    assert has_dependents is True
 
 
 def test_active_stories(any_series):
@@ -335,7 +328,6 @@ def test_active_stories(any_series):
 
         active_stories = i.active_stories()
         assert active_stories is qs
-        ss_mock.exclude.assert_called_once_with(deleted=True)
 
 
 def test_active_variants(any_series):
@@ -349,51 +341,46 @@ def test_active_variants(any_series):
         vs_mock.exclude.assert_called_once_with(deleted=True)
 
 
-def test_has_covers(any_series):
+@pytest.mark.parametrize('result', [True, False])
+def test_has_variants(any_series, result):
+    with mock.patch('%s.active_variants' % ISSUE_PATH) as vs_mock:
+        vs_mock.return_value.exists.return_value = result
+        i = Issue(number='1', series=any_series)
+
+        assert i.has_variants() is result
+
+
+@pytest.mark.parametrize('can_have, active', [
+    (True, True), (True, False), (False, True), (False, False)])
+def test_has_covers(any_series, can_have, active):
     with mock.patch('%s.can_have_cover' % ISSUE_PATH) as cs_mock, \
             mock.patch('%s.active_covers' % ISSUE_PATH) as ac_mock:
 
-        cs_mock.return_value = True
-        ac_mock.return_value.count.return_value = 1
+        cs_mock.return_value = can_have
+        ac_mock.return_value.exists.return_value = active
         i = Issue(number='1', series=any_series)
 
-        assert i.has_covers()
-
-        ac_mock.return_value.count.return_value = 0
-
-        assert not i.has_covers()
-
-        cs_mock.return_value = False
-
-        assert not i.has_covers()
-
-        ac_mock.return_value.count.return_value = 1
-
-        assert not i.has_covers()
+        has = i.has_covers()
+        assert has is all((can_have, active))
 
 
-def test_can_have_cover(any_series):
+@pytest.mark.parametrize('is_comics, is_indexed, result', [
+    # Always true if comics, sometimes true based on indexed if not comics.
+    (True, INDEXED['skeleton'], True),
+    (True, INDEXED['full'], True),
+    (True, INDEXED['ten_percent'], True),
+    (True, INDEXED['partial'], True),
+    (False, INDEXED['skeleton'], False),
+    (False, INDEXED['full'], True),
+    (False, INDEXED['ten_percent'], True),
+    (False, INDEXED['partial'], False)])
+def test_can_have_cover(any_series, is_comics, is_indexed, result):
     i = Issue(number='1', series=any_series)
-    i.series.is_comics_publication = True
-    i.is_indexed = INDEXED['skeleton']
+    i.series.is_comics_publication = is_comics
+    i.is_indexed = is_indexed
 
-    assert i.can_have_cover()
-
-    i.series.is_comics_publication = False
-
-    assert not i.can_have_cover()
-
-    i.is_indexed = INDEXED['full']
-
-    assert i.can_have_cover()
-
-    i.is_indexed = INDEXED['ten_percent']
-
-    assert i.can_have_cover()
-
-    i.is_indexed = INDEXED['partial']
-
-    assert not i.can_have_cover()
+    can = i.can_have_cover()
+    assert can is result
 
 
 def test_active_covers(any_series):

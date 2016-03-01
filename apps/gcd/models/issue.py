@@ -17,10 +17,6 @@ from .gcddata import GcdData
 from .publisher import IndiciaPublisher, Brand
 from .image import Image
 
-# TODO: should not be importing oi app into gcd app, dependency should be
-# the other way around.  Probably.
-from apps.oi import states
-
 
 INDEXED = {
     'skeleton': 0,
@@ -180,7 +176,7 @@ class Issue(GcdData):
         return self.active_covers(), self.variant_covers()
 
     def has_covers(self):
-        return self.can_have_cover() and self.active_covers().count() > 0
+        return self.can_have_cover() and self.active_covers().exists()
 
     def can_have_cover(self):
         if self.series.is_comics_publication:
@@ -306,29 +302,46 @@ class Issue(GcdData):
     def has_reprints(self):
         from story import STORY_TYPES
         """Simplifies UI checks for conditionals.  notes and reprint fields"""
-        return (self.from_reprints.count() or
+        return (self.from_reprints.exists() or
                 self.to_reprints.exclude(
-                    target__type__id=STORY_TYPES['promo']).count() or
-                self.from_issue_reprints.count() or
-                self.to_issue_reprints.count())
+                    target__type__id=STORY_TYPES['promo']).exists() or
+                self.from_issue_reprints.exists() or
+                self.to_issue_reprints.exists())
 
-    def deletable(self):
-        if self.cover_revisions.filter(changeset__state__in=states.ACTIVE) \
-                               .count() > 0:
-            return False
-        if self.variant_set.filter(deleted=False).count() > 0:
-            return False
-        if self.has_reprints():
-            return False
+    def has_variants(self):
+        return self.active_variants().exists()
+
+    def has_dependents(self):
+        # TODO: has_reprints omits reprints to promos.  How do we handle
+        #       those still being around when we try to delete?
+        #       Is this handled in StoryRevision?
+        has_non_story_deps = (
+            self.has_variants() or
+            self.variant_revisions.active_set().exists() or
+            self.has_reprints() or
+            self.origin_reprint_revisions.active_set().exists() or
+            self.target_reprint_revisions.active_set().exists())
+        if has_non_story_deps:
+            return True
+
         for story in self.active_stories():
-            if story.has_reprints(notes=False):
-                return False
-        return True
+            has_story_deps = (
+                story.has_reprints(notes=False) or
+                story.origin_reprint_revisions.active_set().exists() or
+                story.target_reprint_revisions.active_set().exists())
+            if has_story_deps:
+                return True
+
+        return False
 
     def can_upload_variants(self):
+        # TODO: This could be rethought.  It is here to avoid problematic
+        #       interactions between creation/deletion of variants and
+        #       covers, but sometimes these things can coexist.
         if self.has_covers():
-            return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                         deleted=True).count() == 0
+            currently_deleting = self.revisions.active_set() \
+                                               .filter(deleted=True).exists()
+            return not currently_deleting
         else:
             return False
 

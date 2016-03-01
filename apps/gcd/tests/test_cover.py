@@ -7,9 +7,6 @@ import pytest
 
 from apps.gcd.models import Cover, Issue, Series
 
-# TODO: Should not be importing from oi into gcd.
-from apps.oi import states
-
 
 FILTER_PATH = 'apps.oi.models.RevisionManager.filter'
 
@@ -34,26 +31,6 @@ def count_one():
 def cover():
     return Cover(issue=Issue(series=Series(name='n', year_began=2000,
                                            is_comics_publication=True)))
-
-
-def test_deletable(count_zero, count_one):
-    with mock.patch(FILTER_PATH) as f:
-        # Make filter return 0 only if deletable calls with correct kwargs.
-        f.side_effect = (
-            lambda **kwargs:
-            count_zero if kwargs == {'changeset__state__in': states.ACTIVE}
-            else count_one)
-        assert Cover().deletable()
-
-
-def test_not_deletable(count_zero, count_one):
-    with mock.patch(FILTER_PATH) as f:
-        # Make filter return 1 only if deletable calls with correct kwargs.
-        f.side_effect = (
-            lambda **kwargs:
-            count_one if kwargs == {'changeset__state__in': states.ACTIVE}
-            else count_zero)
-        assert not Cover().deletable()
 
 
 def test_stat_counts_comics(cover):

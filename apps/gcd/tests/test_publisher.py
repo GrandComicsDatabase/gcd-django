@@ -79,6 +79,169 @@ def test_update_cached_counts_subtract(f_mock):
     assert p.issue_count == ISSUE_COUNT - DELTAS['issues']
 
 
+@pytest.yield_fixture
+def pub_dep_mocks():
+    p = '%s.Publisher' % PATH
+    with mock.patch('%s.brand_use_revisions' % p) as bu_mock, \
+            mock.patch('%s.indicia_publisher_revisions' % p) as ip_mock, \
+            mock.patch('%s.series_revisions' % p) as s_mock:
+
+        for m in (bu_mock, ip_mock, s_mock):
+            m.active_set.return_value.exists.return_value = False
+        yield {
+            'bu': bu_mock,
+            'ip': ip_mock,
+            's': s_mock,
+        }
+
+
+def test_pub_has_no_dependents(pub_dep_mocks):
+    pub = Publisher()
+    has = pub.has_dependents()
+    assert has is False
+
+    # Check calls on this test case because it should hit all of them.
+    for m in pub_dep_mocks.values():
+        m.active_set.return_value.exists.assert_called_once_with()
+
+
+@pytest.mark.parametrize('which_exists', ['bu', 'ip', 's'])
+def test_pub_has_dependents_revs_exist(pub_dep_mocks, which_exists):
+    pub_dep_mocks[which_exists].active_set.return_value \
+                               .exists.return_value = True
+    pub = Publisher()
+    has = pub.has_dependents()
+    assert has is True
+
+
+@pytest.mark.parametrize('which_count',
+                         ['series', 'brand', 'indicia_publisher'])
+def test_pub_has_dependents_nonzero_counts(pub_dep_mocks, which_count):
+    pub = Publisher(**{'%s_count' % which_count: 1})
+    has = pub.has_dependents()
+    assert has is True
+
+
+@pytest.yield_fixture
+def ipub_dep_mock():
+    ip = '%s.IndiciaPublisher' % PATH
+    with mock.patch('%s.issue_revisions' % ip) as ip_mock:
+        ip_mock.active_set.return_value.exists.return_value = False
+        yield ip_mock
+
+
+def test_ipub_has_no_dependents(ipub_dep_mock):
+    ipub = IndiciaPublisher()
+    has = ipub.has_dependents()
+    assert has is False
+    ipub_dep_mock.active_set.return_value.exists.assert_called_once_with()
+
+
+def test_ipub_has_dependents_revs_exist(ipub_dep_mock):
+    ipub_dep_mock.active_set.return_value.exists.return_value = True
+    ipub = IndiciaPublisher()
+    has = ipub.has_dependents()
+    assert has is True
+
+
+def test_ipub_has_dependents_issue_count(ipub_dep_mock):
+    ipub = IndiciaPublisher(issue_count=1)
+    has = ipub.has_dependents()
+    assert has is True
+
+
+@pytest.yield_fixture
+def group_dep_mocks():
+    g = '%s.BrandGroup' % PATH
+    with mock.patch('%s.brand_revisions' % g) as br_mock, \
+            mock.patch('%s.active_emblems' % g) as ae_mock:
+
+        br_mock.active_set.return_value.exists.return_value = False
+        ae_mock.return_value.exists.return_value = False
+
+        # Do it this way so that we can look at
+        # return_value.exists.return_value and parametrize the cases.
+        yield {
+            'br': br_mock.active_set,
+            'ae': ae_mock,
+        }
+
+
+def test_group_has_no_dependents(group_dep_mocks):
+    group = BrandGroup()
+    has = group.has_dependents()
+    assert has is False
+
+    for m in group_dep_mocks.values():
+        m.return_value.exists.assert_called_once_with()
+
+
+@pytest.mark.parametrize('which_exists', ['br', 'ae'])
+def test_group_has_dependents_revs_exist(group_dep_mocks, which_exists):
+    group_dep_mocks[which_exists].return_value.exists.return_value = True
+    group = BrandGroup()
+    has = group.has_dependents()
+    assert has is True
+
+
+def test_group_has_dependents_issue_count(group_dep_mocks):
+    group = BrandGroup(issue_count=1)
+    has = group.has_dependents()
+    assert has is True
+
+
+@pytest.yield_fixture
+def brand_dep_mocks():
+    b = '%s.Brand' % PATH
+    with mock.patch('%s.use_revisions' % b) as bu_mock, \
+            mock.patch('%s.issue_revisions' % b) as ish_mock, \
+            mock.patch('%s.in_use' % b) as in_use_mock:
+
+        for m in (bu_mock, ish_mock):
+            m.active_set.return_value.exists.return_value = False
+        in_use_mock.exists.return_value = False
+
+        yield {
+            'bu': bu_mock,
+            'ish': ish_mock,
+            'in_use': in_use_mock,
+        }
+
+
+def test_brand_has_no_dependents(brand_dep_mocks):
+    brand = Brand()
+    has = brand.has_dependents()
+    assert has is False
+
+    # Check calls on this test case because it should hit all of them.
+    brand_dep_mocks['in_use'].exists.assert_called_once_with()
+    for m in ('bu', 'ish'):
+        brand_dep_mocks[m].active_set.return_value \
+                          .exists.assert_called_once_with()
+
+
+@pytest.mark.parametrize('which_exists', ['bu', 'ish'])
+def test_brand_has_dependents_revs_exist(brand_dep_mocks, which_exists):
+    brand_dep_mocks[which_exists].active_set.return_value \
+                                 .exists.return_value = True
+    brand = Brand()
+    has = brand.has_dependents()
+    assert has is True
+
+
+def test_brand_has_dependents_in_use(brand_dep_mocks):
+    brand_dep_mocks['in_use'].exists.return_value = True
+    brand = Brand()
+    has = brand.has_dependents()
+    assert has is True
+
+
+def test_brand_has_dependents_issue_count(brand_dep_mocks):
+    brand = Brand(issue_count=1)
+    has = brand.has_dependents()
+    assert has is True
+
+
 @pytest.mark.parametrize("derived_class",
                          [BrandGroup, Brand, IndiciaPublisher])
 def test_base_update_cached_counts_none(derived_class, f_mock):

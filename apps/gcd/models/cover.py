@@ -8,10 +8,6 @@ from django.core import urlresolvers
 from .gcddata import GcdData
 from .issue import Issue
 
-# TODO: should not be importing oi app into gcd app, dependency should be
-# the other way around.  Probably.
-from apps.oi import states
-
 
 ZOOM_SMALL = 1
 ZOOM_MEDIUM = 2
@@ -83,14 +79,8 @@ class Cover(GcdData):
         }
 
     def delete(self):
-        self.deleted = True
         self.marked = False
-        self.reserved = False
-        self.save()
-
-    def deletable(self):
-        return (self.revisions.filter(changeset__state__in=states.ACTIVE)
-                              .count() == 0)
+        super(Cover, self).delete()
 
     def __unicode__(self):
         return u'%s %s cover' % (self.issue.series, self.issue.display_number)

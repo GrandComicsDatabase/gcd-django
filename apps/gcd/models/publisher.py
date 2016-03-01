@@ -10,8 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from taggit.managers import TaggableManager
 
-from apps.oi import states
-from .gcddata import GcdData
+from .gcddata import GcdData, GcdLink
 from .image import Image
 
 
@@ -90,45 +89,22 @@ class Publisher(BasePublisher):
     def active_brand_emblems(self):
         return Brand.objects.filter(in_use__publisher=self, deleted=False)
 
-    def active_brand_emblems_no_pending(self):
-        """
-        Active brands, not including those with pending deletes.
-        Used in some cases where we don't want someone to add to a brand
-        that is in the process of being deleted.
-        """
-        # TODO: check for pending brand_use deletes
-        return self.active_brand_emblems().exclude(
-            revisions__deleted=True,
-            revisions__changeset__state__in=states.ACTIVE).distinct()
-
     def active_indicia_publishers(self):
         return self.indiciapublisher_set.exclude(deleted=True)
-
-    def active_indicia_publishers_no_pending(self):
-        """
-        Active indicia publishers, not including those with pending deletes.
-        Used in some cases where we don't want someone to add to an ind pub
-        that is in the process of being deleted.
-        """
-        return self.active_indicia_publishers().exclude(
-            revisions__deleted=True,
-            revisions__changeset__state__in=states.ACTIVE)
 
     def active_series(self):
         return self.series_set.exclude(deleted=True)
 
-    def deletable(self):
-        # TODO: check for issue_count instead of series_count. Check for added
-        # issue skeletons. Also delete series and not just brands, ind pubs.
-        active = {'changeset__state__in': states.ACTIVE}
-        return (self.series_count == 0 and
-                self.series_revisions.filter(**active).count() == 0 and
-                self.brand_revisions.filter(**active).count() == 0 and
-                self.indicia_publisher_revisions.filter(**active).count() == 0)
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
+    def has_dependents(self):
+        # TODO: What about brand groups that are only attached to this
+        #       publisher?  Shouldn't they be removed first?
+        #       Also, are the counts reliable enough for this?
+        return bool(self.series_count or
+                    self.brand_count or
+                    self.indicia_publisher_count or
+                    self.brand_use_revisions.active_set().exists() or
+                    self.indicia_publisher_revisions.active_set().exists() or
+                    self.series_revisions.active_set().exists())
 
     def update_cached_counts(self, deltas, negate=False):
         """
@@ -206,10 +182,9 @@ class IndiciaPublisher(BasePublisher):
 
     issue_count = models.IntegerField(default=0)
 
-    def deletable(self):
-        active = self.issue_revisions \
-                     .filter(changeset__state__in=states.ACTIVE)
-        return self.issue_count == 0 and active.count() == 0
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.issue_revisions.active_set().exists())
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -248,11 +223,11 @@ class BrandGroup(BasePublisher):
 
     issue_count = models.IntegerField(default=0)
 
-    def deletable(self):
-        return (self.active_emblems().count() == 0 and
-                self.brand_revisions
-                    .filter(changeset__state__in=states.ACTIVE)
-                    .count() == 0)
+    def has_dependents(self):
+        # TODO: It doesn't look like issue_count is ever set?
+        return bool(self.issue_count or
+                    self.active_emblems().exists() or
+                    self.brand_revisions.active_set().exists())
 
     def active_emblems(self):
         return self.brand_set.exclude(deleted=True)
@@ -267,10 +242,6 @@ class BrandGroup(BasePublisher):
         return urlresolvers.reverse(
             'show_brand_group',
             kwargs={'brand_group_id': self.id})
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
 
     def stat_counts(self):
         """
@@ -315,16 +286,11 @@ class Brand(BasePublisher):
         else:
             return None
 
-    def deletable(self):
-        return (self.issue_count == 0 and
-                self.issue_revisions
-                    .filter(changeset__state__in=states.ACTIVE)
-                    .count() == 0 and
-                self.in_use.filter(reserved=True).count() == 0)
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.in_use.exists() or
+                    self.use_revisions.active_set().exists() or
+                    self.issue_revisions.active_set().exists())
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -359,7 +325,7 @@ class Brand(BasePublisher):
         return self.name
 
 
-class BrandUse(models.Model):
+class BrandUse(GcdLink):
     class Meta:
         db_table = 'gcd_brand_use'
         app_label = 'gcd'
@@ -374,18 +340,6 @@ class BrandUse(models.Model):
 
     notes = models.TextField()
 
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateField(auto_now_add=True)
-    modified = models.DateField(auto_now=True)
-
-    @property
-    def deleted(self):
-        return False
-
-    def deletable(self):
-        return True
-
     def active_issues(self):
         return self.emblem.issue_set.exclude(deleted=True) \
                    .filter(issue__series__publisher=self.publisher)
@@ -394,14 +348,6 @@ class BrandUse(models.Model):
         return urlresolvers.reverse(
             'show_brand',
             kwargs={'brand_id': self.emblem.id})
-
-    # TODO: Resolve the question of BrandUse's base class and then remove this.
-    def stat_counts(self):
-        return {}
-
-    # TODO: Resolve the question of BrandUse's base class and then remove this.
-    def update_cached_counts(self, deltas, negate=False):
-        pass
 
     def __unicode__(self):
         return u'emblem %s was used from %s to %s by %s.' % (

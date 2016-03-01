@@ -20,10 +20,6 @@ from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
 
-# TODO: should not be importing oi app into gcd app, dependency should be
-# the other way around.  Probably.
-from apps.oi import states
-
 
 class SeriesPublicationType(models.Model):
     class Meta:
@@ -93,9 +89,6 @@ class Series(GcdData):
     # Fields related to cover image galleries.
     has_gallery = models.BooleanField(default=False, db_index=True)
 
-    # "open_reserve" is a legacy field used only by migration scripts.
-    open_reserve = models.IntegerField(null=True)
-
     # Country and Language info.
     country = models.ForeignKey(Country)
     language = models.ForeignKey(Language)
@@ -127,14 +120,10 @@ class Series(GcdData):
                       for b in self.from_series_bond.filter(**filter_args)])
         return bonds
 
-    def deletable(self):
-        active = self.issue_revisions \
-                     .filter(changeset__state__in=states.ACTIVE)
-        return self.issue_count == 0 and active.count() == 0
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
+    def has_dependents(self):
+        # use active_issues() rather than issue_count to include variants.
+        return (self.active_issues().exists() or
+                self.issue_revisions.active_set().exists())
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)

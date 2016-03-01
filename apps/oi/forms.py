@@ -845,9 +845,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def __init__(self, *args, **kwargs):
             super(RuntimeIssueRevisionForm, self).__init__(*args, **kwargs)
             self.fields['brand'].queryset = \
-              series.publisher.active_brand_emblems_no_pending()
+                Revision.objects.exclude_pending_deletions(
+                    series.publisher.active_brand_emblems())
             self.fields['indicia_publisher'].queryset = \
-              series.publisher.active_indicia_publishers_no_pending()
+                Revision.objects.exclude_pending_deletions(
+                    series.publisher.active_indicia_publishers())
 
             issue_year = None
             if revision and revision.key_date:
@@ -1175,9 +1177,11 @@ def get_bulk_issue_revision_form(series, method, user=None):
         def __init__(self, *args, **kwargs):
             super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
             self.fields['brand'].queryset = \
-              series.publisher.active_brand_emblems_no_pending()
+                Revision.objects.exclude_pending_deletions(
+                    series.publisher.active_brand_emblems())
             self.fields['indicia_publisher'].queryset = \
-              series.publisher.active_indicia_publishers_no_pending()
+                Revision.objects.exclude_pending_deletions(
+                    series.publisher.active_indicia_publishers())
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
 

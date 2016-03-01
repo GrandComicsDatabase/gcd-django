@@ -15,7 +15,6 @@ from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
 
 from .gcddata import GcdData
-from apps.oi import states
 
 
 class ImageType(models.Model):
@@ -65,10 +64,6 @@ class Image(GcdData):
                           options={'quality': 90})
 
     marked = models.BooleanField(default=False)
-
-    def deletable(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE)\
-                             .count() == 0
 
     def description(self):
         return u'%s for %s' % (self.type.description, unicode(self.object))

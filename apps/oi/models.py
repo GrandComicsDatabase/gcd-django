@@ -148,14 +148,60 @@ class RevisionManager(models.Manager):
     """
     Custom manager base class for revisions.
     """
+    # We want to use these methods on reverse relation sets.
+    use_for_related_fields = True
+
+    def get_queryset(self):
+        return RevisionQuerySet(self.model, using=self._db)
+
     def active(self):
         """
-        For use on the revisions relation from display objects
-        where reserved == True.
+        Get the active revision, assuming that there is one.
+
         Throws the DoesNotExist or MultipleObjectsReturned exceptions on
         the appropriate Revision subclass, as it calls get() underneath.
         """
         return self.get(changeset__state__in=states.ACTIVE)
+
+    def active_set(self):
+        """
+        Filter to only revisions on an active changeset.
+
+        For use when the set being filtered can result in multiple
+        active revisions, which raises an exception from active().
+        """
+        return self.filter(changeset__state__in=states.ACTIVE)
+
+    def pending_deletions(self):
+        """
+        Filter to active revisions that are deleting their object.
+        """
+        return self.active_set().filter(deleted=True)
+
+    def filter_pending_deletions(self, data_queryset):
+        """
+        Filter pending deletions out of a queryset of GcdBase-derived objects.
+
+        Since this does not operate on Revision querysets, it should not be
+        copied to the RevisionQuerySet class.
+        """
+        return data_queryset.exclude(
+            revisions__deleted=True,
+            revisions__changeset__state__in=states.ACTIVE).distinct()
+
+
+class RevisionQuerySet(models.QuerySet):
+    """
+    Propagates the RevisionManager methods to further querysets.
+    """
+    def active(self):
+        return self.get(changeset__state__in=states.ACTIVE)
+
+    def active_set(self):
+        return self.filter(changeset__state__in=states.ACTIVE)
+
+    def pending_deletions(self):
+        return self.active_set().filter(deleted=True)
 
 
 class Revision(models.Model):

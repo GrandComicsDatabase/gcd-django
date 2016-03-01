@@ -11,11 +11,9 @@ from django.db.models import QuerySet, Count
 from apps.gcd.models import Series, Issue, Story
 from apps.gcd.models.issue import INDEXED
 
-# TODO: We really shouldn't be depending on the OI here.
-from apps.oi import states
-
 
 SERIES_PATH = 'apps.gcd.models.series.Series'
+REVMGR_PATH = 'apps.oi.models.RevisionManager'
 
 # Exact count/delta numbers not significant.
 # For use with update_cached_counts testing.
@@ -116,33 +114,16 @@ def test_delete():
         s.save.assert_called_once_with()
 
 
-def test_deletable():
-    with mock.patch('%s.issue_revisions' % SERIES_PATH) as ir_mock:
+@pytest.mark.parametrize('issues, issue_revisions', [
+    (True, True), (True, False), (False, True), (False, False)])
+def test_has_dependents(issues, issue_revisions):
+    with mock.patch('%s.active_issues' % SERIES_PATH) as is_mock, \
+            mock.patch('%s.active_set' % REVMGR_PATH) as rev_mock:
+        rev_mock.return_value.exists.return_value = issue_revisions
         s = Series()
-        s.issue_count = 0
-        ir_mock.filter.return_value.count.return_value = 0
+        is_mock.return_value.exists.return_value = issues
 
-        assert s.deletable() is True
-        ir_mock.filter.assert_called_once_with(
-            changeset__state__in=states.ACTIVE)
-
-
-def test_not_deletable_issue_count():
-    with mock.patch('%s.issue_revisions' % SERIES_PATH) as ir_mock:
-        s = Series()
-        s.issue_count = 1
-        ir_mock.filter.return_value.count.return_value = 0
-
-        assert s.deletable() is False
-
-
-def test_not_deletable_active_count():
-    with mock.patch('%s.issue_revisions' % SERIES_PATH) as ir_mock:
-        s = Series()
-        s.issue_count = 0
-        ir_mock.filter.return_value.count.return_value = 1
-
-        assert s.deletable() is False
+        assert s.has_dependents() is any((issue_revisions, issues))
 
 
 @pytest.yield_fixture
