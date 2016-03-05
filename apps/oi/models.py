@@ -1691,6 +1691,10 @@ class IssueRevision(Revision):
         # series that has a non-null 'after' field.  This means that for now
         # we can only support one contiguous run of added/moved issues per
         # series.
+        #
+        # TODO: This may need further tweaking for various cases of working
+        #       with variants, moving covers, etc. but is sufficient for
+        #       general single and bulk issue operations.
         after = self._same_series_open_with_after()
         if after.count() > 1:
             raise ValueError(
