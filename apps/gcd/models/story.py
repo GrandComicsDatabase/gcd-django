@@ -92,6 +92,23 @@ class Story(GcdData):
     # Fields from issue.
     issue = models.ForeignKey('Issue')
 
+    # Reprint properties simulating old reverse relations:
+    @property
+    def to_reprints(self):
+        return self.to_all_reprints.exclude(target=None)
+
+    @property
+    def from_reprints(self):
+        return self.from_all_reprints.exclude(origin=None)
+
+    @property
+    def to_issue_reprints(self):
+        return self.to_all_reprints.filter(target=None)
+
+    @property
+    def from_issue_reprints(self):
+        return self.from_all_reprints.filter(origin=None)
+
     def stat_counts(self):
         if self.deleted:
             return {}
@@ -127,10 +144,8 @@ class Story(GcdData):
 
     def has_reprints(self, notes=True):
         return ((notes and self.reprint_notes) or
-                self.from_reprints.count() or
-                self.to_reprints.count() or
-                self.from_issue_reprints.count() or
-                self.to_issue_reprints.count())
+                self.from_all_reprints.exists() or
+                self.to_all_reprints.exists())
 
     @property
     def reprint_needs_inspection(self):

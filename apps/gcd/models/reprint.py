@@ -13,19 +13,13 @@ class Reprint(GcdLink):
     class Meta:
         app_label = 'gcd'
 
-    origin = models.ForeignKey(Story, related_name='to_reprints', null=True)
-    target = models.ForeignKey(Story, related_name='from_reprints', null=True)
+    origin = models.ForeignKey(Story,
+                               related_name='to_all_reprints', null=True)
+    target = models.ForeignKey(Story,
+                               related_name='from_all_reprints', null=True)
 
-    # NOTE: These should be NOT NULL but that needs to be added after the first
-    #       data migration.
-    # "temp_" prefix on reverse relations is there only until the other three
-    # reprint tables are deleted.  otherwise, these new fields clash with them.
-    origin_issue = models.ForeignKey(Issue,
-                                     related_name='temp_to_issue_reprints',
-                                     null=True)
-    target_issue = models.ForeignKey(Issue,
-                                     related_name='temp_from_issue_reprints',
-                                     null=True)
+    origin_issue = models.ForeignKey(Issue, related_name='to_all_reprints')
+    target_issue = models.ForeignKey(Issue, related_name='from_all_reprints')
 
     notes = models.TextField(max_length=255)
 

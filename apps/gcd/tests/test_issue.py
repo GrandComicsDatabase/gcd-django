@@ -156,63 +156,72 @@ def test_cant_upload_variants_active_revisions(any_series):
 
 
 @pytest.yield_fixture
-def re_issue_mocks():
-    """ Dictionary of mocks for use with testing for reprints. """
-    with mock.patch('%s.from_reprints' % ISSUE_PATH) as fr_mock, \
-            mock.patch('%s.to_reprints' % ISSUE_PATH) as tr_mock, \
-            mock.patch('%s.from_issue_reprints' % ISSUE_PATH) as fir_mock, \
-            mock.patch('%s.to_issue_reprints' % ISSUE_PATH) as tir_mock:
+def re_issue_mocks(any_series):
+    with mock.patch('%s.from_all_reprints' % ISSUE_PATH) as from_mock, \
+            mock.patch('%s.to_all_reprints' % ISSUE_PATH) as to_mock:
 
-        mocks = {
-            'fr': fr_mock,
-            'tr': tr_mock,
-            'fir': fir_mock,
-            'tir': tir_mock,
-        }
-        mocks['fr'].exists.return_value = False
-        mocks['tr'].exclude.return_value.exists.return_value = False
-        mocks['fir'].exists.return_value = False
-        mocks['tir'].exists.return_value = False
+        from_mock.exists.return_value = False
+        to_mock.exclude.return_value.exists.return_value = False
 
-        yield mocks
+        yield from_mock, to_mock, Issue(number='1', series=any_series)
 
 
-def test_no_reprints(any_series, re_issue_mocks):
-    i = Issue(number='1', series=any_series)
+def test_from_reprints(re_issue_mocks):
+    from_mock, to_mock, i = re_issue_mocks
+    r = i.from_reprints
+    assert r == from_mock.exclude.return_value
+    from_mock.exclude.assert_called_once_with(origin=None)
+
+
+def test_to_reprints(re_issue_mocks):
+    from_mock, to_mock, i = re_issue_mocks
+    r = i.to_reprints
+    assert r == to_mock.exclude.return_value
+    to_mock.exclude.assert_called_once_with(target=None)
+
+
+def test_from_issue_reprints(re_issue_mocks):
+    from_mock, to_mock, i = re_issue_mocks
+    r = i.from_issue_reprints
+    assert r == from_mock.filter.return_value
+    from_mock.filter.assert_called_once_with(origin=None)
+
+
+def test_to_issue_reprints(re_issue_mocks):
+    from_mock, to_mock, i = re_issue_mocks
+    r = i.to_issue_reprints
+    assert r == to_mock.filter.return_value
+    to_mock.filter.assert_called_once_with(target=None)
+
+
+def test_no_reprints(re_issue_mocks):
+    from_mock, to_mock, i = re_issue_mocks
+
     has_reprints = i.has_reprints()
+
     assert has_reprints is False
-    re_issue_mocks['tr'].exclude.assert_called_once_with(
+    to_mock.exclude.assert_called_once_with(
         target__type__id=STORY_TYPES['promo'])
 
 
-def test_has_from_reprints(any_series, re_issue_mocks):
-    i = Issue(number='1', series=any_series)
-    re_issue_mocks['fr'].exists.return_value = True
+def test_has_from_reprints(re_issue_mocks):
+    from_mock, to_mock, i = re_issue_mocks
+
+    from_mock.exists.return_value = True
     has_reprints = i.has_reprints()
+
     assert has_reprints is True
 
 
-def test_has_to_reprints(any_series, re_issue_mocks):
-    i = Issue(number='1', series=any_series)
-    re_issue_mocks['tr'].exclude.return_value.exists.return_value = True
+def test_has_to_reprints(re_issue_mocks):
+    from_mock, to_mock, i = re_issue_mocks
+
+    to_mock.exclude.return_value.exists.return_value = True
     has_reprints = i.has_reprints()
+
     assert has_reprints is True
-    re_issue_mocks['tr'].exclude.assert_called_once_with(
+    to_mock.exclude.assert_called_once_with(
         target__type__id=STORY_TYPES['promo'])
-
-
-def test_has_from_issue_reprints(any_series, re_issue_mocks):
-    i = Issue(number='1', series=any_series)
-    re_issue_mocks['fir'].exists.return_value = True
-    has_reprints = i.has_reprints()
-    assert has_reprints is True
-
-
-def test_has_to_issue_reprints(any_series, re_issue_mocks):
-    i = Issue(number='1', series=any_series)
-    re_issue_mocks['tir'].exists.return_value = True
-    has_reprints = i.has_reprints()
-    assert has_reprints is True
 
 
 def test_delete():

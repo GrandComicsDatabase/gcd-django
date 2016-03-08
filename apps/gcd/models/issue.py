@@ -16,6 +16,7 @@ from taggit.managers import TaggableManager
 from .gcddata import GcdData
 from .publisher import IndiciaPublisher, Brand
 from .image import Image
+from .story import StoryType, STORY_TYPES
 
 
 INDEXED = {
@@ -119,6 +120,23 @@ class Issue(GcdData):
             return img.get()
         else:
             return None
+
+    # Reprint properties simulating old reverse relations:
+    @property
+    def to_reprints(self):
+        return self.to_all_reprints.exclude(target=None)
+
+    @property
+    def from_reprints(self):
+        return self.from_all_reprints.exclude(origin=None)
+
+    @property
+    def to_issue_reprints(self):
+        return self.to_all_reprints.filter(target=None)
+
+    @property
+    def from_issue_reprints(self):
+        return self.from_all_reprints.filter(origin=None)
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
@@ -243,7 +261,6 @@ class Issue(GcdData):
 
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
-        from story import StoryType
         if not self.variant_of:
             is_indexed = INDEXED['skeleton']
             if self.page_count > 0:
@@ -300,13 +317,11 @@ class Issue(GcdData):
         return [prev_issue, next_issue]
 
     def has_reprints(self):
-        from story import STORY_TYPES
         """Simplifies UI checks for conditionals.  notes and reprint fields"""
-        return (self.from_reprints.exists() or
-                self.to_reprints.exclude(
-                    target__type__id=STORY_TYPES['promo']).exists() or
-                self.from_issue_reprints.exists() or
-                self.to_issue_reprints.exists())
+        return (
+            self.to_all_reprints.exclude(
+                target__type__id=STORY_TYPES['promo']).exists() or
+            self.from_all_reprints.exists())
 
     def has_variants(self):
         return self.active_variants().exists()

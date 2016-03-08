@@ -68,9 +68,6 @@ DISPLAY_CLASSES = {
     'story': Story,
     'cover': Cover,
     'reprint': Reprint,
-    'reprint_to_issue': ReprintToIssue,
-    'reprint_from_issue': ReprintFromIssue,
-    'issue_reprint': IssueReprint,
     'image': Image,
 }
 
