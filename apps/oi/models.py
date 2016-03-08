@@ -2019,104 +2019,24 @@ class StoryRevision(Revision):
                              country=self.issue.series.country)
 
 
-class ReprintRevisionManager(RevisionManager):
-
-    def _do_create_revision(self, reprint, changeset):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        if isinstance(reprint, Reprint):
-            previous_revision = ReprintRevision.objects.get(
-                reprint=reprint, next_revision=None,
-                changeset__state=states.APPROVED)
-            revision = ReprintRevision(
-                # revision-specific fields:
-                reprint=reprint,
-                in_type=REPRINT_TYPES['story_to_story'],
-                # copied fields:
-                origin_story=reprint.origin,
-                target_story=reprint.target,
-            )
-        if isinstance(reprint, ReprintFromIssue):
-            previous_revision = ReprintRevision.objects.get(
-                reprint_from_issue=reprint, next_revision=None,
-                changeset__state=states.APPROVED)
-            revision = ReprintRevision(
-                # revision-specific fields:
-                reprint_from_issue=reprint,
-                in_type=REPRINT_TYPES['issue_to_story'],
-                # copied fields:
-                target_story=reprint.target,
-                origin_issue=reprint.origin_issue,
-            )
-        if isinstance(reprint, ReprintToIssue):
-            previous_revision = ReprintRevision.objects.get(
-                reprint_to_issue=reprint, next_revision=None,
-                changeset__state=states.APPROVED)
-            revision = ReprintRevision(
-                # revision-specific fields:
-                reprint_to_issue=reprint,
-                in_type=REPRINT_TYPES['story_to_issue'],
-                # copied fields:
-                origin_story=reprint.origin,
-                target_issue=reprint.target_issue,
-            )
-        if isinstance(reprint, IssueReprint):
-            previous_revision = ReprintRevision.objects.get(
-                issue_reprint=reprint, next_revision=None,
-                changeset__state=states.APPROVED)
-            revision = ReprintRevision(
-                # revision-specific fields:
-                issue_reprint=reprint,
-                in_type=REPRINT_TYPES['issue_to_issue'],
-                # copied fields:
-                origin_issue=reprint.origin_issue,
-                target_issue=reprint.target_issue,
-            )
-        revision.previous_revision = previous_revision
-        revision.changeset = changeset
-        revision.notes = reprint.notes
-        revision.save()
-        return revision
-
-
-def get_reprint_field_list():
-    return ['notes']
-
-
 class ReprintRevision(Revision):
-    """
-    One Revision Class for all four types of reprints.
-
-    Otherwise we would have to generate reprint revisions while editing one
-    link, e.g. changing an issue_to_story reprint to a story_to_story one, or
-    changing reprint direction from issue_to_story to story_to_issue.
-    """
     class Meta:
         db_table = 'oi_reprint_revision'
         ordering = ['-created', '-id']
         get_latest_by = "created"
 
-    objects = ReprintRevisionManager()
-
     reprint = models.ForeignKey(Reprint, null=True,
                                 related_name='revisions')
-    reprint_from_issue = models.ForeignKey(ReprintFromIssue, null=True,
-                                           related_name='revisions')
-    reprint_to_issue = models.ForeignKey(ReprintToIssue, null=True,
-                                         related_name='revisions')
-    issue_reprint = models.ForeignKey(IssueReprint, null=True,
-                                      related_name='revisions')
 
-    origin_story = models.ForeignKey(Story, null=True,
-                                     related_name='origin_reprint_revisions')
+    origin = models.ForeignKey(Story, null=True,
+                               related_name='origin_reprint_revisions')
     origin_revision = models.ForeignKey(
         StoryRevision, null=True, related_name='origin_reprint_revisions')
     origin_issue = models.ForeignKey(
         Issue, null=True, related_name='origin_reprint_revisions')
 
-    target_story = models.ForeignKey(Story, null=True,
-                                     related_name='target_reprint_revisions')
+    target = models.ForeignKey(Story, null=True,
+                               related_name='target_reprint_revisions')
     target_revision = models.ForeignKey(
         StoryRevision, null=True, related_name='target_reprint_revisions')
     target_issue = models.ForeignKey(Issue, null=True,
@@ -2124,148 +2044,81 @@ class ReprintRevision(Revision):
 
     notes = models.TextField(max_length=255, default='')
 
-    in_type = models.IntegerField(db_index=True, null=True)
-    out_type = models.IntegerField(db_index=True, null=True)
+    source_name = 'reprint'
+    source_class = Reprint
 
     @property
     def source(self):
-        if self.deleted and self.changeset.state == states.APPROVED:
-            return None
-        if self.out_type is not None:
-            reprint_type = self.out_type
-        elif self.in_type is not None:
-            reprint_type = self.in_type
-        else:
-            return None
-        # reprint link objects can be deleted, so the source may be gone
-        # could access source for change history, so catch it
-        if reprint_type == REPRINT_TYPES['story_to_story'] and \
-           self.reprint:
-            return self.reprint
-        if reprint_type == REPRINT_TYPES['issue_to_story'] and \
-           self.reprint_from_issue:
-            return self.reprint_from_issue
-        if reprint_type == REPRINT_TYPES['story_to_issue'] and \
-           self.reprint_to_issue:
-            return self.reprint_to_issue
-        if reprint_type == REPRINT_TYPES['issue_to_issue'] and \
-           self.issue_reprint:
-            return self.issue_reprint
-        # TODO is None the right return ? Maybe placeholder object ?
-        return None
+        return self.reprint
 
     @source.setter
     def source(self, value):
-        # Hoping to ignore this until reprint data objects consolidated.
-        raise NotImplementedError
+        self.reprint = value
 
-    @property
-    def source_class(self, value):
-        # Hoping to ignore this until reprint data objects consolidated.
-        raise NotImplementedError
+    def save(self, *args, **kwargs):
+        # Ensure that we can't create a nonsense link.
+        if self.origin:
+            if self.origin_issue and self.origin_issue != self.origin.issue:
+                raise ValueError(
+                    "Reprint origin story and issue do not match.  Story "
+                    "issue: '%s'; Issue: '%s'" % (self.origin.issue,
+                                                  self.origin_issue))
+            if not self.origin_issue:
+                self.origin_issue = self.origin.issue
 
-    @property
-    def source_name(self):
-        return 'reprint'
+        if self.target:
+            if self.target_issue and self.target_issue != self.target.issue:
+                raise ValueError(
+                    "Reprint target story and issue do not match.  Story "
+                    "issue: '%s'; Issue: '%s'" % (self.target.issue,
+                                                  self.target_issue))
+            if not self.target_issue:
+                self.target_issue = self.target.issue
 
-    def commit_to_display(self, clear_reservation=True):
-        if self.deleted:
-            deleted_link = self.source
-            field_name = REPRINT_FIELD[self.in_type] + '_id'
-            for revision in deleted_link.revisions.all():
-                setattr(revision, field_name, None)
-                revision.save()
-            deleted_link.delete()
-            return
-        # first figure out which reprint out_type it is, it depends
-        # on which fields are set
-        if self.origin_story or self.origin_revision:
-            if self.origin_revision:
-                self.origin_story = self.origin_revision.story
-                self.origin_revision = None
-            origin = self.origin_story
-            if self.target_story or self.target_revision:
-                if self.target_revision:
-                    self.target_story = self.target_revision.story
-                    self.target_revision = None
-                out_type = REPRINT_TYPES['story_to_story']
-                target = self.target_story
-            else:
-                out_type = REPRINT_TYPES['story_to_issue']
-                # TODO: The following line was present but flake8 notes
-                #       that the local variable "target_issue" is unused.
-                # target_issue = self.target_issue
-        else:  # issue is source
-            if self.target_story or self.target_revision:
-                if self.target_revision:
-                    self.target_story = self.target_revision.story
-                    self.target_revision = None
-                out_type = REPRINT_TYPES['issue_to_story']
-                target = self.target_story
-            else:
-                out_type = REPRINT_TYPES['issue_to_issue']
+        if self.origin_revision:
+            if self.origin and self.origin_revision.story != self.origin:
+                raise ValueError(
+                    "Reprint origin story revision and origin story do not "
+                    "agree.  Story from revision: '%s'; Story: '%s'" %
+                    (self.origin_revision.story, self.origin))
 
-        if self.in_type is not None and self.in_type != out_type:
-            deleted_link = self.source
-            field_name = REPRINT_FIELD[self.in_type] + '_id'
-            for revision in deleted_link.revisions.all():
-                setattr(revision, field_name, None)
-                revision.save()
-            setattr(self, field_name, None)
-            deleted_link.delete()
-        self.out_type = out_type
+            if (self.origin_issue and
+                    self.origin_revision.issue != self.origin_issue):
+                raise ValueError(
+                    "Reprint origin story revision issue and origin issue "
+                    "do not agree.  Issue from revision: '%s'; Issue: '%s'" %
+                    (self.origin_revision.issue, self.origin_issue))
+                self.target_issue = self.target.issue
 
-        # actual save of the data
-        if out_type == REPRINT_TYPES['story_to_story']:
-            if self.in_type != out_type:
-                self.reprint = Reprint.objects.create(origin=origin,
-                                                      target=target,
-                                                      notes=self.notes)
-            else:
-                self.reprint.origin = origin
-                self.reprint.target = target
-                self.reprint.notes = self.notes
-                self.reprint.save()
-        elif out_type == REPRINT_TYPES['issue_to_story']:
-            if self.in_type != out_type:
-                self.reprint_from_issue = ReprintFromIssue.objects.create(
-                    origin_issue=self.origin_issue,
-                    target=target,
-                    notes=self.notes)
-            else:
-                self.reprint_from_issue.origin_issue = self.origin_issue
-                self.reprint_from_issue.target = target
-                self.reprint_from_issue.notes = self.notes
-                self.reprint_from_issue.save()
-        elif out_type == REPRINT_TYPES['story_to_issue']:
-            if self.in_type != out_type:
-                self.reprint_to_issue = ReprintToIssue.objects.create(
-                    origin=origin,
-                    target_issue=self.target_issue,
-                    notes=self.notes)
-            else:
-                self.reprint_to_issue.origin = origin
-                self.reprint_to_issue.target_issue = self.target_issue
-                self.reprint_to_issue.notes = self.notes
-                self.reprint_to_issue.save()
-        elif out_type == REPRINT_TYPES['issue_to_issue']:
-            if self.in_type != out_type:
-                self.issue_reprint = IssueReprint.objects.create(
-                    origin_issue=self.origin_issue,
-                    target_issue=self.target_issue,
-                    notes=self.notes)
-            else:
-                self.issue_reprint.origin_issue = self.origin_issue
-                self.issue_reprint.target_issue = self.target_issue
-                self.issue_reprint.notes = self.notes
-                self.issue_reprint.save()
+        if self.target_revision:
+            if self.target and self.target_revision.story != self.target:
+                raise ValueError(
+                    "Reprint target story revision and target story do not "
+                    "agree.  Story from revision: '%s'; Story: '%s'" %
+                    (self.target_revision.story, self.target))
 
-        if clear_reservation and self.source:
-            reprint = self.source
-            reprint.reserved = False
-            reprint.save()
+            if (self.target_issue and
+                    self.target_revision.issue != self.target_issue):
+                raise ValueError(
+                    "Reprint target story revision issue and target issue "
+                    "do not agree.  Issue from revision: '%s'; Issue: '%s'" %
+                    (self.target_revision.issue, self.target_issue))
 
-        self.save()
+        super(ReprintRevision, self).save(*args, **kwargs)
+
+    def _pre_stats_measurement(self, changes):
+        # If we have StoryRevisions instead of Stories, commit them
+        # first and set our Story fields so that our own commit can
+        # be handled generically after this point.
+        if self.origin_revision:
+            self.origin_revision.commit_to_display()
+            self.origin = self.origin_revision.source
+            self.origin_issue = self.origin.issue
+
+        if self.target_revision:
+            self.target_revision.commit_to_display()
+            self.target = self.target_revision.source
+            self.target_issue = self.target.issue
 
 
 class Download(models.Model):
