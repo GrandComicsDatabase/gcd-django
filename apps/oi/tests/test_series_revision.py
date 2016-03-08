@@ -285,7 +285,7 @@ def test_adjust_stats_no_changes(series_and_revision):
     assert not s.save.called
 
 
-def test_pre_stats_measurement_deleted_singleton():
+def test_handle_prerequisites_deleted_singleton():
     ir_mock = mock.MagicMock()
     with mock.patch('%s.clone' % IREV,
                     return_value=ir_mock,
@@ -302,7 +302,7 @@ def test_pre_stats_measurement_deleted_singleton():
         s.series.issue_set.__getitem__.side_effect = (
             lambda x: i if x == 0 else None)
 
-        s._pre_stats_measurement({})
+        s._handle_prerequisites({})
 
         IssueRevision.clone.assert_called_once_with(
             instance=i, changeset=s.changeset)
@@ -313,8 +313,8 @@ def test_pre_stats_measurement_deleted_singleton():
 
 @pytest.mark.parametrize('is_singleton, deleted',
                          [(False, True), (True, False), (False, False)])
-def test_pre_stats_measurement_deleted_no_issue_revision(is_singleton,
-                                                         deleted):
+def test_handle_prerequisites_deleted_no_issue_revision(is_singleton,
+                                                        deleted):
     with mock.patch('apps.oi.models.IssueRevision.clone') \
             as cr_mock:
         SeriesRevision(series=Series(), previous_revision=SeriesRevision(),
@@ -381,7 +381,7 @@ def test_pre_save_object_neither(pre_save_mocks):
 
 @pytest.mark.parametrize('year_began, key_date',
                          [(1990, '1990-00-00'), (0, '')])
-def test_post_adjust_stats_to_singleton(year_began, key_date):
+def test_handle_dependents_to_singleton(year_began, key_date):
     with mock.patch('%s.save' % IREV) as save_mock, \
             mock.patch('%s.commit_to_display' % IREV) as commit_mock:
         # Make the IssueRevision that would be returned by the patched
@@ -403,7 +403,7 @@ def test_post_adjust_stats_to_singleton(year_began, key_date):
             sr = SeriesRevision(changeset=c, series=s, is_singleton=True,
                                 year_began=year_began)
 
-            sr._post_adjust_stats({'to is_singleton': True})
+            sr._handle_dependents({'to is_singleton': True})
 
             ir_class_mock.assert_called_once_with(**ir_params)
             assert ir.key_date == key_date
@@ -411,8 +411,8 @@ def test_post_adjust_stats_to_singleton(year_began, key_date):
             commit_mock.assert_called_once_with()
 
 
-def test_post_adjust_stats_no_singleton():
+def test_handle_dependents_no_singleton():
         with mock.patch(IREV) as ir_class_mock:
             sr = SeriesRevision()
-            sr._post_adjust_stats({'to is_singleton': False})
+            sr._handle_dependents({'to is_singleton': False})
             assert ir_class_mock.called is False

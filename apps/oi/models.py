@@ -777,17 +777,37 @@ class Revision(models.Model):
                 new_value.save()
 
     def _pre_commit_check(self):
-        """ Runs sanity checks before anything else in commit_to_display. """
+        """
+        Runs sanity checks before anything else in commit_to_display.
+
+        This method must not attempt to change anything, and should raise
+        an exception if the check fails.  For conditions that can be
+        fixed, use _handle_prerequisites.
+        """
         pass
 
-    def _pre_stats_measurement(self, changes):
+    def _handle_prerequisites(self, changes):
         """
-        Runs before the old stat counts are collected.
+        Creates/commits related revisions before committing this revision.
 
-        Typically this is used when a dependent revision must be created
-        or otherwise handled outside of the stats measurements to avoid
-        double-counting.  For instance creating and committing a revision
-        to delete a dependent object.
+        This is where a revision subclass should look for other revisions
+        that must be committed before the commit of this revision can
+        proceed.  It should create and/or commit those prerequisite
+        revisions as needed, updating this revision with the results
+        if appropriate.
+
+        This method should take into account the possibility that multiple
+        revisions in a given changeset may have the same prerequisites, and
+        either only perform actions that can be safely repeated or verify
+        that prior revisions have not already handled things.
+
+        This runs before the old stat counts are collected so that any
+        changes from the prerequisites are accounted for in the stats,
+        any any count updates are not double-counted.
+
+        Note that prerequisite revisions may attempt to handle this
+        revision as a dependent revision, so care must be taken to
+        avoid loops.
         """
         pass
 
@@ -831,14 +851,24 @@ class Revision(models.Model):
         """
         pass
 
-    def _post_adjust_stats(self, changes):
+    def _handle_dependents(self, changes):
         """
-        Runs at the very end of commit_to_display().
+        Creates/commits related revisions after committing this revision.
 
-        Typically this is used when a dependent revision must be created
-        or otherwise handled outside of the stats measurements to avoid
-        double-counting.  For instance, creating and committing a revision
-        to add or update a dependent object.
+        This is where a revision subclass should ensure that any revisions
+        that depend on this revision get handled created and/or committed
+        appropriately.
+
+        This runs at the very end of commit_to_display(), after the new
+        stats have been collected and handled.  Otherwise any counts
+        adjusted in the revisions handled here would be double-counted
+        by this revision's stats code as well.
+
+        Note that dependent revisions may attempt to handle this revision
+        as a prerequisite, so care must be taken to avoid loops.
+        To help with this, self.committed will be set to True and this
+        revision will be saved to the database by the time this method
+        is called.
         """
         pass
 
@@ -870,7 +900,7 @@ class Revision(models.Model):
         self._pre_commit_check()
         changes = self._get_major_changes()
 
-        self._pre_stats_measurement(changes)
+        self._handle_prerequisites(changes)
         old_stats = {} if self.added else self.source.stat_counts()
 
         if self.deleted:
@@ -900,7 +930,9 @@ class Revision(models.Model):
             # only works with self.source, no matter whether it is
             # an add, edit, or delete.
             self.source = self.source
-            self.save()
+
+        self.committed = True
+        self.save()
 
         # Keywords must be handled post-save for added objects, and
         # are safe to handle here for other types of revisions.
@@ -917,7 +949,7 @@ class Revision(models.Model):
 
         new_stats = self.source.stat_counts()
         self._adjust_stats(changes, old_stats, new_stats)
-        self._post_adjust_stats(changes)
+        self._handle_dependents(changes)
 
     def __unicode__(self):
         """
@@ -986,6 +1018,10 @@ class LinkRevision(Revision):
             # will be truly deleted, not just marked inactive.
             revision.series_bond_id = None
             revision.save()
+
+        # The loop above does not affect us as an in-memory instance,
+        # so update the id, but no need to save.
+        self.series_bond_id = None
 
 
 class PublisherRevisionBase(Revision):
@@ -1114,7 +1150,7 @@ class BrandGroupRevision(PublisherRevisionBase):
         """
         self.parent = parent
 
-    def _post_adjust_stats(self, changes):
+    def _handle_dependents(self, changes):
         if self.added:
             brand_revision = BrandRevision(
                 changeset=self.changeset,
@@ -1160,7 +1196,7 @@ class BrandRevision(PublisherRevisionBase):
             return 0
         return self.brand.issue_count
 
-    def _post_adjust_stats(self, changes):
+    def _handle_dependents(self, changes):
         if self.added:
             if self.brand.group.count() != 1:
                 raise NotImplementedError
@@ -1463,7 +1499,7 @@ class SeriesRevision(Revision):
         """
         self.publisher = publisher
 
-    def _pre_stats_measurement(self, changes):
+    def _handle_prerequisites(self, changes):
         # Handle deletion of the singleton issue before getting the
         # series stat counts to avoid double-counting the deletion.
         if self.deleted and self.series.is_singleton:
@@ -1488,7 +1524,7 @@ class SeriesRevision(Revision):
             # TODO: But don't we count covers for some non-comics?
             self.series.has_gallery = bool(self.series.scan_count())
 
-    def _post_adjust_stats(self, changes):
+    def _handle_dependents(self, changes):
         # Handle adding the singleton issue last, to avoid double-counting
         # the addition in statistics.
         if changes['to is_singleton'] and self.series.issue_count == 0:
@@ -1778,7 +1814,7 @@ class IssueRevision(Revision):
             later_issue.sort_code += num_issues
             later_issue.save()
 
-    def _pre_stats_measurement(self, changes):
+    def _handle_prerequisites(self, changes):
         if self.edited and not self.series_changed:
             # order of revision commit doesn't matter, as we do issue
             # sort_cod reorderings separately from the main editing
@@ -1850,7 +1886,7 @@ class IssueRevision(Revision):
                 old_series.has_gallery = False
                 old_series.save()
 
-    def _post_adjust_stats(self, changes):
+    def _handle_dependents(self, changes):
         # These story revisions will handle their own stats when committed.
         # They will also update the issue's is_indexed field.
         for story in self.changeset.storyrevisions.filter(issue=None):
@@ -2106,7 +2142,7 @@ class ReprintRevision(Revision):
 
         super(ReprintRevision, self).save(*args, **kwargs)
 
-    def _pre_stats_measurement(self, changes):
+    def _handle_prerequisites(self, changes):
         # If we have StoryRevisions instead of Stories, commit them
         # first and set our Story fields so that our own commit can
         # be handled generically after this point.

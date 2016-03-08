@@ -480,12 +480,12 @@ def patched_dummy():
     p = 'apps.oi.models.Revision'
     with mock.patch('%s._copy_fields_to' % p), \
             mock.patch('%s._pre_commit_check' % p), \
-            mock.patch('%s._pre_stats_measurement' % p), \
+            mock.patch('%s._handle_prerequisites' % p), \
             mock.patch('%s._post_create_for_add' % p), \
             mock.patch('%s._post_assign_fields' % p), \
             mock.patch('%s._pre_save_object' % p), \
             mock.patch('%s._post_save_object' % p), \
-            mock.patch('%s._post_adjust_stats' % p), \
+            mock.patch('%s._handle_dependents' % p), \
             mock.patch('%s._get_major_changes' % p) as gmc_mock, \
             mock.patch('%s._adjust_stats' % p), \
             mock.patch('%s.save' % p), \
@@ -517,9 +517,10 @@ def test_commit_added(patched_dummy):
 
     d._pre_commit_check.assert_called_once_with()
     d._get_major_changes.assert_called_once_with()
-    d._pre_stats_measurement.assert_called_once_with(changes)
+    d._handle_prerequisites.assert_called_once_with(changes)
 
     assert d.source.delete.called is False
+    assert d.committed is True
 
     # We should have written the data_obj to source, among many read calls.
     source.assert_any_call(data_obj)
@@ -537,7 +538,7 @@ def test_commit_added(patched_dummy):
     # stat_counts only called once for add.
     d.source.stat_counts.assert_called_once_with()
     d._adjust_stats.assert_called_once_with(changes, {}, stats)
-    d._post_adjust_stats.assert_called_once_with(changes)
+    d._handle_dependents.assert_called_once_with(changes)
 
 
 def test_commit_deleted(patched_dummy):
@@ -554,13 +555,14 @@ def test_commit_deleted(patched_dummy):
 
     d._pre_commit_check.assert_called_once_with()
     d._get_major_changes.assert_called_once_with()
-    d._pre_stats_measurement.assert_called_once_with(changes)
+    d._handle_prerequisites.assert_called_once_with(changes)
 
     d.source.delete.assert_called_once_with()
+    assert d.committed is True
 
     # Make sure we never re-assigned to source or did other add/edit stuff.
     assert mock.call(data_obj) not in source.calls
-    assert d.save.called is False
+    d.save.assert_called_once_with()
     assert d._post_create_for_add.called is False
     assert d._copy_fields_to.called is False
     assert d._post_assign_fields.called is False
@@ -574,7 +576,7 @@ def test_commit_deleted(patched_dummy):
     d.source.stat_counts.has_calls([mock.call(), mock.call()])
     assert d.source.stat_counts.call_count == 2
     d._adjust_stats.assert_called_once_with(changes, stats[0], stats[1])
-    d._post_adjust_stats.assert_called_once_with(changes)
+    d._handle_dependents.assert_called_once_with(changes)
 
 
 def test_commit_edited_dont_clear(patched_dummy):
@@ -595,13 +597,14 @@ def test_commit_edited_dont_clear(patched_dummy):
 
     d._pre_commit_check.assert_called_once_with()
     d._get_major_changes.assert_called_once_with()
-    d._pre_stats_measurement.assert_called_once_with(changes)
+    d._handle_prerequisites.assert_called_once_with(changes)
 
     assert d.source.delete.called is False
+    assert d.committed is True
 
     # Make sure we never re-assigned to source, but do copy fields for edit.
     assert mock.call(data_obj) not in source.calls
-    assert d.save.called is False
+    d.save.assert_called_once_with()
     assert d._post_create_for_add.called is False
     d._copy_fields_to.assert_called_once_with(d.source, changes)
     d._post_assign_fields.assert_called_once_with(changes)
@@ -615,7 +618,7 @@ def test_commit_edited_dont_clear(patched_dummy):
     d.source.stat_counts.has_calls([mock.call(), mock.call()])
     assert d.source.stat_counts.call_count == 2
     d._adjust_stats.assert_called_once_with(changes, stats[0], stats[1])
-    d._post_adjust_stats.assert_called_once_with(changes)
+    d._handle_dependents.assert_called_once_with(changes)
 
 
 def test_pre_initial_save():

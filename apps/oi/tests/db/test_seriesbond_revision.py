@@ -64,6 +64,7 @@ def test_delete_series_bond(any_added_series_bond, any_deleting_changeset,
     rev = SeriesBondRevision.clone(data_object=any_added_series_bond,
                                    changeset=any_deleting_changeset)
 
+    assert rev.series_bond.id
     assert rev.previous_revision == any_added_series_bond_rev
     series_bond_id = rev.series_bond_id
     rev.deleted = True

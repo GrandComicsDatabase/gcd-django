@@ -390,7 +390,7 @@ def test_ensure_sort_code_space_already_ensured(multiple_issue_revs):
         not obj_mock.filter.return_value.order_by.return_value.__iter__.called)
 
 
-def test_pre_stats_measurement_non_move_edit():
+def test_handle_prerequisites_non_move_edit():
     with mock.patch('%s.edited' % IREV,
                     new_callable=mock.PropertyMock) as edited_mock, \
             mock.patch('%s.series_changed' % IREV,
@@ -402,7 +402,7 @@ def test_pre_stats_measurement_non_move_edit():
         moved_mock.return_value = False
         rev = IssueRevision(deleted=False)
 
-        rev._pre_stats_measurement({})
+        rev._handle_prerequisites({})
 
         # We should have returned back out immediately, no further calls.
         assert not sort_mock.called
@@ -447,7 +447,7 @@ def _set_up_prereqs(prereq_list_list, open_mock):
         last_all_mock = last_all_mock.return_value.all
 
 
-def test_pre_stats_measurement_added(multiple_issue_revs_pre_stats):
+def test_handle_prerequisites_added(multiple_issue_revs_pre_stats):
     ((i1, i2, i3, i4, i5), (rev2, rev3),
      after_mock, obj_mock, same_mock,
      sort_mock, open_mock) = multiple_issue_revs_pre_stats
@@ -455,14 +455,14 @@ def test_pre_stats_measurement_added(multiple_issue_revs_pre_stats):
     rev2.commit_to_display = mock.MagicMock()
     rev3.commit_to_display = mock.MagicMock()
     _set_up_prereqs([[rev2], []], open_mock)
-    rev3._pre_stats_measurement({})
+    rev3._handle_prerequisites({})
 
     sort_mock.assert_called_once_with()
     rev2.commit_to_display.assert_called_once_with()
     assert not rev3.commit_to_display.called
 
 
-def test_pre_stats_measurement_exit_infinite_loop(
+def test_handle_prerequisites_exit_infinite_loop(
         multiple_issue_revs_pre_stats):
     ((i1, i2, i3, i4, i5), (rev2, rev3),
      after_mock, obj_mock, same_mock,
@@ -489,7 +489,7 @@ def test_pre_stats_measurement_exit_infinite_loop(
 
     with pytest.raises(RuntimeError) as excinfo:
         # Deletes work last to first, so rev3 is a prereq of rev2.
-        rev2._pre_stats_measurement({})
+        rev2._handle_prerequisites({})
 
     assert "did not reduce" in unicode(excinfo.value)
 
@@ -641,14 +641,14 @@ def patched_edit(story_revs):
         yield (rev, recent_mock)
 
 
-def test_post_adjust_stats_add(story_revs):
+def test_handle_dependents_add(story_revs):
     with mock.patch(RECENT) as recent_mock, mock.patch(SAVE), \
             mock.patch('%s.storyrevisions' % CSET) as story_mock:
         story_mock.filter.return_value = story_revs
         rev = IssueRevision(changeset=Changeset(),
                             issue=Issue(is_indexed=INDEXED['full']))
 
-        rev._post_adjust_stats({})
+        rev._handle_dependents({})
 
         for story in story_revs:
             assert story.issue == rev.issue
@@ -657,9 +657,9 @@ def test_post_adjust_stats_add(story_revs):
         recent_mock.assert_called_once_with(rev.issue)
 
 
-def test_post_adjust_stats_edit(patched_edit, story_revs):
+def test_handle_dependents_edit(patched_edit, story_revs):
     rev, recent_mock = patched_edit
-    rev._post_adjust_stats({})
+    rev._handle_dependents({})
 
     for story in story_revs:
         assert story.issue == rev.issue
@@ -668,10 +668,10 @@ def test_post_adjust_stats_edit(patched_edit, story_revs):
     recent_mock.assert_called_once_with(rev.issue)
 
 
-def test_post_adjust_stats_delete(patched_edit, story_revs):
+def test_handle_dependents_delete(patched_edit, story_revs):
     rev, recent_mock = patched_edit
     rev.deleted = True
-    rev._post_adjust_stats({})
+    rev._handle_dependents({})
 
     for story in story_revs:
         assert story.issue == rev.issue
@@ -680,10 +680,10 @@ def test_post_adjust_stats_delete(patched_edit, story_revs):
     assert not recent_mock.called
 
 
-def test_post_adjust_stats_skeleton(patched_edit, story_revs):
+def test_handle_dependents_skeleton(patched_edit, story_revs):
     rev, recent_mock = patched_edit
     rev.issue.is_indexed = INDEXED['skeleton']
-    rev._post_adjust_stats({})
+    rev._handle_dependents({})
 
     for story in story_revs:
         assert story.issue == rev.issue

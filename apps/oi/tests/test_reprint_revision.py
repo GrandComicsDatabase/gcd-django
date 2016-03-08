@@ -182,12 +182,12 @@ def test_save_target_rev_issue_mismatch(patched_for_save):
                                    r.target_issue)) in v
 
 
-def test_pre_stats_measurement(patched_for_commit):
+def test_handle_prerequisites(patched_for_commit):
     origin_rev, target_rev, open_mock = patched_for_commit
     r = ReprintRevision(origin_revision=origin_rev,
                         target_revision=target_rev)
 
-    r._pre_stats_measurement({})
+    r._handle_prerequisites({})
 
     origin_rev.commit_to_display.assert_called_once_with()
     assert r.origin == r.origin_revision.story
