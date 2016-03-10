@@ -8,13 +8,15 @@ from django.contrib.auth.models import User
 from taggit.managers import TaggableManager
 
 from apps.gcd.models import (
-    Country, Language, Indexer, SeriesPublicationType, SeriesBondType, Issue)
+    Country, Language, Indexer, SeriesPublicationType, SeriesBondType, Issue,
+    Story, StoryType)
 from apps.gcd.models.gcddata import GcdData
 from apps.oi import states
 from apps.oi.models import (
     Revision, PublisherRevision, IndiciaPublisherRevision,
     BrandGroupRevision, BrandRevision, BrandUseRevision,
-    SeriesRevision, SeriesBondRevision, IssueRevision, Changeset, CTYPES)
+    SeriesRevision, SeriesBondRevision, IssueRevision, StoryRevision,
+    Changeset, CTYPES)
 
 
 # Make a non-abstract classes that act like Revisions, but con be
@@ -599,3 +601,56 @@ def any_added_variant(any_added_variant_rev):
     any_added_variant_rev.changeset.state = states.APPROVED
     any_added_variant_rev.changeset.save()
     return Issue.objects.get(pk=any_added_variant_rev.issue.pk)
+
+
+@pytest.fixture
+def story_add_values(any_added_issue, keywords):
+    story_type = StoryType.objects.get(name='comic story')
+
+    return {
+        'title': 'Test Story Title',
+        'title_inferred': True,
+        'issue': any_added_issue,
+        'feature': 'Test Feature',
+        'type': story_type,
+        'sequence_number': 1,
+        'page_count': 8,
+        'page_count_uncertain': True,
+        'script': 'Test Person One',
+        'pencils': 'Test Person Two',
+        'inks': 'Test Person Three',
+        'colors': '',
+        'no_colors': True,
+        'letters': 'Test Person Four',
+        'editing': '',
+        'no_editing': True,
+        'job_number': '1234',
+        'genre': 'something contentious',
+        'characters': 'Blah Blah [Whatever]',
+        'synopsis': 'Stuff happened.',
+        'reprint_notes': 'Not bothering to format this properly.',
+        'notes': 'Random extra info',
+        'keywords': keywords['string'],
+    }
+
+
+@pytest.fixture
+def any_added_story_rev(any_adding_changeset, story_add_values):
+    rev = StoryRevision(changeset=any_adding_changeset, **story_add_values)
+    rev.save()
+    return rev
+
+
+@pytest.fixture
+def any_added_story(any_added_story_rev):
+    any_added_story_rev.commit_to_display()
+    any_added_story_rev.changeset.state = states.APPROVED
+    any_added_story_rev.changeset.save()
+    return any_added_story_rev.story
+
+
+@pytest.fixture
+def any_edit_story_rev(any_added_story, any_editing_changeset):
+    rev = StoryRevision.clone(data_object=any_added_story,
+                              changeset=any_editing_changeset)
+    return rev

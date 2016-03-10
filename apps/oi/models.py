@@ -1965,6 +1965,41 @@ class StoryRevision(Revision):
         """
         self.issue = issue
 
+    def _reset_values(self):
+        if self.deleted:
+            # users can edit story revisions before deleting them.
+            # ensure that the final deleted revision matches the
+            # final state of the story.
+            self.title = self.story.title
+            self.title_inferred = self.story.title_inferred
+            self.feature = self.story.feature
+            self.page_count = self.story.page_count
+            self.page_count_uncertain = self.story.page_count_uncertain
+
+            self.script = self.story.script
+            self.pencils = self.story.pencils
+            self.inks = self.story.inks
+            self.colors = self.story.colors
+            self.letters = self.story.letters
+            self.editing = self.story.editing
+
+            self.no_script = self.story.no_script
+            self.no_pencils = self.story.no_pencils
+            self.no_inks = self.story.no_inks
+            self.no_colors = self.story.no_colors
+            self.no_letters = self.story.no_letters
+            self.no_editing = self.story.no_editing
+
+            self.notes = self.story.notes
+            self.synopsis = self.story.synopsis
+            self.characters = self.story.characters
+            self.reprint_notes = self.story.reprint_notes
+            self.genre = self.story.genre
+            self.type = self.story.type
+            self.job_number = self.story.job_number
+            self.sequence_number = self.story.sequence_number
+            self.save()
+
     def commit_to_display(self, clear_reservation=True):
         story = self.story
         if story is None:
@@ -1998,7 +2033,9 @@ class StoryRevision(Revision):
                              country=story.issue.series.country)
             old_issue = story.issue
             story.issue = self.issue
-            if old_issue.set_indexed_status() is False:
+            if old_issue.is_indexed != INDEXED['skeleton'] and \
+               old_issue.set_indexed_status() == INDEXED['skeleton'] and \
+               old_issue.series.is_comics_publication:
                 update_count('issue indexes', -1,
                              language=old_issue.series.language,
                              country=old_issue.series.country)
