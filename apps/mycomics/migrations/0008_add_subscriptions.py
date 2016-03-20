@@ -9,7 +9,7 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         # Adding model 'Subscription'
-        db.create_table('mycomics_subscriptions', (
+        db.create_table('mycomics_subscription', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('collection', self.gf('django.db.models.fields.related.ForeignKey')(related_name='subscriptions', to=orm['mycomics.Collection'])),
             ('series', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['gcd.Series'])),
@@ -20,7 +20,7 @@ class Migration(SchemaMigration):
 
     def backwards(self, orm):
         # Deleting model 'Subscription'
-        db.delete_table('mycomics_subscriptions')
+        db.delete_table('mycomics_subscription')
 
 
     models = {
@@ -341,7 +341,7 @@ class Migration(SchemaMigration):
             'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['mycomics.Collector']"})
         },
         'mycomics.subscription': {
-            'Meta': {'object_name': 'Subscription', 'db_table': "'mycomics_subscriptions'"},
+            'Meta': {'object_name': 'Subscription', 'db_table': "'mycomics_subscription'"},
             'collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'subscriptions'", 'to': "orm['mycomics.Collection']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'last_pulled': ('django.db.models.fields.DateTimeField', [], {}),

@@ -131,7 +131,7 @@ class Subscription(models.Model):
     collection."""
 
     class Meta:
-        db_table = 'mycomics_subscriptions'
+        db_table = 'mycomics_subscription'
 
     collection = models.ForeignKey(Collection, related_name="subscriptions")
     series = models.ForeignKey(Series)

@@ -545,10 +545,7 @@ def add_selected_issues_to_collection(request, data):
     if not issues.count():
         raise ErrorWithMessage("No issues were selected.")
 
-    if 'post_process_selection' in data:
-        post_process_selection = data['post_process_selection']
-    else:
-        post_process_selection = None
+    post_process_selection = data.get('post_process_selection', None)
     if 'confirm_selection' in request.POST:
         collection_id = int(request.POST['collection_id'])
         return add_issues_to_collection(request,
@@ -577,7 +574,7 @@ def add_selected_issues_to_collection(request, data):
 def select_issues_from_preselection(request, issues, cancel,
                                     post_process_selection=None,
                                     collection_list=None):
-    if not issues.count():
+    if not issues.exists():
         raise ErrorWithMessage("No issues to select from.")
     data = {'issue': True,
             'allowed_selects': ['issue',],
