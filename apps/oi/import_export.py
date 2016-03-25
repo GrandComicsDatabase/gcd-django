@@ -610,10 +610,13 @@ def generate_reprint_link(reprints, direction):
             reprint_note += u" (" + issue.publication_date + ")"
         reprint_note += '; '
     return reprint_note
-    
+
 @permission_required('gcd.can_reserve')
-def export_issue_to_file(request, issue_id, use_csv=False):
-    issue = get_object_or_404(Issue, id=issue_id)
+def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
+    if revision:
+        issue = get_object_or_404(IssueRevision, id=issue_id)
+    else:
+        issue = get_object_or_404(Issue, id=issue_id)
     series = issue.series
     filename = unicode(issue).replace(' ', '_').encode('utf-8')
     if use_csv:
@@ -654,8 +657,12 @@ def export_issue_to_file(request, issue_id, use_csv=False):
     export_data.append(unicode(reprint))
     # keywords were added after reprint_links on issue level, so they come
     # later in the export
-    export_data.append(get_keywords(issue))
-    
+    # TODO check after refactor if this can be changed
+    if revision:
+        export_data.append(issue.keywords)
+    else:
+        export_data.append(get_keywords(issue))
+
     if use_csv:
         writer.writerow(export_data)
     else:
@@ -693,7 +700,11 @@ def export_issue_to_file(request, issue_id, use_csv=False):
                     reprint = sequence.reprint_notes
                 export_data.append(unicode(reprint))
             elif field_name == 'keywords':
-                export_data.append(get_keywords(sequence))
+                # TODO check after refactor if this can be changed
+                if revision:
+                    export_data.append(sequence.keywords)
+                else:
+                    export_data.append(get_keywords(sequence))
             else:
                 export_data.append(unicode(getattr(sequence, field_name)))
         if use_csv:
