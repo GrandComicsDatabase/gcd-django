@@ -82,9 +82,7 @@ def view_collection(request, collection_id):
     else:
         raise PermissionDenied
 
-    items = collection.items.all().order_by('issue__series',
-                                            'issue__sort_code')\
-                                  .select_related('issue__series')
+    items = collection.items.all().select_related('issue__series')
     vars = {'collection': collection,
             'collection_list': collection_list}
     paginator = ResponsePaginator(items, template=COLLECTION_TEMPLATE,
@@ -173,8 +171,8 @@ def export_collection(request, collection_id):
     export_data.append("tags")
     writer.writerow(export_data)
 
-    items = collection.items.all().order_by('issue__series',
-                                            'issue__sort_code')
+    items = collection.items.all()
+
     for item in items:
         export_data = [item.issue.series.name, item.issue.series.publisher.name]
         if item.issue.variant_name:
@@ -385,10 +383,14 @@ def view_item(request, item_id, collection_id):
                                             item.issue.series.sort_name)\
                                   .exclude(issue__series__sort_name=
                                              item.issue.series.sort_name,
+                                           issue__series__year_began__gt=
+                                             item.issue.series.year_began)\
+                                  .exclude(issue__series_id=
+                                             item.issue.series.id,
                                            issue__sort_code__gt=
                                              item.issue.sort_code)\
-                                  .exclude(issue__series__sort_name=
-                                             item.issue.series.sort_name,
+                                  .exclude(issue__series_id=
+                                             item.issue.series.id,
                                            issue__sort_code=
                                              item.issue.sort_code,
                                            id__gte=item.id).reverse()
@@ -402,10 +404,14 @@ def view_item(request, item_id, collection_id):
                                            item.issue.series.sort_name)\
                                  .exclude(issue__series__sort_name=
                                             item.issue.series.sort_name,
+                                          issue__series__year_began__lt=
+                                            item.issue.series.year_began)\
+                                 .exclude(issue__series_id=
+                                            item.issue.series.id,
                                           issue__sort_code__lt=
                                             item.issue.sort_code)\
-                                 .exclude(issue__series__sort_name=
-                                            item.issue.series.sort_name,
+                                 .exclude(issue__series_id=
+                                            item.issue.series.id,
                                           issue__sort_code=
                                             item.issue.sort_code,
                                           id__lte=item.id)

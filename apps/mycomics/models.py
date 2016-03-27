@@ -167,7 +167,8 @@ class CollectionItem(models.Model):
 
     class Meta:
         db_table = 'mycomics_collection_item'
-        ordering = ['issue__series__sort_name', 'issue__sort_code', 'id']
+        ordering = ['issue__series__sort_name', 'issue__series__year_began',
+                    'issue__sort_code', 'id']
 
     collections = models.ManyToManyField(Collection, related_name="items",
                                 db_table="mycomics_collection_item_collections")
