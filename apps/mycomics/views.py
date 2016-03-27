@@ -752,15 +752,15 @@ def subscribe_series(request, series_id):
     subscription = Subscription.objects.filter(series=series,
                                                collection=collection)
     if subscription.exists():
-        messages.error(request, _('Series %s is already subscribed for the '
+        messages.error(request, _(u'Series %s is already subscribed for the '
                          'collection %s.' % (series, collection)))
     elif series.is_current:
         subscription = Subscription.objects.create(series=series,
                        collection=collection, last_pulled=datetime.today())
-        messages.success(request, _('Series %s is now subscribed for the '
+        messages.success(request, _(u'Series %s is now subscribed for the '
                            'collection %s.' % (series, collection)))
     else:
-        messages.error(request, _('Selected series is not ongoing.'))
+        messages.error(request, _(u'Selected series is not ongoing.'))
 
     return HttpResponseRedirect(urlresolvers.reverse('show_series',
                                 kwargs={'series_id': series_id}))
