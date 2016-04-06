@@ -39,6 +39,28 @@
                         <img src="{{ creator.portrait.scaled_image.url }}">
                     {% endif %}
 
+                    <!--Portrait  Sources-->
+                    {% if creator.portrait_source.all %}
+                        <hr>
+                        <h3>Portrait Sources</h3>
+                        <p><strong>sources</strong> :
+                            {% for portrait in creator.portrait_source.all %}
+                                {{ portrait }},
+                            {% endfor %}
+                        </p>
+                    {% endif %}
+
+                    <!--Bio  Sources-->
+                    {% if creator.bio_source.all %}
+                        <hr>
+                        <h3>Bio Sources</h3>
+                        <p><strong>sources</strong> :
+                            {% for bio in creator.bio_source.all %}
+                                {{ bio }},
+                            {% endfor %}
+                        </p>
+                    {% endif %}
+
                     {% if creator.samplescan %}
                         <h3>Sample Scan:</h3>
                         <img src="{{ creator.samplescan.scaled_image.url }}">
@@ -52,8 +74,20 @@
                             <p><strong>Name</strong> : {{ creator_name.name }}</p>
                             <p><strong>Type</strong> : {{ creator_name.type }}</p>
                             {% if creator_name.source.all %}
-                                <p><strong>sources</strong> :{% for source in creator_name.source.all %}
+                                <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
                                     {{ source.type }},{% endfor %}</p>
+                            {% endif %}
+                            {% if creator_name.creator_revise_to_name.all %}
+                                {% for relation in creator_name.creator_revise_to_name.all %}
+                                    <p><strong>Relation Type</strong>
+                                        : {{ relation.rel_type.type }}</p>
+                                    {% if relation.rel_source.all %}
+                                        <p><strong>Relation sources</strong> :
+                                            {% for source in relation.rel_source.all %}
+                                                {{ source.type }},{% endfor %}
+                                        </p>
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
                         {% endfor %}
 
@@ -64,45 +98,115 @@
                             <p><strong>Name</strong> : {{ creator_name.name }}</p>
                             <p><strong>Type</strong> : {{ creator_name.type }}</p>
                             {% if creator_name.source.all %}
-                                <p><strong>sources</strong> :{% for source in creator_name.source.all %}
+                                <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
                                     {{ source.type }},{% endfor %}</p>
+                            {% endif %}
+                            {% if creator_name.to_name.all %}
+                                {% for relation in creator_name.to_name.all %}
+                                    <p><strong>Relation Type</strong>
+                                        : {{ relation.rel_type.type }}</p>
+                                    {% if relation.rel_source.all %}
+                                        <p><strong>Relation sources</strong> :
+                                            {% for source in relation.rel_source.all %}
+                                                {{ source.type }},{% endfor %}
+                                        </p>
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
                         {% endfor %}
                     {% endif %}
 
                     <!--Creator's Schools-->
-                    {% if creator.schools.all %}
+                    {% if creator.cr_creator_school.all %}
                         <hr>
-                        {% for school in creator.schools.all %}
+                        {% for school_obj in creator.cr_creator_school.all %}
                             <h3>Schools:{{ forloop.counter }}</h3>
-                            <p><strong>School name</strong> : {{ school }}</p>
-                            {% if school.school_year_began %}
-                                <p><strong>School year began</strong> : {{ school.school_year_began }}</p>
+                            <p><strong>School name</strong>
+                                : {{ school_obj.school.school_name }}</p>
+                            {% if school_obj.school_year_began %}
+                                <p><strong>School year began</strong>
+                                    : {{ school_obj.school_year_began }}</p>
                             {% endif %}
-                            {% if school.school_year_ended %}
-                                <p><strong>School year ended</strong> : {{ school.school_year_ended }}</p>
+                            <p><strong>School year began uncertain</strong>
+                                : {{ school_obj.school_year_began_uncertain }}
+                            </p>
+                            {% if school_obj.school_year_ended %}
+                                <p><strong>School year ended</strong>
+                                    : {{ school_obj.school_year_ended }}</p>
                             {% endif %}
-                            {% if school.school_source.all %}
-                                <p><strong>School source</strong> :{% for source in school.school_source.all %}
-                                    {{ source.type }},{% endfor %}</p>
+                            <p><strong>School year ended uncertain</strong>
+                                : {{ school_obj.school_year_ended_uncertain }}
+                            </p>
+                            {% if school_obj.school_source.all %}
+                                <p><strong>School source</strong> :
+                                    {% for source in school_obj.school_source.all %}
+                                        {{ source.type }},{% endfor %}</p>
+                            {% endif %}
+                        {% endfor %}
+
+                    {% elif creator.creator_school.all %}
+                        <hr>
+                        {% for school_obj in creator.creator_school.all %}
+                            <h3>Schools:{{ forloop.counter }}</h3>
+                            <p><strong>School name</strong>
+                                : {{ school_obj.school.school_name }}</p>
+                            {% if school_obj.school_year_began %}
+                                <p><strong>School year began</strong>
+                                    : {{ school_obj.school_year_began }}</p>
+                            {% endif %}
+                            {% if school_obj.school_year_began_uncertain %}
+                                <p><strong>School year began uncertain</strong>
+                                    : {{ school_obj.school_year_began_uncertain }}
+                                </p>
+                            {% endif %}
+                            {% if school_obj.school_year_ended %}
+                                <p><strong>School year ended</strong>
+                                    : {{ school_obj.school_year_ended }}</p>
+                            {% endif %}
+                            <p><strong>School year ended uncertain</strong>
+                                : {{ school_obj.school_year_ended_uncertain }}
+                            </p>
+                            {% if school_obj.school_source.all %}
+                                <p><strong>School source</strong> :
+                                    {% for source in school_obj.school_source.all %}
+                                        {{ source.type }},{% endfor %}</p>
                             {% endif %}
                         {% endfor %}
                     {% endif %}
 
-                    <!--Creator's Degrees-->
-                    {% if creator.degrees.all %}
+                    <!--Creator's Degree-->
+                    {% if creator.cr_creator_degree.all %}
                         <hr>
-                        {% for degree in creator.degrees.all %}
+                        {% for degree_obj in creator.cr_creator_degree.all %}
                             <h3>Degrees:{{ forloop.counter }}</h3>
-                            <p><strong>Degree name</strong> : {{ degree }}</p>
-                            {% if degree.school %}
-                                <p><strong>School name</strong> : {{ degree.school.school_name }}</p>
+                            <p><strong>Degree name</strong>
+                                : {{ degree_obj.degree.degree_name }}</p>
+                            <p><strong>School name</strong>
+                                : {{ degree_obj.school.school_name }}</p>
+                            {% if degree_obj.degree_year %}
+                                <p><strong>Degree year</strong>
+                                    : {{ degree_obj.degree_year }}</p>
                             {% endif %}
-                            {% if degree.degree_year %}
-                                <p><strong>Degree year</strong> : {{ degree.degree_year }}</p>
+                            <p><strong>Degree year uncertain</strong>
+                                : {{ degree_obj.degree_year_uncertain }}</p>
+                        {% endfor %}
+                    {% elif creator.creator_degree.all %}
+                        <hr>
+                        {% for degree_obj in creator.creator_degree.all %}
+                            <h3>Degrees:{{ forloop.counter }}</h3>
+                            <p><strong>Degree name</strong>
+                                : {{ degree_obj.degree.degree_name }}</p>
+                            <p><strong>School name</strong>
+                                : {{ degree_obj.school.school_name }}</p>
+                            {% if degree_obj.degree_year %}
+                                <p><strong>Degree year</strong>
+                                    : {{ degree_obj.degree_year }}</p>
                             {% endif %}
+                            <p><strong>Degree year uncertain</strong>
+                                : {{ degree_obj.degree_year_uncertain }}</p>
                         {% endfor %}
                     {% endif %}
+
 
                     <!--Creator's Awards-->
                     {% if creator.award_set.all %}

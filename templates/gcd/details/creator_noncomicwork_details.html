@@ -43,6 +43,38 @@
         {% endfor %}
 {% endif %}
 
+          <!--Creator's Degree-->
+          {% if creator_noncomicwork.cr_noncomicworkyears.all %}
+              <hr>
+              {% for workyear_obj in creator_noncomicwork.cr_noncomicworkyears.all %}
+                  <h4>Work Year Details: {{ forloop.counter }}</h4>
+                  <p><strong>Year</strong> : {{ workyear_obj.work_year }}</p>
+                  <p><strong>Year uncertain</strong>
+                      : {{ workyear_obj.work_year_uncertain }}</p>
+              {% endfor %}
+          {% elif creator_noncomicwork.noncomicworkyears.all %}
+              <hr>
+              {% for workyear_obj in creator_noncomicwork.noncomicworkyears.all %}
+                  <h4>Work Year Details: {{ forloop.counter }}</h4>
+                  <p><strong>Year</strong> : {{ workyear_obj.work_year }}</p>
+                  <p><strong>Year uncertain</strong>
+                      : {{ workyear_obj.work_year_uncertain }}</p>
+              {% endfor %}
+          {% endif %}
+
+          {% if creator_noncomicwork.cr_noncomicworklinks.all %}
+              <hr>
+              {% for worklink_obj in creator_noncomicwork.cr_noncomicworklinks.all %}
+                  <h4>Links: {{ forloop.counter }}</h4>
+                  <p><strong>Link</strong> : {{ worklink_obj.link }}</p>
+              {% endfor %}
+          {% elif creator_noncomicwork.noncomicworklinks.all %}
+              <hr>
+              {% for worklink_obj in creator_noncomicwork.noncomicworklinks.all %}
+                  <h4>Links: {{ forloop.counter }}</h4>
+                  <p><strong>Link</strong> : {{ worklink_obj.link }}</p>
+              {% endfor %}
+          {% endif %}
       </dl>
     </div> <!-- control_center -->
   {% if not preview or creator_noncomicwork.source %}

@@ -46,10 +46,10 @@ STATIC_ROOT = MEDIA_ROOT
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME':  'gcdonline',
-        'USER': 'gcdonline',
-        'PASSWORD': '',
-        'HOST': '',
+        'NAME':  'gcd_online',
+        'USER': 'root',
+        'PASSWORD': 'quixom123',
+        'HOST': 'localhost',
         'PORT': '',
     },
 }
@@ -360,8 +360,14 @@ if READ_ONLY or NO_OI:
       ('apps.middleware.read_only.ReadOnlyMiddleware',)
 
 
+# EMAIL_USE_TLS = True
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_HOST_USER = ''
+# EMAIL_HOST_PASSWORD = ''
+
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_USER = 'test.qt2014@gmail.com'
+EMAIL_HOST_PASSWORD = 'helpqt2014'

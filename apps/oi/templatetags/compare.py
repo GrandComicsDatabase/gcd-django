@@ -358,11 +358,34 @@ register.filter(show_diff)
 register.filter(compare_current_reprints)
 register.assignment_tag(diff_list)
 
+
 def is_in(value, sources):
     for source in sources:
         if str(source) == str(value):
             return True
     return False
 
+
 register.filter(is_in)
 
+
+def is_equal(value, relation_obj):
+    for relation in relation_obj:
+        if relation.rel_type:
+            if str(relation.rel_type.type) == str(value):
+                return True
+    return False
+
+
+register.filter(is_equal)
+
+
+def relation_source_is_in(value, relation_objs):
+    for relation_obj in relation_objs:
+        for source in relation_obj.rel_source.all():
+            if str(source.type) == str(value):
+                return True
+    return False
+
+
+register.filter(relation_source_is_in)
