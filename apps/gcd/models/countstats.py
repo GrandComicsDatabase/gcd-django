@@ -3,13 +3,13 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
-from apps.gcd.models.language import Language
-from apps.gcd.models.country import Country
-from apps.gcd.models.series import Series
-from apps.gcd.models.issue import Issue, INDEXED
-from apps.gcd.models.story import Story
-from apps.gcd.models.cover import Cover
+from .publisher import Publisher, Brand, IndiciaPublisher
+from .language import Language
+from .country import Country
+from .series import Series
+from .issue import Issue, INDEXED
+from .story import Story
+from .cover import Cover
 
 
 class CountStatsManager(models.Manager):

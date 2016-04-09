@@ -259,8 +259,16 @@ class Issue(GcdData):
         else:
             return u''
 
-    # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
+        """
+        Sets the index status and returns the resulting stat change value.
+
+        The return value of this method is intended for use in adjusting
+        the "issue indexes" stat count.  GCD model modules cannot import
+        CountStats and set them directly due to circular dependencies.
+        """
+        was_indexed = self.is_indexed
+
         if not self.variant_of:
             is_indexed = INDEXED['skeleton']
             if self.page_count > 0:
@@ -292,7 +300,14 @@ class Issue(GcdData):
                     for variant in self.active_variants():
                         variant.is_indexed = is_indexed
                         variant.save()
-        return self.is_indexed
+
+        index_delta = 0
+        if self.series.is_comics_publication:
+            if not was_indexed and self.is_indexed:
+                index_delta = 1
+            elif was_indexed and not self.is_indexed:
+                index_delta = -1
+        return index_delta
 
     def get_prev_next_issue(self):
         """

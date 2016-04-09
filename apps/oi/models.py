@@ -681,7 +681,7 @@ class Revision(models.Model):
 
         return changes
 
-    def _get_major_changes(self):
+    def _get_major_changes(self, extra_field_tuples=frozenset()):
         """
         Returns a dictionary for deciding what additional actions are needed.
 
@@ -691,11 +691,18 @@ class Revision(models.Model):
 
         This method bundles up all of the flags and old vs new values
         needed for easy conditionals and easy calls to update_all_counts().
+
+        extra_field_tuples is a way for child classes to put additional fields
+        into the changes dictionary through a super() call without having
+        to put them in any of the sets that trigger special handling.
+        This is useful for oddball fields that trigger custom code when
+        changed, but don't fall into any of the usual patterns.
         """
         changes = {}
         for name_tuple in (self._get_parent_field_tuples() |
                            self._get_major_flag_field_tuples() |
-                           self._get_stats_category_field_tuples()):
+                           self._get_stats_category_field_tuples() |
+                           extra_field_tuples):
             changes.update(self._check_major_change(name_tuple))
 
         return changes
@@ -891,6 +898,9 @@ class Revision(models.Model):
             if (field not in c or reduce(getattr, c[field], self)):
                 setattr(target, field, getattr(self, field))
 
+    def _reset_values(self):
+        pass
+
     def commit_to_display(self, clear_reservation=True):
         """
         Writes the changes from the revision back to the display object.
@@ -905,6 +915,7 @@ class Revision(models.Model):
 
         if self.deleted:
             self._pre_delete(changes)
+            self._reset_values()
             self.source.delete()
         else:
             if self.added:
@@ -1817,7 +1828,7 @@ class IssueRevision(Revision):
     def _handle_prerequisites(self, changes):
         if self.edited and not self.series_changed:
             # order of revision commit doesn't matter, as we do issue
-            # sort_cod reorderings separately from the main editing
+            # sort_code reorderings separately from the main editing
             # workflow, at least for now.
             return
 
@@ -1868,8 +1879,6 @@ class IssueRevision(Revision):
                 self.issue.sort_code = 0
 
     def _post_save_object(self, changes):
-        # These all need for the data objects to be committed, (or just
-        # read better that way) but don't affect stats one way or the other.
         self.series.set_first_last_issues()
         if self.series_changed:
             old_series = self.previous_revision.series
@@ -1958,6 +1967,20 @@ class StoryRevision(Revision):
         return frozenset({('issue', 'series', 'country',),
                           ('issue', 'series', 'language',)})
 
+    def _get_major_changes(self, extra_field_tuples=frozenset()):
+        # We need to look at issue for index status changes, but it does
+        # not otherwise behave like a normal parent field, nor does it
+        # fit into any of the other unusual field classifications.
+        extras = {('issue',)}
+
+        if extra_field_tuples:
+            # extra_field_tuples might be a frozenset, so add to our new
+            # set rather than the other way around.
+            extras.add(extra_field_tuples)
+
+        return super(StoryRevision, self)._get_major_changes(
+            extra_field_tuples=extras)
+
     def _do_complete_added_revision(self, issue):
         """
         Do the necessary processing to complete the fields of a new
@@ -2000,96 +2023,27 @@ class StoryRevision(Revision):
             self.sequence_number = self.story.sequence_number
             self.save()
 
-    def commit_to_display(self, clear_reservation=True):
-        story = self.story
-        if story is None:
-            story = Story()
-            update_count('stories', 1, language=self.issue.series.language,
-                         country=self.issue.series.country)
-        elif self.deleted:
-            if self.issue.is_indexed != INDEXED['skeleton']:
-                if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
-                   self.issue.series.is_comics_publication:
-                    update_count('issue indexes', -1,
-                                 language=story.issue.series.language,
-                                 country=story.issue.series.country)
-            update_count('stories', -1, language=story.issue.series.language,
-                         country=story.issue.series.country)
-            self._reset_values()
-            story.delete()
-            return
+    def _handle_dependents(self, changes):
+        # While committing an issue is a prerequisite for the story,
+        # accounting for index status changes is dependent upon the
+        # story commit.
+        issues = [] if self.added else [changes['old issue']]
+        if changes['issue changed'] and not self.deleted:
+            issues.append(changes['new issue'])
 
-        story.title = self.title
-        story.title_inferred = self.title_inferred
-        story.feature = self.feature
-        if hasattr(story, 'issue') and (story.issue != self.issue):
-            if story.issue.series.language != self.issue.series.language or \
-               story.issue.series.country != self.issue.series.country:
-                update_count('stories', 1,
-                             language=self.issue.series.language,
-                             country=self.issue.series.country)
-                update_count('stories', -1,
-                             language=story.issue.series.language,
-                             country=story.issue.series.country)
-            old_issue = story.issue
-            story.issue = self.issue
-            if old_issue.is_indexed != INDEXED['skeleton'] and \
-               old_issue.set_indexed_status() == INDEXED['skeleton'] and \
-               old_issue.series.is_comics_publication:
-                update_count('issue indexes', -1,
-                             language=old_issue.series.language,
-                             country=old_issue.series.country)
-        else:
-            story.issue = self.issue
-        story.page_count = self.page_count
-        story.page_count_uncertain = self.page_count_uncertain
-
-        story.script = self.script
-        story.pencils = self.pencils
-        story.inks = self.inks
-        story.colors = self.colors
-        story.letters = self.letters
-        story.editing = self.editing
-
-        story.no_script = self.no_script
-        story.no_pencils = self.no_pencils
-        story.no_inks = self.no_inks
-        story.no_colors = self.no_colors
-        story.no_letters = self.no_letters
-        story.no_editing = self.no_editing
-
-        story.notes = self.notes
-        story.synopsis = self.synopsis
-        story.reprint_notes = self.reprint_notes
-        story.characters = self.characters
-        story.genre = self.genre
-        story.type = self.type
-        story.job_number = self.job_number
-        story.sequence_number = self.sequence_number
-
-        if clear_reservation:
-            story.reserved = False
-
-        story.save()
-        save_keywords(self, story)
-        story.save()
-
-        if self.story is None:
-            self.story = story
-            self.save()
-
-        if self.issue.is_indexed == INDEXED['skeleton']:
-            if self.issue.set_indexed_status() != INDEXED['skeleton'] and \
-               self.issue.series.is_comics_publication:
-                update_count('issue indexes', 1,
-                             language=self.issue.series.language,
-                             country=self.issue.series.country)
-        else:
-            if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
-               self.issue.series.is_comics_publication:
-                update_count('issue indexes', -1,
-                             language=self.issue.series.language,
-                             country=self.issue.series.country)
+        # import pytest
+        for issue in issues:
+            # if self.deleted:
+                # pytest.set_trace()
+            delta = issue.set_indexed_status()
+            if delta:
+                if self.edited:
+                    assert issue.series.country is not None
+                    assert issue.series.language is not None
+                CountStats.objects.update_all_counts(
+                    {'issue indexes': delta},
+                    country=issue.series.country,
+                    language=issue.series.language)
 
 
 class ReprintRevision(Revision):

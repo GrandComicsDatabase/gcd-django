@@ -5,8 +5,18 @@ import mock
 import pytest
 
 from apps.gcd.models import (
-    Country, Language, Publisher, Series, Issue, Story, INDEXED)
+    CountStats, Country, Language, Publisher, Series, Issue, Story, INDEXED)
 from apps.oi.models import StoryRevision
+
+
+# Needed for various set_indexed_status() patch replacements
+def _get_indexed_delta(was_indexed, is_indexed, is_comics):
+    if is_comics:
+        if not was_indexed and is_indexed:
+            return 1
+        if was_indexed and not is_indexed:
+            return -1
+    return 0
 
 
 @pytest.mark.django_db
@@ -37,24 +47,26 @@ def test_commit_added_revision(any_added_story_rev, story_add_values,
     rev.issue.series.save()
 
     def set_indexed_status(self):
+        delta = _get_indexed_delta(self.is_indexed, new_status, is_comics)
         self.is_indexed = new_status
         self.save()
-        return new_status
+        return delta
 
-    with mock.patch('apps.oi.helpers.CountStats.objects.update_count') \
+    with mock.patch('apps.oi.models.CountStats.objects.update_count') \
             as updater_mock, \
             mock.patch('apps.gcd.models.issue.Issue.set_indexed_status',
                        set_indexed_status):
         rev.commit_to_display()
 
-    expected_calls = [mock.call('stories', 1,
+    expected_calls = [mock.call(field='stories', delta=1,
                                 language=rev.issue.series.language,
                                 country=rev.issue.series.country)]
     if is_comics and new_status != INDEXED['skeleton']:
-        expected_calls.append(mock.call('issue indexes', 1,
+        expected_calls.append(mock.call(field='issue indexes', delta=1,
                                         language=rev.issue.series.language,
                                         country=rev.issue.series.country))
 
+    assert is_comics is rev.issue.series.is_comics_publication
     updater_mock.assert_has_calls(expected_calls)
     assert updater_mock.call_count == len(expected_calls)
 
@@ -101,11 +113,12 @@ def test_create_edit_revision(any_edit_story_rev, story_add_values,
     rev.save()
 
     def set_indexed_status(self):
+        delta = _get_indexed_delta(self.is_indexed, new_status, is_comics)
         self.is_indexed = new_status
         self.save()
-        return new_status
+        return delta
 
-    with mock.patch('apps.oi.helpers.CountStats.objects.update_count') \
+    with mock.patch('apps.oi.models.CountStats.objects.update_count') \
             as updater_mock, \
             mock.patch('apps.gcd.models.issue.Issue.set_indexed_status',
                        set_indexed_status):
@@ -116,7 +129,7 @@ def test_create_edit_revision(any_edit_story_rev, story_add_values,
     elif is_comics:
         delta = 1 if old_status == INDEXED['skeleton'] else -1
         updater_mock.assert_called_once_with(
-            'issue indexes', delta,
+            field='issue indexes', delta=delta,
             country=rev.issue.series.country,
             language=rev.issue.series.language)
 
@@ -172,6 +185,11 @@ def test_create_move_revision(any_edit_story_rev, story_add_values,
                                                 name='Other Country')[0]
     new_language = Language.objects.get_or_create(code='XZX',
                                                   name='Other Language')[0]
+    # Ensure we already have stats for new country and language or else
+    # we get different calls in the tests due to init logic.
+    CountStats.objects.init_stats(country=new_country)
+    CountStats.objects.init_stats(language=new_language)
+
     new_publisher = Publisher.objects.create(name='Other Test Publisher',
                                              country=new_country,
                                              year_began=1990,
@@ -197,13 +215,17 @@ def test_create_move_revision(any_edit_story_rev, story_add_values,
     def set_indexed_status(self):
         if self.series.name == 'New Test Series':
             # Destination series always ends up indexed.
+            delta = _get_indexed_delta(self.is_indexed, new_post_status,
+                                       new_is_comics)
             self.is_indexed = new_post_status
         else:
+            delta = _get_indexed_delta(self.is_indexed, old_post_status,
+                                       old_is_comics)
             self.is_indexed = old_post_status
         self.save()
-        return self.is_indexed
+        return delta
 
-    with mock.patch('apps.oi.helpers.CountStats.objects.update_count') \
+    with mock.patch('apps.oi.models.CountStats.objects.update_count') \
             as updater_mock, \
             mock.patch('apps.gcd.models.issue.Issue.set_indexed_status',
                        set_indexed_status):
@@ -211,29 +233,29 @@ def test_create_move_revision(any_edit_story_rev, story_add_values,
 
     # TODO: Verify that reprint links still have story/issue fields agreeing.
 
-    expected_calls = [mock.call('stories', 1,
+    expected_calls = [mock.call(field='stories', delta=1,
                                 language=new_language,
                                 country=new_country),
-                      mock.call('stories', -1,
+                      mock.call(field='stories', delta=-1,
                                 language=old_language,
                                 country=old_country)]
     if old_is_comics and (old_pre_status != INDEXED['skeleton'] and
                           old_post_status == INDEXED['skeleton']):
-        expected_calls.append(mock.call('issue indexes', -1,
+        expected_calls.append(mock.call(field='issue indexes', delta=-1,
                                         language=old_language,
                                         country=old_country))
     if new_is_comics and (new_pre_status == INDEXED['skeleton'] and
                           new_post_status != INDEXED['skeleton']):
-        expected_calls.append(mock.call('issue indexes', 1,
+        expected_calls.append(mock.call(field='issue indexes', delta=1,
                                         language=new_language,
                                         country=new_country))
     elif new_is_comics and (new_pre_status != INDEXED['skeleton'] and
                             new_post_status == INDEXED['skeleton']):
-        expected_calls.append(mock.call('issue indexes', 1,
+        expected_calls.append(mock.call(field='issue indexes', delta=1,
                                         language=new_language,
                                         country=new_country))
 
-    updater_mock.assert_has_calls(expected_calls)
+    updater_mock.assert_has_calls(expected_calls, any_order=True)
     assert updater_mock.call_count == len(expected_calls)
 
 
@@ -251,16 +273,18 @@ def test_delete_story(any_added_story, any_deleting_changeset,
     rev.issue.series.is_comics_publication = is_comics
     rev.issue.series.save()
     rev.issue.is_indexed = old_status
+    rev.story.issue.is_indexed = old_status
     rev.issue.save()
     rev.deleted = True
     rev.save()
 
     def set_indexed_status(self):
+        delta = _get_indexed_delta(self.is_indexed, new_status, is_comics)
         self.is_indexed = new_status
         self.save()
-        return new_status
+        return delta
 
-    with mock.patch('apps.oi.helpers.CountStats.objects.update_count') \
+    with mock.patch('apps.oi.models.CountStats.objects.update_count') \
             as updater_mock, \
             mock.patch('apps.gcd.models.issue.Issue.set_indexed_status',
                        set_indexed_status), \
@@ -277,13 +301,13 @@ def test_delete_story(any_added_story, any_deleting_changeset,
     assert rev.story == any_added_story
     assert rev.story.deleted is True
 
-    expected_calls = [mock.call('stories', -1,
+    expected_calls = [mock.call(field='stories', delta=-1,
                                 country=rev.issue.series.country,
                                 language=rev.issue.series.language)]
     if is_comics and old_status != new_status:
         expected_calls.insert(0,
-                              mock.call('issue indexes', -1,
+                              mock.call(field='issue indexes', delta=-1,
                                         country=rev.issue.series.country,
                                         language=rev.issue.series.language))
-    updater_mock.assert_has_calls(expected_calls)
+    updater_mock.assert_has_calls(expected_calls, any_order=True)
     assert updater_mock.call_count == len(expected_calls)
