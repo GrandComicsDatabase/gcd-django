@@ -118,10 +118,10 @@ class Reprint(GcdLink):
             return '%s of %s is reprinted in %s of %s' % (
                 self.origin, self.origin_issue, self.target, self.target_issue)
         elif self.origin:
-            return u'%s of %s is reprinted in %s' % (
+            return '%s of %s is reprinted in %s' % (
                 self.origin, self.origin_issue, self.target_issue)
         elif self.target:
-            return u'material from %s is reprinted in %s of %s' % (
+            return 'material from %s is reprinted in %s of %s' % (
                 self.origin_issue, self.target, self.target_issue)
-        return u'material from %s is reprinted in %s' % (
+        return 'material from %s is reprinted in %s' % (
             self.origin_issue, self.target_issue)
