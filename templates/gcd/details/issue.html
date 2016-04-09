@@ -143,13 +143,21 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% include "mycomics/bits/issue_control.html" %}
 {% else %}
         <div class="edit_header">Editing
-  {% if request.user.is_authenticated and not preview %}
+  {% if request.user.is_authenticated %}
           <div class="right">
+    {% if preview %}
+            <a class="link_info_left" href="{% url "export_issue_revision_csv" issue.id %}"><span>download issue data (CSV)</span>
+    {% else %}
             <a class="link_info_left" href="{% url "export_issue_csv" issue.id %}"><span>download issue data (CSV)</span>
+    {% endif %}
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-spreadsheet.png" alt="download issue data" style="border:0;">
             </a>
 
+    {% if preview %}
+            <a class="link_info_left" href="{% url "export_issue_revision" issue.id %}"><span>download issue data</span>
+    {% else %}
             <a class="link_info_left" href="{% url "export_issue" issue.id %}"><span>download issue data</span>
+    {% endif %}
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-save.png" alt="download issue data" style="border:0;">
             </a>
           </div>
