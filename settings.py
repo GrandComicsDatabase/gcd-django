@@ -46,10 +46,10 @@ STATIC_ROOT = MEDIA_ROOT
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME':  'gcd_online',
-        'USER': 'root',
-        'PASSWORD': 'quixom123',
-        'HOST': 'localhost',
+        'NAME':  'gcdonline',
+        'USER': 'gcdonline',
+        'PASSWORD': '',
+        'HOST': '',
         'PORT': '',
     },
 }
@@ -254,7 +254,7 @@ EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_PRTEAM = 'pr-team@comics.org'
 EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
-CHAIRMAN = 'Don Milne'
+CHAIRMAN = 'Daniel Nauschuetz'
 EMAIL_CHAIRMAN = '%s <chair@comics.org>' % CHAIRMAN
 
 # Number of days for which a registraton confirmation token is valid.
@@ -359,15 +359,3 @@ if READ_ONLY or NO_OI:
     MIDDLEWARE_CLASSES += \
       ('apps.middleware.read_only.ReadOnlyMiddleware',)
 
-
-# EMAIL_USE_TLS = True
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_HOST_USER = ''
-# EMAIL_HOST_PASSWORD = ''
-
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'test.qt2014@gmail.com'
-EMAIL_HOST_PASSWORD = 'helpqt2014'

@@ -829,19 +829,24 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                     for i in range(1, total_creator_schools + 1):
                         if 'school' + str(i) in request.POST:
                             school = request.POST.get('school' + str(i))
-                            school_year_began = request.POST.get(
-                                'school_year_began' + str(i))
+                            try:
+                                school_year_began = int(request.POST.get(
+                                  'school_year_began' + str(i)))
+                            except ValueError:
+                                school_year_began = None
                             school_year_began_uncertain = True if request.POST.get(
                                 'school_year_began_uncertain' + str(
                                     i)) == 'on' else False
-                            school_year_ended = request.POST.get(
-                                'school_year_ended' + str(i))
+                            try:
+                                school_year_ended = int(request.POST.get(
+                                  'school_year_ended' + str(i)))
+                            except ValueError:
+                                school_year_ended = None
                             school_year_ended_uncertain = True if request.POST.get(
                                 'school_year_ended_uncertain' + str(
                                     i)) == 'on' else False
                             sources = request.POST.getlist(
                                 'school_sources' + str(i))
-
                             try:
                                 creatorschool = \
                                     CreatorSchoolDetailRevision.objects.get(
@@ -880,8 +885,11 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                         if 'degree' + str(i) in request.POST:
                             degree = request.POST.get('degree' + str(i))
                             school = request.POST.get('degreeschool' + str(i))
-                            degree_year = request.POST.get(
-                                'degree_year' + str(i))
+                            try:
+                                degree_year = int(request.POST.get(
+                                    'degree_year' + str(i)))
+                            except ValueError:
+                                degree_year = None
                             degree_year_uncertain = True if request.POST.get(
                                 'degree_year_uncertain' + str(
                                     i)) == 'on' else False
