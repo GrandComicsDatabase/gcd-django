@@ -35,11 +35,17 @@
     {% if ranking.national_levelup %}
     (IMPs to next level: <span class="data_value">{{ ranking.national_levelup }}</span>)
     {% endif %}
+    {% if ranking.national_leveldown %}
+    (IMPs ahead of following level: <span class="data_value">{{ ranking.national_leveldown }}</span>)
+    {% endif %}
   </li>
   <li> Worldwide Rank:
     <span class="data_value">{{ ranking.global|ordinal }}</span> place
     {% if ranking.global_levelup %}
     (IMPs to next level: <span class="data_value">{{ ranking.global_levelup }}</span>)
+    {% endif %}
+    {% if ranking.global_leveldown %}
+    (IMPs ahead of following level: <span class="data_value">{{ ranking.global_leveldown }}</span>)
     {% endif %}
   </li>
   {% endifequal %}
