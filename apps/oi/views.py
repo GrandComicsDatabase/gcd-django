@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from django.core import urlresolvers
 from django.core.files import File
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404, render
@@ -457,13 +458,17 @@ def _display_edit_form(request, changeset, form, revision=None):
 
     if changeset.change_type == CTYPES['creators']:
         name_types = NameType.objects.all()
-        name_sources = SourceType.objects.all()
+        sources = SourceType.objects.all()
+        schools = School.objects.all()
+        degrees = Degree.objects.all()
+        relation_types = RelationType.objects.all()
         other_name_details = []
         for creator_names in revision.cr_creator_names.all():
             if creator_names.type.type == settings.GCD_OFFICIAL_NAME_FIELDNAME:
                 official_name_details = {'name':creator_names.name, 'type':creator_names.type.type, 'sources':creator_names.source.all()}
             else:
-                other_name_details.append({'name':creator_names.name, 'type':creator_names.type.type, 'sources':creator_names.source.all()})
+                other_name_details.append({'name':creator_names.name, 'type':creator_names.type.type, 'sources':creator_names.source.all(),
+                                           'relation_obj':creator_names.creator_revise_to_name.all()})
         response = oi_render_to_response(
         template,
         {
@@ -474,7 +479,10 @@ def _display_edit_form(request, changeset, form, revision=None):
             'settings': settings,
             'CTYPES': CTYPES,
             'name_types': name_types,
-            'name_sources': name_sources,
+            'sources': sources,
+            'schools': schools,
+            'degrees':degrees,
+            'relation_types':relation_types,
             'official_name_details': official_name_details,
             'other_name_details': other_name_details,
         },
@@ -725,28 +733,6 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                                                               source_type=portrait_source,
                                                               changeset=revision.changeset)
 
-                    schools = [schools for schools in
-                               form.cleaned_data.get('schools')]
-                    CreatorSchoolDetailRevision.objects.filter(
-                        creator=revision).delete()
-
-                    for school in schools:
-                        CreatorSchoolDetailRevision.objects.create(
-                            creator=revision,
-                            changeset=revision.changeset,
-                            school=school)
-
-                    degrees = [degrees for degrees in
-                               form.cleaned_data.get('degrees')]
-                    CreatorDegreeDetailRevision.objects.filter(
-                        creator=revision).delete()
-
-                    for degree in degrees:
-                        CreatorDegreeDetailRevision.objects.create(
-                            creator=revision,
-                            changeset=revision.changeset,
-                            degree=degree)
-
                     bio_sources = form.cleaned_data.get('bio_source')
                     BioSourceRevision.objects.filter(creator=revision).delete()
                     for bio_source in bio_sources:
@@ -773,37 +759,155 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                     creatorname.source.clear()
                     for source in gcd_official_name_sources:
                         creatorname.source.add(source)
-
                     # Update Creator's Other Names
                     updated_creator_name_list = []
                     updated_creator_name_list.append(creatorname.id)
+                    updated_creator_name_relation_list = []
                     for i in range(1, total_creator_names + 1):
                         if 'name' + str(i) in request.POST:
                             name = request.POST.get('name' + str(i))
                             type_id = request.POST.get('type' + str(i))
                             sources = request.POST.getlist('sources' + str(i))
                             type = NameType.objects.get(id=type_id)
-
+                            relation_type = request.POST.get(
+                                'relation_type' + str(i)) if request.POST.get(
+                                'relation_type' + str(i)) else None
+                            relation_sources = request.POST.getlist(
+                                'relation_sources' + str(i))
                             try:
-                                creatorname = \
+                                creatorothername = \
                                     CreatorNameDetailsRevision.objects.get(
                                     creator=revision,
                                     name=name,
                                     type=type)
                             except ObjectDoesNotExist:
-                                creatorname = \
+                                creatorothername = \
                                     CreatorNameDetailsRevision.objects.create(
                                     creator=revision,
                                     name=name,
                                     type=type,
                                     changeset=changeset)
-                            creatorname.source.clear()
+                            creatorothername.source.clear()
                             for source in sources:
-                                creatorname.source.add(source)
-                            updated_creator_name_list.append(creatorname.id)
+                                creatorothername.source.add(source)
+                            updated_creator_name_list.append(
+                                creatorothername.id)
+
+                            # Add name relation with gcd official name
+                            try:
+                                name_relation = NameRelationRevision.objects.get(
+                                    gcd_official_name=creatorname,
+                                    to_name=creatorothername,
+                                    rel_type_id=relation_type
+                                )
+                            except ObjectDoesNotExist:
+                                name_relation = NameRelationRevision.objects.create(
+                                    gcd_official_name=creatorname,
+                                    to_name=creatorothername,
+                                    rel_type_id=relation_type,
+                                    changeset=changeset
+                                )
+
+                            for source in relation_sources:
+                                name_relation.rel_source.add(source)
+                            updated_creator_name_relation_list.append(
+                                name_relation.id)
+
+                    NameRelationRevision.objects.filter(
+                        to_name__creator=revision).exclude(
+                        id__in=updated_creator_name_relation_list).delete()
+
                     CreatorNameDetailsRevision.objects.filter(
                         creator=revision).exclude(
                         id__in=updated_creator_name_list).delete()
+
+                    total_creator_schools = int(
+                        request.POST.get('total_schools'))
+
+                    # Update Creator's School Details
+                    updated_creator_school_list = []
+                    for i in range(1, total_creator_schools + 1):
+                        if 'school' + str(i) in request.POST:
+                            school = request.POST.get('school' + str(i))
+                            school_year_began = request.POST.get(
+                                'school_year_began' + str(i))
+                            school_year_began_uncertain = True if request.POST.get(
+                                'school_year_began_uncertain' + str(
+                                    i)) == 'on' else False
+                            school_year_ended = request.POST.get(
+                                'school_year_ended' + str(i))
+                            school_year_ended_uncertain = True if request.POST.get(
+                                'school_year_ended_uncertain' + str(
+                                    i)) == 'on' else False
+                            sources = request.POST.getlist(
+                                'school_sources' + str(i))
+
+                            try:
+                                creatorschool = \
+                                    CreatorSchoolDetailRevision.objects.get(
+                                        creator=revision,
+                                        school_id=int(school),
+                                        school_year_began=school_year_began,
+                                        school_year_began_uncertain=school_year_began_uncertain,
+                                        school_year_ended=school_year_ended,
+                                        school_year_ended_uncertain=school_year_ended_uncertain
+                                    )
+                            except ObjectDoesNotExist:
+                                creatorschool = \
+                                    CreatorSchoolDetailRevision.objects.create(
+                                        creator=revision,
+                                        school_id=int(school),
+                                        school_year_began=school_year_began,
+                                        school_year_began_uncertain=school_year_began_uncertain,
+                                        school_year_ended=school_year_ended,
+                                        school_year_ended_uncertain=school_year_ended_uncertain,
+                                        changeset=changeset)
+
+                            creatorschool.school_source.clear()
+                            for source in sources:
+                                creatorschool.school_source.add(source)
+                            updated_creator_school_list.append(creatorschool.id)
+                    CreatorSchoolDetailRevision.objects.filter(
+                        creator=revision).exclude(
+                        id__in=updated_creator_school_list).delete()
+
+
+                    # Update Creator's Degree Details
+                    total_creator_degrees = int(
+                        request.POST.get('total_degrees'))
+                    updated_creator_degree_list = []
+                    for i in range(1, total_creator_degrees + 1):
+                        if 'degree' + str(i) in request.POST:
+                            degree = request.POST.get('degree' + str(i))
+                            school = request.POST.get('degreeschool' + str(i))
+                            degree_year = request.POST.get(
+                                'degree_year' + str(i))
+                            degree_year_uncertain = True if request.POST.get(
+                                'degree_year_uncertain' + str(
+                                    i)) == 'on' else False
+                            try:
+                                creatordegree = \
+                                    CreatorDegreeDetailRevision.objects.get(
+                                        creator=revision,
+                                        degree_id=int(degree),
+                                        school_id=int(school),
+                                        degree_year=degree_year,
+                                        degree_year_uncertain=degree_year_uncertain
+                                    )
+                            except ObjectDoesNotExist:
+                                creatordegree = \
+                                    CreatorDegreeDetailRevision.objects.create(
+                                        creator=revision,
+                                        degree_id=int(degree),
+                                        school_id=int(school),
+                                        degree_year=degree_year,
+                                        degree_year_uncertain=degree_year_uncertain,
+                                        changeset=changeset)
+
+                            updated_creator_degree_list.append(creatordegree.id)
+                    CreatorDegreeDetailRevision.objects.filter(
+                        creator=revision).exclude(
+                        id__in=updated_creator_degree_list).delete()
 
                 elif revision.changeset.change_type == CTYPES[
                     'creator_membership']:
@@ -827,6 +931,53 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
 
                 elif revision.changeset.change_type == CTYPES[
                     'creator_noncomicwork']:
+
+                    # Edit work year details
+                    updated_cretor_noncomicworkyears_list = []
+                    total_workyears = int(request.POST.get('total_workyears'))
+                    for i in range(1, total_workyears + 1):
+                        if 'work_year' + str(i) in request.POST:
+                            work_year = request.POST.get('work_year' + str(i))
+                            work_year_uncertain = True if request.POST.get(
+                                'work_year_uncertain' + str(i)) == 'on' else False
+                            try:
+                                noncomicworkyear = NonComicWorkYearRevision.objects.get(
+                                    non_comic_work=revision,
+                                    work_year=work_year,
+                                    work_year_uncertain=work_year_uncertain)
+                            except ObjectDoesNotExist:
+                                noncomicworkyear = NonComicWorkYearRevision.objects.create(
+                                    non_comic_work=revision,
+                                    work_year=work_year,
+                                    work_year_uncertain=work_year_uncertain,
+                                    changeset=changeset)
+                            updated_cretor_noncomicworkyears_list.append(noncomicworkyear.id)
+
+                    NonComicWorkYearRevision.objects.filter(
+                        non_comic_work=revision).exclude(
+                        id__in=updated_cretor_noncomicworkyears_list).delete()
+
+                    # Edit work link details
+                    updated_cretor_noncomicworklinks_list = []
+                    total_worklinks = int(request.POST.get('total_worklinks'))
+                    for i in range(1, total_worklinks + 1):
+                        if 'work_link' + str(i) in request.POST:
+                            work_link = request.POST.get('work_link' + str(i))
+                            try:
+                                noncomicworklink = NonComicWorkLinkRevision.objects.get(
+                                    non_comic_work=revision,
+                                    link=work_link)
+                            except ObjectDoesNotExist:
+                                noncomicworklink = NonComicWorkLinkRevision.objects.create(
+                                    non_comic_work=revision,
+                                    link=work_link,
+                                    changeset=changeset)
+                            updated_cretor_noncomicworklinks_list.append(noncomicworklink.id)
+
+                    NonComicWorkLinkRevision.objects.filter(
+                        non_comic_work=revision).exclude(
+                        id__in=updated_cretor_noncomicworklinks_list).delete()
+
                     revision.work_source.clear()
                     sources = form.cleaned_data.get('work_source')
                     for source in sources:
@@ -4939,18 +5090,6 @@ def add_creator(request, template_name='oi/creators/creators.html'):
                                                       source_type=portrait_source,
                                                       changeset=changeset)
 
-            schools = creator_form.cleaned_data.get('schools')
-            for school in schools:
-                CreatorSchoolDetailRevision.objects.create(creator=revision,
-                                                           school=school,
-                                                           changeset=changeset)
-
-            degrees = creator_form.cleaned_data.get('degrees')
-            for degree in degrees:
-                CreatorDegreeDetailRevision.objects.create(creator=revision,
-                                                           degree=degree,
-                                                           changeset=changeset)
-
             bio_sources = creator_form.cleaned_data.get('bio_source')
             for bio_source in bio_sources:
                 BioSourceRevision.objects.create(creator=revision,
@@ -4965,13 +5104,13 @@ def add_creator(request, template_name='oi/creators/creators.html'):
 
             gcd_official_name_type = NameType.objects.get(
                 id=gcd_official_name_type_id)
-            creatorname = CreatorNameDetailsRevision.objects.create(
+            creatorofficialname = CreatorNameDetailsRevision.objects.create(
                 creator=revision,
                 name=gcd_official_name,
                 type=gcd_official_name_type,
                 changeset=changeset)
             for source in gcd_official_name_sources:
-                creatorname.source.add(source)
+                creatorofficialname.source.add(source)
 
             # Add gcd creator's other names
             total_creator_names = int(request.POST.get('total_names'))
@@ -4980,7 +5119,8 @@ def add_creator(request, template_name='oi/creators/creators.html'):
                     name = request.POST.get('name' + str(i))
                     type_id = request.POST.get('type' + str(i))
                     sources = request.POST.getlist('sources' + str(i))
-
+                    relation_type = request.POST.get('relation_type' + str(i))
+                    relation_sources = request.POST.getlist('relation_sources' + str(i))
                     type = NameType.objects.get(id=type_id)
                     creatorname = CreatorNameDetailsRevision.objects.create(
                         creator=revision,
@@ -4990,12 +5130,73 @@ def add_creator(request, template_name='oi/creators/creators.html'):
                     for source in sources:
                         creatorname.source.add(source)
 
+                    # Add name relation with gcd official name
+                    name_relation = NameRelationRevision.objects.create(
+                        gcd_official_name=creatorofficialname,
+                        to_name=creatorname,
+                        rel_type_id=relation_type,
+                        changeset=changeset
+                    )
+                    for source in relation_sources:
+                        name_relation.rel_source.add(source)
+
+
+            # Add gcd creator's School Details
+            total_creator_schools = int(request.POST.get('total_schools'))
+            for i in range(1, total_creator_schools + 1):
+                if 'school' + str(i) in request.POST:
+                    school = request.POST.get('degreeschool' + str(i))
+                    school_year_began = request.POST.get(
+                        'school_year_began' + str(i))
+                    school_year_began_uncertain = True if request.POST.get(
+                        'school_year_began_uncertain' + str(
+                            i)) == 'on' else False
+                    school_year_ended = request.POST.get(
+                        'school_year_ended' + str(i))
+                    school_year_ended_uncertain = True if request.POST.get(
+                        'school_year_ended_uncertain' + str(
+                            i)) == 'on' else False
+                    school_sources = request.POST.getlist(
+                        'school_sources' + str(i))
+
+                    creatorschool = CreatorSchoolDetailRevision.objects.create(
+                        creator=revision,
+                        school_id=int(school),
+                        school_year_began=school_year_began,
+                        school_year_began_uncertain=school_year_began_uncertain,
+                        school_year_ended=school_year_ended,
+                        school_year_ended_uncertain=school_year_ended_uncertain,
+                        changeset=changeset)
+                    for source in school_sources:
+                        creatorschool.school_source.add(source)
+
+            # Add gcd creator's Degree Details
+            total_creator_degrees = int(request.POST.get('total_degrees'))
+            for i in range(1, total_creator_degrees + 1):
+                if 'degree' + str(i) in request.POST:
+                    degree = request.POST.get('degree' + str(i))
+                    school = request.POST.get('school' + str(i))
+                    degree_year = request.POST.get('degree_year' + str(i))
+                    degree_year_uncertain = True if request.POST.get(
+                        'degree_year_uncertain' + str(i)) == 'on' else False
+
+                    CreatorDegreeDetailRevision.objects.create(
+                        creator=revision,
+                        degree_id=int(degree),
+                        school_id=int(school),
+                        degree_year=degree_year,
+                        degree_year_uncertain=degree_year_uncertain,
+                        changeset=changeset)
+
             return submit(request, changeset.id)
 
     context = {}
     context['creator_form'] = creator_form
     context['name_types'] = NameType.objects.all()
-    context['name_sources'] = SourceType.objects.all()
+    context['sources'] = SourceType.objects.all()
+    context['schools'] = School.objects.all()
+    context['degrees'] = Degree.objects.all()
+    context['relation_types'] = RelationType.objects.all()
     context['gcd_official_name_field'] = settings.GCD_OFFICIAL_NAME_FIELDNAME
     context['mode'] = 'new'
     return render(request, template_name, context)
@@ -5192,6 +5393,31 @@ def add_creator_noncomicwork(request, creator_id,
                 revision.save_added_revision(changeset=changeset, parent=parent)
                 revision.save()
 
+                # Add work years
+                total_workyears = int(request.POST.get('total_workyears'))
+                for i in range(1, total_workyears + 1):
+                    if 'work_year' + str(i) in request.POST:
+                        work_year = request.POST.get('work_year' + str(i))
+                        work_year_uncertain = True if request.POST.get(
+                            'work_year_uncertain' + str(i)) == 'on' else False
+
+                        NonComicWorkYearRevision.objects.get_or_create(
+                            non_comic_work=revision,
+                            work_year=work_year,
+                            work_year_uncertain=work_year_uncertain,
+                            changeset=changeset)
+
+                # Add work links
+                total_worklinks = int(request.POST.get('total_worklinks'))
+                for i in range(1, total_worklinks + 1):
+                    if 'work_link' + str(i) in request.POST:
+                        work_link = request.POST.get('work_link' + str(i))
+
+                        NonComicWorkLinkRevision.objects.get_or_create(
+                            non_comic_work=revision,
+                            link=work_link,
+                            changeset=changeset)
+
                 work_sources = noncomicwork_form.cleaned_data.get('work_source')
                 for work_source in work_sources:
                     revision.work_source.add(work_source)
@@ -5203,5 +5429,6 @@ def add_creator_noncomicwork(request, creator_id,
 
     context = {}
     context['noncomicwork_form'] = noncomicwork_form
+    context['creator_id'] = creator_id
     context['mode'] = 'new'
     return render(request, template_name, context)

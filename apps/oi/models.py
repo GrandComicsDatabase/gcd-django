@@ -5572,8 +5572,14 @@ class CreatorRevisionManager(RevisionManager):
 
         name_details = creator.creator_names.all()
         for name_detail in name_details:
-            CreatorNameDetailsRevision.objects.clone_revision(name_detail,
+            creator_other_name = CreatorNameDetailsRevision.objects.clone_revision(name_detail,
                                                               changeset=changeset)
+            name_relation_details = name_detail.to_name.all()
+            for name_relation in name_relation_details:
+                changeset = {'changeset':changeset, 'creator_other_name':creator_other_name}
+                NameRelationRevision.objects.clone_revision(name_relation,
+                                                              changeset=changeset)
+                changeset = changeset['changeset']
 
         birth_year_sources = creator.creatorbirthyearsource.all()
         for birth_year_source in birth_year_sources:
@@ -5681,10 +5687,6 @@ class CreatorRevision(Revision):
                                 related_name='revisions')
 
     gcd_official_name = models.CharField(max_length=255, db_index=True)
-    related_person = models.ManyToManyField(
-            'self',
-            through='NameRelationRevision',
-            symmetrical=False)
     birth_year = models.PositiveSmallIntegerField(null=True, blank=True)
     birth_year_uncertain = models.BooleanField(default=False)
     birth_year_source = models.ManyToManyField('gcd.SourceType',
@@ -5945,7 +5947,7 @@ class CreatorRevision(Revision):
             for artinfluence in artinfluences:
                 artinfluence.deleted = True
                 artinfluence.save()
-            noncomicworks = ctr.noncomicwork_set.exclude(deleted=True)
+            noncomicworks = ctr.noncomicwork_set.exclude(dename_detailleted=True)
             for noncomicwork in noncomicworks:
                 noncomicwork.deleted = True
                 noncomicwork.save()
@@ -5990,17 +5992,39 @@ class CreatorRevision(Revision):
 
         creator_name_details = self.cr_creator_names.all()
         updated_creator_name_list = []
-        for creator_name_detail in creator_name_details:
+        for creator_name_detail_obj in creator_name_details:
             creator_name_object, created = \
                 CreatorNameDetails.objects.get_or_create(
                         creator=ctr,
-                        name=creator_name_detail.name,
-                        type=creator_name_detail.type)
+                        name=creator_name_detail_obj.name,
+                        type=creator_name_detail_obj.type)
 
             creator_name_object.source.clear()
-            sources = creator_name_detail.source.all()
+            sources = creator_name_detail_obj.source.all()
             for source in sources:
                 creator_name_object.source.add(source)
+            creator_name_detail_obj.creator_name_detail = creator_name_object
+            creator_name_detail_obj.save()
+
+            official_name_relation = ctr.creator_names.get(
+                type__type='GCD Official')
+            updated_creator_name_relation_list = []
+            for name_relation_obj in creator_name_detail_obj.creator_revise_to_name.all():
+                creator_name_relation_object, created = \
+                    NameRelation.objects.get_or_create(
+                        gcd_official_name=official_name_relation,
+                        to_name=creator_name_object,
+                        rel_type=name_relation_obj.rel_type,
+                    )
+
+                creator_name_relation_object.rel_source.clear()
+                sources = name_relation_obj.rel_source.all()
+                for source in sources:
+                    creator_name_relation_object.rel_source.add(source)
+                name_relation_obj.name_relation = creator_name_relation_object
+                name_relation_obj.save()
+                updated_creator_name_relation_list.append(
+                    creator_name_relation_object.id)
 
             updated_creator_name_list.append(creator_name_object.id)
         CreatorNameDetails.objects.exclude(creator=ctr,
@@ -6114,19 +6138,42 @@ class CreatorRevision(Revision):
             PortraitSource.objects.create(creator=ctr,
                                           source_type=portrait_source_type)
 
-        CreatorSchoolDetail.objects.filter(creator=ctr).delete()
+        updated_creator_school_list = []
         schools = self.cr_creator_school.all()
-        school_list = [school_object.school for school_object in schools]
-        for school in school_list:
-            CreatorSchoolDetail.objects.create(creator=ctr,
-                                               school=school)
+        school_list = [school_object for school_object in schools]
+        for school_obj in school_list:
+            creator_obj, created = CreatorSchoolDetail.objects.get_or_create(
+                creator=ctr,
+                school=school_obj.school,
+                school_year_began=school_obj.school_year_began,
+                school_year_began_uncertain=school_obj.school_year_began_uncertain,
+                school_year_ended=school_obj.school_year_ended,
+                school_year_ended_uncertain=school_obj.school_year_ended_uncertain
+            )
+            creator_obj.school_source.clear()
+            school_sources = school_obj.school_source.all()
+            for source in school_sources:
+                creator_obj.school_source.add(source)
 
-        CreatorDegreeDetail.objects.filter(creator=ctr).delete()
+            updated_creator_school_list.append(creator_obj.id)
+        CreatorSchoolDetail.objects.exclude(creator=ctr,
+                                            id__in=updated_creator_school_list).delete()
+
+        updated_creator_degree_list = []
         degrees = self.cr_creator_degree.all()
-        degree_list = [degree_object.degree for degree_object in degrees]
-        for degree in degree_list:
-            CreatorDegreeDetail.objects.create(creator=ctr,
-                                               degree=degree)
+        degree_list = [degree_object for degree_object in degrees]
+        for degree_obj in degree_list:
+            creator_obj, created = CreatorDegreeDetail.objects.get_or_create(
+                creator=ctr,
+                degree=degree_obj.degree,
+                school=degree_obj.school,
+                degree_year=degree_obj.degree_year,
+                degree_year_uncertain=degree_obj.degree_year_uncertain,
+            )
+
+            updated_creator_degree_list.append(creator_obj.id)
+        CreatorDegreeDetail.objects.exclude(creator=ctr,
+                                            id__in=updated_creator_degree_list).delete()
 
         BioSource.objects.filter(creator=ctr).delete()
         bio_sources = self.cr_creatorbiosource.all()
@@ -6141,55 +6188,6 @@ class CreatorRevision(Revision):
             self.save()
 
 
-class RelationTypeRevisionManager(RevisionManager):
-    def clone_revision(self, relationtype, changeset):
-        """
-        Given an existing RelationType instance, create a new revision based
-        on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=relationtype,
-                                              instance_class=RelationType,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, relationtype, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = RelationTypeRevision(
-                # revision-specific fields:
-                creator=relationtype,
-                changeset=changeset,
-
-                # copied fields:
-        )
-
-        revision.save()
-        return revision
-
-
-class RelationTypeRevision(Revision):
-    """
-    The type of relation between two creators.
-    """
-
-    class Meta:
-        app_label = 'oi'
-        ordering = ('type',)
-        verbose_name_plural = 'Relation Type Revisions'
-
-    objects = RelationTypeRevisionManager()
-    relation_type = models.ForeignKey('gcd.RelationType',
-                                      null=True,
-                                      related_name='cr_relation_type')
-    type = models.CharField(max_length=50)
-
-    def __unicode__(self):
-        return unicode(self.type)
-
-
 class NameRelationRevisionManager(RevisionManager):
     def clone_revision(self, namerelation, changeset):
         """
@@ -6201,21 +6199,26 @@ class NameRelationRevisionManager(RevisionManager):
         return RevisionManager.clone_revision(self,
                                               instance=namerelation,
                                               instance_class=NameRelation,
-                                              changeset=changeset)
+                                              changeset=changeset,
+                                              )
 
     def _do_create_revision(self, namerelation, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
+        official_name_relation = namerelation.gcd_official_name.cr_creator_name_details.all()[0]
         revision = NameRelationRevision(
                 # revision-specific fields:
-                creator=namerelation,
-                changeset=changeset,
-
+                name_relation=namerelation,
+                gcd_official_name=official_name_relation,
+                to_name=changeset['creator_other_name'],
+                changeset=changeset['changeset'],
+                rel_type=namerelation.rel_type
                 # copied fields:
         )
-
         revision.save()
+        for relation_source in namerelation.rel_source.all():
+            revision.rel_source.add(relation_source)
         return revision
 
 
@@ -6235,19 +6238,19 @@ class NameRelationRevision(Revision):
                                       null=True,
                                       related_name='cr_name_relation')
     gcd_official_name = models.ForeignKey(
-            CreatorRevision,
+            'CreatorNameDetailsRevision',
             related_name='creator_revise_gcd_official_name')
-    to_name = models.ForeignKey(CreatorRevision,
+    to_name = models.ForeignKey('CreatorNameDetailsRevision',
                                 related_name='creator_revise_to_name')
-    rel_type = models.ForeignKey(RelationTypeRevision,
-                                 related_name='creator_revise_relation_type')
-    rel_source = models.TextField(blank=True, null=True)
+    rel_type = models.ForeignKey('gcd.RelationType',
+                                 related_name='creator_revise_relation_type',
+                                 null=True, blank=True)
+    rel_source = models.ManyToManyField('gcd.SourceType', null=True)
 
     def __unicode__(self):
         return '%s >Name_Relation< %s :: %s' % (unicode(self.gcd_official_name),
                                                 unicode(self.to_name),
                                                 unicode(self.rel_type)
-
                                                 )
 
 
@@ -7111,10 +7114,15 @@ class CreatorSchoolDetailRevisionManager(RevisionManager):
                 creator=changeset.revisions.next(),
                 changeset=changeset,
                 school=createschooldetail.school,
+                school_year_began = createschooldetail.school_year_began,
+                school_year_began_uncertain = createschooldetail.school_year_began_uncertain,
+                school_year_ended = createschooldetail.school_year_ended,
+                school_year_ended_uncertain = createschooldetail.school_year_ended_uncertain,
                 # copied fields:
         )
-
         revision.save()
+        for school_source in createschooldetail.school_source.all():
+            revision.school_source.add(school_source)
         return revision
 
 
@@ -7173,6 +7181,9 @@ class CreatorDegreeDetailRevisionManager(RevisionManager):
                 creator=changeset.revisions.next(),
                 changeset=changeset,
                 degree=createdegreedetail.degree,
+                school=createdegreedetail.school,
+                degree_year=createdegreedetail.degree_year,
+                degree_year_uncertain=createdegreedetail.degree_year_uncertain
                 # copied fields:
         )
 
@@ -7680,7 +7691,18 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
         sources = creatornoncomicwork.work_source.all()
         for source in sources:
             revision.work_source.add(source)
+
+        noncomicworkyears = creatornoncomicwork.noncomicworkyears.all()
+        for noncomicworkyear in noncomicworkyears:
+            NonComicWorkYearRevision.objects.clone_revision(noncomicworkyear,
+                                                            changeset=changeset)
+
+        noncomicworklinks = creatornoncomicwork.noncomicworklinks.all()
+        for noncomicworklink in noncomicworklinks:
+            NonComicWorkLinkRevision.objects.clone_revision(noncomicworklink,
+                                                            changeset=changeset)
         return revision
+
 
 
 class CreatorNonComicWorkRevision(Revision):
@@ -7783,6 +7805,31 @@ class CreatorNonComicWorkRevision(Revision):
         for source_type in self.work_source.all():
             ncw.work_source.add(source_type)
 
+        updated_non_comic_work_year_list = []
+        noncomicworkyears = self.cr_noncomicworkyears.all()
+        for noncomicworkyear in noncomicworkyears:
+            noncomicworkyear_obj, created = NonComicWorkYear.objects.get_or_create(
+                non_comic_work=ncw,
+                work_year=noncomicworkyear.work_year,
+                work_year_uncertain=noncomicworkyear.work_year_uncertain,
+            )
+            updated_non_comic_work_year_list.append(noncomicworkyear_obj.id)
+
+        NonComicWorkYear.objects.exclude(non_comic_work=ncw,
+                                         id__in=updated_non_comic_work_year_list).delete()
+
+        updated_non_comic_work_link_list = []
+        noncomicworklinks = self.cr_noncomicworklinks.all()
+        for noncomicworklink in noncomicworklinks:
+            noncomicworklink_obj, created = NonComicWorkLink.objects.get_or_create(
+                non_comic_work=ncw,
+                link=noncomicworklink.link,
+            )
+            updated_non_comic_work_link_list.append(noncomicworklink_obj.id)
+
+        NonComicWorkLink.objects.exclude(non_comic_work=ncw,
+                                         id__in=updated_non_comic_work_link_list).delete()
+
         if self.creator_noncomicwork is None:
             self.creator_noncomicwork = ncw
             self.save()
@@ -7791,3 +7838,112 @@ class CreatorNonComicWorkRevision(Revision):
         if self.creator_noncomicwork is None:
             return "/creator_noncomicwork/revision/%i/preview" % self.id
         return self.creator_noncomicwork.get_absolute_url()
+
+
+class NonComicWorkYearRevisionManager(RevisionManager):
+    def clone_revision(self, creatornoncomicworkyear, changeset):
+        """
+        Given an existing CreatorDegreeDetail instance, create a new revision
+        based on it.
+
+        This new revision will be where the replacement is stored.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=creatornoncomicworkyear,
+                                              instance_class=NonComicWorkYear,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, creatornoncomicworkyear, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        revision = NonComicWorkYearRevision(
+                # revision-specific fields:
+                changeset=changeset,
+                creator_noncomicworkyear=creatornoncomicworkyear,
+                non_comic_work=changeset.revisions.next(),
+                work_year=creatornoncomicworkyear.work_year,
+                work_year_uncertain=creatornoncomicworkyear.work_year_uncertain
+                # copied fields:
+        )
+
+        revision.save()
+        return revision
+
+
+class NonComicWorkYearRevision(Revision):
+    """
+    record the year of the work
+    There may be multiple years recorded
+    """
+
+    class Meta:
+        app_label = 'oi'
+        ordering = ('work_year',)
+        verbose_name_plural = 'NonComic Work Year Revisions'
+
+    objects = NonComicWorkYearRevisionManager()
+    creator_noncomicworkyear = models.ForeignKey('gcd.NonComicWorkYear',
+                                             null=True,
+                                             related_name='revisions')
+    non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
+                                       related_name='cr_noncomicworkyears')
+    work_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    work_year_uncertain = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return '%s - %s' % (
+            unicode(self.non_comic_work.publication_title), unicode(self.work_year))
+
+
+class NonComicWorkLinkRevisionManager(RevisionManager):
+    def clone_revision(self, creatornoncomicworklink, changeset):
+        """
+        Given an existing CreatorDegreeDetail instance, create a new revision
+        based on it.
+
+        This new revision will be where the replacement is stored.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=creatornoncomicworklink,
+                                              instance_class=NonComicWorkLink,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, creatornoncomicworklink, changeset, **ignore):
+
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        revision = NonComicWorkLinkRevision(
+                # revision-specific fields:
+                changeset=changeset,
+                creator_noncomicworklink=creatornoncomicworklink,
+                non_comic_work=changeset.revisions.next(),
+                link=creatornoncomicworklink.link
+                # copied fields:
+        )
+        revision.save()
+        return revision
+
+
+class NonComicWorkLinkRevision(Revision):
+    """
+    record a link to either the work or more information about the work
+    """
+
+    class Meta:
+        app_label = 'oi'
+        ordering = ('link',)
+        verbose_name_plural = 'NonComic Work Link Revisions'
+
+    objects = NonComicWorkLinkRevisionManager()
+    creator_noncomicworklink = models.ForeignKey('gcd.NonComicWorkLink',
+                                             null=True,
+                                             related_name='revisions')
+    non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
+                                       related_name='cr_noncomicworklinks')
+    link = models.URLField(max_length=255)
+
+    def __unicode__(self):
+        return '%s - %s' % (
+            unicode(self.non_comic_work.publication_title), unicode(self.link))

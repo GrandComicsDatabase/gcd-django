@@ -1885,7 +1885,7 @@ class CreatorRevisionForm(forms.ModelForm):
                'are not part of the regular display.')
     class Meta:
         model = CreatorRevision
-        exclude = ['gcd_official_name','related_person', 'changeset', 'creator', 'deleted']
+        exclude = ['gcd_official_name','changeset', 'creator', 'deleted', 'schools', 'degrees']
 
 
 class CreatorMembershipRevisionForm(forms.ModelForm):

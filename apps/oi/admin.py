@@ -20,9 +20,9 @@ admin.site.register(OngoingReservation, OngoingReservationAdmin)
 
 
 #register creator revison models to admin panel
-admin.site.register(RelationTypeRevision)
 admin.site.register(CreatorNameDetailsRevision)
 admin.site.register(CreatorRevision)
+admin.site.register(NameRelationRevision)
 admin.site.register(BirthYearSourceRevision)
 admin.site.register(BirthMonthSourceRevision)
 admin.site.register(BirthDateSourceRevision)
@@ -37,7 +37,6 @@ admin.site.register(DeathProvinceSourceRevision)
 admin.site.register(DeathCitySourceRevision)
 admin.site.register(PortraitSourceRevision)
 admin.site.register(BioSourceRevision)
-admin.site.register(NameRelationRevision)
 admin.site.register(CreatorSchoolDetailRevision)
 admin.site.register(CreatorDegreeDetailRevision)
 admin.site.register(Changeset)
@@ -46,6 +45,10 @@ admin.site.register(CreatorMembershipRevision)
 admin.site.register(CreatorAwardRevision)
 admin.site.register(CreatorArtInfluenceRevision)
 admin.site.register(CreatorNonComicWorkRevision)
+admin.site.register(NonComicWorkYearRevision)
+admin.site.register(NonComicWorkLinkRevision)
+
+
 
 
 

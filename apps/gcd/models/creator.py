@@ -105,10 +105,6 @@ class Creator(models.Model):
     objects = CreatorManager()
 
     gcd_official_name = models.CharField(max_length=255, db_index=True)
-    related_person = models.ManyToManyField(
-            'self',
-            through='NameRelation',
-            symmetrical=False)
     birth_year = models.PositiveSmallIntegerField(null=True, blank=True)
     birth_year_uncertain = models.BooleanField(default=False)
     birth_year_source = models.ManyToManyField(SourceType,
@@ -328,10 +324,11 @@ class NameRelation(models.Model):
         verbose_name_plural = 'Name Relations'
 
     gcd_official_name = models.ForeignKey(
-            Creator,
+            CreatorNameDetails,
             related_name='creator_gcd_official_name')
-    to_name = models.ForeignKey(Creator, related_name='to_name')
-    rel_type = models.ForeignKey(RelationType, related_name='relation_type')
+    to_name = models.ForeignKey(CreatorNameDetails, related_name='to_name')
+    rel_type = models.ForeignKey(RelationType, related_name='relation_type',
+                                 null=True, blank=True)
     rel_source = models.ManyToManyField(SourceType, null=True)
 
     def __unicode__(self):
@@ -930,7 +927,7 @@ class NonComicWorkYear(models.Model):
         ordering = ('work_year',)
         verbose_name_plural = 'NonComic Work Years'
 
-    non_comic_work = models.ForeignKey(NonComicWork)
+    non_comic_work = models.ForeignKey(NonComicWork, related_name='noncomicworkyears')
     work_year = models.PositiveSmallIntegerField(null=True, blank=True)
     work_year_uncertain = models.BooleanField(default=False)
 
@@ -948,7 +945,7 @@ class NonComicWorkLink(models.Model):
         app_label = 'gcd'
         verbose_name_plural = 'NonComic Work Links'
 
-    non_comic_work = models.ForeignKey(NonComicWork)
+    non_comic_work = models.ForeignKey(NonComicWork, related_name='noncomicworklinks')
     link = models.URLField(max_length=255)
 
     def __unicode__(self):
