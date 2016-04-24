@@ -39,6 +39,7 @@ class Dummy(GcdData):
     f = models.ForeignKey('gcd.OtherDummy')
     o = models.OneToOneField('gcd.OtherDummy')
     m = models.ManyToManyField('gcd.OtherDummy')
+    z = models.DecimalField()           # used to test meta fields
     x = models.BooleanField()           # type mismatch with revision
     c = models.CharField()              # Not present in Revision
     keywords = TaggableManager()        # keywords must be called 'keywords'
@@ -63,6 +64,7 @@ class DummyRevision(Revision):
     f = models.ForeignKey('gcd.OtherDummy')
     o = models.OneToOneField('gcd.OtherDummy')
     m = models.ManyToManyField('gcd.OtherDummy')
+    z = models.DecimalField()           # used to test meta fields
     x = models.CharField()              # type mismatch with data object
     y = models.BooleanField()           # Not present on data object
     keywords = models.TextField()       # keywords field on revision is text
@@ -77,6 +79,10 @@ class DummyRevision(Revision):
     @source.setter
     def source(self, value):
         self.dummy = value
+
+    @classmethod
+    def _get_meta_field_names(cls):
+        return {'z'}
 
     @classmethod
     def _get_parent_field_tuples(cls):

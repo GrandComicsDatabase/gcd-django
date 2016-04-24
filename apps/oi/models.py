@@ -260,6 +260,7 @@ class Revision(models.Model):
     _irregular_fields = None
     _single_value_fields = None
     _multi_value_fields = None
+    _meta_fields = None
 
     # Child classes must set these properly.  Unlike source, they cannot be
     # instance properties because they are needed during revision construction.
@@ -282,6 +283,8 @@ class Revision(models.Model):
         """
         raise NotImplementedError
 
+    # #####################################################################
+    # Properties indicating the type of action this Revision is performing.
     @property
     def added(self):
         """
@@ -313,8 +316,8 @@ class Revision(models.Model):
         """
         return self.committed is None
 
-    # ##################################################################
-    # Field declarations and methods for creating revisions.
+    # #####################################################################
+    # Field declarations and classification.
 
     @classmethod
     def _classify_fields(cls):
@@ -335,23 +338,31 @@ class Revision(models.Model):
         #       In a future release of Django this will change, but should
         #       be covered in the release notes.  And presumably there
         #       will be a different reliable way to filter them out.
-        excluded = cls._get_excluded_field_names()
+        excluded_names = cls._get_excluded_field_names()
+        meta_names = cls._get_meta_field_names()
         data_fields = {
             f.get_attname(): f
             for f in cls.source_class._meta.get_fields()
-            if isinstance(f, Field) and f.get_attname() not in excluded
+            if isinstance(f, Field) and f.get_attname() not in excluded_names
         }
         rev_fields = {
             f.get_attname(): f
             for f in cls._meta.get_fields()
-            if isinstance(f, Field) and f.get_attname() not in excluded
+            if isinstance(f, Field) and f.get_attname() not in excluded_names
         }
         cls._regular_fields = {}
         cls._irregular_fields = {}
         cls._single_value_fields = {}
         cls._multi_value_fields = {}
+        cls._meta_fields = {}
 
         for name, data_field in data_fields.iteritems():
+            # Currently we do not have relations that are meta fields,
+            # so just handle those here and move on to the next field.
+            if name in meta_names:
+                cls._meta_fields[name] = data_field
+                continue
+
             # Note that ForeignKeys and OneToOneFields show up under the
             # attribute name for the actual key ('parent_id' instead of
             # 'parent'), so strip the _id off for more convenient use.
@@ -461,6 +472,19 @@ class Revision(models.Model):
         return frozenset()
 
     @classmethod
+    def _get_meta_field_names(cls):
+        """
+        Fields that are about other fields, and only copied from rev to data.
+
+        These fields are not included in either the regular or irregular
+        field sets, nor the single value or multi value sets.  They are
+        handled completely separately.
+
+        See also _get_meta_fields() for more information.
+        """
+        return frozenset()
+
+    @classmethod
     def _get_regular_fields(cls):
         """
         Data fields that can be predictably transferred to and from revisions.
@@ -500,6 +524,33 @@ class Revision(models.Model):
         """
         cls._classify_fields()
         return cls._multi_value_fields
+
+    @classmethod
+    def _get_meta_fields(cls):
+        """
+        Fields that are not managed as primary data.
+
+        These fields are usually meta-data of some sort, such as flags
+        indicating data that needs revisiting.  Alternatively, they
+        may be additional information calculated from primary data
+        but cached in database fields.
+
+        These field values may be changed in the data object without
+        using a Revision, and Revisions should not attempt to keep
+        them in sync.
+
+        When committing a revision, the field must be activley set
+        correctly as it is not copied *from* the data object, but
+        will be copied back *to* it.
+
+        Note that fields that are calculated either entirely within
+        the revision, or entirely within the data object, but are
+        never copied in either direction should *not* be included
+        here.  This classification is essentially for fields that
+        are only copied from revision to data object.
+        """
+        cls._classify_fields()
+        return cls._meta_fields
 
     @classmethod
     def _get_conditional_field_tuple_mapping(cls):
@@ -567,6 +618,10 @@ class Revision(models.Model):
 
         return stats_tuples
 
+    # #####################################################################
+    # Methods for creating (cloning) a Revision from a data object,
+    # including hook methods for use in customizing the cloning process.
+
     def _pre_initial_save(self):
         """
         Called just before saving to the database to handle unusual fields.
@@ -632,7 +687,12 @@ class Revision(models.Model):
         return revision
 
     # ##################################################################
-    # Description of changes, and methods for saving to the data object.
+    # Methods for inventorying significant changes to the fields,
+    # an handling those changes and the resulting updates to cached
+    # values and statistics.
+
+    def _reset_values(self):
+        pass
 
     def _check_major_change(self, attrs):
         """
@@ -783,6 +843,10 @@ class Revision(models.Model):
                 new_value.update_cached_counts(deltas)
                 new_value.save()
 
+    # #####################################################################
+    # Methods for saving the Revision back to the data object, including
+    # hook methods for customizing that process.
+
     def _pre_commit_check(self):
         """
         Runs sanity checks before anything else in commit_to_display.
@@ -879,7 +943,7 @@ class Revision(models.Model):
         """
         pass
 
-    def _copy_fields_to(self, target, changes=None):
+    def _copy_fields_to(self, target):
         """
         Used to copy fields from a revision to a display object.
 
@@ -887,19 +951,14 @@ class Revision(models.Model):
         the display object set as self.source (in the case of a newly
         added object), so the target of the copy is given as a parameter.
         """
-        # TODO: Make "changes" required once more of the refactor is done.
-        if changes is None:
-            changes = {}
-
+        fields_to_copy = self._get_single_value_fields().copy()
+        fields_to_copy.update(self._get_meta_fields())
         c = self._get_conditional_field_tuple_mapping()
-        for field in self._get_single_value_fields().keys():
+        for name in fields_to_copy:
             # If conditional, apply getattr until we produce the flag
             # value and only assign the field if that flag is True.
-            if (field not in c or reduce(getattr, c[field], self)):
-                setattr(target, field, getattr(self, field))
-
-    def _reset_values(self):
-        pass
+            if (name not in c or reduce(getattr, c[name], self)):
+                setattr(target, name, getattr(self, name))
 
     def commit_to_display(self, clear_reservation=True):
         """
@@ -922,7 +981,7 @@ class Revision(models.Model):
                 self.source = self.source_class()
                 self._post_create_for_add(changes)
 
-            self._copy_fields_to(self.source, changes)
+            self._copy_fields_to(self.source)
             self._post_assign_fields(changes)
 
         if clear_reservation:
@@ -961,6 +1020,9 @@ class Revision(models.Model):
         new_stats = self.source.stat_counts()
         self._adjust_stats(changes, old_stats, new_stats)
         self._handle_dependents(changes)
+
+    # #####################################################################
+    # Methods not involved in the Revision lifecycle.
 
     def __unicode__(self):
         """
@@ -2033,8 +2095,6 @@ class StoryRevision(Revision):
 
         # import pytest
         for issue in issues:
-            # if self.deleted:
-                # pytest.set_trace()
             delta = issue.set_indexed_status()
             if delta:
                 if self.edited:

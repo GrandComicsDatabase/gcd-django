@@ -33,6 +33,7 @@ def test_classify_fields():
     f = meta.get_field('f')
     o = meta.get_field('o')
     m = meta.get_field('m')
+    z = meta.get_field('z')
     x = meta.get_field('x')
     c = meta.get_field('c')
     k = meta.get_field('keywords')
@@ -45,6 +46,7 @@ def test_classify_fields():
     assert rev._irregular_fields == {'c': c, 'x': x}
     assert rev._single_value_fields == {'i': i, 'b': b, 'f': f, 'o': o}
     assert rev._multi_value_fields == {'m': m}
+    assert rev._meta_fields == {'z': z}
 
 
 def test_second_classify_fields():
@@ -65,7 +67,8 @@ def test_second_classify_fields():
 @pytest.mark.parametrize('method', (Revision._get_regular_fields,
                                     Revision._get_irregular_fields,
                                     Revision._get_single_value_fields,
-                                    Revision._get_multi_value_fields))
+                                    Revision._get_multi_value_fields,
+                                    Revision._get_meta_fields))
 def test_classifying_methods(method):
     with mock.patch('apps.oi.models.Revision._classify_fields') as cl_mock:
         method()
@@ -102,6 +105,10 @@ def test_stats_category_field_tuples():
 
 def test_deprecated_fields():
     assert Revision._get_deprecated_field_names() == frozenset()
+
+
+def test_meta_fields():
+    assert Revision._get_meta_field_names() == frozenset()
 
 
 def test_added():
@@ -527,7 +534,7 @@ def test_commit_added(patched_dummy):
     d.save.assert_called_once_with()
     d._post_create_for_add.assert_called_once_with(changes)
 
-    d._copy_fields_to.assert_called_once_with(d.source, changes)
+    d._copy_fields_to.assert_called_once_with(d.source)
     d._post_assign_fields.assert_called_once_with(changes)
 
     assert d.source.reserved is False
@@ -606,7 +613,7 @@ def test_commit_edited_dont_clear(patched_dummy):
     assert mock.call(data_obj) not in source.calls
     d.save.assert_called_once_with()
     assert d._post_create_for_add.called is False
-    d._copy_fields_to.assert_called_once_with(d.source, changes)
+    d._copy_fields_to.assert_called_once_with(d.source)
     d._post_assign_fields.assert_called_once_with(changes)
 
     assert d.source.reserved is True
