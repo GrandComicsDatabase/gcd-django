@@ -15,6 +15,7 @@ django-imagekit==3.3
 django-mobile==0.3.0
 django-taggit==0.17.6
 django-templatesadmin==0.6
+dj-inmemorystorage==1.4.0
 # TODO: Upgrade to elasticsearch 2.x will need work.
 elasticsearch==2.1.0
 elasticstack==0.3.0

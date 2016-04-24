@@ -2219,6 +2219,29 @@ class Download(models.Model):
 
 
 class ImageRevision(Revision):
+    """
+    Manage uploading or replacing images attached to other objects.
+
+    The ImageRevision class is unusual in that all non-delete operations
+    must involve uploading an image file- either a new file or a replacement.
+
+    We only ever keep one copy of the image on the filesystem, and therefore
+    either the Image *or* the ImageRevision will have a field for that file,
+    but never both.  Files are named after the id of the object to which
+    they are attached.  Image and ImageRevision configure different
+    directories in which to store their images, which avoids id conflicts.
+
+    The lifecycle for images on the filesystem is as follows:
+
+    Initial upload:  image temporarily stored under the revision,
+        but deleted after being copied to the data object.
+
+    Replacement:  old image copied from data object to the *previous*
+        revision (which is the one where that image was uploaded),
+        new image handled as with the initial upload.
+
+    Deletion:  image left with data object, not copied to any revision.
+    """
     class Meta:
         db_table = 'oi_image_revision'
         ordering = ['created']
@@ -2257,45 +2280,61 @@ class ImageRevision(Revision):
     def _get_excluded_field_names(cls):
         return frozenset(
             super(ImageRevision, cls)._get_excluded_field_names() |
-            {'image_file', 'scaled_image', 'marked'}
+            {'image_file', 'scaled_image', 'thumbnail', 'icon'}
         )
 
-    def commit_to_display(self, clear_reservation=True):
-        image = self.image
-        if self.is_replacement:
-            prev_rev = self.previous()
-            # copy replaced image back to revision
-            prev_rev.image_file.save(str(prev_rev.id) + '.jpg',
-                                     content=image.image_file)
-            image.image_file.delete()
-        elif self.deleted:
-            image.delete()
+    @classmethod
+    def _get_meta_field_names(cls):
+        return frozenset({'marked'})
+
+    def _pre_commit_check(self):
+        # This arrangement of if statements makes it easy to unit test
+        # all conditions.
+        if not self.edited:
+            if self.is_replacement:
+                raise ValueError("Can only replace during edit, not %s." %
+                                 ("add" if self.added else "delete"))
+
+            elif (self.added and self.type.unique and
+                  Image.objects.filter(
+                      content_type=ContentType.objects
+                                              .get_for_model(self.object),
+                      object_id=self.object.id,
+                      type=self.type,
+                      deleted=False).exists()):
+                raise ValueError(
+                    '%s has an %s. Additional images cannot be uploaded, '
+                    'only replacements are possible.' %
+                    (self.object, self.type.description))
+
+    def _post_save_object(self, changes):
+        if self.deleted:
+            # We want to leave the image with the deleted data object
+            # to support change history and examining deleted data.
+            # So we don't do anything in this case.
             return
-        elif image is None:
-            if self.type.unique and not self.is_replacement:
-                if Image.objects.filter(
-                        content_type=ContentType.objects
-                                                .get_for_model(self.object),
-                        object_id=self.object.id,
-                        type=self.type,
-                        deleted=False).count():
-                    raise ValueError(
-                        '%s has an %s. Additional images cannot be uploaded, '
-                        'only replacements are possible.' %
-                        (self.object, self.type.description))
 
-            # first generate instance
-            image = Image(content_type=self.content_type,
-                          object_id=self.object_id,
-                          type=self.type,
-                          marked=self.marked)
-            image.save()
+        # TODO: What happens if the database transaction fails and unrolls?
+        #       Is there anything we can do to make sure the filesystem side
+        #       doesn't end up in too bad of a state?
+        if self.is_replacement:
+            # Since we remove files from revisions when we copy them to
+            # data objects, upon replacement we need to backfill a copy
+            # of the image to the revision before we delete it from
+            # the data object.
+            self.previous_revision \
+                .image_file.save('%d.jpg' % self.previous_revision.id,
+                                 content=self.image.image_file)
+            self.image.image_file.delete()
 
-        # then add the uploaded file
-        image.image_file.save(str(image.id) + '.jpg', content=self.image_file)
+        # Copy to the data object and then remove from the revision
+        # so that there is only one copy on the filesystem.
+        self.image.image_file.save('%d.jpg' % self.image.id,
+                                   content=self.image_file)
         self.image_file.delete()
-        self.image = image
-        self.save()
-        if clear_reservation:
-            image.reserved = False
-            image.save()
+
+    def __unicode__(self):
+        uni = super(ImageRevision, self).__unicode__()
+        if self.image_file:
+            return '%s (%s)' % (uni, self.image_file.url)
+        return '%s (no file)' % uni
