@@ -1778,6 +1778,55 @@ class IssueRevision(Revision):
                 self.previous_revision.series != self.series)
 
     @classmethod
+    def fork_variant(cls, issue, changeset,
+                     variant_name, variant_cover_revision=None,
+                     reservation_requested=False):
+        current_variants = issue.variant_set.all().order_by('-sort_code')
+        if current_variants:
+            add_after = current_variants[0]
+        else:
+            add_after = issue
+
+        variant_revision = IssueRevision.clone(
+            issue, changeset, fork=True, exclude={
+                'publication_date',
+                'key_date',
+                'on_sale_date',
+                'on_sale_date_uncertain',
+                'price',
+                'brand',
+                'no_brand',
+                'isbn',
+                'no_isbn',
+                'barcode',
+                'no_barcode',
+                'keywords',
+            })
+        variant_revision.add_after = add_after
+        variant_revision.variant_of = issue
+        variant_revision.variant_name = variant_name
+        variant_revision.reservation_requested = reservation_requested
+        variant_revision.save()
+
+        if variant_cover_revision:
+            cover_sequence_revision = StoryRevision(
+                changeset=changeset,
+                type=StoryType.objects.get(name='cover'),
+                no_script=True,
+                pencils='?',
+                inks='?',
+                colors='?',
+                no_letters=True,
+                no_editing=True,
+                sequence_number=0,
+                page_count=2 if variant_cover_revision.is_wraparound else 1)
+            cover_sequence_revision.save()
+        else:
+            cover_sequence_revision = None
+
+        return variant_revision, cover_sequence_revision
+
+    @classmethod
     def _get_stats_category_field_tuples(cls):
         return frozenset({('series', 'country',), ('series', 'language',)})
 

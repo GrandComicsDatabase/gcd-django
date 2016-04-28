@@ -5,8 +5,26 @@ import mock
 import pytest
 
 from apps.gcd.models import Series, Issue
-from apps.oi.models import Changeset, IssueRevision, CTYPES
+from apps.oi.models import Changeset, IssueRevision, CoverRevision, CTYPES
 from apps.oi import states
+
+
+EXCLUDED_FORK_FIELDS = {
+    'publication_date': '',
+    'key_date': '',
+    'year_on_sale': None,
+    'month_on_sale': None,
+    'day_on_sale': None,
+    'on_sale_date_uncertain': False,
+    'price': '',
+    'brand': None,
+    'no_brand': False,
+    'isbn': '',
+    'no_isbn': False,
+    'barcode': '',
+    'no_barcode': False,
+    'keywords': '',
+}
 
 
 @pytest.mark.django_db
@@ -101,14 +119,21 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
     assert rev.issue is not None
     assert rev.source is rev.issue
 
+    on_sale_revision_fields = ('year_on_sale', 'month_on_sale', 'day_on_sale')
     for k, v in issue_add_values.iteritems():
         if k == 'keywords':
             kws = [k for k in rev.issue.keywords.names()]
             kws.sort()
             assert kws == keywords['list']
+        elif k in on_sale_revision_fields:
+            # These are covered below.
+            continue
         else:
             assert getattr(rev.issue, k) == v
-
+    assert rev.issue.on_sale_date == '%04d-%02d-%02d' % (
+        issue_add_values['year_on_sale'],
+        issue_add_values['month_on_sale'],
+        issue_add_values['day_on_sale'])
     rev.issue.refresh_from_db()
     rev.issue.series.refresh_from_db()
     rev.issue.series.publisher.refresh_from_db()
@@ -424,3 +449,74 @@ def test_noncomics_counts(any_added_series_rev,
     assert {group.pk: group.issue_count
             for group in i.brand.group.all()} == old_brand_group_counts
     assert i.indicia_publisher.issue_count == old_ind_pub_issue_count
+
+
+@pytest.mark.django_db
+def test_fork_variant_for_cover_no_reserve(any_added_issue,
+                                           any_editing_changeset):
+    # Make it a wraparound to test cover sequence page count logic.
+    cover_rev = CoverRevision(changeset=any_editing_changeset,
+                              is_wraparound=2)
+    issue_rev, story_rev = IssueRevision.fork_variant(
+        any_added_issue,
+        any_editing_changeset,
+        variant_name='any variant name',
+        variant_cover_revision=cover_rev)
+
+    for name in IssueRevision._get_regular_fields():
+        if name == 'variant_of':
+            assert issue_rev.variant_of == any_added_issue
+        elif name == 'variant_name':
+            assert issue_rev.variant_name == 'any variant name'
+        elif name == 'on_sale_date':
+            assert issue_rev.year_on_sale is None
+            assert issue_rev.month_on_sale is None
+            assert issue_rev.day_on_sale is None
+        elif name in EXCLUDED_FORK_FIELDS:
+            assert getattr(issue_rev, name) == EXCLUDED_FORK_FIELDS[name]
+        else:
+            assert getattr(issue_rev, name) == getattr(any_added_issue, name)
+
+    assert issue_rev.add_after == any_added_issue
+    assert issue_rev.reservation_requested is False
+
+    assert story_rev.changeset == issue_rev.changeset
+    assert story_rev.issue is None
+    assert story_rev.sequence_number == 0
+    assert story_rev.page_count == 2
+    assert story_rev.type.name == 'cover'
+    assert story_rev.script == ''
+    assert story_rev.no_script is True
+    assert story_rev.inks == '?'
+    assert story_rev.no_inks is False
+    assert story_rev.colors == '?'
+    assert story_rev.no_colors is False
+    assert story_rev.letters == ''
+    assert story_rev.no_letters is True
+    assert story_rev.editing == ''
+    assert story_rev.no_editing is True
+
+    for name in ('pencils', 'inks', 'colors'):
+        assert getattr(story_rev, name) == '?'
+    for name in ('script', 'letters', 'editing'):
+        assert getattr(story_rev, name) == ''
+
+
+@pytest.mark.django_db
+def test_fork_variant_reserve_no_cover_with_variants(any_added_issue,
+                                                     any_added_variant,
+                                                     any_editing_changeset):
+    issue_rev, story_rev = IssueRevision.fork_variant(
+        any_added_issue,
+        any_editing_changeset,
+        variant_name='any variant name',
+        reservation_requested=True)
+
+    # Don't bother testing most fields as it is the same as above.
+    # Just test the reservation & no cover revision implications.
+    assert issue_rev.reservation_requested is True
+    assert story_rev is None
+
+    # Because we built a variant in the fixtures, the new variant
+    # should be sorted just after the existing variant.
+    assert issue_rev.add_after == any_added_variant

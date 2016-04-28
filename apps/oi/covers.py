@@ -536,40 +536,15 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
     # the variant issue and copy the values which would not change
     # TODO are these reasonable assumptions below ?
     if variant:
-        current_variants = issue.variant_set.all().order_by('-sort_code')
-        if current_variants:
-            add_after = current_variants[0]
-        else:
-            add_after = issue
-        issue_revision = IssueRevision(
-            changeset=changeset,
-            after=add_after,
-            number=issue.number,
-            title=issue.title,
-            no_title=issue.no_title,
-            volume=issue.volume,
-            no_volume=issue.no_volume,
-            display_volume_with_number=issue.display_volume_with_number,
-            variant_of=issue,
-            variant_name=form.cleaned_data['variant_name'],
-            page_count=issue.page_count,
-            page_count_uncertain=issue.page_count_uncertain,
-            series=issue.series,
-            editing=issue.editing,
-            no_editing=issue.no_editing,
-            reservation_requested=form.cleaned_data['reservation_requested'])
-        issue_revision.save()
+        variant_cover_revision = (
+            revision if form.cleaned_data['variant_artwork'] else None)
 
-        if form.cleaned_data['variant_artwork']:
-            story_revision = StoryRevision(
-                changeset=changeset,
-                type=StoryType.objects.get(name='cover'),
-                pencils='?',
-                inks='?',
-                colors='?',
-                sequence_number=0,
-                page_count=2 if form.cleaned_data['is_wraparound'] else 1)
-            story_revision.save()
+        issue_revision, story_revision = IssueRevision.fork_variant(
+            issue=issue,
+            changeset=changeset,
+            variant_name=form.cleaned_data['variant_name'],
+            variant_cover_revision=variant_cover_revision,
+            reservation_requested=form.cleaned_data['reservation_requested'])
 
     # put new uploaded covers into
     # media/<LOCAL_NEW_SCANS>/<monthname>_<year>/

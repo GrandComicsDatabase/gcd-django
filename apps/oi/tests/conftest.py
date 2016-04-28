@@ -9,7 +9,7 @@ from taggit.managers import TaggableManager
 
 from apps.gcd.models import (
     Country, Language, Indexer, SeriesPublicationType, SeriesBondType, Issue,
-    Story, StoryType)
+    StoryType)
 from apps.gcd.models.gcddata import GcdData
 from apps.oi import states
 from apps.oi.models import (
@@ -555,6 +555,10 @@ def issue_add_values(any_adding_changeset, any_country, any_language,
         'brand': any_added_brand,
         'publication_date': 'January 1947',
         'key_date': '1947-01-00',
+        'year_on_sale': 1946,
+        'month_on_sale': 11,
+        'day_on_sale': 23,
+        'on_sale_date_uncertain': True,
         'no_isbn': True,
         'no_barcode': True,
         'no_rating': True,
