@@ -622,48 +622,63 @@ class Revision(models.Model):
     # Methods for creating (cloning) a Revision from a data object,
     # including hook methods for use in customizing the cloning process.
 
-    def _pre_initial_save(self):
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset()):
         """
         Called just before saving to the database to handle unusual fields.
 
         Note that if there is a source data object, it will already be set.
+
+        See clone() for usage of fork, fork_source, and exclude.
         """
         pass
 
-    def _post_m2m_add(self):
+    def _post_m2m_add(self, fork=False, fork_source=None, exclude=frozenset()):
         """
         Called after initial save to database and m2m population.
 
         This is for handling unusual fields that require the revision to
         already exist in the database.
+
+        See clone() for usage of fork, fork_source, and exclude.
         """
         pass
 
     @classmethod
-    def clone(cls, data_object, changeset):
+    def clone(cls, data_object, changeset, fork=False, exclude=frozenset()):
         """
         Given an existing data object, create a new revision based on it.
 
         This new revision will be where the edits are made.
 
+        'fork' may be set to true to create a revision for a new data
+        object based on an existing data object.  The source and
+        previous_revision fields will be left null in this case.  Due to
+        this, the source issue will be passed separately to the customization
+        methods as 'fork_source'.
+
         Entirely new data objects should be started by simply instantiating
         a new revision of the approparite type directly.
+
+        A set (or set-like object) of field names to exclude from copying
+        may be passed.  This is particularly useful for forking.
         """
         # We start with all assignable fields, since we want to copy
         # old values even for deprecated fields.
         rev_kwargs = {field: getattr(data_object, field)
-                      for field in cls._get_single_value_fields().keys()}
+                      for field
+                      in cls._get_single_value_fields().viewkeys() - exclude}
 
         # Keywords are not assignable but behave the same way whenever
         # they are present, so handle them here.
-        if 'keywords' in cls._get_regular_fields():
+        if 'keywords' in cls._get_regular_fields().viewkeys() - exclude:
             rev_kwargs['keywords'] = get_keywords(data_object)
 
         # Instantiate the revision.  Since we do not know the exact
         # field name for the data_object, set it through the source property.
         revision = cls(changeset=changeset, **rev_kwargs)
 
-        if data_object:
+        if data_object and not fork:
             revision.source = data_object
 
             # Link to the previous revision for this data object.
@@ -675,14 +690,16 @@ class Revision(models.Model):
                 **{revision.source_name: data_object})
             revision.previous_revision = previous_revision
 
-        revision._pre_initial_save()
+        revision._pre_initial_save(fork=fork, fork_source=data_object,
+                                   exclude=exclude)
         revision.save()
 
         # Populate all of the many to many relations that don't use
         # their own separate revision classes.
-        for m2m in revision._get_multi_value_fields().keys():
+        for m2m in revision._get_multi_value_fields().viewkeys() - exclude:
             getattr(revision, m2m).add(*list(getattr(data_object, m2m).all()))
-        revision._post_m2m_add()
+        revision._post_m2m_add(fork=fork, fork_source=data_object,
+                               exclude=exclude)
 
         return revision
 
@@ -1799,11 +1816,13 @@ class IssueRevision(Revision):
             ('brand', 'group'),
         })
 
-    def _pre_initial_save(self):
-        if self.issue.on_sale_date:
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset()):
+        source = fork_source if fork_source else self.issue
+        if source.on_sale_date and 'on_sale_date' not in exclude:
             (self.year_on_sale,
              self.month_on_sale,
-             self.day_on_sale) = on_sale_date_fields(self.issue.on_sale_date)
+             self.day_on_sale) = on_sale_date_fields(source.on_sale_date)
 
     def _do_complete_added_revision(self, series, variant_of=None):
         """

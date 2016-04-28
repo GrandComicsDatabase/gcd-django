@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
-from apps.oi.models import Revision, RevisionManager
+from apps.oi.models import Revision, RevisionManager, Changeset
 from apps.gcd.models import Country, Language
 
 from .conftest import (
@@ -634,3 +634,25 @@ def test_pre_initial_save():
 
 def test_post_m2m_add():
     assert DummyRevision()._post_m2m_add() is None
+
+
+def test_clone_parameter_passthrough():
+    with mock.patch('apps.oi.models.Revision._pre_initial_save',
+                    return_value={}), \
+            mock.patch('apps.oi.models.Revision._post_m2m_add',
+                       return_value={}), \
+            mock.patch('apps.oi.models.Revision.changeset'), \
+            mock.patch('apps.oi.models.Revision.save'):
+        exclude = {'whatever'}
+        data_object = mock.MagicMock()
+        data_object.keywords.all.return_value.order_by.return_value = {}
+        rev = OtherDummyRevision.clone(data_object=data_object,
+                                       changeset=Changeset(),
+                                       fork=True,
+                                       exclude=exclude)
+        rev._pre_initial_save.assert_called_once_with(fork=True,
+                                                      fork_source=data_object,
+                                                      exclude=exclude)
+        rev._post_m2m_add.assert_called_once_with(fork=True,
+                                                  fork_source=data_object,
+                                                  exclude=exclude)
