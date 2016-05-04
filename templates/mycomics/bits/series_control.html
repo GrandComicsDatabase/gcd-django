@@ -1,5 +1,6 @@
 {% load url from future %}
 {% load i18n %}
+{% load collecting %}
 <div class="edit_header">
     <div>my.comics.org</div>
 </div>
@@ -24,7 +25,7 @@
     </select>
   </div>
 </form>
-{% for subscription in series.subscription_set.all %}
+{% for subscription in series|subscribed:request.user %}
   {% if forloop.first %}
 <ul>
   {% endif %}
