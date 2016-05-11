@@ -9,9 +9,21 @@ class Migration(DataMigration):
     def forwards(self, orm):
         from django.core.management import call_command
         from django.conf import settings
-        call_command('loaddata', 'support')
-        call_command('loaddata', 'site')
-        call_command('loaddata', 'imagetype')
+        call_command('loaddata', 'countstats')
+
+        if settings.DEBUG:
+            # Assume this is a development environment, load test users.
+            # First ensure that we have all of the content types needed
+            # for this fixture.  Then load the fixture.
+            from django.contrib.contenttypes.management import \
+                update_contenttypes
+            from django.contrib.auth.management import create_permissions
+            from django.db.models import get_app, get_models
+
+            update_contenttypes(get_app('gcd'), get_models())
+            create_permissions(get_app('gcd'), get_models(), 0)
+
+            call_command('loaddata', 'users')
 
     def backwards(self, orm):
         # Not really reversable.
@@ -58,6 +70,24 @@ class Migration(DataMigration):
             'Meta': {'ordering': "['name']", 'object_name': 'Brand'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'group': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['gcd.BrandGroup']", 'symmetrical': 'False', 'db_table': "'gcd_brand_emblem_group'", 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'issue_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {}),
+            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']", 'null': 'True', 'blank': 'True'}),
+            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '255', 'blank': 'True'}),
+            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
+            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
+            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
+        },
+        'gcd.brandgroup': {
+            'Meta': {'ordering': "['name']", 'object_name': 'BrandGroup', 'db_table': "'gcd_brand_group'"},
+            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'issue_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
@@ -66,6 +96,20 @@ class Migration(DataMigration):
             'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']"}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '255', 'blank': 'True'}),
+            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
+            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
+            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
+        },
+        'gcd.branduse': {
+            'Meta': {'object_name': 'BrandUse', 'db_table': "'gcd_brand_use'"},
+            'created': ('django.db.models.fields.DateField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'emblem': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'in_use'", 'to': "orm['gcd.Brand']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'modified': ('django.db.models.fields.DateField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {}),
+            'publisher': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']"}),
+            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
             'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
@@ -80,6 +124,7 @@ class Migration(DataMigration):
         'gcd.countstats': {
             'Meta': {'object_name': 'CountStats', 'db_table': "'gcd_count_stats'"},
             'count': ('django.db.models.fields.IntegerField', [], {}),
+            'country': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Country']", 'null': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Language']", 'null': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '40', 'db_index': 'True'})
@@ -149,16 +194,19 @@ class Migration(DataMigration):
             'collapse_compare_view': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'country': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'indexers'", 'to': "orm['gcd.Country']"}),
             'deceased': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'from_where': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'imps': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'interests': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'is_banned': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'is_new': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'issue_detail': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
             'languages': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'indexers'", 'symmetrical': 'False', 'db_table': "'gcd_indexer_languages'", 'to': "orm['gcd.Language']"}),
             'max_ongoing': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'max_reservations': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
             'mentor': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'mentees'", 'null': 'True', 'to': "orm['auth.User']"}),
             'notify_on_approve': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
+            'opt_in_email': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'registration_expires': ('django.db.models.fields.DateField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
             'registration_key': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'db_index': 'True'}),
             'show_wiki_links': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
@@ -204,6 +252,7 @@ class Migration(DataMigration):
             'no_editing': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'no_rating': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_title': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
@@ -214,6 +263,7 @@ class Migration(DataMigration):
             'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'price': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'publication_date': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'rating': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'db_index': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'series': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Series']"}),
             'sort_code': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
@@ -311,21 +361,25 @@ class Migration(DataMigration):
         },
         'gcd.series': {
             'Meta': {'ordering': "['sort_name', 'year_began']", 'object_name': 'Series'},
+            'binding': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
+            'color': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'country': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Country']"}),
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'dimensions': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'first_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'first_issue_series_set'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'format': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'format': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'has_barcode': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'has_gallery': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'has_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'has_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'has_issue_title': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'has_rating': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'has_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'imprint': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'imprint_series_set'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
             'is_comics_publication': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'is_current': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'is_singleton': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'issue_count': ('django.db.models.fields.IntegerField', [], {}),
             'language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Language']"}),
             'last_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'last_issue_series_set'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
@@ -333,9 +387,12 @@ class Migration(DataMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
             'open_reserve': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
+            'paper_stock': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'publication_dates': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'publication_notes': ('django.db.models.fields.TextField', [], {}),
+            'publication_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.SeriesPublicationType']", 'null': 'True', 'blank': 'True'}),
             'publisher': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']"}),
+            'publishing_format': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'sort_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'tracking_notes': ('django.db.models.fields.TextField', [], {}),
@@ -343,6 +400,30 @@ class Migration(DataMigration):
             'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
             'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
+        },
+        'gcd.seriesbond': {
+            'Meta': {'object_name': 'SeriesBond', 'db_table': "'gcd_series_bond'"},
+            'bond_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.SeriesBondType']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
+            'origin': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_series_bond'", 'to': "orm['gcd.Series']"}),
+            'origin_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_series_issue_bond'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
+            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'target': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_series_bond'", 'to': "orm['gcd.Series']"}),
+            'target_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_series_issue_bond'", 'null': 'True', 'to': "orm['gcd.Issue']"})
+        },
+        'gcd.seriesbondtype': {
+            'Meta': {'object_name': 'SeriesBondType', 'db_table': "'gcd_series_bond_type'"},
+            'description': ('django.db.models.fields.TextField', [], {}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'})
+        },
+        'gcd.seriespublicationtype': {
+            'Meta': {'ordering': "['name']", 'object_name': 'SeriesPublicationType', 'db_table': "'gcd_series_publication_type'"},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {})
         },
         'gcd.story': {
             'Meta': {'ordering': "['sequence_number']", 'object_name': 'Story'},
