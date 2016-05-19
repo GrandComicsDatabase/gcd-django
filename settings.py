@@ -51,6 +51,7 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': '',
         'PORT': '',
+        'ATOMIC_REQUESTS': True,
     },
 }
 
@@ -62,7 +63,6 @@ MIDDLEWARE_CLASSES = (
    'django.contrib.messages.middleware.MessageMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.common.CommonMiddleware',
-   'django.middleware.transaction.TransactionMiddleware',
    'django_mobile.middleware.MobileDetectionMiddleware',
    'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',

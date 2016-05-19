@@ -3,7 +3,7 @@ from apps.gcd.models import Publisher, Country, Language
 
 PUBLISHERS = [[p.id, p.name]
                for p in Publisher.objects
-                                 .filter(is_master=True, deleted=False)
+                                 .filter(deleted=False)
                                  .order_by('name')]
 
 IN_USE_COUNTRIES = [['', '--']]
