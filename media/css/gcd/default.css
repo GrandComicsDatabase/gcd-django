@@ -1,5 +1,5 @@
 body {
-    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
     font-size: 100%;
 }
 
@@ -50,18 +50,18 @@ body {
 }
 
 h1 {
-    font-family: Helvetica, Arial, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
     font-size: 2em;
     clear: both;
 }
 
 h2 {
-    font-family: Helvetica, Arial, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
     font-size: 1.5em;
 }
 
 h3 {
-    font-family: Helvetica, Arial, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
     font-size: 1.2em;
 }
 
@@ -277,7 +277,7 @@ div.search_id_nav {
     margin-top: 1em;
 }
 
-/* for two columns on the pages with control box on the right */
+/* For two columns on the pages with control box on the right */
 
 .control_body{
 	padding:0 15.25em 0 0;
@@ -721,7 +721,7 @@ a.link_info_left:hover span
 }
 
 .change_history {
-    font-family: Helvetica, Arial, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
     margin-bottom: 0.5em;
     padding: .4em;
     background-color: #444;
@@ -733,7 +733,8 @@ a.link_info_left:hover span
     font-weight: bold;
 }
 
-/* for search results info */
+/* For search results info */
+
 div.search_terms {
     clear: left;
     margin-bottom: 1em;
