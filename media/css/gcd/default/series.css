@@ -51,7 +51,6 @@ div#series_data img.icon {
 }
 
 div.series_detail_header {
-    font-family: Helvetica, Arial, Verdana, sans-serif;
     font-size: larger;
     font-weight: bold;
 }
@@ -73,4 +72,3 @@ ul#series_detail_link_list {
 .empty_month {
     color: #777;
 }
-
