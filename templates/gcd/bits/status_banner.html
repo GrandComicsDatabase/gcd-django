@@ -1,5 +1,3 @@
-{% load url from future %}
-
 {% if object.reserved %}
   {% with object.revisions.active as revision %}
   {% with revision.changeset as changeset %}

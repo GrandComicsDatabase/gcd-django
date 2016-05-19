@@ -1,5 +1,4 @@
 {% load display %}
-{% load url from future %}
 
 {% if revision.issue and revision.issue.has_covers %}
 <a class="new_window" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>

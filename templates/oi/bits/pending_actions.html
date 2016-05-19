@@ -1,5 +1,3 @@
-{% load url from future %}
-
 {% if changeset.state = states.REVIEWING or changeset.state = states.DISCUSSED %}
   {% if changeset.approver == user %}
 <form action="{% url "process" id=changeset.id %}" method="POST">

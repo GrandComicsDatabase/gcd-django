@@ -1,4 +1,3 @@
-{% load url from future %}
 {% load display %}
 <tr colspan="2" align="left" {% if reprint.deleted %} class="deleted" {% endif %} {% if reprint.changeset and reprint.in_type = None and reprint.out_type = None %} class="added" {% endif %}>
   {% if reprint.changeset and not reprint.changeset = changeset and reprint.source %}
