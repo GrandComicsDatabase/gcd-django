@@ -1,6 +1,6 @@
 git+git://github.com/GrandComicsDatabase/django-taggit.git@django18
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@django18
-git+git://github.com/GrandComicsDatabase/django-mobile.git
+git+git://github.com/GrandComicsDatabase/django-mobile.git@django19
 argparse==1.2.1
 BeautifulSoup==3.2.1
 diff-match-patch==20121119
