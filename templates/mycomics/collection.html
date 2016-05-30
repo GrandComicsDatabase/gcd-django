@@ -14,6 +14,9 @@
           <button type="button" class="btn" style="display: inline-block;">
           <span class="glyphicon glyphicon-download"></span>
         </button></a>
+        <a href="{% url "subscriptions_collection" collection.id %}">
+          <button type="button" class="btn btn-primary">{% trans "Subscriptions" %}
+        </button></a>
         <a href="{% url "edit_collection" collection.id %}">
           <button type="button" class="btn btn-primary">{% trans "Edit" %}
         </button></a>
@@ -30,14 +33,15 @@
         {% for col_item in collection_list %}
           <a href="{% url "view_collection" col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
           {% if col_item.public %}
-            <span class="glyphicon glyphicon-eye-open">&thinsp;</span>
+            <span title="public collection" class="glyphicon glyphicon-eye-open">&thinsp;</span>
           {% else %}
-            <span class="glyphicon glyphicon-eye-close"></span>
+            <span title="non-public collection" class="glyphicon glyphicon-eye-close"></span>
           {% endif %}
             {{ col_item }}</a>
         {% endfor %}
       </div>
       <div>
+        {% include 'gcd/bits/ad_skyscraper.html' %}
         <!-- Here should go adserver script -->
       </div>
     </div>

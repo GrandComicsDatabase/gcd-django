@@ -429,8 +429,16 @@ def search(request):
     else:
         sort = ORDER_ALPHA
 
-    if request.GET['type'].startswith("haystack"):
+    if request.GET['type'].find("haystack") >= 0:
         quoted_query = urlquote(request.GET['query'])
+
+    if request.GET['type'] == "mycomics_haystack":
+        if sort == ORDER_CHRONO:
+            return HttpResponseRedirect(urlresolvers.reverse("mycomics_search") + \
+            "?q=%s&sort=year" % quoted_query)
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse("mycomics_search") + \
+            "?q=%s" % quoted_query)
 
     if request.GET['type'] == "haystack":
         if sort == ORDER_CHRONO:

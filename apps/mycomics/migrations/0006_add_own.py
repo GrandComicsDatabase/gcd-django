@@ -1,21 +1,51 @@
 # -*- coding: utf-8 -*-
-import datetime
+from south.utils import datetime_utils as datetime
 from south.db import db
-from south.v2 import DataMigration
+from south.v2 import SchemaMigration
 from django.db import models
 
-class Migration(DataMigration):
+
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        from django.core.management import call_command
-        from django.conf import settings
-        call_command('loaddata', 'support')
-        call_command('loaddata', 'site')
-        call_command('loaddata', 'imagetype')
+        # Adding field 'CollectionItem.own'
+        db.add_column('mycomics_collection_item', 'own',
+                      self.gf('django.db.models.fields.NullBooleanField')(default=None, null=True, blank=True),
+                      keep_default=False)
+
+
+        # Changing field 'CollectionItem.purchase_location'
+        db.alter_column('mycomics_collection_item', 'purchase_location_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, on_delete=models.SET_NULL, to=orm['mycomics.PurchaseLocation']))
+
+        # Changing field 'CollectionItem.location'
+        db.alter_column('mycomics_collection_item', 'location_id', self.gf('django.db.models.fields.related.ForeignKey')(null=True, on_delete=models.SET_NULL, to=orm['mycomics.Location']))
+        # Adding field 'Collection.own_used'
+        db.add_column('mycomics_collection', 'own_used',
+                      self.gf('django.db.models.fields.BooleanField')(default=False),
+                      keep_default=False)
+
+        # Adding field 'Collection.own_default'
+        db.add_column('mycomics_collection', 'own_default',
+                      self.gf('django.db.models.fields.NullBooleanField')(default=None, null=True, blank=True),
+                      keep_default=False)
+
 
     def backwards(self, orm):
-        # Not really reversable.
-        pass
+        # Deleting field 'CollectionItem.own'
+        db.delete_column('mycomics_collection_item', 'own')
+
+
+        # Changing field 'CollectionItem.purchase_location'
+        db.alter_column('mycomics_collection_item', 'purchase_location_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['mycomics.PurchaseLocation'], null=True))
+
+        # Changing field 'CollectionItem.location'
+        db.alter_column('mycomics_collection_item', 'location_id', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['mycomics.Location'], null=True))
+        # Deleting field 'Collection.own_used'
+        db.delete_column('mycomics_collection', 'own_used')
+
+        # Deleting field 'Collection.own_default'
+        db.delete_column('mycomics_collection', 'own_default')
+
 
     models = {
         'auth.group': {
@@ -58,6 +88,24 @@ class Migration(DataMigration):
             'Meta': {'ordering': "['name']", 'object_name': 'Brand'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'group': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['gcd.BrandGroup']", 'symmetrical': 'False', 'db_table': "'gcd_brand_emblem_group'", 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'issue_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {}),
+            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']", 'null': 'True', 'blank': 'True'}),
+            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '255', 'blank': 'True'}),
+            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
+            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
+            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
+        },
+        'gcd.brandgroup': {
+            'Meta': {'ordering': "['name']", 'object_name': 'BrandGroup', 'db_table': "'gcd_brand_group'"},
+            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'issue_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
@@ -76,36 +124,6 @@ class Migration(DataMigration):
             'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '10'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'})
-        },
-        'gcd.countstats': {
-            'Meta': {'object_name': 'CountStats', 'db_table': "'gcd_count_stats'"},
-            'count': ('django.db.models.fields.IntegerField', [], {}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Language']", 'null': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '40', 'db_index': 'True'})
-        },
-        'gcd.cover': {
-            'Meta': {'ordering': "['issue']", 'object_name': 'Cover'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'front_bottom': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'front_left': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'front_right': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'front_top': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_wraparound': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Issue']"}),
-            'last_upload': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'db_index': 'True'}),
-            'limit_display': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'marked': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
-        },
-        'gcd.error': {
-            'Meta': {'object_name': 'Error'},
-            'error_key': ('django.db.models.fields.CharField', [], {'max_length': '40', 'primary_key': 'True'}),
-            'error_text': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'is_safe': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
         'gcd.image': {
             'Meta': {'object_name': 'Image'},
@@ -126,43 +144,6 @@ class Migration(DataMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50', 'db_index': 'True'}),
             'unique': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'gcd.impgrant': {
-            'Meta': {'object_name': 'ImpGrant', 'db_table': "'gcd_imp_grant'"},
-            'grant_type': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'imps': ('django.db.models.fields.IntegerField', [], {}),
-            'indexer': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'imp_grant_set'", 'to': "orm['gcd.Indexer']"}),
-            'notes': ('django.db.models.fields.TextField', [], {})
-        },
-        'gcd.indexcredit': {
-            'Meta': {'object_name': 'IndexCredit', 'db_table': "'gcd_series_indexers'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'indexer': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'index_credit_set'", 'to': "orm['gcd.Indexer']"}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'null': 'True'}),
-            'run': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True'}),
-            'series': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'index_credit_set'", 'to': "orm['gcd.Series']"})
-        },
-        'gcd.indexer': {
-            'Meta': {'ordering': "['user__last_name', 'user__first_name']", 'object_name': 'Indexer'},
-            'collapse_compare_view': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'country': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'indexers'", 'to': "orm['gcd.Country']"}),
-            'deceased': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'imps': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'interests': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'is_banned': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'is_new': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'languages': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'indexers'", 'symmetrical': 'False', 'db_table': "'gcd_indexer_languages'", 'to': "orm['gcd.Language']"}),
-            'max_ongoing': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'max_reservations': ('django.db.models.fields.IntegerField', [], {'default': '1'}),
-            'mentor': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'mentees'", 'null': 'True', 'to': "orm['auth.User']"}),
-            'notify_on_approve': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
-            'registration_expires': ('django.db.models.fields.DateField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'registration_key': ('django.db.models.fields.CharField', [], {'max_length': '40', 'null': 'True', 'db_index': 'True'}),
-            'show_wiki_links': ('django.db.models.fields.BooleanField', [], {'default': 'True', 'db_index': 'True'}),
-            'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True'})
         },
         'gcd.indiciapublisher': {
             'Meta': {'ordering': "['name']", 'object_name': 'IndiciaPublisher', 'db_table': "'gcd_indicia_publisher'"},
@@ -204,6 +185,7 @@ class Migration(DataMigration):
             'no_editing': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'no_rating': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_title': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'no_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
@@ -214,6 +196,7 @@ class Migration(DataMigration):
             'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'price': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'publication_date': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'rating': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'db_index': 'True'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'series': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Series']"}),
             'sort_code': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
@@ -223,28 +206,11 @@ class Migration(DataMigration):
             'variant_of': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'variant_set'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
             'volume': ('django.db.models.fields.CharField', [], {'max_length': '50', 'db_index': 'True'})
         },
-        'gcd.issuereprint': {
-            'Meta': {'object_name': 'IssueReprint', 'db_table': "'gcd_issue_reprint'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
-            'origin_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_issue_reprints'", 'to': "orm['gcd.Issue']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'target_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_issue_reprints'", 'to': "orm['gcd.Issue']"})
-        },
         'gcd.language': {
             'Meta': {'ordering': "('name',)", 'object_name': 'Language'},
             'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '10'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'})
-        },
-        'gcd.migrationstorystatus': {
-            'Meta': {'object_name': 'MigrationStoryStatus', 'db_table': "'gcd_migration_story_status'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'reprint_confirmed': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'reprint_needs_inspection': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'reprint_original_notes': ('django.db.models.fields.TextField', [], {'null': 'True'}),
-            'story': ('django.db.models.fields.related.OneToOneField', [], {'related_name': "'migration_status'", 'unique': 'True', 'to': "orm['gcd.Story']"})
         },
         'gcd.publisher': {
             'Meta': {'ordering': "['name']", 'object_name': 'Publisher'},
@@ -269,63 +235,27 @@ class Migration(DataMigration):
             'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
             'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
         },
-        'gcd.recentindexedissue': {
-            'Meta': {'object_name': 'RecentIndexedIssue', 'db_table': "'gcd_recent_indexed_issue'"},
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Issue']"}),
-            'language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Language']", 'null': 'True'})
-        },
-        'gcd.reprint': {
-            'Meta': {'object_name': 'Reprint'},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
-            'origin': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_reprints'", 'to': "orm['gcd.Story']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'target': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_reprints'", 'to': "orm['gcd.Story']"})
-        },
-        'gcd.reprintfromissue': {
-            'Meta': {'object_name': 'ReprintFromIssue', 'db_table': "'gcd_reprint_from_issue'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
-            'origin_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_reprints'", 'to': "orm['gcd.Issue']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'target': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_issue_reprints'", 'to': "orm['gcd.Story']"})
-        },
-        'gcd.reprinttoissue': {
-            'Meta': {'object_name': 'ReprintToIssue', 'db_table': "'gcd_reprint_to_issue'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
-            'origin': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_issue_reprints'", 'to': "orm['gcd.Story']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'target_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_reprints'", 'to': "orm['gcd.Issue']"})
-        },
-        'gcd.reservation': {
-            'Meta': {'object_name': 'Reservation'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'expires': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'indexer': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'reservation_set'", 'to': "orm['gcd.Indexer']"}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'reservation_set'", 'to': "orm['gcd.Issue']"}),
-            'status': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'})
-        },
         'gcd.series': {
             'Meta': {'ordering': "['sort_name', 'year_began']", 'object_name': 'Series'},
+            'binding': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
+            'color': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'country': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Country']"}),
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'dimensions': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'first_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'first_issue_series_set'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'format': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'format': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'has_barcode': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'has_gallery': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'has_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'has_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'has_issue_title': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'has_rating': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'has_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'imprint': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'imprint_series_set'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
             'is_comics_publication': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'is_current': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'is_singleton': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'issue_count': ('django.db.models.fields.IntegerField', [], {}),
             'language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Language']"}),
             'last_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'last_issue_series_set'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
@@ -333,9 +263,12 @@ class Migration(DataMigration):
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'notes': ('django.db.models.fields.TextField', [], {}),
             'open_reserve': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
+            'paper_stock': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'publication_dates': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'publication_notes': ('django.db.models.fields.TextField', [], {}),
+            'publication_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.SeriesPublicationType']", 'null': 'True', 'blank': 'True'}),
             'publisher': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']"}),
+            'publishing_format': ('django.db.models.fields.CharField', [], {'default': "u''", 'max_length': '255'}),
             'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'sort_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
             'tracking_notes': ('django.db.models.fields.TextField', [], {}),
@@ -344,45 +277,109 @@ class Migration(DataMigration):
             'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
             'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
-        'gcd.story': {
-            'Meta': {'ordering': "['sequence_number']", 'object_name': 'Story'},
-            'characters': ('django.db.models.fields.TextField', [], {}),
-            'colors': ('django.db.models.fields.TextField', [], {}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'editing': ('django.db.models.fields.TextField', [], {}),
-            'feature': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'genre': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+        'gcd.seriespublicationtype': {
+            'Meta': {'ordering': "['name']", 'object_name': 'SeriesPublicationType', 'db_table': "'gcd_series_publication_type'"},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'inks': ('django.db.models.fields.TextField', [], {}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Issue']"}),
-            'job_number': ('django.db.models.fields.CharField', [], {'max_length': '25'}),
-            'letters': ('django.db.models.fields.TextField', [], {}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'no_colors': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_editing': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_inks': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_letters': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_pencils': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_script': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {}),
-            'page_count': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '3', 'db_index': 'True'}),
-            'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'pencils': ('django.db.models.fields.TextField', [], {}),
-            'reprint_notes': ('django.db.models.fields.TextField', [], {}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'script': ('django.db.models.fields.TextField', [], {}),
-            'sequence_number': ('django.db.models.fields.IntegerField', [], {}),
-            'synopsis': ('django.db.models.fields.TextField', [], {}),
-            'title': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'title_inferred': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.StoryType']"})
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'notes': ('django.db.models.fields.TextField', [], {})
         },
-        'gcd.storytype': {
-            'Meta': {'ordering': "['sort_code']", 'object_name': 'StoryType', 'db_table': "'gcd_story_type'"},
+        'mycomics.collection': {
+            'Meta': {'object_name': 'Collection'},
+            'acquisition_date_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'collector': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'collections'", 'to': "orm['mycomics.Collector']"}),
+            'condition_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'for_sale_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50', 'db_index': 'True'}),
-            'sort_code': ('django.db.models.fields.IntegerField', [], {'unique': 'True'})
+            'location_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'market_value_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
+            'own_default': ('django.db.models.fields.NullBooleanField', [], {'default': 'None', 'null': 'True', 'blank': 'True'}),
+            'own_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'price_paid_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'public': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'purchase_location_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'sell_date_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'sell_price_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'signed_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'was_read_used': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
+        },
+        'mycomics.collectionitem': {
+            'Meta': {'ordering': "['issue__series__sort_name', 'issue__sort_code']", 'object_name': 'CollectionItem', 'db_table': "'mycomics_collection_item'"},
+            'acquisition_date': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'+'", 'null': 'True', 'to': "orm['stddata.Date']"}),
+            'collections': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'items'", 'symmetrical': 'False', 'db_table': "'mycomics_collection_item_collections'", 'to': "orm['mycomics.Collection']"}),
+            'for_sale': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'grade': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'+'", 'null': 'True', 'to': "orm['mycomics.ConditionGrade']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'issue': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Issue']"}),
+            'location': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'items'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': "orm['mycomics.Location']"}),
+            'market_value': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
+            'market_value_currency': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'+'", 'null': 'True', 'to': "orm['stddata.Currency']"}),
+            'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'own': ('django.db.models.fields.NullBooleanField', [], {'default': 'None', 'null': 'True', 'blank': 'True'}),
+            'price_paid': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
+            'price_paid_currency': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'+'", 'null': 'True', 'to': "orm['stddata.Currency']"}),
+            'purchase_location': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'items'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': "orm['mycomics.PurchaseLocation']"}),
+            'sell_date': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'+'", 'null': 'True', 'to': "orm['stddata.Date']"}),
+            'sell_price': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '2', 'blank': 'True'}),
+            'sell_price_currency': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'+'", 'null': 'True', 'to': "orm['stddata.Currency']"}),
+            'signed': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'was_read': ('django.db.models.fields.NullBooleanField', [], {'default': 'None', 'null': 'True', 'blank': 'True'})
+        },
+        'mycomics.collector': {
+            'Meta': {'object_name': 'Collector'},
+            'default_currency': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'+'", 'null': 'True', 'to': "orm['stddata.Currency']"}),
+            'default_have_collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'null': 'True', 'to': "orm['mycomics.Collection']"}),
+            'default_language': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['gcd.Language']"}),
+            'default_want_collection': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'null': 'True', 'to': "orm['mycomics.Collection']"}),
+            'grade_system': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'+'", 'to': "orm['mycomics.ConditionGradeScale']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'user': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['auth.User']", 'unique': 'True'})
+        },
+        'mycomics.conditiongrade': {
+            'Meta': {'object_name': 'ConditionGrade', 'db_table': "'mycomics_condition_grade'"},
+            'code': ('django.db.models.fields.CharField', [], {'max_length': '20'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'scale': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'grades'", 'to': "orm['mycomics.ConditionGradeScale']"}),
+            'value': ('django.db.models.fields.FloatField', [], {})
+        },
+        'mycomics.conditiongradescale': {
+            'Meta': {'object_name': 'ConditionGradeScale', 'db_table': "'mycomics_condition_grade_scale'"},
+            'description': ('django.db.models.fields.CharField', [], {'max_length': '2000', 'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'})
+        },
+        'mycomics.location': {
+            'Meta': {'object_name': 'Location'},
+            'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['mycomics.Collector']"})
+        },
+        'mycomics.purchaselocation': {
+            'Meta': {'object_name': 'PurchaseLocation', 'db_table': "'mycomics_purchase_location'"},
+            'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['mycomics.Collector']"})
+        },
+        'stddata.currency': {
+            'Meta': {'ordering': "('name',)", 'object_name': 'Currency'},
+            'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '3'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'is_decimal': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100', 'db_index': 'True'})
+        },
+        'stddata.date': {
+            'Meta': {'ordering': "('year', 'month', 'day')", 'object_name': 'Date'},
+            'day': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '2', 'blank': 'True'}),
+            'day_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'month': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '2', 'blank': 'True'}),
+            'month_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'year': ('django.db.models.fields.CharField', [], {'db_index': 'True', 'max_length': '4', 'blank': 'True'}),
+            'year_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
         'taggit.tag': {
             'Meta': {'object_name': 'Tag'},
@@ -399,5 +396,4 @@ class Migration(DataMigration):
         }
     }
 
-    complete_apps = ['gcd']
-    symmetrical = True
+    complete_apps = ['mycomics']

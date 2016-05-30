@@ -4,9 +4,6 @@
 {% load i18n %}
 {% load display %}
 {% load credits %}
-{% if MYCOMICS %}
-  {% load collecting %}
-{% endif %}
 
 {% block title %}
   GCD :: Issue :: {{ issue.short_name }}
@@ -143,33 +140,24 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
     <div id="control_rail">
       <div class="edit_box">
 {% if MYCOMICS %}
-        <div class="edit_header">
-          <div>my.comics.org</div>
-        </div>
-  {% if request.user.is_authenticated %}
-          {{ issue|show_have_want:request.user }}
-        <form method="POST" action="{% url "my_issue" issue_id=issue.id %}">
-            {% csrf_token %}
-          <div>
-            <input type="submit" name="confirm_selection" value="Add">
-            this issue to your 
-            <select name="collection_id">
-            {% for col_item in request.user.collector.ordered_collections %}
-              <option value="{{ col_item.id }}">{{ col_item.name }}
-            {% endfor %}
-            </select>
-          </div>
-        </form>
-  {% endif %}
+  {% include "mycomics/bits/issue_control.html" %}
 {% else %}
         <div class="edit_header">Editing
-  {% if request.user.is_authenticated and not preview %}
+  {% if request.user.is_authenticated %}
           <div class="right">
+    {% if preview %}
+            <a class="link_info_left" href="{% url "export_issue_revision_csv" issue.id %}"><span>download issue data (CSV)</span>
+    {% else %}
             <a class="link_info_left" href="{% url "export_issue_csv" issue.id %}"><span>download issue data (CSV)</span>
+    {% endif %}
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-spreadsheet.png" alt="download issue data" style="border:0;">
             </a>
 
+    {% if preview %}
+            <a class="link_info_left" href="{% url "export_issue_revision" issue.id %}"><span>download issue data</span>
+    {% else %}
             <a class="link_info_left" href="{% url "export_issue" issue.id %}"><span>download issue data</span>
+    {% endif %}
             <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-save.png" alt="download issue data" style="border:0;">
             </a>
           </div>
@@ -213,6 +201,15 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 {% endif %} <!-- MYCOMICS -->
       </div> <!-- edit_box -->
 {% if not preview or issue.source %}
+  {% if MYCOMICS %}
+      <div class="www_comics_cross_link">
+        <a href="http://www.comics.org{% url "show_issue" issue_id=issue.id %}">Issue at www.comics.org</a>
+      </div>
+  {% else %}
+      <div class="my_comics_cross_link">
+        <a href="http://my.comics.org{% url "show_issue" issue_id=issue.id %}">Issue at my.comics.org</a>
+      </div>
+  {% endif %}
       <div class="change_history">
   {% if preview %}
         <a href="{% url "issue_images" issue_id=issue.source.id %}">Resources ({{ images_count }}) </a>
@@ -220,6 +217,9 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
         <a href="{% url "issue_images" issue_id=issue.id %}">Resources ({{ images_count }}) </a>
   {% endif %}
       </div>
+{% if ADVERTISING %}
+  {% include "gcd/bits/ad_skyscraper.html" %}
+{% endif %}
       <div class="change_history">
   {% if preview %}
         <a href="{% url "change_history" model_name='issue' id=issue.source.id %}">Change History</a>
@@ -273,7 +273,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% endif %}
       </div> <!-- index_credits -->
 {% endif %}
-{% if ADVERTISING %}
+{% if False and ADVERTISING %}
   {% include "gcd/bits/ad_skyscraper.html" %}
 {% endif %}
     </div> <!-- control_rail -->

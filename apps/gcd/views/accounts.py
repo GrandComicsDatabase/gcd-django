@@ -602,10 +602,21 @@ def ranking(indexer):
         .filter(imps__gt=indexer.imps)
     national = worldwide.filter(country=indexer.country)
 
+    # first in the list is the next one who can get in front
+    worldwide_down = Indexer.objects.order_by('-imps')\
+        .exclude(user__username=settings.ANON_USER_NAME) \
+        .exclude(user=indexer.user) \
+        .filter(imps__lte=indexer.imps)
+    national_down = worldwide_down.filter(country=indexer.country)
+
     return {
         'national': national.count() + 1,
         'global': worldwide.count() + 1,
         'national_levelup':
             (national[0].imps - indexer.imps + 1) if national else None,
         'global_levelup':
-            (worldwide[0].imps - indexer.imps + 1) if worldwide else None }
+            (worldwide[0].imps - indexer.imps + 1) if worldwide else None,
+        'national_leveldown':
+            (indexer.imps - national_down[0].imps) if national_down else None,
+        'global_leveldown':
+            (indexer.imps - worldwide_down[0].imps) if worldwide_down else None }

@@ -27,6 +27,13 @@ body {
     margin-bottom: 1em;
 }
 
+#special_banner {
+    font-size: 1.4em;
+    background-color: #EE7;
+    margin-bottom: 0em;
+    padding: 0.3em 0.3em 0.3em 0.3em;
+}
+
 #preview_banner {
     font-weight: bold;
     background-color: orange;
@@ -589,11 +596,7 @@ div.ongoing_status form {
 
 /* Fix "Selection" column width to avoid jumping when heading is changed dynamically */
 .select_heading {
-    width: 7em;
-}
-
-.select_heading :link {
-    color: white;
+    width: 8em;
 }
 
 /* For form error messages, which usually need div positioning */
@@ -630,6 +633,21 @@ div.ongoing_status form {
 a.new_window {
     padding-right: 13px;
     background: transparent no-repeat right center url(external.png);
+    position:relative;
+    z-index:1;
+}
+
+a.new_window:hover span
+{
+    display:block;
+    position:absolute;
+    left:0em;
+    width:11em;
+    border:1px solid black;
+    background-color: #FFF;
+    color:#000;
+    text-align: center;
+    padding: 5px;
 }
 
 a.link_info_left
@@ -639,12 +657,12 @@ a.link_info_left
     text-decoration:none;
 }
 
-a.link_info_left:hover
+a.link_info_left:hover, a.new_window:hover
 {
     z-index:2;
 }
 
-a.link_info_left span
+a.link_info_left span, a.new_window span
 {
     display: none;
 }
@@ -660,7 +678,7 @@ a.link_info_left:hover span
     color:#000;
     text-align: center;
     padding: 5px;
-    font-size: 0.8em;
+    font-size: 0.9em;
 }
 
 #donate_table {
@@ -682,9 +700,29 @@ a.link_info_left:hover span
     color: white;
 }
 
+.my_comics_cross_link {
+    margin-bottom: 0.5em;
+    padding: .4em;
+    background-color: #A9302A;
+    text-align: center;
+}
+
+.www_comics_cross_link {
+    margin-bottom: 0.5em;
+    padding: .4em;
+    background-color: #66E;
+    text-align: center;
+}
+
+.my_comics_cross_link a, .www_comics_cross_link a {
+    color: white;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
 .change_history {
     font-family: Helvetica, Arial, Verdana, sans-serif;
-    margin-bottom: 1em;
+    margin-bottom: 0.5em;
     padding: .4em;
     background-color: #444;
     text-align: center

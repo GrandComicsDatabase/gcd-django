@@ -1,11 +1,11 @@
-from django.forms import ModelForm
+from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect
 from apps.mycomics.models import *
 from apps.oi.forms import _clean_keywords
 
 class CollectorForm(ModelForm):
     class Meta:
         model = Collector
-        exclude = ('user')
+        exclude = ('user',)
 
     def __init__(self, collector, *args, **kwargs):
         kwargs['instance']=collector
@@ -18,25 +18,30 @@ class CollectorForm(ModelForm):
 class CollectionForm(ModelForm):
     class Meta:
         model = Collection
-        exclude = ('collector')
+        exclude = ('collector',)
+        widgets = {'own_default': RadioSelect(choices = ((None, "---"),
+                                              (True, "I own this comic."),
+                                              (False, "I want this comic."))),}
 
 
 class LocationForm(ModelForm):
     class Meta:
         model = Location
-        exclude = ('user')
+        exclude = ('user',)
 
 
 class PurchaseLocationForm(ModelForm):
     class Meta:
         model = PurchaseLocation
-        exclude = ('user')
-
+        exclude = ('user',)
 
 class CollectionItemForm(ModelForm):
     class Meta:
         model = CollectionItem
         exclude = ('collections', 'issue', 'acquisition_date', 'sell_date')
+        widgets = {'own': Select(choices = ((None, "---"),
+                                            (True, "I own this comic."),
+                                            (False, "I want this comic."))),}
 
     def __init__(self, user, *args, **kwargs):
         super(CollectionItemForm, self).__init__(*args, **kwargs)
@@ -59,6 +64,8 @@ class CollectionItemForm(ModelForm):
         else:
             self.fields['purchase_location'].queryset = \
                         PurchaseLocation.objects.filter(user=user)
+        if not collections.filter(own_used=True).exists():
+            self.fields.pop('own')
         if not collections.filter(was_read_used=True).exists():
             self.fields.pop('was_read')
         if not collections.filter(for_sale_used=True).exists():
@@ -77,3 +84,15 @@ class CollectionItemForm(ModelForm):
 
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
+
+
+class CollectionSelectForm(Form):
+    collection = ChoiceField()
+
+    def __init__(self, collector, excluded_collections=None, *args, **kwargs):
+        super(CollectionSelectForm, self).__init__(*args, **kwargs)
+        choices = [(collection.id, collection) for collection in collector.ordered_collections()]
+        if excluded_collections:
+            choices[:] = [choice for choice in choices \
+                             if choice[1] not in excluded_collections]
+        self.fields['collection'].choices = choices

@@ -4,30 +4,35 @@
  * ***************************************/
 
 .status_available,
-.status_0 {
+.status_0,
+.collection_status_empty {
     background-color: white;
 }
 
 .status_editing,
-.status_1 {
+.status_1,
+.collection_status_want {
     background-color: #F30;
 }
 
 .status_pending,
 .status_reviewing,
 .status_discussed,
-.status_2 {
+.status_2,
+.collection_status_collected {
     background-color: #F93;
 }
 
 .status_approved,
-.status_3 {
+.status_3,
+.collection_status_own {
     /* background-color: #0B2; */
     background-color: #3C3;
 }
 
 .status_partial,
-.status_4 {
+.status_4,
+.collection_status_several {
     background-color: #77E;
 }
 

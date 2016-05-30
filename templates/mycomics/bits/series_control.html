@@ -1,15 +1,41 @@
 {% load url from future %}
+{% load i18n %}
+{% load collecting %}
 <div class="edit_header">
     <div>my.comics.org</div>
 </div>
+<div class="my_comics_control">
 {% if messages %}
 <ul class="messages">
   {% for message in messages %}
-  <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+  <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</li>
   {% endfor %}
 </ul>
 {% endif %}
 {% if request.user.is_authenticated %}
+  {% if series.is_current %}
+<form method="POST" action="{% url "series_subscribe" series_id=series.id %}">
+  {% csrf_token %}
+  <div>
+    <input type="submit" name="confirm_selection" value="{% trans "Subscribe" %}"> series for
+    <select name="collection_id">
+  {% for col_item in request.user.collector.ordered_collections %}
+      <option value="{{ col_item.id }}">{{ col_item.name }}</option>
+  {% endfor %}
+    </select>
+  </div>
+</form>
+{% for subscription in series|subscribed:request.user %}
+  {% if forloop.first %}
+<ul>
+  {% endif %}
+  <li>{% trans "subscribed for" %} <a href="{% url "subscriptions_collection" collection_id=subscription.collection.id %}">{{ subscription.collection }}</a>
+  {% if forloop.last %}
+</ul>
+  {% endif %}
+{% endfor %}
+<hr>
+  {% endif %}
 <form action="{% url "my_series_issues" series_id=series.id %}" method="get">
   <input type="submit" name="submit" value="Select issues"> from this series 
   <select name="which_issues">
@@ -31,4 +57,14 @@ to add to a collection.
     </select>
   </div>
 </form>
+<hr>
+<form class="changeset" method="POST" enctype="multipart/form-data"
+        action="{% url "my_series_issues" series_id=series.id %}">
+{% csrf_token %}
+  <div>
+    Select file: <input type="file" name="import_my_issues_to_series">
+    <input type="submit" name="import_issues" value="Import issues">
+  </div>
+</form>
+</div>
 {% endif %}

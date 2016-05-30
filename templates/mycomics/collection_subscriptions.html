@@ -1,0 +1,94 @@
+{% extends "mycomics/user_base.html" %}
+{% load url from future %}
+{% load i18n %}
+{% load collecting %}
+{% load bootstrap3 %}
+
+{% block modals %}
+  {{ block.super }}
+  {% if request.user.collector == collection.collector %}
+  <script type="application/javascript">
+      var selected_subscription;
+      var selected_series;
+  </script>
+  <div id="unsubscribe-series" class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+            <h4 class="modal-title">{% trans "Unsubscribe series in collection" %}</h4>
+          </div>
+          <div class="modal-body">
+            <p>{% trans "Do you want to unsubscribe from this series?" %} </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <button type="button" class="btn btn-primary" onclick="window.location.href='{% url "unsubscribe" %}'+selected_subscription">{% trans "Confirm" %}</button>
+          </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  {% endif %}
+{% endblock %}
+
+  
+{% block content %}
+  {% bootstrap_messages %}
+  <div class="page-header middle-header">
+    <h1>{% trans "Subscriptions" %}: {{ collection.name }}
+    {% if request.user.collector == collection.collector %}
+      <div class="btn-group pull-right">
+        <a href="{% url "subscribed_into_collection" collection.id %}">
+          <button type="button" class="btn btn-primary">{% trans "Pull" %}
+        </button></a>
+      </div>
+    {% endif %}
+    </h1>
+  </div>
+
+  <div class="row">
+    <div class="col-md-2 hidden-xs">
+      <h3>{% trans "Collections" %}:</h3>
+      <div class="list-group">
+        {% for col_item in collection_list %}
+          <a href="{% url "view_collection" col_item.id %}" class="list-group-item{% if col_item.id == collection.id %} active{% endif %}">
+          {% if col_item.public %}
+            <span title="public collection" class="glyphicon glyphicon-eye-open">&thinsp;</span>
+          {% else %}
+            <span title="non-public collection" class="glyphicon glyphicon-eye-close"></span>
+          {% endif %}
+            {{ col_item }}</a>
+        {% endfor %}
+      </div>
+      <div>
+        {% include 'gcd/bits/ad_skyscraper.html' %}
+      </div>
+    </div>
+    <div class="col-md-10">
+      <div class="row">
+        {% for subscription in subscriptions %}
+          <div class="col-md-2">
+            <div class="thumbnail">
+              <a href="{{ subscription.series.get_absolute_url }}">
+              {{ subscription.series.first_issue|show_cover_tag }}
+              <div class="caption">{{ subscription.series.full_name_with_link }}<br>Issue added {{ subscription.last_pulled|date:"Y-m-d" }}</div>
+              <div class="btn-group pull-right">
+                <button type="button" class="btn btn-primary btn-sm"
+                        style="display: inline-block;" data-toggle="modal"
+                        href="#unsubscribe-series" onclick="selected_subscription={{ subscription.id }}" onclick="selected_series={{ subscription.series.full_name }}">
+                    <span class="glyphicon glyphicon-remove"></span>
+                </button>
+              </div>
+              <div class="clearfix"></div>
+            </div>
+          </div>
+          {% if forloop.counter|divisibleby:"5" and not forloop.last %}
+            </div>
+            <div class="row">
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

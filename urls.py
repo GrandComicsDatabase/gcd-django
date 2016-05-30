@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.views.generic import base as bv
 from django.shortcuts import redirect
+from django.views.generic.base import TemplateView
 
 from apps.gcd.views import accounts as account_views
 from apps.gcd.views import error_view
@@ -118,11 +119,15 @@ read_only_patterns = patterns('',
 )
 
 if settings.SITE_DOWN:
+    class SiteDownTemplateView(TemplateView):
+        def get_context_data(self, **kwargs):
+            context = super(SiteDownTemplateView, self).get_context_data(**kwargs)
+            context.update({'settings': settings})
+            return context
+
     urlpatterns = patterns('',
-        (r'^site-down/$', direct_to_template, {
-            'template': 'site_down.html',
-            'extra_context': { 'settings': settings }
-         }),
+        (r'^site-down/$',  SiteDownTemplateView.as_view(
+            template_name= 'site_down.html')),
         (r'^.*$', lambda request: redirect('/site-down/')),
     )
 
