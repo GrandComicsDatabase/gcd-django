@@ -232,6 +232,13 @@
         {% endif %}
       {% endif %} <!-- logged in -->
     {% endif %} <!-- not preview -->
+        <div id="change_history" class="edit_footer">
+  {% if preview %}
+          <a href="{% url "change_history" model_name='series' id=series.source.id %}">View Change History</a>
+  {% else %}
+          <a href="{% url "change_history" model_name='series' id=series.id %}">View Change History</a>
+  {% endif %}
+        </div>
   {% endif %} <!-- MYCOMICS -->
       </div>
 {% if not preview %}
@@ -245,13 +252,6 @@
       </div>
   {% endif %}
 {% endif %}
-      <div class="change_history">
-  {% if preview %}
-        <a href="{% url "change_history" model_name='series' id=series.source.id %}">Change History</a>
-  {% else %}
-        <a href="{% url "change_history" model_name='series' id=series.id %}">Change History</a>
-  {% endif %}
-      </div>
     </div> <!-- control_rail -->
 {% endif %}
   </div> <!-- control_container -->
