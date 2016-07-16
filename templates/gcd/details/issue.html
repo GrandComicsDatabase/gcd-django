@@ -202,7 +202,11 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
       </div> <!-- edit_box -->
       <div id="change_history" class="edit_footer">
   {% if preview %}
+    {% if issue.source %}
         <a href="{% url "change_history" model_name='issue' id=issue.source.id %}">View Change History</a>
+    {% else %}
+        No Change History Available
+    {% endif %}
   {% else %}
         <a href="{% url "change_history" model_name='issue' id=issue.id %}">View Change History</a>
   {% endif %}
