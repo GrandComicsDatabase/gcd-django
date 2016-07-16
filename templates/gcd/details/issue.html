@@ -282,7 +282,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
       </ol>
 
 {% if ADVERTISING %}
-  {% include "gcd/bits/ad_skyscraper.html" %}
+  {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
 {% endif %}
 
 {% if issue.series.index_credit_set.all.select_related or oi_indexers %}

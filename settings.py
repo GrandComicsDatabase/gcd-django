@@ -174,9 +174,9 @@ DATETIME_FORMAT = 'Y-m-d H:i:s'
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
                         'compressor.filters.csstidy.CSSTidyFilter']
 
-# for front page editing
+# for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
-                                'templates/gcd/front_page/')),]
+                                       'templates/managed_content/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
 
 #################################################################################
