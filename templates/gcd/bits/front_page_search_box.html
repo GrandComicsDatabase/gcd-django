@@ -22,3 +22,12 @@
     </div>
   </form> 
 </div>
+
+<!-- This extra wrapping div causes an extra top margin to be added to the
+     div inside the survery_banner if it is present.  However, it is only
+     attached to that inner div, so if the survey banner is empty, this
+     outer div has no effect. -->
+<div id="survey_top_spacer">
+  {% include "managed_content/gcd/messages/survey_banner.html" %}
+</div>
+

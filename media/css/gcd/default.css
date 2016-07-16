@@ -30,8 +30,24 @@ body {
 #special_banner {
     font-size: 1.4em;
     background-color: #EE7;
-    margin-bottom: 0em;
-    padding: 0.3em 0.3em 0.3em 0.3em;
+    margin-bottom 0em;
+    padding: 0.3em;
+}
+
+/* Survey banners should be an inviting color. */
+#survey_banner {
+    background-color: palegreen;
+    font-size: 1.4em;
+    margin-bottom: 0.5em;
+    padding: 0.3em;
+}
+
+/* In one place we need a top margin, so we wrap another div around it.
+ * The margin still needs to be on .special_banner, though, as that div
+ * appears conditionally, while the wrapper is always present.
+ */
+#survey_top_spacer #survey_banner {
+    margin-top: 0.5em;
 }
 
 #preview_banner {
