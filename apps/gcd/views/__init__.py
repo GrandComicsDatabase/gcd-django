@@ -49,26 +49,38 @@ def index(request):
     stats = CountStats.objects.filter(language__isnull=True,
                                       country__isnull=True)
     language = None
-    # TODO: we want to check here if we actively support the language
-    if request.LANGUAGE_CODE != 'en':
+    stats_for_language = []
+
+    # We only want to show English-specific anything if English was
+    # explicitly passed in the URL.  Otherwise we use the English-language
+    # page but without anything specific to only the English contents of
+    # the database.
+    code = request.LANGUAGE_CODE
+    if code and (code != 'en' or request.GET.get('lang') == 'en'):
         try:
-            language = Language.objects.get(code=request.LANGUAGE_CODE)
+            language = Language.objects.get(code=code)
+            stats_for_language = CountStats.objects.filter(language=language)
         except Language.DoesNotExist:
             pass
 
-    if language:
-        front_page_content = ("gcd/front_page/front_page_content_%s.html" %
-                              language.code)
-        stats_for_language = CountStats.objects.filter(language=language)
-    else:
-        front_page_content = "gcd/front_page/front_page_content.html"
-        stats_for_language = None
+    if (not code) or code not in settings.FRONT_PAGE_LANGUAGES:
+        # Make certain that we pick an actual existing page, but
+        # leave the language stats matching what was requested.
+        code = 'en'
+    base_path = 'managed_content/gcd/%s/' % code
 
-    vars = {'stats': stats, 'language': language,
-            'stats_for_language': stats_for_language,
-            'front_page_content': front_page_content,
-            'CALENDAR': settings.CALENDAR}
-    return render_to_response('gcd/index.html', vars,
+    template_vars = {}
+    for template in ('front_page_title', 'front_page_main', 'front_page_lower',
+                     'fb_feed'):
+        template_vars[template] = '%s/%s.html' % (base_path, template)
+
+    template_vars.update({
+        'stats': stats,
+        'language': language,
+        'stats_for_language': stats_for_language,
+        'CALENDAR': settings.CALENDAR,
+    })
+    return render_to_response('gcd/index.html', template_vars,
                               context_instance=RequestContext(request))
 
 
