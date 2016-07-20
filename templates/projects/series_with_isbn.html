@@ -2,13 +2,14 @@
 
 {% load i18n %}
 {% load display %}
+{% load staticfiles %}
 
 {% block title %}Series with ISBN in notes{% endblock %}
 
 {% block css %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/projects/default.css"/>
+      href="{% static "css/projects/default.css" %}"/>
 {% endblock %}
 
 {% block body %}
@@ -42,7 +43,7 @@
 {% for series in items %}
   <tr> {# class="{% cycle 'listing_even' 'listing_odd' as row_classes%}"> #}
     <td class="listing_publisher first_row last_row">
-      <img src="{{ MEDIA_URL }}/img/gcd/flags/{{ series.publisher.country.code|lower }}.png" alt="{{ series.publisher.country.code|upper }}">
+      <img src="{% static "img/gcd/flags/{{ series.publisher.country.code|lower }}.png" %}" alt="{{ series.publisher.country.code|upper }}">
     </td>
     <td class="listing_publisher first_row last_row">
       {{ series.publisher|absolute_url }}
