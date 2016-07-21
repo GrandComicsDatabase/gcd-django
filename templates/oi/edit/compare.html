@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 {% load url from future %}
+{% load staticfiles %}
 
 {% load display %}
 {% load editing %}
@@ -11,11 +12,11 @@ GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css">
+      href="{% static "css/gcd/default.css" %}">
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default.css">
+      href="{% static "css/oi/default.css" %}">
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default/edit.css">
+      href="{% static "css/oi/default/edit.css" %}">
 {% endblock %}
 
 {% block view_body %}
