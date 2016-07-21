@@ -32,7 +32,7 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
 
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
-MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
+MEDIA_ROOT = abspath(join(dirname(__file__), 'site_media'))
 MEDIA_URL = '/site_media/'
 
 # URL and absolute path to static file tree.
