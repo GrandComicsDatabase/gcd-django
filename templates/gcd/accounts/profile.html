@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 {% load url from future %}
+{% load staticfiles %}
 
 <!--
 Account organization is messed up, leading to this template reaching over
@@ -13,11 +14,11 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+        href="{% static "css/gcd/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default/accounts.css"/>
+        href="{% static "css/gcd/default/accounts.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/oi/default.css"/>
+        href="{% static "css/oi/default.css" %}"/>
 {% endblock %}
 
 {% block title %} GCD :: {{ profile_user.indexer }} :: Profile {% endblock %}

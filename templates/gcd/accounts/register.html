@@ -1,13 +1,14 @@
 {% extends "gcd/base_view.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load forms %}
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+        href="{% static "css/gcd/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default/accounts.css"/>
+        href="{% static "css/gcd/default/accounts.css" %}"/>
 {% endblock %}
 
 {% block title %}

@@ -3,6 +3,7 @@
 {% load humanize %}
 {% load i18n %}
 {% load compress %}
+{% load staticfiles %}
 {% load url from future %}
 
 <html>
@@ -10,9 +11,9 @@
   <title> {{ site_name }} </title>
 {% compress css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+        href="{% static "css/gcd/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default/front_page.css"/>
+        href="{% static "css/gcd/default/front_page.css" %}"/>
 {% endcompress %}
   <!--[if lt IE 7]>
     <style type="text/css">
@@ -20,7 +21,7 @@
     margin-left:-100%;
     }</style>
   <![endif]-->
-  <link rel="shortcut icon" href="{{ MEDIA_URL }}/img/favicon.ico">
+  <link rel="shortcut icon" href="{% static "img/favicon.ico" %}">
   <link href="https://plus.google.com/114804467432159116851" rel="publisher" />
 </head>
 
@@ -81,27 +82,27 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
         <div class="front_page_left_box_social">
           <div class="social_item">
             <a href="http://www.facebook.com/GrandComicsDatabase">
-              <img alt="facebook" src="{{ MEDIA_URL }}/img/gcd/social/facebook_32.png">
+              <img alt="facebook" src="{% static "img/gcd/social/facebook_32.png" %}">
             </a>
           </div>
           <div class="social_item">
             <a href="http://www.twitter.com/GCDcomics">
-              <img alt="twitter" src="{{ MEDIA_URL }}/img/gcd/social/twitter_32.png">
+              <img alt="twitter" src="{% static "img/gcd/social/twitter_32.png" %}">
             </a>
           </div>
           <div class="social_item">
             <a href="https://plus.google.com/+GrandComicsDatabase">
-              <img alt="google+" src="{{ MEDIA_URL }}/img/gcd/social/google_plus_32.png">
+              <img alt="google+" src="{% static "img/gcd/social/google_plus_32.png" %}">
             </a>
           </div>
           <div class="social_item">
             <a href="http://www.pinterest.com/gcdcomics/">
-              <img alt="pinterest" src="{{ MEDIA_URL }}/img/gcd/social/pinterest_32.png">
+              <img alt="pinterest" src="{% static "img/gcd/social/pinterest_32.png" %}">
             </a>
           </div>
           <div class="social_item">
             <a href="mailto:{% trans 'contact@comics.org' %}">
-              <img alt="email" src="{{ MEDIA_URL }}/img/gcd/social/email_32.png">
+              <img alt="email" src="{% static "img/gcd/social/email_32.png" %}">
             </a>
           </div>
         </div>

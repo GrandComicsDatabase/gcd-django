@@ -1,8 +1,9 @@
 {% extends "gcd/base_view.html" %}
+{% load staticfiles %}
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+        href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
 {% block title %} GCD :: New Account Confirmation {% endblock %}
