@@ -107,7 +107,7 @@ def feed(context, feed_url, posts_to_show=None, cache_expires=None):
     """
     return {
       'posts': pull_feed(feed_url, posts_to_show, cache_expires),
-      'MEDIA_URL': context['MEDIA_URL'] }
+    }
 
 class GetFeedNode(template.Node):
     def __init__(self, var_name, feed_url, posts_to_show=None,

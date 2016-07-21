@@ -35,12 +35,13 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
 MEDIA_URL = '/site_media/'
 
-# We're not using django.contrib.staticfiles yet, but the admin site
-# is happier with a STATIC_URL and django-compressor has changed from
-# defaulting to MEDIA_* to STATIC_* for its settings.
-# for its settings.
-STATIC_URL = MEDIA_URL
-STATIC_ROOT = MEDIA_ROOT
+# URL and absolute path to static file tree.
+STATIC_URL = '/static/'
+STATIC_ROOT = abspath(join(dirname(__file__), 'static_root'))
+
+# Additional dirs from which to collect static files.
+# Must not contain STATIC_ROOT, which is the destination.
+STATICFILES_DIRS = (abspath(join(dirname(__file__), 'static')),)
 
 # Database settings. Override yours in a settings_local.py
 DATABASES = {
@@ -92,6 +93,7 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.sites',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'django_mobile',
     'apps.gcd',
     'apps.oi',
@@ -314,8 +316,8 @@ MYCOMICS = False
 
 # Twitter Bootstrap
 BOOTSTRAP3 = {
-    'jquery_url': MEDIA_URL+'jquery/js/jquery.min.js',
-    'base_url': MEDIA_URL+'bootstrap/',
+    'jquery_url': STATIC_URL + 'jquery/js/jquery.min.js',
+    'base_url': STATIC_URL + 'bootstrap/',
     }
 
 # absolute path to the directory that holds election files.

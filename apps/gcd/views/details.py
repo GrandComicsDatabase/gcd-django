@@ -1287,7 +1287,7 @@ def agenda(request, language):
     css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
       len('<link type="text/css" rel="stylesheet" href="')
     css_pos_end = a[css_pos:].find('">') + css_pos
-    a = a[:css_pos]  + settings.MEDIA_URL + \
+    a = a[:css_pos]  + settings.STATIC_URL + \
       'calendar/css/c9ff6efaf72bf95e3e2b53938d3fbacaembedcompiled_fastui.css' \
       + a[css_pos_end:]
     return HttpResponse(a)

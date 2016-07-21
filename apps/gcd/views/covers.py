@@ -52,7 +52,7 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
                'class="cover_img">')
 
     if settings.FAKE_IMAGES:
-        return mark_safe('<img src="' +settings.MEDIA_URL + \
+        return mark_safe('<img src="' +settings.STATIC_URL + \
                'img/placeholder_' + size + '.jpg"' + \
                'class="cover_img">')
 

@@ -6,6 +6,7 @@ from django.contrib.auth import views as auth_views
 from django.views.generic import base as bv
 from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from apps.gcd.views import accounts as account_views
 from apps.gcd.views import error_view
@@ -158,7 +159,5 @@ else:
                            )
                   )
 
-if settings.DEBUG:
-    urlpatterns += patterns('',
-        (r'site_media/(?P<path>.*)$', 'django.views.static.serve',
-         { 'document_root' : settings.MEDIA_ROOT }))
+# This only has any effect when DEBUG is True.
+urlpatterns += staticfiles_urlpatterns()
