@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
@@ -11,11 +12,11 @@
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+        href="{% static "css/gcd/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default/issue.css"/>
+        href="{% static "css/gcd/default/issue.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default/single_story.css"/>
+        href="{% static "css/gcd/default/single_story.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
