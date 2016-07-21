@@ -12,8 +12,7 @@ def index(request):
     print reverse('apps.inducks.views.index')
     vars = {
         'style' : style,
-        'media_url' : settings.MEDIA_URL,
-	'base_url' : reverse('apps.inducks.views.index')
+        'base_url' : reverse('apps.inducks.views.index')
     }
     return render_to_response('inducks/index.html', vars)
       
