@@ -118,12 +118,16 @@ Disallow: /
 User-agent: WebReaper
 Disallow: /
 
-## experimental
-Crawl-delay: 120
-Visit-time: 0600-0845
+User-agent: msnbot
+Crawl-delay: 1
 
+User-agent: bingbot
+Crawl-delay: 1
+
+# Google AdSense bot.  We no longer use AdSense.
+# Note that Google's regular search indexing bot is different.
 User-agent: Mediapartners-Google
-Disallow:
+Disallow: /
 
 ## crawler should forget old URLs
 User-agent: *
@@ -139,8 +143,18 @@ Disallow: /special/
 Disallow: /data/
 Disallow: /changeset/
 Disallow: /projects/
+Disallow: /select_object/
+Disallow: /issue/revision/
+Disallow: /reprint/revision/
+Disallow: /story/revision/
+Disallow: /*history/$
 ## expensive searches
 Disallow: /character/name/
 Disallow: /credit/name/
 Disallow: /search/advanced/process/
+
+Sitemap: http://www.comics.org/sitemap.xml
+
+User-agent: Yandex
+Crawl-delay: 1 # sets a 1 second time-out
 

@@ -1,0 +1,27 @@
+{% comment %}
+Center column beneath the search box.  This region is mostly built
+from various smaller templates that are managed via django-templatesadmin.
+{% endcomment %}
+
+{% load url from future %}
+
+<div id="front_page_content_inner">
+  <h2>{% include front_page_title %}</h2>
+
+{% if BETA %}
+  {% load statustags %}
+
+  <div class="instructions">
+    <h3>This is the BETA site.</h3>
+    <p>
+    If you have no particular reason to visit our BETA site, you probably want
+    to use the <a href="{% url 'home' %}?lang={{ language.code }}">real site.</a>
+    </p>
+  </div>
+{% endif %} {# BETA #}
+
+  {% include front_page_main %}
+  {% include fb_feed %}
+  {% include front_page_lower %}
+
+</div>

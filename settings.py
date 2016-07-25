@@ -182,9 +182,9 @@ DATETIME_FORMAT = 'Y-m-d H:i:s'
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
                         'compressor.filters.csstidy.CSSTidyFilter']
 
-# for front page editing
+# for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
-                                'templates/gcd/front_page/')),]
+                                       'templates/managed_content/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
 
 # settings for django-taggit
@@ -247,6 +247,8 @@ NO_OI = False
 
 ###
 # General GCD site settings
+
+FRONT_PAGE_LANGUAGES = ('en', 'de', 'nl', 'sv')
 
 DEFAULT_FROM_EMAIL = 'GCD Contact <contact@comics.org>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'

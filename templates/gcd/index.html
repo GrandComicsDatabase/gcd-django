@@ -48,7 +48,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             </div>
           </div>
           <div class="front_page_central">
-            {% include front_page_content %}
+            {% include "gcd/bits/front_page_content.html" %}
           </div>
           <div class="front_page_central_box">
             <div class="box_header">
@@ -128,7 +128,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
       <div id="right_column">
         <!-- Right Column start -->
-        {% include "gcd/front_page/front_page_notice.html" %}
+        {% include "managed_content/gcd/messages/front_page_notice.html" %}
         <div class="front_page_right_box">
           <div class="box_header">
             {% trans "Useful Links" %}
@@ -143,7 +143,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
               <li><a href="{% url "international_stats_language" %}">{% trans "by Language" %}</a>
               <li><a href="{% url "international_stats_country" %}">{% trans "by Country" %}</a>
               </ul>
-              {% if language %}
+              {% if language and language.code != 'en' %}
               <li><a href="{% url "apps.gcd.views.index" %}">English start page</a></li>
               {% endif %}
               {% ifnotequal language.code 'de' %}
@@ -201,7 +201,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
           </div>
         </div>
 {% if ADVERTISING and not BETA %}
-  {% include "gcd/bits/ad_skyscraper.html" %}
+  {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
 {% endif %}
         <!-- Right Column end -->
       </div>
@@ -211,7 +211,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
 <div id="footer">
   {% include "gcd/bits/legalese.html" %}
-  {% include "gcd/bits/ad_bottom.html" %}
+  {% include "managed_content/gcd/ads/ad_bottom.html" %}
 </div>
 
 </div><!-- id="sizing_base" -->

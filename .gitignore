@@ -1,10 +1,13 @@
+# Compiled files
 *.pyc
-*.py~
-*.html~
-*.css~
-*.json~
-*swp
-*media/cache
+*.mo
+
+# Auto-generated or externally managed content
+/media/cache
+/media/CACHE
+/media/beta
+/media/dumps
+/media/fonts
 /media/img/gcd/covers_by_id
 /media/img/gcd/covers_old_id_scheme
 /media/img/gcd/new_covers
@@ -12,11 +15,23 @@
 /media/img/gcd/generic_images
 /media/local_img
 /media/admin
+/site_media
+/voting
+
+# Local configuration
 settings_local.py
+templates/BingSiteAuth.xml
+.reviewboardrc
+
+# Editor temp and config files
+*.py~
+*.html~
+*.css~
+*.json~
+*swp
 .project
 .pydevproject
 .settings
 *.nja
 .idea
 *.iml
-.reviewboardrc

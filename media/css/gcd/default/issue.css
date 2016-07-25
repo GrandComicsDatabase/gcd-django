@@ -63,42 +63,30 @@ div#format {
 }
 
 #story_toc {
-    margin-bottom: 1em;
     font-size: 0.85em;
+    margin: 0 0 1em 0;
+    padding: 0;
+    list-style: none;
 }
 
-a.cache_link {
-    color:  black;
-    font-weight: normal;
+#story_toc li {
+    padding: 0.4em;
 }
 
 .toc_story_title {
     /* font-style: italic; */
 }
 
-#story_toc ol {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-#story_toc ol li {
-    padding: 0.4em;
-}
-
-#story_toc ol li.odd {
+#story_toc li.odd {
     background-color: #FFF;
 }
-#story_toc ol li.even {
+#story_toc li.even {
     background-color: #DDD;
 }
 
-#toc_header {
-    margin-top: 0;
-    margin-bottom: 0;
-    padding: .4em;
-    background-color: #444;
-    color: white;
+a.cache_link {
+    color:  black;
+    font-weight: normal;
 }
 
 

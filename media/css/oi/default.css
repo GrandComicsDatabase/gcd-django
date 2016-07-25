@@ -106,8 +106,7 @@ div.indexer_right_box h2 {
 }
 
 div.indexer_notice {
-    padding-top: 1em;
     background-color: #EEE;
-    padding-left: 0.4em;
-    padding-right: 0.4em;
+    padding: 1em 0.4em;
+    margin-bottom: 1em;
 }

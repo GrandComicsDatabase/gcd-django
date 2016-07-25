@@ -20,9 +20,15 @@ For now, just a simple single block for all CSS, despite redundancy.
 {% if BETA %}
   {% include "gcd/bits/beta_banner.html" %}
 {% endif %}
+
+{% if not EDITING %}
+  {% include "managed_content/gcd/messages/special_banner.html" %}
+{% endif %}
+
 {% if preview %}
   {% include "gcd/bits/preview_banner.html" %}
 {% endif %}
+
 {% block body %}{% endblock %}
 
 {% block fine_print %}

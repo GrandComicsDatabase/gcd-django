@@ -71,6 +71,14 @@
           <input type="submit" name="search_select" value="Submit">
           <div style="clear: both;"></div>
       {% endif %}
+      {% if paginator.count > 100 %}
+      <div style="clear: both;">
+      Too many results? Try adding further terms to limit the matches,
+      e.g. publication year or publisher. Or put search terms in ""-quotes
+      for exact matches, which also works for (exact) series name and
+      issue number.
+      </div>
+      {% endif %}
       <div class="left">
         <table class="listing left">
           <tr>
@@ -146,7 +154,7 @@
       </div>
       <div class="right">
         {% if ADVERTISING and not BETA %}
-          {% include "gcd/bits/ad_skyscraper.html" %}
+          {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
         {% endif %}
       </div>
       {% if select_key and multiple_selects %}
