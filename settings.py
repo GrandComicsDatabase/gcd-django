@@ -43,6 +43,15 @@ STATIC_ROOT = abspath(join(dirname(__file__), 'static_root'))
 # Must not contain STATIC_ROOT, which is the destination.
 STATICFILES_DIRS = (abspath(join(dirname(__file__), 'static')),)
 
+# THe first two are the defaults, which need to be listed because
+# we also need the django-compressor finder to be specified.
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+)
+
+
 # Database settings. Override yours in a settings_local.py
 DATABASES = {
     'default': {
