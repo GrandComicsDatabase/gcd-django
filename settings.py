@@ -115,7 +115,6 @@ INSTALLED_APPS = (
     'templatesadmin',
     'taggit',
     'imagekit',
-    'south',
     'haystack',
     'elasticstack',
     'bootstrap3',
@@ -203,11 +202,6 @@ COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                        'templates/managed_content/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
-
-# settings for django-taggit
-SOUTH_MIGRATION_MODULES = {
-    'taggit': 'taggit.south_migration',
-}
 
 #################################################################################
 # Haystack and search
