@@ -1510,27 +1510,14 @@ class PublisherRevisionBase(Revision):
 
     name = models.CharField(max_length=255)
 
-    year_began = models.IntegerField(null=True, blank=True,
-      help_text='The first year in which the publisher was active.')
-    year_ended = models.IntegerField(null=True, blank=True,
-      help_text='The last year in which the publisher was active. '
-                'Leave blank if the publisher is still active.')
-    year_began_uncertain = models.BooleanField(default=False,
-      help_text='Check if you are not certain of the beginning year.')
-    year_ended_uncertain = models.BooleanField(default=False,
-      help_text='Check if you are not certain of the ending year, or if you '
-                'are not certain whether the publisher is still active.')
+    year_began = models.IntegerField(null=True, blank=True)
+    year_ended = models.IntegerField(null=True, blank=True)
+    year_began_uncertain = models.BooleanField(default=False)
+    year_ended_uncertain = models.BooleanField(default=False)
 
-    notes = models.TextField(blank=True,
-      help_text='Anything that doesn\'t fit in other fields.  These notes '
-                'are part of the regular display.')
-    keywords = models.TextField(blank=True, default='',
-      help_text='Significant objects, locations, or themes (NOT characters) '
-                'depicted in the content, such as "Phantom Zone", '
-                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
-                'entries are to be separated by semi-colons.')
-    url = models.URLField(blank=True,
-      help_text='The official web site of the publisher.')
+    notes = models.TextField(blank=True)
+    keywords = models.TextField(blank=True, default='')
+    url = models.URLField(blank=True)
 
     # order exactly as desired in compare page
     # use list instead of set to control order
@@ -1629,9 +1616,7 @@ class PublisherRevision(PublisherRevisionBase):
     country = models.ForeignKey('gcd.Country', db_index=True)
 
     # Deprecated fields about relating publishers/imprints to each other
-    is_master = models.BooleanField(default=True, db_index=True,
-      help_text='Check if this is a top-level publisher that may contain '
-                'imprints.')
+    is_master = models.BooleanField(default=True, db_index=True)
     parent = models.ForeignKey('gcd.Publisher', default=None,
                                null=True, blank=True, db_index=True,
                                related_name='imprint_revisions')
@@ -2135,7 +2120,7 @@ class BrandRevision(PublisherRevisionBase):
 
     def _queue_name(self):
         return u'%s: %s (%s)' % (self.group.all()[0].name, self.name,
-                                self.year_began)
+                                 self.year_began)
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -2570,10 +2555,13 @@ class CoverRevision(Revision):
                         suffix = "/uploads/%d_%s" % (
                             self.cover.id,
                             self.changeset.created.strftime('%Y%m%d_%H%M%S'))
-                    return "%s%s%d%s%s" % (settings.IMAGE_SERVER_URL,
-                    settings.COVERS_DIR, int(self.cover.id/1000), suffix,
-                    os.path.splitext(glob.glob(self.cover.base_dir() +
-                                               suffix + '*')[0])[1])
+                    return "%s%s%d%s%s" % (
+                        settings.IMAGE_SERVER_URL,
+                        settings.COVERS_DIR,
+                        int(self.cover.id/1000),
+                        suffix,
+                        os.path.splitext(glob.glob(self.cover.base_dir() +
+                                                   suffix + '*')[0])[1])
                 else:
                     filename = "%s/%d" % (self.base_dir(), self.id)
                     return "%s%s%s%d%s" % (
@@ -2689,101 +2677,52 @@ class SeriesRevision(Revision):
     # at the time of approval.
     reservation_requested = models.BooleanField(default=False)
 
-    name = models.CharField(max_length=255,
-      help_text='Series name as it appears in the indicia (or cover only '
-                'if there is no indicia).')
-    leading_article = models.BooleanField(default=False,
-      help_text='Check if the name starts with an article.')
+    name = models.CharField(max_length=255)
+    leading_article = models.BooleanField(default=False)
 
     # The "format" field is a legacy field that is being split into
     # color, dimensions, paper_stock, binding, and publishing_format
     format = models.CharField(max_length=255, blank=True)
-    color = models.CharField(max_length=255, blank=True,
-      help_text='What sort of color is used in the printing.  Common '
-                'values include Color, Four Color, Painted, '
-                'Two Color, Duotone, and Black and White. '
-                'This may change over the life of the series.')
-    dimensions = models.CharField(max_length=255, blank=True,
-      help_text='The size of the comic, such as Standard Golden Age U.S.'
-                '(or Silver or Modern), A4, A5, Tabloid, Digest, 8.5" x 11", '
-                '21cm x 28cm.  This may change over the life of the series.')
-    paper_stock = models.CharField(max_length=255, blank=True,
-      help_text='Type of paper used for the interior pages, such as '
-                'Newsprint, Glossy, Bond, Mando, Baxter, etc.  Information '
-                'about cover paper stock may also be noted. This may change '
-                'over the life of the series.')
-    binding = models.CharField(max_length=255, blank=True,
-      help_text='Binding type, such as Saddle-stitched (stapled in the spine, '
-                'like most U.S. monthly comics), stapled (from front cover '
-                'through to back cover, near the spine), Bound, Squarebound, '
-                'Perfect Bound, Hardcover, Trade Paperback, Mass Market '
-                'Paperback. This may change over the life of the series.')
-    publishing_format = models.CharField(max_length=255, blank=True,
-      help_text='Indicates the nature of this publication as a series (or '
-                'non-series), such as Ongoing Series, Limited Series, '
-                'Miniseries, Maxiseries, One-Shot, Graphic Novel.  '
-                '"Was Ongoing Series" may be used if it has ceased '
-                'publication.')
-    publication_type = models.ForeignKey(SeriesPublicationType, null=True,
-      blank=True,
-      help_text="Describe the publication format for user reference.")
+    color = models.CharField(max_length=255, blank=True)
+    dimensions = models.CharField(max_length=255, blank=True)
+    paper_stock = models.CharField(max_length=255, blank=True)
+    binding = models.CharField(max_length=255, blank=True)
+    publishing_format = models.CharField(max_length=255, blank=True)
+    publication_type = models.ForeignKey(SeriesPublicationType,
+                                         null=True, blank=True)
 
-    year_began = models.IntegerField(help_text='Year first issue published.')
-    year_ended = models.IntegerField(null=True, blank=True,
-      help_text='Leave blank if the series is still producing new issues.')
-    year_began_uncertain = models.BooleanField(default=False,
-      help_text='Check if you are not certain of the beginning year.')
-    year_ended_uncertain = models.BooleanField(default=False,
-      help_text='Check if you are not certain of the ending year.')
-    is_current = models.BooleanField(default=False,
-      help_text='Check if new issues are still being produced for this '
-                'series. Only uncheck after the last issue is approved '
-                'and in our database.')
+    year_began = models.IntegerField()
+    year_ended = models.IntegerField(null=True, blank=True)
+    year_began_uncertain = models.BooleanField(default=False)
+    year_ended_uncertain = models.BooleanField(default=False)
+    is_current = models.BooleanField(default=False)
 
     publication_notes = models.TextField(blank=True)
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
-    tracking_notes = models.TextField(blank=True,
-      help_text='Field to track numbering from one series to another.')
+    tracking_notes = models.TextField(blank=True)
 
     # Fields for handling the presence of certain issue fields
-    has_barcode = models.BooleanField(default=False,
-      help_text="Barcodes are present for issues of this series.")
-    has_indicia_frequency = models.BooleanField(default=False,
-      help_text="Indicia frequencies are present for issues of this series.")
-    has_isbn = models.BooleanField(default=False, verbose_name='Has ISBN',
-      help_text="ISBNs are present for issues of this series.")
-    has_issue_title = models.BooleanField(default=False,
-      help_text="Titles are present for issues of this series.")
-    has_volume = models.BooleanField(default=False,
-      help_text="Volume numbers are present for issues of this series.")
-    has_rating = models.BooleanField(default=False,
-      verbose_name="Has Publisher's age guidelines ",
-      help_text="Publisher's age guidelines are present for issues of this "
-                "series.")
+    has_barcode = models.BooleanField(default=False)
+    has_indicia_frequency = models.BooleanField(default=False)
+    has_isbn = models.BooleanField(default=False)
+    has_issue_title = models.BooleanField(default=False)
+    has_volume = models.BooleanField(default=False)
+    has_rating = models.BooleanField(default=False)
 
-    is_comics_publication = models.BooleanField(default=False,
-      help_text="Publications in this series are mostly comics publications.")
-    is_singleton = models.BooleanField(default=False,
-      help_text="Series consists of one and only one issue by design. "
-                "Note that for series adds an issue with no issue number will"
-                " be created upon approval.")
+    is_comics_publication = models.BooleanField(default=False)
+    is_singleton = models.BooleanField(default=False)
 
     notes = models.TextField(blank=True)
-    keywords = models.TextField(blank=True, default='',
-      help_text='Significant objects, locations, or themes (NOT characters) '
-                'depicted in the content, such as "Phantom Zone", '
-                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
-                'entries are to be separated by semi-colons.')
+    keywords = models.TextField(blank=True, default='')
 
     # Country and Language info.
     country = models.ForeignKey(Country, related_name='series_revisions')
     language = models.ForeignKey(Language, related_name='series_revisions')
 
     # Fields related to the publishers table.
-    publisher = models.ForeignKey(Publisher,
-                                  related_name='series_revisions')
+    publisher = models.ForeignKey(Publisher, related_name='series_revisions')
     imprint = models.ForeignKey(Publisher, null=True, blank=True, default=None,
                                 related_name='imprint_series_revisions')
     date_inferred = models.BooleanField(default=False)
@@ -3202,8 +3141,7 @@ class SeriesBondRevision(Revision):
 
     bond_type = models.ForeignKey(SeriesBondType, null=True,
                                   related_name='bond_revisions')
-    notes = models.TextField(max_length=255, default='', blank=True,
-      help_text='Notes about the series bond.')
+    notes = models.TextField(max_length=255, default='', blank=True)
 
     previous_revision = models.OneToOneField('self', null=True,
                                              related_name='next_revision')
@@ -3386,8 +3324,7 @@ class IssueRevision(Revision):
     # when saving back the the DB. If null, place at the beginning of
     # the series.
     after = models.ForeignKey(
-        Issue, null=True, blank=True, related_name='after_revisions',
-        verbose_name='Add this issue after')
+        Issue, null=True, blank=True, related_name='after_revisions')
 
     # This is used *only* for multiple issues within the same changeset.
     # It does NOT correspond directly to gcd_issue.sort_code, which must be
@@ -3397,153 +3334,61 @@ class IssueRevision(Revision):
     # When adding an issue, this requests the reservation upon approval of
     # the new issue.  The request will be granted unless an ongoing reservation
     # is in place at the time of approval.
-    reservation_requested = models.BooleanField(default=False,
-      verbose_name = 'Request reservation',
-      help_text='Check this box to have this issue reserved to you '
-                'automatically when it is approved, unless someone '
-                'has acquired the series\' ongoing reservation before '
-                'then.')
+    reservation_requested = models.BooleanField(default=False)
 
-    number = models.CharField(max_length=50,
-      help_text='The issue number (or other label) as it appears in the indicia. '
-                'If there is no indicia the cover number may be used. '
-                'Series that number by year (mostly European series) should write '
-                'the year after a slash: "4/2009" for issue #4 in publication '
-                'year 2009.  Place brackets around an issue number if there is an '
-                'indicia but the number does not appear in it.  Use "[nn]" or the '
-                'next logical number in brackets like "[2]" if '
-                'there is no number printed anywhere on the issue.')
+    number = models.CharField(max_length=50)
 
-    title = models.CharField(max_length=255, default='', blank=True,
-      help_text='The title of the issue. Refer to the wiki for the '
-                'cases when an issue can have a title.')
-    no_title = models.BooleanField(default=False,
-      help_text='Check if there is no title.')
+    title = models.CharField(max_length=255, default='', blank=True)
+    no_title = models.BooleanField(default=False)
 
-    volume = models.CharField(max_length=50, blank=True, default='',
-      help_text='Volume number (only if listed on the item). For collections '
-                'or other items that only have a volume or book number, '
-                'put the same number in both this field and the issue number '
-                'and do *not* check "Display volume with number". ')
-    no_volume = models.BooleanField(default=False,
-      help_text='If there is no volume, check this box and leave the volume field '
-                'blank. This lets us distinguish between confirmed no-volume '
-                'issues and issues indexed before we started tracking volume.')
-    display_volume_with_number = models.BooleanField(default=False,
-      help_text='Check to cause the site to display the volume as part of the '
-                'issue number.  For example with a volume of "2" and an issue '
-                'number of "1", checking this box will display "v2#1" instead '
-                'of just "1" in the status grids and issues lists for the series.')
+    volume = models.CharField(max_length=50, blank=True, default='')
+    no_volume = models.BooleanField(default=False)
+    display_volume_with_number = models.BooleanField(default=False)
     variant_of = models.ForeignKey(Issue, null=True,
                                    related_name='variant_revisions')
-    variant_name = models.CharField(max_length=255, blank=True, default='',
-      help_text='Name of this variant. Examples are: "Cover A" (if listed as '
-        'such in the issue), "2nd printing", "newsstand", "direct", or the '
-        'name of the artist if different from the base issue.')
+    variant_name = models.CharField(max_length=255, blank=True, default='')
 
-    publication_date = models.CharField(max_length=255, blank=True, default='',
-      help_text='The publicaton date as printed on the comic, except with the '
-                'name of the month (if any) spelled out.  Any part of the date '
-                'that is not printed on the comic but is known should be put '
-                'in square brackets, such as "[January] 2009". ')
-    key_date = models.CharField(max_length=10, blank=True, default='',
-      validators=[RegexValidator(r'^(17|18|19|20)\d{2}(\.|-)(0[0-9]|1[0-3])(\.|-)\d{2}$')],
-      help_text='Keydate is a translation of the publication date, possibly '
-                'supplemented by the on-sale date, into numeric '
-                'form for chronological ordering and searches. It is in the '
-                'format YYYY-MM-DD, where the parts of the date not given are '
-                'filled up with 00. For comics dated only by year, the keydate '
-                'is YYYY-00-00. For comics only dated by month the day (DD) '
-                'is 00. For the month (MM) on quarterlies, use 04 for Spring, '
-                '07 for Summer, 10 for Fall and 01 or 12 for Winter (in the '
-                'northern hemisphere, shift accordingly in the southern).')
+    publication_date = models.CharField(max_length=255, blank=True, default='')
+    key_date = models.CharField(
+        max_length=10, blank=True, default='',
+        validators=[RegexValidator(
+            r'^(17|18|19|20)\d{2}(\.|-)(0[0-9]|1[0-3])(\.|-)\d{2}$')])
     year_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
     month_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
     day_on_sale = models.IntegerField(db_index=True, null=True, blank=True)
-    on_sale_date_uncertain = models.BooleanField(default=False,
-      help_text='The uncertain flag only relates to the actual entered data, '
-        'therefore if e.g. no day is entered, but the month and year are '
-        'certain, the uncertain flag is not set.')
-    indicia_frequency = models.CharField(max_length=255, blank=True, default='',
-      help_text='If relevant, the frequency of publication specified in the '
-                'indicia, which may not match the actual publication schedule. '
-                'This is most often found on ongoing magazine series.')
-    no_indicia_frequency = models.BooleanField(default=False,
-      help_text='Check this box if there is no publication frequency printed '
-                'on the comic.')
+    on_sale_date_uncertain = models.BooleanField(default=False)
+    indicia_frequency = models.CharField(max_length=255, blank=True,
+                                         default='')
+    no_indicia_frequency = models.BooleanField(default=False)
 
-    price = models.CharField(max_length=255, blank=True, default='',
-      help_text='Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
-                '"2.99 CAD" for $2.99 Canadian.  Use a format like '
-                '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
-                'Use "0.00 FREE" for free issues. '
-                'Separate multiple prices with a semicolon.  Use parentheses '
-                'after the currency code for notes: "2.99 USD; 3.99 USD '
-                '(newsstand)" Use country codes after the currency code if more '
-                'than one price uses the same currency: '
-                '"3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"')
+    price = models.CharField(max_length=255, blank=True, default='')
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
-                                     null=True, blank=True, default=None,
-      help_text="Count of all pages in the issue, including the covers but "
-                "excluding dust jackets and inserts.  A single sheet of paper "
-                "folded in half would count as 4 pages.")
-    page_count_uncertain = models.BooleanField(default=False,
-      help_text="Check if you do not know or aren't sure about the page count.")
+                                     null=True, blank=True, default=None)
+    page_count_uncertain = models.BooleanField(default=False)
 
-    editing = models.TextField(blank=True, default='',
-      help_text='The editor and any similar credits for the whole issue.  If no '
-                'overall editor is known put a question mark in the field.')
-    no_editing = models.BooleanField(default=False,
-      help_text='Check if there is no editor or similar credit (such as '
-                'publisher) for the issue as a whole.')
+    editing = models.TextField(blank=True, default='')
+    no_editing = models.BooleanField(default=False)
     notes = models.TextField(blank=True, default='')
-    keywords = models.TextField(blank=True, default='',
-      help_text='Significant objects, locations, or themes (NOT characters) '
-                'depicted in the content, such as "Phantom Zone", '
-                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
-                'entries are to be separated by semi-colons.')
+    keywords = models.TextField(blank=True, default='')
 
     series = models.ForeignKey(Series, related_name='issue_revisions')
-    indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True, blank=True,
-      default=None, related_name='issue_revisions', verbose_name='indicia/colophon publisher',
-      help_text='The exact corporation listed as the publisher in the '
-                'indicia or colophon, if any.  If there is none, the copyright '
-                'holder (if any) may be used, with a comment in the notes field')
-    indicia_pub_not_printed = models.BooleanField(default=False,
-      verbose_name='indicia/colophon pub. not printed',
-      help_text="Check this box if no publisher name is listed "
-                "in the indicia or colophon.")
-    brand = models.ForeignKey(Brand, null=True, default=None, blank=True,
-      related_name='issue_revisions', verbose_name='brand emblem',
-      help_text="The publisher's logo or tagline on the cover of the comic, "
-                "if any. If no matching brand emblem exists, it either "
-                " needs to be added to the database, or information for the "
-                "years used of an existing one needs to be changed.")
-    no_brand = models.BooleanField(default=False, verbose_name='no brand emblem',
-      help_text="Some comics do not have any identifiable brand marks. Check "
-                "this box if there is no publisher's logo or tagline.")
+    indicia_publisher = models.ForeignKey(
+        IndiciaPublisher, null=True, blank=True, default=None,
+        related_name='issue_revisions')
+    indicia_pub_not_printed = models.BooleanField(default=False)
+    brand = models.ForeignKey(
+        Brand, null=True, default=None, blank=True,
+        related_name='issue_revisions')
+    no_brand = models.BooleanField(default=False)
 
-    isbn = models.CharField(max_length=32, blank=True, default='',
-      verbose_name='ISBN',
-      help_text='The ISBN as printed on the item. Do not use this field for '
-                'numbering systems other than ISBN. If both ISBN 10 and '
-                'ISBN 13 are listed, separate them with a semi-colon. '
-                ' Example: "978-0-307-29063-2; 0-307-29063-8".')
-    no_isbn = models.BooleanField(default=False, verbose_name='No ISBN',
-      help_text="Check this box if there is no ISBN.")
+    isbn = models.CharField(max_length=32, blank=True, default='')
+    no_isbn = models.BooleanField(default=False)
 
-    barcode = models.CharField(max_length=38, blank=True, default='',
-      help_text='The barcode as printed on the item with no spaces. In case '
-                'two barcodes are present, separate them with a semi-colon.')
-    no_barcode = models.BooleanField(default=False,
-      help_text='Check this box if there is no barcode.')
+    barcode = models.CharField(max_length=38, blank=True, default='')
+    no_barcode = models.BooleanField(default=False)
 
-    rating = models.CharField(max_length=255, blank=True, default='',
-      verbose_name="Publisher's age guidelines",
-      help_text="The publisher's age guidelines as printed on the item.")
-    no_rating = models.BooleanField(default=False,
-      verbose_name="No publisher's age guidelines",
-      help_text="Check this box if there are no publisher's age guidelines.")
+    rating = models.CharField(max_length=255, blank=True, default='')
+    no_rating = models.BooleanField(default=False)
 
     date_inferred = models.BooleanField(default=False)
 
@@ -4525,11 +4370,7 @@ class StoryRevision(Revision):
     synopsis = models.TextField(blank=True)
     reprint_notes = models.TextField(blank=True)
     notes = models.TextField(blank=True)
-    keywords = models.TextField(blank=True, default='',
-      help_text='Significant objects, locations, or themes (NOT characters) '
-                'depicted in the content, such as "Phantom Zone", '
-                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
-                'entries are to be separated by semi-colons.')
+    keywords = models.TextField(blank=True, default='')
 
     issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
     date_inferred = models.BooleanField(default=False)

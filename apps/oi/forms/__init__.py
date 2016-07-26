@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import re
 from math import log10
 
@@ -12,156 +14,13 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.utils.encoding import force_unicode
 from django.utils.html import escape, conditional_escape
 
+from .support import *
 from apps.oi.models import *
 from apps.gcd.models import *
 from apps.gcd.models.seriesbond import BOND_TRACKING
 from apps.gcd.models.story import NON_OPTIONAL_TYPES, STORY_TYPES
 from apps.gcd.templatetags.credits import format_page_count
 
-CREATOR_CREDIT_HELP = 'The %s and similar credits for this sequence, where ' \
-  'multiple credits are separated with semicolons. If the credit applies to' \
-  ' this sequence type but the creator is unknown, enter a question mark.'
-NO_CREATOR_CREDIT_HELP = 'Check this box if %s does not apply to this ' \
-                'sequence%s and leave the %s field blank. '
-GENERIC_ERROR_MESSAGE = 'Please correct the field errors.  Scroll down to see '\
-                        'the specific error message(s) next to each field.'
-
-DOC_URL = 'http://docs.comics.org/wiki/'
-
-PUBLISHER_HELP_LINKS = {
-    'name' : 'Publisher_Name',
-    'year_began': 'Years_of_Publication',
-    'year_ended': 'Years_of_Publication',
-    'year_began_uncertain': 'Years_of_Publication',
-    'year_ended_uncertain': 'Years_of_Publication',
-    'country': 'Country',
-    'url': 'URL',
-    'notes': 'Notes_%28on_Publisher_Screen%29',
-    'keywords': 'Keywords',
-    'comments': 'Comments '
-}
-
-BRAND_HELP_LINKS = {
-    'name' : 'Brand',
-    'year_began': 'Years_of_Use_%28Brand%29',
-    'year_ended': 'Years_of_Use_%28Brand%29',
-    'year_began_uncertain': 'Years_of_Use_%28Brand%29',
-    'year_ended_uncertain': 'Years_of_Use_%28Brand%29',
-    'url': 'URL_%28Brand%29',
-    'notes': 'Notes_%28Brand%29',
-    'keywords': 'Keywords',
-    'comments': 'Comments '
-}
-
-INDICIA_PUBLISHER_HELP_LINKS = {
-    'name' : 'Indicia_Publisher',
-    'year_began': 'Years_of_Use_%28Indicia_publisher%29',
-    'year_ended': 'Years_of_Use_%28Indicia_publisher%29',
-    'year_began_uncertain': 'Years_of_Use_%28Indicia_publisher%29',
-    'year_ended_uncertain': 'Years_of_Use_%28Indicia_publisher%29',
-    'is_surrogate': 'Surrogate',
-    'country': 'Country_%28Indicia_publisher%29',
-    'url': 'URL_%28Indicia_publisher%29',
-    'notes': 'Notes_%28Indicia_publisher%29',
-    'keywords': 'Keywords',
-    'comments': 'Comments '
-}
-
-ISSUE_HELP_LINKS = {
-    'number': 'Issue_Numbers',
-    'variant_name': 'Variant_Issues',
-    'title': 'Issue_Title',
-    'no_title': 'Issue_Title',
-    'volume': 'Volume',
-    'no_volume': 'Volume',
-    'display_volume_with_number': 'Display_Volume_with_Issue_Number',
-    'publication_date': 'Published_Date',
-    'indicia_frequency': 'Indicia_frequency',
-    'no_indicia_frequency': 'Indicia_frequency',
-    'key_date': 'Keydate',
-    'on_sale_date': 'On-sale_date',
-    'year_on_sale': 'On-sale_date',
-    'month_on_sale': 'On-sale_date',
-    'day_on_sale': 'On-sale_date',
-    'indicia_publisher': 'Indicia_publisher',
-    'indicia_pub_not_printed': 'Indicia_publisher',
-    'brand': 'Brand',
-    'no_brand': 'Brand',
-    'price': 'Cover_Price',
-    'page_count': 'Page_Count',
-    'page_count_uncertain': 'Page_Count',
-    'editing': 'Editing',
-    'no_editing': 'Editing',
-    'isbn': 'ISBN',
-    'no_isbn': 'ISBN',
-    'barcode': 'Barcode',
-    'no_barcode': 'Barcode',
-    'rating': "Publisher's_Age_Guidelines",
-    'no_rating': "Publisher's_Age_Guidelines",
-    'notes': 'Notes_%28issue%29',
-    'keywords': 'Keywords',
-    'comments': 'Comments'
-}
-
-SEQUENCE_HELP_LINKS = {
-    'type': 'Type',
-    'title': 'Title',
-    'title_inferred': 'Title',
-    'feature': 'Feature',
-    'page_count': 'Page_Count',
-    'page_count_uncertain': 'Page_Count',
-    'genre': 'Genre',
-    'script': 'Script',
-    'no_script': 'Script',
-    'pencils': 'Pencils',
-    'no_pencils': 'Pencils',
-    'inks': 'Inks',
-    'no_inks': 'Inks',
-    'colors': 'Colors',
-    'no_colors': 'Colors',
-    'letters': 'Letters',
-    'no_letters': 'Letters',
-    'editing': 'Editing',
-    'no_editing': 'Editing',
-    'characters': 'Character_Appearances',
-    'synopsis': 'Synopsis',
-    'job_number': 'Job_Number',
-    'reprint_notes': 'Reprints',
-    'notes': 'Notes',
-    'keywords': 'Keywords',
-    'comments': 'Comments'
-}
-
-SERIES_HELP_LINKS = {
-    'name': 'Book_Name',
-    'leading_article': 'Book_Name',
-    'year_began': 'Years_of_Publication',
-    'year_began_uncertain': 'Years_of_Publication',
-    'year_ended': 'Years_of_Publication',
-    'year_ended_uncertain': 'Years_of_Publication',
-    'is_current': 'Years_of_Publication',
-    'country': 'Country',
-    'language': 'Language',
-    'tracking_notes': 'Tracking',
-    'notes': 'Series_Notes',
-    'keywords': 'Keywords',
-    'format': 'Format',
-    'color': 'Format',
-    'dimensions': 'Format',
-    'paper_stock': 'Format',
-    'binding': 'Format',
-    'publishing_format': 'Format',
-    'is_comics_publication': 'Comics_Publication',
-    'is_singleton': 'Is_Singleton',
-    'publication_type': 'Publication_Type',
-    'has_barcode': 'Barcode',
-    'has_indicia_frequency': 'Indicia_frequency',
-    'has_isbn': 'ISBN',
-    'has_issue_title': 'Issue_Title',
-    'has_rating': "Publisher's_Age_Guidelines",
-    'has_volume': 'Volume',
-    'comments': 'Comments'
-}
 
 def _set_help_labels(self, help_links):
     for field in self.fields:
@@ -348,6 +207,7 @@ class PublisherRevisionForm(forms.ModelForm):
         model = PublisherRevision
         fields = _get_publisher_fields(middle=('country',))
         widgets = {'name': forms.TextInput(attrs={'autofocus':''})}
+        help_texts = PUBLISHER_HELP_TEXTS
 
     country = forms.ModelChoiceField(queryset=Country.objects.exclude(code='xx'))
     comments = _get_comments_form_field()
@@ -378,7 +238,7 @@ def get_indicia_publisher_revision_form(source=None, user=None):
     return RuntimeIndiciaPublisherRevisionForm
 
 class IndiciaPublisherRevisionForm(PublisherRevisionForm):
-    class Meta:
+    class Meta(PublisherRevisionForm.Meta):
         model = IndiciaPublisherRevision
         fields = _get_publisher_fields(middle=('is_surrogate', 'country'))
 
@@ -616,12 +476,11 @@ def get_series_revision_form(publisher=None, source=None, user=None):
             can_request = False
 
         class RuntimeAddSeriesRevisionForm(SeriesRevisionForm):
-            class Meta:
-                model = SeriesRevisionForm.Meta.model
-                fields = SeriesRevisionForm.Meta.fields
-                exclude = SeriesRevisionForm.Meta.exclude + ['imprint', 'format']
-                widgets = SeriesRevisionForm.Meta.widgets
+            class Meta(SeriesRevisionForm.Meta):
+                exclude = SeriesRevisionForm.Meta.exclude + ['imprint',
+                                                             'format']
                 if can_request:
+                    fields = SeriesRevisionForm.Meta.fields
                     fields = ['reservation_requested'] + fields
 
             if can_request:
@@ -641,14 +500,11 @@ def get_series_revision_form(publisher=None, source=None, user=None):
 
     else:
         class RuntimeSeriesRevisionForm(SeriesRevisionForm):
-            class Meta:
-                model = SeriesRevisionForm.Meta.model
-                fields = SeriesRevisionForm.Meta.fields
+            class Meta(SeriesRevisionForm.Meta):
                 exclude = SeriesRevisionForm.Meta.exclude
-                exclude = exclude + ['imprint']
+                exclude.append('imprint')
                 if not source.format:
-                    exclude = exclude + ['format']
-                widgets = SeriesRevisionForm.Meta.widgets
+                    exclude.append('format')
 
             def __init__(self, *args, **kwargs):
                 # Don't allow country and language to be un-set:
@@ -695,6 +551,11 @@ class SeriesRevisionForm(forms.ModelForm):
           'binding': forms.TextInput(attrs={'class': 'wide'}),
           'publishing_format': forms.TextInput(attrs={'class': 'wide'})
         }
+        labels = {
+            'has_isbn': 'Has ISBN',
+            'has_rating': "Has Publisher's age guidelines ",
+        }
+        help_texts = SERIES_HELP_TEXTS
 
     def __init__(self, *args, **kwargs):
         super(SeriesRevisionForm, self).__init__(*args, **kwargs)
@@ -747,7 +608,7 @@ class SeriesRevisionForm(forms.ModelForm):
             raise forms.ValidationError('Reservations for the created issue '
               'of a singleton series are not supported for technical reasons.')
 
-        # TODO How to get to series ? 
+        # TODO How to get to series ?
         # Then we could check the number of issues for singletons
         return cd
 
@@ -800,6 +661,9 @@ class SeriesBondRevisionForm(forms.ModelForm):
         widgets = {
           'notes': forms.TextInput(attrs={'class': 'wide'})
         }
+        help_texts = {
+          'notes': 'Notes about the series bond.',
+        }
 
     comments = _get_comments_form_field()
 
@@ -811,6 +675,9 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         variant_of = revision.variant_of
 
     class RuntimeIssueRevisionForm(IssueRevisionForm):
+        class Meta(IssueRevisionForm.Meta):
+            pass
+
         def __init__(self, *args, **kwargs):
             super(RuntimeIssueRevisionForm, self).__init__(*args, **kwargs)
             self.fields['brand'].queryset = \
@@ -1037,14 +904,20 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
     if variant_of:
         class RuntimeAddVariantIssueRevisionForm(RuntimeIssueRevisionForm):
-            class Meta:
-                model = IssueRevision
+            class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
                 fields = fields[0:1] + ['variant_name'] + fields[1:]
-                if revision is None or revision.source is None:
-                    fields = ['after'] + fields
+
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
                 widgets['variant_name'] = forms.TextInput(attrs={'class': 'wide'})
+                help_texts = RuntimeIssueRevisionForm.Meta.help_texts
+                help_texts['variant_name'] = VARIANT_NAME_HELP_TEXT
+                labels = RuntimeIssueRevisionForm.Meta.labels
+
+                if revision is None or revision.source is None:
+                    fields = ['after'] + fields
+                    labels['after'] = 'Add this issue after'
+
             def __init__(self, *args, **kwargs):
                 super(RuntimeAddVariantIssueRevisionForm, self)\
                   .__init__(*args, **kwargs)
@@ -1060,13 +933,22 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
     if revision is None or revision.source is None:
         class RuntimeAddIssueRevisionForm(RuntimeIssueRevisionForm):
-            class Meta:
-                model = IssueRevision
+            class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
                 fields = ['after'] + fields
+                widgets = RuntimeIssueRevisionForm.Meta.widgets
+                labels = RuntimeIssueRevisionForm.Meta.labels
+                labels['after'] = 'Add this issue after'
+
                 if series.get_ongoing_reservation() is None:
                     fields = ['reservation_requested'] + fields
-                widgets = RuntimeIssueRevisionForm.Meta.widgets
+
+                    help_texts = RuntimeIssueRevisionForm.Meta.help_texts
+                    help_texts.update(reservation_requested=
+                        'Check this box to have this issue reserved to you '
+                        'automatically when it is approved, unless someone '
+                        'has acquired the series\' ongoing reservation before '
+                        'then.')
 
             def __init__(self, *args, **kwargs):
                 super(RuntimeAddIssueRevisionForm, self).__init__(*args, **kwargs)
@@ -1079,12 +961,14 @@ def get_issue_revision_form(publisher, series=None, revision=None,
     if revision.changeset.change_type == CTYPES['variant_add'] or \
       revision.issue.variant_set.count():
         class RuntimeBaseIssueRevisionForm(RuntimeIssueRevisionForm):
-            class Meta:
-                model = IssueRevision
+            class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
                 fields = fields[0:1] + ['variant_name'] + fields[1:]
+
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
                 widgets['variant_name'] = forms.TextInput(attrs={'class': 'wide'})
+                help_texts = RuntimeIssueRevisionForm.Meta.help_texts
+                help_texts['variant_name'] = VARIANT_NAME_HELP_TEXT
         return RuntimeBaseIssueRevisionForm
 
     return RuntimeIssueRevisionForm
@@ -1111,19 +995,15 @@ class IssueRevisionForm(forms.ModelForm):
           'page_count': PageCountInput,
           'brand': BrandEmblemSelect,
         }
+        labels = ISSUE_LABELS
+        help_texts = ISSUE_HELP_TEXTS
 
     comments = _get_comments_form_field()
     turned_off_help = forms.CharField(widget=HiddenInput, required=False)
     on_sale_date_help = forms.CharField(widget=HiddenInputWithHelp,
-                                        required=False, label='',
-      help_text='The on-sale (shipping) date can be entered in two ways: '
-                'Either in the next field as YYYY-MM-DD, where all parts need '
-                ' to be entered, or using the following three fields. If only'
-                ' partial information is known you need to use the second '
-                'option and enter the part of the date which is known. '
-                'If you only know the decade you can enter the first three '
-                'digits, e.g. 199 for the decade 1990-1999.')
+                                        required=False, label='')
     on_sale_date = forms.DateField(required=False, input_formats=['%Y-%m-%d'])
+
 
 def get_bulk_issue_revision_form(series, method, user=None):
     if method == 'number':
@@ -1140,6 +1020,9 @@ def get_bulk_issue_revision_form(series, method, user=None):
         return render_error(request, 'Unknown method of adding issues.')
 
     class RuntimeBulkIssueRevisionForm(base):
+        class Meta(base.Meta):
+            pass
+
         def __init__(self, *args, **kwargs):
             super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
             self.fields['brand'].queryset = \
@@ -1208,6 +1091,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
           'page_count': PageCountInput,
           'brand': BrandEmblemSelect
         }
+        labels = ISSUE_LABELS
+        help_texts = ISSUE_HELP_TEXTS
 
     def _shared_key_order(self):
         return ['indicia_publisher', 'indicia_pub_not_printed', 'brand',
@@ -1555,6 +1440,13 @@ class StoryRevisionForm(forms.ModelForm):
         widgets = {
           'feature': forms.TextInput(attrs={'class': 'wide' }),
         }
+        help_texts = {
+            'keywords':
+                'Significant objects, locations, or themes (NOT characters) '
+                'depicted in the content, such as "Phantom Zone", '
+                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
+                'entries are to be separated by semi-colons.',
+        }
 
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
@@ -1633,7 +1525,7 @@ class StoryRevisionForm(forms.ModelForm):
         genre = self.cleaned_data['genre']
         if len(genre) > 10:
             raise forms.ValidationError(['Up to 10 genres can be selected.'])
-        return genre 
+        return genre
 
     def clean(self):
         cd = self.cleaned_data
