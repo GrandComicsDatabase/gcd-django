@@ -188,6 +188,11 @@ TIME_ZONE = 'UTC'
 # International DateTime string format
 DATETIME_FORMAT = 'Y-m-d H:i:s'
 
+# Even though we are using pytest-django and don't use a Django test runner,
+# Django 1.7 and 1.8 will emit warnings every time manage.py is run unless
+# this line is here.  The false positive warning is removed in Django 1.9.
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
 #################################################################################
 # 3rd-party app settings
 #################################################################################
