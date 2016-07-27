@@ -4,7 +4,7 @@ from math import log10
 
 from django import forms
 from django.core import urlresolvers
-from django.db.models import Count, F
+from django.db.models import Count, F, Q
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.forms.widgets import TextInput, HiddenInput, RadioSelect
 from django.utils.safestring import mark_safe
@@ -825,19 +825,16 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 int(log10(revision.year_on_sale)) + 1 == 4:
                 issue_year = revision.year_on_sale
             if issue_year:
-                brands = self.fields['brand'].queryset
-                brands = brands.filter(in_use__year_began__lte=issue_year,
-                                in_use__year_ended=None,
-                                in_use__publisher__id=series.publisher.id) | \
-                         brands.filter(in_use__year_began=None,
-                                in_use__year_ended__gte=issue_year,
-                                in_use__publisher__id=series.publisher.id) | \
-                         brands.filter(in_use__year_began=None,
-                                in_use__year_ended=None,
-                                in_use__publisher__id=series.publisher.id) | \
-                         brands.filter(in_use__year_began__lte=issue_year,
-                                in_use__year_ended__gte=issue_year,
-                                in_use__publisher__id=series.publisher.id)
+                started_before = Q(in_use__year_began__lte=issue_year)
+                no_start = Q(in_use__year_began=None)
+                not_ended_before = (Q(in_use__year_ended__gte=issue_year) |
+                                    Q(in_use__year_ended=None))
+
+                brands = self.fields['brand'].queryset \
+                             .filter(in_use__publisher=series.publisher) \
+                             .filter((started_before & not_ended_before) |
+                                     (no_start & not_ended_before))
+
                 self.fields['brand'].queryset = brands.distinct()
                 self.fields['indicia_publisher'].queryset = \
                     self.fields['indicia_publisher'].queryset\
@@ -1103,14 +1100,16 @@ class IssueRevisionForm(forms.ModelForm):
           'number': forms.TextInput(attrs={'class': 'wide', 'autofocus':''}),
           'title': forms.TextInput(attrs={'class': 'wide'}),
           'volume': forms.TextInput(attrs={'class': 'wide'}),
+          'publication_date': forms.TextInput(attrs={'class': 'wide'}),
           'key_date': forms.TextInput(attrs={'class': 'key_date'}),
           'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
           'price': forms.TextInput(attrs={'class': 'wide'}),
           'editing': forms.TextInput(attrs={'class': 'wide' }),
           'isbn': forms.TextInput(attrs={'class': 'wide'}),
           'barcode': forms.TextInput(attrs={'class': 'wide'}),
+          'rating': forms.TextInput(attrs={'class': 'wide'}),
           'page_count': PageCountInput,
-          'brand': BrandEmblemSelect
+          'brand': BrandEmblemSelect,
         }
 
     comments = _get_comments_form_field()
@@ -1553,6 +1552,9 @@ class StoryRevisionForm(forms.ModelForm):
         model = StoryRevision
         fields = get_story_field_list()
         fields.insert(fields.index('job_number')+1, 'creator_help')
+        widgets = {
+          'feature': forms.TextInput(attrs={'class': 'wide' }),
+        }
 
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
