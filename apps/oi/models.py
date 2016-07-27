@@ -4455,7 +4455,7 @@ class StoryRevision(Revision):
                     return True
             return True
         else:
-            raise False
+            return False
 
     def _field_list(self):
         fields = get_story_field_list()
