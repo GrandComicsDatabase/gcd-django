@@ -66,7 +66,7 @@ def get_preview_generic_image_tag(revision, alt_text):
 
 def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
     if revision is None:
-        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
                'img/nocover.gif" alt="No image yet" class="cover_img"/>')
 
     img_class = 'cover_img'

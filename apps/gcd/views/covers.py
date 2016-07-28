@@ -36,18 +36,18 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
         size = 'large'
 
     if not can_have_cover:
-        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
             'img/noupload_' + size +'.png" alt="No image"' + \
             'class="cover_img">')
 
     if cover is None:
-        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
             'img/nocover_' + size +'.png" alt="No image yet"' + \
             'class="cover_img">')
 
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
-        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
                'img/nocover_' + size +'.png" alt="No image yet"' + \
                'class="cover_img">')
 
