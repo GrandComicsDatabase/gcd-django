@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django import forms
+from django.utils.safestring import mark_safe
+from django.utils.encoding import force_unicode
+from django.utils.html import escape, conditional_escape
+from django.forms.widgets import TextInput
+
+from apps.gcd.templatetags.credits import format_page_count
+
+
 CREATOR_CREDIT_HELP = (
     'The %s and similar credits for this sequence, where multiple '
     'credits are separated with semicolons. If the credit applies to '
@@ -395,3 +404,102 @@ ISSUE_HELP_TEXTS = {
         'If you only know the decade you can enter the first three '
         'digits, e.g. 199 for the decade 1990-1999.',
 }
+
+
+def _set_help_labels(self, help_links):
+    for field in self.fields:
+        if field in help_links:
+            if not self.fields[field].label:
+                label =  forms.forms.pretty_name(field)
+            else:
+                label = self.fields[field].label
+            self.fields[field].label = mark_safe(label + \
+              u' <a href="%s%s" target=_blank>[?]</a>' %
+              (DOC_URL, help_links[field]))
+
+def _init_no_isbn(series, revision):
+    """
+    Set nice defaults for the no_isbn flag if we can figure out when this is.
+    """
+    if revision is not None and revision.issue is not None:
+        return revision.issue.no_isbn
+
+    if series.year_ended and series.year_ended < 1970:
+        return True
+
+    return False
+
+def _init_no_barcode(series, revision):
+    """
+    Set nice defaults for the no_barcode flag if we can figure out when this is.
+    """
+    if revision is not None and revision.issue is not None:
+        return revision.issue.no_barcode
+
+    if series.year_ended and series.year_ended < 1974:
+        return True
+
+    return False
+
+class HiddenInputWithHelp(forms.TextInput):
+    input_type = 'hidden'
+
+    def __init__(self, *args, **kwargs):
+        super(HiddenInputWithHelp, self).__init__(*args, **kwargs)
+        self.attrs = kwargs.get('attrs', {})
+        self.key = self.attrs.get('key', False)
+
+    def render(self, name, value, *args, **kwargs):
+        return mark_safe(super(HiddenInputWithHelp, self).render(name, value,
+                                                                 self.attrs))
+
+def _get_comments_form_field():
+    return forms.CharField(widget=forms.Textarea, required=False,
+      help_text='Comments about the change. These are part of the change '
+                'history, but not part of the regular display.')
+
+def _clean_keywords(cleaned_data):
+    keywords = cleaned_data['keywords']
+    if keywords != None:
+        not_allowed = False
+        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']:
+            if c in keywords:
+                not_allowed = True
+                break
+        if not_allowed:
+            raise forms.ValidationError('The following characters are '
+            'not allowed in a keyword: < > { } : / \ | @ ,')
+
+    return keywords
+
+
+class PageCountInput(TextInput):
+    def render(self, name, value, attrs=None):
+        value = format_page_count(value)
+        return super(PageCountInput, self).render(name, value, attrs)
+
+
+class BrandEmblemSelect(forms.Select):
+    def render_option(self, selected_choices, option_value, option_label):
+        url = ''
+        if option_value:
+            brand = Brand.objects.get(id=option_value)
+            if brand.emblem and not settings.FAKE_IMAGES:
+                url = brand.emblem.icon.url
+        option_value = force_unicode(option_value)
+        if option_value in selected_choices:
+            selected_html = u' selected="selected"'
+            if not self.allow_multiple_selected:
+                # Only allow for a single selection.
+                selected_choices.remove(option_value)
+        else:
+            selected_html = ''
+        if url:
+            return u'<option value="%s"%s data-image="%s" image-width="%d">' \
+              '%s</option>' % (
+              escape(option_value), selected_html, url, brand.emblem.icon.width,
+              conditional_escape(force_unicode(option_label)))
+        else:
+            return u'<option value="%s"%s>%s</option>' % (
+              escape(option_value), selected_html,
+              conditional_escape(force_unicode(option_label)))
