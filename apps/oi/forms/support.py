@@ -187,7 +187,9 @@ PUBLISHER_HELP_TEXTS = {
         'or "time travel".  Multiple entries are to be separated by '
         'semi-colons.',
     'url':
-        'The official web site of the publisher.',
+        'The official web site of the publisher.  Must include "http://" or '
+        '"https://", for example "https://www.example.com" not '
+        '"www.example.com"',
 }
 
 SERIES_HELP_TEXTS = {
