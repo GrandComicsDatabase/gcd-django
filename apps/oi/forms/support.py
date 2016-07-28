@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from django.conf import settings
 from django import forms
 from django.utils.safestring import mark_safe
 from django.utils.encoding import force_unicode
 from django.utils.html import escape, conditional_escape
 from django.forms.widgets import TextInput
 
+from apps.gcd.models import Brand
 from apps.gcd.templatetags.credits import format_page_count
 
 
@@ -26,7 +28,7 @@ GENERIC_ERROR_MESSAGE = (
 DOC_URL = 'http://docs.comics.org/wiki/'
 
 PUBLISHER_HELP_LINKS = {
-    'name' : 'Publisher_Name',
+    'name': 'Publisher_Name',
     'year_began': 'Years_of_Publication',
     'year_ended': 'Years_of_Publication',
     'year_began_uncertain': 'Years_of_Publication',
@@ -39,7 +41,7 @@ PUBLISHER_HELP_LINKS = {
 }
 
 BRAND_HELP_LINKS = {
-    'name' : 'Brand',
+    'name': 'Brand',
     'year_began': 'Years_of_Use_%28Brand%29',
     'year_ended': 'Years_of_Use_%28Brand%29',
     'year_began_uncertain': 'Years_of_Use_%28Brand%29',
@@ -51,7 +53,7 @@ BRAND_HELP_LINKS = {
 }
 
 INDICIA_PUBLISHER_HELP_LINKS = {
-    'name' : 'Indicia_Publisher',
+    'name': 'Indicia_Publisher',
     'year_began': 'Years_of_Use_%28Indicia_publisher%29',
     'year_ended': 'Years_of_Use_%28Indicia_publisher%29',
     'year_began_uncertain': 'Years_of_Use_%28Indicia_publisher%29',
@@ -410,12 +412,14 @@ def _set_help_labels(self, help_links):
     for field in self.fields:
         if field in help_links:
             if not self.fields[field].label:
-                label =  forms.forms.pretty_name(field)
+                label = forms.forms.pretty_name(field)
             else:
                 label = self.fields[field].label
-            self.fields[field].label = mark_safe(label + \
-              u' <a href="%s%s" target=_blank>[?]</a>' %
-              (DOC_URL, help_links[field]))
+            self.fields[field].label = mark_safe(
+                label +
+                u' <a href="%s%s" target=_blank>[?]</a>' %
+                (DOC_URL, help_links[field]))
+
 
 def _init_no_isbn(series, revision):
     """
@@ -429,9 +433,10 @@ def _init_no_isbn(series, revision):
 
     return False
 
+
 def _init_no_barcode(series, revision):
     """
-    Set nice defaults for the no_barcode flag if we can figure out when this is.
+    Set nice defaults for no_barcode if we can figure out when this is.
     """
     if revision is not None and revision.issue is not None:
         return revision.issue.no_barcode
@@ -440,6 +445,7 @@ def _init_no_barcode(series, revision):
         return True
 
     return False
+
 
 class HiddenInputWithHelp(forms.TextInput):
     input_type = 'hidden'
@@ -453,22 +459,26 @@ class HiddenInputWithHelp(forms.TextInput):
         return mark_safe(super(HiddenInputWithHelp, self).render(name, value,
                                                                  self.attrs))
 
+
 def _get_comments_form_field():
-    return forms.CharField(widget=forms.Textarea, required=False,
-      help_text='Comments about the change. These are part of the change '
-                'history, but not part of the regular display.')
+    return forms.CharField(
+        widget=forms.Textarea, required=False,
+        help_text='Comments about the change. These are part of the change '
+                  'history, but not part of the regular display.')
+
 
 def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
-    if keywords != None:
+    if keywords is not None:
         not_allowed = False
-        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']:
+        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',']:
             if c in keywords:
                 not_allowed = True
                 break
         if not_allowed:
-            raise forms.ValidationError('The following characters are '
-            'not allowed in a keyword: < > { } : / \ | @ ,')
+            raise forms.ValidationError(
+                'The following characters are not allowed in a keyword: '
+                '< > { } : / \ | @ ,')
 
     return keywords
 
@@ -495,11 +505,15 @@ class BrandEmblemSelect(forms.Select):
         else:
             selected_html = ''
         if url:
-            return u'<option value="%s"%s data-image="%s" image-width="%d">' \
-              '%s</option>' % (
-              escape(option_value), selected_html, url, brand.emblem.icon.width,
-              conditional_escape(force_unicode(option_label)))
+            return (u'<option value="%s"%s data-image="%s" '
+                    'image-width="%d">%s</option>') % (
+                escape(option_value),
+                selected_html,
+                url,
+                brand.emblem.icon.width,
+                conditional_escape(force_unicode(option_label)))
         else:
             return u'<option value="%s"%s>%s</option>' % (
-              escape(option_value), selected_html,
-              conditional_escape(force_unicode(option_label)))
+                escape(option_value),
+                selected_html,
+                conditional_escape(force_unicode(option_label)))
