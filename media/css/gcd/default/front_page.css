@@ -194,6 +194,7 @@ body {
 #front_page_content_inner img {
     float: left;
     margin-right: 1em;
+    margin-bottom: 1em;
 }
 
 #front_page_disclaimer h4 {
@@ -292,3 +293,35 @@ hr.feed-post {
     border: none;
 }
 
+/* Styles for managed content */
+p.announcement, div.announcement {
+    border-top: solid 1px;
+    border-bottom: solid 1px;
+    background: palegreen;
+    padding: 0.3em;
+}
+
+p.attention, div.attention  {
+    background: #EE7;
+}
+
+div.milestone {
+    margin-bottom: 1em;
+}
+
+div.milestone img {
+    float: left;
+    width: 200px;
+    margin-right: 1em;
+    margin-bottom: 1em;
+}
+
+/* Clear whatever is next back to the regular flow.  These are the most
+ * likely following tags.  There does not seem to be an "any following
+ * tag" selector as far as I can tell.
+ */
+div.milestone + p, div.milestone + div, div.milestone + hr,
+div.milestone + ul, div.milestone + ol, div.milestone + dl,
+div.milestone + img {
+    clear: both;
+}
