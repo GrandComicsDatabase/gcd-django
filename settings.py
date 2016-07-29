@@ -144,7 +144,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'apps.gcd.context_processors.gcd',
 )
 
-AUTH_PROFILE_MODULE = 'gcd.Indexer'
 AUTHENTICATION_BACKENDS = (
     'apps.gcd.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',
