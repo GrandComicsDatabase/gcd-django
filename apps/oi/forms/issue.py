@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import re
+from collections import OrderedDict
 from math import log10
 
 from django import forms
@@ -535,7 +536,8 @@ class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
         ordering = ['no_title', 'volume', 'display_volume_with_number',
                     'no_volume']
         ordering.extend(self._shared_key_order())
-        self.fields.keyOrder = ordering
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
 
 
 class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
@@ -545,7 +547,8 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
         ordering = ['after', 'number_of_issues', 'first_number',
                     'volume', 'display_volume_with_number', 'no_volume']
         ordering.extend(self._shared_key_order())
-        self.fields.keyOrder = ordering
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
 
     def clean(self):
         cd = super(WholeNumberIssueRevisionForm, self).clean()
@@ -580,7 +583,8 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
         ordering = ['after', 'number_of_issues', 'first_number',
                     'first_volume', 'issues_per_volume']
         ordering.extend(self._shared_key_order())
-        self.fields.keyOrder = ordering
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
 
     def clean(self):
         cd = super(PerVolumeIssueRevisionForm, self).clean()
@@ -652,7 +656,8 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
                     'first_number', 'first_year', 'issues_per_year',
                     'volume', 'display_volume_with_number', 'no_volume']
         ordering.extend(self._shared_key_order())
-        self.fields.keyOrder = ordering
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
 
     def clean(self):
         cd = super(PerYearIssueRevisionForm, self).clean()
@@ -716,7 +721,8 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
                     'first_number', 'first_year', 'first_volume',
                     'issues_per_cycle', 'display_volume_with_number']
         ordering.extend(self._shared_key_order())
-        self.fields.keyOrder = ordering
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
 
     def clean(self):
         cd = super(PerYearIssueRevisionForm, self).clean()

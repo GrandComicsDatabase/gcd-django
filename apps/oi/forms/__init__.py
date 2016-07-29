@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from collections import OrderedDict
+
 from django import forms
 from django.conf import settings
 from django.core import urlresolvers
@@ -289,8 +291,11 @@ def get_brand_revision_form(source=None, user=None, revision=None,
         def __init__(self, *args, **kw):
             super(BrandRevisionForm, self).__init__(*args, **kw)
             # brand_group_other_publisher_id is last field, move it after group
-            self.fields.keyOrder.insert(self.fields.keyOrder.index('group') + 1,
-                                        self.fields.keyOrder.pop())
+            ordering = self.fields.keys()
+            ordering.insert(ordering.index('group') + 1,
+                            ordering.pop())
+            new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+            self.fields = new_fields
 
         group = forms.MultipleChoiceField(required=True,
             widget=FilteredSelectMultiple('Brand Groups', False),
@@ -905,14 +910,15 @@ class UploadScanForm(forms.Form):
 class UploadVariantScanForm(UploadScanForm):
     def __init__(self, *args, **kwargs):
         super(UploadVariantScanForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keyOrder
+        ordering = self.fields.keys()
         ordering.remove('variant_name')
         ordering.remove('variant_artwork')
         ordering.remove('reservation_requested')
         ordering = ['variant_artwork'] + ordering
         ordering = ['variant_name'] + ordering
         ordering = ['reservation_requested'] + ordering
-        self.fields.keyOrder = ordering
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
 
     is_gatefold = forms.CharField(widget=HiddenInputWithHelp, required=False,
       label="Gatefold cover",
