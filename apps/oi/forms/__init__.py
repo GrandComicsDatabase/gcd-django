@@ -6,11 +6,10 @@ from collections import OrderedDict
 from django import forms
 from django.conf import settings
 from django.core import urlresolvers
-from django.db.models import Count
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.contrib.admin.widgets import FilteredSelectMultiple
 
-from .issue import get_issue_revision_form, get_bulk_issue_revision_form
+from .issue import get_issue_revision_form
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     GENERIC_ERROR_MESSAGE, PUBLISHER_HELP_LINKS, PUBLISHER_HELP_TEXTS,
@@ -35,7 +34,6 @@ from apps.gcd.models import (
 #       This should either be exported thorugh gcd.models or
 #       we should not be using it here.
 from apps.gcd.models.story import NON_OPTIONAL_TYPES
-from apps.gcd.templatetags.credits import format_page_count
 
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
@@ -89,6 +87,7 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     raise NotImplementedError
 
+
 class ForeignKeyField(forms.IntegerField):
     def __init__(self, queryset, target_name=None, **kwargs):
         forms.IntegerField.__init__(self, **kwargs)
@@ -109,6 +108,7 @@ class ForeignKeyField(forms.IntegerField):
             raise forms.ValidationError, (
               "%d matched multiple instances of %s" % (id, self.target_name))
 
+
 class OngoingReservationForm(forms.ModelForm):
     class Meta:
         model = OngoingReservation
@@ -121,6 +121,7 @@ class OngoingReservationForm(forms.ModelForm):
                 'series that does not already '
                 'have an ongoing reservation')
 
+
 def get_publisher_revision_form(source=None, user=None):
     class RuntimePublisherRevisionForm(PublisherRevisionForm):
         if source is not None:
@@ -131,11 +132,13 @@ def get_publisher_revision_form(source=None, user=None):
                 country_queryset = Country.objects.exclude(code='xx')
             country = forms.ModelChoiceField(queryset=country_queryset,
                                              empty_label=None)
+
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
                 _set_help_labels(self, PUBLISHER_HELP_LINKS)
             return super(RuntimePublisherRevisionForm, self).as_table()
     return RuntimePublisherRevisionForm
+
 
 def _get_publisher_fields(middle=None):
     first = ['name', 'year_began', 'year_began_uncertain',
@@ -146,11 +149,12 @@ def _get_publisher_fields(middle=None):
     first.extend(last)
     return first
 
+
 class PublisherRevisionForm(forms.ModelForm):
     class Meta:
         model = PublisherRevision
         fields = _get_publisher_fields(middle=('country',))
-        widgets = {'name': forms.TextInput(attrs={'autofocus':''})}
+        widgets = {'name': forms.TextInput(attrs={'autofocus': ''})}
         help_texts = PUBLISHER_HELP_TEXTS
 
     country = forms.ModelChoiceField(queryset=Country.objects.exclude(code='xx'))
@@ -169,24 +173,28 @@ class PublisherRevisionForm(forms.ModelForm):
         cd['comments'] = cd['comments'].strip()
         return cd
 
+
 def get_indicia_publisher_revision_form(source=None, user=None):
     class RuntimeIndiciaPublisherRevisionForm(IndiciaPublisherRevisionForm):
         if source is not None:
             # Don't allow country to be un-set:
             country = forms.ModelChoiceField(empty_label=None,
               queryset=Country.objects.exclude(code='xx'))
+
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
                 _set_help_labels(self, INDICIA_PUBLISHER_HELP_LINKS)
             return super(RuntimeIndiciaPublisherRevisionForm, self).as_table()
+
     return RuntimeIndiciaPublisherRevisionForm
+
 
 class IndiciaPublisherRevisionForm(PublisherRevisionForm):
     class Meta(PublisherRevisionForm.Meta):
         model = IndiciaPublisherRevision
         fields = _get_publisher_fields(middle=('is_surrogate', 'country'))
 
-    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
+    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus': ''}),
       max_length=255, required=True,
       help_text='The name exactly as it appears in the indicia or colophon, '
                 'including punctuation, abbreviations, suffixes like ", Inc.",'
@@ -210,10 +218,11 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
         cd['comments'] = cd['comments'].strip()
         return cd
 
+
 def get_brand_group_revision_form(source=None, user=None):
     class RuntimeBrandGroupRevisionForm(BrandGroupRevisionForm):
         if source is None:
-            name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
+            name = forms.CharField(widget=forms.TextInput(attrs={'autofocus': ''}),
               max_length=255, help_text='The name of the new brand group.')
 
         def as_table(self):
@@ -222,12 +231,13 @@ def get_brand_group_revision_form(source=None, user=None):
             return super(RuntimeBrandGroupRevisionForm, self).as_table()
     return RuntimeBrandGroupRevisionForm
 
+
 class BrandGroupRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandGroupRevision
         fields = _get_publisher_fields()
 
-    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
+    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus': ''}),
       max_length=255, help_text='The name of the brand group.')
 
     year_began = forms.IntegerField(required=False,
@@ -261,6 +271,7 @@ class BrandGroupRevisionForm(forms.ModelForm):
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
         return cd
+
 
 def get_brand_revision_form(source=None, user=None, revision=None,
                             brand_group=None, publisher=None):
@@ -302,7 +313,7 @@ def get_brand_revision_form(source=None, user=None, revision=None,
             choices=choices, initial=initial)
         # maybe only allow editors this to be less confusing to normal indexers
         brand_group_other_publisher_id = forms.IntegerField(required=False,
-          label = "Add Brand Group",
+          label="Add Brand Group",
           help_text="One can add a brand group from a different publisher by "
             "id. If an id is entered the submit will return for confirmation.")
 
@@ -312,12 +323,13 @@ def get_brand_revision_form(source=None, user=None, revision=None,
             return super(RuntimeBrandRevisionForm, self).as_table()
     return RuntimeBrandRevisionForm
 
+
 class BrandRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandRevision
         fields = _get_publisher_fields(middle=('group',))
 
-    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus':''}),
+    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus': ''}),
       max_length=255,
       help_text='The name of the brand emblem as it appears on the logo.  If '
                 'the logo does not use words, then the name of the brand as '
@@ -354,7 +366,7 @@ class BrandRevisionForm(forms.ModelForm):
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
         if cd['brand_group_other_publisher_id']:
-            brand_group = BrandGroup.objects.filter( \
+            brand_group = BrandGroup.objects.filter(
               id=cd['brand_group_other_publisher_id'], deleted=False)
             if brand_group:
                 brand_group = brand_group[0]
@@ -371,13 +383,14 @@ class BrandRevisionForm(forms.ModelForm):
                     widget=FilteredSelectMultiple('Brand Groups', False),
                     choices=choices)
                 # TODO maybe do this differently
-                raise forms.ValidationError( \
+                raise forms.ValidationError(
                   "Please confirm selection of brand group '%s'." % brand_group)
             else:
-                raise forms.ValidationError( \
-                  "A brand group with id %d does not exist." % \
+                raise forms.ValidationError(
+                  "A brand group with id %d does not exist." %
                   cd['brand_group_other_publisher_id'])
         return cd
+
 
 def get_brand_use_revision_form(source=None, user=None):
     class RuntimeBrandUseRevisionForm(BrandUseRevisionForm):
@@ -386,6 +399,7 @@ def get_brand_use_revision_form(source=None, user=None):
                 _set_help_labels(self, BRAND_HELP_LINKS)
             return super(RuntimeBrandUseRevisionForm, self).as_table()
     return RuntimeBrandUseRevisionForm
+
 
 class BrandUseRevisionForm(forms.ModelForm):
     class Meta:
@@ -415,6 +429,7 @@ class BrandUseRevisionForm(forms.ModelForm):
         cd['comments'] = cd['comments'].strip()
         return cd
 
+
 def get_series_revision_form(publisher=None, source=None, user=None):
     if source is None:
         if user is not None and user.indexer.can_reserve_another_ongoing():
@@ -432,7 +447,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
 
             if can_request:
                 reservation_requested = forms.BooleanField(required=False,
-                  label = 'Request reservation',
+                  label='Request reservation',
                   help_text='Check this box to have the ongoing reservation for '
                             'this series assigned to you when it is approved, '
                             'unless you have gone over your ongoing reservation '
@@ -475,6 +490,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                             '(color, dimensions, paper stock, binding, or '
                             'publishing format) or into the notes field if the '
                             'information does not fit anywhere else.')
+
             def as_table(self):
                 if not user or user.indexer.show_wiki_links:
                     _set_help_labels(self, SERIES_HELP_LINKS)
@@ -482,14 +498,15 @@ def get_series_revision_form(publisher=None, source=None, user=None):
 
         return RuntimeSeriesRevisionForm
 
+
 class SeriesRevisionForm(forms.ModelForm):
 
     class Meta:
         model = SeriesRevision
         fields = get_series_field_list()
-        exclude = ['publisher',]
+        exclude = ['publisher']
         widgets = {
-          'name': forms.TextInput(attrs={'class': 'wide', 'autofocus':''}),
+          'name': forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
           'year_began': forms.TextInput(attrs={'class': 'year'}),
           'year_ended': forms.TextInput(attrs={'class': 'year'}),
           'color': forms.TextInput(attrs={'class': 'wide'}),
@@ -508,7 +525,6 @@ class SeriesRevisionForm(forms.ModelForm):
         super(SeriesRevisionForm, self).__init__(*args, **kwargs)
         self.fields['country'].queryset = Country.objects.exclude(code='xx')
 
-
     comments = _get_comments_form_field()
 
     def clean_keywords(self):
@@ -521,7 +537,7 @@ class SeriesRevisionForm(forms.ModelForm):
         if 'name' in cd:
             cd['name'] = cd['name'].strip()
             if (cd['leading_article'] and
-                cd['name'] == remove_leading_article(cd['name'])):
+                    cd['name'] == remove_leading_article(cd['name'])):
                 raise forms.ValidationError('The series name is only one word,'
                     ' you cannot specify a leading article in this case.')
 
@@ -559,6 +575,7 @@ class SeriesRevisionForm(forms.ModelForm):
         # Then we could check the number of issues for singletons
         return cd
 
+
 def _get_series_has_fields_off_note(series, field):
     return 'The %s field is turned off for %s. To enter a value for %s this ' \
            'setting for the series has to be changed.' % (field, series, field), \
@@ -571,10 +588,13 @@ def get_series_bond_revision_form(revision=None, user=None):
             super(RuntimeSeriesBondRevisionForm, self).__init__(*args, **kwargs)
             self.fields['bond_type'].queryset = \
                 SeriesBondType.objects.filter(id__in=BOND_TRACKING)
+
         def as_table(self):
             # TODO: add help links
             return super(RuntimeSeriesBondRevisionForm, self).as_table()
+
     return RuntimeSeriesBondRevisionForm
+
 
 class SeriesBondRevisionForm(forms.ModelForm):
     class Meta:
@@ -589,13 +609,16 @@ class SeriesBondRevisionForm(forms.ModelForm):
 
     comments = _get_comments_form_field()
 
+
 def get_reprint_revision_form(revision=None, user=None):
     class RuntimeReprintRevisionForm(ReprintRevisionForm):
         def as_table(self):
-            #if not user or user.indexer.show_wiki_links:
-                #_set_help_labels(self, REPRINT_HELP_LINKS)
+            # TODO: Why is there commented-out code?
+            # if not user or user.indexer.show_wiki_links:
+                # _set_help_labels(self, REPRINT_HELP_LINKS)
             return super(RuntimeReprintRevisionForm, self).as_table()
     return RuntimeReprintRevisionForm
+
 
 class ReprintRevisionForm(forms.ModelForm):
     class Meta:
@@ -613,7 +636,7 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
         # make indexers consciously choose a type by allowing an empty
         # initial value.  So only set None if there is an existing story revision.
         extra['empty_label'] = None
-        if revision.issue and revision.issue.series.is_comics_publication == False:
+        if revision.issue and revision.issue.series.is_comics_publication is False:
             is_comics_publication = False
         if revision.genre:
             genres = revision.genre.split(';')
@@ -628,7 +651,7 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
         else:
             language = None
     # for variants we can only have cover sequences (for now)
-    if revision and (revision.issue == None or revision.issue.variant_of):
+    if revision and (revision.issue is None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
         # TODO prevent adding of non-covers directly in the form cleanup
@@ -655,8 +678,8 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
 
         fantasy_id = GENRES['en'].index(u'fantasy')
         if language and language.code != 'en' and language.code in GENRES:
-            choices = [[g, g + ' / ' + h] for g,h in zip(GENRES['en'],
-                                                    GENRES[language.code])]
+            choices = [[g, g + ' / ' + h] for g, h in zip(GENRES['en'],
+                                                          GENRES[language.code])]
             choices[fantasy_id] = [u'fantasy',
               u'fantasy-supernatural / %s' % GENRES[language.code][fantasy_id]]
         else:
@@ -676,13 +699,14 @@ def get_story_revision_form(revision=None, user=None, is_comics_publication=True
             return super(StoryRevisionForm, self).as_table()
     return RuntimeStoryRevisionForm
 
+
 class StoryRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryRevision
         fields = get_story_field_list()
-        fields.insert(fields.index('job_number')+1, 'creator_help')
+        fields.insert(fields.index('job_number') + 1, 'creator_help')
         widgets = {
-          'feature': forms.TextInput(attrs={'class': 'wide' }),
+          'feature': forms.TextInput(attrs={'class': 'wide'}),
         }
         help_texts = {
             'keywords':
@@ -697,7 +721,7 @@ class StoryRevisionForm(forms.ModelForm):
     sequence_number = forms.IntegerField(widget=forms.HiddenInput)
 
     title = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide',
-                                                          'autofocus':''}),
+                                                          'autofocus': ''}),
                             required=False,
       help_text='If no title can be determined, preferably use here'
                 ' the first line of text/dialogue in "quotation marks", or '
@@ -825,12 +849,12 @@ class StoryRevisionForm(forms.ModelForm):
             if cd['type'].id in NON_OPTIONAL_TYPES:
                 if not cd['no_%s' % seq_type] and cd[seq_type] == "":
                     raise forms.ValidationError(
-                      ['%s field or No %s checkbox must be filled in.' % \
+                      ['%s field or No %s checkbox must be filled in.' %
                         (seq_type.capitalize(), seq_type.capitalize())])
 
             if cd['no_%s' % seq_type] and cd[seq_type] != "":
                 raise forms.ValidationError(
-                  ['%s field and No %s checkbox cannot both be filled in.'% \
+                  ['%s field and No %s checkbox cannot both be filled in.' %
                     (seq_type.capitalize(), seq_type.capitalize())])
 
         if (len(cd['synopsis']) > settings.LIMIT_SYNOPSIS_LENGTH and
@@ -842,23 +866,24 @@ class StoryRevisionForm(forms.ModelForm):
                   settings.LIMIT_SYNOPSIS_LENGTH])
 
         if (cd['page_count'] is None and not cd['page_count_uncertain'] and
-            cd['type'].id != STORY_TYPES['insert']):
+                cd['type'].id != STORY_TYPES['insert']):
             raise forms.ValidationError(
               ['Page count uncertain must be checked if the page count '
                'is not filled in.'])
 
         return cd
 
+
 def get_cover_revision_form(revision=None, user=None):
     compare_url = '<a href="' + urlresolvers.reverse('compare',
-      kwargs={ 'id': revision.changeset.id }) + '">Compare Change</a>'
+      kwargs={'id': revision.changeset.id}) + '">Compare Change</a>'
 
     class UploadScanCommentForm(forms.ModelForm):
         comments = forms.CharField(widget=forms.Textarea,
                                    required=False,
           help_text='Comments between the Indexer and Editor about the change. '
                     'These comments are part of the public change history, but '
-                    'are not part of the regular display. <p>%s</p>' \
+                    'are not part of the regular display. <p>%s</p>'
                     % compare_url)
 
         def clean(self):
@@ -867,6 +892,7 @@ def get_cover_revision_form(revision=None, user=None):
             return cd
 
     return UploadScanCommentForm
+
 
 class UploadScanForm(forms.Form):
     """ Form for cover uploads. """
@@ -907,6 +933,7 @@ class UploadScanForm(forms.Form):
                'submitted as a gatefold cover.'])
         return cd
 
+
 class UploadVariantScanForm(UploadScanForm):
     def __init__(self, *args, **kwargs):
         super(UploadVariantScanForm, self).__init__(*args, **kwargs)
@@ -930,24 +957,25 @@ class UploadVariantScanForm(UploadScanForm):
         'such in the issue), "second printing", "newsstand", "direct", or the '
         'name of the artist if different from the base issue.')
     variant_artwork = forms.BooleanField(required=False, initial=True,
-      label = 'Variant artwork',
+      label='Variant artwork',
       help_text='Check this box if the uploaded variant cover has artwork '
         'different from the base issue. If checked a cover sequence will '
         'be generated with question marks in the creator fields on approval.')
     reservation_requested = forms.BooleanField(required=False,
-      label = 'Request variant reservation',
+      label='Request variant reservation',
       help_text='Ideally you request a reservation for the new variant to later'
         ' fill in the missing data. Check this box to have the variant issue '
         'reserved to you automatically when it is approved.')
 
+
 class GatefoldScanForm(forms.Form):
     """ Form for cover uploads. """
 
-    left = forms.IntegerField(widget=forms.TextInput(attrs={'size':'4'}))
-    width = forms.IntegerField(widget=forms.TextInput(attrs={'size':'4'}))
+    left = forms.IntegerField(widget=forms.TextInput(attrs={'size': '4'}))
+    width = forms.IntegerField(widget=forms.TextInput(attrs={'size': '4'}))
     real_width = forms.IntegerField(widget=forms.HiddenInput)
-    top = forms.IntegerField(widget=forms.TextInput(attrs={'size':'4'}))
-    height = forms.IntegerField(widget=forms.TextInput(attrs={'size':'4'}))
+    top = forms.IntegerField(widget=forms.TextInput(attrs={'size': '4'}))
+    height = forms.IntegerField(widget=forms.TextInput(attrs={'size': '4'}))
     cover_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
     issue_id = forms.IntegerField(widget=forms.HiddenInput)
     scan_name = forms.CharField(widget=forms.HiddenInput)
@@ -956,6 +984,7 @@ class GatefoldScanForm(forms.Form):
                                          required=False)
     marked = forms.BooleanField(widget=forms.HiddenInput, required=False)
     comments = forms.CharField(widget=forms.HiddenInput, required=False)
+
 
 class UploadImageForm(forms.Form):
     """ Form for image uploads. """
@@ -972,6 +1001,7 @@ class UploadImageForm(forms.Form):
       help_text='Please credit the source of this image if scanned or '
                 'otherwise provided by another site or person, along with '
                 'any additional comments to the upload approver.')
+
 
 class DownloadForm(forms.Form):
     """ Form for downloading data dumps. """
