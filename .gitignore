@@ -6,6 +6,7 @@
 /site_media
 /static_root
 /voting
+/templates/managed_content
 
 # Local configuration
 settings_local.py

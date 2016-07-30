@@ -1,3 +1,0 @@
-[submodule "templates/managed_content"]
-	path = templates/managed_content
-	url = https://github.com/GrandComicsDatabase/gcd-managed-content.git
