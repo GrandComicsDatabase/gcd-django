@@ -375,9 +375,17 @@ class IssueRevisionForm(forms.ModelForm):
         help_texts = ISSUE_HELP_TEXTS
 
     comments = _get_comments_form_field()
-    turned_off_help = forms.CharField(widget=HiddenInput, required=False)
-    on_sale_date_help = forms.CharField(widget=HiddenInputWithHelp,
-                                        required=False, label='')
+    turned_off_help = forms.CharField(widget=HiddenInputWithHelp,
+                                      required=False)
+    on_sale_date_help = forms.CharField(
+        widget=HiddenInputWithHelp, required=False, label='',
+        help_text='The on-sale (shipping) date can be entered in two ways: '
+                  'Either in the next field as YYYY-MM-DD, where all parts '
+                  'need to be entered, or using the following three fields. '
+                  'If only partial information is known you need to use the '
+                  'second option and enter the part of the date which is '
+                  'known. If you only know the decade you can enter the '
+                  'first three digits, e.g. 199 for the decade 1990-1999.')
     on_sale_date = forms.DateField(required=False, input_formats=['%Y-%m-%d'])
 
 

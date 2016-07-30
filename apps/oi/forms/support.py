@@ -398,15 +398,6 @@ ISSUE_HELP_TEXTS = {
         "The publisher's age guidelines as printed on the item.",
     'no_rating':
         "Check this box if there are no publisher's age guidelines.",
-
-    'on_sale_date_help':
-        'The on-sale (shipping) date can be entered in two ways: '
-        'Either in the next field as YYYY-MM-DD, where all parts need '
-        ' to be entered, or using the following three fields. If only'
-        ' partial information is known you need to use the second '
-        'option and enter the part of the date which is known. '
-        'If you only know the decade you can enter the first three '
-        'digits, e.g. 199 for the decade 1990-1999.',
 }
 
 
@@ -456,6 +447,15 @@ class HiddenInputWithHelp(forms.TextInput):
         super(HiddenInputWithHelp, self).__init__(*args, **kwargs)
         self.attrs = kwargs.get('attrs', {})
         self.key = self.attrs.get('key', False)
+
+    @property
+    def is_hidden(self):
+        # As of Django 1.7 this is tied to whether input_type is 'hidden',
+        # which then means that it is not rendered in line with the
+        # non-hidden fields.  Override this so that we can get the
+        # help text to appear in the appropriate order among the regular
+        # form fields.
+        return False
 
     def render(self, name, value, *args, **kwargs):
         return mark_safe(super(HiddenInputWithHelp, self).render(name, value,
