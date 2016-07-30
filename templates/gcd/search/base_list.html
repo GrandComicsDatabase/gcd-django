@@ -44,7 +44,7 @@
   {% block list_contents %}{% endblock %}
 </div>
 <div class="right">
-  {% if ADVERTISING and not BETA %}
+  {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
     {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
   {% endif %}
 </div>

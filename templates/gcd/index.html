@@ -129,7 +129,9 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
       <div id="right_column">
         <!-- Right Column start -->
+{% if USE_TEMPLATESADMIN %}
         {% include "managed_content/gcd/messages/front_page_notice.html" %}
+{% endif %}
         <div class="front_page_right_box">
           <div class="box_header">
             {% trans "Useful Links" %}
@@ -201,7 +203,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             {% endfor %}
           </div>
         </div>
-{% if ADVERTISING and not BETA %}
+{% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
   {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
 {% endif %}
         <!-- Right Column end -->
@@ -212,7 +214,9 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
 <div id="footer">
   {% include "gcd/bits/legalese.html" %}
+{% if USE_TEMPLATESADMIN %}
   {% include "managed_content/gcd/ads/ad_bottom.html" %}
+{% endif %}
 </div>
 
 </div><!-- id="sizing_base" -->

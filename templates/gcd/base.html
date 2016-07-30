@@ -22,7 +22,7 @@ For now, just a simple single block for all CSS, despite redundancy.
   {% include "gcd/bits/beta_banner.html" %}
 {% endif %}
 
-{% if not EDITING %}
+{% if USE_TEMPLATESADMIN and not EDITING %}
   {% include "managed_content/gcd/messages/special_banner.html" %}
 {% endif %}
 

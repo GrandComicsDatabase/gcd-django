@@ -28,6 +28,8 @@
      attached to that inner div, so if the survey banner is empty, this
      outer div has no effect. -->
 <div id="survey_top_spacer">
+{% if USE_TEMPLATESADMIN %}
   {% include "managed_content/gcd/messages/survey_banner.html" %}
+{% endif %}
 </div>
 

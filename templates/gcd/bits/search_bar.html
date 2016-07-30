@@ -37,4 +37,6 @@
   <span class="donate_link"><a method="post" href="{% url "donate" %}">Donate</a></span>
 {% endif %}
 </div>
+{% if USE_TEMPLATESADMIN %}
 {% include "managed_content/gcd/messages/survey_banner.html" %}
+{% endif %}

@@ -282,7 +282,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 {% endfor %}
       </ol>
 
-{% if ADVERTISING %}
+{% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
   {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
 {% endif %}
 

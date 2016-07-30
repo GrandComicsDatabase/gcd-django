@@ -27,7 +27,11 @@ GCD :: {{ user.indexer }} :: Editing Queue
   </div>
 </div>
 <div class="indexer_right_box">
+{% if USE_TEMPLATESADMIN %}
 {% include 'managed_content/oi/messages/policy_info.html' %}
+{% else %}
+  {% include "/templates/gcd/bits/managed_content_dev_notice.html" %}
+{% endif %}
 </div>
 {% endblock %}
 

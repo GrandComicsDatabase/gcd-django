@@ -51,6 +51,8 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 
+# Set up for translations.
+LOCALE_PATHS = [abspath(join(dirname(__file__), 'locale'))]
 
 # Database settings. Override yours in a settings_local.py
 DATABASES = {
@@ -241,6 +243,10 @@ USE_ELASTICSEARCH = False
 ###
 # Debugging and development environment settings
 BETA = False
+
+# Requires the gcd-managed-content repo to be checked out under
+# templates/managed_content
+USE_TEMPLATESADMIN = False
 
 ADVERTISING = True
 CALENDAR = True
