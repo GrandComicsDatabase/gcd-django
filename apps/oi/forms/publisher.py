@@ -53,7 +53,8 @@ class PublisherRevisionForm(forms.ModelForm):
         widgets = {'name': forms.TextInput(attrs={'autofocus': ''})}
         help_texts = PUBLISHER_HELP_TEXTS
 
-    country = forms.ModelChoiceField(queryset=Country.objects.exclude(code='xx'))
+    country = forms.ModelChoiceField(
+        queryset=Country.objects.exclude(code='xx'))
     comments = _get_comments_form_field()
 
     def clean_keywords(self):
@@ -74,8 +75,9 @@ def get_indicia_publisher_revision_form(source=None, user=None):
     class RuntimeIndiciaPublisherRevisionForm(IndiciaPublisherRevisionForm):
         if source is not None:
             # Don't allow country to be un-set:
-            country = forms.ModelChoiceField(empty_label=None,
-              queryset=Country.objects.exclude(code='xx'))
+            country = forms.ModelChoiceField(
+                empty_label=None,
+                queryset=Country.objects.exclude(code='xx'))
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -90,16 +92,20 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
         model = IndiciaPublisherRevision
         fields = _get_publisher_fields(middle=('is_surrogate', 'country'))
 
-    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus': ''}),
-      max_length=255, required=True,
-      help_text='The name exactly as it appears in the indicia or colophon, '
-                'including punctuation, abbreviations, suffixes like ", Inc.",'
-                ' etc. Do not move articles to the end of the name.')
+    name = forms.CharField(
+        widget=forms.TextInput(attrs={'autofocus': ''}),
+        max_length=255,
+        required=True,
+        help_text='The name exactly as it appears in the indicia or colophon, '
+                  'including punctuation, abbreviations, suffixes like ", '
+                  'Inc.", etc. Do not move articles to the end of the name.')
 
-    is_surrogate = forms.BooleanField(required=False, label='Surrogate',
-      help_text='Check if this was an independent company serving as a surrogate '
-                'for the master publisher, rather than a company belonging to the '
-                'master publisher.')
+    is_surrogate = forms.BooleanField(
+        required=False,
+        label='Surrogate',
+        help_text='Check if this was an independent company serving as a '
+                  'surrogate for the master publisher, rather than a company '
+                  'belonging to the master publisher.')
 
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
@@ -118,8 +124,10 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
 def get_brand_group_revision_form(source=None, user=None):
     class RuntimeBrandGroupRevisionForm(BrandGroupRevisionForm):
         if source is None:
-            name = forms.CharField(widget=forms.TextInput(attrs={'autofocus': ''}),
-              max_length=255, help_text='The name of the new brand group.')
+            name = forms.CharField(
+                widget=forms.TextInput(attrs={'autofocus': ''}),
+                max_length=255,
+                help_text='The name of the new brand group.')
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -133,25 +141,34 @@ class BrandGroupRevisionForm(forms.ModelForm):
         model = BrandGroupRevision
         fields = _get_publisher_fields()
 
-    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus': ''}),
-      max_length=255, help_text='The name of the brand group.')
+    name = forms.CharField(
+        widget=forms.TextInput(attrs={'autofocus': ''}),
+        max_length=255,
+        help_text='The name of the brand group.')
 
-    year_began = forms.IntegerField(required=False,
-      help_text='The first year the brand group was used.')
-    year_began_uncertain = forms.BooleanField(required=False,
-      help_text='Check if you are not certain of the first year the brand group '
-                'was used.')
+    year_began = forms.IntegerField(
+        required=False,
+        help_text='The first year the brand group was used.')
+    year_began_uncertain = forms.BooleanField(
+        required=False,
+        help_text='Check if you are not certain of the first year the brand '
+                  'group was used.')
 
-    year_ended = forms.IntegerField(required=False,
-      help_text='The last year the brand group was used.  Leave blank if currently '
-                'in use.')
-    year_ended_uncertain = forms.BooleanField(required=False,
-      help_text='Check if you are not certain of the last year the brand group '
-                'was used, or if you are not certain whether it is still in use.')
+    year_ended = forms.IntegerField(
+        required=False,
+        help_text='The last year the brand group was used.  Leave blank if '
+                  'currently in use.')
+    year_ended_uncertain = forms.BooleanField(
+        required=False,
+        help_text='Check if you are not certain of the last year the brand '
+                  'group was used, or if you are not certain whether it is '
+                  'still in use.')
 
-    url = forms.URLField(required=False,
-      help_text='The official web site of the brand.  Leave blank if the '
-                'publisher does not have a specific web site for the brand group.')
+    url = forms.URLField(
+        required=False,
+        help_text='The official web site of the brand.  Leave blank if the '
+                  'publisher does not have a specific web site for the brand '
+                  'group.')
 
     comments = _get_comments_form_field()
 
@@ -177,7 +194,8 @@ def get_brand_revision_form(source=None, user=None, revision=None,
     if revision and revision.source:
         publishers = revision.source.in_use.all().values_list('publisher_id',
                                                               flat=True)
-        groups = BrandGroup.objects.filter(parent__in=publishers, deleted=False)
+        groups = BrandGroup.objects.filter(parent__in=publishers,
+                                           deleted=False)
     elif publisher:
         groups = BrandGroup.objects.filter(parent=publisher.id, deleted=False)
 
@@ -204,14 +222,18 @@ def get_brand_revision_form(source=None, user=None, revision=None,
             new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
             self.fields = new_fields
 
-        group = forms.MultipleChoiceField(required=True,
+        group = forms.MultipleChoiceField(
+            required=True,
             widget=FilteredSelectMultiple('Brand Groups', False),
-            choices=choices, initial=initial)
+            choices=choices,
+            initial=initial)
         # maybe only allow editors this to be less confusing to normal indexers
-        brand_group_other_publisher_id = forms.IntegerField(required=False,
-          label="Add Brand Group",
-          help_text="One can add a brand group from a different publisher by "
-            "id. If an id is entered the submit will return for confirmation.")
+        brand_group_other_publisher_id = forms.IntegerField(
+            required=False,
+            label="Add Brand Group",
+            help_text="One can add a brand group from a different publisher "
+                      "by id. If an id is entered the submit will return for "
+                      "confirmation.")
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -225,28 +247,37 @@ class BrandRevisionForm(forms.ModelForm):
         model = BrandRevision
         fields = _get_publisher_fields(middle=('group',))
 
-    name = forms.CharField(widget=forms.TextInput(attrs={'autofocus': ''}),
-      max_length=255,
-      help_text='The name of the brand emblem as it appears on the logo.  If '
-                'the logo does not use words, then the name of the brand as '
-                'it is commonly used.  Consult an editor if in doubt.')
+    name = forms.CharField(
+        widget=forms.TextInput(attrs={'autofocus': ''}),
+        max_length=255,
+        help_text='The name of the brand emblem as it appears on the logo.  '
+                  'If the logo does not use words, then the name of the '
+                  'brand as it is commonly used.  Consult an editor if in '
+                  'doubt.')
 
-    year_began = forms.IntegerField(required=False,
-      help_text='The first year the brand emblem was used.')
-    year_began_uncertain = forms.BooleanField(required=False,
-      help_text='Check if you are not certain of the first year the brand '
-                'emblem was used.')
+    year_began = forms.IntegerField(
+        required=False,
+        help_text='The first year the brand emblem was used.')
 
-    year_ended = forms.IntegerField(required=False,
-      help_text='The last year the brand emblem was used.  Leave blank if '
-                'currently in use.')
-    year_ended_uncertain = forms.BooleanField(required=False,
-      help_text='Check if you are not certain of the last year the brand emblem '
-                'was used, or if you are not certain whether it is still in use.')
+    year_began_uncertain = forms.BooleanField(
+        required=False,
+        help_text='Check if you are not certain of the first year the brand '
+                  'emblem was used.')
 
-    url = forms.URLField(required=False,
-      help_text='The official web site of the brand.  Leave blank if the '
-                'publisher does not have a specific web site for the brand.')
+    year_ended = forms.IntegerField(
+        required=False,
+        help_text='The last year the brand emblem was used.  Leave blank if '
+                  'currently in use.')
+    year_ended_uncertain = forms.BooleanField(
+        required=False,
+        help_text='Check if you are not certain of the last year the '
+                  'brand emblem was used, or if you are not certain whether '
+                  'it is still in use.')
+
+    url = forms.URLField(
+        required=False,
+        help_text='The official web site of the brand.  Leave blank if the '
+                  'publisher does not have a specific web site for the brand.')
 
     comments = _get_comments_form_field()
 
@@ -263,7 +294,7 @@ class BrandRevisionForm(forms.ModelForm):
         cd['comments'] = cd['comments'].strip()
         if cd['brand_group_other_publisher_id']:
             brand_group = BrandGroup.objects.filter(
-              id=cd['brand_group_other_publisher_id'], deleted=False)
+                id=cd['brand_group_other_publisher_id'], deleted=False)
             if brand_group:
                 brand_group = brand_group[0]
                 # need to add directly to revision, otherwise validation fails
@@ -275,16 +306,18 @@ class BrandRevisionForm(forms.ModelForm):
                 data['brand_group_other_publisher_id'] = None
                 self.data = data
                 # need to update with new choices
-                self.fields['group'] = forms.MultipleChoiceField(required=True,
+                self.fields['group'] = forms.MultipleChoiceField(
+                    required=True,
                     widget=FilteredSelectMultiple('Brand Groups', False),
                     choices=choices)
                 # TODO maybe do this differently
                 raise forms.ValidationError(
-                  "Please confirm selection of brand group '%s'." % brand_group)
+                    "Please confirm selection of brand group '%s'." %
+                    brand_group)
             else:
                 raise forms.ValidationError(
-                  "A brand group with id %d does not exist." %
-                  cd['brand_group_other_publisher_id'])
+                    "A brand group with id %d does not exist." %
+                    cd['brand_group_other_publisher_id'])
         return cd
 
 
@@ -302,18 +335,23 @@ class BrandUseRevisionForm(forms.ModelForm):
         model = BrandUseRevision
         fields = get_brand_use_field_list()
 
-    year_began = forms.IntegerField(required=False,
-      help_text='The first year the brand was at the publisher.')
-    year_began_uncertain = forms.BooleanField(required=False,
-      help_text='Check if you are not certain of the first year the brand '
-                'was used.')
+    year_began = forms.IntegerField(
+        required=False,
+        help_text='The first year the brand was at the publisher.')
+    year_began_uncertain = forms.BooleanField(
+        required=False,
+        help_text='Check if you are not certain of the first year the '
+                  'brand was used.')
 
-    year_ended = forms.IntegerField(required=False,
-      help_text='The last year the brand was used at the publisher. '
-                ' Leave blank if currently in use.')
-    year_ended_uncertain = forms.BooleanField(required=False,
-      help_text='Check if you are not certain of the last year the brand '
-                'was used, or if you are not certain whether it is still in use.')
+    year_ended = forms.IntegerField(
+        required=False,
+        help_text='The last year the brand was used at the publisher. '
+                  ' Leave blank if currently in use.')
+    year_ended_uncertain = forms.BooleanField(
+        required=False,
+        help_text='Check if you are not certain of the last year the brand '
+                  'was used, or if you are not certain whether it is still '
+                  'in use.')
 
     comments = _get_comments_form_field()
 
