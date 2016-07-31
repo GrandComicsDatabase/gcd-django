@@ -30,12 +30,13 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                     fields = ['reservation_requested'] + fields
 
             if can_request:
-                reservation_requested = forms.BooleanField(required=False,
-                  label='Request reservation',
-                  help_text='Check this box to have the ongoing reservation for '
-                            'this series assigned to you when it is approved, '
-                            'unless you have gone over your ongoing reservation '
-                            'limit at that time.')
+                reservation_requested = forms.BooleanField(
+                    required=False,
+                    label='Request reservation',
+                    help_text='Check this box to have the ongoing reservation '
+                              'for this series assigned to you when it is '
+                              'approved, unless you have gone over your '
+                              'ongoing reservation limit at that time.')
 
             def as_table(self):
                 if not user or user.indexer.show_wiki_links:
@@ -54,26 +55,31 @@ def get_series_revision_form(publisher=None, source=None, user=None):
 
             def __init__(self, *args, **kwargs):
                 # Don't allow country and language to be un-set:
-                super(RuntimeSeriesRevisionForm, self).__init__(*args, **kwargs)
+                super(RuntimeSeriesRevisionForm, self).__init__(*args,
+                                                                **kwargs)
                 self.fields['country'].empty_label = None
                 self.fields['language'].empty_label = None
 
             if user.has_perm('gcd.can_approve'):
-                move_to_publisher_with_id = forms.IntegerField(required=False,
-                  help_text="Only editors can move a series. A confirmation "
-                    "page will follow to confirm the move.<br>"
-                    "The move of a series is only possible if no issues are "
-                    "reserved. Brand and indicia publisher entries of the "
-                    "issues will be reset. ")
+                move_to_publisher_with_id = forms.IntegerField(
+                    required=False,
+                    help_text="Only editors can move a series. A "
+                              "confirmation page will follow to confirm the "
+                              "move.<br>"
+                              "The move of a series is only possible if no "
+                              "issues are reserved. Brand and indicia "
+                              "publisher entries of the issues will be reset.")
 
             if source.format:
-                format = forms.CharField(required=False,
-                  widget=forms.TextInput(attrs={'class': 'wide'}),
-                  help_text='This field is DEPRECATED.  Please move the '
-                            'contents to the appropriate more specific fields '
-                            '(color, dimensions, paper stock, binding, or '
-                            'publishing format) or into the notes field if the '
-                            'information does not fit anywhere else.')
+                format = forms.CharField(
+                    required=False,
+                    widget=forms.TextInput(attrs={'class': 'wide'}),
+                    help_text='This field is DEPRECATED.  Please move the '
+                              'contents to the appropriate more specific '
+                              'fields (color, dimensions, paper stock, '
+                              'binding, or publishing format) or into the '
+                              'notes field if the information does not fit '
+                              'anywhere else.')
 
             def as_table(self):
                 if not user or user.indexer.show_wiki_links:
@@ -90,14 +96,14 @@ class SeriesRevisionForm(forms.ModelForm):
         fields = get_series_field_list()
         exclude = ['publisher']
         widgets = {
-          'name': forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
-          'year_began': forms.TextInput(attrs={'class': 'year'}),
-          'year_ended': forms.TextInput(attrs={'class': 'year'}),
-          'color': forms.TextInput(attrs={'class': 'wide'}),
-          'dimensions': forms.TextInput(attrs={'class': 'wide'}),
-          'paper_stock': forms.TextInput(attrs={'class': 'wide'}),
-          'binding': forms.TextInput(attrs={'class': 'wide'}),
-          'publishing_format': forms.TextInput(attrs={'class': 'wide'})
+            'name': forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
+            'year_began': forms.TextInput(attrs={'class': 'year'}),
+            'year_ended': forms.TextInput(attrs={'class': 'year'}),
+            'color': forms.TextInput(attrs={'class': 'wide'}),
+            'dimensions': forms.TextInput(attrs={'class': 'wide'}),
+            'paper_stock': forms.TextInput(attrs={'class': 'wide'}),
+            'binding': forms.TextInput(attrs={'class': 'wide'}),
+            'publishing_format': forms.TextInput(attrs={'class': 'wide'})
         }
         labels = {
             'has_isbn': 'Has ISBN',
@@ -122,8 +128,9 @@ class SeriesRevisionForm(forms.ModelForm):
             cd['name'] = cd['name'].strip()
             if (cd['leading_article'] and
                     cd['name'] == remove_leading_article(cd['name'])):
-                raise forms.ValidationError('The series name is only one word,'
-                    ' you cannot specify a leading article in this case.')
+                raise forms.ValidationError(
+                    'The series name is only one word, you cannot specify '
+                    'a leading article in this case.')
 
         if 'format' in cd:
             cd['format'] = cd['format'].strip()
@@ -134,26 +141,29 @@ class SeriesRevisionForm(forms.ModelForm):
         cd['publishing_format'] = cd['publishing_format'].strip()
         cd['comments'] = cd['comments'].strip()
         if 'reservation_requested' in cd and cd['reservation_requested'] and \
-            (not cd['is_current'] and not cd['is_singleton']):
-            raise forms.ValidationError('A reservation can only be requested'
-                    ' for currently ongoing series.')
+                (not cd['is_current'] and not cd['is_singleton']):
+            raise forms.ValidationError(
+                'A reservation can only be requested for currently ongoing '
+                'series.')
         # some status checks for singleton series
         if cd['is_singleton'] and cd['has_issue_title']:
-            raise forms.ValidationError('Singleton series cannot have '
-              'an issue title.')
+            raise forms.ValidationError(
+                'Singleton series cannot have an issue title.')
         if cd['is_singleton'] and cd['notes']:
-            raise forms.ValidationError('Notes for singleton series are '
-              'stored on the issue level.')
+            raise forms.ValidationError(
+                'Notes for singleton series are stored on the issue level.')
         if cd['is_singleton'] and cd['tracking_notes']:
-            raise forms.ValidationError('Singleton series cannot have '
-              'tracking notes.')
+            raise forms.ValidationError(
+                'Singleton series cannot have tracking notes.')
         if cd['is_singleton'] and cd['is_current']:
-            raise forms.ValidationError('Singleton series do not continue '
-              'and therefore cannot be current in our sense.')
-        if cd['is_singleton'] and 'reservation_requested' in cd and \
-          cd['reservation_requested']:
-            raise forms.ValidationError('Reservations for the created issue '
-              'of a singleton series are not supported for technical reasons.')
+            raise forms.ValidationError(
+                'Singleton series do not continue and therefore cannot be '
+                'current in our sense.')
+        if (cd['is_singleton'] and 'reservation_requested' in cd and
+                cd['reservation_requested']):
+            raise forms.ValidationError(
+                'Reservations for the created issue of a singleton series '
+                'are not supported for technical reasons.')
 
         # TODO How to get to series ?
         # Then we could check the number of issues for singletons
@@ -161,15 +171,18 @@ class SeriesRevisionForm(forms.ModelForm):
 
 
 def _get_series_has_fields_off_note(series, field):
-    return 'The %s field is turned off for %s. To enter a value for %s this ' \
-           'setting for the series has to be changed.' % (field, series, field), \
-           forms.BooleanField(widget=forms.HiddenInput, required=False)
+    off_note = (
+        'The %s field is turned off for %s. To enter a value for %s this '
+        'setting for the series has to be changed.' % (field, series, field))
+    return (off_note,
+            forms.BooleanField(widget=forms.HiddenInput, required=False))
 
 
 def get_series_bond_revision_form(revision=None, user=None):
     class RuntimeSeriesBondRevisionForm(SeriesBondRevisionForm):
         def __init__(self, *args, **kwargs):
-            super(RuntimeSeriesBondRevisionForm, self).__init__(*args, **kwargs)
+            super(RuntimeSeriesBondRevisionForm, self).__init__(*args,
+                                                                **kwargs)
             self.fields['bond_type'].queryset = \
                 SeriesBondType.objects.filter(id__in=BOND_TRACKING)
 
@@ -185,11 +198,10 @@ class SeriesBondRevisionForm(forms.ModelForm):
         model = SeriesBondRevision
         fields = get_series_bond_field_list()
         widgets = {
-          'notes': forms.TextInput(attrs={'class': 'wide'})
+            'notes': forms.TextInput(attrs={'class': 'wide'})
         }
         help_texts = {
-          'notes': 'Notes about the series bond.',
+            'notes': 'Notes about the series bond.',
         }
 
     comments = _get_comments_form_field()
-
