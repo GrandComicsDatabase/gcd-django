@@ -5,24 +5,23 @@ from django import forms
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from apps.oi.models import OngoingReservation
-from apps.gcd.models import Series 
+from apps.gcd.models import Series
 
+# Some imports need a 'noqa' because we are only importing them to re-export
+# through the forms module as a whole, which flake8 does not understand.
+# The 'noqa' goes on the first line of the import, no matter where the
+# apparently-unused import is in a multi-line import statement.
 from .publisher import (get_publisher_revision_form,
                         get_indicia_publisher_revision_form,
                         get_brand_group_revision_form,
                         get_brand_revision_form,
                         get_brand_use_revision_form)
 from .series import get_series_revision_form, get_series_bond_revision_form
-from .issue import get_issue_revision_form
+from .issue import (    # noqa
+    get_issue_revision_form, get_bulk_issue_revision_form)
 from .story import get_story_revision_form, get_reprint_revision_form
 from .image import get_cover_revision_form
-
-# The form classes are imported so that other code can import them
-# through apps.oi.forms without needing to know the internal file
-# structure.  So to keep flake8 from complaining we mark the whole
-# import statment 'noqa', which goes on the first line but applies
-# to the whole statement.
-from .image import (     # noqa
+from .image import (    # noqa
     UploadScanForm, UploadVariantScanForm, GatefoldScanForm, UploadImageForm)
 
 
@@ -92,11 +91,11 @@ class ForeignKeyField(forms.IntegerField):
         try:
             return self.queryset.get(id=id)
         except ObjectDoesNotExist:
-            raise forms.ValidationError, ("%d is not the ID of a valid %s" %
-                               (id, self.target_name))
+            raise forms.ValidationError(
+                "%d is not the ID of a valid %s" % (id, self.target_name))
         except MultipleObjectsReturned:
-            raise forms.ValidationError, (
-              "%d matched multiple instances of %s" % (id, self.target_name))
+            raise forms.ValidationError(
+                "%d matched multiple instances of %s" % (id, self.target_name))
 
 
 class OngoingReservationForm(forms.ModelForm):
@@ -104,38 +103,43 @@ class OngoingReservationForm(forms.ModelForm):
         model = OngoingReservation
         fields = ('series',)
     series = ForeignKeyField(
-      queryset=Series.objects.filter(ongoing_reservation__isnull=True,
-                                     is_current=True),
-      target_name='Available Series',
-      help_text='The numeric database ID of a '
-                'series that does not already '
-                'have an ongoing reservation')
+        queryset=Series.objects.filter(ongoing_reservation__isnull=True,
+                                       is_current=True),
+        target_name='Available Series',
+        help_text='The numeric database ID of a '
+                  'series that does not already '
+                  'have an ongoing reservation')
 
 
 class DownloadForm(forms.Form):
     """ Form for downloading data dumps. """
 
-    purpose = forms.ChoiceField(required=False, widget=forms.RadioSelect,
-      choices=(('private', 'Private use'),
-               ('non-commercial', 'Public / Non-Commercial use'),
-               ('commercial', 'Public / Commercial use')),
-      label="[Optional] Purpose:")
+    purpose = forms.ChoiceField(
+        required=False,
+        widget=forms.RadioSelect,
+        choices=(('private', 'Private use'),
+                 ('non-commercial', 'Public / Non-Commercial use'),
+                 ('commercial', 'Public / Commercial use')),
+        label="[Optional] Purpose:")
 
-    usage = forms.CharField(required=False, widget=forms.Textarea,
-      label="[Optional] How or where do you plan to use the data?")
+    usage = forms.CharField(
+        required=False,
+        widget=forms.Textarea,
+        label="[Optional] How or where do you plan to use the data?")
 
     # Set required=False so we can supply a better error message.
-    accept_license = forms.BooleanField(required=False,
-      label='I have read and accept the GCD data licensing terms and crediting '
-            'guidelines')
+    accept_license = forms.BooleanField(
+        required=False,
+        label='I have read and accept the GCD data licensing terms and '
+              'crediting guidelines')
 
     def clean(self):
         cd = self.cleaned_data
         cd['usage'] = cd['usage'].strip()
 
         if cd['accept_license'] is not True:
-            raise forms.ValidationError, (
-              'You must check the box indicating your acceptance of the licensing '
-              'and crediting terms in order to download the data.')
+            raise forms.ValidationError(
+                'You must check the box indicating your acceptance of the '
+                'licensing and crediting terms in order to download the data.')
 
         return cd
