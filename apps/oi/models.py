@@ -9,7 +9,7 @@ from stdnum import isbn
 
 from django.conf import settings
 from django.db import models
-from django.db.models import Q, F, Manager
+from django.db.models import Q, F, Manager, Count
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes.models import ContentType
