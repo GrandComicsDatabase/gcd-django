@@ -4,7 +4,7 @@ import datetime
 from django.db import models, transaction, connection
 from django.contrib.auth.models import User
 from apps.gcd.models.publisher import Publisher
-from apps.gcd.models.indexer import Indexer
+from apps.indexer.models import Indexer
 from apps.oi.models import *
 from apps.legacy.tools.history import MigratoryTable, LogRecord
 

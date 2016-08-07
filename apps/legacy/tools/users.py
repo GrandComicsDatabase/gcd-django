@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User, Group
-from apps.gcd.models.indexer import Indexer
+from apps.indexer.models import Indexer
 from django.db import connection
 from _mysql_exceptions import OperationalError, IntegrityError
 

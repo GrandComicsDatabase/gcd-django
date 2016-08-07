@@ -28,7 +28,10 @@ ALLOWED_HOSTS = [
 
 # absolute path to the directory that holds templates.
 TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
-                  abspath(join(dirname(__file__), 'apps', 'voting', 'templates')),)
+                  abspath(join(dirname(__file__),
+                               'apps', 'indexer', 'templates')),
+                  abspath(join(dirname(__file__),
+                               'apps', 'voting', 'templates')),)
 
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
@@ -106,6 +109,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_mobile',
+    'apps.indexer',
     'apps.gcd',
     'apps.legacy',
     'apps.oi',

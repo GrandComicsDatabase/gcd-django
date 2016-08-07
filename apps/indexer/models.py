@@ -21,7 +21,6 @@ class Indexer(models.Model):
     Now serves as the profile table in the Django-based implementation.
     """
     class Meta:
-        app_label = 'gcd'
         ordering = ['user__last_name', 'user__first_name']
         permissions = (
             ('can_upload_cover', 'Can upload covers'),
@@ -120,7 +119,7 @@ class Indexer(models.Model):
         email = EmailMessage(from_email=settings.EMAIL_CHAIRMAN,
                   to=[self.user.email],
                   subject='GCD full member',
-                  body=get_template('gcd/accounts/new_member_mail.html').render(
+                  body=get_template('indexer/new_member_mail.html').render(
                     Context({'site_name': settings.SITE_NAME,
                             'chairman': settings.CHAIRMAN })
                     ),
@@ -144,8 +143,7 @@ class Indexer(models.Model):
 
 class ImpGrant(models.Model):
     class Meta:
-        db_table = 'gcd_imp_grant'
-        app_label = 'gcd'
+        db_table = 'indexer_imp_grant'
 
     indexer = models.ForeignKey(Indexer, related_name='imp_grant_set')
     imps = models.IntegerField()

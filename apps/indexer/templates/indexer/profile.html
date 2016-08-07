@@ -16,7 +16,7 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
   <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default/accounts.css" %}"/>
+        href="{% static "css/indexer/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
         href="{% static "css/oi/default.css" %}"/>
 {% endblock %}
@@ -33,7 +33,7 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
 </ul>
 {% endif %}
 
-{% include 'gcd/bits/profile_limits.html' %}
+{% include 'indexer/bits/profile_limits.html' %}
 
 {% if form %}
 <form action="/accounts/profile/{{ profile_user.id|default:user.id }}/"
@@ -78,7 +78,7 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
   </p>
 </form>
 {% else %}
-  {% include 'gcd/bits/profile_display.html' %}
+  {% include 'indexer/bits/profile_display.html' %}
 
   {% if profile_user == user %}
 <form action="{% url "edit_profile" user_id=profile_user.id %}" method="GET"

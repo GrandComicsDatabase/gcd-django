@@ -25,9 +25,10 @@ from django.contrib.contenttypes.models import ContentType
 
 from apps.stddata.models import Country, Language
 
+from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
                             IndiciaPublisher, Brand, BrandGroup, CountStats, \
-                            Indexer, Cover, SeriesBond
+                            Cover, SeriesBond
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \

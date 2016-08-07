@@ -8,7 +8,7 @@
   <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default/accounts.css" %}"/>
+        href="{% static "css/indexer/default.css" %}"/>
 {% endblock %}
 
 {% block title %} GCD :: Mentor an Indexer {% endblock %}
@@ -40,8 +40,8 @@
   {% endif %}
 {% endif %}
 {% with indexer.user as profile_user %}
-  {% include 'gcd/bits/profile_limits.html' %}
-  {% include 'gcd/bits/profile_display.html' %}
+  {% include 'indexer/bits/profile_limits.html' %}
+  {% include 'indexer/bits/profile_display.html' %}
 {% endwith %}
 
 {% endblock %}

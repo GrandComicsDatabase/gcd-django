@@ -25,9 +25,9 @@ from apps.gcd.views.search_haystack import GcdNameQuery
 
 from apps.stddata.models import Country, Language
 
+from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            Indexer, BrandGroup, Brand, IndiciaPublisher, \
-                            STORY_TYPES
+                            BrandGroup, Brand, IndiciaPublisher, STORY_TYPES
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO, render_error

@@ -31,11 +31,11 @@ from django.utils.html import conditional_escape as esc
 
 from apps.stddata.models import Language, Country
 
-from apps.gcd.views import render_error
-from apps.gcd.models import Indexer
-from apps.gcd.forms.accounts import ProfileForm, RegistrationForm, \
-                                    LongUsernameAuthenticationForm
+from apps.indexer.models import Indexer
+from apps.indexer.forms import ProfileForm, RegistrationForm, \
+                               LongUsernameAuthenticationForm
 
+from apps.gcd.views import render_error
 from apps.oi import states
 from apps.mycomics.models import Collector
 
@@ -119,14 +119,14 @@ def register(request):
 
     if request.method == 'GET':
         form = RegistrationForm(auto_id=True)
-        return render_to_response('gcd/accounts/register.html',
+        return render_to_response('indexer/register.html',
           { 'form' : form },
           context_instance=RequestContext(request))
 
     errors = []
     form = RegistrationForm(request.POST)
     if not form.is_valid():
-        return render_to_response('gcd/accounts/register.html',
+        return render_to_response('indexer/register.html',
                                   { 'form': form },
                                   context_instance=RequestContext(request))
 
@@ -309,7 +309,7 @@ Mentor this indexer: %s
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
                   recipient_list=[indexer.user.email],
                   subject='GCD successfull registration',
-                  message=get_template('gcd/accounts/welcome_mail.html').render(
+                  message=get_template('indexer/welcome_mail.html').render(
                             RequestContext(request)),
                   fail_silently=(not settings.BETA))
 
@@ -448,7 +448,7 @@ def profile(request, user_id=None, edit=False):
     if profile_user == request.user:
         context['ranking'] = ranking(profile_user.indexer)
 
-    return render_to_response('gcd/accounts/profile.html',
+    return render_to_response('indexer/profile.html',
                               context,
                               context_instance=RequestContext(request))
 
@@ -463,7 +463,7 @@ def update_profile(request, user_id=None):
     errors = []
     form = ProfileForm(request.POST)
     if not form.is_valid():
-        return render_to_response('gcd/accounts/profile.html',
+        return render_to_response('indexer/profile.html',
                                   { 'form': form },
                                   context_instance=RequestContext(request))
 
@@ -484,7 +484,7 @@ def update_profile(request, user_id=None):
             set_password = True
 
     if errors:
-        return render_to_response('gcd/accounts/profile.html',
+        return render_to_response('indexer/profile.html',
                                   { 'form': form, 'error_list': errors },
                                   context_instance=RequestContext(request))
 
@@ -541,7 +541,7 @@ def mentor(request, indexer_id):
         if 'HTTP_REFERER' in request.META:
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    return render_to_response('gcd/accounts/mentor.html',
+    return render_to_response('indexer/mentor.html',
                               { 'indexer' : indexer },
                               context_instance=RequestContext(request))
 

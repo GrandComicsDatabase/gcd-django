@@ -11,7 +11,6 @@ from series import Series, SeriesPublicationType
 from issue import Issue
 from story import StoryType, Story, STORY_TYPES, OLD_TYPES
 from cover import Cover
-from indexer import Indexer, ImpGrant
 from error import Error
 from countstats import CountStats
 from issuereprint import IssueReprint

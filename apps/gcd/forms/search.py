@@ -4,7 +4,8 @@ from decimal import Decimal, InvalidOperation
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from apps.stddata.models import Country, Language
-from apps.gcd.models import Indexer, StoryType, OLD_TYPES
+from apps.indexer.models import Indexer
+from apps.gcd.models import StoryType, OLD_TYPES
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],

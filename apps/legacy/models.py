@@ -1,6 +1,7 @@
 from django.db import models
 
-from apps.gcd.models import Indexer, Series, Issue, Story
+from apps.indexer.models import Indexer
+from apps.gcd.models import Series, Issue, Story
 
 
 class IndexCredit(models.Model):
