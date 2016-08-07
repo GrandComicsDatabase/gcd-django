@@ -1,45 +1,64 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals, absolute_import
+
 import re
 import sys
-import os
-import os.path
 import glob
 import PIL.Image as pyImage
-import stat
-import errno
-from datetime import datetime, timedelta
 
 from django.core import urlresolvers
-from django.core.files import File
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.db import transaction
-from django.db.models import Min, Max
-from django.core.exceptions import *
-from django.utils.html import conditional_escape as esc
-from django.utils.datastructures import MultiValueDictKeyError
+from django.db.models import Min, Max, Count, F
+from django.utils.html import mark_safe, conditional_escape as esc
 
-from django.contrib.auth.views import login
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
-from apps.gcd.models import *
-from apps.gcd.views import ViewTerminationError, render_error, paginate_response
+from apps.stddata.models import Country
+
+from apps.indexer.views import ViewTerminationError, render_error
+
+from apps.gcd.models import (
+    Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
+    IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
+    Series, SeriesBond, Story, StoryType)
+from apps.gcd.views import paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
                                    show_brand_group, show_brand, show_series, \
                                    show_issue
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
-from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL
+from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM
 from apps.gcd.templatetags.display import show_revision_short
 from apps.select.views import store_select_data
-from apps.oi.models import *
-from apps.oi.forms import *
+
+from apps.oi.models import (
+    Changeset, BrandGroupRevision, BrandRevision, BrandUseRevision,
+    CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
+    PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
+    StoryRevision, OngoingReservation, CTYPES, get_issue_field_list,
+    set_series_first_last)
+
+from apps.oi.forms import (get_brand_group_revision_form,
+                           get_brand_revision_form,
+                           get_brand_use_revision_form,
+                           get_bulk_issue_revision_form,
+                           get_indicia_publisher_revision_form,
+                           get_publisher_revision_form,
+                           get_revision_form,
+                           get_series_revision_form,
+                           get_story_revision_form,
+                           OngoingReservationForm)
+
 from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
+from apps.oi import states
 from apps.legacy.models import MigrationStoryStatus
 
 REVISION_CLASSES = {
@@ -1615,7 +1634,7 @@ def add_indicia_publisher(request, parent_id):
 
     except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
         return render_error(request,
-          'Could not find publisher for id ' + publisher_id)
+          'Could not find publisher for id ' + parent_id)
 
 def _display_add_indicia_publisher_form(request, parent, form):
     object_name = 'Indicia / Colophon Publisher'
@@ -1665,7 +1684,7 @@ def add_brand_group(request, parent_id):
 
     except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
         return render_error(request,
-          'Could not find publisher for id ' + publisher_id)
+          'Could not find publisher for id ' + parent_id)
 
 def _display_add_brand_group_form(request, parent, form):
     object_name = 'BrandGroup'
@@ -1972,9 +1991,10 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
         return render_error(request,
           'You cannot add a variant to this changeset.')
     issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
+    series = issue_revision.series
 
     form_class = get_revision_form(model_name='issue',
-                                   series=issue_revision.series,
+                                   series=series,
                                    publisher=issue_revision.series.publisher,
                                    variant_of=issue_revision.issue,
                                    user=request.user)
@@ -2255,8 +2275,6 @@ def _build_issue(form, revision_sort_code, number,
       no_isbn=cd['no_isbn'],
       no_barcode=cd['no_barcode'],
       revision_sort_code=revision_sort_code)
-    issue_revisions.append(revision)
-    return issue_revisons
 
 def _display_bulk_issue_form(request, series, form, method=None):
     kwargs = {
@@ -2343,9 +2361,9 @@ def add_story(request, issue_revision_id, changeset_id):
     except ViewTerminationError as vte:
         return vte.response
 
-    except (Issue.DoesNotExist, Issue.MultipleObjectsReturned):
+    except (IssueRevision.DoesNotExist, IssueRevision.MultipleObjectsReturned):
         return render_error(request,
-          'Could not find issue for id ' + issue_id)
+          'Could not find issue revision for id ' + issue_revision_id)
 
 def _get_initial_add_story_data(request, issue_revision, seq):
     # First, if we have an integer sequence number, make certain it's
@@ -3047,7 +3065,7 @@ def confirm_reprint(request, data, object_type, selected_id):
         return _cant_get(request)
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': changeset_id }))
+          kwargs={ 'id': data['changeset_id'] }))
 
     if 'story_id' in data and data['story_id']:
         current_story = get_object_or_404(Story, id=data['story_id'])
