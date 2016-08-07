@@ -55,7 +55,7 @@ def download(request):
             record.save()
 
             response = FileResponse(open(path, 'rb'),
-                                    mimetype='application/zip')
+                                    content_type='application/zip')
             response['Content-Disposition'] = \
                 'attachment; filename=current.zip'
             return response
