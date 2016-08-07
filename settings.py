@@ -145,7 +145,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 AUTHENTICATION_BACKENDS = (
-    'apps.gcd.backends.EmailBackend',
+    'apps.indexer.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
 

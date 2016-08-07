@@ -1,4 +1,8 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals, absolute_import
+
 from django.contrib.auth.models import User, check_password
+
 
 class EmailBackend:
     """
@@ -30,4 +34,3 @@ class EmailBackend:
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
-
