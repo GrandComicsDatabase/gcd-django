@@ -12,11 +12,8 @@ from issue import Issue
 from story import StoryType, Story, STORY_TYPES, OLD_TYPES
 from cover import Cover
 from indexer import Indexer, ImpGrant
-from indexcredit import IndexCredit
-from reservation import Reservation
 from error import Error
 from countstats import CountStats
-from migrationstorystatus import MigrationStoryStatus
 from issuereprint import IssueReprint
 from reprint import Reprint
 from reprinttoissue import ReprintToIssue

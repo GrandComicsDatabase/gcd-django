@@ -32,7 +32,7 @@ from django.utils.html import conditional_escape as esc
 from apps.stddata.models import Language, Country
 
 from apps.gcd.views import render_error
-from apps.gcd.models import Indexer, Reservation, IndexCredit
+from apps.gcd.models import Indexer
 from apps.gcd.forms.accounts import ProfileForm, RegistrationForm, \
                                     LongUsernameAuthenticationForm
 

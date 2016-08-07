@@ -14,7 +14,8 @@ from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm
 from django.conf import settings
 
 from apps.stddata.models import Country, Language
-from apps.gcd.models import Indexer, Reservation, IndexCredit
+from apps.gcd.models import Indexer
+from apps.legacy.models import Reservation, IndexCredit
 
 MIN_PASSWORD_LENGTH = 6
 MAX_PASSWORD_LENGTH = 20

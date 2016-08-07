@@ -107,6 +107,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django_mobile',
     'apps.gcd',
+    'apps.legacy',
     'apps.oi',
     'apps.voting',
     'apps.stddata',

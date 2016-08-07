@@ -40,6 +40,7 @@ from apps.oi.forms import *
 from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
+from apps.legacy.models import MigrationStoryStatus
 
 REVISION_CLASSES = {
     'publisher': PublisherRevision,

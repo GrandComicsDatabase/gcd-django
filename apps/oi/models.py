@@ -30,9 +30,11 @@ from apps.gcd.models import (
     Series, SeriesBond, Cover, Image, Issue, Story,
     Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
     SeriesPublicationType, SeriesBondType, StoryType, ImageType,
-    RecentIndexedIssue, CountStats, Reservation, MigrationStoryStatus)
+    RecentIndexedIssue, CountStats)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
+
+from apps.legacy.models import Reservation, MigrationStoryStatus
 
 LANGUAGE_STATS = ['de']
 
