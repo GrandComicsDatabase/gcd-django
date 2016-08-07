@@ -5,7 +5,7 @@ from django.db import transaction, connection
 from django.contrib.auth.models import User
 
 from apps.gcd.models import Series
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 
 from stdnum import isbn
 

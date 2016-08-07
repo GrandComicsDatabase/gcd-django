@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 
 from apps.gcd.models import Story, Issue
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 
 anon = User.objects.get(username=settings.ANON_USER_NAME)
 

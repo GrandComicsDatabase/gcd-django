@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 
 from apps.gcd.models.indexer import Indexer, IMPS_FOR_APPROVAL
-from apps.gcd.migration.history import MigratoryChangeset
+from apps.legacy.tools.history import MigratoryChangeset
 
 from apps.oi import states
 from apps.oi.models import Changeset

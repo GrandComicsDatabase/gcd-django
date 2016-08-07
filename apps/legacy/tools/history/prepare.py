@@ -7,15 +7,15 @@ from apps.gcd.models.publisher import Publisher
 from apps.gcd.models.indexer import Indexer
 from apps.oi.models import *
 
-#from apps.gcd.migration.history.publisher import MigratoryPublisherRevision, \
+#from apps.legacy.tools.history.publisher import MigratoryPublisherRevision, \
 #                                                 LogPublisher
-#from apps.gcd.migration.history.series import MigratorySeriesRevision, LogSeries
-#from apps.gcd.migration.history.issue import MigratoryIssueRevision, LogIssue
-#from apps.gcd.migration.history.story import MigratoryStoryRevision, LogStory
-from apps.gcd.migration.history.publisher import LogPublisher
-from apps.gcd.migration.history.series import LogSeries
-from apps.gcd.migration.history.issue import LogIssue
-from apps.gcd.migration.history.story import LogStory
+#from apps.legacy.tools.history.series import MigratorySeriesRevision, LogSeries
+#from apps.legacy.tools.history.issue import MigratoryIssueRevision, LogIssue
+#from apps.legacy.tools.history.story import MigratoryStoryRevision, LogStory
+from apps.legacy.tools.history.publisher import LogPublisher
+from apps.legacy.tools.history.series import LogSeries
+from apps.legacy.tools.history.issue import LogIssue
+from apps.legacy.tools.history.story import LogStory
 
 def main():
     logging.basicConfig(level=logging.NOTSET,

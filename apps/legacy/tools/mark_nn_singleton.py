@@ -3,7 +3,7 @@ import sys
 from django.db import transaction, connection
 
 from apps.gcd.models import Series
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 
 @transaction.commit_on_success
 def mark_as_singleton():

@@ -5,7 +5,7 @@ from django.db.models import F, Count
 
 from apps.gcd.models import Publisher, Series
 from apps.oi.models import check_delete_imprint
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 
 def fix_stray_imprints():
     """

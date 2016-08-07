@@ -18,10 +18,10 @@ from django.db import transaction
 
 from apps.gcd.models import Publisher, Series, Issue, Story, Reprint, ReprintFromIssue, ReprintToIssue
 from apps.oi.models import ReprintRevision, REPRINT_FIELD
-from apps.gcd.migration.reprints.parse_reprints import parse_reprint, parse_reprint_full, parse_reprint_fr, find_reprint_sequence_in_issue, parse_reprint_lars
+from apps.legacy.tools.reprints.parse_reprints import parse_reprint, parse_reprint_full, parse_reprint_fr, find_reprint_sequence_in_issue, parse_reprint_lars
 
 from apps.gcd.templatetags.credits import split_reprint_string
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 
 def migrate_reprints_lars():
     # 18732  Superman

@@ -4,7 +4,7 @@ from django.db import transaction, connection
 
 from apps.oi.models import *
 from apps.oi.views import _do_reserve
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 
 anon = User.objects.get(username=settings.ANON_USER_NAME)
 

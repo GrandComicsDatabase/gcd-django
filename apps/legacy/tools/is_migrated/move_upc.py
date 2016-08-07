@@ -5,7 +5,7 @@ from django.db import transaction, connection
 from django.contrib.auth.models import User
 
 from apps.gcd.models import Issue
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 from apps.gcd.templatetags.display import valid_barcode
 
 anon = User.objects.get(username=settings.ANON_USER_NAME)

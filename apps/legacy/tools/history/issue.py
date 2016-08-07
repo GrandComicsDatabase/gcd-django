@@ -7,8 +7,8 @@ from django.contrib.auth.models import User
 from apps.gcd.models.publisher import Publisher
 from apps.gcd.models.indexer import Indexer
 from apps.oi.models import *
-from apps.gcd.migration.history import MigratoryTable, LogRecord
-from apps.gcd.migration.history.story import MigratoryStoryRevision, LogStory
+from apps.legacy.tools.history import MigratoryTable, LogRecord
+from apps.legacy.tools.history.story import MigratoryStoryRevision, LogStory
 
 EPSILON = timedelta(5, 0, 0) # Five days
 

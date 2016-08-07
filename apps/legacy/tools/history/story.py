@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from apps.gcd.models.publisher import Publisher
 from apps.gcd.models.indexer import Indexer
 from apps.oi.models import *
-from apps.gcd.migration.history import MigratoryTable, LogRecord
+from apps.legacy.tools.history import MigratoryTable, LogRecord
 
 class MigratoryStoryRevision(MigratoryTable):
     class Meta(MigratoryTable.Meta):

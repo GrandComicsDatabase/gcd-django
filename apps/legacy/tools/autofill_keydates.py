@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import re
 from django.db import transaction
 from apps.gcd.models import Issue
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 
 monthRegExp = [re.compile(x) for x in (
     r'(jan|gen|ene|ιαν|ocak|tammikuu|styczeń|o(dd|đđ)ajag)',

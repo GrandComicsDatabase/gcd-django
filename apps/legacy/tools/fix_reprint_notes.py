@@ -8,7 +8,7 @@ from django.utils.encoding import smart_unicode as uni
 from django.utils.encoding import smart_str
 
 from apps.gcd.models import Issue
-from apps.gcd.migration import migrate_reserve, do_auto_approve
+from apps.legacy.tools import migrate_reserve, do_auto_approve
 
 anon = User.objects.get(username=settings.ANON_USER_NAME)
 

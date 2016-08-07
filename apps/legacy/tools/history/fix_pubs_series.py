@@ -10,11 +10,11 @@ from apps.gcd.models import Publisher, Series
 from apps.oi.models import Changeset, PublisherRevision, SeriesRevision, CTYPES
 from apps.oi import states
 
-from apps.gcd.migration import ANON_USER
-from apps.gcd.migration.history import \
+from apps.legacy.tools import ANON_USER
+from apps.legacy.tools.history import \
     COMMENT_TEXT, COMMENT_TEXT_FOR_ADD, MigratoryChangeset
-from apps.gcd.migration.history.publisher import MigratoryPublisherRevision
-from apps.gcd.migration.history.series import MigratorySeriesRevision
+from apps.legacy.tools.history.publisher import MigratoryPublisherRevision
+from apps.legacy.tools.history.series import MigratorySeriesRevision
 
 class VieuxBoisPublisher(models.Model):
     class Meta:
