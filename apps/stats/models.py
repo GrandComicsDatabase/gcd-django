@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from django.conf import settings
+from django.contrib.auth.models import User
 
 from apps.stddata.models import Country, Language
-from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
-from apps.gcd.models.series import Series
-from apps.gcd.models.issue import Issue, INDEXED
-from apps.gcd.models.story import Story
-from apps.gcd.models.cover import Cover
+from apps.gcd.models import Publisher, Brand, IndiciaPublisher, \
+                            Series, Issue, INDEXED, Story, Cover
+
 
 class CountStatsManager(models.Manager):
 
@@ -66,13 +66,13 @@ class CountStatsManager(models.Manager):
         self.create(name='stories', language=language, country=country,
           count=Story.objects.filter(**kwargs).count())
 
+
 class CountStats(models.Model):
     """
     Store stats from gcd database.
     """
     class Meta:
-        app_label = 'gcd'
-        db_table = 'gcd_count_stats'
+        db_table = 'stats_count_stats'
 
     class Admin:
         pass
@@ -87,3 +87,52 @@ class CountStats(models.Model):
     def __unicode__(self):
         return self.name + ": " + str(self.count)
 
+
+class RecentIndexedIssueManager(models.Manager):
+    """
+    Custom manager to allow specialized object creation.
+    """
+
+    def update_recents(self, issue):
+        international = self.filter(language__isnull=True)
+        if issue.id not in international.values_list('issue', flat=True):
+            self.create(issue=issue, language=None)
+            count = international.count()
+            if count > settings.RECENTS_COUNT:
+                for recent in international.order_by('created')\
+                                [:count - settings.RECENTS_COUNT]:
+                    recent.delete()
+
+        local = self.filter(language=issue.series.language)
+        if issue.id not in local.values_list('issue', flat=True):
+            self.create(issue=issue, language=issue.series.language)
+            count = local.count()
+            if count > settings.RECENTS_COUNT:
+                for recent in local.order_by('created')\
+                                [:count - settings.RECENTS_COUNT]:
+                    recent.delete()         
+
+
+class RecentIndexedIssue(models.Model):
+    """
+    Cache the most recently indexed issues to avoid really expensive
+    scans of the very large oi_changeset and oi_issue_revision tables.
+    """
+    class Meta:
+        db_table = 'stats_recent_indexed_issue'
+
+    objects = RecentIndexedIssueManager()
+
+    issue = models.ForeignKey('gcd.Issue')
+    language = models.ForeignKey('stddata.Language', null=True, db_index=True)
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
+class Download(models.Model):
+    """
+    Track downloads of bulk data.  Description may contain the filesystem
+    paths or other information about what was downloaded.
+    """
+    user = models.ForeignKey(User)
+    description = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)

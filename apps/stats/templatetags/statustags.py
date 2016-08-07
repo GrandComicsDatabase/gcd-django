@@ -3,7 +3,7 @@ from django import template
 from django.utils.html import conditional_escape as esc
 from django.utils.safestring import mark_safe
 
-from apps.gcd.models import RecentIndexedIssue
+from apps.stats.models import RecentIndexedIssue
 
 register = template.Library()
 
@@ -65,4 +65,3 @@ class LastUpdatedNode(template.Node):
 
 
 register.tag('last_updated_issues', last_updated_issues)
-

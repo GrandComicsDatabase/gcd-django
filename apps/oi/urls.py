@@ -287,8 +287,6 @@ urlpatterns = patterns('',
        {'queue_name': 'covers', 'state': states.PENDING },
         name='pending_covers'),
 
-    url(r'^download/', oi_views.download, {}, name='download'),
-
     url(r'^coordinator/clear_publisher_series',
       oi_coordinators.clear_reservations_one_week,
       {}, name='clear_publisher_series'),

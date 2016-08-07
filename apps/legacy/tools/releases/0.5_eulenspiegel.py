@@ -9,7 +9,8 @@ from django.db import models
 from django.db.models import Count
 
 from apps.stddata.models import Language
-from apps.gcd.models import CountStats, StoryType, Series
+from apps.stats.models import CountStats
+from apps.gcd.models import StoryType, Series
 
 
 def main():

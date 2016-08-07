@@ -21,7 +21,8 @@ from django.utils.safestring import mark_safe
 from apps.gcd.views.pagination import DiggPaginator
 
 from apps.stddata.models import Language
-from apps.gcd.models import Error, CountStats
+from apps.stats.models import CountStats
+from apps.gcd.models import Error
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"

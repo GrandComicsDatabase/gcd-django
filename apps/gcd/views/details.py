@@ -24,10 +24,11 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
 from apps.stddata.models import Country, Language
+from apps.stats.models import CountStats
 
 from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
-                            IndiciaPublisher, Brand, BrandGroup, CountStats, \
+                            IndiciaPublisher, Brand, BrandGroup, \
                             Cover, SeriesBond
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO

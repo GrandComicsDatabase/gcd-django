@@ -70,6 +70,7 @@ if settings.SITE_DOWN:
 elif settings.NO_OI:
     urlpatterns = (basic_patterns +
                    patterns('', (r'^', include('apps.gcd.urls'))) +
+                   patterns('', (r'^', include('apps.stats.urls'))) +
                    patterns('', (r'^', include('apps.indexer.urls'))) +
                    read_only_patterns
                   )
@@ -77,6 +78,7 @@ elif settings.MYCOMICS:
     urlpatterns = (basic_patterns +
                    patterns('', (r'^', include('apps.mycomics.urls'))) +
                    patterns('', (r'^', include('apps.gcd.urls'))) +
+                   patterns('', (r'^', include('apps.stats.urls'))) +
                    patterns('', (r'^', include('apps.select.urls'))) +
                    patterns('', (r'^', include('apps.indexer.urls'))) +
                    read_only_patterns
@@ -84,6 +86,7 @@ elif settings.MYCOMICS:
 else:
     urlpatterns = (basic_patterns +
                    patterns('', (r'^', include('apps.gcd.urls'))) +
+                   patterns('', (r'^', include('apps.stats.urls'))) +
                    patterns('', (r'^', include('apps.indexer.urls'))) +
                    patterns('', (r'^', include('apps.select.urls'))) +
                    patterns('', (r'^', include('apps.oi.urls')),

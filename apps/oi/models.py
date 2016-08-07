@@ -24,13 +24,13 @@ from imagekit.processors import ResizeToFit
 from apps.oi import states
 
 from apps.stddata.models import Country, Language
+from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse,
     Series, SeriesBond, Cover, Image, Issue, Story,
     Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
-    SeriesPublicationType, SeriesBondType, StoryType, ImageType,
-    RecentIndexedIssue, CountStats)
+    SeriesPublicationType, SeriesBondType, StoryType, ImageType)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 
@@ -5379,16 +5379,6 @@ class ReprintRevision(Revision):
         if self.deleted:
             reprint += ' [DELETED]'
         return mark_safe(reprint)
-
-
-class Download(models.Model):
-    """
-    Track downloads of bulk data.  Description may contain the filesystem
-    paths or other information about what was downloaded.
-    """
-    user = models.ForeignKey(User)
-    description = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
 
 
 class ImageRevisionManager(RevisionManager):

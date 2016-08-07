@@ -31,6 +31,8 @@ TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
                   abspath(join(dirname(__file__),
                                'apps', 'indexer', 'templates')),
                   abspath(join(dirname(__file__),
+                               'apps', 'stats', 'templates')),
+                  abspath(join(dirname(__file__),
                                'apps', 'voting', 'templates')),)
 
 # absolute path to the directory that holds media.
@@ -111,6 +113,7 @@ INSTALLED_APPS = (
     'django_mobile',
     'apps.indexer',
     'apps.gcd',
+    'apps.stats',
     'apps.legacy',
     'apps.oi',
     'apps.voting',
