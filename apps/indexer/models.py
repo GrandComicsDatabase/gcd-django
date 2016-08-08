@@ -141,6 +141,7 @@ class Indexer(models.Model):
 
         return full_name
 
+
 class ImpGrant(models.Model):
     class Meta:
         db_table = 'indexer_imp_grant'
@@ -150,3 +151,18 @@ class ImpGrant(models.Model):
     grant_type = models.CharField(max_length=50)
     notes = models.TextField()
 
+
+class Error(models.Model):
+    """
+    Store errors from gcd database.
+    """
+    class Admin:
+        pass
+
+    error_key = models.CharField(primary_key=True, max_length=40, editable=False)
+    error_text = models.TextField(null=True, blank=True)
+
+    is_safe = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return self.error_text

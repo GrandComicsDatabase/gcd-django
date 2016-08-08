@@ -13,7 +13,7 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 
-from apps.gcd.views import render_error
+from apps.indexer.views import render_error
 from apps.voting.models import *
 
 EMAIL_RESULT = """

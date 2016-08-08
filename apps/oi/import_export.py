@@ -13,7 +13,7 @@ from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import render_to_response, get_object_or_404
 
-from apps.gcd.views import render_error
+from apps.indexer.views import render_error
 from apps.gcd.views.details import KEY_DATE_REGEXP
 from apps.oi.models import *
 from apps.oi.forms import *

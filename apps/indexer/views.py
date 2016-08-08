@@ -7,6 +7,7 @@ The urls for these views are in the top-level urls.py file instead of
 the gcd app's urls.py, which was the start of an effort to split this
 out of the gcd app.
 """
+from __future__ import unicode_literals, absolute_import
 
 import re
 import hashlib
@@ -28,16 +29,95 @@ from django.contrib.auth.views import logout as standard_logout
 from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+from django.utils.translation import ugettext as _
 
 from apps.stddata.models import Language, Country
 
-from apps.indexer.models import Indexer
+from apps.indexer.models import Indexer, Error
 from apps.indexer.forms import ProfileForm, RegistrationForm, \
                                LongUsernameAuthenticationForm
 
-from apps.gcd.views import render_error
 from apps.oi import states
 from apps.mycomics.models import Collector
+
+
+class ViewTerminationError(Exception):
+    """
+    Used to end a view from within a helper function.  Takes a Django response
+    object in place of a message.  View functions should catch these exceptions
+    and simply return the included response.
+    """
+
+    def __init__(self, response):
+        self.response = response
+
+    def __str__(self):
+        return repr(self.response)
+
+    def get_response(self, request):
+        return self.response
+
+
+class ErrorWithMessage(ViewTerminationError):
+    def __init__(self, message):
+        self.message = message
+
+    def get_response(self, request):
+        return render_error(request, _(self.message), redirect=False)
+
+
+def render_error(request, error_text, redirect=True, is_safe=False):
+    """
+    Utility function to render an error page as a response.  Can be
+    called to return the page directly as a response or used to
+    set up a redirect for which the error message is stored in our
+    custom errors table.
+
+    See apps.indexer.models.Error for more details.
+    """
+    if redirect:
+        if error_text != '':
+            salt = hashlib.sha1(str(random())).hexdigest()[:5]
+            key = hashlib.sha1(salt + error_text.encode('utf-8')).hexdigest()
+            Error.objects.create(error_key=key, is_safe=is_safe,
+                                 error_text=error_text,)
+            return HttpResponseRedirect(
+              urlresolvers.reverse('error') +
+              u'?error_key=' + key)
+
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse('error'))
+    else:
+        if is_safe:
+            error_text = mark_safe(error_text)
+        return error_view(request, error_text)
+
+
+def error_view(request, error_text=''):
+    """
+    Looks up a specified error in the GCD's custom errors table,
+    and renders a generic error page using that error's text.
+    Can be used through a redirect or can be called directly from another view.
+
+    See apps.indexer.models.Error for more details.
+    """
+    if error_text == '':
+        if 'error_key' not in request.GET:
+            error_text = 'Unknown error.'
+        else:
+            key = request.GET['error_key']
+            errors = Error.objects.filter(error_key=key)
+            if errors.count() == 1:
+                error_text = unicode(errors[0])
+                if errors[0].is_safe:
+                    error_text = mark_safe(error_text)
+                errors[0].delete()
+            else:
+                error_text = 'Unknown error.'
+    return render_to_response('indexer/error.html',
+                              {'error_text': error_text},
+                              context_instance=RequestContext(request))
+
 
 def login(request, template_name, landing_view='default_profile'):
     """

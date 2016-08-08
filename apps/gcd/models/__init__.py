@@ -11,7 +11,6 @@ from series import Series, SeriesPublicationType
 from issue import Issue, INDEXED
 from story import StoryType, Story, STORY_TYPES, OLD_TYPES
 from cover import Cover
-from error import Error
 from issuereprint import IssueReprint
 from reprint import Reprint
 from reprinttoissue import ReprintToIssue

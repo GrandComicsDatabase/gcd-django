@@ -23,9 +23,10 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
 from apps.stats.models import CountStats
+from apps.indexer.views import render_error
 
 from apps.gcd.models import Cover, Series, Issue
-from apps.gcd.views import render_error, paginate_response
+from apps.gcd.views import paginate_response
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue, \
                                   get_generic_image_tag
 

@@ -13,7 +13,7 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response
 from django.contrib.auth.decorators import login_required
 
-from apps.gcd.views import render_error
+from apps.indexer.views import render_error
 from apps.stats.models import Download
 from apps.stats.forms import DownloadForm
 

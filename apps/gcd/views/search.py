@@ -26,11 +26,12 @@ from apps.gcd.views.search_haystack import GcdNameQuery
 from apps.stddata.models import Country, Language
 
 from apps.indexer.models import Indexer
+from apps.indexer.views import ViewTerminationError, render_error
+
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             BrandGroup, Brand, IndiciaPublisher, STORY_TYPES
 from apps.gcd.models.issue import INDEXED
-from apps.gcd.views import ViewTerminationError, paginate_response, \
-                           ORDER_ALPHA, ORDER_CHRONO, render_error
+from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
                                   COUNT_RANGE_REGEXP
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, IS_NONE

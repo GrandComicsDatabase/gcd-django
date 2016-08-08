@@ -12,11 +12,11 @@ from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.utils.html import conditional_escape as esc
 
+from apps.indexer.views import render_error, ErrorWithMessage
 from apps.gcd.models import Issue, Series
-from apps.gcd.views import render_error, ResponsePaginator, paginate_response
+from apps.gcd.views import ResponsePaginator, paginate_response
 from apps.gcd.views.alpha_pagination import AlphaPaginator
 from apps.gcd.templatetags.credits import show_keywords_comma
-from apps.gcd import ErrorWithMessage
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 

@@ -7,7 +7,7 @@ from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
-from apps.gcd.views import error_view
+from apps.indexer.views import error_view
 from apps.gcd.views import read_only
 
 admin.autodiscover()

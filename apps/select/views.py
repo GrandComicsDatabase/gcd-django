@@ -13,7 +13,8 @@ from django.utils.datastructures import MultiValueDictKeyError
 from apps.gcd.models import *
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
-from apps.gcd.views import render_error, paginate_response
+from apps.gcd.views import paginate_response
+from apps.indexer.views import render_error
 from apps.select.forms import *
 
 ##############################################################################
