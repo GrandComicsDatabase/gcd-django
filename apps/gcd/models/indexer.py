@@ -6,7 +6,7 @@ from django.core.mail import EmailMessage
 from django.template import Context
 from django.template.loader import get_template
 
-from apps.gcd.models import Country, Language
+from apps.stddata.models import Country, Language
 
 #TODO: Should not be importing from OI.  Reconsider app split.
 from apps.oi import states

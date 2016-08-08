@@ -6,8 +6,6 @@ the traditional models.py and views.py files.
 
 # Make imports work as if we just had a single "models.py" file.
 
-from country import Country
-from language import Language
 from publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, BrandUse
 from series import Series, SeriesPublicationType
 from issue import Issue

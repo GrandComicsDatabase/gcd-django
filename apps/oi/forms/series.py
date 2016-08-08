@@ -11,7 +11,8 @@ from apps.oi.models import (
     SeriesRevision, SeriesBondRevision, get_series_field_list,
     get_series_bond_field_list, remove_leading_article)
 
-from apps.gcd.models import BOND_TRACKING, Country, SeriesBondType
+from apps.stddata.models import Country
+from apps.gcd.models import BOND_TRACKING, SeriesBondType
 
 
 def get_series_revision_form(publisher=None, source=None, user=None):

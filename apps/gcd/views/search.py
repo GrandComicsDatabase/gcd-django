@@ -23,9 +23,11 @@ from django.utils.http import urlquote
 from haystack.query import SearchQuerySet
 from apps.gcd.views.search_haystack import GcdNameQuery
 
+from apps.stddata.models import Country, Language
+
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            Country, Language, Indexer, BrandGroup, Brand, \
-                            IndiciaPublisher, STORY_TYPES
+                            Indexer, BrandGroup, Brand, IndiciaPublisher, \
+                            STORY_TYPES
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import ViewTerminationError, paginate_response, \
                            ORDER_ALPHA, ORDER_CHRONO, render_error

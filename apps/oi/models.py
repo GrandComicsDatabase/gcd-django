@@ -23,9 +23,15 @@ from imagekit.processors import ResizeToFit
 
 from apps.oi import states
 
-# We should just from apps.gcd import models as gcd_models, but that's
-# a lot of little changes so for now tell flake8 noqa so it doesn't complain
-from apps.gcd.models import *  # noqa
+from apps.stddata.models import Country, Language
+
+from apps.gcd.models import (
+    Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse,
+    Series, SeriesBond, Cover, Image, Issue, Story,
+    Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
+    SeriesPublicationType, SeriesBondType, StoryType, ImageType,
+    RecentIndexedIssue, CountStats, Reservation, MigrationStoryStatus)
+
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 
 LANGUAGE_STATS = ['de']
@@ -1613,7 +1619,7 @@ class PublisherRevision(PublisherRevisionBase):
     publisher = models.ForeignKey('gcd.Publisher', null=True,
                                   related_name='revisions')
 
-    country = models.ForeignKey('gcd.Country', db_index=True)
+    country = models.ForeignKey('stddata.Country', db_index=True)
 
     # Deprecated fields about relating publishers/imprints to each other
     is_master = models.BooleanField(default=True, db_index=True)
@@ -1787,7 +1793,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
 
     is_surrogate = models.BooleanField(default=False)
 
-    country = models.ForeignKey('gcd.Country', db_index=True,
+    country = models.ForeignKey('stddata.Country', db_index=True,
                                 related_name='indicia_publishers_revisions')
 
     parent = models.ForeignKey('gcd.Publisher',

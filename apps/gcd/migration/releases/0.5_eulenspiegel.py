@@ -8,7 +8,8 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Count
 
-from apps.gcd.models import Language, CountStats, StoryType, Series
+from apps.stddata.models import Language
+from apps.gcd.models import CountStats, StoryType, Series
 
 
 def main():

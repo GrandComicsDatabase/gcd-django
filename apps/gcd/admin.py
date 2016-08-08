@@ -2,16 +2,6 @@ from django.contrib import admin
 
 from apps.gcd.models import *
 
-class CountryAdmin(admin.ModelAdmin):
-    search_fields = ('name', 'code')
-    list_display = ('code', 'name')
-    list_display_links = ('code', 'name')
-
-class LanguageAdmin(admin.ModelAdmin):
-    search_fields = ('name', 'code')
-    list_display = ('code', 'name')
-    list_display_links = ('code', 'name')
-
 class StoryTypeAdmin(admin.ModelAdmin):
     list_display = ('sort_code', 'name')
     list_display_links = ('name',)
@@ -48,8 +38,6 @@ class IndexerAdmin(admin.ModelAdmin):
 class ImpGrantAdmin(admin.ModelAdmin):
     raw_id_fields = ('indexer',)
 
-admin.site.register(Country, CountryAdmin)
-admin.site.register(Language, LanguageAdmin)
 admin.site.register(StoryType, StoryTypeAdmin)
 admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 admin.site.register(Indexer, IndexerAdmin)

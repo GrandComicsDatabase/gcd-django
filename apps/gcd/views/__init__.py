@@ -20,7 +20,8 @@ from django.utils.safestring import mark_safe
 
 from apps.gcd.views.pagination import DiggPaginator
 
-from apps.gcd.models import Error, CountStats, Language
+from apps.stddata.models import Language
+from apps.gcd.models import Error, CountStats
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"

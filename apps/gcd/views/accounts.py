@@ -29,8 +29,10 @@ from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
+from apps.stddata.models import Language, Country
+
 from apps.gcd.views import render_error
-from apps.gcd.models import Indexer, Language, Country, Reservation, IndexCredit
+from apps.gcd.models import Indexer, Reservation, IndexCredit
 from apps.gcd.forms.accounts import ProfileForm, RegistrationForm, \
                                     LongUsernameAuthenticationForm
 

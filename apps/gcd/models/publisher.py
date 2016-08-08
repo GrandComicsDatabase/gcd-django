@@ -1,6 +1,6 @@
 from django.db import models
 from django.core import urlresolvers
-from country import Country
+from apps.stddata.models import Country
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType

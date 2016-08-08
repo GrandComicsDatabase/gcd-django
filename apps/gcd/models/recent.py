@@ -38,6 +38,6 @@ class RecentIndexedIssue(models.Model):
     objects = RecentIndexedIssueManager()
 
     issue = models.ForeignKey('Issue')
-    language = models.ForeignKey('Language', null=True, db_index=True)
+    language = models.ForeignKey('stddata.Language', null=True, db_index=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
 

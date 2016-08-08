@@ -15,7 +15,8 @@ from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision, BrandGroupRevision,
     BrandRevision, BrandUseRevision, get_brand_use_field_list)
 
-from apps.gcd.models import Country, BrandGroup
+from apps.stddata.models import Country
+from apps.gcd.models import BrandGroup
 
 
 def get_publisher_revision_form(source=None, user=None):

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 
+from apps.stddata.models import Country, Language
 from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
-from apps.gcd.models.language import Language
-from apps.gcd.models.country import Country
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue, INDEXED
 from apps.gcd.models.story import Story

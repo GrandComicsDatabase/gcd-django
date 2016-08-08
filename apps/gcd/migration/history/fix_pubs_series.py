@@ -5,7 +5,8 @@ from django.conf import settings
 from django.db import models, transaction
 from django.contrib.auth.models import User
 
-from apps.gcd.models import Country, Language, Publisher, Series
+from apps.stddata.models import Country, Language
+from apps.gcd.models import Publisher, Series
 from apps.oi.models import Changeset, PublisherRevision, SeriesRevision, CTYPES
 from apps.oi import states
 

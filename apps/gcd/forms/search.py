@@ -3,7 +3,8 @@ from re import match
 from decimal import Decimal, InvalidOperation
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from apps.gcd.models import Country, Language, Indexer, StoryType, OLD_TYPES
+from apps.stddata.models import Country, Language
+from apps.gcd.models import Indexer, StoryType, OLD_TYPES
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],
