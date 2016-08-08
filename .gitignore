@@ -3,7 +3,7 @@
 *.mo
 
 # Auto-generated or externally managed content
-/site_media
+/media
 /static_root
 /voting
 /templates/managed_content
