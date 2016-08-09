@@ -1,27 +1,27 @@
 - fields: { name: publishers, count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 1
 - fields: { name: brands, count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 2
 - fields: { name: "indicia publishers", count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 3
 - fields: { name: series, count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 4
 - fields: { name: issues, count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 5
 - fields: { name: "variant issues", count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 6
 - fields: { name: "issue indexes", count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 7
 - fields: { name: covers, count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 8
 - fields: { name: stories, count: 0, language: null, country: null }
-  model: gcd.countstats
+  model: stats.countstats
   pk: 9

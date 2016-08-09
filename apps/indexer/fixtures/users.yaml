@@ -12,7 +12,7 @@
     date_joined: 2002-01-01 00:00:00
     last_login: 2002-01-01 00:00:00
 
-- model: gcd.indexer
+- model: indexer.indexer
   pk: 1
   fields:
     user: 1
@@ -40,7 +40,7 @@
     date_joined: 2002-01-01 00:00:00
     last_login: 2002-01-01 00:00:00
 
-- model: gcd.indexer
+- model: indexer.indexer
   pk: 2
   fields:
     user: 2
@@ -68,7 +68,7 @@
     date_joined: 2009-12-15 11:50:45
     last_login: 2010-12-15 23:00:10
 
-- model: gcd.indexer
+- model: indexer.indexer
   pk: 3
   fields:
     user: 3
@@ -96,7 +96,7 @@
     date_joined: 2002-01-01 00:00:00
     last_login: 2002-01-01 00:00:00
 
-- model: gcd.indexer
+- model: indexer.indexer
   pk: 4
   fields:
     user: 4
