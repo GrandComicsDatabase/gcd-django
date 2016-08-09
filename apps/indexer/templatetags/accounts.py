@@ -6,7 +6,7 @@ register = template.Library()
 
 def can_view_profile_details(viewer, user):
     if (viewer is not None and viewer.is_authenticated() and
-        (user == viewer or viewer.has_perm('gcd.can_mentor'))):
+        (user == viewer or viewer.has_perm('indexer.can_mentor'))):
         return True
     return False
 

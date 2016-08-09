@@ -118,7 +118,7 @@ def oi_render_to_response(template_name, context, context_instance):
 # Generic view functions
 ##############################################################################
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def delete(request, id, model_name):
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
     if request.method == 'GET':
@@ -178,7 +178,7 @@ def _unreserve(display_obj):
     display_obj.reserved = False
     display_obj.save()
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def reserve(request, id, model_name, delete=False,
             callback=None, callback_args=None):
     if request.method != 'POST':
@@ -327,7 +327,7 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
 
     return changeset
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def edit_two_issues(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, deleted=False)
     if issue.reserved:
@@ -345,7 +345,7 @@ def edit_two_issues(request, issue_id):
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
           kwargs={'select_key': select_key}))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def confirm_two_edits(request, data, object_type, issue_two_id):
     if object_type != 'issue':
         raise ValueError
@@ -362,7 +362,7 @@ def confirm_two_edits(request, data, object_type, issue_two_id):
         {'issue_one': issue_one, 'issue_two': issue_two},
         context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 # in case of variants: issue_one = variant, issue_two = base
 def reserve_two_issues(request, issue_one_id, issue_two_id):
     if request.method != 'POST':
@@ -392,14 +392,14 @@ def reserve_other_issue(changeset, revision, issue_one):
     changeset.save()
     return True
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def edit_revision(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     form_class = get_revision_form(revision, user=request.user)
     form = form_class(instance=revision)
     return _display_edit_form(request, revision.changeset, form, revision)
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     form = None
@@ -435,7 +435,7 @@ def _display_edit_form(request, changeset, form, revision=None):
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def submit(request, id):
     """
     Submit a change and go to the reservations queue.
@@ -506,7 +506,7 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
         revision.save()
         if revision.changeset.change_type == CTYPES['series'] and \
           'move_to_publisher_with_id' in form.cleaned_data and \
-          request.user.has_perm('gcd.can_approve') and \
+          request.user.has_perm('indexer.can_approve') and \
           form.cleaned_data['move_to_publisher_with_id']:
             try:
                 publisher_id = form.cleaned_data['move_to_publisher_with_id']
@@ -561,7 +561,7 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
         changeset = get_object_or_404(Changeset, id=changeset_id)
     return _display_edit_form(request, changeset, form, revision)
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def retract(request, id):
     """
     Retract a pending change back into your reserved queue.
@@ -583,7 +583,7 @@ def retract(request, id):
     return HttpResponseRedirect(
       urlresolvers.reverse('edit', kwargs={'id': changeset.id }))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def confirm_discard(request, id, has_comment=0):
     """
     Indexer has to confirm the discard of a change.
@@ -644,7 +644,7 @@ thanks,
         return HttpResponseRedirect(urlresolvers.reverse('edit',
                                     kwargs={'id': changeset.id }))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def discard(request, id):
     """
     Discard a change and go to the reservations queue.
@@ -724,7 +724,7 @@ thanks,
             else:
                 return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def assign(request, id):
     """
     Move a change into your approvals queue, and go to the queue.
@@ -810,7 +810,7 @@ thanks,
                                              kwargs={'id': changeset.id }) \
                                 + option)
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def release(request, id):
     """
     Move a change out of your approvals queue, and go back to your queue.
@@ -860,7 +860,7 @@ thanks,
         else:
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def discuss(request, id):
     """
     Move a change into the discussion state and go back to your queue.
@@ -941,7 +941,7 @@ thanks,
             else:
                 return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def approve(request, id):
     """
     Approve a change and return to your approvals queue.
@@ -1147,7 +1147,7 @@ thanks,
       email_body,
       settings.EMAIL_INDEXING)
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def disapprove(request, id):
     """
     Disapprove a change and return to your approvals queue.
@@ -1237,7 +1237,7 @@ thanks,
         User.objects.get(id=commenter).email_user('GCD comment',
             email_body, settings.EMAIL_INDEXING)
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_comments(request, id):
     """
     Comment on a change and return to the compare page.
@@ -1289,7 +1289,7 @@ thanks,
     return HttpResponseRedirect(urlresolvers.reverse(compare,
                                                      kwargs={ 'id': id }))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def process(request, id):
     """
     Entry point for forms with multiple actions.
@@ -1337,7 +1337,7 @@ def process(request, id):
     return render_error(request, 'Unknown action requested!  Please try again. '
       'If this error message persists, please contact an Editor.')
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def process_revision(request, id, model_name):
     if request.method != 'POST':
         return _cant_get(request)
@@ -1366,7 +1366,7 @@ def _clean_bulk_issue_change_form(form, remove_fields, items,
         form.fields.pop(i)
     return form
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def edit_issues_in_bulk(request):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -1563,7 +1563,7 @@ def _display_bulk_issue_change_form(request, form,
 # Adding Items
 ##############################################################################
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_publisher(request):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -1599,7 +1599,7 @@ def _display_add_publisher_form(request, form):
       },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_indicia_publisher(request, parent_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -1650,7 +1650,7 @@ def _display_add_indicia_publisher_form(request, parent, form):
       },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_brand_group(request, parent_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -1700,7 +1700,7 @@ def _display_add_brand_group_form(request, parent, form):
       },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_brand(request, brand_group_id=None, publisher_id=None):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -1773,7 +1773,7 @@ def _display_add_brand_form(request, form, brand_group=None, publisher=None):
       },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_brand_use(request, brand_id, publisher_id=None):
     brand = get_object_or_404(Brand, id=brand_id, deleted=False)
     if brand.pending_deletion():
@@ -1817,7 +1817,7 @@ def add_brand_use(request, brand_id, publisher_id=None):
         return HttpResponseRedirect(urlresolvers.reverse('select_object',
             kwargs={'select_key': select_key}))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def process_add_brand_use(request, data, object_type, publisher_id):
     if object_type != 'publisher':
         raise ValueError
@@ -1843,7 +1843,7 @@ def _display_add_brand_use_form(request, form, brand, publisher):
       },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_series(request, publisher_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -1917,7 +1917,7 @@ def init_added_variant(form_class, initial, issue):
     form = form_class(initial=initial)
     return form
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_issue(request, series_id, sort_after=None, variant_of=None,
               variant_cover=None, edit_with_base=False):
     if not request.user.indexer.can_reserve_another():
@@ -2046,7 +2046,7 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
                                       variant_of=variant_of)
     return True
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
@@ -2111,7 +2111,7 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
       },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_issues(request, series_id, method=None):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -2294,7 +2294,7 @@ def _display_bulk_issue_form(request, series, form, method=None):
       },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_story(request, issue_revision_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -2428,7 +2428,7 @@ def _display_add_story_form(request, issue, form, changeset_id):
 # Series Bond Editing
 ##############################################################################
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def edit_series_bonds(request, series_id):
     series = get_object_or_404(Series, id=series_id)
     return oi_render_to_response('oi/edit/list_series_bonds.html',
@@ -2437,7 +2437,7 @@ def edit_series_bonds(request, series_id):
       },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def save_selected_series_bond(request, data, object_type, selected_id):
     if request.method != 'POST':
         return _cant_get(request)
@@ -2463,7 +2463,7 @@ def save_selected_series_bond(request, data, object_type, selected_id):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
         kwargs={'id': series_bond_revision.changeset.id}))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def edit_series_bond(request, id):
     if request.method != 'POST':
         return _cant_get(request)
@@ -2530,7 +2530,7 @@ def save_added_series_bond(request, data, object_type, selected_id):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
         kwargs={'id': series_bond_revision.changeset.id}))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_series_bond(request, id):
     series = get_object_or_404(Series, id=id)
     data = {'series_id': id,
@@ -2550,7 +2550,7 @@ def add_series_bond(request, id):
 # Reprint Link Editing
 ##############################################################################
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def confirm_reprint_migration(request, id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -2650,7 +2650,7 @@ def parse_reprint(reprints):
             pass
     return None, None, None, None, None
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def list_issue_reprints(request, id):
     issue_revision = get_object_or_404(IssueRevision, id=id)
     changeset = issue_revision.changeset
@@ -2663,7 +2663,7 @@ def list_issue_reprints(request, id):
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -2701,7 +2701,7 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
         kwargs={'id': revision.id, 'which_side': which_side }))
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def edit_reprint(request, id, which_side=None):
     reprint_revision = get_object_or_404(ReprintRevision, id=id)
     changeset = reprint_revision.changeset
@@ -2933,7 +2933,7 @@ def edit_reprint(request, id, which_side=None):
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
         kwargs={'select_key': select_key}))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_reprint(request, changeset_id,
                 story_id=None, issue_id=None, reprint_note=''):
     if story_id:
@@ -2970,7 +2970,7 @@ def add_reprint(request, changeset_id,
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
           kwargs={'select_key': select_key}))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def select_internal_object(request, id, changeset_id, which_side,
                            issue_id=None, story_id=None):
     reprint_revision = get_object_or_404(ReprintRevision, id=id)
@@ -3015,7 +3015,7 @@ def select_internal_object(request, id, changeset_id, which_side,
           'reprint_revision': reprint_revision, 'which_side': which_side },
         context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, edit=False):
     story = get_object_or_404(Story, id=story_id)
     issue = get_object_or_404(Issue, id=issue_id)
@@ -3059,7 +3059,7 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
         return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
               kwargs={ 'model_name': 'story', 'id': story_revision.id }))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def confirm_reprint(request, data, object_type, selected_id):
     if request.method != 'POST':
         return _cant_get(request)
@@ -3130,7 +3130,7 @@ def confirm_reprint(request, data, object_type, selected_id):
         },
         context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def save_reprint(request, reprint_revision_id, changeset_id,
                  story_one_id=None, story_revision_id=None, issue_one_id=None,
                  story_two_id=None, issue_two_id=None):
@@ -3238,7 +3238,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
             kwargs={ 'id': changeset_id }))
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def remove_reprint_revision(request, id):
     reprint = get_object_or_404(ReprintRevision, id=id)
     if request.user != reprint.changeset.indexer:
@@ -3296,7 +3296,7 @@ def remove_reprint_revision(request, id):
 # Moving Items
 ##############################################################################
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def move_series(request, series_revision_id, publisher_id):
     series_revision = get_object_or_404(SeriesRevision, id=series_revision_id,
                                         deleted=False)
@@ -3378,7 +3378,7 @@ def move_series(request, series_revision_id, publisher_id):
             series_revision.save()
             return submit(request, series_revision.changeset.id)
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def move_issue(request, issue_revision_id, series_id):
     """ move issue to series """
     issue_revision = get_object_or_404(IssueRevision, id=issue_revision_id,
@@ -3448,7 +3448,7 @@ def move_issue(request, issue_revision_id, series_id):
         return HttpResponseRedirect(urlresolvers.reverse('edit',
             kwargs={'id': issue_revision.changeset.id}))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def move_story_revision(request, id):
     """ move story revision between two issue revisions """
     story = get_object_or_404(StoryRevision, id=id)
@@ -3476,7 +3476,7 @@ def move_story_revision(request, id):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
       kwargs={ 'id': story.changeset.id }))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def move_cover(request, id, cover_id=None):
     """ move cover between two issue revisions """
     changeset = get_object_or_404(Changeset, id=id)
@@ -3522,7 +3522,7 @@ def move_cover(request, id, cover_id=None):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
       kwargs={ 'id': changeset.id }))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def undo_move_cover(request, id, cover_id):
     changeset = get_object_or_404(Changeset, id=id)
     if request.user != changeset.indexer:
@@ -3544,7 +3544,7 @@ def undo_move_cover(request, id, cover_id):
 # Removing Items from a Changeset
 ##############################################################################
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def remove_story_revision(request, id):
     story = get_object_or_404(StoryRevision, id=id)
     if request.user != story.changeset.indexer:
@@ -3590,7 +3590,7 @@ def remove_story_revision(request, id):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
       kwargs={ 'id': story.changeset.id }))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def toggle_delete_story_revision(request, id):
     story = get_object_or_404(StoryRevision, id=id)
     if request.user != story.changeset.indexer:
@@ -3605,7 +3605,7 @@ def toggle_delete_story_revision(request, id):
 # Ongoing Reservations
 ##############################################################################
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def ongoing(request, user_id=None):
     """
     Handle the ongoing reservation, process the request and form and
@@ -3705,7 +3705,7 @@ def _process_reorder_form(request, parent, sort_field, child_name, child_class):
     child_map = child_class.objects.in_bulk(reorder_list)
     return [child_map[child_id] for child_id in reorder_list]
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def reorder_series(request, series_id):
     series = get_object_or_404(Series, id=series_id)
     if request.method != 'POST':
@@ -3721,7 +3721,7 @@ def reorder_series(request, series_id):
     except ViewTerminationError as vte:
         return vte.response
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def reorder_series_by_key_date(request, series_id):
     if request.method != 'POST':
         return _cant_get(request)
@@ -3730,7 +3730,7 @@ def reorder_series_by_key_date(request, series_id):
     issues = series.active_issues().order_by('key_date')
     return _reorder_series(request, series, issues)
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def reorder_series_by_issue_number(request, series_id):
     if request.method != 'POST':
         return _cant_get(request)
@@ -3795,7 +3795,7 @@ def _reorder_series(request, series, issues):
         'issue_list': issue_list },
       context_instance=RequestContext(request))
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def reorder_stories(request, issue_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -3906,7 +3906,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
 # Queue Views
 ##############################################################################
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def show_queue(request, queue_name, state):
     kwargs = {}
     if 'editing' == queue_name:
@@ -4360,7 +4360,7 @@ def preview(request, id, model_name):
 # Mentoring
 ##############################################################################
 
-@permission_required('gcd.can_mentor')
+@permission_required('indexer.can_mentor')
 def mentoring(request):
     max_show_new = 50
     new_indexers = User.objects.filter(indexer__mentor=None) \

@@ -447,7 +447,7 @@ def _find_publisher_object(request, changeset, name, publisher_objects,
         return _handle_import_error(request, changeset, error_text)
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -557,7 +557,7 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
             % (issue_id, changeset_id))
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def import_sequences_from_file(request, issue_id, changeset_id, use_csv = False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -611,7 +611,7 @@ def generate_reprint_link(reprints, direction):
         reprint_note += '; '
     return reprint_note
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     if revision:
         issue = get_object_or_404(IssueRevision, id=issue_id)

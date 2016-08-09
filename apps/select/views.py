@@ -73,7 +73,7 @@ def get_select_forms(request, initial, data, publisher=False,
     return search_form, cache_form
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def process_multiple_selects(request, select_key):
     try:
         data = get_select_data(request, select_key)
@@ -93,7 +93,7 @@ def process_multiple_selects(request, select_key):
     store_select_data(request, select_key, data)
     return data['return'](request, data)
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def process_select_search_haystack(request, select_key):
     try:
         data = get_select_data(request, select_key)
@@ -118,7 +118,7 @@ def process_select_search_haystack(request, select_key):
                                       kwargs={'select_key': select_key}) \
                                     + '?' + request.META['QUERY_STRING'])
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def process_select_search(request, select_key):
     try:
         data = get_select_data(request, select_key)
@@ -226,7 +226,7 @@ def process_select_search(request, select_key):
     }
     return paginate_response(request, search, template, context)
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def select_object(request, select_key):
     try:
         data = get_select_data(request, select_key)
@@ -333,7 +333,7 @@ def get_cached_cover(request):
     return cached_cover
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
     """
     Store an issue_id or story_id in the session.

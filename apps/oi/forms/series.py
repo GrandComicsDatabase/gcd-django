@@ -61,7 +61,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                 self.fields['country'].empty_label = None
                 self.fields['language'].empty_label = None
 
-            if user.has_perm('gcd.can_approve'):
+            if user.has_perm('indexer.can_approve'):
                 move_to_publisher_with_id = forms.IntegerField(
                     required=False,
                     help_text="Only editors can move a series. A "

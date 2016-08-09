@@ -598,7 +598,7 @@ def mentor(request, indexer_id):
     GET: Displays whether the user needs a mentor or not, or who it is.
     POST: Takes on the user as a mentee.
     """
-    if not request.user.has_perm('gcd.can_mentor'):
+    if not request.user.has_perm('indexer.can_mentor'):
         return render_error(request,
           'You are not allowed to mentor new Indexers', redirect=False)
 
@@ -652,7 +652,7 @@ def mentor_not_new(request, indexer_id):
     accordingly.
     POST only, although a GET will redirect to the basic mentoring view.
     """
-    if not request.user.has_perm('gcd.can_mentor'):
+    if not request.user.has_perm('indexer.can_mentor'):
         return render_error(request,
           'You are not allowed to mentor new Indexers', redirect=False)
 
