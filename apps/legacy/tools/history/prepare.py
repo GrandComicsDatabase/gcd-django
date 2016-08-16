@@ -1,6 +1,7 @@
 import sys
 import logging
 import datetime
+import django
 from django.db import models, transaction, connection
 from django.contrib.auth.models import User
 from apps.gcd.models.publisher import Publisher
@@ -145,5 +146,6 @@ UPDATE %s l LEFT OUTER JOIN %s_helper h ON l.ID=h.id
         logging.info("Done with preparation for %s" % table_name)
         transaction.commit_unless_managed()
 
-main()
-
+if __name__ == '__main__':
+    django.setup()
+    main()

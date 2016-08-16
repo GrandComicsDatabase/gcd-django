@@ -1,6 +1,7 @@
 import sys
 import logging
 import datetime
+import django
 from django.db import models, transaction, connection
 from django.contrib.auth.models import User
 from apps.gcd.models.publisher import Publisher
@@ -27,5 +28,6 @@ def main():
         # Commit the changes to the InnoDB tables for each object type.
         transaction.commit_unless_managed()
 
-main()
-
+if __name__ == '__main__':
+    django.setup()
+    main()

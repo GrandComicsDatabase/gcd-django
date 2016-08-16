@@ -2,6 +2,7 @@
 import sys
 import logging
 
+import django
 from django.db import transaction
 from django.db.models import Q
 from django.contrib.auth.models import User
@@ -43,5 +44,6 @@ def main():
             c.approver.indexer.add_imps(IMPS_FOR_APPROVAL)
         n += 1
 
-main()
-
+if __name__ == '__main__':
+    django.setup()
+    main()

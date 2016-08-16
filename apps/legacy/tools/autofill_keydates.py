@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import re
+import django
 from django.db import transaction
 from apps.gcd.models import Issue
 from apps.legacy.tools import migrate_reserve, do_auto_approve
@@ -98,4 +99,5 @@ def main():
     keydate_migration(issues)
 
 if __name__ == '__main__':
+    django.setup()
     main()

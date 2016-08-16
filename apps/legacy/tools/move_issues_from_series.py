@@ -1,17 +1,15 @@
 import sys
-from django.conf import settings
-from django.db import transaction, connection
 
-from apps.oi.models import *
-from apps.oi.views import _do_reserve
+import django
+from apps.gcd.models import Issue, Series
+
 from apps.legacy.tools import migrate_reserve, do_auto_approve
 
-anon = User.objects.get(username=settings.ANON_USER_NAME)
 
 def move_issues(issues, series, reserve_text, approve_text):
     changes = []
     for issue in issues:
-        if issue.reserved == False:
+        if issue.reserved is False:
             changeset = migrate_reserve(issue, 'issue', reserve_text)
             if changeset:
                 issue_revision = changeset.issuerevisions.get()
@@ -24,9 +22,10 @@ def move_issues(issues, series, reserve_text, approve_text):
                         else:
                             issue_revision.brand = None
                     if issue_revision.indicia_publisher:
-                        new_indicia_publisher = series.publisher\
-                                                    .active_indicia_publishers()\
-                            .filter(name=issue_revision.indicia_publisher.name)
+                        name = issue_revision.indicia_publisher.name
+                        new_indicia_publisher = \
+                            series.publisher.active_indicia_publishers() \
+                                  .filter(name=name)
                         if new_indicia_publisher.count() == 1:
                             issue_revision.indicia_publisher = \
                                 new_indicia_publisher[0]
@@ -47,26 +46,35 @@ def move_issues(issues, series, reserve_text, approve_text):
     if len(changes):
         do_auto_approve(changes, approve_text)
 
-print sys.argv, len(sys.argv)
 
-old_series_id = int(sys.argv[1])
-old_series = Series.objects.get(id=old_series_id)
+def main():
+    print sys.argv, len(sys.argv)
 
-new_series_id = int(sys.argv[2])
-new_series = Series.objects.get(id=new_series_id)
+    old_series_id = int(sys.argv[1])
+    old_series = Series.objects.get(id=old_series_id)
 
-issue_list = Issue.objects.filter(series=old_series, deleted=False, reserved=False)
+    new_series_id = int(sys.argv[2])
+    new_series = Series.objects.get(id=new_series_id)
 
-if len(sys.argv) >= 4:
-    num_range = range(int(sys.argv[3]), int(sys.argv[4])+1)
-    issue_list = issue_list.filter(number__in=num_range)
+    issue_list = Issue.objects.filter(series=old_series,
+                                      deleted=False, reserved=False)
 
-#issue_list = issue_list[:10]
+    if len(sys.argv) >= 4:
+        num_range = range(int(sys.argv[3]), int(sys.argv[4])+1)
+        issue_list = issue_list.filter(number__in=num_range)
 
-answer = raw_input('Move the %d (of %d total) issues from series %s to series %s (y/n):' % (issue_list.count(), old_series.issue_count, old_series, new_series))
-if answer.startswith('y'):
-    reserve_text = 'for the move of an issue.'
-    approve_text = 'move of an issue'
+    # issue_list = issue_list[:10]
+
+    answer = raw_input(
+        'Move the %d (of %d total) issues from series %s to series %s (y/n):' %
+        (issue_list.count(), old_series.issue_count, old_series, new_series))
+    if answer.startswith('y'):
+        reserve_text = 'for the move of an issue.'
+        approve_text = 'move of an issue'
+
+        move_issues(issue_list, new_series, reserve_text, approve_text)
 
 
-    move_issues(issue_list, new_series, reserve_text, approve_text)
+if __name__ == '__main__':
+    django.setup()
+    main()
