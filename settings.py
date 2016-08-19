@@ -366,8 +366,9 @@ try:
 except ImportError, exp:
     pass
 try:
-    import more_settings
-    more_settings.modify(globals())
+    import settings_local
+    if hasattr(settings_local, '_modify'):
+        settings_local._modify(globals())
 except ImportError:
     pass
 
