@@ -9,13 +9,13 @@
   <a href="{% url "editing" %}">Editing</a> |
   <a href="{% url "pending" %}">Pending</a> |
   <a href="{% url "pending_covers" %}">Covers</a> |
-  {% if perms.gcd.can_approve %}
+  {% if perms.indexer.can_approve %}
   <a href="{% url "reviewing" %}">Reviewing</a> |
   <a href="{% url "editor_log" %}">Editor Log</a> |
   {% endif %}
   <a href="{% url "approved" %}">Approved</a> |
   <a href="{% url "add" %}">Add New</a> |
-  {% if perms.gcd.can_mentor %}
+  {% if perms.indexer.can_mentor %}
   <a href="{% url "mentoring" %}">Mentoring</a> |
   {% endif %}
   <a href="{% url "voting_dashboard" %}">Voting</a> |

@@ -44,7 +44,7 @@ Edit Covers :: {{ issue }}
       <br>
        <span class="cover_links">Zoom:
 <a href="{{ issue.get_absolute_url }}cover/4">Large</a><br>
-  {% if perms.gcd.can_approve and not pending %}
+  {% if perms.indexer.can_approve and not pending %}
     {% if not cover.marked %}
 <form action="{% url "mark_cover" cover_id=cover.id %}" method="POST">
   {% csrf_token %}

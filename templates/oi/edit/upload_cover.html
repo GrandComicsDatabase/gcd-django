@@ -34,7 +34,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 {% if info %}
 <h2>{{ info }}<br/></h2>
 {% endif %}
-{% if not perms.gcd.can_vote %}
+{% if not perms.indexer.can_vote %}
 <div class="cover_guidelines">
 {% include "oi/bits/cover_guidelines.html" %}
 </div>

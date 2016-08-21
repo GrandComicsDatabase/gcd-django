@@ -207,7 +207,7 @@
           <input id="add" name="add" type="submit" value="Add issues">
           </input>
         </form>
-          {% if perms.gcd.can_approve and series.issue_count %}
+          {% if perms.indexer.can_approve and series.issue_count %}
         <form method="GET" action="{% url "reorder_series" series_id=series.id %}">
           <input id="reorder" name="reorder" type="submit" value="Reorder issues">
           </input>

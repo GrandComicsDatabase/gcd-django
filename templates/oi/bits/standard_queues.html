@@ -11,7 +11,7 @@
 </h2>
 <table>
   <tr>
-      {% if perms.gcd.can_approve or queue_name = 'editing' %}
+      {% if perms.indexer.can_approve or queue_name = 'editing' %}
     <th> </th>
       {% endif %}
     <th> Name {{ queue_name }}</th>
@@ -27,7 +27,7 @@
   </tr>
       {% for changeset in section.changesets %}
   <tr>
-        {% if perms.gcd.can_approve or queue_name = 'editing' %}
+        {% if perms.indexer.can_approve or queue_name = 'editing' %}
     <td>
           {% if queue_name != 'editing' or changeset.state > states.OPEN %} {{ changeset.magnitude }} {% endif %}
     </td>
