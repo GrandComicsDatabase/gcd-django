@@ -445,7 +445,7 @@ def submit(request, id):
 
     changeset = get_object_or_404(Changeset, id=id)
     if (request.user != changeset.indexer):
-        return oi_render_to_response('gcd/error.html',
+        return oi_render_to_response('indexer/error.html',
           {'error_text': 'A change may only be submitted by its author.'},
           context_instance=RequestContext(request))
     comment_text = request.POST['comments'].strip()
@@ -571,7 +571,7 @@ def retract(request, id):
     changeset = get_object_or_404(Changeset, id=id)
 
     if request.user != changeset.indexer:
-        return oi_render_to_response('gcd/error.html',
+        return oi_render_to_response('indexer/error.html',
           {'error_text': 'A change may only be retracted by its author.'},
           context_instance=RequestContext(request))
     comment_text = request.POST['comments'].strip()
@@ -655,7 +655,7 @@ def discard(request, id):
 
     if (request.user != changeset.indexer and
         request.user != changeset.approver):
-        return oi_render_to_response('gcd/error.html',
+        return oi_render_to_response('indexer/error.html',
           { 'error_text':
             'Only the author or the assigned editor can discard a change.' },
           context_instance=RequestContext(request))
@@ -820,7 +820,7 @@ def release(request, id):
 
     changeset = get_object_or_404(Changeset, id=id)
     if request.user != changeset.approver:
-        return oi_render_to_response('gcd/error.html',
+        return oi_render_to_response('indexer/error.html',
           {'error_text': 'A change may only be released by its approver.'},
           context_instance=RequestContext(request))
 
@@ -871,7 +871,7 @@ def discuss(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     if request.user != changeset.approver and \
       request.user != changeset.indexer:
-        return oi_render_to_response('gcd/error.html',
+        return oi_render_to_response('indexer/error.html',
           {'error_text': 'A change may only be put into discussion by its ' \
                          'indexer or approver.'},
           context_instance=RequestContext(request))

@@ -426,11 +426,11 @@ def change_history(request, model_name, id):
                           'image', 'series_bond']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
-            return render_to_response('gcd/error.html', {
+            return render_to_response('indexer/error.html', {
               'error_text': 'There is no change history for this type of object.'},
               context_instance=RequestContext(request))
     if model_name == 'cover' and not request.user.has_perm('indexer.can_vote'):
-        return render_to_response('gcd/error.html', {
+        return render_to_response('indexer/error.html', {
           'error_text': 'Only members can access the change history for covers.'},
           context_instance=RequestContext(request))
 
@@ -1256,7 +1256,7 @@ def countries_in_use(request):
                                   {'countries' : used_countries },
                                   context_instance=RequestContext(request))
     else:
-        return render_to_response('gcd/error.html', {
+        return render_to_response('indexer/error.html', {
           'error_text' : 'You are not allowed to access this page.',
           },
           context_instance=RequestContext(request))
