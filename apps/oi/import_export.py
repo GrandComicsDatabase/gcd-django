@@ -620,7 +620,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     series = issue.series
     filename = unicode(issue).replace(' ', '_').encode('utf-8')
     if use_csv:
-        response = HttpResponse(mimetype='text/csv')
+        response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename=%s.csv' % filename
         writer = UnicodeWriter(response)
     export_data = []
@@ -712,6 +712,6 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
         else:
             export += '\t'.join(export_data) + '\r\n'
     if not use_csv:
-        response = HttpResponse(export, mimetype='text/tab-separated-values')
+        response = HttpResponse(export, content_type='text/tab-separated-values')
         response['Content-Disposition'] = 'attachment; filename=%s.tsv' % filename
     return response

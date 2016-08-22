@@ -140,7 +140,7 @@ def export_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
     filename = unicode(collection).replace(' ', '_').encode('utf-8')
-    response = HttpResponse(mimetype='text/csv')
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename=%s.csv' % filename
     writer = UnicodeWriter(response)
 
