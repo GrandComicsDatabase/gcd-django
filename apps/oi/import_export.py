@@ -8,15 +8,17 @@ from codecs import EncodedFile, BOM_UTF16
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
+from django.core import urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import get_object_or_404
 
 from apps.indexer.views import render_error
 from apps.gcd.views.details import KEY_DATE_REGEXP
-from apps.oi.models import *
-from apps.oi.forms import *
+from apps.gcd.models import StoryType, Issue, Brand, IndiciaPublisher
+from apps.oi.models import (
+    Changeset, StoryRevision, IssueRevision, get_keywords)
 
 MIN_ISSUE_FIELDS = 10
 # MAX_ISSUE_FIELDS is set to 16 to allow import of export issue lines, but
