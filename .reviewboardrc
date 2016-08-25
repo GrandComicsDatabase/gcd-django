@@ -1,0 +1,4 @@
+REVIEWBOARD_URL = "http://reviews.comics.org"
+REPOSITORY = "gcd-django"
+BRANCH = "beta"
+LAND_DEST_BRANCH = "beta"

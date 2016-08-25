@@ -5,13 +5,10 @@
 # Auto-generated or externally managed content
 /media
 /static_root
-/voting
 /templates/managed_content
 
 # Local configuration
 settings_local.py
-templates/BingSiteAuth.xml
-.reviewboardrc
 
 # Editor temp and config files
 *.py~
