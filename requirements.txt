@@ -32,3 +32,13 @@ simplejson==3.4.0
 versiontools==1.9.1
 wsgiref==0.1.2
 RBTools
+
+# These packages are primarily used in production for performance reasons.
+# By default their use is not enabled.  If you enable them, you may need
+# to install other (non-Python-package) software do perform further
+# configuration.  They are included here to ensure that we catch library
+# version dependency interactions.
+rq==0.4.6
+django-rq==0.5.1
+redis==2.10.1
+git+git://github.com/mandx/haystack-rqueue.git
