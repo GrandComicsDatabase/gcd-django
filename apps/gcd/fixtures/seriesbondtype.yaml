@@ -11,3 +11,7 @@
       changes., name: publisher_numbering_continues, notes: ''}
   model: gcd.seriesbondtype
   pk: 3
+- fields: {description: Tracks subnumbering from one series to another., name: subnumbering_continues,
+    notes: ''}
+  model: gcd.seriesbondtype
+  pk: 4

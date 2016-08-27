@@ -2,7 +2,8 @@
 from django.db import models
 from functools import total_ordering
 
-BOND_TRACKING = {1, 2, 3}
+BOND_TRACKING = {1, 2, 3, 4}
+SUBNUMBER_TRACKING = 4
 
 class SeriesBondType(models.Model):
     class Meta:

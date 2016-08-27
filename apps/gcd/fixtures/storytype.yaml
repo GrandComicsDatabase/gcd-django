@@ -46,7 +46,7 @@
 - fields: {name: 'foreword, introduction, preface, afterword', sort_code: 16}
   model: gcd.storytype
   pk: 10
-- fields: {name: credits, sort_code: 17}
+- fields: {name: 'credits, title page', sort_code: 17}
   model: gcd.storytype
   pk: 8
 - fields: {name: recap, sort_code: 18}
