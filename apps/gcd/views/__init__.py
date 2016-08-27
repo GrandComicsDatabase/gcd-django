@@ -20,27 +20,12 @@ from django.utils.safestring import mark_safe
 
 from apps.gcd.views.pagination import DiggPaginator
 
-from apps.gcd.models import Error, CountStats, Language
+from apps.stddata.models import Language
+from apps.stats.models import CountStats
+from apps.indexer.models import Error
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
-
-
-class ViewTerminationError(Exception):
-    """
-    Used to end a view from within a helper function.  Takes a Django response
-    object in place of a message.  View functions should catch these exceptions
-    and simply return the included response.
-    """
-
-    def __init__(self, response):
-        self.response = response
-
-    def __str__(self):
-        return repr(self.response)
-
-    def get_response(self, request):
-        return self.response
 
 
 def index(request):
@@ -168,56 +153,3 @@ def paginate_response(request, queryset, template, vars, per_page=100,
                              per_page=per_page,
                              callback_key=callback_key,
                              callback=callback).paginate(request)
-
-
-def render_error(request, error_text, redirect=True, is_safe=False):
-    """
-    Utility function to render an error page as a response.  Can be
-    called to return the page directly as a response or used to
-    set up a redirect for which the error message is stored in our
-    custom errors table.
-
-    See apps.gcd.models.Error for more details.
-    """
-    if redirect:
-        if error_text != '':
-            salt = hashlib.sha1(str(random())).hexdigest()[:5]
-            key = hashlib.sha1(salt + error_text.encode('utf-8')).hexdigest()
-            Error.objects.create(error_key=key, is_safe=is_safe,
-                                 error_text=error_text,)
-            return HttpResponseRedirect(
-              urlresolvers.reverse('error') +
-              u'?error_key=' + key)
-
-        else:
-            return HttpResponseRedirect(urlresolvers.reverse('error'))
-    else:
-        if is_safe:
-            error_text = mark_safe(error_text)
-        return error_view(request, error_text)
-
-
-def error_view(request, error_text=''):
-    """
-    Looks up a specified error in the GCD's custom errors table,
-    and renders a generic error page using that error's text.
-    Can be used through a redirect or can be called directly from another view.
-
-    See apps.gcd.models.Error for more details.
-    """
-    if error_text == '':
-        if 'error_key' not in request.GET:
-            error_text = 'Unknown error.'
-        else:
-            key = request.GET['error_key']
-            errors = Error.objects.filter(error_key=key)
-            if errors.count() == 1:
-                error_text = unicode(errors[0])
-                if errors[0].is_safe:
-                    error_text = mark_safe(error_text)
-                errors[0].delete()
-            else:
-                error_text = 'Unknown error.'
-    return render_to_response('gcd/error.html',
-                              {'error_text': error_text},
-                              context_instance=RequestContext(request))

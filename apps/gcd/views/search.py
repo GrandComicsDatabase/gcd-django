@@ -4,7 +4,7 @@ View methods related to displaying search and search results pages.
 """
 
 from re import *
-from urllib import urlopen, quote, urlencode
+from urllib import urlopen, urlencode
 from decimal import Decimal
 from string import capitalize
 from stdnum import isbn as stdisbn
@@ -23,12 +23,15 @@ from django.utils.http import urlquote
 from haystack.query import SearchQuerySet
 from apps.gcd.views.search_haystack import GcdNameQuery
 
+from apps.stddata.models import Country, Language
+
+from apps.indexer.models import Indexer
+from apps.indexer.views import ViewTerminationError, render_error
+
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            Country, Language, Indexer, BrandGroup, Brand, \
-                            IndiciaPublisher, STORY_TYPES
+                            BrandGroup, Brand, IndiciaPublisher, STORY_TYPES
 from apps.gcd.models.issue import INDEXED
-from apps.gcd.views import ViewTerminationError, paginate_response, \
-                           ORDER_ALPHA, ORDER_CHRONO, render_error
+from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
                                   COUNT_RANGE_REGEXP
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, IS_NONE
@@ -183,7 +186,6 @@ def generic_by_name(request, name, q_obj, sort,
              'plural_suffix': plural_suffix,
              'heading': heading,
              'search_term': name,
-             'media_url': settings.MEDIA_URL,
              'query_string': urlencode(query_val),
              'change_order': change_order,
              'which_credit': credit,
@@ -483,7 +485,7 @@ def search(request):
     elif object_type == 'job_number':
         param_type = 'number'
 
-    param_type_value = quote(request.GET['query'].strip().encode('utf-8'))
+    param_type_value = request.GET['query'].strip().encode('utf-8')
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
                            kwargs = { param_type: param_type_value,

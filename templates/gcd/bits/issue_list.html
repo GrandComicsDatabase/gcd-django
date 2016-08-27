@@ -2,6 +2,7 @@
 {% load display %}
 {% load compress %}
 {% load url from future %}
+{% load staticfiles %}
 
 {% comment %}
 Either confirm_selection and select_key can be used. 
@@ -71,7 +72,7 @@ the selected issues to your
 {% include "oi/bits/jquery.html" %}
 {% compress js %}
 <script type='text/javascript'
-        src='{{ MEDIA_URL }}js/select_utils.js'></script>
+        src='{% static "js/select_utils.js" %}'></script>
 {% endcompress %}
 {% endif %}
 {% if request.user.is_authenticated and confirm_selection %}

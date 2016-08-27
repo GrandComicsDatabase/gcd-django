@@ -13,7 +13,8 @@ from django.utils.translation import ungettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models import Issue, Country, Language, Reprint
+from apps.stddata.models import Country, Language
+from apps.gcd.models import Issue, Reprint
 from apps.oi.models import ReprintRevision, GENRES
 from apps.gcd.models import StoryType, STORY_TYPES
 
@@ -279,7 +280,7 @@ def show_country_info(country, name=None):
     else:
         code = country.code
         name = country.name
-    src = u'src="%s/img/gcd/flags/%s.png"' % (settings.MEDIA_URL,
+    src = u'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
                                               code.lower())
     alt = u'alt="%s"' % esc(code.upper())
     title = u'title="%s"' % esc(name)

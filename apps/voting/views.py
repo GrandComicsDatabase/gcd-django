@@ -13,7 +13,7 @@ from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 
-from apps.gcd.views import render_error
+from apps.indexer.views import render_error
 from apps.voting.models import *
 
 EMAIL_RESULT = """
@@ -251,7 +251,7 @@ def _send_result_email(topic, extra=''):
 def topic(request, id):
     topic = get_object_or_404(Topic, id=id)
 
-    if not request.user.has_perm('gcd.can_vote'):
+    if not request.user.has_perm('indexer.can_vote'):
         return render_error(request,
                             'You do not have permission to vote on this topic.')
     # Note that if this was a secret ballot, this will be an empty
@@ -269,7 +269,7 @@ def topic(request, id):
                               },
                               context_instance=RequestContext(request))
 
-@permission_required('gcd.can_vote')
+@permission_required('indexer.can_vote')
 def vote(request):
     if request.method != 'POST':
         return render_error(request,

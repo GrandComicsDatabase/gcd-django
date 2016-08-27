@@ -1,973 +1,534 @@
 # -*- coding: utf-8 -*-
-import datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+from django.conf import settings
+import django.core.validators
 
 
-class Migration(SchemaMigration):
-    depends_on = (
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('stddata', '0001_initial'),
         ('gcd', '0001_initial'),
-    )
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('contenttypes', '0001_initial'),
+    ]
 
-    def forwards(self, orm):
-        # Adding model 'Changeset'
-        db.create_table('oi_changeset', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('state', self.gf('django.db.models.fields.IntegerField')(db_index=True)),
-            ('indexer', self.gf('django.db.models.fields.related.ForeignKey')(related_name='changesets', to=orm['auth.User'])),
-            ('approver', self.gf('django.db.models.fields.related.ForeignKey')(related_name='approved_changeset', null=True, to=orm['auth.User'])),
-            ('change_type', self.gf('django.db.models.fields.IntegerField')(db_index=True)),
-            ('migrated', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('date_inferred', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('imps', self.gf('django.db.models.fields.IntegerField')(default=0)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-        ))
-        db.send_create_signal('oi', ['Changeset'])
-
-        # Adding M2M table for field along_with on 'Changeset'
-        db.create_table('oi_changeset_along_with', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('changeset', models.ForeignKey(orm['oi.changeset'], null=False)),
-            ('user', models.ForeignKey(orm['auth.user'], null=False))
-        ))
-        db.create_unique('oi_changeset_along_with', ['changeset_id', 'user_id'])
-
-        # Adding M2M table for field on_behalf_of on 'Changeset'
-        db.create_table('oi_changeset_on_behalf_of', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('changeset', models.ForeignKey(orm['oi.changeset'], null=False)),
-            ('user', models.ForeignKey(orm['auth.user'], null=False))
-        ))
-        db.create_unique('oi_changeset_on_behalf_of', ['changeset_id', 'user_id'])
-
-        # Adding model 'ChangesetComment'
-        db.create_table('oi_changeset_comment', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('commenter', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
-            ('text', self.gf('django.db.models.fields.TextField')()),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='comments', to=orm['oi.Changeset'])),
-            ('content_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['contenttypes.ContentType'], null=True)),
-            ('revision_id', self.gf('django.db.models.fields.IntegerField')(null=True, db_index=True)),
-            ('old_state', self.gf('django.db.models.fields.IntegerField')()),
-            ('new_state', self.gf('django.db.models.fields.IntegerField')()),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-        ))
-        db.send_create_signal('oi', ['ChangesetComment'])
-
-        # Adding model 'OngoingReservation'
-        db.create_table('oi_ongoing_reservation', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('indexer', self.gf('django.db.models.fields.related.ForeignKey')(related_name='ongoing_reservations', to=orm['auth.User'])),
-            ('series', self.gf('django.db.models.fields.related.OneToOneField')(related_name='ongoing_reservation', unique=True, to=orm['gcd.Series'])),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-        ))
-        db.send_create_signal('oi', ['OngoingReservation'])
-
-        # Adding M2M table for field along_with on 'OngoingReservation'
-        db.create_table('oi_ongoing_reservation_along_with', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('ongoingreservation', models.ForeignKey(orm['oi.ongoingreservation'], null=False)),
-            ('user', models.ForeignKey(orm['auth.user'], null=False))
-        ))
-        db.create_unique('oi_ongoing_reservation_along_with', ['ongoingreservation_id', 'user_id'])
-
-        # Adding M2M table for field on_behalf_of on 'OngoingReservation'
-        db.create_table('oi_ongoing_reservation_on_behalf_of', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('ongoingreservation', models.ForeignKey(orm['oi.ongoingreservation'], null=False)),
-            ('user', models.ForeignKey(orm['auth.user'], null=False))
-        ))
-        db.create_unique('oi_ongoing_reservation_on_behalf_of', ['ongoingreservation_id', 'user_id'])
-
-        # Adding model 'PublisherRevision'
-        db.create_table('oi_publisher_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='publisherrevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('year_began', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('year_ended', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('year_began_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('year_ended_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('keywords', self.gf('django.db.models.fields.TextField')(default='', blank=True)),
-            ('url', self.gf('django.db.models.fields.URLField')(max_length=200, blank=True)),
-            ('publisher', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Publisher'])),
-            ('country', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['gcd.Country'])),
-            ('is_master', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('parent', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='imprint_revisions', null=True, to=orm['gcd.Publisher'])),
-            ('date_inferred', self.gf('django.db.models.fields.BooleanField')(default=False)),
-        ))
-        db.send_create_signal('oi', ['PublisherRevision'])
-
-        # Adding model 'IndiciaPublisherRevision'
-        db.create_table('oi_indicia_publisher_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='indiciapublisherrevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('year_began', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('year_ended', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('year_began_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('year_ended_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('keywords', self.gf('django.db.models.fields.TextField')(default='', blank=True)),
-            ('url', self.gf('django.db.models.fields.URLField')(max_length=200, blank=True)),
-            ('indicia_publisher', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.IndiciaPublisher'])),
-            ('is_surrogate', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('country', self.gf('django.db.models.fields.related.ForeignKey')(related_name='indicia_publishers_revisions', to=orm['gcd.Country'])),
-            ('parent', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='indicia_publisher_revisions', null=True, to=orm['gcd.Publisher'])),
-        ))
-        db.send_create_signal('oi', ['IndiciaPublisherRevision'])
-
-        # Adding model 'BrandRevision'
-        db.create_table('oi_brand_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='brandrevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('year_began', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('year_ended', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('year_began_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('year_ended_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('keywords', self.gf('django.db.models.fields.TextField')(default='', blank=True)),
-            ('url', self.gf('django.db.models.fields.URLField')(max_length=200, blank=True)),
-            ('brand', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Brand'])),
-            ('parent', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='brand_revisions', null=True, to=orm['gcd.Publisher'])),
-        ))
-        db.send_create_signal('oi', ['BrandRevision'])
-
-        # Adding model 'CoverRevision'
-        db.create_table('oi_cover_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='coverrevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('cover', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Cover'])),
-            ('issue', self.gf('django.db.models.fields.related.ForeignKey')(related_name='cover_revisions', to=orm['gcd.Issue'])),
-            ('marked', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('is_replacement', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('is_wraparound', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('front_left', self.gf('django.db.models.fields.IntegerField')(default=0, null=True)),
-            ('front_right', self.gf('django.db.models.fields.IntegerField')(default=0, null=True)),
-            ('front_bottom', self.gf('django.db.models.fields.IntegerField')(default=0, null=True)),
-            ('front_top', self.gf('django.db.models.fields.IntegerField')(default=0, null=True)),
-            ('file_source', self.gf('django.db.models.fields.CharField')(max_length=255, null=True)),
-        ))
-        db.send_create_signal('oi', ['CoverRevision'])
-
-        # Adding model 'SeriesRevision'
-        db.create_table('oi_series_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='seriesrevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('series', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Series'])),
-            ('reservation_requested', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('leading_article', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('format', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('year_began', self.gf('django.db.models.fields.IntegerField')()),
-            ('year_ended', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('year_began_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('year_ended_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('is_current', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('publication_notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('tracking_notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('has_barcode', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('has_indicia_frequency', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('has_isbn', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('has_issue_title', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('has_volume', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('is_comics_publication', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('keywords', self.gf('django.db.models.fields.TextField')(default='', blank=True)),
-            ('country', self.gf('django.db.models.fields.related.ForeignKey')(related_name='series_revisions', to=orm['gcd.Country'])),
-            ('language', self.gf('django.db.models.fields.related.ForeignKey')(related_name='series_revisions', to=orm['gcd.Language'])),
-            ('publisher', self.gf('django.db.models.fields.related.ForeignKey')(related_name='series_revisions', to=orm['gcd.Publisher'])),
-            ('imprint', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='imprint_series_revisions', null=True, to=orm['gcd.Publisher'])),
-            ('date_inferred', self.gf('django.db.models.fields.BooleanField')(default=False)),
-        ))
-        db.send_create_signal('oi', ['SeriesRevision'])
-
-        # Adding model 'IssueRevision'
-        db.create_table('oi_issue_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='issuerevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('issue', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Issue'])),
-            ('after', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='after_revisions', null=True, to=orm['gcd.Issue'])),
-            ('revision_sort_code', self.gf('django.db.models.fields.IntegerField')(null=True)),
-            ('reservation_requested', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('number', self.gf('django.db.models.fields.CharField')(max_length=50)),
-            ('title', self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True)),
-            ('no_title', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('volume', self.gf('django.db.models.fields.CharField')(default='', max_length=50, blank=True)),
-            ('no_volume', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('display_volume_with_number', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('variant_of', self.gf('django.db.models.fields.related.ForeignKey')(related_name='variant_revisions', null=True, to=orm['gcd.Issue'])),
-            ('variant_name', self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True)),
-            ('publication_date', self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True)),
-            ('key_date', self.gf('django.db.models.fields.CharField')(default='', max_length=10, blank=True)),
-            ('year_on_sale', self.gf('django.db.models.fields.IntegerField')(db_index=True, null=True, blank=True)),
-            ('month_on_sale', self.gf('django.db.models.fields.IntegerField')(db_index=True, null=True, blank=True)),
-            ('day_on_sale', self.gf('django.db.models.fields.IntegerField')(db_index=True, null=True, blank=True)),
-            ('on_sale_date_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('indicia_frequency', self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True)),
-            ('no_indicia_frequency', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('price', self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True)),
-            ('page_count', self.gf('django.db.models.fields.DecimalField')(default=None, null=True, max_digits=10, decimal_places=3, blank=True)),
-            ('page_count_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('editing', self.gf('django.db.models.fields.TextField')(default='', blank=True)),
-            ('no_editing', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('notes', self.gf('django.db.models.fields.TextField')(default='', blank=True)),
-            ('keywords', self.gf('django.db.models.fields.TextField')(default='', blank=True)),
-            ('series', self.gf('django.db.models.fields.related.ForeignKey')(related_name='issue_revisions', to=orm['gcd.Series'])),
-            ('indicia_publisher', self.gf('django.db.models.fields.related.ForeignKey')(default=None, related_name='issue_revisions', null=True, blank=True, to=orm['gcd.IndiciaPublisher'])),
-            ('indicia_pub_not_printed', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('brand', self.gf('django.db.models.fields.related.ForeignKey')(default=None, related_name='issue_revisions', null=True, blank=True, to=orm['gcd.Brand'])),
-            ('no_brand', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('isbn', self.gf('django.db.models.fields.CharField')(default='', max_length=32, blank=True)),
-            ('no_isbn', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('barcode', self.gf('django.db.models.fields.CharField')(default='', max_length=38, blank=True)),
-            ('no_barcode', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('date_inferred', self.gf('django.db.models.fields.BooleanField')(default=False)),
-        ))
-        db.send_create_signal('oi', ['IssueRevision'])
-
-        # Adding model 'StoryRevision'
-        db.create_table('oi_story_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='storyrevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('story', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Story'])),
-            ('title', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('title_inferred', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('feature', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['gcd.StoryType'])),
-            ('sequence_number', self.gf('django.db.models.fields.IntegerField')()),
-            ('page_count', self.gf('django.db.models.fields.DecimalField')(null=True, max_digits=10, decimal_places=3, blank=True)),
-            ('page_count_uncertain', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('script', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('pencils', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('inks', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('colors', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('letters', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('editing', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('no_script', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('no_pencils', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('no_inks', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('no_colors', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('no_letters', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('no_editing', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('job_number', self.gf('django.db.models.fields.CharField')(max_length=25, blank=True)),
-            ('genre', self.gf('django.db.models.fields.CharField')(max_length=255, blank=True)),
-            ('characters', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('synopsis', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('reprint_notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-            ('keywords', self.gf('django.db.models.fields.TextField')(default='', blank=True)),
-            ('issue', self.gf('django.db.models.fields.related.ForeignKey')(related_name='story_revisions', null=True, to=orm['gcd.Issue'])),
-            ('date_inferred', self.gf('django.db.models.fields.BooleanField')(default=False)),
-        ))
-        db.send_create_signal('oi', ['StoryRevision'])
-
-        # Adding model 'ReprintRevision'
-        db.create_table('oi_reprint_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='reprintrevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('reprint', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Reprint'])),
-            ('reprint_from_issue', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.ReprintFromIssue'])),
-            ('reprint_to_issue', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.ReprintToIssue'])),
-            ('issue_reprint', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.IssueReprint'])),
-            ('origin_story', self.gf('django.db.models.fields.related.ForeignKey')(related_name='origin_reprint_revisions', null=True, to=orm['gcd.Story'])),
-            ('origin_revision', self.gf('django.db.models.fields.related.ForeignKey')(related_name='origin_reprint_revisions', null=True, to=orm['oi.StoryRevision'])),
-            ('origin_issue', self.gf('django.db.models.fields.related.ForeignKey')(related_name='origin_reprint_revisions', null=True, to=orm['gcd.Issue'])),
-            ('target_story', self.gf('django.db.models.fields.related.ForeignKey')(related_name='target_reprint_revisions', null=True, to=orm['gcd.Story'])),
-            ('target_revision', self.gf('django.db.models.fields.related.ForeignKey')(related_name='target_reprint_revisions', null=True, to=orm['oi.StoryRevision'])),
-            ('target_issue', self.gf('django.db.models.fields.related.ForeignKey')(related_name='target_reprint_revisions', null=True, to=orm['gcd.Issue'])),
-            ('notes', self.gf('django.db.models.fields.TextField')(default='', max_length=255)),
-            ('in_type', self.gf('django.db.models.fields.IntegerField')(null=True, db_index=True)),
-            ('out_type', self.gf('django.db.models.fields.IntegerField')(null=True, db_index=True)),
-            ('previous_revision', self.gf('django.db.models.fields.related.OneToOneField')(related_name='next_revision', unique=True, null=True, to=orm['oi.ReprintRevision'])),
-        ))
-        db.send_create_signal('oi', ['ReprintRevision'])
-
-        # Adding model 'Download'
-        db.create_table('oi_download', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
-            ('description', self.gf('django.db.models.fields.TextField')()),
-            ('timestamp', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-        ))
-        db.send_create_signal('oi', ['Download'])
-
-        # Adding model 'ImageRevision'
-        db.create_table('oi_image_revision', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('changeset', self.gf('django.db.models.fields.related.ForeignKey')(related_name='imagerevisions', to=orm['oi.Changeset'])),
-            ('deleted', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, db_index=True, blank=True)),
-            ('image', self.gf('django.db.models.fields.related.ForeignKey')(related_name='revisions', null=True, to=orm['gcd.Image'])),
-            ('content_type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['contenttypes.ContentType'], null=True)),
-            ('object_id', self.gf('django.db.models.fields.PositiveIntegerField')(null=True, db_index=True)),
-            ('type', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['gcd.ImageType'])),
-            ('image_file', self.gf('django.db.models.fields.files.ImageField')(max_length=100)),
-            ('marked', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('is_replacement', self.gf('django.db.models.fields.BooleanField')(default=False)),
-        ))
-        db.send_create_signal('oi', ['ImageRevision'])
-
-
-    def backwards(self, orm):
-        # Deleting model 'Changeset'
-        db.delete_table('oi_changeset')
-
-        # Removing M2M table for field along_with on 'Changeset'
-        db.delete_table('oi_changeset_along_with')
-
-        # Removing M2M table for field on_behalf_of on 'Changeset'
-        db.delete_table('oi_changeset_on_behalf_of')
-
-        # Deleting model 'ChangesetComment'
-        db.delete_table('oi_changeset_comment')
-
-        # Deleting model 'OngoingReservation'
-        db.delete_table('oi_ongoing_reservation')
-
-        # Removing M2M table for field along_with on 'OngoingReservation'
-        db.delete_table('oi_ongoing_reservation_along_with')
-
-        # Removing M2M table for field on_behalf_of on 'OngoingReservation'
-        db.delete_table('oi_ongoing_reservation_on_behalf_of')
-
-        # Deleting model 'PublisherRevision'
-        db.delete_table('oi_publisher_revision')
-
-        # Deleting model 'IndiciaPublisherRevision'
-        db.delete_table('oi_indicia_publisher_revision')
-
-        # Deleting model 'BrandRevision'
-        db.delete_table('oi_brand_revision')
-
-        # Deleting model 'CoverRevision'
-        db.delete_table('oi_cover_revision')
-
-        # Deleting model 'SeriesRevision'
-        db.delete_table('oi_series_revision')
-
-        # Deleting model 'IssueRevision'
-        db.delete_table('oi_issue_revision')
-
-        # Deleting model 'StoryRevision'
-        db.delete_table('oi_story_revision')
-
-        # Deleting model 'ReprintRevision'
-        db.delete_table('oi_reprint_revision')
-
-        # Deleting model 'Download'
-        db.delete_table('oi_download')
-
-        # Deleting model 'ImageRevision'
-        db.delete_table('oi_image_revision')
-
-
-    models = {
-        'auth.group': {
-            'Meta': {'object_name': 'Group'},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '80'}),
-            'permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'})
-        },
-        'auth.permission': {
-            'Meta': {'ordering': "('content_type__app_label', 'content_type__model', 'codename')", 'unique_together': "(('content_type', 'codename'),)", 'object_name': 'Permission'},
-            'codename': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['contenttypes.ContentType']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
-        },
-        'auth.user': {
-            'Meta': {'object_name': 'User'},
-            'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
-            'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'groups': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Group']", 'symmetrical': 'False', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
-            'is_staff': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_superuser': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'last_login': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
-            'last_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
-            'password': ('django.db.models.fields.CharField', [], {'max_length': '128'}),
-            'user_permissions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['auth.Permission']", 'symmetrical': 'False', 'blank': 'True'}),
-            'username': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '30'})
-        },
-        'contenttypes.contenttype': {
-            'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
-            'app_label': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
-        },
-        'gcd.brand': {
-            'Meta': {'ordering': "['name']", 'object_name': 'Brand'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'issue_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '255', 'blank': 'True'}),
-            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
-            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
-            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
-        },
-        'gcd.country': {
-            'Meta': {'ordering': "('name',)", 'object_name': 'Country'},
-            'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '10'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'})
-        },
-        'gcd.cover': {
-            'Meta': {'ordering': "['issue']", 'object_name': 'Cover'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'front_bottom': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'front_left': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'front_right': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'front_top': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_wraparound': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Issue']"}),
-            'last_upload': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'db_index': 'True'}),
-            'limit_display': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'marked': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
-        },
-        'gcd.image': {
-            'Meta': {'object_name': 'Image'},
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['contenttypes.ContentType']", 'null': 'True'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'null': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'image_file': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'marked': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'null': 'True', 'blank': 'True'}),
-            'object_id': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'db_index': 'True'}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.ImageType']"})
-        },
-        'gcd.imagetype': {
-            'Meta': {'object_name': 'ImageType', 'db_table': "'gcd_image_type'"},
-            'description': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50', 'db_index': 'True'}),
-            'unique': ('django.db.models.fields.BooleanField', [], {'default': 'True'})
-        },
-        'gcd.indiciapublisher': {
-            'Meta': {'ordering': "['name']", 'object_name': 'IndiciaPublisher', 'db_table': "'gcd_indicia_publisher'"},
-            'country': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Country']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_surrogate': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'issue_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '255', 'blank': 'True'}),
-            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
-            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
-            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
-        },
-        'gcd.issue': {
-            'Meta': {'ordering': "['series', 'sort_code']", 'unique_together': "(('series', 'sort_code'),)", 'object_name': 'Issue'},
-            'barcode': ('django.db.models.fields.CharField', [], {'max_length': '38', 'db_index': 'True'}),
-            'brand': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Brand']", 'null': 'True'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'display_volume_with_number': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'editing': ('django.db.models.fields.TextField', [], {}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'indicia_frequency': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'indicia_pub_not_printed': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'indicia_publisher': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.IndiciaPublisher']", 'null': 'True'}),
-            'is_indexed': ('django.db.models.fields.IntegerField', [], {'default': '0', 'db_index': 'True'}),
-            'isbn': ('django.db.models.fields.CharField', [], {'max_length': '32', 'db_index': 'True'}),
-            'key_date': ('django.db.models.fields.CharField', [], {'max_length': '10', 'db_index': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'no_barcode': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_brand': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_editing': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_title': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {}),
-            'number': ('django.db.models.fields.CharField', [], {'max_length': '50', 'db_index': 'True'}),
-            'on_sale_date': ('django.db.models.fields.CharField', [], {'max_length': '10', 'db_index': 'True'}),
-            'on_sale_date_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'page_count': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '3'}),
-            'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'price': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'publication_date': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'series': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Series']"}),
-            'sort_code': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
-            'title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'valid_isbn': ('django.db.models.fields.CharField', [], {'max_length': '13', 'db_index': 'True'}),
-            'variant_name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'variant_of': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'variant_set'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'volume': ('django.db.models.fields.CharField', [], {'max_length': '50', 'db_index': 'True'})
-        },
-        'gcd.issuereprint': {
-            'Meta': {'object_name': 'IssueReprint', 'db_table': "'gcd_issue_reprint'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
-            'origin_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_issue_reprints'", 'to': "orm['gcd.Issue']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'target_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_issue_reprints'", 'to': "orm['gcd.Issue']"})
-        },
-        'gcd.language': {
-            'Meta': {'ordering': "('name',)", 'object_name': 'Language'},
-            'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '10'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'})
-        },
-        'gcd.publisher': {
-            'Meta': {'ordering': "['name']", 'object_name': 'Publisher'},
-            'brand_count': ('django.db.models.fields.IntegerField', [], {'default': '0', 'db_index': 'True'}),
-            'country': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Country']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'imprint_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'indicia_publisher_count': ('django.db.models.fields.IntegerField', [], {'default': '0', 'db_index': 'True'}),
-            'is_master': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'issue_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'imprint_set'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'series_count': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'url': ('django.db.models.fields.URLField', [], {'default': "u''", 'max_length': '255', 'blank': 'True'}),
-            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
-            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
-            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'})
-        },
-        'gcd.reprint': {
-            'Meta': {'object_name': 'Reprint'},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
-            'origin': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_reprints'", 'to': "orm['gcd.Story']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'target': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_reprints'", 'to': "orm['gcd.Story']"})
-        },
-        'gcd.reprintfromissue': {
-            'Meta': {'object_name': 'ReprintFromIssue', 'db_table': "'gcd_reprint_from_issue'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
-            'origin_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_reprints'", 'to': "orm['gcd.Issue']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'target': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_issue_reprints'", 'to': "orm['gcd.Story']"})
-        },
-        'gcd.reprinttoissue': {
-            'Meta': {'object_name': 'ReprintToIssue', 'db_table': "'gcd_reprint_to_issue'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'max_length': '255'}),
-            'origin': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_issue_reprints'", 'to': "orm['gcd.Story']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'target_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'from_reprints'", 'to': "orm['gcd.Issue']"})
-        },
-        'gcd.series': {
-            'Meta': {'ordering': "['sort_name', 'year_began']", 'object_name': 'Series'},
-            'country': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Country']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'first_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'first_issue_series_set'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'format': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'has_barcode': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'has_gallery': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'has_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'has_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'has_issue_title': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'has_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'imprint': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'imprint_series_set'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
-            'is_comics_publication': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_current': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'issue_count': ('django.db.models.fields.IntegerField', [], {}),
-            'language': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Language']"}),
-            'last_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'last_issue_series_set'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {}),
-            'open_reserve': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
-            'publication_dates': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'publication_notes': ('django.db.models.fields.TextField', [], {}),
-            'publisher': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Publisher']"}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'sort_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'db_index': 'True'}),
-            'tracking_notes': ('django.db.models.fields.TextField', [], {}),
-            'year_began': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
-            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
-            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
-        },
-        'gcd.story': {
-            'Meta': {'ordering': "['sequence_number']", 'object_name': 'Story'},
-            'characters': ('django.db.models.fields.TextField', [], {}),
-            'colors': ('django.db.models.fields.TextField', [], {}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'editing': ('django.db.models.fields.TextField', [], {}),
-            'feature': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'genre': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'inks': ('django.db.models.fields.TextField', [], {}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Issue']"}),
-            'job_number': ('django.db.models.fields.CharField', [], {'max_length': '25'}),
-            'letters': ('django.db.models.fields.TextField', [], {}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'no_colors': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_editing': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_inks': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_letters': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_pencils': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'no_script': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {}),
-            'page_count': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '3', 'db_index': 'True'}),
-            'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'pencils': ('django.db.models.fields.TextField', [], {}),
-            'reprint_notes': ('django.db.models.fields.TextField', [], {}),
-            'reserved': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'script': ('django.db.models.fields.TextField', [], {}),
-            'sequence_number': ('django.db.models.fields.IntegerField', [], {}),
-            'synopsis': ('django.db.models.fields.TextField', [], {}),
-            'title': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'title_inferred': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.StoryType']"})
-        },
-        'gcd.storytype': {
-            'Meta': {'ordering': "['sort_code']", 'object_name': 'StoryType', 'db_table': "'gcd_story_type'"},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '50', 'db_index': 'True'}),
-            'sort_code': ('django.db.models.fields.IntegerField', [], {'unique': 'True'})
-        },
-        'oi.brandrevision': {
-            'Meta': {'ordering': "['-created', '-id']", 'object_name': 'BrandRevision', 'db_table': "'oi_brand_revision'"},
-            'brand': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Brand']"}),
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'brandrevisions'", 'to': "orm['oi.Changeset']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'keywords': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'brand_revisions'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
-            'url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'blank': 'True'}),
-            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
-        },
-        'oi.changeset': {
-            'Meta': {'object_name': 'Changeset'},
-            'along_with': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'changesets_assisting'", 'symmetrical': 'False', 'to': "orm['auth.User']"}),
-            'approver': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'approved_changeset'", 'null': 'True', 'to': "orm['auth.User']"}),
-            'change_type': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'date_inferred': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'imps': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'indexer': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'changesets'", 'to': "orm['auth.User']"}),
-            'migrated': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'on_behalf_of': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'changesets_source'", 'symmetrical': 'False', 'to': "orm['auth.User']"}),
-            'state': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'})
-        },
-        'oi.changesetcomment': {
-            'Meta': {'ordering': "['created']", 'object_name': 'ChangesetComment', 'db_table': "'oi_changeset_comment'"},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'comments'", 'to': "orm['oi.Changeset']"}),
-            'commenter': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"}),
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['contenttypes.ContentType']", 'null': 'True'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'new_state': ('django.db.models.fields.IntegerField', [], {}),
-            'old_state': ('django.db.models.fields.IntegerField', [], {}),
-            'revision_id': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
-            'text': ('django.db.models.fields.TextField', [], {})
-        },
-        'oi.coverrevision': {
-            'Meta': {'ordering': "['-created', '-id']", 'object_name': 'CoverRevision', 'db_table': "'oi_cover_revision'"},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'coverrevisions'", 'to': "orm['oi.Changeset']"}),
-            'cover': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Cover']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'file_source': ('django.db.models.fields.CharField', [], {'max_length': '255', 'null': 'True'}),
-            'front_bottom': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True'}),
-            'front_left': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True'}),
-            'front_right': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True'}),
-            'front_top': ('django.db.models.fields.IntegerField', [], {'default': '0', 'null': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_replacement': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_wraparound': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'cover_revisions'", 'to': "orm['gcd.Issue']"}),
-            'marked': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'})
-        },
-        'oi.download': {
-            'Meta': {'object_name': 'Download'},
-            'description': ('django.db.models.fields.TextField', [], {}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'timestamp': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"})
-        },
-        'oi.imagerevision': {
-            'Meta': {'ordering': "['created']", 'object_name': 'ImageRevision', 'db_table': "'oi_image_revision'"},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'imagerevisions'", 'to': "orm['oi.Changeset']"}),
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['contenttypes.ContentType']", 'null': 'True'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'image': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Image']"}),
-            'image_file': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'is_replacement': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'marked': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'object_id': ('django.db.models.fields.PositiveIntegerField', [], {'null': 'True', 'db_index': 'True'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.ImageType']"})
-        },
-        'oi.indiciapublisherrevision': {
-            'Meta': {'ordering': "['-created', '-id']", 'object_name': 'IndiciaPublisherRevision', 'db_table': "'oi_indicia_publisher_revision'"},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'indiciapublisherrevisions'", 'to': "orm['oi.Changeset']"}),
-            'country': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'indicia_publishers_revisions'", 'to': "orm['gcd.Country']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'indicia_publisher': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.IndiciaPublisher']"}),
-            'is_surrogate': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'keywords': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'indicia_publisher_revisions'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
-            'url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'blank': 'True'}),
-            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
-        },
-        'oi.issuerevision': {
-            'Meta': {'ordering': "['-created', '-id']", 'object_name': 'IssueRevision', 'db_table': "'oi_issue_revision'"},
-            'after': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'after_revisions'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'barcode': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '38', 'blank': 'True'}),
-            'brand': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'related_name': "'issue_revisions'", 'null': 'True', 'blank': 'True', 'to': "orm['gcd.Brand']"}),
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'issuerevisions'", 'to': "orm['oi.Changeset']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'date_inferred': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'day_on_sale': ('django.db.models.fields.IntegerField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'display_volume_with_number': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'editing': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'indicia_frequency': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'}),
-            'indicia_pub_not_printed': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'indicia_publisher': ('django.db.models.fields.related.ForeignKey', [], {'default': 'None', 'related_name': "'issue_revisions'", 'null': 'True', 'blank': 'True', 'to': "orm['gcd.IndiciaPublisher']"}),
-            'isbn': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '32', 'blank': 'True'}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'key_date': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '10', 'blank': 'True'}),
-            'keywords': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'month_on_sale': ('django.db.models.fields.IntegerField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
-            'no_barcode': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_brand': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_editing': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_title': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'notes': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'number': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
-            'on_sale_date_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'page_count': ('django.db.models.fields.DecimalField', [], {'default': 'None', 'null': 'True', 'max_digits': '10', 'decimal_places': '3', 'blank': 'True'}),
-            'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'price': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'}),
-            'publication_date': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'}),
-            'reservation_requested': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'revision_sort_code': ('django.db.models.fields.IntegerField', [], {'null': 'True'}),
-            'series': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'issue_revisions'", 'to': "orm['gcd.Series']"}),
-            'title': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'}),
-            'variant_name': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '255', 'blank': 'True'}),
-            'variant_of': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'variant_revisions'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'volume': ('django.db.models.fields.CharField', [], {'default': "''", 'max_length': '50', 'blank': 'True'}),
-            'year_on_sale': ('django.db.models.fields.IntegerField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'})
-        },
-        'oi.ongoingreservation': {
-            'Meta': {'object_name': 'OngoingReservation', 'db_table': "'oi_ongoing_reservation'"},
-            'along_with': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'ongoing_assisting'", 'symmetrical': 'False', 'to': "orm['auth.User']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'indexer': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'ongoing_reservations'", 'to': "orm['auth.User']"}),
-            'on_behalf_of': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'ongoing_source'", 'symmetrical': 'False', 'to': "orm['auth.User']"}),
-            'series': ('django.db.models.fields.related.OneToOneField', [], {'related_name': "'ongoing_reservation'", 'unique': 'True', 'to': "orm['gcd.Series']"})
-        },
-        'oi.publisherrevision': {
-            'Meta': {'ordering': "['-created', '-id']", 'object_name': 'PublisherRevision', 'db_table': "'oi_publisher_revision'"},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'publisherrevisions'", 'to': "orm['oi.Changeset']"}),
-            'country': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.Country']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'date_inferred': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'is_master': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'keywords': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'parent': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'imprint_revisions'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
-            'publisher': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
-            'url': ('django.db.models.fields.URLField', [], {'max_length': '200', 'blank': 'True'}),
-            'year_began': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
-        },
-        'oi.reprintrevision': {
-            'Meta': {'ordering': "['-created', '-id']", 'object_name': 'ReprintRevision', 'db_table': "'oi_reprint_revision'"},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'reprintrevisions'", 'to': "orm['oi.Changeset']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'in_type': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
-            'issue_reprint': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.IssueReprint']"}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'default': "''", 'max_length': '255'}),
-            'origin_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'origin_reprint_revisions'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'origin_revision': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'origin_reprint_revisions'", 'null': 'True', 'to': "orm['oi.StoryRevision']"}),
-            'origin_story': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'origin_reprint_revisions'", 'null': 'True', 'to': "orm['gcd.Story']"}),
-            'out_type': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'db_index': 'True'}),
-            'previous_revision': ('django.db.models.fields.related.OneToOneField', [], {'related_name': "'next_revision'", 'unique': 'True', 'null': 'True', 'to': "orm['oi.ReprintRevision']"}),
-            'reprint': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Reprint']"}),
-            'reprint_from_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.ReprintFromIssue']"}),
-            'reprint_to_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.ReprintToIssue']"}),
-            'target_issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'target_reprint_revisions'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'target_revision': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'target_reprint_revisions'", 'null': 'True', 'to': "orm['oi.StoryRevision']"}),
-            'target_story': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'target_reprint_revisions'", 'null': 'True', 'to': "orm['gcd.Story']"})
-        },
-        'oi.seriesrevision': {
-            'Meta': {'ordering': "['-created', '-id']", 'object_name': 'SeriesRevision', 'db_table': "'oi_series_revision'"},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'seriesrevisions'", 'to': "orm['oi.Changeset']"}),
-            'country': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'series_revisions'", 'to': "orm['gcd.Country']"}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'date_inferred': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'format': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'has_barcode': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'has_indicia_frequency': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'has_isbn': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'has_issue_title': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'has_volume': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'imprint': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'imprint_series_revisions'", 'null': 'True', 'to': "orm['gcd.Publisher']"}),
-            'is_comics_publication': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'is_current': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'keywords': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'language': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'series_revisions'", 'to': "orm['gcd.Language']"}),
-            'leading_article': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'publication_notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'publisher': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'series_revisions'", 'to': "orm['gcd.Publisher']"}),
-            'reservation_requested': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'series': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Series']"}),
-            'tracking_notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'year_began': ('django.db.models.fields.IntegerField', [], {}),
-            'year_began_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'year_ended': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'year_ended_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
-        },
-        'oi.storyrevision': {
-            'Meta': {'ordering': "['-created', '-id']", 'object_name': 'StoryRevision', 'db_table': "'oi_story_revision'"},
-            'changeset': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'storyrevisions'", 'to': "orm['oi.Changeset']"}),
-            'characters': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'colors': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'date_inferred': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'deleted': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
-            'editing': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'feature': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'genre': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'inks': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'issue': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'story_revisions'", 'null': 'True', 'to': "orm['gcd.Issue']"}),
-            'job_number': ('django.db.models.fields.CharField', [], {'max_length': '25', 'blank': 'True'}),
-            'keywords': ('django.db.models.fields.TextField', [], {'default': "''", 'blank': 'True'}),
-            'letters': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'db_index': 'True', 'blank': 'True'}),
-            'no_colors': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_editing': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_inks': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_letters': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_pencils': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'no_script': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'page_count': ('django.db.models.fields.DecimalField', [], {'null': 'True', 'max_digits': '10', 'decimal_places': '3', 'blank': 'True'}),
-            'page_count_uncertain': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'pencils': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'reprint_notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'script': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'sequence_number': ('django.db.models.fields.IntegerField', [], {}),
-            'story': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'revisions'", 'null': 'True', 'to': "orm['gcd.Story']"}),
-            'synopsis': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'title': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
-            'title_inferred': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'type': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['gcd.StoryType']"})
-        },
-        'taggit.tag': {
-            'Meta': {'object_name': 'Tag'},
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
-            'slug': ('django.db.models.fields.SlugField', [], {'unique': 'True', 'max_length': '100'})
-        },
-        'taggit.taggeditem': {
-            'Meta': {'object_name': 'TaggedItem'},
-            'content_type': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'taggit_taggeditem_tagged_items'", 'to': "orm['contenttypes.ContentType']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'object_id': ('django.db.models.fields.IntegerField', [], {'db_index': 'True'}),
-            'tag': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'taggit_taggeditem_items'", 'to': "orm['taggit.Tag']"})
-        }
-    }
-
-    complete_apps = ['oi']
+    operations = [
+        migrations.CreateModel(
+            name='BrandGroupRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('name', models.CharField(max_length=255)),
+                ('year_began', models.IntegerField(null=True, blank=True)),
+                ('year_ended', models.IntegerField(null=True, blank=True)),
+                ('year_began_uncertain', models.BooleanField(default=False)),
+                ('year_ended_uncertain', models.BooleanField(default=False)),
+                ('notes', models.TextField(blank=True)),
+                ('keywords', models.TextField(default=b'', blank=True)),
+                ('url', models.URLField(blank=True)),
+                ('brand_group', models.ForeignKey(related_name='revisions', to='gcd.BrandGroup', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_brand_group_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='BrandRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('name', models.CharField(max_length=255)),
+                ('year_began', models.IntegerField(null=True, blank=True)),
+                ('year_ended', models.IntegerField(null=True, blank=True)),
+                ('year_began_uncertain', models.BooleanField(default=False)),
+                ('year_ended_uncertain', models.BooleanField(default=False)),
+                ('notes', models.TextField(blank=True)),
+                ('keywords', models.TextField(default=b'', blank=True)),
+                ('url', models.URLField(blank=True)),
+                ('brand', models.ForeignKey(related_name='revisions', to='gcd.Brand', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_brand_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='BrandUseRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('year_began', models.IntegerField(null=True, db_index=True)),
+                ('year_ended', models.IntegerField(null=True)),
+                ('year_began_uncertain', models.BooleanField(default=False)),
+                ('year_ended_uncertain', models.BooleanField(default=False)),
+                ('notes', models.TextField(max_length=255, blank=True)),
+                ('brand_use', models.ForeignKey(related_name='revisions', to='gcd.BrandUse', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_brand_use_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='Changeset',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('state', models.IntegerField(db_index=True)),
+                ('change_type', models.IntegerField(db_index=True)),
+                ('migrated', models.BooleanField(default=False, db_index=True)),
+                ('date_inferred', models.BooleanField(default=False)),
+                ('imps', models.IntegerField(default=0)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('along_with', models.ManyToManyField(related_name='changesets_assisting', to=settings.AUTH_USER_MODEL)),
+                ('approver', models.ForeignKey(related_name='approved_changeset', to=settings.AUTH_USER_MODEL, null=True)),
+                ('indexer', models.ForeignKey(related_name='changesets', to=settings.AUTH_USER_MODEL)),
+                ('on_behalf_of', models.ManyToManyField(related_name='changesets_source', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ChangesetComment',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('text', models.TextField()),
+                ('revision_id', models.IntegerField(null=True, db_index=True)),
+                ('old_state', models.IntegerField()),
+                ('new_state', models.IntegerField()),
+                ('created', models.DateTimeField(auto_now_add=True)),
+                ('changeset', models.ForeignKey(related_name='comments', to='oi.Changeset')),
+                ('commenter', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('content_type', models.ForeignKey(to='contenttypes.ContentType', null=True)),
+            ],
+            options={
+                'ordering': ['created'],
+                'db_table': 'oi_changeset_comment',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='CoverRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('marked', models.BooleanField(default=False)),
+                ('is_replacement', models.BooleanField(default=False)),
+                ('is_wraparound', models.BooleanField(default=False)),
+                ('front_left', models.IntegerField(default=0, null=True)),
+                ('front_right', models.IntegerField(default=0, null=True)),
+                ('front_bottom', models.IntegerField(default=0, null=True)),
+                ('front_top', models.IntegerField(default=0, null=True)),
+                ('file_source', models.CharField(max_length=255, null=True)),
+                ('changeset', models.ForeignKey(related_name='coverrevisions', to='oi.Changeset')),
+                ('cover', models.ForeignKey(related_name='revisions', to='gcd.Cover', null=True)),
+                ('issue', models.ForeignKey(related_name='cover_revisions', to='gcd.Issue')),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_cover_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ImageRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('object_id', models.PositiveIntegerField(null=True, db_index=True)),
+                ('image_file', models.ImageField(upload_to=b'img/gcd/new_generic_images//%m_%Y')),
+                ('marked', models.BooleanField(default=False)),
+                ('is_replacement', models.BooleanField(default=False)),
+                ('changeset', models.ForeignKey(related_name='imagerevisions', to='oi.Changeset')),
+                ('content_type', models.ForeignKey(to='contenttypes.ContentType', null=True)),
+                ('image', models.ForeignKey(related_name='revisions', to='gcd.Image', null=True)),
+                ('type', models.ForeignKey(to='gcd.ImageType')),
+            ],
+            options={
+                'ordering': ['created'],
+                'db_table': 'oi_image_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='IndiciaPublisherRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('name', models.CharField(max_length=255)),
+                ('year_began', models.IntegerField(null=True, blank=True)),
+                ('year_ended', models.IntegerField(null=True, blank=True)),
+                ('year_began_uncertain', models.BooleanField(default=False)),
+                ('year_ended_uncertain', models.BooleanField(default=False)),
+                ('notes', models.TextField(blank=True)),
+                ('keywords', models.TextField(default=b'', blank=True)),
+                ('url', models.URLField(blank=True)),
+                ('is_surrogate', models.BooleanField(default=False)),
+                ('changeset', models.ForeignKey(related_name='indiciapublisherrevisions', to='oi.Changeset')),
+                ('country', models.ForeignKey(related_name='indicia_publishers_revisions', to='stddata.Country')),
+                ('indicia_publisher', models.ForeignKey(related_name='revisions', to='gcd.IndiciaPublisher', null=True)),
+                ('parent', models.ForeignKey(related_name='indicia_publisher_revisions', blank=True, to='gcd.Publisher', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_indicia_publisher_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='IssueRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('revision_sort_code', models.IntegerField(null=True)),
+                ('reservation_requested', models.BooleanField(default=False)),
+                ('number', models.CharField(max_length=50)),
+                ('title', models.CharField(default=b'', max_length=255, blank=True)),
+                ('no_title', models.BooleanField(default=False)),
+                ('volume', models.CharField(default=b'', max_length=50, blank=True)),
+                ('no_volume', models.BooleanField(default=False)),
+                ('display_volume_with_number', models.BooleanField(default=False)),
+                ('variant_name', models.CharField(default=b'', max_length=255, blank=True)),
+                ('publication_date', models.CharField(default=b'', max_length=255, blank=True)),
+                ('key_date', models.CharField(default=b'', max_length=10, blank=True, validators=[django.core.validators.RegexValidator(b'^(17|18|19|20)\\d{2}(\\.|-)(0[0-9]|1[0-3])(\\.|-)\\d{2}$')])),
+                ('year_on_sale', models.IntegerField(db_index=True, null=True, blank=True)),
+                ('month_on_sale', models.IntegerField(db_index=True, null=True, blank=True)),
+                ('day_on_sale', models.IntegerField(db_index=True, null=True, blank=True)),
+                ('on_sale_date_uncertain', models.BooleanField(default=False)),
+                ('indicia_frequency', models.CharField(default=b'', max_length=255, blank=True)),
+                ('no_indicia_frequency', models.BooleanField(default=False)),
+                ('price', models.CharField(default=b'', max_length=255, blank=True)),
+                ('page_count', models.DecimalField(default=None, null=True, max_digits=10, decimal_places=3, blank=True)),
+                ('page_count_uncertain', models.BooleanField(default=False)),
+                ('editing', models.TextField(default=b'', blank=True)),
+                ('no_editing', models.BooleanField(default=False)),
+                ('notes', models.TextField(default=b'', blank=True)),
+                ('keywords', models.TextField(default=b'', blank=True)),
+                ('indicia_pub_not_printed', models.BooleanField(default=False)),
+                ('no_brand', models.BooleanField(default=False)),
+                ('isbn', models.CharField(default=b'', max_length=32, blank=True)),
+                ('no_isbn', models.BooleanField(default=False)),
+                ('barcode', models.CharField(default=b'', max_length=38, blank=True)),
+                ('no_barcode', models.BooleanField(default=False)),
+                ('rating', models.CharField(default=b'', max_length=255, blank=True)),
+                ('no_rating', models.BooleanField(default=False)),
+                ('date_inferred', models.BooleanField(default=False)),
+                ('after', models.ForeignKey(related_name='after_revisions', blank=True, to='gcd.Issue', null=True)),
+                ('brand', models.ForeignKey(related_name='issue_revisions', default=None, blank=True, to='gcd.Brand', null=True)),
+                ('changeset', models.ForeignKey(related_name='issuerevisions', to='oi.Changeset')),
+                ('indicia_publisher', models.ForeignKey(related_name='issue_revisions', default=None, blank=True, to='gcd.IndiciaPublisher', null=True)),
+                ('issue', models.ForeignKey(related_name='revisions', to='gcd.Issue', null=True)),
+                ('series', models.ForeignKey(related_name='issue_revisions', to='gcd.Series')),
+                ('variant_of', models.ForeignKey(related_name='variant_revisions', to='gcd.Issue', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_issue_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='OngoingReservation',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('along_with', models.ManyToManyField(related_name='ongoing_assisting', to=settings.AUTH_USER_MODEL)),
+                ('indexer', models.ForeignKey(related_name='ongoing_reservations', to=settings.AUTH_USER_MODEL)),
+                ('on_behalf_of', models.ManyToManyField(related_name='ongoing_source', to=settings.AUTH_USER_MODEL)),
+                ('series', models.OneToOneField(related_name='ongoing_reservation', to='gcd.Series')),
+            ],
+            options={
+                'db_table': 'oi_ongoing_reservation',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='PublisherRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('name', models.CharField(max_length=255)),
+                ('year_began', models.IntegerField(null=True, blank=True)),
+                ('year_ended', models.IntegerField(null=True, blank=True)),
+                ('year_began_uncertain', models.BooleanField(default=False)),
+                ('year_ended_uncertain', models.BooleanField(default=False)),
+                ('notes', models.TextField(blank=True)),
+                ('keywords', models.TextField(default=b'', blank=True)),
+                ('url', models.URLField(blank=True)),
+                ('is_master', models.BooleanField(default=True, db_index=True)),
+                ('date_inferred', models.BooleanField(default=False)),
+                ('changeset', models.ForeignKey(related_name='publisherrevisions', to='oi.Changeset')),
+                ('country', models.ForeignKey(to='stddata.Country')),
+                ('parent', models.ForeignKey(related_name='imprint_revisions', default=None, blank=True, to='gcd.Publisher', null=True)),
+                ('publisher', models.ForeignKey(related_name='revisions', to='gcd.Publisher', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_publisher_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ReprintRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('notes', models.TextField(default=b'', max_length=255)),
+                ('in_type', models.IntegerField(null=True, db_index=True)),
+                ('out_type', models.IntegerField(null=True, db_index=True)),
+                ('changeset', models.ForeignKey(related_name='reprintrevisions', to='oi.Changeset')),
+                ('issue_reprint', models.ForeignKey(related_name='revisions', to='gcd.IssueReprint', null=True)),
+                ('origin_issue', models.ForeignKey(related_name='origin_reprint_revisions', to='gcd.Issue', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_reprint_revision',
+                'get_latest_by': 'created',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SeriesBondRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('notes', models.TextField(default=b'', max_length=255, blank=True)),
+                ('bond_type', models.ForeignKey(related_name='bond_revisions', to='gcd.SeriesBondType', null=True)),
+                ('changeset', models.ForeignKey(related_name='seriesbondrevisions', to='oi.Changeset')),
+                ('origin', models.ForeignKey(related_name='origin_bond_revisions', to='gcd.Series', null=True)),
+                ('origin_issue', models.ForeignKey(related_name='origin_series_bond_revisions', to='gcd.Issue', null=True)),
+                ('previous_revision', models.OneToOneField(related_name='next_revision', null=True, to='oi.SeriesBondRevision')),
+                ('series_bond', models.ForeignKey(related_name='revisions', to='gcd.SeriesBond', null=True)),
+                ('target', models.ForeignKey(related_name='target_bond_revisions', to='gcd.Series', null=True)),
+                ('target_issue', models.ForeignKey(related_name='target_series_bond_revisions', to='gcd.Issue', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_series_bond_revision',
+                'get_latest_by': 'created',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SeriesRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('reservation_requested', models.BooleanField(default=False)),
+                ('name', models.CharField(max_length=255)),
+                ('leading_article', models.BooleanField(default=False)),
+                ('format', models.CharField(max_length=255, blank=True)),
+                ('color', models.CharField(max_length=255, blank=True)),
+                ('dimensions', models.CharField(max_length=255, blank=True)),
+                ('paper_stock', models.CharField(max_length=255, blank=True)),
+                ('binding', models.CharField(max_length=255, blank=True)),
+                ('publishing_format', models.CharField(max_length=255, blank=True)),
+                ('year_began', models.IntegerField()),
+                ('year_ended', models.IntegerField(null=True, blank=True)),
+                ('year_began_uncertain', models.BooleanField(default=False)),
+                ('year_ended_uncertain', models.BooleanField(default=False)),
+                ('is_current', models.BooleanField(default=False)),
+                ('publication_notes', models.TextField(blank=True)),
+                ('tracking_notes', models.TextField(blank=True)),
+                ('has_barcode', models.BooleanField(default=False)),
+                ('has_indicia_frequency', models.BooleanField(default=False)),
+                ('has_isbn', models.BooleanField(default=False)),
+                ('has_issue_title', models.BooleanField(default=False)),
+                ('has_volume', models.BooleanField(default=False)),
+                ('has_rating', models.BooleanField(default=False)),
+                ('is_comics_publication', models.BooleanField(default=False)),
+                ('is_singleton', models.BooleanField(default=False)),
+                ('notes', models.TextField(blank=True)),
+                ('keywords', models.TextField(default=b'', blank=True)),
+                ('date_inferred', models.BooleanField(default=False)),
+                ('changeset', models.ForeignKey(related_name='seriesrevisions', to='oi.Changeset')),
+                ('country', models.ForeignKey(related_name='series_revisions', to='stddata.Country')),
+                ('imprint', models.ForeignKey(related_name='imprint_series_revisions', default=None, blank=True, to='gcd.Publisher', null=True)),
+                ('language', models.ForeignKey(related_name='series_revisions', to='stddata.Language')),
+                ('publication_type', models.ForeignKey(blank=True, to='gcd.SeriesPublicationType', null=True)),
+                ('publisher', models.ForeignKey(related_name='series_revisions', to='gcd.Publisher')),
+                ('series', models.ForeignKey(related_name='revisions', to='gcd.Series', null=True)),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_series_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='StoryRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('title', models.CharField(max_length=255, blank=True)),
+                ('title_inferred', models.BooleanField(default=False)),
+                ('feature', models.CharField(max_length=255, blank=True)),
+                ('sequence_number', models.IntegerField()),
+                ('page_count', models.DecimalField(null=True, max_digits=10, decimal_places=3, blank=True)),
+                ('page_count_uncertain', models.BooleanField(default=False)),
+                ('script', models.TextField(blank=True)),
+                ('pencils', models.TextField(blank=True)),
+                ('inks', models.TextField(blank=True)),
+                ('colors', models.TextField(blank=True)),
+                ('letters', models.TextField(blank=True)),
+                ('editing', models.TextField(blank=True)),
+                ('no_script', models.BooleanField(default=False)),
+                ('no_pencils', models.BooleanField(default=False)),
+                ('no_inks', models.BooleanField(default=False)),
+                ('no_colors', models.BooleanField(default=False)),
+                ('no_letters', models.BooleanField(default=False)),
+                ('no_editing', models.BooleanField(default=False)),
+                ('job_number', models.CharField(max_length=25, blank=True)),
+                ('genre', models.CharField(max_length=255, blank=True)),
+                ('characters', models.TextField(blank=True)),
+                ('synopsis', models.TextField(blank=True)),
+                ('reprint_notes', models.TextField(blank=True)),
+                ('notes', models.TextField(blank=True)),
+                ('keywords', models.TextField(default=b'', blank=True)),
+                ('date_inferred', models.BooleanField(default=False)),
+                ('changeset', models.ForeignKey(related_name='storyrevisions', to='oi.Changeset')),
+                ('issue', models.ForeignKey(related_name='story_revisions', to='gcd.Issue', null=True)),
+                ('story', models.ForeignKey(related_name='revisions', to='gcd.Story', null=True)),
+                ('type', models.ForeignKey(to='gcd.StoryType')),
+            ],
+            options={
+                'ordering': ['-created', '-id'],
+                'db_table': 'oi_story_revision',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='origin_revision',
+            field=models.ForeignKey(related_name='origin_reprint_revisions', to='oi.StoryRevision', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='origin_story',
+            field=models.ForeignKey(related_name='origin_reprint_revisions', to='gcd.Story', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='previous_revision',
+            field=models.OneToOneField(related_name='next_revision', null=True, to='oi.ReprintRevision'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='reprint',
+            field=models.ForeignKey(related_name='revisions', to='gcd.Reprint', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='reprint_from_issue',
+            field=models.ForeignKey(related_name='revisions', to='gcd.ReprintFromIssue', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='reprint_to_issue',
+            field=models.ForeignKey(related_name='revisions', to='gcd.ReprintToIssue', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='target_issue',
+            field=models.ForeignKey(related_name='target_reprint_revisions', to='gcd.Issue', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='target_revision',
+            field=models.ForeignKey(related_name='target_reprint_revisions', to='oi.StoryRevision', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='reprintrevision',
+            name='target_story',
+            field=models.ForeignKey(related_name='target_reprint_revisions', to='gcd.Story', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='branduserevision',
+            name='changeset',
+            field=models.ForeignKey(related_name='branduserevisions', to='oi.Changeset'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='branduserevision',
+            name='emblem',
+            field=models.ForeignKey(related_name='use_revisions', to='gcd.Brand', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='branduserevision',
+            name='publisher',
+            field=models.ForeignKey(related_name='brand_use_revisions', to='gcd.Publisher', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='brandrevision',
+            name='changeset',
+            field=models.ForeignKey(related_name='brandrevisions', to='oi.Changeset'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='brandrevision',
+            name='group',
+            field=models.ManyToManyField(related_name='brand_revisions', to='gcd.BrandGroup'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='brandrevision',
+            name='parent',
+            field=models.ForeignKey(related_name='brand_revisions', blank=True, to='gcd.Publisher', null=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='brandgrouprevision',
+            name='changeset',
+            field=models.ForeignKey(related_name='brandgrouprevisions', to='oi.Changeset'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='brandgrouprevision',
+            name='parent',
+            field=models.ForeignKey(related_name='brand_group_revisions', blank=True, to='gcd.Publisher', null=True),
+            preserve_default=True,
+        ),
+    ]

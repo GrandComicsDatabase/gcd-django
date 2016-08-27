@@ -1,6 +1,10 @@
 from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect
 from apps.mycomics.models import *
-from apps.oi.forms import _clean_keywords
+
+# TODO: Should not be reaching into OI form internals and importing an
+#       internal (leading underscore) function.  Should move the function
+#       if we need it more broadly.
+from apps.oi.forms.support import _clean_keywords
 
 class CollectorForm(ModelForm):
     class Meta:

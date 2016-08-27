@@ -4,8 +4,8 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django.core import urlresolvers
 
-from apps.gcd.models import Issue, Language, Series
-from apps.stddata.models import Currency, Date
+from apps.gcd.models import Issue, Series
+from apps.stddata.models import Currency, Date, Language
 from taggit.managers import TaggableManager
 
 # Create your models here.

@@ -1,9 +1,10 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
 {% load compress %}
+{% load staticfiles %}
 <html>
 <head>
   <title>{% block title %}{% endblock %}</title>
-  <link rel="shortcut icon" href="{{ MEDIA_URL }}/img/favicon.ico">
+  <link rel="shortcut icon" href="{% static "img/favicon.ico" %}">
 
 {% comment %}
 Having trouble with block / ifnotequal interactions.  Need to investigate.
@@ -21,7 +22,7 @@ For now, just a simple single block for all CSS, despite redundancy.
   {% include "gcd/bits/beta_banner.html" %}
 {% endif %}
 
-{% if not EDITING %}
+{% if USE_TEMPLATESADMIN and not EDITING %}
   {% include "managed_content/gcd/messages/special_banner.html" %}
 {% endif %}
 

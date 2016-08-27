@@ -1,9 +1,10 @@
 {% load compress %}
+{% load staticfiles %}
 
 {% include 'oi/bits/jquery.html' %}
 {% compress js %}
-<script type='text/javascript' src='{{ MEDIA_URL }}jquery/js/jquery.Jcrop.min.js'></script>
-<script type='text/javascript' src='{{ MEDIA_URL }}js/oi/gatefoldcover.js'></script>
+<script type='text/javascript' src='{% static "jquery/js/jquery.Jcrop.min.js" %}'></script>
+<script type='text/javascript' src='{% static "js/oi/gatefoldcover.js" %}'></script>
 {% endcompress %}
 
 <noscript>

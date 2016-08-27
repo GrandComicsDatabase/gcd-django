@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth import logout
-from apps.gcd.views import render_error
+from apps.indexer.views import render_error
 
 #
 # read_only mode, keep all users logged out

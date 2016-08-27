@@ -12,11 +12,11 @@ from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.utils.html import conditional_escape as esc
 
+from apps.indexer.views import render_error, ErrorWithMessage
 from apps.gcd.models import Issue, Series
-from apps.gcd.views import render_error, ResponsePaginator, paginate_response
+from apps.gcd.views import ResponsePaginator, paginate_response
 from apps.gcd.views.alpha_pagination import AlphaPaginator
 from apps.gcd.templatetags.credits import show_keywords_comma
-from apps.gcd import ErrorWithMessage
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 
@@ -140,7 +140,7 @@ def export_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
     filename = unicode(collection).replace(' ', '_').encode('utf-8')
-    response = HttpResponse(mimetype='text/csv')
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename=%s.csv' % filename
     writer = UnicodeWriter(response)
 

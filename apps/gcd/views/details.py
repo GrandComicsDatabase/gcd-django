@@ -23,10 +23,13 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
+from apps.stddata.models import Country, Language
+from apps.stats.models import CountStats
+
+from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
-                            IndiciaPublisher, Brand, BrandGroup, CountStats, \
-                            Country, Language, Indexer, IndexCredit, Cover, \
-                            SeriesBond
+                            IndiciaPublisher, Brand, BrandGroup, \
+                            Cover, SeriesBond
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -423,11 +426,11 @@ def change_history(request, model_name, id):
                           'image', 'series_bond']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
-            return render_to_response('gcd/error.html', {
+            return render_to_response('indexer/error.html', {
               'error_text': 'There is no change history for this type of object.'},
               context_instance=RequestContext(request))
-    if model_name == 'cover' and not request.user.has_perm('gcd.can_vote'):
-        return render_to_response('gcd/error.html', {
+    if model_name == 'cover' and not request.user.has_perm('indexer.can_vote'):
+        return render_to_response('indexer/error.html', {
           'error_text': 'Only members can access the change history for covers.'},
           context_instance=RequestContext(request))
 
@@ -1253,7 +1256,7 @@ def countries_in_use(request):
                                   {'countries' : used_countries },
                                   context_instance=RequestContext(request))
     else:
-        return render_to_response('gcd/error.html', {
+        return render_to_response('indexer/error.html', {
           'error_text' : 'You are not allowed to access this page.',
           },
           context_instance=RequestContext(request))
@@ -1287,7 +1290,7 @@ def agenda(request, language):
     css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
       len('<link type="text/css" rel="stylesheet" href="')
     css_pos_end = a[css_pos:].find('">') + css_pos
-    a = a[:css_pos]  + settings.MEDIA_URL + \
+    a = a[:css_pos]  + settings.STATIC_URL + \
       'calendar/css/c9ff6efaf72bf95e3e2b53938d3fbacaembedcompiled_fastui.css' \
       + a[css_pos_end:]
     return HttpResponse(a)

@@ -1,11 +1,12 @@
 {% extends 'oi/base_view.html' %}
+{% load staticfiles %}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default.css"/>
+      href="{% static "css/oi/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/voting/default.css"/>
+      href="{% static "css/voting/default.css" %}"/>
 {% endblock %}
 

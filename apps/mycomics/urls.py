@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls import patterns, url
-from apps.gcd.views import accounts as account_views
+from apps.indexer import views as account_views
 from apps.mycomics import views as mycomics_views
 
 urlpatterns = patterns('',

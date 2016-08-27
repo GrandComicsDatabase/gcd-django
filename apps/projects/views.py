@@ -3,8 +3,8 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.db.models import F
 
-from apps.gcd.models import Publisher, Country, Language, Issue, StoryType, \
-                            Series, Story
+from apps.stddata.models import Country, Language
+from apps.gcd.models import Publisher, Issue, StoryType, Series, Story
 from apps.gcd.views import paginate_response
 from apps.projects.forms import IssuesWithCoversForm, ReprintInspectionForm
 

@@ -8,15 +8,17 @@ from codecs import EncodedFile, BOM_UTF16
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
+from django.core import urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import get_object_or_404
 
-from apps.gcd.views import render_error
+from apps.indexer.views import render_error
 from apps.gcd.views.details import KEY_DATE_REGEXP
-from apps.oi.models import *
-from apps.oi.forms import *
+from apps.gcd.models import StoryType, Issue, Brand, IndiciaPublisher
+from apps.oi.models import (
+    Changeset, StoryRevision, IssueRevision, get_keywords)
 
 MIN_ISSUE_FIELDS = 10
 # MAX_ISSUE_FIELDS is set to 16 to allow import of export issue lines, but
@@ -447,7 +449,7 @@ def _find_publisher_object(request, changeset, name, publisher_objects,
         return _handle_import_error(request, changeset, error_text)
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -557,7 +559,7 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
             % (issue_id, changeset_id))
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def import_sequences_from_file(request, issue_id, changeset_id, use_csv = False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -611,7 +613,7 @@ def generate_reprint_link(reprints, direction):
         reprint_note += '; '
     return reprint_note
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     if revision:
         issue = get_object_or_404(IssueRevision, id=issue_id)
@@ -620,7 +622,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     series = issue.series
     filename = unicode(issue).replace(' ', '_').encode('utf-8')
     if use_csv:
-        response = HttpResponse(mimetype='text/csv')
+        response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename=%s.csv' % filename
         writer = UnicodeWriter(response)
     export_data = []
@@ -712,6 +714,6 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
         else:
             export += '\t'.join(export_data) + '\r\n'
     if not use_csv:
-        response = HttpResponse(export, mimetype='text/tab-separated-values')
+        response = HttpResponse(export, content_type='text/tab-separated-values')
         response['Content-Disposition'] = 'attachment; filename=%s.tsv' % filename
     return response

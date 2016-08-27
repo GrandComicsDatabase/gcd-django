@@ -3,7 +3,9 @@ from re import match
 from decimal import Decimal, InvalidOperation
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from apps.gcd.models import Country, Language, Indexer, StoryType, OLD_TYPES
+from apps.stddata.models import Country, Language
+from apps.indexer.models import Indexer
+from apps.gcd.models import StoryType, OLD_TYPES
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],
@@ -126,7 +128,7 @@ class AdvancedSearch(forms.Form):
     dimensions = forms.CharField(label='Dimensions', required=False)
     paper_stock = forms.CharField(label='Paper Stock', required=False)
     binding = forms.CharField(label='Binding', required=False)
-    publishing_format = forms.CharField('Publishing Format', required=False)
+    publishing_format = forms.CharField(label='Publishing Format', required=False)
 
     issues = forms.CharField(label='Issues', required=False)
     volume = forms.CharField(label='Volume', required=False)

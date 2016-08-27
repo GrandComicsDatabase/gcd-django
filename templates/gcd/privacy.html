@@ -1,11 +1,12 @@
 {% extends "gcd/base_view.html" %}
+{% load staticfiles %}
 {% load url from future %}
 
 {% block title %}GCD Privacy Policy{% endblock %}
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+        href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
 {% block view_body %}

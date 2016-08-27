@@ -1,0 +1,8 @@
+[
+{"model":"mycomics.conditiongradescale","pk":1,"fields":{
+"name":"US basic grading scale","description":""}},
+{"model":"mycomics.conditiongradescale","pk":2,"fields":{
+"name":"US ten-point grading scale","description":""}},
+{"model":"mycomics.conditiongradescale","pk":3,"fields":{
+"name":"German grading scale","description":""}}
+]

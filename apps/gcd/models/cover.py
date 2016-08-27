@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from django.db import models, settings
+from django.conf import settings
+from django.db import models
 from django.core import urlresolvers
 
 from issue import Issue
@@ -41,9 +42,9 @@ class Cover(models.Model):
     reserved = models.BooleanField(default=False, db_index=True)
     deleted = models.BooleanField(default=False, db_index=True)
 
-    def _sort_code(self):
+    @property
+    def sort_code(self):
         return self.issue.sort_code
-    sort_code = property(_sort_code)
 
     def base_dir(self):
         return settings.MEDIA_ROOT + settings.COVERS_DIR + \

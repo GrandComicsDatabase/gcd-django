@@ -54,17 +54,6 @@ DISPLAY_NAME = {
     DISCARDED: 'Discarded',
 }
 
-CSS_NAME = {
-    UNRESERVED: 'available',
-    BASELINE: 'baseline',
-    OPEN: 'editing',
-    PENDING: 'pending',
-    DISCUSSED: 'discussed',
-    REVIEWING: 'reviewing',
-    APPROVED: 'approved',
-    DISCARDED: 'discarded',
-}
-
 ACTIVE = (OPEN, PENDING, DISCUSSED, REVIEWING)
 
 CLOSED = (APPROVED, DISCARDED)

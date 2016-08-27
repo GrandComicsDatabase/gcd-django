@@ -8,8 +8,7 @@ from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
-from apps.gcd.models.country import Country
-from apps.gcd.models.language import Language
+from apps.stddata.models import Country, Language
 from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
 from apps.gcd.models.seriesbond import SeriesRelativeBond
 

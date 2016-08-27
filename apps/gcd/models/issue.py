@@ -86,25 +86,27 @@ class Issue(models.Model):
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
     image_resources = generic.GenericRelation(Image)
-    def _indicia_image(self):
+
+    @property
+    def indicia_image(self):
         img = Image.objects.filter(object_id=self.id, deleted=False,
           content_type = ContentType.objects.get_for_model(self), type__id=1)
         if img:
             return img.get()
         else:
             return None
-    indicia_image = property(_indicia_image)
+
     brand = models.ForeignKey(Brand, null=True)
     no_brand = models.BooleanField(default=False, db_index=True)
 
-    def _soo_image(self):
+    @property
+    def soo_image(self):
         img = Image.objects.filter(object_id=self.id, deleted=False,
           content_type = ContentType.objects.get_for_model(self), type__id=2)
         if img:
             return img.get()
         else:
             return None
-    soo_image = property(_soo_image)
 
     # In production, this is a tinyint(1) because the set of numbers
     # is very small.  But syncdb produces an int(11).
@@ -195,13 +197,13 @@ class Issue(models.Model):
     def issue_descriptor(self):
         return issue_descriptor(self)
 
-    def _display_number(self):
+    @property
+    def display_number(self):
         number = self.issue_descriptor()
         if number:
             return u'#' + number
         else:
             return u''
-    display_number = property(_display_number)
 
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
@@ -235,21 +237,6 @@ class Issue(models.Model):
                         variant.is_indexed = is_indexed
                         variant.save()
         return self.is_indexed
-
-    def index_status_name(self):
-        """
-        Text form of status.  If clauses arranged in order of most
-        likely case to least.
-        """
-        if self.reserved:
-            active =  self.revisions.get(changeset__state__in=states.ACTIVE)
-            return states.CSS_NAME[active.changeset.state]
-        elif self.is_indexed == INDEXED['full']:
-            return 'approved'
-        elif self.is_indexed in [INDEXED['partial'], INDEXED['ten_percent']]:
-            return 'partial'
-        else:
-            return 'available'
 
     def get_prev_next_issue(self):
         """

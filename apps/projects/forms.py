@@ -1,5 +1,6 @@
 from django import forms
-from apps.gcd.models import Publisher, Country, Language
+from apps.stddata.models import Country, Language
+from apps.gcd.models import Publisher
 
 PUBLISHERS = [[p.id, p.name]
                for p in Publisher.objects
