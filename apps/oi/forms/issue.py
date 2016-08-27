@@ -331,8 +331,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         return RuntimeAddIssueRevisionForm
 
     # the other issuerevision from 'variant_add' was taken care of above
-    if revision.changeset.change_type == (CTYPES['variant_add'] or
-                                          revision.issue.variant_set.count()):
+    if (revision.changeset.change_type == CTYPES['variant_add']) or \
+            revision.issue.variant_set.count():
         class RuntimeBaseIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
