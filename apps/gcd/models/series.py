@@ -149,6 +149,9 @@ class Series(models.Model):
 
     def active_base_issues_variant_count(self):
         issues = self.active_base_issues()
+        # TODO Counts also deleted variants. Seemingly can be fixed in 1.8
+        # http://stackoverflow.com/questions/30752268/\
+        # how-to-filter-objects-for-count-annotation-in-django
         issues = issues.annotate(variant_count=Count('variant_set'))
         return issues
 
