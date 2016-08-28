@@ -175,13 +175,13 @@
   pk: 1
   fields:
     group: 2
-    permission: [can_reserve, gcd, indexer]
+    permission: [can_reserve, indexer, indexer]
 
 - model: auth.group_permissions
   pk: 2
   fields:
     group: 2
-    permission: [can_upload_cover, gcd, indexer]
+    permission: [can_upload_cover, indexer, indexer]
 
 - model: auth.group_permissions
   pk: 3
@@ -193,25 +193,25 @@
   pk: 4
   fields:
     group: 1
-    permission: [can_approve, gcd, indexer]
+    permission: [can_approve, indexer, indexer]
 
 - model: auth.group_permissions
   pk: 5
   fields:
     group: 1
-    permission: [can_mentor, gcd, indexer]
+    permission: [can_mentor, indexer, indexer]
 
 - model: auth.group_permissions
   pk: 6
   fields:
     group: 4
-    permission: [can_vote, gcd, indexer]
+    permission: [can_vote, indexer, indexer]
 
 - model: auth.group_permissions
   pk: 7
   fields:
     group: 5
-    permission: [on_board, gcd, indexer]
+    permission: [on_board, indexer, indexer]
 
 - model: auth.group_permissions
   pk: 8
@@ -223,5 +223,5 @@
   pk: 9
   fields:
     group: 3
-    permission: [change_indexer, gcd, indexer]
+    permission: [change_indexer, indexer, indexer]
 

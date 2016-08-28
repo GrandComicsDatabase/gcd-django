@@ -22,6 +22,9 @@ def clear_reservations_three_weeks(request=None):
     for c in changes_issue:
         # issue edits with more than two existing revisions cannot be
         # changes due to ongoing reservations (which have more time)
+        # Revision 0:  Initial add of the issue
+        # Revision 1:  Potentially an automatic edit due to ongoing reservation
+        # Revision 2:  Definitely not the result of an ongoing reservation.
         if c.issuerevisions.get().issue.revisions.count() > 2:
             changes_overdue.append(c)
         elif c.created <= final_clearing_date:

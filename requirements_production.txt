@@ -1,3 +1,4 @@
+-r requirements.txt
 rq==0.4.6
 django-rq==0.5.1
 redis==2.10.1
