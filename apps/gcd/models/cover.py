@@ -59,7 +59,7 @@ class Cover(models.Model):
           str(int(self.id/1000))
 
     def get_status_url(self):
-        if self.marked:
+        if self.marked and not settings.MYCOMICS:
             return urlresolvers.reverse(
                 'replace_cover',
                 kwargs={'cover_id': self.id} )
