@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.core import urlresolvers
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -13,8 +14,10 @@ SCRIPT_DEBUG = False
 
 @permission_required('oi.change_ongoingreservation')
 def clear_reservations_three_weeks(request=None):
-    clearing_date = datetime.today() - timedelta(weeks=3)
-    final_clearing_date = datetime.today() - timedelta(weeks=9)
+    clearing_date = datetime.today() - \
+                    timedelta(weeks=settings.RESERVE_ISSUE_WEEKS)
+    final_clearing_date = datetime.today() - \
+                          timedelta(weeks=settings.RESERVE_ISSUE_INITIAL_WEEKS)
     changes = Changeset.objects.filter(created__lt=clearing_date,
                                        state=states.OPEN)
     changes_issue = changes.filter(change_type=CTYPES['issue'])
@@ -34,7 +37,8 @@ def clear_reservations_three_weeks(request=None):
 
 @permission_required('oi.change_ongoingreservation')
 def clear_reservations_one_week(request=None):
-    clearing_date = datetime.today() - timedelta(weeks=1)
+    clearing_date = datetime.today() - \
+                    timedelta(days=settings.RESERVE_NON_ISSUE_DAYS)
     changes = Changeset.objects.filter(created__lt=clearing_date,
       state=states.OPEN).filter(change_type__in=[CTYPES['publisher'],
                                                  CTYPES['brand'],

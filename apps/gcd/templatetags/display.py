@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
-from datetime import datetime, timedelta
 from stdnum import ean as stdean
 from stdnum import isbn as stdisbn
 
@@ -373,14 +372,6 @@ def field_name(field):
     else:
         return title(field.replace('_', ' '))
 
-def is_overdue(changeset):
-    # do this correctly and with variables in settings if we ever do the 
-    # enforcing of the reservation limit according to the vote
-    if datetime.today() - changeset.created > timedelta(weeks=8):
-        return mark_safe("class='overdue'")
-    else:
-        return ""
-
 def link_other_reprint(reprint, is_source):
     if is_source:
         if hasattr(reprint, 'target'):
@@ -459,5 +450,4 @@ register.filter(show_revision_type)
 register.filter(changed_fields)
 register.filter(changed_story_list)
 register.filter(field_name)
-register.filter(is_overdue)
 register.filter(link_other_reprint)

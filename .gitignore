@@ -1,6 +1,7 @@
-# Compiled files
+# Compiled/cached files and directories
 *.pyc
 *.mo
+.cache
 
 # Auto-generated or externally managed content
 /media
@@ -9,6 +10,7 @@
 
 # Local configuration
 settings_local.py
+pytest.ini
 
 # Editor temp and config files
 *.py~
