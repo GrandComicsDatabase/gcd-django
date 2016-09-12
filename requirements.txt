@@ -16,12 +16,11 @@ django-imagekit<3.0
 git+git://github.com/GrandComicsDatabase/django-mobile.git
 git+git://github.com/GrandComicsDatabase/django-taggit.git@django16
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@django17
-elasticsearch<1.6
+elasticsearch<1.0
 elasticstack==0.3.0
 facebook-sdk==2.0
 feedparser==5.1.3
 ipython==0.13.1
-pyelasticsearch==0.6.1
 python-dateutil==2.2
 python-graph-core==1.8.2
 python-memcached==1.48
@@ -44,7 +43,7 @@ pytest-django
 # to install other (non-Python-package) software do perform further
 # configuration.  They are included here to ensure that we catch library
 # version dependency interactions.
-rq==0.4.6
-django-rq==0.5.1
-redis==2.10.1
+rq==0.6.0
+django-rq==0.8.0
+redis==2.10.5
 git+git://github.com/mandx/haystack-rqueue.git
