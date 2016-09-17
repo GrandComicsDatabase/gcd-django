@@ -16,7 +16,7 @@ django-imagekit<3.0
 git+git://github.com/GrandComicsDatabase/django-mobile.git
 git+git://github.com/GrandComicsDatabase/django-taggit.git@django16
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@django17
-elasticsearch<1.0
+elasticsearch<2.0
 elasticstack==0.3.0
 facebook-sdk==2.0
 feedparser==5.1.3
