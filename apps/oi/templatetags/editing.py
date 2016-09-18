@@ -118,7 +118,11 @@ def header_link(changeset):
 
 @register.filter
 def is_overdue(changeset):
-    if changeset.change_type != CTYPES['issue']:
+    # TODO touch this after the changeset refactor
+    if changeset.change_type in [CTYPES['publisher'],
+                                 CTYPES['brand'],
+                                 CTYPES['indicia_publisher'],
+                                 CTYPES['series']]:
         if datetime.today() - changeset.created > \
                 timedelta(days=settings.RESERVE_NON_ISSUE_DAYS/2):
             return mark_safe("class='overdue'")
@@ -130,6 +134,7 @@ def is_overdue(changeset):
         elif datetime.today() - changeset.created > \
                 timedelta(weeks=settings.RESERVE_ISSUE_INITIAL_WEEKS-1):
             return mark_safe("class='overdue'")
-        elif changeset.issuerevisions.get().issue.revisions.count() > 2:
+        elif changeset.issuerevisions.earliest('created').issue.revisions\
+                                                               .count() > 2:
             return mark_safe("class='overdue'")
     return ""
