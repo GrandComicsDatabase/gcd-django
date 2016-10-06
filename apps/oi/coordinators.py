@@ -29,7 +29,18 @@ def clear_reservations_three_weeks(request=None):
         # Revision 1:  Potentially an automatic edit due to ongoing reservation
         # Revision 2:  Definitely not the result of an ongoing reservation.
         if c.issuerevisions.get().issue.revisions.count() > 2:
-            changes_overdue.append(c)
+            # was there an edit to the issue in the last week
+            if (c.issuerevisions.get().modified >
+                    datetime.today() - timedelta(weeks=1)) or \
+                (c.storyrevisions.exists() and
+                 c.storyrevisions.latest('modified').modified >
+                    datetime.today() - timedelta(weeks=1)):
+                # at max three extensions
+                if c.created <= datetime.today() - \
+                  timedelta(weeks=settings.RESERVE_ISSUE_WEEKS + 3):
+                    changes_overdue.append(c)
+            else:
+                changes_overdue.append(c)
         elif c.created <= final_clearing_date:
             changes_overdue.append(c)
     return clear_reservations(request, changes_overdue)

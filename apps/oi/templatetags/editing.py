@@ -136,5 +136,15 @@ def is_overdue(changeset):
             return mark_safe("class='overdue'")
         elif changeset.issuerevisions.earliest('created').issue.revisions\
                                                                .count() > 2:
-            return mark_safe("class='overdue'")
+            # at max three extensions
+            if datetime.today() - changeset.created > \
+                    timedelta(weeks=settings.RESERVE_ISSUE_WEEKS+2):
+                return mark_safe("class='overdue'")
+            # was there an edit to the issue in the last week
+            if (changeset.issuerevisions.get().modified <=
+                    datetime.today() - timedelta(weeks=1)) and \
+              (changeset.storyrevisions.exists() is False or
+               changeset.storyrevisions.latest('modified').modified <=
+                    datetime.today() - timedelta(weeks=1)):
+                return mark_safe("class='overdue'")
     return ""
