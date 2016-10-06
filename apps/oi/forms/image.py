@@ -6,6 +6,8 @@ from collections import OrderedDict
 from django import forms
 from django.core import urlresolvers
 
+from apps.oi.models import CoverRevision, ImageRevision
+
 from .support import _get_comments_form_field, HiddenInputWithHelp
 
 
@@ -15,6 +17,9 @@ def get_cover_revision_form(revision=None, user=None):
         kwargs={'id': revision.changeset.id}) + '">Compare Change</a>'
 
     class UploadScanCommentForm(forms.ModelForm):
+        class Meta:
+            model = CoverRevision
+
         comments = forms.CharField(
             widget=forms.Textarea,
             required=False,
@@ -143,6 +148,8 @@ class GatefoldScanForm(forms.Form):
 
 class UploadImageForm(forms.Form):
     """ Form for image uploads. """
+    class Meta:
+        model = ImageRevision
 
     image = forms.ImageField(widget=forms.FileInput)
 
