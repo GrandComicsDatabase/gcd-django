@@ -404,6 +404,11 @@ def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     form = None
     revision = None
+
+    # TODO workaround for ImageRevision, which do hang in render_to_response
+    if changeset.change_type == CTYPES['image']:
+        return compare(request, id)
+
     if changeset.inline():
         revision = changeset.inline_revision()
         form_class = get_revision_form(revision, user=request.user)
