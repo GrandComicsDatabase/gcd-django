@@ -1,4 +1,5 @@
-from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect
+from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect, \
+                         ValidationError
 from apps.mycomics.models import *
 
 # TODO: Should not be reaching into OI form internals and importing an
@@ -26,6 +27,13 @@ class CollectionForm(ModelForm):
         widgets = {'own_default': RadioSelect(choices = ((None, "---"),
                                               (True, "I own this comic."),
                                               (False, "I want this comic."))),}
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['own_default'] is not None and cd['own_used'] == False:
+            raise ValidationError('To use "Default ownership status" the '
+              '"Show own/want status" needs to be activated.')
+
 
 
 class LocationForm(ModelForm):
