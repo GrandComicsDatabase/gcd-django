@@ -11,6 +11,22 @@ from apps.oi.models import *
 
 SCRIPT_DEBUG = False
 
+def issue_untouched(c, clearing_date):
+    modified = issue_revision_modified(c)
+    if modified > datetime.today() - timedelta(weeks=1):
+        # at max three weeks extensions
+        if c.created > datetime.today() - timedelta(weeks=clearing_date + 3):
+            return False
+    return True
+
+def issue_revision_modified(changeset):
+    # was there an edit to the issue changeset in the last week
+    modified = changeset.issuerevisions.latest('modified').modified
+    if changeset.storyrevisions.exists():
+        modified_story = changeset.storyrevisions.latest('modified')
+        if modified < modified_story.modified:
+            modified = modified_story.modified
+    return modified
 
 @permission_required('oi.change_ongoingreservation')
 def clear_reservations_three_weeks(request=None):
@@ -20,28 +36,24 @@ def clear_reservations_three_weeks(request=None):
                           timedelta(weeks=settings.RESERVE_ISSUE_INITIAL_WEEKS)
     changes = Changeset.objects.filter(created__lt=clearing_date,
                                        state=states.OPEN)
-    changes_issue = changes.filter(change_type=CTYPES['issue'])
-    changes_overdue = list(changes.exclude(change_type=CTYPES['issue']))
+    changes_issue = changes.filter(change_type__in=[CTYPES['issue'],
+                                                    CTYPES['two_issues'],
+                                                    CTYPES['variant_add']])
+    changes_overdue = list(changes.exclude(change_type__in=
+                                           [CTYPES['issue'],
+                                            CTYPES['two_issues'],
+                                            CTYPES['variant_add']]))
     for c in changes_issue:
         # issue edits with more than two existing revisions cannot be
         # changes due to ongoing reservations (which have more time)
         # Revision 0:  Initial add of the issue
         # Revision 1:  Potentially an automatic edit due to ongoing reservation
         # Revision 2:  Definitely not the result of an ongoing reservation.
-        if c.issuerevisions.get().issue.revisions.count() > 2:
-            # was there an edit to the issue in the last week
-            if (c.issuerevisions.get().modified >
-                    datetime.today() - timedelta(weeks=1)) or \
-                (c.storyrevisions.exists() and
-                 c.storyrevisions.latest('modified').modified >
-                    datetime.today() - timedelta(weeks=1)):
-                # at max three extensions
-                if c.created <= datetime.today() - \
-                  timedelta(weeks=settings.RESERVE_ISSUE_WEEKS + 3):
-                    changes_overdue.append(c)
-            else:
+        if c.issuerevisions.earliest('created').issue.revisions.count() > 2:
+            if issue_untouched(c, settings.RESERVE_ISSUE_WEEKS):
                 changes_overdue.append(c)
-        elif c.created <= final_clearing_date:
+        elif c.created <= final_clearing_date and \
+          issue_untouched(c, settings.RESERVE_ISSUE_INITIAL_WEEKS):
             changes_overdue.append(c)
     return clear_reservations(request, changes_overdue)
 
