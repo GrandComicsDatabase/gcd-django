@@ -9,6 +9,7 @@ from django import template
 
 from apps.gcd.templatetags.display import absolute_url
 from apps.oi.models import CTYPES
+from apps.oi.coordinators import issue_revision_modified
 
 register = template.Library()
 
@@ -115,6 +116,29 @@ def header_link(changeset):
     else:
         return u''
 
+def check_for_modified(changeset, clearing_weeks):
+    # at least another week to go
+    if datetime.today() - changeset.created < \
+      timedelta(weeks=clearing_weeks-1):
+        changeset.expires = changeset.created + \
+          timedelta(weeks=clearing_weeks)
+        return False
+    # at max three weeks extensions
+    if datetime.today() - changeset.created > \
+      timedelta(weeks=clearing_weeks+2):
+        changeset.expires = changeset.created + \
+          timedelta(weeks=clearing_weeks+3)
+        return True
+    # was there an edit to the issue in the last week
+    modified = issue_revision_modified(changeset)
+    if modified > changeset.created + \
+        timedelta(weeks=clearing_weeks-1):
+        changeset.expires = modified + timedelta(weeks=1)
+    else:
+        # in last week with no recent changes
+        changeset.expires = changeset.created + \
+            timedelta(weeks=clearing_weeks)
+    return True
 
 @register.filter
 def is_overdue(changeset):
@@ -123,28 +147,25 @@ def is_overdue(changeset):
                                  CTYPES['brand'],
                                  CTYPES['indicia_publisher'],
                                  CTYPES['series']]:
+        changeset.expires = changeset.created + \
+          timedelta(days=settings.RESERVE_NON_ISSUE_DAYS)
         if datetime.today() - changeset.created > \
                 timedelta(days=settings.RESERVE_NON_ISSUE_DAYS/2):
             return mark_safe("class='overdue'")
-    else:
-        # avoid db call by treating fresh reservations separately
-        if datetime.today() - changeset.created < \
+    # TODO these likely should be treated as above
+    elif changeset.change_type not in [CTYPES['issue'],
+                                       CTYPES['two_issues'],
+                                       CTYPES['variant_add']]:
+        changeset.expires = changeset.created + \
+          timedelta(weeks=settings.RESERVE_ISSUE_WEEKS)
+        if datetime.today() - changeset.created > \
                 timedelta(weeks=settings.RESERVE_ISSUE_WEEKS-1):
-            return ""
-        elif datetime.today() - changeset.created > \
-                timedelta(weeks=settings.RESERVE_ISSUE_INITIAL_WEEKS-1):
             return mark_safe("class='overdue'")
-        elif changeset.issuerevisions.earliest('created').issue.revisions\
-                                                               .count() > 2:
-            # at max three extensions
-            if datetime.today() - changeset.created > \
-                    timedelta(weeks=settings.RESERVE_ISSUE_WEEKS+2):
-                return mark_safe("class='overdue'")
-            # was there an edit to the issue in the last week
-            if (changeset.issuerevisions.get().modified <=
-                    datetime.today() - timedelta(weeks=1)) and \
-              (changeset.storyrevisions.exists() is False or
-               changeset.storyrevisions.latest('modified').modified <=
-                    datetime.today() - timedelta(weeks=1)):
-                return mark_safe("class='overdue'")
+    elif changeset.issuerevisions.earliest('created').issue.revisions\
+                                                           .count() > 2:
+        if check_for_modified(changeset, settings.RESERVE_ISSUE_WEEKS):
+            return mark_safe("class='overdue'")
+    else:
+        if check_for_modified(changeset, settings.RESERVE_ISSUE_INITIAL_WEEKS):
+            return mark_safe("class='overdue'")
     return ""
