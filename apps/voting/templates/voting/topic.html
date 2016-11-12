@@ -28,6 +28,8 @@
 {% endfor %}
     </ul>
   </dd>
+  <dt>Voting Period:</dt>
+  <dd>{{ topic.created|date:"Y-m-d" }} - {{ topic.deadline|date:"Y-m-d" }}</dd>
   <dt>Text:</dt>
   <dd>{{ topic.text|default:'[no text]'|linebreaksbr }}</dd>
 </dl>
