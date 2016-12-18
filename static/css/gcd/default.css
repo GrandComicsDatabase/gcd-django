@@ -15,6 +15,15 @@ body {
     float: right;
 }
 
+#RightSearchColumn {
+    margin-left : 100px;
+}
+
+#LeftSearchColumn {
+    float : left;
+    width : 95px;
+}
+
 /*
  * This is intended to be so horribly, jarringly unatractive that
  * you can't possibly fail to notice it.

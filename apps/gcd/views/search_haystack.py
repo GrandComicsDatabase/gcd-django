@@ -127,14 +127,18 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         elif self.sort == 'year':
             self.results = self.results.order_by('year',
                                                  '-_score')
-        elif len(self.form.selected_facets) == 1:
+        elif len(self.form.selected_facets) >= 1:
             if self.sort:
-                if self.form.selected_facets[0] in \
-                  [u'facet_model_name_exact:publisher',
-                   u'facet_model_name_exact:indicia publisher',
-                   u'facet_model_name_exact:brand group',
-                   u'facet_model_name_exact:brand emblem',
-                   u'facet_model_name_exact:series']:
+                if (u'facet_model_name_exact:publisher' \
+                  in self.form.selected_facets) or \
+                  (u'facet_model_name_exact:indicia publisher'
+                  in self.form.selected_facets) or \
+                  (u'facet_model_name_exact:brand group'
+                  in self.form.selected_facets) or \
+                  (u'facet_model_name_exact:brand emblem'
+                  in self.form.selected_facets) or \
+                  (u'facet_model_name_exact:series'
+                  in self.form.selected_facets):
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
                                                              'year')
@@ -176,11 +180,19 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         if suggestion == self.get_query().lower():
             suggestion = u''
         facet_page = ''
+        is_model_selected = False
+        is_country_selected = False
         if self.form.selected_facets:
             for facet in self.form.selected_facets:
                 facet_page += '&selected_facets=%s' % facet
+                if u'facet_model_name_exact:' in facet:
+                    is_model_selected = True
+                elif u'country_exact:' in facet:
+                    is_country_selected = True
         extra.update({'suggestion': suggestion,
-                     'facet_page': facet_page})
+                     'facet_page': facet_page,
+                     'is_model_selected': is_model_selected,
+                     'is_country_selected': is_country_selected})
         if self.sort:
             extra.update({'sort': '&sort=%s' % self.sort})
         else:
