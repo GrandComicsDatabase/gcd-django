@@ -45,7 +45,7 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     sort_code = indexes.IntegerField(model_attr='sort_code', indexed=False)
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='series__country__code',
-                                indexed=False)
+                                faceted=True, indexed=False)
     language = indexes.CharField(model_attr='series__language__code',
                                  indexed=False)
 
@@ -78,7 +78,8 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     sort_name = indexes.CharField(model_attr='sort_name', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='country__code', indexed=False)
+    country = indexes.CharField(model_attr='country__code',  faceted=True,
+                                indexed=False)
     language = indexes.CharField(model_attr='language__code', indexed=False)
     title_search = indexes.CharField()
 
@@ -112,7 +113,7 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     type = indexes.CharField(model_attr='type__name', indexed=False)
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='issue__series__country__code',
-                                indexed=False)
+                                faceted=True, indexed=False)
     language = indexes.CharField(model_attr='issue__series__language__code',
                                  indexed=False)
 
@@ -150,7 +151,8 @@ class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='country__code', indexed=False)
+    country = indexes.CharField(model_attr='country__code', faceted=True,
+                                indexed=False)
 
     def get_model(self):
         return Publisher
@@ -170,7 +172,8 @@ class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='country__code', indexed=False)
+    country = indexes.CharField(model_attr='country__code', faceted=True,
+                                indexed=False)
 
     def get_model(self):
         return IndiciaPublisher
@@ -208,7 +211,7 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     sort_name = indexes.CharField(model_attr='name', indexed=False)
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='parent__country__code',
-                                indexed=False)
+                                faceted=True, indexed=False)
 
     def get_model(self):
         return BrandGroup
