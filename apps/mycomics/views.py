@@ -523,6 +523,7 @@ def add_issues_to_collection(request, collection_id, issues, redirect,
         collected = create_collection_item(issue, collection)
         if post_process_selection:
             post_process_selection(collected)
+    request.session['collection_id'] = collection_id
     return HttpResponseRedirect(redirect)
 
 
@@ -538,6 +539,7 @@ def add_single_issue_to_collection(request, issue_id):
                                "'%s' collection." % \
                               (collected.get_absolute_url(collection),
                                esc(issue), esc(collection.name)))
+    request.session['collection_id'] = collection.id
     return HttpResponseRedirect(urlresolvers.reverse('show_issue',
                                   kwargs={'issue_id': issue_id}))
 
