@@ -1,6 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -9,9 +10,9 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default.css"/>
+      href="{% static "css/oi/default.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -43,7 +44,7 @@
         {% if cover.changeset.state = states.REVIEWING or cover.changeset.state = states.DISCUSSED %}
           reviewed by {{ cover.changeset.approver.indexer|absolute_url }}
         {% else %}
-            {% if perms.gcd.can_approve %}
+            {% if perms.indexer.can_approve %}
               {% ifnotequal cover.changeset.indexer user %}
 <form action="{% url "process" id=cover.changeset.id %}" method="POST">
   {% csrf_token %}

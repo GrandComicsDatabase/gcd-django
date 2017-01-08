@@ -5,6 +5,7 @@ from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
 
 DEFAULT_BOOST = 15.0
 
+
 class ObjectIndex(object):
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
@@ -33,6 +34,7 @@ class ObjectIndex(object):
             self.remove_object(instance, **kwargs)
         return not instance.deleted
 
+
 class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)
@@ -45,6 +47,8 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='series__country__code',
                                 indexed=False)
+    language = indexes.CharField(model_attr='series__language__code',
+                                 indexed=False)
 
     def get_model(self):
         return Issue
@@ -67,6 +71,7 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_title(self, obj):
         return obj.short_name()
 
+
 class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
@@ -75,6 +80,7 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     sort_name = indexes.CharField(model_attr='sort_name', indexed=False)
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='country__code', indexed=False)
+    language = indexes.CharField(model_attr='language__code', indexed=False)
     title_search = indexes.CharField()
 
     def get_model(self):
@@ -108,6 +114,8 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='issue__series__country__code',
                                 indexed=False)
+    language = indexes.CharField(model_attr='issue__series__language__code',
+                                 indexed=False)
 
     def get_model(self):
         return Story

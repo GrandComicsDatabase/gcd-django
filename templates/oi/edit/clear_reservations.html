@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load staticfiles %}
 
 {% block title %}
 GCD :: Clearing Reservations
@@ -6,9 +7,9 @@ GCD :: Clearing Reservations
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default.css"/>
+      href="{% static "css/oi/default.css" %}"/>
 {% endblock %}
 
 {% block view_body %}

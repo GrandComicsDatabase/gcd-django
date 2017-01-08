@@ -23,7 +23,7 @@ def issue(request, issue_id):
     return render_to_response('inducks/issue.html', {
       'issue' : issue,
       'stories' : stories,
-      'media_url' : settings.MEDIA_URL })
+    })
 
 def series(request, series_id):
     """Display the details page for a series."""
@@ -35,4 +35,4 @@ def series(request, series_id):
     return render_to_response('inducks/series.html', {
       'series' : series,
       'issues' : issues,
-      'media_url' : settings.MEDIA_URL })
+    })

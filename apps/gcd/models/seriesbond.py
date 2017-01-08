@@ -2,7 +2,8 @@
 from django.db import models
 from functools import total_ordering
 
-BOND_TRACKING = {1, 2, 3}
+BOND_TRACKING = {1, 2, 3, 4}
+SUBNUMBER_TRACKING = 4
 
 class SeriesBondType(models.Model):
     class Meta:
@@ -36,9 +37,9 @@ class SeriesBond(models.Model):
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
 
-    def _modified(self):
+    @property
+    def modified(self):
         return self.revisions.filter(changeset__state=5).latest().modified
-    modified = property(_modified)
     
     # we check for deleted in the oi for models, so set to False
     deleted = False

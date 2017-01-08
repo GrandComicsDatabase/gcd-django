@@ -25,12 +25,40 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
+  <div id="import-items" class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{% url "import_items" %}" method="POST" enctype="multipart/form-data">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+            <h4 class="modal-title">{% trans "Import Issues Into A Collection" %}</h4>
+          </div>
+          <div class="modal-body">
+            {% trans "Select file:" %} <input type="file" name="import_my_issues">
+          {% csrf_token %}
+          </div>
+          <div class="modal-body">
+            {% blocktrans %}
+            Import a csv-file, where each line has tab-separated entries for an issue. First entry is the series name, second entry the issue number. Optionally a third entry for the publisher name, and fourth entry for the language code.
+            {% endblocktrans %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <input type="submit" class="btn btn-primary" name="import_my_issues" value="{% trans "Import" %}">
+          </div>
+        </form>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
 {% endblock %}
 
 {% block content %}
   {% bootstrap_messages %}
   <div class="page-header middle-header">
     <h1>{% trans "Collections list" %}
+      <button type="button" class="btn btn-primary pull-right"
+              data-toggle="modal" href="#import-items">{% trans "Import" %}
+      </button>
       <a href="{% url "add_collection" %}">
         <button type="button" class="btn btn-primary pull-right">{% trans "Add new" %}
       </button></a>
@@ -65,7 +93,7 @@
     </div>
     <div class="col-md-3">
       <div class="pull-right">
-        <!-- Here should go adserver script -->
+        {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
       </div>
     </div>
   </div>

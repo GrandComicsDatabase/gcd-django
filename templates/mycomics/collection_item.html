@@ -95,7 +95,7 @@
     <h4>In: <a href="{% url "view_collection" collection.id %}?page={{ page }}">{{ collection.name }}</a>
     {% if request.user.collector == collection.collector %}
       {% if other_collections %}
-        Also in:
+        {% trans "Also in:" %}
         {% for other_collection in other_collections %}
           {% if not forloop.first %}/{% endif %}
           <a href="{% url "view_item" item_id=item.id collection_id=other_collection.id %}">{{ other_collection.name }}</a>
@@ -128,7 +128,7 @@
         {{ item.own|yesno:"I own this comic.<br>,I want this comic.<br>,"|safe }}
       {% endif %}
       {% if item.notes %}{{ item.notes }}<hr>{% endif %}
-      {% if item.keywords.count %}{% trans "Keywords: " %}{{ item|show_keywords }}<hr>{% endif %}
+      {% if item.keywords.count %}{% trans "Tags: " %}{{ item|show_keywords_comma }}<hr>{% endif %}
       {% if collection.location_used %}
         {% trans "Location: " %}{{ item.location|default:'-' }}<br>
       {% endif %}

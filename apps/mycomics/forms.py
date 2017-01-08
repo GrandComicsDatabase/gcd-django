@@ -1,6 +1,11 @@
-from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect
+from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect, \
+                         ValidationError
 from apps.mycomics.models import *
-from apps.oi.forms import _clean_keywords
+
+# TODO: Should not be reaching into OI form internals and importing an
+#       internal (leading underscore) function.  Should move the function
+#       if we need it more broadly.
+from apps.oi.forms.support import _clean_keywords
 
 class CollectorForm(ModelForm):
     class Meta:
@@ -22,6 +27,13 @@ class CollectionForm(ModelForm):
         widgets = {'own_default': RadioSelect(choices = ((None, "---"),
                                               (True, "I own this comic."),
                                               (False, "I want this comic."))),}
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['own_default'] is not None and cd['own_used'] == False:
+            raise ValidationError('To use "Default ownership status" the '
+              '"Show own/want status" needs to be activated.')
+
 
 
 class LocationForm(ModelForm):
@@ -89,9 +101,10 @@ class CollectionItemForm(ModelForm):
 class CollectionSelectForm(Form):
     collection = ChoiceField()
 
-    def __init__(self, collector, collections=None, *args, **kwargs):
+    def __init__(self, collector, excluded_collections=None, *args, **kwargs):
         super(CollectionSelectForm, self).__init__(*args, **kwargs)
         choices = [(collection.id, collection) for collection in collector.ordered_collections()]
-        if collections:
-            choices[:] = [choice for choice in choices if choice[1] not in collections]
-        self.fields['collection'].choices = [collection for collection in choices]
+        if excluded_collections:
+            choices[:] = [choice for choice in choices \
+                             if choice[1] not in excluded_collections]
+        self.fields['collection'].choices = choices

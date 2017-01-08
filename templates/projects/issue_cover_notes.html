@@ -1,6 +1,7 @@
 {% extends "gcd/search/base_list.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 {% load display %}
 
@@ -9,7 +10,7 @@
 {% block css %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/projects/default.css"/>
+      href="{% static "css/projects/default.css" %}"/>
 {% endblock %}
 
 {% block body %}

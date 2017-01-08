@@ -1,0 +1,735 @@
+- fields: {code: zz, name: (unknown)}
+  model: stddata.country
+  pk: 249
+- fields: {code: xx, name: -- FIX ME --}
+  model: stddata.country
+  pk: 248
+- fields: {code: af, name: Afghanistan}
+  model: stddata.country
+  pk: 3
+- fields: {code: al, name: Albania}
+  model: stddata.country
+  pk: 6
+- fields: {code: dz, name: Algeria}
+  model: stddata.country
+  pk: 59
+- fields: {code: as, name: American Samoa}
+  model: stddata.country
+  pk: 12
+- fields: {code: ad, name: Andorra}
+  model: stddata.country
+  pk: 1
+- fields: {code: ao, name: Angola}
+  model: stddata.country
+  pk: 9
+- fields: {code: ai, name: Anguilla}
+  model: stddata.country
+  pk: 5
+- fields: {code: aq, name: Antarctica}
+  model: stddata.country
+  pk: 10
+- fields: {code: ag, name: Antigua and Barbuda}
+  model: stddata.country
+  pk: 4
+- fields: {code: ar, name: Argentina}
+  model: stddata.country
+  pk: 11
+- fields: {code: am, name: Armenia}
+  model: stddata.country
+  pk: 7
+- fields: {code: aw, name: Aruba}
+  model: stddata.country
+  pk: 15
+- fields: {code: au, name: Australia}
+  model: stddata.country
+  pk: 14
+- fields: {code: at, name: Austria}
+  model: stddata.country
+  pk: 13
+- fields: {code: az, name: Azerbaijan}
+  model: stddata.country
+  pk: 16
+- fields: {code: bs, name: Bahamas}
+  model: stddata.country
+  pk: 30
+- fields: {code: bh, name: Bahrain}
+  model: stddata.country
+  pk: 23
+- fields: {code: bd, name: Bangladesh}
+  model: stddata.country
+  pk: 19
+- fields: {code: bb, name: Barbados}
+  model: stddata.country
+  pk: 18
+- fields: {code: by, name: Belarus}
+  model: stddata.country
+  pk: 34
+- fields: {code: be, name: Belgium}
+  model: stddata.country
+  pk: 20
+- fields: {code: bz, name: Belize}
+  model: stddata.country
+  pk: 35
+- fields: {code: bj, name: Benin}
+  model: stddata.country
+  pk: 25
+- fields: {code: bm, name: Bermuda}
+  model: stddata.country
+  pk: 26
+- fields: {code: bt, name: Bhutan}
+  model: stddata.country
+  pk: 31
+- fields: {code: bo, name: Bolivia}
+  model: stddata.country
+  pk: 28
+- fields: {code: ba, name: Bosnia and Herzegovina}
+  model: stddata.country
+  pk: 17
+- fields: {code: bw, name: Botswana}
+  model: stddata.country
+  pk: 33
+- fields: {code: bv, name: Bouvet Island}
+  model: stddata.country
+  pk: 32
+- fields: {code: br, name: Brazil}
+  model: stddata.country
+  pk: 29
+- fields: {code: io, name: British Indian Ocean Territory}
+  model: stddata.country
+  pk: 102
+- fields: {code: bn, name: Brunei Darussalam}
+  model: stddata.country
+  pk: 27
+- fields: {code: bg, name: Bulgaria}
+  model: stddata.country
+  pk: 22
+- fields: {code: bf, name: Burkina Faso}
+  model: stddata.country
+  pk: 21
+- fields: {code: bi, name: Burundi}
+  model: stddata.country
+  pk: 24
+- fields: {code: kh, name: Cambodia}
+  model: stddata.country
+  pk: 112
+- fields: {code: cm, name: Cameroon}
+  model: stddata.country
+  pk: 44
+- fields: {code: ca, name: Canada}
+  model: stddata.country
+  pk: 36
+- fields: {code: cv, name: Cape Verde}
+  model: stddata.country
+  pk: 50
+- fields: {code: ky, name: Cayman Islands}
+  model: stddata.country
+  pk: 119
+- fields: {code: cf, name: Central African Republic}
+  model: stddata.country
+  pk: 38
+- fields: {code: td, name: Chad}
+  model: stddata.country
+  pk: 206
+- fields: {code: cl, name: Chile}
+  model: stddata.country
+  pk: 43
+- fields: {code: cn, name: China}
+  model: stddata.country
+  pk: 45
+- fields: {code: cx, name: Christmas Island}
+  model: stddata.country
+  pk: 51
+- fields: {code: cc, name: Cocos (Keeling) Islands}
+  model: stddata.country
+  pk: 37
+- fields: {code: co, name: Colombia}
+  model: stddata.country
+  pk: 46
+- fields: {code: km, name: Comoros}
+  model: stddata.country
+  pk: 114
+- fields: {code: cg, name: Congo}
+  model: stddata.country
+  pk: 39
+- fields: {code: ck, name: Cook Islands}
+  model: stddata.country
+  pk: 42
+- fields: {code: cr, name: Costa Rica}
+  model: stddata.country
+  pk: 47
+- fields: {code: ci, name: Cote D'Ivoire (Ivory Coast)}
+  model: stddata.country
+  pk: 41
+- fields: {code: hr, name: Croatia (Hrvatska)}
+  model: stddata.country
+  pk: 95
+- fields: {code: cu, name: Cuba}
+  model: stddata.country
+  pk: 49
+- fields: {code: cy, name: Cyprus}
+  model: stddata.country
+  pk: 52
+- fields: {code: cz, name: Czech Republic}
+  model: stddata.country
+  pk: 53
+- fields: {code: cshh, name: Czechoslovakia (former)}
+  model: stddata.country
+  pk: 48
+- fields: {code: dk, name: Denmark}
+  model: stddata.country
+  pk: 56
+- fields: {code: dj, name: Djibouti}
+  model: stddata.country
+  pk: 55
+- fields: {code: dm, name: Dominica}
+  model: stddata.country
+  pk: 57
+- fields: {code: do, name: Dominican Republic}
+  model: stddata.country
+  pk: 58
+- fields: {code: tp, name: East Timor}
+  model: stddata.country
+  pk: 215
+- fields: {code: ec, name: Ecuador}
+  model: stddata.country
+  pk: 60
+- fields: {code: eg, name: Egypt}
+  model: stddata.country
+  pk: 62
+- fields: {code: sv, name: El Salvador}
+  model: stddata.country
+  pk: 202
+- fields: {code: gq, name: Equatorial Guinea}
+  model: stddata.country
+  pk: 85
+- fields: {code: er, name: Eritrea}
+  model: stddata.country
+  pk: 64
+- fields: {code: ee, name: Estonia}
+  model: stddata.country
+  pk: 61
+- fields: {code: et, name: Ethiopia}
+  model: stddata.country
+  pk: 66
+- fields: {code: fk, name: Falkland Islands (Malvinas)}
+  model: stddata.country
+  pk: 69
+- fields: {code: fo, name: Faroe Islands}
+  model: stddata.country
+  pk: 71
+- fields: {code: fj, name: Fiji}
+  model: stddata.country
+  pk: 68
+- fields: {code: fi, name: Finland}
+  model: stddata.country
+  pk: 67
+- fields: {code: fr, name: France}
+  model: stddata.country
+  pk: 72
+- fields: {code: fx, name: 'France, Metropolitan'}
+  model: stddata.country
+  pk: 73
+- fields: {code: gf, name: French Guiana}
+  model: stddata.country
+  pk: 78
+- fields: {code: pf, name: French Polynesia}
+  model: stddata.country
+  pk: 169
+- fields: {code: tf, name: French Southern Territories}
+  model: stddata.country
+  pk: 207
+- fields: {code: ga, name: Gabon}
+  model: stddata.country
+  pk: 74
+- fields: {code: gm, name: Gambia}
+  model: stddata.country
+  pk: 82
+- fields: {code: ge, name: Georgia}
+  model: stddata.country
+  pk: 77
+- fields: {code: ddde, name: 'German Democratic Republic [former]'}
+  model: stddata.country
+  pk: 247
+- fields: {code: de, name: Germany}
+  model: stddata.country
+  pk: 54
+- fields: {code: gh, name: Ghana}
+  model: stddata.country
+  pk: 79
+- fields: {code: gi, name: Gibraltar}
+  model: stddata.country
+  pk: 80
+- fields: {code: gr, name: Greece}
+  model: stddata.country
+  pk: 86
+- fields: {code: gl, name: Greenland}
+  model: stddata.country
+  pk: 81
+- fields: {code: gd, name: Grenada}
+  model: stddata.country
+  pk: 76
+- fields: {code: gp, name: Guadeloupe}
+  model: stddata.country
+  pk: 84
+- fields: {code: gu, name: Guam}
+  model: stddata.country
+  pk: 89
+- fields: {code: gt, name: Guatemala}
+  model: stddata.country
+  pk: 88
+- fields: {code: gn, name: Guinea}
+  model: stddata.country
+  pk: 83
+- fields: {code: gw, name: Guinea-Bissau}
+  model: stddata.country
+  pk: 90
+- fields: {code: gy, name: Guyana}
+  model: stddata.country
+  pk: 91
+- fields: {code: ht, name: Haiti}
+  model: stddata.country
+  pk: 96
+- fields: {code: hm, name: Heard and McDonald Islands}
+  model: stddata.country
+  pk: 93
+- fields: {code: hn, name: Honduras}
+  model: stddata.country
+  pk: 94
+- fields: {code: hk, name: Hong Kong}
+  model: stddata.country
+  pk: 92
+- fields: {code: hu, name: Hungary}
+  model: stddata.country
+  pk: 97
+- fields: {code: is, name: Iceland}
+  model: stddata.country
+  pk: 105
+- fields: {code: in, name: India}
+  model: stddata.country
+  pk: 101
+- fields: {code: id, name: Indonesia}
+  model: stddata.country
+  pk: 98
+- fields: {code: ir, name: Iran}
+  model: stddata.country
+  pk: 104
+- fields: {code: iq, name: Iraq}
+  model: stddata.country
+  pk: 103
+- fields: {code: ie, name: Ireland}
+  model: stddata.country
+  pk: 99
+- fields: {code: il, name: Israel}
+  model: stddata.country
+  pk: 100
+- fields: {code: it, name: Italy}
+  model: stddata.country
+  pk: 106
+- fields: {code: jm, name: Jamaica}
+  model: stddata.country
+  pk: 107
+- fields: {code: jp, name: Japan}
+  model: stddata.country
+  pk: 109
+- fields: {code: jo, name: Jordan}
+  model: stddata.country
+  pk: 108
+- fields: {code: kz, name: Kazakhstan}
+  model: stddata.country
+  pk: 120
+- fields: {code: ke, name: Kenya}
+  model: stddata.country
+  pk: 110
+- fields: {code: ki, name: Kiribati}
+  model: stddata.country
+  pk: 113
+- fields: {code: kp, name: Korea (North)}
+  model: stddata.country
+  pk: 116
+- fields: {code: kr, name: Korea (South)}
+  model: stddata.country
+  pk: 117
+- fields: {code: kw, name: Kuwait}
+  model: stddata.country
+  pk: 118
+- fields: {code: kg, name: Kyrgyzstan}
+  model: stddata.country
+  pk: 111
+- fields: {code: la, name: Laos}
+  model: stddata.country
+  pk: 121
+- fields: {code: lv, name: Latvia}
+  model: stddata.country
+  pk: 130
+- fields: {code: lb, name: Lebanon}
+  model: stddata.country
+  pk: 122
+- fields: {code: ls, name: Lesotho}
+  model: stddata.country
+  pk: 127
+- fields: {code: lr, name: Liberia}
+  model: stddata.country
+  pk: 126
+- fields: {code: ly, name: Libya}
+  model: stddata.country
+  pk: 131
+- fields: {code: li, name: Liechtenstein}
+  model: stddata.country
+  pk: 124
+- fields: {code: lt, name: Lithuania}
+  model: stddata.country
+  pk: 128
+- fields: {code: lu, name: Luxembourg}
+  model: stddata.country
+  pk: 129
+- fields: {code: mo, name: Macau}
+  model: stddata.country
+  pk: 141
+- fields: {code: mk, name: Macedonia}
+  model: stddata.country
+  pk: 137
+- fields: {code: mg, name: Madagascar}
+  model: stddata.country
+  pk: 135
+- fields: {code: mw, name: Malawi}
+  model: stddata.country
+  pk: 149
+- fields: {code: my, name: Malaysia}
+  model: stddata.country
+  pk: 151
+- fields: {code: mv, name: Maldives}
+  model: stddata.country
+  pk: 148
+- fields: {code: ml, name: Mali}
+  model: stddata.country
+  pk: 138
+- fields: {code: mt, name: Malta}
+  model: stddata.country
+  pk: 146
+- fields: {code: mh, name: Marshall Islands}
+  model: stddata.country
+  pk: 136
+- fields: {code: mq, name: Martinique}
+  model: stddata.country
+  pk: 143
+- fields: {code: mr, name: Mauritania}
+  model: stddata.country
+  pk: 144
+- fields: {code: mu, name: Mauritius}
+  model: stddata.country
+  pk: 147
+- fields: {code: yt, name: Mayotte}
+  model: stddata.country
+  pk: 238
+- fields: {code: mx, name: Mexico}
+  model: stddata.country
+  pk: 150
+- fields: {code: fm, name: Micronesia}
+  model: stddata.country
+  pk: 70
+- fields: {code: md, name: Moldova}
+  model: stddata.country
+  pk: 134
+- fields: {code: mc, name: Monaco}
+  model: stddata.country
+  pk: 133
+- fields: {code: mn, name: Mongolia}
+  model: stddata.country
+  pk: 140
+- fields: {code: ms, name: Montserrat}
+  model: stddata.country
+  pk: 145
+- fields: {code: ma, name: Morocco}
+  model: stddata.country
+  pk: 132
+- fields: {code: mz, name: Mozambique}
+  model: stddata.country
+  pk: 152
+- fields: {code: mm, name: Myanmar}
+  model: stddata.country
+  pk: 139
+- fields: {code: na, name: Namibia}
+  model: stddata.country
+  pk: 153
+- fields: {code: nr, name: Nauru}
+  model: stddata.country
+  pk: 162
+- fields: {code: np, name: Nepal}
+  model: stddata.country
+  pk: 161
+- fields: {code: nl, name: Netherlands}
+  model: stddata.country
+  pk: 159
+- fields: {code: an, name: Netherlands Antilles}
+  model: stddata.country
+  pk: 8
+- fields: {code: nt, name: Neutral Zone}
+  model: stddata.country
+  pk: 163
+- fields: {code: nc, name: New Caledonia}
+  model: stddata.country
+  pk: 154
+- fields: {code: nz, name: New Zealand (Aotearoa)}
+  model: stddata.country
+  pk: 165
+- fields: {code: ni, name: Nicaragua}
+  model: stddata.country
+  pk: 158
+- fields: {code: ne, name: Niger}
+  model: stddata.country
+  pk: 155
+- fields: {code: ng, name: Nigeria}
+  model: stddata.country
+  pk: 157
+- fields: {code: nu, name: Niue}
+  model: stddata.country
+  pk: 164
+- fields: {code: nf, name: Norfolk Island}
+  model: stddata.country
+  pk: 156
+- fields: {code: mp, name: Northern Mariana Islands}
+  model: stddata.country
+  pk: 142
+- fields: {code: 'no', name: Norway}
+  model: stddata.country
+  pk: 160
+- fields: {code: om, name: Oman}
+  model: stddata.country
+  pk: 166
+- fields: {code: pk, name: Pakistan}
+  model: stddata.country
+  pk: 172
+- fields: {code: pw, name: Palau}
+  model: stddata.country
+  pk: 178
+- fields: {code: pa, name: Panama}
+  model: stddata.country
+  pk: 167
+- fields: {code: pg, name: Papua New Guinea}
+  model: stddata.country
+  pk: 170
+- fields: {code: py, name: Paraguay}
+  model: stddata.country
+  pk: 179
+- fields: {code: pe, name: Peru}
+  model: stddata.country
+  pk: 168
+- fields: {code: ph, name: Philippines}
+  model: stddata.country
+  pk: 171
+- fields: {code: pn, name: Pitcairn}
+  model: stddata.country
+  pk: 175
+- fields: {code: pl, name: Poland}
+  model: stddata.country
+  pk: 173
+- fields: {code: pt, name: Portugal}
+  model: stddata.country
+  pk: 177
+- fields: {code: pr, name: Puerto Rico}
+  model: stddata.country
+  pk: 176
+- fields: {code: qa, name: Qatar}
+  model: stddata.country
+  pk: 180
+- fields: {code: re, name: Reunion}
+  model: stddata.country
+  pk: 181
+- fields: {code: ro, name: Romania}
+  model: stddata.country
+  pk: 182
+- fields: {code: ru, name: Russian Federation}
+  model: stddata.country
+  pk: 183
+- fields: {code: rw, name: Rwanda}
+  model: stddata.country
+  pk: 184
+- fields: {code: gs, name: S. Georgia and S. Sandwich Isls.}
+  model: stddata.country
+  pk: 87
+- fields: {code: kn, name: Saint Kitts and Nevis}
+  model: stddata.country
+  pk: 115
+- fields: {code: lc, name: Saint Lucia}
+  model: stddata.country
+  pk: 123
+- fields: {code: vc, name: Saint Vincent and the Grenadines}
+  model: stddata.country
+  pk: 229
+- fields: {code: ws, name: Samoa}
+  model: stddata.country
+  pk: 236
+- fields: {code: sm, name: San Marino}
+  model: stddata.country
+  pk: 196
+- fields: {code: st, name: Sao Tome and Principe}
+  model: stddata.country
+  pk: 200
+- fields: {code: sa, name: Saudi Arabia}
+  model: stddata.country
+  pk: 185
+- fields: {code: sn, name: Senegal}
+  model: stddata.country
+  pk: 197
+- fields: {code: sc, name: Seychelles}
+  model: stddata.country
+  pk: 187
+- fields: {code: sl, name: Sierra Leone}
+  model: stddata.country
+  pk: 195
+- fields: {code: sg, name: Singapore}
+  model: stddata.country
+  pk: 190
+- fields: {code: sk, name: Slovak Republic}
+  model: stddata.country
+  pk: 194
+- fields: {code: si, name: Slovenia}
+  model: stddata.country
+  pk: 192
+- fields: {code: sb, name: Solomon Islands}
+  model: stddata.country
+  pk: 186
+- fields: {code: so, name: Somalia}
+  model: stddata.country
+  pk: 198
+- fields: {code: za, name: South Africa}
+  model: stddata.country
+  pk: 240
+- fields: {code: es, name: Spain}
+  model: stddata.country
+  pk: 65
+- fields: {code: lk, name: Sri Lanka}
+  model: stddata.country
+  pk: 125
+- fields: {code: sh, name: St. Helena}
+  model: stddata.country
+  pk: 191
+- fields: {code: pm, name: St. Pierre and Miquelon}
+  model: stddata.country
+  pk: 174
+- fields: {code: sd, name: Sudan}
+  model: stddata.country
+  pk: 188
+- fields: {code: sr, name: Suriname}
+  model: stddata.country
+  pk: 199
+- fields: {code: sj, name: Svalbard and Jan Mayen Islands}
+  model: stddata.country
+  pk: 193
+- fields: {code: sz, name: Swaziland}
+  model: stddata.country
+  pk: 204
+- fields: {code: se, name: Sweden}
+  model: stddata.country
+  pk: 189
+- fields: {code: ch, name: Switzerland}
+  model: stddata.country
+  pk: 40
+- fields: {code: sy, name: Syria}
+  model: stddata.country
+  pk: 203
+- fields: {code: tw, name: Taiwan}
+  model: stddata.country
+  pk: 219
+- fields: {code: tj, name: Tajikistan}
+  model: stddata.country
+  pk: 210
+- fields: {code: tz, name: Tanzania}
+  model: stddata.country
+  pk: 220
+- fields: {code: th, name: Thailand}
+  model: stddata.country
+  pk: 209
+- fields: {code: tg, name: Togo}
+  model: stddata.country
+  pk: 208
+- fields: {code: tk, name: Tokelau}
+  model: stddata.country
+  pk: 211
+- fields: {code: to, name: Tonga}
+  model: stddata.country
+  pk: 214
+- fields: {code: tt, name: Trinidad and Tobago}
+  model: stddata.country
+  pk: 217
+- fields: {code: tn, name: Tunisia}
+  model: stddata.country
+  pk: 213
+- fields: {code: tr, name: Turkey}
+  model: stddata.country
+  pk: 216
+- fields: {code: tm, name: Turkmenistan}
+  model: stddata.country
+  pk: 212
+- fields: {code: tc, name: Turks and Caicos Islands}
+  model: stddata.country
+  pk: 205
+- fields: {code: tv, name: Tuvalu}
+  model: stddata.country
+  pk: 218
+- fields: {code: ug, name: Uganda}
+  model: stddata.country
+  pk: 222
+- fields: {code: ua, name: Ukraine}
+  model: stddata.country
+  pk: 221
+- fields: {code: ae, name: United Arab Emirates}
+  model: stddata.country
+  pk: 2
+- fields: {code: gb, name: United Kingdom}
+  model: stddata.country
+  pk: 75
+- fields: {code: us, name: United States}
+  model: stddata.country
+  pk: 225
+- fields: {code: uy, name: Uruguay}
+  model: stddata.country
+  pk: 226
+- fields: {code: um, name: US Minor Outlying Islands}
+  model: stddata.country
+  pk: 224
+- fields: {code: suhh, name: USSR (former)}
+  model: stddata.country
+  pk: 201
+- fields: {code: uz, name: Uzbekistan}
+  model: stddata.country
+  pk: 227
+- fields: {code: vu, name: Vanuatu}
+  model: stddata.country
+  pk: 234
+- fields: {code: va, name: Vatican City State (Holy See)}
+  model: stddata.country
+  pk: 228
+- fields: {code: ve, name: Venezuela}
+  model: stddata.country
+  pk: 230
+- fields: {code: vn, name: Viet Nam}
+  model: stddata.country
+  pk: 233
+- fields: {code: vg, name: Virgin Islands (British)}
+  model: stddata.country
+  pk: 231
+- fields: {code: vi, name: Virgin Islands (U.S.)}
+  model: stddata.country
+  pk: 232
+- fields: {code: wf, name: Wallis and Futuna Islands}
+  model: stddata.country
+  pk: 235
+- fields: {code: eh, name: Western Sahara}
+  model: stddata.country
+  pk: 63
+- fields: {code: ye, name: Yemen}
+  model: stddata.country
+  pk: 237
+- fields: {code: yu, name: Yugoslavia}
+  model: stddata.country
+  pk: 239
+- fields: {code: zr, name: Zaire}
+  model: stddata.country
+  pk: 242
+- fields: {code: zm, name: Zambia}
+  model: stddata.country
+  pk: 241
+- fields: {code: zw, name: Zimbabwe}
+  model: stddata.country
+  pk: 243

@@ -31,7 +31,7 @@ You will need to enter the following token exactly as shown in order to vote:
 
 %s
 
-Please do not share this token with anyone who did not recieve the email.
+Please do not share this token with anyone who did not receive the email.
 Voters who can be shown to not have been eligible to receive the token will
 have their votes invalidated.
 """

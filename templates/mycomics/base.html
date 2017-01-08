@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load staticfiles %}
 {% load bootstrap3 %}
 {% load compress %}
 <html>
@@ -8,13 +9,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% compress css %}
     <link rel="stylesheet" type="text/css"
-          href="{{ MEDIA_URL }}css/mycomics/main.css"/>
+          href="{% static "css/mycomics/main.css" %}"/>
     {% block other-stylesheets %}{% endblock %}
   {% endcompress %}
   <script src="{% bootstrap_jquery_url %}"></script>
   {% bootstrap_css %}
   {% bootstrap_javascript jquery=1 %}
-  <link rel="shortcut icon" href="{{ MEDIA_URL }}/img/favicon.ico">
+  <link rel="shortcut icon" href="{% static "img/favicon.ico" %}">
 </head>
 <body>
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls import patterns, url
-from apps.gcd.views import accounts as account_views
+from apps.indexer import views as account_views
 from apps.mycomics import views as mycomics_views
 
 urlpatterns = patterns('',
@@ -18,15 +18,21 @@ urlpatterns = patterns('',
     url(r'^collection/add/$',
         mycomics_views.edit_collection,
         name='add_collection'),
-    url(r'^collection/edit/(?P<collection_id>\d+)/$',
-        mycomics_views.edit_collection,
-        name='edit_collection'),
     url(r'^collection/delete/(?:(?P<collection_id>\d+)?)$',
         mycomics_views.delete_collection,
         name='delete_collection'),
+    url(r'^collection/edit/(?P<collection_id>\d+)/$',
+        mycomics_views.edit_collection,
+        name='edit_collection'),
     url(r'^collection/export/(?P<collection_id>\d+)/$',
         mycomics_views.export_collection,
         name='export_collection'),
+    url(r'^collection/pull/(?:(?P<collection_id>\d+)?)$',
+        mycomics_views.subscribed_into_collection,
+        name='subscribed_into_collection'),
+    url(r'^collection/subscriptions/(?P<collection_id>\d+)/$',
+        mycomics_views.subscriptions_collection,
+        name='subscriptions_collection'),
 
     url(r'^item/(?P<item_id>\d+)/collection/(?P<collection_id>\d+)/view/$',
         mycomics_views.view_item, name='view_item'),
@@ -41,6 +47,11 @@ urlpatterns = patterns('',
      mycomics_views.add_series_issues_to_collection, name='my_series_issues'),
     url(r'^issue/(?P<issue_id>\d+)/add_to_collection/$',
      mycomics_views.add_single_issue_to_collection, name='my_issue'),
+
+    url(r'^series/(?P<series_id>\d+)/subscribe/$',
+     mycomics_views.subscribe_series, name='series_subscribe'),
+    url(r'^subscription/unsubscribe/(?:(?P<subscription_id>\d+)?)$',
+     mycomics_views.unsubscribe_series, name='unsubscribe'),
 
     url(r'^mycomics_search/$',
       mycomics_views.mycomics_search, name='mycomics_search'),
@@ -62,4 +73,6 @@ urlpatterns = patterns('',
     url(r'^purchase_location/delete/(?:(?P<location_id>\d+)?)$',
         mycomics_views.delete_purchase_location,
         name='delete_purchase_location'),
+
+    url(r'^import_items/$', mycomics_views.import_items, name='import_items'),
 )

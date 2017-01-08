@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from apps.gcd.views import render_error
+from apps.indexer.views import render_error
 
 def dummy(request, id=None, issue_id=None, model_name=None, image_type=None,
           image_id=None):
