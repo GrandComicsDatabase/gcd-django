@@ -1,0 +1,80 @@
+- model: auth.user
+  pk: 200000
+  fields:
+    username: editor
+    first_name: Ed
+    last_name: Tor
+    email: nobody@comics.org
+    password: 'sha1$66b61$8dafc5b8b3470a1e6f849f2c380a4b0959447508' # editme
+    is_active: True
+    is_staff: False
+    is_superuser: False
+    date_joined: 2002-01-01 00:00:00
+    last_login: 2002-01-01 00:00:00
+
+- model: indexer.indexer
+  pk: 200000
+  fields:
+    user: 200000
+    country: [de]
+    is_new: False
+    is_banned: False
+    deceased: False
+    max_reservations: 500
+    max_ongoing: 100
+    imps: 4000
+    notify_on_approve: False
+    collapse_compare_view: True
+
+- model: auth.user
+  pk: 300000
+  fields:
+    username: dexter_1234
+    first_name: Dexter
+    last_name: Indexer
+    email: test@comics.org
+    password: 'sha1$1acd5$9cbf7fb2a284cb56e1484752aec2ff151976341e' # test
+    is_active: True
+    is_staff: False
+    is_superuser: False
+    date_joined: 2009-12-15 11:50:45
+    last_login: 2010-12-15 23:00:10
+
+- model: indexer.indexer
+  pk: 300000
+  fields:
+    user: 300000
+    country: [us]
+    is_new: False
+    is_banned: False
+    deceased: False
+    max_reservations: 12
+    max_ongoing: 4
+    imps: 100
+    notify_on_approve: True
+    collapse_compare_view: False
+
+- model: auth.user_groups
+  pk: 200000
+  fields:
+    user: 200000
+    group: 2 # indexer
+
+- model: auth.user_groups
+  pk: 300000
+  fields:
+    user: 200000
+    group: 1 # editor
+
+- model: auth.user_groups
+  pk: 400000
+  fields:
+    user: 200000
+    group: 4 # member
+
+- model: auth.user_groups
+  pk: 500000
+  fields:
+    user: 300000
+    group: 2 # indexer
+

@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load staticfiles %}
 
 {% block title %}
 Adding {{ object_name }}
@@ -6,17 +7,17 @@ Adding {{ object_name }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default.css"/>
+      href="{% static "css/oi/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+      href="{% static "css/oi/default/edit.css" %}"/>
 {% endblock %}
 {% block css_raw %}
 {% comment %} this css doesn't like compressing {% endcomment %}
 {% if object_name in 'Issues' or 'Variant Issue' in object_name %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}jquery/css/msdropdown/dd.css"/>
+      href="{% static "jquery/css/msdropdown/dd.css" %}"/>
 {% endif %}
 {% endblock %}
 

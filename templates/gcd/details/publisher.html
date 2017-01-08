@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 {% load credits %}
 
@@ -10,7 +11,7 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -111,11 +112,11 @@
     {% endif %} <!-- not preview -->
   {% endif %}
       </div> <!-- edit_box -->
-      <div class="change_history">
+      <div id="change_history" class="edit_footer">
   {% if preview %}
-        <a href="{% url "change_history" model_name='publisher' id=publisher.source.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='publisher' id=publisher.source.id %}">View Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='publisher' id=publisher.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='publisher' id=publisher.id %}">View Change History</a>
   {% endif %}
       </div>
     </div> <!-- control_rail -->

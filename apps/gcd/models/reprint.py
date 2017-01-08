@@ -15,23 +15,23 @@ class Reprint(models.Model):
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
 
-    def _origin_sort(self):
+    @property
+    def origin_sort(self):
         if self.origin.issue.key_date:
             sort = self.origin.issue.key_date
         else:
             sort = '9999-99-99'
         return "%s-%d-%d" % (sort, self.origin.issue.series.year_began,
                              self.origin.issue.sort_code)
-    origin_sort = property(_origin_sort)
 
-    def _target_sort(self):
+    @property
+    def target_sort(self):
         if self.target.issue.key_date:
             sort = self.target.issue.key_date
         else:
             sort = '9999-99-99'
         return "%s-%d-%d" % (sort, self.target.issue.series.year_began,
                              self.target.issue.sort_code)
-    target_sort = property(_target_sort)
 
     def get_compare_string(self, base_issue):
         if self.origin.issue == base_issue:

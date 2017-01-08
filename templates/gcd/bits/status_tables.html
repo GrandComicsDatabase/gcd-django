@@ -1,3 +1,4 @@
+{% load display %}
 {% load gcdtable %}
 
 <table border="1" class="status" id="key">
@@ -13,7 +14,7 @@
 <table border="1" class="status">
   <tr>
   {% for issue in series.active_base_issues %}
-    <td class="status_{{ issue.index_status_name }}">
+    <td class="status_{{ issue|index_status_css }}">
       <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor }}</a> </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>

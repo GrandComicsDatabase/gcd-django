@@ -1,6 +1,7 @@
 {% load i18n %}
 {% load display %}
 {% load credits %}
+{% load staticfiles %}
 
       <dl id="issue_data_list">
 {% if not issue.no_volume and issue.series.has_volume %}
@@ -37,7 +38,7 @@
   {% if issue.valid_isbn %}
           <a title="Search at WorldCat" href="http://worldcat.org/isbn/{{ issue.valid_isbn }}">
             {{ issue.isbn|show_isbn }}
-            <img src="{{ MEDIA_URL }}img/gcd/icons/worldcat_16.gif" width="12px;" alt="Search at WorldCat" style="border:0;">
+            <img src="{% static "img/gcd/icons/worldcat_16.gif" %}" width="12px;" alt="Search at WorldCat" style="border:0;">
           </a>
   {% else %}
         {{ issue.isbn|show_isbn|default:"?" }}

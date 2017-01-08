@@ -1,0 +1,438 @@
+- fields: {code: zxx, name: (no linguistic content)}
+  model: stddata.language
+  pk: 144
+- fields: {code: und, name: (undetermined)}
+  model: stddata.language
+  pk: 146
+- fields: {code: ab, name: Abkhazian}
+  model: stddata.language
+  pk: 2
+- fields: {code: aa, name: Afar}
+  model: stddata.language
+  pk: 1
+- fields: {code: af, name: Afrikaans}
+  model: stddata.language
+  pk: 3
+- fields: {code: sq, name: Albanian}
+  model: stddata.language
+  pk: 107
+- fields: {code: am, name: Amharic}
+  model: stddata.language
+  pk: 4
+- fields: {code: ar, name: Arabic}
+  model: stddata.language
+  pk: 5
+- fields: {code: hy, name: Armenian}
+  model: stddata.language
+  pk: 45
+- fields: {code: as, name: Assamese}
+  model: stddata.language
+  pk: 6
+- fields: {code: ay, name: Aymara}
+  model: stddata.language
+  pk: 7
+- fields: {code: az, name: Azerbaijani}
+  model: stddata.language
+  pk: 8
+- fields: {code: ba, name: Bashkir}
+  model: stddata.language
+  pk: 9
+- fields: {code: eu, name: Basque}
+  model: stddata.language
+  pk: 29
+- fields: {code: bn, name: Bengali; Bangla}
+  model: stddata.language
+  pk: 14
+- fields: {code: dz, name: Bhutani}
+  model: stddata.language
+  pk: 23
+- fields: {code: bh, name: Bihari}
+  model: stddata.language
+  pk: 12
+- fields: {code: bi, name: Bislama}
+  model: stddata.language
+  pk: 13
+- fields: {code: bs, name: Bosnian}
+  model: stddata.language
+  pk: 137
+- fields: {code: br, name: Breton}
+  model: stddata.language
+  pk: 16
+- fields: {code: bg, name: Bulgarian}
+  model: stddata.language
+  pk: 11
+- fields: {code: my, name: Burmese}
+  model: stddata.language
+  pk: 79
+- fields: {code: be, name: Byelorussian}
+  model: stddata.language
+  pk: 10
+- fields: {code: km, name: Cambodian}
+  model: stddata.language
+  pk: 59
+- fields: {code: ca, name: Catalan}
+  model: stddata.language
+  pk: 17
+- fields: {code: zh, name: Chinese}
+  model: stddata.language
+  pk: 135
+- fields: {code: co, name: Corsican}
+  model: stddata.language
+  pk: 18
+- fields: {code: hr, name: Croatian}
+  model: stddata.language
+  pk: 43
+- fields: {code: cs, name: Czech}
+  model: stddata.language
+  pk: 19
+- fields: {code: da, name: Danish}
+  model: stddata.language
+  pk: 21
+- fields: {code: nl, name: Dutch}
+  model: stddata.language
+  pk: 82
+- fields: {code: en, name: English}
+  model: stddata.language
+  pk: 25
+- fields: {code: eo, name: Esperanto}
+  model: stddata.language
+  pk: 26
+- fields: {code: et, name: Estonian}
+  model: stddata.language
+  pk: 28
+- fields: {code: fo, name: Faeroese}
+  model: stddata.language
+  pk: 33
+- fields: {code: fj, name: Fiji}
+  model: stddata.language
+  pk: 32
+- fields: {code: fil, name: Filipino; Pilipino}
+  model: stddata.language
+  pk: 145
+- fields: {code: fi, name: Finnish}
+  model: stddata.language
+  pk: 31
+- fields: {code: fr, name: French}
+  model: stddata.language
+  pk: 34
+- fields: {code: fy, name: Frisian}
+  model: stddata.language
+  pk: 35
+- fields: {code: gl, name: Galician}
+  model: stddata.language
+  pk: 38
+- fields: {code: ka, name: Georgian}
+  model: stddata.language
+  pk: 56
+- fields: {code: de, name: German}
+  model: stddata.language
+  pk: 22
+- fields: {code: el, name: Greek}
+  model: stddata.language
+  pk: 24
+- fields: {code: kl, name: Greenlandic}
+  model: stddata.language
+  pk: 58
+- fields: {code: gn, name: Guarani}
+  model: stddata.language
+  pk: 39
+- fields: {code: gu, name: Gujarati}
+  model: stddata.language
+  pk: 40
+- fields: {code: ha, name: Hausa}
+  model: stddata.language
+  pk: 41
+- fields: {code: iw, name: Hebrew}
+  model: stddata.language
+  pk: 52
+- fields: {code: hi, name: Hindi}
+  model: stddata.language
+  pk: 42
+- fields: {code: hu, name: Hungarian}
+  model: stddata.language
+  pk: 44
+- fields: {code: is, name: Icelandic}
+  model: stddata.language
+  pk: 50
+- fields: {code: in, name: Indonesian}
+  model: stddata.language
+  pk: 49
+- fields: {code: ia, name: Interlingua}
+  model: stddata.language
+  pk: 46
+- fields: {code: ie, name: Interlingue}
+  model: stddata.language
+  pk: 47
+- fields: {code: ik, name: Inupiak}
+  model: stddata.language
+  pk: 48
+- fields: {code: ga, name: Irish}
+  model: stddata.language
+  pk: 36
+- fields: {code: it, name: Italian}
+  model: stddata.language
+  pk: 51
+- fields: {code: ja, name: Japanese}
+  model: stddata.language
+  pk: 53
+- fields: {code: jw, name: Javanese}
+  model: stddata.language
+  pk: 55
+- fields: {code: kn, name: Kannada}
+  model: stddata.language
+  pk: 60
+- fields: {code: ks, name: Kashmiri}
+  model: stddata.language
+  pk: 62
+- fields: {code: kk, name: Kazakh}
+  model: stddata.language
+  pk: 57
+- fields: {code: rw, name: Kinyarwanda}
+  model: stddata.language
+  pk: 96
+- fields: {code: ky, name: Kirghiz}
+  model: stddata.language
+  pk: 64
+- fields: {code: rn, name: Kirundi}
+  model: stddata.language
+  pk: 93
+- fields: {code: ko, name: Korean}
+  model: stddata.language
+  pk: 61
+- fields: {code: ku, name: Kurdish}
+  model: stddata.language
+  pk: 63
+- fields: {code: lo, name: Laothian}
+  model: stddata.language
+  pk: 67
+- fields: {code: la, name: Latin}
+  model: stddata.language
+  pk: 65
+- fields: {code: lv, name: 'Latvian, Lettish'}
+  model: stddata.language
+  pk: 69
+- fields: {code: ln, name: Lingala}
+  model: stddata.language
+  pk: 66
+- fields: {code: lt, name: Lithuanian}
+  model: stddata.language
+  pk: 68
+- fields: {code: mk, name: Macedonian}
+  model: stddata.language
+  pk: 72
+- fields: {code: mg, name: Malagasy}
+  model: stddata.language
+  pk: 70
+- fields: {code: ms, name: Malay}
+  model: stddata.language
+  pk: 77
+- fields: {code: ml, name: Malayalam}
+  model: stddata.language
+  pk: 73
+- fields: {code: mt, name: Maltese}
+  model: stddata.language
+  pk: 78
+- fields: {code: mi, name: Maori}
+  model: stddata.language
+  pk: 71
+- fields: {code: mr, name: Marathi}
+  model: stddata.language
+  pk: 76
+- fields: {code: mo, name: Moldavian}
+  model: stddata.language
+  pk: 75
+- fields: {code: mn, name: Mongolian}
+  model: stddata.language
+  pk: 74
+- fields: {code: na, name: Nauru}
+  model: stddata.language
+  pk: 80
+- fields: {code: ne, name: Nepali}
+  model: stddata.language
+  pk: 81
+- fields: {code: 'no', name: Norwegian}
+  model: stddata.language
+  pk: 83
+- fields: {code: oc, name: Occitan}
+  model: stddata.language
+  pk: 84
+- fields: {code: or, name: Oriya}
+  model: stddata.language
+  pk: 86
+- fields: {code: om, name: Oromo (Afan)}
+  model: stddata.language
+  pk: 85
+- fields: {code: ps, name: 'Pashto, Pushto'}
+  model: stddata.language
+  pk: 89
+- fields: {code: fa, name: Persian}
+  model: stddata.language
+  pk: 30
+- fields: {code: pl, name: Polish}
+  model: stddata.language
+  pk: 88
+- fields: {code: pt, name: Portuguese}
+  model: stddata.language
+  pk: 90
+- fields: {code: pa, name: Punjabi}
+  model: stddata.language
+  pk: 87
+- fields: {code: qu, name: Quechua}
+  model: stddata.language
+  pk: 91
+- fields: {code: rm, name: Rhaeto-Romance}
+  model: stddata.language
+  pk: 92
+- fields: {code: ro, name: Romanian}
+  model: stddata.language
+  pk: 94
+- fields: {code: ru, name: Russian}
+  model: stddata.language
+  pk: 95
+- fields: {code: smn, name: Sami (Inari)}
+  model: stddata.language
+  pk: 141
+- fields: {code: smj, name: Sami (Lule)}
+  model: stddata.language
+  pk: 140
+- fields: {code: se, name: Sami (Northern)}
+  model: stddata.language
+  pk: 138
+- fields: {code: sms, name: Sami (Skolt)}
+  model: stddata.language
+  pk: 142
+- fields: {code: sma, name: Sami (Southern)}
+  model: stddata.language
+  pk: 139
+- fields: {code: smi, name: Sami languages}
+  model: stddata.language
+  pk: 143
+- fields: {code: sm, name: Samoan}
+  model: stddata.language
+  pk: 104
+- fields: {code: sg, name: Sangro}
+  model: stddata.language
+  pk: 99
+- fields: {code: sa, name: Sanskrit}
+  model: stddata.language
+  pk: 97
+- fields: {code: gd, name: Scots Gaelic}
+  model: stddata.language
+  pk: 37
+- fields: {code: sr, name: Serbian}
+  model: stddata.language
+  pk: 108
+- fields: {code: sh, name: Serbo-Croatian}
+  model: stddata.language
+  pk: 100
+- fields: {code: st, name: Sesotho}
+  model: stddata.language
+  pk: 110
+- fields: {code: tn, name: Setswana}
+  model: stddata.language
+  pk: 121
+- fields: {code: sn, name: Shona}
+  model: stddata.language
+  pk: 105
+- fields: {code: sd, name: Sindhi}
+  model: stddata.language
+  pk: 98
+- fields: {code: si, name: Singhalese}
+  model: stddata.language
+  pk: 101
+- fields: {code: ss, name: Siswati}
+  model: stddata.language
+  pk: 109
+- fields: {code: sk, name: Slovak}
+  model: stddata.language
+  pk: 102
+- fields: {code: sl, name: Slovenian}
+  model: stddata.language
+  pk: 103
+- fields: {code: so, name: Somali}
+  model: stddata.language
+  pk: 106
+- fields: {code: es, name: Spanish}
+  model: stddata.language
+  pk: 27
+- fields: {code: su, name: Sundanese}
+  model: stddata.language
+  pk: 111
+- fields: {code: sw, name: Swahili}
+  model: stddata.language
+  pk: 113
+- fields: {code: sv, name: Swedish}
+  model: stddata.language
+  pk: 112
+- fields: {code: tl, name: Tagalog}
+  model: stddata.language
+  pk: 120
+- fields: {code: tg, name: Tajik}
+  model: stddata.language
+  pk: 116
+- fields: {code: ta, name: Tamil}
+  model: stddata.language
+  pk: 114
+- fields: {code: tt, name: Tatar}
+  model: stddata.language
+  pk: 125
+- fields: {code: te, name: Telugu}
+  model: stddata.language
+  pk: 115
+- fields: {code: th, name: Thai}
+  model: stddata.language
+  pk: 117
+- fields: {code: bo, name: Tibetan}
+  model: stddata.language
+  pk: 15
+- fields: {code: ti, name: Tigrinya}
+  model: stddata.language
+  pk: 118
+- fields: {code: to, name: Tonga}
+  model: stddata.language
+  pk: 122
+- fields: {code: ts, name: Tsonga}
+  model: stddata.language
+  pk: 124
+- fields: {code: tr, name: Turkish}
+  model: stddata.language
+  pk: 123
+- fields: {code: tk, name: Turkmen}
+  model: stddata.language
+  pk: 119
+- fields: {code: tw, name: Twi}
+  model: stddata.language
+  pk: 126
+- fields: {code: uk, name: Ukrainian}
+  model: stddata.language
+  pk: 127
+- fields: {code: ur, name: Urdu}
+  model: stddata.language
+  pk: 128
+- fields: {code: uz, name: Uzbek}
+  model: stddata.language
+  pk: 129
+- fields: {code: vi, name: Vietnamese}
+  model: stddata.language
+  pk: 130
+- fields: {code: vo, name: Volapuk}
+  model: stddata.language
+  pk: 131
+- fields: {code: cy, name: Welsh}
+  model: stddata.language
+  pk: 20
+- fields: {code: wo, name: Wolof}
+  model: stddata.language
+  pk: 132
+- fields: {code: xh, name: Xhosa}
+  model: stddata.language
+  pk: 133
+- fields: {code: ji, name: Yiddish}
+  model: stddata.language
+  pk: 54
+- fields: {code: yo, name: Yoruba}
+  model: stddata.language
+  pk: 134
+- fields: {code: zu, name: Zulu}
+  model: stddata.language
+  pk: 136

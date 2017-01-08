@@ -106,16 +106,8 @@ of modernization and cleanup of the code.
 
 ## Reporting or Examining Bugs
 
-Bugs and feature requests are currently tracked in
-[Bugzilla](http://dev.comics.org/bugs/), from before we were using GitHub.
-We don't currently use GitHub's issue tracking system.
-
-    * Bugs in the NEW state are available for work.
-    * Bugs in the ASSIGNED state are being worked on.
-
-Be sure to "Accept" a bug to put it in the ASSIGNED state
-before you start working on it.  Unlike in many Bugzilla installations,
-"Accept"ing a bug will automatically reassign it to you.
+Bugs and feature requests are currently recorded in GitHub's issue tracking system. We previously
+used an instance of Bugzilla but all bugs/requests from that system have been moved to GitHub. 
 
 If you are unfamiliar with the code, please contact the
 [gcd-tech](http://groups.google.com/group/gcd-tech/) list before starting

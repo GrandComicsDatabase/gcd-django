@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -9,16 +10,16 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css">
+      href="{% static "css/gcd/default.css" %}">
 </link>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default/series.css">
+      href="{% static "css/gcd/default/series.css" %}">
 </link>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default/status.css">
+      href="{% static "css/gcd/default/status.css" %}">
 </link>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default/scans.css">
+      href="{% static "css/gcd/default/scans.css" %}">
 </link>
 {% endblock %}
 
@@ -95,15 +96,15 @@
           <div class="series_detail_header">Series Details:</div>
           <ul class="series_detail_info"><li>
   {% if series.has_gallery %}
-            <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png">Cover Gallery</a>&nbsp;
+            <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png">Cover Gallery</a>&nbsp;
   {% endif %}
   {% if not preview or series.source %}
     {% if preview %}
-            <a  href="{% url "series_details" series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
-            <a href="{% url "series_timeline" series_id=series.source.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+            <a  href="{% url "series_details" series_id=series.source.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
+            <a href="{% url "series_timeline" series_id=series.source.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
     {% else %}
-            <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
-            <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ MEDIA_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+            <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
+            <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
     {% endif %}
   {% endif %}
 {% endif %}
@@ -206,7 +207,7 @@
           <input id="add" name="add" type="submit" value="Add issues">
           </input>
         </form>
-          {% if perms.gcd.can_approve and series.issue_count %}
+          {% if perms.indexer.can_approve and series.issue_count %}
         <form method="GET" action="{% url "reorder_series" series_id=series.id %}">
           <input id="reorder" name="reorder" type="submit" value="Reorder issues">
           </input>
@@ -232,15 +233,26 @@
         {% endif %}
       {% endif %} <!-- logged in -->
     {% endif %} <!-- not preview -->
+        <div id="change_history" class="edit_footer">
+  {% if preview %}
+          <a href="{% url "change_history" model_name='series' id=series.source.id %}">View Change History</a>
+  {% else %}
+          <a href="{% url "change_history" model_name='series' id=series.id %}">View Change History</a>
+  {% endif %}
+        </div>
   {% endif %} <!-- MYCOMICS -->
       </div>
-      <div class="change_history">
-  {% if preview %}
-        <a href="{% url "change_history" model_name='series' id=series.source.id %}">Change History</a>
-  {% else %}
-        <a href="{% url "change_history" model_name='series' id=series.id %}">Change History</a>
-  {% endif %}
+{% if not preview %}
+  {% if MYCOMICS %}
+      <div class="www_comics_cross_link">
+        <a href="http://www.comics.org{% url "show_series" series_id=series.id %}">Series at www.comics.org</a>
       </div>
+  {% else %}
+      <div class="my_comics_cross_link">
+        <a href="http://my.comics.org{% url "show_series" series_id=series.id %}">Series at my.comics.org</a>
+      </div>
+  {% endif %}
+{% endif %}
     </div> <!-- control_rail -->
 {% endif %}
   </div> <!-- control_container -->
@@ -254,6 +266,11 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 {% endif %}
 
 {% if series.active_issues.count %}
+  {% if MYCOMICS and user.is_authenticated %}
+<h3> Collection Status </h3>
+    {% include 'mycomics/bits/series_collection_status.html' %}
+  {% endif %}
+
 <h3> Index Status </h3>
 
   {% include "gcd/bits/status_tables.html" %}

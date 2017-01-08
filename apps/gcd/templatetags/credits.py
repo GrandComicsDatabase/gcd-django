@@ -13,7 +13,8 @@ from django.utils.translation import ungettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models import Issue, Country, Language, Reprint
+from apps.stddata.models import Country, Language
+from apps.gcd.models import Issue, Reprint
 from apps.oi.models import ReprintRevision, GENRES
 from apps.gcd.models import StoryType, STORY_TYPES
 
@@ -198,16 +199,22 @@ def __format_credit(story, credit):
            dt + '<span class="credit_label">' + label + '</span></dt>' + \
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
-def __format_keywords(keywords):
+def __format_keywords(keywords, join_on='; '):
     if type(keywords) == unicode:
         credit_value = keywords
     else:
         credit_value = esc(
-            '; '.join(str(i) for i in keywords.all().order_by('name')))
+            join_on.join(str(i) for i in keywords.all().order_by('name')))
     return credit_value
+
 
 def show_keywords(object):
     return __format_keywords(object.keywords)
+
+
+def show_keywords_comma(object):
+    return __format_keywords(object.keywords, u', ')
+
 
 def show_credit_status(story):
     """
@@ -273,7 +280,7 @@ def show_country_info(country, name=None):
     else:
         code = country.code
         name = country.name
-    src = u'src="%simg/gcd/flags/%s.png"' % (settings.MEDIA_URL,
+    src = u'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
                                               code.lower())
     alt = u'alt="%s"' % esc(code.upper())
     title = u'title="%s"' % esc(name)
@@ -633,4 +640,5 @@ register.filter(show_cover_contributor)
 register.filter(show_reprints)
 register.filter(show_reprints_for_issue)
 register.filter(show_keywords)
+register.filter(show_keywords_comma)
 register.filter(split_reprint_string)

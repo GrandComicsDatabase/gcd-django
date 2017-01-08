@@ -1,4 +1,6 @@
-import csv
+import os
+import tempfile
+from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -8,23 +10,23 @@ from django.core import urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
-from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
+from apps.indexer.views import render_error, ErrorWithMessage
 from apps.gcd.models import Issue, Series
-from apps.gcd.views import render_error, ResponsePaginator, paginate_response
+from apps.gcd.views import ResponsePaginator, paginate_response
 from apps.gcd.views.alpha_pagination import AlphaPaginator
-from apps.gcd import ErrorWithMessage
+from apps.gcd.templatetags.credits import show_keywords_comma
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 
-from apps.oi.import_export import UnicodeWriter
+from apps.oi.import_export import UnicodeReader, UnicodeWriter
 
 from apps.select.views import store_select_data
 
 from apps.mycomics.forms import *
 from apps.stddata.forms import DateForm
-from apps.mycomics.models import Collection, CollectionItem
+from apps.mycomics.models import Collection, CollectionItem, Subscription
 
 from django.contrib import messages
 from django.utils.translation import ugettext as _
@@ -34,6 +36,7 @@ COLLECTION_TEMPLATE='mycomics/collection.html'
 COLLECTION_LIST_TEMPLATE='mycomics/collections.html'
 COLLECTION_FORM_TEMPLATE='mycomics/collection_form.html'
 COLLECTION_ITEM_TEMPLATE='mycomics/collection_item.html'
+COLLECTION_SUBSCRIPTIONS_TEMPLATE='mycomics/collection_subscriptions.html'
 MESSAGE_TEMPLATE='mycomics/message.html'
 SETTINGS_TEMPLATE='mycomics/settings.html'
 DEFAULT_PER_PAGE=25
@@ -79,9 +82,7 @@ def view_collection(request, collection_id):
     else:
         raise PermissionDenied
 
-    items = collection.items.all().order_by('issue__series',
-                                            'issue__sort_code')\
-                                  .select_related('issue__series')
+    items = collection.items.all().select_related('issue__series')
     vars = {'collection': collection,
             'collection_list': collection_list}
     paginator = ResponsePaginator(items, template=COLLECTION_TEMPLATE,
@@ -130,6 +131,7 @@ def delete_collection(request, collection_id):
     messages.success(request, _('Collection deleted.'))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
+
 @login_required
 def export_collection(request, collection_id):
     """
@@ -138,7 +140,7 @@ def export_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
     filename = unicode(collection).replace(' ', '_').encode('utf-8')
-    response = HttpResponse(mimetype='text/csv')
+    response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename=%s.csv' % filename
     writer = UnicodeWriter(response)
 
@@ -165,10 +167,12 @@ def export_collection(request, collection_id):
         export_data.append("market value")
     if collection.sell_price_used:
         export_data.append("sell price")
+    export_data.append("description")
+    export_data.append("tags")
     writer.writerow(export_data)
 
-    items = collection.items.all().order_by('issue__series',
-                                            'issue__sort_code')
+    items = collection.items.all()
+
     for item in items:
         export_data = [item.issue.series.name, item.issue.series.publisher.name]
         if item.issue.variant_name:
@@ -199,16 +203,24 @@ def export_collection(request, collection_id):
             export_data.append(unicode(item.signed))
         if collection.price_paid_used:
             export_data.append(u"%s %s" % (item.price_paid,
-                                           item.price_paid_currency.code) \
+                                           item.price_paid_currency.code
+                                             if item.price_paid_currency
+                                             else u'')
                                if item.price_paid else u'')
         if collection.market_value_used:
             export_data.append(u"%s %s" % (item.market_value,
-                                           item.market_value_currency.code) \
+                                           item.market_value_currency.code
+                                             if item.market_value_currency
+                                             else u'')
                                if item.market_value else u'')
         if collection.sell_price_used:
             export_data.append(u"%s %s" % (item.sell_price,
-                                           item.sell_price_currency.code) \
+                                           item.sell_price_currency.code
+                                             if item.sell_price_currency
+                                             else u'')
                                if item.sell_price else u'')
+        export_data.append(unicode(item.notes))
+        export_data.append(unicode(show_keywords_comma(item)))
         writer.writerow(export_data)
 
     return response
@@ -236,10 +248,10 @@ def check_item_is_not_in_collection(request, item, collection):
 def get_collection_for_owner(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     if collection.collector.user != request.user:
-        return render_error(request,
+        return None, render_error(request,
             'Only the owner of a collection can add issues to it.',
             redirect=False)
-    return collection
+    return collection, None
 
 
 @login_required
@@ -287,12 +299,12 @@ def move_item(request, item_id, collection_id):
     from_collection = get_object_or_404(Collection, id=collection_id)
     item = get_item_for_collector(item_id, request.user.collector)
     check_item_is_in_collection(request, item, from_collection)
-    collection_form = CollectionSelectForm(request.user.collector, None, request.POST)
+    collection_form = CollectionSelectForm(request.user.collector, None,
+                                           request.POST)
     if collection_form.is_valid():
         to_collection_id = collection_form.cleaned_data['collection']
         to_collection = get_object_or_404(Collection, id=to_collection_id)
 
-        check_item_is_in_collection(request, item, from_collection)
         check_item_is_not_in_collection(request, item, to_collection)
         if 'move' in request.POST:
             from_collection.items.remove(item)
@@ -314,6 +326,8 @@ def move_item(request, item_id, collection_id):
                                      "collection differs from item status."))
         else:
             messages.error(request, _("Item unchanged"))
+    else:
+        messages.error(request, _("Item unchanged"))
 
     return HttpResponseRedirect(urlresolvers.reverse('view_item',
                                 kwargs={'item_id': item_id,
@@ -357,21 +371,26 @@ def view_item(request, item_id, collection_id):
                                             prefix='acquisition_date')
             acquisition_date_form.fields['date'].label = _('Acquisition date')
         collection_form = CollectionSelectForm(collector,
-                                        collections=item.collections.all())
+                            excluded_collections=item.collections.all())
         other_collections = item.collections.exclude(id=collection.id)
     else:
         item_form = None
         collection_form = None
         other_collections = None
 
+    # TODO with django1.6 use first/last here
     item_before = collection.items.filter(issue__series__sort_name__lte=
                                             item.issue.series.sort_name)\
                                   .exclude(issue__series__sort_name=
                                              item.issue.series.sort_name,
+                                           issue__series__year_began__gt=
+                                             item.issue.series.year_began)\
+                                  .exclude(issue__series_id=
+                                             item.issue.series.id,
                                            issue__sort_code__gt=
                                              item.issue.sort_code)\
-                                  .exclude(issue__series__sort_name=
-                                             item.issue.series.sort_name,
+                                  .exclude(issue__series_id=
+                                             item.issue.series.id,
                                            issue__sort_code=
                                              item.issue.sort_code,
                                            id__gte=item.id).reverse()
@@ -385,10 +404,14 @@ def view_item(request, item_id, collection_id):
                                            item.issue.series.sort_name)\
                                  .exclude(issue__series__sort_name=
                                             item.issue.series.sort_name,
+                                          issue__series__year_began__lt=
+                                            item.issue.series.year_began)\
+                                 .exclude(issue__series_id=
+                                            item.issue.series.id,
                                           issue__sort_code__lt=
                                             item.issue.sort_code)\
-                                 .exclude(issue__series__sort_name=
-                                            item.issue.series.sort_name,
+                                 .exclude(issue__series_id=
+                                            item.issue.series.id,
                                           issue__sort_code=
                                             item.issue.sort_code,
                                           id__lte=item.id)
@@ -480,27 +503,36 @@ def save_item(request, item_id, collection_id):
     raise Http404
 
 
-def add_issues_to_collection(request, collection_id, issues, redirect):
-    collection = get_collection_for_owner(request, collection_id)
+def create_collection_item(issue, collection):
+    collected = CollectionItem.objects.create(issue=issue)
+    collected.collections.add(collection)
+    if collection.own_used:
+        collected.own = collection.own_default
+        collected.save()
+    return collected
+
+
+def add_issues_to_collection(request, collection_id, issues, redirect,
+                             post_process_selection=None):
+    collection, error_return = get_collection_for_owner(request,
+                                                        collection_id)
+    if not collection:
+        return error_return
     for issue in issues:
-        collected = CollectionItem.objects.create(issue=issue)
-        collected.collections.add(collection)
-        if collection.own_used:
-            collected.own = collection.own_default
-            collected.save()
+        collected = create_collection_item(issue, collection)
+        if post_process_selection:
+            post_process_selection(collected)
     return HttpResponseRedirect(redirect)
 
 
 @login_required
 def add_single_issue_to_collection(request, issue_id):
     issue = Issue.objects.get(id=issue_id)
-    collection = get_collection_for_owner(request,
+    collection, error_return = get_collection_for_owner(request,
                    collection_id=int(request.POST['collection_id']))
-    collected = CollectionItem.objects.create(issue=issue)
-    collected.collections.add(collection)
-    if collection.own_used:
-        collected.own = collection.own_default
-        collected.save()
+    if not collection:
+        return error_return
+    collected = create_collection_item(issue, collection)
     messages.success(request, u"Issue <a href='%s'>%s</a> was added to your "
                                "'%s' collection." % \
                               (collected.get_absolute_url(collection),
@@ -516,13 +548,21 @@ def add_selected_issues_to_collection(request, data):
     if 'story' in selections:
         issues |= Issue.objects.filter(story__id__in=selections['story'])
     issues = issues.distinct()
+    if not issues.count():
+        raise ErrorWithMessage("No issues were selected.")
+
+    post_process_selection = data.get('post_process_selection', None)
     if 'confirm_selection' in request.POST:
         collection_id = int(request.POST['collection_id'])
         return add_issues_to_collection(request,
           collection_id, issues, urlresolvers.reverse('view_collection',
-                                 kwargs={'collection_id': collection_id}))
+                                 kwargs={'collection_id': collection_id}),
+          post_process_selection=post_process_selection)
     else:
-        collection_list = request.user.collector.ordered_collections()
+        if 'collection_list' in data:
+            collection_list = data['collection_list']
+        else:
+            collection_list = request.user.collector.ordered_collections()
         context = {
                 'item_name': 'issue',
                 'plural_suffix': 's',
@@ -537,10 +577,79 @@ def add_selected_issues_to_collection(request, data):
 
 
 @login_required
+def select_issues_from_preselection(request, issues, cancel,
+                                    post_process_selection=None,
+                                    collection_list=None):
+    if not issues.exists():
+        raise ErrorWithMessage("No issues to select from.")
+    data = {'issue': True,
+            'allowed_selects': ['issue',],
+            'return': add_selected_issues_to_collection,
+            'cancel': cancel}
+    if post_process_selection:
+        data['post_process_selection'] = post_process_selection
+    if collection_list:
+        data['collection_list'] = collection_list
+    select_key = store_select_data(request, None, data)
+    context = {'select_key': select_key,
+            'multiple_selects': True,
+            'item_name': 'issue',
+            'plural_suffix': 's',
+            'no_bulk_edit': True,
+            'all_pre_selected': True,
+            'heading': 'Issues'
+    }
+    return paginate_response(request, issues,
+                            'gcd/search/issue_list.html', context,
+                            per_page=issues.count())
+
+
+@login_required
+def import_items(request):
+    if 'import_my_issues' in request.FILES:
+        # real file to be able to use pythons Universal Newline Support
+        tmpfile_handle, tmpfile_name = tempfile.mkstemp(".mycomics_import")
+        for chunk in request.FILES['import_my_issues'].chunks():
+            os.write(tmpfile_handle, chunk)
+        os.close(tmpfile_handle)
+        tmpfile = open(tmpfile_name, 'U')
+        upload = UnicodeReader(tmpfile)
+        issues = Issue.objects.none()
+        for line in upload:
+            issue = Issue.objects.none()
+            if len(line) >= 2:
+                series = line[0].strip()
+                number = line[1].strip().lstrip('#')
+                if series != '' and number != '':
+                    issue = Issue.objects.filter(\
+                                          series__name__icontains=series,
+                                          number=number)
+                else:
+                    issue = Issue.objects.none()
+            if len(line) >= 3:
+                publisher = line[2].strip()
+                if publisher != '':
+                    issue = issue.filter(
+                            series__publisher__name__icontains=publisher)
+            if len(line) >= 4:
+                language_code = line[3].strip()
+                if language_code != '':
+                    issue = issue.filter(
+                            series__language__code__iexact=language_code)
+            issues = issues | issue
+        issues = issues.distinct()
+        tmpfile.close()
+        os.remove(tmpfile_name)
+        cancel = HttpResponseRedirect(urlresolvers\
+                                      .reverse('collections_list'))
+        return select_issues_from_preselection(request, issues, cancel)
+
+
+@login_required
 def add_series_issues_to_collection(request, series_id):
     series = get_object_or_404(Series, id=series_id)
-    issues = series.active_base_issues()
     if 'confirm_selection' in request.POST:
+        issues = series.active_base_issues()
         # add all issues (without variants) to the selected collection
         collection_id = int(request.POST['collection_id'])
         collection = get_object_or_404(Collection, id=collection_id)
@@ -558,29 +667,122 @@ def add_series_issues_to_collection(request, series_id):
         return add_issues_to_collection(request, collection_id, issues,
           urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
     else:
-        # allow user to choose which issues to add to the selected collection
-        if request.GET['which_issues'] == 'all_issues':
-            issues = series.active_issues()
-        elif request.GET['which_issues'] == 'variant_issues':
-            issues = series.active_issues().exclude(variant_of=None)
-        data = {'issue': True,
-                'allowed_selects': ['issue',],
-                'return': add_selected_issues_to_collection,
-                'cancel': HttpResponseRedirect(urlresolvers\
-                            .reverse('show_series',
-                                     kwargs={'series_id': series_id}))}
-        select_key = store_select_data(request, None, data)
-        context = {'select_key': select_key,
-                'multiple_selects': True,
-                'item_name': 'issue',
-                'plural_suffix': 's',
-                'no_bulk_edit': True,
-                'all_pre_selected': True,
-                'heading': 'Issues'
-            }
-        return paginate_response(request, issues,
-                                 'gcd/search/issue_list.html', context,
-                                 per_page=issues.count())
+        issues = None
+        if 'import_my_issues_to_series' in request.FILES:
+            # real file to be able to use pythons Universal Newline Support
+            tmpfile_handle, tmpfile_name = tempfile.mkstemp(".mycomics_import")
+            for chunk in request.FILES['import_my_issues_to_series'].chunks():
+                os.write(tmpfile_handle, chunk)
+            os.close(tmpfile_handle)
+            tmpfile = open(tmpfile_name, 'U')
+            issue_numbers = []
+            for line in tmpfile:
+                issue_numbers.append(line.strip(' \n').lstrip('#'))
+            issues = Issue.objects.filter(series__id=series_id,
+                                          number__in=issue_numbers)
+            issues = issues.distinct()
+            tmpfile.close()
+            os.remove(tmpfile_name)
+        elif 'which_issues' in request.GET:
+            # allow user to choose which issues to add to the selected collection
+            if request.GET['which_issues'] == 'base_issues':
+                issues = series.active_base_issues()
+            elif request.GET['which_issues'] == 'all_issues':
+                issues = series.active_issues()
+            elif request.GET['which_issues'] == 'variant_issues':
+                issues = series.active_issues().exclude(variant_of=None)
+        return_url = HttpResponseRedirect(urlresolvers.reverse('show_series',
+                                          kwargs={'series_id': series_id}))
+        if issues:
+            return select_issues_from_preselection(request, issues, return_url)
+        else:
+            messages.warning(request, 'no corresponding issues found')
+            return return_url
+
+
+def post_process_subscription(item):
+    # set last_pulled of a subscription to today for those series
+    # for which at least one issue was added to the collection
+    subscription = item.issue.series.subscription_set\
+                                    .get(collection=item.collections.get())
+    subscription.last_pulled = datetime.today()
+    subscription.save()
+
+
+@login_required
+def subscriptions_collection(request, collection_id):
+    collection, error_return = get_collection_for_owner(request,
+                               collection_id=collection_id)
+    if not collection:
+        return error_return
+    subscriptions = collection.subscriptions.order_by('series__sort_name')
+    return render_to_response(COLLECTION_SUBSCRIPTIONS_TEMPLATE,
+                              {'collection': collection,
+                               'subscriptions': subscriptions,
+                               'collection_list': request.user.collector\
+                                                  .ordered_collections()},
+                              context_instance=RequestContext(request))
+
+
+@login_required
+def subscribed_into_collection(request, collection_id):
+    collection, error_return = get_collection_for_owner(request,
+                               collection_id=collection_id)
+    if not collection:
+        return error_return
+    issues = Issue.objects.none()
+    for subscription in collection.subscriptions.all():
+        new_issues = subscription.series.active_issues()\
+                                 .filter(created__gte=subscription.last_pulled)
+        issues |= new_issues
+    return_url = HttpResponseRedirect(
+      urlresolvers.reverse('subscriptions_collection',
+                           kwargs={'collection_id': collection_id}))
+    if issues:
+        return select_issues_from_preselection(request, issues, return_url,
+          post_process_selection=post_process_subscription,
+          collection_list=[collection])
+    else:
+        messages.warning(request, 'No new issues for subscribed series found.')
+        return return_url
+
+
+@login_required
+def subscribe_series(request, series_id):
+    series = get_object_or_404(Series, id=series_id)
+    collection_id = int(request.POST['collection_id'])
+    collection, error_return = get_collection_for_owner(request,
+                               collection_id=collection_id)
+    if not collection:
+        return error_return
+    subscription = Subscription.objects.filter(series=series,
+                                               collection=collection)
+    if subscription.exists():
+        messages.error(request, _(u'Series %s is already subscribed for the '
+                         'collection %s.' % (series, collection)))
+    elif series.is_current:
+        subscription = Subscription.objects.create(series=series,
+                       collection=collection, last_pulled=datetime.today())
+        messages.success(request, _(u'Series %s is now subscribed for the '
+                           'collection %s.' % (series, collection)))
+    else:
+        messages.error(request, _(u'Selected series is not ongoing.'))
+
+    return HttpResponseRedirect(urlresolvers.reverse('show_series',
+                                kwargs={'series_id': series_id}))
+
+
+@login_required
+def unsubscribe_series(request, subscription_id):
+    subscription = get_object_or_404(Subscription, id=subscription_id)
+    if subscription.collection.collector.user != request.user:
+        return render_error(request,
+            'Only the owner of a collection can unsubscribe series.',
+            redirect=False)
+    subscription.delete()
+    return HttpResponseRedirect(
+             urlresolvers.reverse('subscriptions_collection',
+               kwargs={'collection_id': subscription.collection.id}))
 
 
 @login_required

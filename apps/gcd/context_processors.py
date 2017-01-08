@@ -13,5 +13,7 @@ def gcd(request):
         stuff['MYCOMICS'] = settings.MYCOMICS
     if hasattr(settings, 'USE_ELASTICSEARCH'):
         stuff['USE_ELASTICSEARCH'] = settings.USE_ELASTICSEARCH
+    if hasattr(settings, 'USE_TEMPLATESADMIN'):
+        stuff['USE_TEMPLATESADMIN'] = settings.USE_TEMPLATESADMIN
     return stuff
 

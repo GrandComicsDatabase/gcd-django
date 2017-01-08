@@ -1,4 +1,5 @@
 {% extends "oi/base_view.html" %}
+{% load staticfiles %}
 
 {% block title %}
 GCD :: {{ user.indexer }} :: Editing Queue
@@ -6,11 +7,11 @@ GCD :: {{ user.indexer }} :: Editing Queue
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default.css"/>
+      href="{% static "css/oi/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default/queues.css"/>
+      href="{% static "css/oi/default/queues.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -26,7 +27,11 @@ GCD :: {{ user.indexer }} :: Editing Queue
   </div>
 </div>
 <div class="indexer_right_box">
-{% include 'oi/bits/indexer_info.html' %}
+{% if USE_TEMPLATESADMIN %}
+{% include 'managed_content/oi/messages/policy_info.html' %}
+{% else %}
+  {% include "gcd/bits/managed_content_dev_notice.html" %}
+{% endif %}
 </div>
 {% endblock %}
 

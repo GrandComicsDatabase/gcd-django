@@ -1,11 +1,12 @@
 {% extends "mycomics/base.html" %}
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 
 
 {% block other-stylesheets %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/mycomics/front_page.css"/>
+        href="{% static "css/mycomics/front_page.css" %}"/>
 {% endblock %}
 
 {% block header %}

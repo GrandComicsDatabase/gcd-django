@@ -1,13 +1,17 @@
 {% extends "oi/base_view.html" %}
+{% load staticfiles %}
 
 {% block title %}
 Adding Creator Award
 {% endblock %}
 
 {% block css %}
-    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/gcd/default.css"/>
-    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default.css"/>
-    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default/edit.css" %}"/>
 {% endblock %}
 
 {% block view_body %}

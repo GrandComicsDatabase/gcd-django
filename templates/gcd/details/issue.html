@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
@@ -11,11 +12,11 @@
 
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+        href="{% static "css/gcd/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default/issue.css"/>
+        href="{% static "css/gcd/default/issue.css" %}"/>
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default/single_story.css"/>
+        href="{% static "css/gcd/default/single_story.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -143,14 +144,22 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% include "mycomics/bits/issue_control.html" %}
 {% else %}
         <div class="edit_header">Editing
-  {% if request.user.is_authenticated and not preview %}
+  {% if request.user.is_authenticated %}
           <div class="right">
+    {% if preview %}
+            <a class="link_info_left" href="{% url "export_issue_revision_csv" issue.id %}"><span>download issue data (CSV)</span>
+    {% else %}
             <a class="link_info_left" href="{% url "export_issue_csv" issue.id %}"><span>download issue data (CSV)</span>
-            <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-spreadsheet.png" alt="download issue data" style="border:0;">
+    {% endif %}
+            <img src="{{ STATIC_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-spreadsheet.png" alt="download issue data" style="border:0;">
             </a>
 
+    {% if preview %}
+            <a class="link_info_left" href="{% url "export_issue_revision" issue.id %}"><span>download issue data</span>
+    {% else %}
             <a class="link_info_left" href="{% url "export_issue" issue.id %}"><span>download issue data</span>
-            <img src="{{ MEDIA_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-save.png" alt="download issue data" style="border:0;">
+    {% endif %}
+            <img src="{{ STATIC_URL }}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-save.png" alt="download issue data" style="border:0;">
             </a>
           </div>
 <a class="right cache_link" href="{% url "cache_issue" issue_id=issue.id %}">(remember issue)</a>
@@ -192,46 +201,90 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% endif %} <!-- not preview -->
 {% endif %} <!-- MYCOMICS -->
       </div> <!-- edit_box -->
+      <div id="change_history" class="edit_footer">
+  {% if preview %}
+    {% if issue.source %}
+        <a href="{% url "change_history" model_name='issue' id=issue.source.id %}">View Change History</a>
+    {% else %}
+        No Change History Available
+    {% endif %}
+  {% else %}
+        <a href="{% url "change_history" model_name='issue' id=issue.id %}">View Change History</a>
+  {% endif %}
+      </div>
 {% if not preview or issue.source %}
-      <div class="change_history">
-  {% if preview %}
-        <a href="{% url "issue_images" issue_id=issue.source.id %}">Resources ({{ images_count }}) </a>
-  {% else %}
-        <a href="{% url "issue_images" issue_id=issue.id %}">Resources ({{ images_count }}) </a>
-  {% endif %}
+  {% if MYCOMICS %}
+      <div class="www_comics_cross_link">
+        <a href="http://www.comics.org{% url "show_issue" issue_id=issue.id %}">Issue at www.comics.org</a>
       </div>
-      <div class="change_history">
-  {% if preview %}
-        <a href="{% url "change_history" model_name='issue' id=issue.source.id %}">Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='issue' id=issue.id %}">Change History</a>
-  {% endif %}
+      <div class="my_comics_cross_link">
+        <a href="http://my.comics.org{% url "show_issue" issue_id=issue.id %}">Issue at my.comics.org</a>
       </div>
+  {% endif %}
+      <div class="side_section_header">Related Scans</div>
+        <ul class="side_section_body">
+  {% if preview %}
+    {% if issue.source.indicia_image or issue.source.soo_image %}
+      {% if issue.source.indicia_image %}
+          <li> <a href="{% url "issue_images" issue_id=issue.source.id %}">Indicia</a>
+      {% endif %}
+      {% if issue.source.soo_image %}
+          <li> <a href="{% url "issue_images" issue_id=issue.source.id %}">Statement of Ownership</a>
+      {% endif %}
+    {% else %}
+          <li> <a href="{% url "issue_images" issue_id=issue.source.id %}">None</a>
+    {% endif %}
+  {% else %}
+    {% if issue.indicia_image or issue.soo_image %}
+      {% if issue.indicia_image %}
+          <li> <a href="{% url "issue_images" issue_id=issue.id %}">Indicia</a>
+      {% endif %}
+      {% if issue.soo_image %}
+          <li> <a href="{% url "issue_images" issue_id=issue.id %}">Statement of Ownership</a>
+      {% endif %}
+    {% else %}
+          <li> <a href="{% url "issue_images" issue_id=issue.id %}">None</a>
+    {% endif %}
+  {% endif %}
+        </ul>
+  {% if not issue.series.is_singleton %}
+      <div class="side_section_header">Series Information</div>
+      <ul class="side_section_body">
+        <li> <a href="{% url "series_details" series_id=issue.series.id %}">Details by Issue</a><br/>
+        <li> <a href="{% url "series_timeline" series_id=issue.series.id %}">Timeline</a>
+    {% if issue.series.has_gallery %}
+        <li> <a href="{{ issue.series.get_absolute_url }}covers">Cover gallery</a>
+    {% endif %}
+  {% endif %}
+      </ul>
 {% endif %}
 
-      <div id="story_toc">
-        <a name="toc"></a>
-        <h2 id="toc_header">Table of Contents</h2>
-        <ol>
+      <a name="toc"></a>
+      <div class="side_section_header">Table of Contents</div>
+      <ol id="story_toc">
 {% if cover_story %}
-          <li class="even">
-          0. <span class="toc_story_title">
-          <a href="#{{ cover_story.id }}">{{ cover_story|show_title }}</a></span><br/>
+        <li class="even">
+        0. <span class="toc_story_title">
+        <a href="#{{ cover_story.id }}">{{ cover_story|show_title }}</a></span><br/>
   {% if cover_story.feature %}
-          <span class="toc_story_feature">{{ cover_story.feature}}</span>
+        <span class="toc_story_feature">{{ cover_story.feature}}</span>
   {% endif %}
 {% endif %}
 {% for story in stories %}
-          <li class="{% cycle 'odd' 'even' %}">
-          {{ forloop.counter }}.
-          <span class="toc_story_title">
-          <a href="#{{ story.id }}">{{ story|show_title }}</a></span><br/>
+        <li class="{% cycle 'odd' 'even' %}">
+        {{ forloop.counter }}.
+        <span class="toc_story_title">
+        <a href="#{{ story.id }}">{{ story|show_title }}</a></span><br/>
   {% if story.feature %}
-          <span class="toc_story_feature">{{ story.feature}}</span>
+        <span class="toc_story_feature">{{ story.feature}}</span>
   {% endif %}
 {% endfor %}
-        </ol>
-      </div> <!-- story_toc, a.k.a "right" -->
+      </ol>
+
+{% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
+  {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
+{% endif %}
 
 {% if issue.series.index_credit_set.all.select_related or oi_indexers %}
       <div id="index_credits">
@@ -252,9 +305,6 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
         </ul>
   {% endif %}
       </div> <!-- index_credits -->
-{% endif %}
-{% if ADVERTISING %}
-  {% include "gcd/bits/ad_skyscraper.html" %}
 {% endif %}
     </div> <!-- control_rail -->
   </div> <!-- control_container -->

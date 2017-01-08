@@ -10,6 +10,12 @@ from apps.gcd.models import Issue
 
 register = template.Library()
 
+@register.filter
+def subscribed(series, user):
+    return series.subscription_set.filter(collection__collector__user=user)
+
+
+@register.filter
 def show_have_want(issue, user):
     have_count = issue.collectionitem_set.filter(own=True,
                     collections__collector__user=user).distinct().count()
@@ -43,12 +49,18 @@ def item_url(item, collection):
     return item.get_absolute_url(collection)
 
 
-def show_cover_tag(issue):
-    return get_image_tags_per_issue(issue, alt_text=u'', zoom_level=ZOOM_SMALL)
+@register.filter
+def show_cover_tag(issue, zoom_level=ZOOM_SMALL):
+    if issue:
+        return get_image_tags_per_issue(issue, alt_text=u'',
+                                        zoom_level=zoom_level)
+    else:
+        return ""
 
 
+@register.filter
 def show_cover_tag_medium(issue):
-    return get_image_tags_per_issue(issue, alt_text=u'', zoom_level=ZOOM_MEDIUM)
+    return show_cover_tag(issue, zoom_level=ZOOM_MEDIUM)
 
 
 @register.filter
@@ -57,6 +69,15 @@ def is_default_collection(collection):
       collection == collection.collector.default_have_collection)
 
 
-register.filter(show_have_want)
-register.filter(show_cover_tag)
-register.filter(show_cover_tag_medium)
+@register.filter
+def collection_status(issue, user):
+    items = item_collections(issue, user)
+    if items.count() == 0:
+        return "collection_status_empty"
+    if items.count() >= 2:
+        return "collection_status_several"
+    if items[0].own:
+        return "collection_status_own"
+    if items[0].own == False:
+        return "collection_status_want"
+    return "collection_status_collected"

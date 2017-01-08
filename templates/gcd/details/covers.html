@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 {% load credits %}
 
@@ -8,7 +9,7 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -46,8 +47,8 @@
   </table>
 </div>
 <div class="right">
-  {% if ADVERTISING and not BETA %}
-    {% include "gcd/bits/ad_med_rectangle.html" %}
+  {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
+    {% include "managed_content/gcd/ads/ad_med_rectangle.html" %}
   {% endif %}
 </div>
 {% with 1 as paginate_only %}

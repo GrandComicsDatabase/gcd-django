@@ -22,8 +22,11 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
-from apps.gcd.models import Cover, Series, Issue, CountStats
-from apps.gcd.views import render_error, paginate_response
+from apps.stats.models import CountStats
+from apps.indexer.views import render_error
+
+from apps.gcd.models import Cover, Series, Issue
+from apps.gcd.views import paginate_response
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue, \
                                   get_generic_image_tag
 
@@ -66,7 +69,7 @@ def get_preview_generic_image_tag(revision, alt_text):
 
 def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
     if revision is None:
-        return mark_safe('<img class="no_cover" src="' + settings.MEDIA_URL + \
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
                'img/nocover.gif" alt="No image yet" class="cover_img"/>')
 
     img_class = 'cover_img'
@@ -92,7 +95,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
             # Current cover is the one from this revision, show it.
             return get_image_tag(revision.cover, esc(alt_text), zoom_level)
         else:
-            if request and request.user.has_perm('gcd.can_approve') \
+            if request and request.user.has_perm('indexer.can_approve') \
               and not settings.BETA:
                 # The cover was replaced by now, show original uploaded file,
                 # scaled in the browser.
@@ -764,7 +767,7 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
     return render_to_response(upload_template, kwargs,
                               context_instance=RequestContext(request))
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def flip_artwork_flag(request, revision_id=None):
     """
     flips the status in regard to variants with different cover artwork
@@ -796,7 +799,7 @@ def flip_artwork_flag(request, revision_id=None):
     return HttpResponseRedirect(urlresolvers.reverse('compare',
             kwargs={'id': cover.changeset.id} ))
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def mark_cover(request, marked, cover_id=None, revision_id=None):
     """
     sets or removes the replacement mark from the the cover
@@ -970,7 +973,7 @@ def _display_image_upload_form(request, form, display_obj, model_name,
     return render_to_response(upload_template, kwargs,
                               context_instance=RequestContext(request))
 
-@permission_required('gcd.can_approve')
+@permission_required('indexer.can_approve')
 def mark_image(request, marked, image_id=None, revision_id=None):
     """
     sets or removes the replacement mark from the the cover
