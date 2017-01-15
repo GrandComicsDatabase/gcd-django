@@ -108,6 +108,7 @@ class Language(models.Model):
 
     code = models.CharField(max_length=10, unique=True)
     name = models.CharField(max_length=255, db_index=True)
+    native_name = models.CharField(max_length=255, blank=True)
 
     def natural_key(self):
         """
