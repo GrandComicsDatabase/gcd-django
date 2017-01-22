@@ -259,7 +259,7 @@ urlpatterns = patterns('',
 )
 
 # haystack search
-sqs = GcdSearchQuerySet().facet('facet_model_name')
+sqs = GcdSearchQuerySet().facet('facet_model_name').facet('country')
 
 urlpatterns += patterns('haystack.views',
                         url(r'^searchNew/', search_view_factory(

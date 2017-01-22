@@ -286,7 +286,9 @@ def show_country_info(country, name=None):
     title = u'title="%s"' % esc(name)
     return mark_safe(u'%s %s %s' % (src, alt, title))
 
-def get_country_flag(country):
+def get_country_flag(country, given_code=False):
+    if given_code:
+        country = Country.objects.get(code=country)
     return mark_safe(u'<img %s '\
            'class="embedded_flag">' \
            % show_country_info(country))
