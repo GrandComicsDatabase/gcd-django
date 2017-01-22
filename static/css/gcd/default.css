@@ -130,6 +130,11 @@ div.stats_content {
     padding-left: 8px;
 }
 
+div.stats_header {
+    padding-left: 8px;
+    line-height: 1.5em;
+}
+
 /* Item ID stuff */
 
 .item_id {
