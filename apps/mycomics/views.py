@@ -609,6 +609,8 @@ def select_issues_from_preselection(request, issues, cancel,
 
 def select_from_on_sale_weekly(request, year=None, week=None):
     issues_on_sale, context = do_on_sale_weekly(request, year, week)
+    if context == None:
+        return issues_on_sale
     data = {'issue': True,
             'allowed_selects': ['issue'],
             'return': add_selected_issues_to_collection}

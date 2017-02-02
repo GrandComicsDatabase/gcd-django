@@ -833,7 +833,7 @@ def do_on_sale_weekly(request, year=None, week=None):
             return HttpResponseRedirect(
                 urlresolvers.reverse(
                 'on_sale_weekly',
-                kwargs={'year': year, 'week': week} ))
+                kwargs={'year': year, 'week': week} )), None
         if year:
             year = int(year)
         if week:
@@ -888,6 +888,8 @@ def do_on_sale_weekly(request, year=None, week=None):
 
 def on_sale_weekly(request, year=None, week=None):
     issues_on_sale, vars = do_on_sale_weekly(request, year, week)
+    if vars == None:
+        return issues_on_sale
     return paginate_response(request, issues_on_sale,
                              'gcd/status/issues_on_sale.html', vars)
 
