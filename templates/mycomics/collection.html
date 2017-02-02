@@ -41,7 +41,9 @@
         {% endfor %}
       </div>
       <div>
-        {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
+        {% if USE_TEMPLATESADMIN %}
+          {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
+        {% endif %}
       </div>
     </div>
     <div class="col-md-10">

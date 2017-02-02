@@ -16,6 +16,7 @@ from apps.indexer.views import render_error, ErrorWithMessage
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import ResponsePaginator, paginate_response
 from apps.gcd.views.alpha_pagination import AlphaPaginator
+from apps.gcd.views.details import do_on_sale_weekly
 from apps.gcd.templatetags.credits import show_keywords_comma
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
@@ -604,6 +605,25 @@ def select_issues_from_preselection(request, issues, cancel,
     return paginate_response(request, issues,
                             'gcd/search/issue_list.html', context,
                             per_page=issues.count())
+
+
+def select_from_on_sale_weekly(request, year=None, week=None):
+    issues_on_sale, context = do_on_sale_weekly(request, year, week)
+    data = {'issue': True,
+            'allowed_selects': ['issue'],
+            'return': add_selected_issues_to_collection}
+    select_key = store_select_data(request, None, data)
+    context.update({'select_key': select_key,
+            'multiple_selects': True,
+            'item_name': 'issue',
+            'plural_suffix': 's',
+            'no_bulk_edit': True,
+            'all_pre_selected': True,
+            'heading': 'Issues'
+    })
+    return paginate_response(request, issues_on_sale,
+                             'gcd/status/issues_on_sale.html', context,
+                             per_page=max(1,issues_on_sale.count()))
 
 
 @login_required
