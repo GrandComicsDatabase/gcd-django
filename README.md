@@ -78,7 +78,9 @@ via [gcd-tech](http://groups.google.com/group/gcd-tech/)
 
 ### Closed branches
 The `newsearch` branch is dead- it was used to add Elasticsearch to the system.
+
 The `mycomics` branch is dead - it was used to collection management to the site.
+
 The `django-17` branch is dead - it was used to upgrade to django 1.7.
 
 ## History of the Code
