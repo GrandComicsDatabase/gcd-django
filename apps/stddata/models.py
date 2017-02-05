@@ -118,5 +118,13 @@ class Language(models.Model):
         """
         return (self.code,)
 
+
+    def get_native_name(self):
+        if self.native_name:
+            return self.native_name
+        else:
+            return self.name
+
+
     def __unicode__(self):
         return self.name

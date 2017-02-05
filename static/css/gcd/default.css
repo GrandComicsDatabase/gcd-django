@@ -16,12 +16,12 @@ body {
 }
 
 #RightSearchColumn {
-    margin-left : 100px;
+    margin-left : 150px;
 }
 
 #LeftSearchColumn {
     float : left;
-    width : 95px;
+    width : 145px;
 }
 
 /*
