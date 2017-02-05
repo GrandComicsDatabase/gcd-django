@@ -310,6 +310,13 @@ def show_language(series):
     """
     return unicode(series.language)
 
+
+@register.filter
+def get_native_language_name(language_code):
+    language = Language.objects.get(code=language_code)
+    return language.get_native_name()
+
+
 def show_page_count(story, show_page=False):
     """
     Return a properly formatted page count, with "?" as needed.

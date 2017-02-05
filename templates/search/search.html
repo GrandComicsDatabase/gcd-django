@@ -90,6 +90,16 @@
           </td></tr>
       {% endfor %}
         </table>
+        <table class="listing left">
+          <tr>
+            <th>Language</th>
+          </tr>
+      {% for language in facets.fields.language %}
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_language_selected %}&amp;selected_facets=language_exact:{{ language.0|urlencode }}{% endif %}">{{ language.0|get_native_language_name }} ({{ language.1}})</a>
+          </td></tr>
+      {% endfor %}
+        </table>
       </div>
       <div id="RightSearchColumn">
       <div class="left">
