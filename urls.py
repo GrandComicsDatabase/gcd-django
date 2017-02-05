@@ -9,8 +9,11 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from apps.indexer.views import error_view
 from apps.gcd.views import read_only
+from apps.api.urls import router as api_router
+
 
 admin.autodiscover()
+
 
 # Note that the structure of the various pattern lists is to facilitate
 # future implementation of a read-only mode for the site.  Such a mode
@@ -36,6 +39,7 @@ basic_patterns = patterns('',
         bv.TemplateView.as_view(template_name='gcd/donate/thanks.html'),
         name='donate_thanks'),
     url(r'^jsi18n/$', 'django.views.i18n.javascript_catalog', js_info_dict),
+    url(r'^api/', include(api_router.urls)),
 )
 
 read_only_patterns = patterns('',
@@ -45,7 +49,7 @@ read_only_patterns = patterns('',
         name='upload_cover'),
     url(r'^edit_covers/(?P<issue_id>\d+)/$', read_only.dummy,
         name='edit_covers'),
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', 
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$',
         read_only.dummy, name='upload_image'),
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$', 
         read_only.dummy, name='replace_image'),
@@ -62,8 +66,8 @@ if settings.SITE_DOWN:
             return context
 
     urlpatterns = patterns('',
-        (r'^site-down/$',  SiteDownTemplateView.as_view(
-            template_name= 'site_down.html')),
+        (r'^site-down/$', SiteDownTemplateView.as_view(
+            template_name='site_down.html')),
         (r'^.*$', lambda request: redirect('/site-down/')),
     )
 
@@ -73,7 +77,7 @@ elif settings.NO_OI:
                    patterns('', (r'^', include('apps.stats.urls'))) +
                    patterns('', (r'^', include('apps.indexer.urls'))) +
                    read_only_patterns
-                  )
+                   )
 elif settings.MYCOMICS:
     urlpatterns = (basic_patterns +
                    patterns('', (r'^', include('apps.mycomics.urls'))) +
@@ -91,16 +95,17 @@ else:
                    patterns('', (r'^', include('apps.select.urls'))) +
                    patterns('', (r'^', include('apps.oi.urls')),
                                 (r'^voting/', include('apps.voting.urls')),
-                                (r'^admin/templatesadmin/', include('templatesadmin.urls')),
+                                (r'^admin/templatesadmin/',
+                                    include('templatesadmin.urls')),
                                 (r'^admin/', include(admin.site.urls)),
                                 (r'^projects/', include('apps.projects.urls')),
-                           )
-                  )
+                            )
+                   )
 
 if 'django_rq' in settings.INSTALLED_APPS:
     urlpatterns += patterns('',
-        (r'^django-rq/', include('django_rq.urls')),
-    )
+                            (r'^django-rq/', include('django_rq.urls')),
+                            )
 
 # This only has any effect when DEBUG is True.
 urlpatterns += staticfiles_urlpatterns()

@@ -126,6 +126,7 @@ INSTALLED_APPS = (
     'haystack',
     'elasticstack',
     'bootstrap3',
+    'rest_framework',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -241,6 +242,29 @@ ELASTICSEARCH_INDEX_SETTINGS = {
 ELASTICSEARCH_DEFAULT_ANALYZER = 'default'
 
 USE_ELASTICSEARCH = False
+
+#################################################################################
+# REST-API
+#################################################################################
+REST_FRAMEWORK = {
+
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework_yaml.parsers.YAMLParser',
+    ),
+
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework_yaml.renderers.YAMLRenderer',
+    ),
+    # Use Django's standard `django.contrib.auth` permissions, 
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+}
 
 #################################################################################
 # GCD site settings

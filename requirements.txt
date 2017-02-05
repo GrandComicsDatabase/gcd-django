@@ -31,6 +31,10 @@ simplejson==3.4.0
 versiontools==1.9.1
 wsgiref==0.1.2
 
+# REST-API
+djangorestframework<3.4
+djangorestframework-yaml==1.0.3
+
 # These packages are used in development and testing.
 RBTools
 flake8
