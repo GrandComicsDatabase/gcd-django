@@ -16,9 +16,14 @@ def get_cover_revision_form(revision=None, user=None):
         'compare',
         kwargs={'id': revision.changeset.id}) + '">Compare Change</a>'
 
+    # TODO Revisit this. Does it need to be a ModelForm to be consistent
+    # to other forms which get returned by get_revision_form, or can
+    # this be a normal Form and avoid the slight hackish way of not
+    # really using the ModelForm before in the actual cover upload.
     class UploadScanCommentForm(forms.ModelForm):
         class Meta:
             model = CoverRevision
+            fields = []
 
         comments = forms.CharField(
             widget=forms.Textarea,
