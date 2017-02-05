@@ -821,7 +821,7 @@ def daily_changes(request, show_date=None):
       context_instance=RequestContext(request)
     )
 
-def on_sale_weekly(request, year=None, week=None):
+def do_on_sale_weekly(request, year=None, week=None):
     """
     Produce a page displaying the comics on-sale in a given week.
     """
@@ -833,7 +833,7 @@ def on_sale_weekly(request, year=None, week=None):
             return HttpResponseRedirect(
                 urlresolvers.reverse(
                 'on_sale_weekly',
-                kwargs={'year': year, 'week': week} ))
+                kwargs={'year': year, 'week': week} )), None
         if year:
             year = int(year)
         if week:
@@ -883,8 +883,16 @@ def on_sale_weekly(request, year=None, week=None):
         'next_week': next_week,
         'query_string': urlencode(query_val),
     }
+    return issues_on_sale, vars
 
-    return paginate_response(request, issues_on_sale, 'gcd/status/issues_on_sale.html', vars)
+
+def on_sale_weekly(request, year=None, week=None):
+    issues_on_sale, vars = do_on_sale_weekly(request, year, week)
+    if vars == None:
+        return issues_on_sale
+    return paginate_response(request, issues_on_sale,
+                             'gcd/status/issues_on_sale.html', vars)
+
 
 def int_stats_language(request):
     """
