@@ -182,6 +182,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         facet_page = ''
         is_model_selected = False
         is_country_selected = False
+        is_language_selected = False
         if self.form.selected_facets:
             for facet in self.form.selected_facets:
                 facet_page += '&selected_facets=%s' % facet
@@ -189,10 +190,13 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                     is_model_selected = True
                 elif u'country_exact:' in facet:
                     is_country_selected = True
+                elif u'language_exact:' in facet:
+                    is_language_selected = True
         extra.update({'suggestion': suggestion,
                      'facet_page': facet_page,
                      'is_model_selected': is_model_selected,
-                     'is_country_selected': is_country_selected})
+                     'is_country_selected': is_country_selected,
+                     'is_language_selected': is_language_selected})
         if self.sort:
             extra.update({'sort': '&sort=%s' % self.sort})
         else:

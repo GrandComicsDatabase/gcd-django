@@ -811,7 +811,8 @@ def unsubscribe_series(request, subscription_id):
 
 @login_required
 def mycomics_search(request):
-    sqs = GcdSearchQuerySet().facet('facet_model_name').facet('country')
+    sqs = GcdSearchQuerySet().facet('facet_model_name').facet('country') \
+                             .facet('language')
 
     allowed_selects = ['issue', 'story']
     data = {'issue': True,
