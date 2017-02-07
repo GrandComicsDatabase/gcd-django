@@ -47,7 +47,7 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     country = indexes.CharField(model_attr='series__country__code',
                                 faceted=True, indexed=False)
     language = indexes.CharField(model_attr='series__language__code',
-                                 indexed=False)
+                                 faceted=True, indexed=False)
 
     def get_model(self):
         return Issue
@@ -80,7 +80,8 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='country__code',  faceted=True,
                                 indexed=False)
-    language = indexes.CharField(model_attr='language__code', indexed=False)
+    language = indexes.CharField(model_attr='language__code', faceted=True,
+                                 indexed=False)
     title_search = indexes.CharField()
 
     def get_model(self):
@@ -115,7 +116,7 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     country = indexes.CharField(model_attr='issue__series__country__code',
                                 faceted=True, indexed=False)
     language = indexes.CharField(model_attr='issue__series__language__code',
-                                 indexed=False)
+                                 faceted=True, indexed=False)
 
     def get_model(self):
         return Story
