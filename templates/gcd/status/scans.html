@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
+{% load staticfiles %}
 {% load i18n %}
 {% load credits %}
 
@@ -7,9 +8,9 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default/scans.css"/>
+      href="{% static "css/gcd/default/scans.css" %}"/>
 {% endblock %}
 
 {% block view_body %}

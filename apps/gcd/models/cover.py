@@ -42,9 +42,9 @@ class Cover(models.Model):
     reserved = models.BooleanField(default=False, db_index=True)
     deleted = models.BooleanField(default=False, db_index=True)
 
-    def _sort_code(self):
+    @property
+    def sort_code(self):
         return self.issue.sort_code
-    sort_code = property(_sort_code)
 
     def base_dir(self):
         return settings.MEDIA_ROOT + settings.COVERS_DIR + \
@@ -59,7 +59,7 @@ class Cover(models.Model):
           str(int(self.id/1000))
 
     def get_status_url(self):
-        if self.marked:
+        if self.marked and not settings.MYCOMICS:
             return urlresolvers.reverse(
                 'replace_cover',
                 kwargs={'cover_id': self.id} )

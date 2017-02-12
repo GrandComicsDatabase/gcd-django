@@ -1,5 +1,6 @@
 {% extends "gcd/base_view.html" %}
 {% load url from future %}
+{% load staticfiles %}
 
 {% block title %}
 Confirm deletion of {{ object }}
@@ -7,7 +8,7 @@ Confirm deletion of {{ object }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
 {% block view_body %}

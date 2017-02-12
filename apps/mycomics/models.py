@@ -4,8 +4,8 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django.core import urlresolvers
 
-from apps.gcd.models import Issue, Language
-from apps.stddata.models import Currency, Date
+from apps.gcd.models import Issue, Series
+from apps.stddata.models import Currency, Date, Language
 from taggit.managers import TaggableManager
 
 # Create your models here.
@@ -126,6 +126,18 @@ class Collection(models.Model):
         return unicode(self.name)
 
 
+class Subscription(models.Model):
+    """Class to record the subscription of a particular series in user's
+    collection."""
+
+    class Meta:
+        db_table = 'mycomics_subscription'
+
+    collection = models.ForeignKey(Collection, related_name="subscriptions")
+    series = models.ForeignKey(Series)
+    last_pulled = models.DateTimeField()
+
+
 class Location(models.Model):
     """Class for keeping information about locations of user's collection's
     items."""
@@ -155,7 +167,8 @@ class CollectionItem(models.Model):
 
     class Meta:
         db_table = 'mycomics_collection_item'
-        ordering = ['issue__series__sort_name', 'issue__sort_code', 'id']
+        ordering = ['issue__series__sort_name', 'issue__series__year_began',
+                    'issue__sort_code', 'id']
 
     collections = models.ManyToManyField(Collection, related_name="items",
                                 db_table="mycomics_collection_item_collections")

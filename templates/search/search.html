@@ -1,15 +1,14 @@
 {% extends "gcd/base_view.html" %}
 {% load url from future %}
+{% load staticfiles %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
 {% block css %}
   <link rel="stylesheet" type="text/css"
-        href="{{ MEDIA_URL }}css/gcd/default.css"/>
+        href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 {% block view_body %}
-  <h2>Search</h2>
-
   <form method="get" action=".">
       <p>
         <label for="id_q">Search for:</label>
@@ -38,15 +37,15 @@
     {% if query and paginator.count > 0 %}
       <h1 class="item_id search_id">Search Results:
         <div class="right">Order:
-        {% if form.selected_facets|length == 1 %}
+        {% if is_model_selected %}
           {% if sort %}<a href="?{{ query }}{{ facet_page }}">Relevance</a>{% else %}Relevance{% endif %} |
           {% if 'alpha' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=alpha">Alpha</a>{% else %}Alpha{%endif %} |
           {% if 'chrono' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=chrono">Chrono</a>{% else %}Chrono{%endif %} |
           {% if 'country' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=country">Country</a>{% else %}Country{%endif %}
         {% else %}
-          {% if sort %}<a href="?{{ query }}">Relevance</a>{% else %} Relevance{% endif %} |
-          {% if 'year' not in sort %}<a href="?{{ query }}&sort=year">Year</a>{% else %}Year{% endif %} |
-          {% if 'country' not in sort %}<a href="?{{ query }}&sort=country">Country</a>{% else %}Country{%endif %}
+          {% if sort %}<a href="?{{ query }}{{ facet_page }}">Relevance</a>{% else %} Relevance{% endif %} |
+          {% if 'year' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=year">Year</a>{% else %}Year{% endif %} |
+          {% if 'country' not in sort %}<a href="?{{ query }}{{ facet_page }}&sort=country">Country</a>{% else %}Country{%endif %}
         {% endif %}
         </div>
       </h1>
@@ -65,7 +64,7 @@
       {% if facets.fields.facet_model_name %}
         <ul>
           {% for model in facets.fields.facet_model_name %}
-            <li><a href="?{{ query }}{% if request.GET.models %}&amp;models={{ request.GET.models }}{% endif %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}">{{ model.0 }}</a> ({{ model.1 }})</li>
+            <li><a href="?{{ query }}{{ facet_page }}{% if not is_model_selected %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}{% endif %}">{{ model.0 }}</a> ({{ model.1 }})</li>
           {% endfor %}
         </ul>
       {% endif %}
@@ -75,6 +74,38 @@
           <input type="submit" name="search_select" value="Submit">
           <div style="clear: both;"></div>
       {% endif %}
+      {% if paginator.count > 100 %}
+      <div style="clear: both;">
+      Too many results? Try adding further terms to limit the matches,
+      e.g. publication year or publisher. Or put search terms in ""-quotes
+      for exact matches, which also works for (exact) series name and
+      issue number.
+      </div>
+      {% endif %}
+      <div id="Container">
+      <div id="LeftSearchColumn">
+        <table class="listing left">
+          <tr>
+            <th>Country</th>
+          </tr>
+      {% for country in facets.fields.country %}
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_country_selected %}&amp;selected_facets=country_exact:{{ country.0|urlencode }}{% endif %}">{{ country.0|get_country_flag:1 }} ({{ country.1}})</a>
+          </td></tr>
+      {% endfor %}
+        </table>
+        <table class="listing left">
+          <tr>
+            <th>Language</th>
+          </tr>
+      {% for language in facets.fields.language %}
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_language_selected %}&amp;selected_facets=language_exact:{{ language.0|urlencode }}{% endif %}">{{ language.0|get_native_language_name }} ({{ language.1}})</a>
+          </td></tr>
+      {% endfor %}
+        </table>
+      </div>
+      <div id="RightSearchColumn">
       <div class="left">
         <table class="listing left">
           <tr>
@@ -170,9 +201,11 @@
         </table>
       </div>
       <div class="right">
-        {% if ADVERTISING and not BETA %}
-          {% include "gcd/bits/ad_skyscraper.html" %}
+        {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
+          {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
         {% endif %}
+      </div>
+      </div> <!-- #RightSearchColumn -->
       </div>
       {% if select_key and multiple_selects %}
       <div style="clear: both;"></div>

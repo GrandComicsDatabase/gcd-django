@@ -1,5 +1,30 @@
 from django.db import models
 
+class CountryManager(models.Manager):
+    def get_by_natural_key(self, code):
+        return self.get(code=code)
+
+class Country(models.Model):
+    class Meta:
+        ordering = ('name',)
+        verbose_name_plural = 'Countries'
+
+    objects = CountryManager()
+
+    code = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=255, db_index=True)
+
+    def natural_key(self):
+        """
+        Note that this natural key is not technically guaranteed to be unique.
+        However, it probably is and our use of the natural key concept is
+        sufficiently limited that this is acceptable.
+        """
+        return (self.code,)
+
+    def __unicode__(self):
+        return self.name
+
 class CurrencyManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
@@ -70,3 +95,36 @@ class Date(models.Model):
             return year+u'-'+month+u'-'+day
         else:
             return u''
+
+class LanguageManager(models.Manager):
+    def get_by_natural_key(self, code):
+        return self.get(code=code)
+
+class Language(models.Model):
+    class Meta:
+        ordering = ('name',)
+
+    objects = LanguageManager()
+
+    code = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=255, db_index=True)
+    native_name = models.CharField(max_length=255, blank=True)
+
+    def natural_key(self):
+        """
+        Note that this natural key is not technically guaranteed to be unique.
+        However, it probably is and our use of the natural key concept is
+        sufficiently limited that this is acceptable.
+        """
+        return (self.code,)
+
+
+    def get_native_name(self):
+        if self.native_name:
+            return self.native_name
+        else:
+            return self.name
+
+
+    def __unicode__(self):
+        return self.name

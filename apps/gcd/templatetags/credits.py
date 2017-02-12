@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import re
 try:
-   import icu
+    import icu
 except:
-   import PyICU as icu
+    import PyICU as icu
 from decimal import Decimal, InvalidOperation
 
 from django import template
@@ -13,11 +13,12 @@ from django.utils.translation import ungettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models import Issue, Country, Language, Reprint
-from apps.oi.models import ReprintRevision, GENRES
-from apps.gcd.models import StoryType, STORY_TYPES
+from apps.stddata.models import Country, Language
+from apps.oi.models import GENRES
+from apps.gcd.models import STORY_TYPES
 
 register = template.Library()
+
 
 def sc_in_brackets(reprints, bracket_begin, bracket_end, sc_pos):
     begin = reprints.find(bracket_begin)
@@ -31,6 +32,8 @@ def sc_in_brackets(reprints, bracket_begin, bracket_end, sc_pos):
     else:
         return sc_pos
 
+
+@register.filter
 def split_reprint_string(reprints):
     '''
     split the reprint string
@@ -48,6 +51,8 @@ def split_reprint_string(reprints):
     liste.append(reprints.strip())
     return liste
 
+
+@register.filter
 def show_credit(story, credit):
     """
     For showing the credits on the search results page.
@@ -62,7 +67,7 @@ def show_credit(story, credit):
 
     if credit.startswith('any:'):
         collator = icu.Collator.createInstance()
-        collator.setStrength(0) # so that umlaut/accent behave as in MySql
+        collator.setStrength(0)  # so that umlaut/accent behave as in MySql
         target = credit[4:]
         credit_string = ''
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
@@ -123,12 +128,10 @@ def show_credit(story, credit):
             if search.first() != -1:
                 formatted_credit += __format_credit(story, 'feature')
         return formatted_credit
-    elif credit == 'genre' and getattr(story, credit) and \
-      story.issue:
+    elif credit == 'genre' and getattr(story, credit) and story.issue:
         genres = story.genre.lower()
-        language = story.issue.series.language.code 
-        if language == 'en' and \
-          story.issue.series.country.code != 'us':
+        language = story.issue.series.language.code
+        if language == 'en' and story.issue.series.country.code != 'us':
             genres = genres.replace('humor', 'humour')
             genres = genres.replace('sports', 'sport')
             genres = genres.replace('math & science', 'maths & science')
@@ -146,7 +149,8 @@ def show_credit(story, credit):
                     display_genre += u'%s (%s); ' % (translation, genre)
                 else:
                     display_genre += genre + '; '
-            display_genre = display_genre.replace('(fantasy)', '(fantasy-supernatural)')
+            display_genre = display_genre.replace('(fantasy)',
+                                                  '(fantasy-supernatural)')
             story.genre = display_genre[:-2]
         return __format_credit(story, credit)
     elif hasattr(story, credit):
@@ -154,6 +158,7 @@ def show_credit(story, credit):
 
     else:
         return ""
+
 
 def __credit_visible(value):
     """
@@ -184,7 +189,7 @@ def __format_credit(story, credit):
         credit_value = __format_keywords(story.keywords)
         if credit_value == '':
             return ''
-    else: # This takes care of escaping the database entries we display
+    else:  # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
@@ -195,20 +200,30 @@ def __format_credit(story, credit):
     dd += '">'
 
     return mark_safe(
-           dt + '<span class="credit_label">' + label + '</span></dt>' + \
+           dt + '<span class="credit_label">' + label + '</span></dt>' +
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
-def __format_keywords(keywords):
+
+def __format_keywords(keywords, join_on='; '):
     if type(keywords) == unicode:
         credit_value = keywords
     else:
         credit_value = esc(
-            '; '.join(str(i) for i in keywords.all().order_by('name')))
+            join_on.join(str(i) for i in keywords.all().order_by('name')))
     return credit_value
 
+
+@register.filter
 def show_keywords(object):
     return __format_keywords(object.keywords)
 
+
+@register.filter
+def show_keywords_comma(object):
+    return __format_keywords(object.keywords, u', ')
+
+
+@register.filter
 def show_credit_status(story):
     """
     Display a set of letters indicating which of the required credit fields
@@ -251,9 +266,10 @@ def show_credit_status(story):
     return mark_safe(snippet)
 
 
+@register.filter
 def show_cover_contributor(cover_revision):
     if cover_revision.file_source:
-        if cover_revision.changeset.indexer.id == 381: # anon user
+        if cover_revision.changeset.indexer.id == 381:  # anon user
             # filter away '( email@domain.part )' for old contributions
             text = cover_revision.file_source
             bracket = text.rfind('(')
@@ -267,40 +283,36 @@ def show_cover_contributor(cover_revision):
     else:
         return cover_revision.changeset.indexer.indexer
 
+
+@register.filter
 def show_country_info(country, name=None):
     if name:
         code = country
     else:
         code = country.code
         name = country.name
-    src = u'src="%simg/gcd/flags/%s.png"' % (settings.MEDIA_URL,
+    src = u'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
                                               code.lower())
     alt = u'alt="%s"' % esc(code.upper())
     title = u'title="%s"' % esc(name)
     return mark_safe(u'%s %s %s' % (src, alt, title))
 
-def get_country_flag(country):
-    return mark_safe(u'<img %s '\
-           'class="embedded_flag">' \
-           % show_country_info(country))
+
+@register.filter
+def get_country_flag(country, given_code=False):
+    if given_code:
+        country = Country.objects.get(code=country)
+    return mark_safe(u'<img %s class="embedded_flag">'
+                     % show_country_info(country))
 
 
-# these next two are seemingly not used any more
-def show_country(series):
-    """
-    Translate country code into country name.
-    Formerly had to do real work when we did not have foreign keys.
-    """
-    return unicode(series.country)
+@register.filter
+def get_native_language_name(language_code):
+    language = Language.objects.get(code=language_code)
+    return language.get_native_name()
 
 
-def show_language(series):
-    """
-    Translate country code into country name.
-    Formerly had to do real work when we did not have foreign keys.
-    """
-    return unicode(series.language)
-
+@register.filter
 def show_page_count(story, show_page=False):
     """
     Return a properly formatted page count, with "?" as needed.
@@ -320,16 +332,20 @@ def show_page_count(story, show_page=False):
         p = p + u' ' + ungettext('page', 'pages', story.page_count)
     return p
 
+
+@register.filter
 def format_page_count(page_count):
     if page_count is not None:
         try:
-            return re.sub(r'\.?0+$', '', 
+            return re.sub(r'\.?0+$', '',
               unicode(Decimal(page_count).quantize(Decimal(10)**-3)))
         except InvalidOperation:
             return page_count
     else:
         return u''
 
+
+@register.filter
 def show_title(story):
     """
     Return a properly formatted title.
@@ -342,13 +358,14 @@ def show_title(story):
         return u'[%s]' % story.title
     return story.title
 
+
 def generate_reprint_link(issue, from_to, notes=None, li=True,
                           only_number=False):
     ''' generate reprint link to_issue'''
 
     if only_number:
         link = u', <a href="%s">%s</a>' % (issue.get_absolute_url(),
-                                           esc(issue.display_number) )
+                                           esc(issue.display_number))
     else:
         link = u'%s %s <a href="%s">%s</a>' % \
           (get_country_flag(issue.series.country), from_to,
@@ -369,17 +386,18 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
     ''' generate reprint link to story'''
     if only_number:
         link = u', <a href="%s#%d">%s</a>' % (story.issue.get_absolute_url(),
-                                    story.id, esc(story.issue.display_number) )
+                                              story.id,
+                                              esc(story.issue.display_number))
     elif story.sequence_number == 0:
         link = u'%s %s <a href="%s#%d">%s</a>' % \
           (get_country_flag(story.issue.series.country), from_to,
            story.issue.get_absolute_url(), story.id,
-           esc(story.issue.full_name()) )
+           esc(story.issue.full_name()))
     else:
         link = u'%s %s <a href="%s#%d">%s</a>' % \
           (get_country_flag(story.issue.series.country), from_to,
            story.issue.get_absolute_url(), story.id,
-           esc(story.issue.full_name(variant_name=False)) )
+           esc(story.issue.full_name(variant_name=False)))
     if story.issue.publication_date:
         link = "%s (%s)" % (link, esc(story.issue.publication_date))
     if notes:
@@ -391,6 +409,7 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
 
 # stuff to consider in the display
 # - sort domestic/foreign reprints
+
 
 def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
                            level=0, no_promo=False):
@@ -404,10 +423,12 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
             if last_series == from_reprint.origin_issue.series and \
               last_follow == follow_info and original != 'With_Story':
                 reprint += generate_reprint_link(from_reprint.origin_issue,
-                            "from ", notes=from_reprint.notes, only_number=True)
+                                                 "from ",
+                                                 notes=from_reprint.notes,
+                                                 only_number=True)
                 same_issue_cnt += 1
             else:
-                if last_follow != None:
+                if last_follow is not None:
                     if same_issue_cnt > 0:
                         last_follow = last_follow.replace('which is',
                                                           'which are', 1)
@@ -415,7 +436,8 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
                 same_issue_cnt = 0
                 last_series = from_reprint.origin_issue.series
                 reprint += generate_reprint_link(from_reprint.origin_issue,
-                            "from ", notes=from_reprint.notes)
+                                                 "from ",
+                                                 notes=from_reprint.notes)
                 if original == 'With_Story':
                     reprint += '<br>points to issue'
                 last_follow = follow_info
@@ -424,8 +446,9 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
                                               level=level+1)
             if last_series == from_reprint.origin.issue.series and \
               last_follow == follow_info and original != 'With_Story':
-                reprint += generate_reprint_link_sequence(from_reprint.origin,
-                            "from ", notes=from_reprint.notes, only_number=True)
+                reprint += generate_reprint_link_sequence(
+                             from_reprint.origin, "from ",
+                             notes=from_reprint.notes, only_number=True)
                 same_issue_cnt += 1
             else:
                 if last_follow:
@@ -436,12 +459,13 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
                 same_issue_cnt = 0
                 last_series = from_reprint.origin.issue.series
 
-                reprint += generate_reprint_link_sequence(from_reprint.origin,
-                            "from ", notes=from_reprint.notes)
+                reprint += generate_reprint_link_sequence(
+                             from_reprint.origin, "from ",
+                             notes=from_reprint.notes)
             if original == 'With_Story':
                 from apps.gcd.templatetags.display import show_story_short
                 reprint += '<br>points to sequence: %s' % \
-                  show_story_short(from_reprint.origin)
+                           show_story_short(from_reprint.origin)
             last_follow = follow_info
 
     if last_follow:
@@ -457,19 +481,21 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
             follow_info = ''
             if last_series == to_reprint.target_issue.series and \
               last_follow == follow_info and original != 'With_Story':
-                reprint += generate_reprint_link(to_reprint.target_issue,
-                            "in ", notes=to_reprint.notes, only_number=True)
+                reprint += generate_reprint_link(
+                             to_reprint.target_issue, "in ",
+                             notes=to_reprint.notes, only_number=True)
                 same_issue_cnt += 1
             else:
-                if last_follow != None:
+                if last_follow is not None:
                     if same_issue_cnt > 0:
                         last_follow = last_follow.replace('which is',
                                                           'which are', 1)
                     reprint += '</li>' + last_follow
                 same_issue_cnt = 0
                 last_series = to_reprint.target_issue.series
-                reprint += generate_reprint_link(to_reprint.target_issue,
-                            "in ", notes = to_reprint.notes)
+                reprint += generate_reprint_link(
+                             to_reprint.target_issue, "in ",
+                             notes=to_reprint.notes)
                 if original == 'With_Story':
                     reprint += '<br>points to issue'
                 last_follow = follow_info
@@ -477,27 +503,30 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
             if no_promo and to_reprint.target.type.id == STORY_TYPES['promo']:
                 pass
             else:
-                follow_info = follow_reprint_link(to_reprint, 'in', level=level+1)
+                follow_info = follow_reprint_link(to_reprint, 'in',
+                                                  level=level+1)
                 if last_series == to_reprint.target.issue.series and \
-                last_follow == follow_info and original != 'With_Story':
-                    reprint += generate_reprint_link_sequence(to_reprint.target,
-                                "in ", notes=to_reprint.notes, only_number=True)
+                  last_follow == follow_info and original != 'With_Story':
+                    reprint += generate_reprint_link_sequence(
+                                 to_reprint.target, "in ",
+                                 notes=to_reprint.notes, only_number=True)
                     same_issue_cnt += 1
                 else:
                     if last_follow:
                         if same_issue_cnt > 0:
                             last_follow = last_follow.replace('which is',
-                                                            'which are', 1)
+                                                              'which are', 1)
                         reprint += '</li>' + last_follow
                     same_issue_cnt = 0
                     last_series = to_reprint.target.issue.series
 
-                    reprint += generate_reprint_link_sequence(to_reprint.target,
-                                "in ", notes=to_reprint.notes)
+                    reprint += generate_reprint_link_sequence(
+                                 to_reprint.target, "in ",
+                                 notes=to_reprint.notes)
                 if original == 'With_Story':
                     from apps.gcd.templatetags.display import show_story_short
                     reprint += '<br>points to sequence: %s' % \
-                    show_story_short(to_reprint.origin)
+                               show_story_short(to_reprint.origin)
                 last_follow = follow_info
     if last_follow:
         if same_issue_cnt > 0:
@@ -506,49 +535,57 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], original='',
 
     return reprint
 
+
 def follow_reprint_link(reprint, direction, level=0):
-    if level > 10: # max level to avoid loops
+    if level > 10:  # max level to avoid loops
         return ''
     reprint_note = ''
-    text = False
     if direction == 'from':
-        further_reprints = list(reprint.origin.from_reprints.select_related().all())
-        further_reprints.extend(list(reprint.origin.from_issue_reprints.select_related().all()))
-        further_reprints = sorted(further_reprints, key=lambda a: a.origin_sort)
+        further_reprints = list(reprint.origin.from_reprints.select_related()
+                                .all())
+        further_reprints.extend(list(reprint.origin.from_issue_reprints
+                                            .select_related().all()))
+        further_reprints = sorted(further_reprints,
+                                  key=lambda a: a.origin_sort)
         reprint_note += generate_reprint_notes(from_reprints=further_reprints,
                                                level=level)
         if reprint.origin.reprint_notes:
             for string in split_reprint_string(reprint.origin.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('from '):
-                    text = True
                     reprint_note += '<li> ' + esc(string) + ' </li>'
     else:
-        further_reprints = list(reprint.target.to_reprints.select_related().all())
-        further_reprints.extend(list(reprint.target.to_issue_reprints.select_related().all()))
-        further_reprints = sorted(further_reprints, key=lambda a: a.target_sort)
+        further_reprints = list(reprint.target.to_reprints.select_related()
+                                                          .all())
+        further_reprints.extend(list(reprint.target.to_issue_reprints
+                                            .select_related().all()))
+        further_reprints = sorted(further_reprints,
+                                  key=lambda a: a.target_sort)
         reprint_note += generate_reprint_notes(to_reprints=further_reprints,
                                                level=level)
         if reprint.target.reprint_notes:
             for string in split_reprint_string(reprint.target.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('in '):
-                    text = True
                     reprint_note += '<li> ' + esc(string) + ' </li>'
 
     if reprint_note != '':
         reprint_note = 'which is reprinted<ul>%s</ul>' % reprint_note
     return reprint_note
 
-def show_reprints(story, original = False):
+
+@register.filter
+def show_reprints(story, original=False):
     """ Filter for our reprint line on the story level."""
 
     reprint = ""
 
     from_reprints = list(story.from_reprints.select_related().all())
-    from_reprints.extend(list(story.from_issue_reprints.select_related().all()))
+    from_reprints.extend(list(story.from_issue_reprints.select_related()
+                                                       .all()))
     from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
-    reprint = generate_reprint_notes(from_reprints=from_reprints, original=original)
+    reprint = generate_reprint_notes(from_reprints=from_reprints,
+                                     original=original)
 
     if story.type.id != STORY_TYPES['promo']:
         no_promo = True
@@ -557,15 +594,15 @@ def show_reprints(story, original = False):
     to_reprints = list(story.to_reprints.select_related().all())
     to_reprints.extend(list(story.to_issue_reprints.select_related().all()))
     to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
-    reprint += generate_reprint_notes(to_reprints=to_reprints, original=original,
-                                      no_promo=no_promo)
+    reprint += generate_reprint_notes(to_reprints=to_reprints,
+                                      original=original, no_promo=no_promo)
 
     if story.reprint_notes:
         for string in split_reprint_string(story.reprint_notes):
             string = string.strip()
             reprint += '<li> ' + esc(string) + ' </li>'
 
-    if reprint != '' or (original and not story.reprint_confirmed and \
+    if reprint != '' or (original and not story.reprint_confirmed and
                          story.migration_status.reprint_original_notes):
         label = _('Reprints') + ': '
         if original:
@@ -587,20 +624,23 @@ def show_reprints(story, original = False):
             if story.reprint_needs_inspection:
                 label += ' (migrated reprint links need inspection)'
 
-        return mark_safe('<dt class="credit_tag">' + \
-                         '<span class="credit_label">' + label + '</span></dt>' + \
-                         '<dd class="credit_def">' + \
-                         '<span class="credit_value">' + \
+        return mark_safe('<dt class="credit_tag">' +
+                         '<span class="credit_label">' + label +
+                         '</span></dt>' + '<dd class="credit_def">' +
+                         '<span class="credit_value">' +
                          '<ul>' + reprint + '</ul></span></dd>')
     else:
         return ""
 
+
+@register.filter
 def show_reprints_for_issue(issue):
     """ show reprints stored on the issue level. """
 
     reprint = ""
     from_reprints = list(issue.from_reprints.select_related().all())
-    from_reprints.extend(list(issue.from_issue_reprints.select_related().all()))
+    from_reprints.extend(list(issue.from_issue_reprints.select_related()
+                                                       .all()))
     from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
@@ -615,22 +655,8 @@ def show_reprints_for_issue(issue):
         dt = '<dt class="credit_tag>'
         dd = '<dd class="credit_def>'
 
-        return mark_safe(dt + '<span class="credit_label">' + label + '</span></dt>' + \
-               dd + '<span class="credit_value"><ul>' + reprint + '</ul></span></dd>')
+        return mark_safe(dt + '<span class="credit_label">' + label + '</span>'
+                         '</dt>' + dd + '<span class="credit_value">'
+                         '<ul>' + reprint + '</ul></span></dd>')
     else:
         return ""
-
-register.filter(show_credit)
-register.filter(show_credit_status)
-register.filter(show_country_info)
-register.filter(get_country_flag)
-register.filter(show_country)
-register.filter(show_language)
-register.filter(show_page_count)
-register.filter(format_page_count)
-register.filter(show_title)
-register.filter(show_cover_contributor)
-register.filter(show_reprints)
-register.filter(show_reprints_for_issue)
-register.filter(show_keywords)
-register.filter(split_reprint_string)

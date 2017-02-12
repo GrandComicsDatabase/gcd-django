@@ -2,6 +2,7 @@
 {% load display %}
 {% load compress %}
 {% load url from future %}
+{% load staticfiles %}
 
 {% comment %}
 Either confirm_selection and select_key can be used. 
@@ -33,8 +34,8 @@ the selected issues to your
   <tr>
     {% if select_key %}
     <th class="select_heading"><span>Selection</span>
-      <a href="#" id="select_all" class="hidden">Select all</a>
-      <a href="#" id="select_none" class="hidden">Select none</a>
+      <a href="#" id="select_all" title="use click followed by shift click to select ranges" class="hidden"><button type="button">Select all</button></a>
+      <a href="#" id="select_none" title="use click followed by shift click to select ranges" class="hidden"><button type="button">Select none</button></a>
     </th>
     {% endif %}
     <th colspan="2"> Publisher </th>
@@ -71,7 +72,7 @@ the selected issues to your
 {% include "oi/bits/jquery.html" %}
 {% compress js %}
 <script type='text/javascript'
-        src='{{ MEDIA_URL }}js/select_utils.js'></script>
+        src='{% static "js/select_utils.js" %}'></script>
 {% endcompress %}
 {% endif %}
 {% if request.user.is_authenticated and confirm_selection %}

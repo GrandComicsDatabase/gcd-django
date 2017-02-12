@@ -1,3 +1,4 @@
+{% load staticfiles %}
 <div id="plain_bar">
-    <img src="{{ MEDIA_URL }}/img/gcd_logo_icon.png" alt="GCD" style="border:0;"/><span> | {{ bar_heading }}</span>
+    <img src="{% static "img/gcd_logo_icon.png" %}" alt="GCD" style="border:0;"/><span> | {{ bar_heading }}</span>
 </div>

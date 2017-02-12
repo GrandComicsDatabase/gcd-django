@@ -16,11 +16,12 @@
 <form method="POST" action="{% url "my_issue" issue_id=issue.id %}">
   {% csrf_token %}
   <div>
+    {% comment %}TODO: figure out a how to have this translated {% endcomment %}
     <input type="submit" name="confirm_selection" value="Add">
     this issue to your 
     <select name="collection_id">
     {% for col_item in request.user.collector.ordered_collections %}
-      <option value="{{ col_item.id }}">{{ col_item.name }}
+      <option value="{{ col_item.id }}" {% if request.session.collection_id == col_item.id %}selected{% endif %}>{{ col_item.name }}
     {% endfor %}
     </select>
   </div>

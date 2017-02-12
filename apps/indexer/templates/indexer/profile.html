@@ -1,0 +1,101 @@
+{% extends "oi/base_view.html" %}
+{% load url from future %}
+{% load staticfiles %}
+
+<!--
+Account organization is messed up, leading to this template reaching over
+into the OI app as well as the GCD app for CSS and the base template.
+It should either be factored into a third app or made part of the OI,
+but there's just not enough time to rework it since this code base is supposed
+to have a limited lifespan anyway. <-(LOL 5+ years later)
+  -->
+
+{% load forms %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default.css" %}"/>
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/indexer/default.css" %}"/>
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/oi/default.css" %}"/>
+{% endblock %}
+
+{% block title %} GCD :: {{ profile_user.indexer }} :: Profile {% endblock %}
+
+{% block view_body %}
+
+{% if error_list %}
+<ul class="error_message">
+  {% for error in error_list %}
+  <li> {{ error }} </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% include 'indexer/bits/profile_limits.html' %}
+
+{% if form %}
+<form action="/accounts/profile/{{ profile_user.id|default:user.id }}/"
+      method="POST"
+      class="profile_form">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="error_message">
+    {{ form.non_field_errors }}
+  </div>
+  {% endif %}
+  <fieldset>
+    <legend>Personal Information</legend>
+    <table>
+      {{ form.email|show_form_as_row }}
+      {{ form.first_name|show_form_as_row }}
+      {{ form.last_name|show_form_as_row }}
+      {{ form.country|show_form_as_row }}
+      {{ form.languages|show_form_as_row }}
+      {{ form.interests|show_form_as_row }}
+      {{ form.from_where|show_form_as_row }}
+      {{ form.opt_in_email|show_form_as_row }}
+      {{ form.issue_detail|show_form_as_row }}
+      {{ form.notify_on_approve|show_form_as_row }}
+      {{ form.collapse_compare_view|show_form_as_row }}
+      {{ form.show_wiki_links|show_form_as_row }}
+    </table>
+  </fieldset>
+  <fieldset>
+    <legend>Change Password</legend>
+    <div class="instructions">
+      Leave all three fields blank to leave your password unchanged.
+    </div>
+    <ol>
+      {{ form.old_password|show_form }}
+      {{ form.new_password|show_form }}
+      {{ form.confirm_new_password|show_form }}
+    </ol>
+  </fieldset>
+  <p>
+    <input type="submit" value="Save"></td>
+  </p>
+</form>
+{% else %}
+  {% include 'indexer/bits/profile_display.html' %}
+
+  {% if profile_user == user %}
+<form action="{% url "edit_profile" user_id=profile_user.id %}" method="GET"
+      class="profile_form">
+  <input type="submit" value="Edit Profile">
+</form>
+  {% endif %}
+
+{% endif %}
+
+{% if profile_user.ongoing_reservations.count %}
+<h3> Ongoing Reservations </h3>
+<ul>
+  {% for ongoing in profile_user.ongoing_reservations.all %}
+  <li> <a href="{{ ongoing.series.get_absolute_url }}">{{ ongoing.series }}</a>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% endblock %}

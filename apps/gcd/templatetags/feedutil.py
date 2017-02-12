@@ -49,8 +49,10 @@ def parse_comments(fb_comments):
 def pull_feed(feed_url, posts_to_show=None, cache_expires=None):
     if not hasattr(settings, 'FB_API_ACCESS_TOKEN'):
         return []
-    if posts_to_show is None: posts_to_show = FEEDUTIL_NUM_POSTS
-    if cache_expires is None: cache_expires = FEEDUTIL_CACHE_MIN
+    if posts_to_show is None:
+        posts_to_show = FEEDUTIL_NUM_POSTS
+    if cache_expires is None:
+        cache_expires = FEEDUTIL_CACHE_MIN
     cachename = 'feed_cache_' + template.defaultfilters.slugify(feed_url)
     posts = []
     data = None
@@ -59,23 +61,31 @@ def pull_feed(feed_url, posts_to_show=None, cache_expires=None):
     if data is None:
         # load feed
         try:
-            graph = facebook.GraphAPI(access_token=settings.FB_API_ACCESS_TOKEN)
+            graph = facebook.GraphAPI(
+              access_token=settings.FB_API_ACCESS_TOKEN, version='2.7')
+            # we need to fetch more than posts_to_show posts since
+            # non-birthday posts are filtered out
             json_posts = graph.request('/GrandComicsDatabase/posts',
-              args={'fields': 'full_picture, link, message', 'limit': 10})
+              args={'fields': 'full_picture, link, message, application',
+                    'limit': 4*posts_to_show})
             entries = json_posts.items()[1][1]
             if posts_to_show > 0 and len(entries) > posts_to_show:
-               entries = entries[:posts_to_show]
-            posts = [ {
+                entries = entries[:4*posts_to_show]
+            posts = [{
                 'author': 'Grand Comics Database',
-                'mail_body': urlquote(entry['message']),
-                'mail_subject': urlquote('From the %s' % settings.SITE_NAME),
                 'summary_html': summarize_html(entry['message']),
                 'content': linebreaksbr(urlizetrunc(entry['message'], 75)),
                 'url': entry['link'],
                 'picture': entry['full_picture'],
-                'published': entry['created_time'], }
+                'published': entry['created_time'],
+                'application': entry['application']}
               for entry in entries if all (k in entry for k in ('message',
-                                                             'full_picture')) ]
+                                           'full_picture', 'application')) ]
+            # only use posts coming via hootsuite
+            for post in reversed(posts):
+                if post['application']['name'] != 'Hootsuite':
+                    posts.remove(post)
+            posts = posts[:posts_to_show]
         except:
             if settings.DEBUG:
                 raise
@@ -107,7 +117,7 @@ def feed(context, feed_url, posts_to_show=None, cache_expires=None):
     """
     return {
       'posts': pull_feed(feed_url, posts_to_show, cache_expires),
-      'MEDIA_URL': context['MEDIA_URL'] }
+    }
 
 class GetFeedNode(template.Node):
     def __init__(self, var_name, feed_url, posts_to_show=None,

@@ -1,5 +1,6 @@
 {% extends "voting/base_view.html" %}
 {% load url from future %}
+{% load staticfiles %}
 
 {% load display %}
 {% load voting %}
@@ -9,7 +10,7 @@
 {% block css %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default/queues.css"/>
+      href="{% static "css/oi/default/queues.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -27,6 +28,8 @@
 {% endfor %}
     </ul>
   </dd>
+  <dt>Voting Period:</dt>
+  <dd>{{ topic.created|date:"Y-m-d" }} - {{ topic.deadline|date:"Y-m-d" }}</dd>
   <dt>Text:</dt>
   <dd>{{ topic.text|default:'[no text]'|linebreaksbr }}</dd>
 </dl>

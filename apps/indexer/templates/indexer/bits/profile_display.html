@@ -1,0 +1,34 @@
+{% load accounts %}
+
+<ul>
+  <li> First Name: {{ profile_user.first_name }}<br/>
+  <li> Last Name: {{ profile_user.last_name }}
+{% if user|can_view_profile_details:profile_user %}
+  <li> Email: <a href="mailto:{{ profile_user.email }}">{{ profile_user.email }}</a>
+  <li> Opt in for emails: {{ profile_user.indexer.opt_in_email|yesno }} {{ profile_user.issue_detail }}
+  <li> Issue details: {% if profile_user.indexer.issue_detail == 0 %} core view {% elif profile_user.indexer.issue_detail == 1 %} editorial content {% else %} all content {% endif %}
+  <li> Receive approval emails: {{ profile_user.indexer.notify_on_approve|yesno }}
+  <li> Collapse compare view by default: {{ profile_user.indexer.collapse_compare_view|yesno }}
+  <li> Show links to the wiki documentation: {{ profile_user.indexer.show_wiki_links|yesno }}
+{% endif %}
+  <li> Country: <img src="{{ STATIC_URL }}/img/gcd/flags/{{ profile_user.indexer.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
+       {{ profile_user.indexer.country }} <br>
+  <li> Languages:
+    {% with profile_user.indexer.languages.all as languages %}
+      {% if languages.count %}
+        <ul>
+          {% for language in languages %}
+            <li> {{ language }}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  <li> Groups:
+    <ul>
+      {% for group in profile_user.groups.all %}
+        <li> {{ group }}
+      {% endfor %}
+    </ul>
+  <li>
+</ul>
+

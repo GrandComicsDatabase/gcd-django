@@ -3,7 +3,9 @@ from re import match
 from decimal import Decimal, InvalidOperation
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from apps.gcd.models import Country, Language, Indexer, StoryType, OLD_TYPES
+from apps.stddata.models import Country, Language
+from apps.indexer.models import Indexer
+from apps.gcd.models import StoryType, OLD_TYPES
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],
@@ -154,8 +156,8 @@ class AdvancedSearch(forms.Form):
                                         required=False)
     issue_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
       widget=forms.Select(choices=((None, ""),
-                                   (True, "From"),
-                                   (False, "In"))))
+                                   (True, "has issue level sources"),
+                                   (False, "has issue level targets"))))
 
     cover_needed = forms.BooleanField(label="Cover is Needed",
                                        required=False)
@@ -201,10 +203,11 @@ class AdvancedSearch(forms.Form):
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
-    story_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
-      widget=forms.Select(choices=((None, ""),
-                                   (True, "From"),
-                                   (False, "In"))))
+    story_reprinted = forms.ChoiceField(label="Reprinted", required=False,
+      choices=[('', ""),
+               ('from', "is a linked reprint"),
+               ('in', "has linked reprints"),
+               ('not', "is not a linked reprint")])
 
     notes = forms.CharField(label='Notes', required=False)
 

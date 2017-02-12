@@ -23,6 +23,10 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
+from apps.stddata.models import Country, Language
+from apps.stats.models import CountStats
+
+from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
                             IndiciaPublisher, Brand, BrandGroup, CountStats, \
                             Country, Language, Indexer, IndexCredit, Cover, \
@@ -524,11 +528,11 @@ def change_history(request, model_name, id):
                           'creator_award', 'creator_artinfluence','creator_noncomicwork']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
-            return render_to_response('gcd/error.html', {
+            return render_to_response('indexer/error.html', {
               'error_text': 'There is no change history for this type of object.'},
               context_instance=RequestContext(request))
-    if model_name == 'cover' and not request.user.has_perm('gcd.can_vote'):
-        return render_to_response('gcd/error.html', {
+    if model_name == 'cover' and not request.user.has_perm('indexer.can_vote'):
+        return render_to_response('indexer/error.html', {
           'error_text': 'Only members can access the change history for covers.'},
           context_instance=RequestContext(request))
 
@@ -923,7 +927,7 @@ def daily_changes(request, show_date=None):
       context_instance=RequestContext(request)
     )
 
-def on_sale_weekly(request, year=None, week=None):
+def do_on_sale_weekly(request, year=None, week=None):
     """
     Produce a page displaying the comics on-sale in a given week.
     """
@@ -935,7 +939,7 @@ def on_sale_weekly(request, year=None, week=None):
             return HttpResponseRedirect(
                 urlresolvers.reverse(
                 'on_sale_weekly',
-                kwargs={'year': year, 'week': week} ))
+                kwargs={'year': year, 'week': week} )), None
         if year:
             year = int(year)
         if week:
@@ -985,8 +989,16 @@ def on_sale_weekly(request, year=None, week=None):
         'next_week': next_week,
         'query_string': urlencode(query_val),
     }
+    return issues_on_sale, vars
 
-    return paginate_response(request, issues_on_sale, 'gcd/status/issues_on_sale.html', vars)
+
+def on_sale_weekly(request, year=None, week=None):
+    issues_on_sale, vars = do_on_sale_weekly(request, year, week)
+    if vars == None:
+        return issues_on_sale
+    return paginate_response(request, issues_on_sale,
+                             'gcd/status/issues_on_sale.html', vars)
+
 
 def int_stats_language(request):
     """
@@ -1358,7 +1370,7 @@ def countries_in_use(request):
                                   {'countries' : used_countries },
                                   context_instance=RequestContext(request))
     else:
-        return render_to_response('gcd/error.html', {
+        return render_to_response('indexer/error.html', {
           'error_text' : 'You are not allowed to access this page.',
           },
           context_instance=RequestContext(request))
@@ -1392,7 +1404,7 @@ def agenda(request, language):
     css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
       len('<link type="text/css" rel="stylesheet" href="')
     css_pos_end = a[css_pos:].find('">') + css_pos
-    a = a[:css_pos]  + settings.MEDIA_URL + \
+    a = a[:css_pos]  + settings.STATIC_URL + \
       'calendar/css/c9ff6efaf72bf95e3e2b53938d3fbacaembedcompiled_fastui.css' \
       + a[css_pos_end:]
     return HttpResponse(a)

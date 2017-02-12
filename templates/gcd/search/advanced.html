@@ -1,6 +1,7 @@
 {% extends "gcd/base.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load forms %}
 {% load compress %}
 
@@ -8,9 +9,9 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css">
+      href="{% static "css/gcd/default.css" %}">
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default/advanced_search.css">
+      href="{% static "css/gcd/default/advanced_search.css" %}">
 {% endblock %}
 
 {% block body %}
@@ -26,7 +27,7 @@ override of SelectFilter does not seem to work
 {% endcomment %}
 {% compress js %}
 <script type='text/javascript'
-        src='{{ MEDIA_URL }}admin/js/jquery.min.js'></script>
+        src='{% static "admin/js/jquery.min.js" %}'></script>
 {% endcompress %}
 <script type='text/javascript'>
 <!--- overriding SelectFilter function for small windows --->

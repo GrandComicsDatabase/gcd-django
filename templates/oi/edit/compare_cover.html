@@ -1,6 +1,7 @@
 {% extends "oi/base_view.html" %}
 
 {% load url from future %}
+{% load staticfiles %}
 {% load credits %}
 {% load editing %}
 
@@ -10,13 +11,13 @@ Reviewing :: {{ revision }}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default.css"/>
+      href="{% static "css/oi/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+      href="{% static "css/oi/default/edit.css" %}"/>
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/oi/default/cover.css"/>
+      href="{% static "css/oi/default/cover.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -70,7 +71,7 @@ Reviewing :: {{ revision }}
   <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
 {% if cover_width %}
   <div>The full cover file has a width of {{ cover_width }} pixels.</div>
-  {% if perms.gcd.can_vote and revision.created > settings.NEW_SITE_COVER_CREATION_DATE and not settings.BETA %}
+  {% if perms.indexer.can_vote and revision.created > settings.NEW_SITE_COVER_CREATION_DATE and not settings.BETA %}
 <a href="{{ revision.approved_file }}">full uploaded cover</a>
   {% endif %}
 {% endif %}

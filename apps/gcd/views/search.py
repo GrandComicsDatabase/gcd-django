@@ -4,7 +4,7 @@ View methods related to displaying search and search results pages.
 """
 
 from re import *
-from urllib import urlopen, quote, urlencode
+from urllib import urlopen, urlencode
 from decimal import Decimal
 from string import capitalize
 from haystack.backends import SQ
@@ -24,13 +24,17 @@ from django.utils.http import urlquote
 from haystack.query import SearchQuerySet
 from apps.gcd.views.search_haystack import GcdNameQuery
 
+from apps.stddata.models import Country, Language
+
+from apps.indexer.models import Indexer
+from apps.indexer.views import ViewTerminationError, render_error
+
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             Country, Language, Indexer, BrandGroup, Brand, \
                             IndiciaPublisher, STORY_TYPES,Creator, Membership,\
                             Award, ArtInfluence, NonComicWork,CreatorNameDetails
 from apps.gcd.models.issue import INDEXED
-from apps.gcd.views import ViewTerminationError, paginate_response, \
-                           ORDER_ALPHA, ORDER_CHRONO, render_error
+from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
                                   COUNT_RANGE_REGEXP
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, IS_NONE
@@ -257,7 +261,6 @@ def generic_by_name(request, name, q_obj, sort,
              'plural_suffix': plural_suffix,
              'heading': heading,
              'search_term': name,
-             'media_url': settings.MEDIA_URL,
              'query_string': urlencode(query_val),
              'change_order': change_order,
              'which_credit': credit,
@@ -591,8 +594,16 @@ def search(request):
     else:
         sort = ORDER_ALPHA
 
-    if request.GET['type'].startswith("haystack"):
+    if request.GET['type'].find("haystack") >= 0:
         quoted_query = urlquote(request.GET['query'])
+
+    if request.GET['type'] == "mycomics_haystack":
+        if sort == ORDER_CHRONO:
+            return HttpResponseRedirect(urlresolvers.reverse("mycomics_search") + \
+            "?q=%s&sort=year" % quoted_query)
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse("mycomics_search") + \
+            "?q=%s" % quoted_query)
 
     if request.GET['type'] == "haystack":
         if sort == ORDER_CHRONO:
@@ -648,7 +659,7 @@ def search(request):
     elif object_type == 'job_number':
         param_type = 'number'
 
-    param_type_value = quote(request.GET['query'].strip().encode('utf-8'))
+    param_type_value = request.GET['query'].strip().encode('utf-8')
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
                            kwargs={param_type: param_type_value,
@@ -1426,14 +1437,16 @@ def search_stories(data, op):
         q_objs.append(Q(**{ '%sediting__%s' % (prefix, op):
                             data['story_editing'] }))
 
-    if data['story_reprinted'] is not None:
-        if data['story_reprinted'] == True:
+    if data['story_reprinted'] != '':
+        if data['story_reprinted'] == 'from':
             q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: False }) | \
                    Q(**{ '%sfrom_issue_reprints__isnull' % prefix: False }))
-        else:
+        elif data['story_reprinted'] == 'in':
             q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
                    Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
-
+        elif data['story_reprinted'] == 'not':
+            q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: True }) & \
+                   Q(**{ '%sfrom_issue_reprints__isnull' % prefix: True }))
     try:
         if data['pages'] is not None and data['pages'] != '':
             range_match = match(PAGE_RANGE_REGEXP, data['pages'])

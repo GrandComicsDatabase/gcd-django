@@ -28,19 +28,36 @@ ALLOWED_HOSTS = [
 
 # absolute path to the directory that holds templates.
 TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
-                  abspath(join(dirname(__file__), 'apps', 'voting', 'templates')),)
+                  abspath(join(dirname(__file__),
+                               'apps', 'indexer', 'templates')),
+                  abspath(join(dirname(__file__),
+                               'apps', 'stats', 'templates')),
+                  abspath(join(dirname(__file__),
+                               'apps', 'voting', 'templates')),)
 
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
-MEDIA_URL = '/site_media/'
+MEDIA_URL = '/media/'
 
-# We're not using django.contrib.staticfiles yet, but the admin site
-# is happier with a STATIC_URL and django-compressor has changed from
-# defaulting to MEDIA_* to STATIC_* for its settings.
-# for its settings.
-STATIC_URL = MEDIA_URL
-STATIC_ROOT = MEDIA_ROOT
+# URL and absolute path to static file tree.
+STATIC_URL = '/static/'
+STATIC_ROOT = abspath(join(dirname(__file__), 'static_root'))
+
+# Additional dirs from which to collect static files.
+# Must not contain STATIC_ROOT, which is the destination.
+STATICFILES_DIRS = (abspath(join(dirname(__file__), 'static')),)
+
+# THe first two are the defaults, which need to be listed because
+# we also need the django-compressor finder to be specified.
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+)
+
+# Set up for translations.
+LOCALE_PATHS = [abspath(join(dirname(__file__), 'locale'))]
 
 # Database settings. Override yours in a settings_local.py
 DATABASES = {
@@ -66,7 +83,7 @@ MIDDLEWARE_CLASSES = (
    'django_mobile.middleware.MobileDetectionMiddleware',
    'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
-   'apps.gcd.ErrorHandlingMiddleware'
+   'apps.middleware.errorhandling.ErrorHandlingMiddleware'
 )
 
 LANGUAGES = (
@@ -92,8 +109,12 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.sites',
     'django.contrib.messages',
+    'django.contrib.staticfiles',
     'django_mobile',
+    'apps.indexer',
     'apps.gcd',
+    'apps.stats',
+    'apps.legacy',
     'apps.oi',
     'apps.voting',
     'apps.stddata',
@@ -102,7 +123,6 @@ INSTALLED_APPS = (
     'templatesadmin',
     'taggit',
     'imagekit',
-    'south',
     'haystack',
     'elasticstack',
     'bootstrap3',
@@ -131,9 +151,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'apps.gcd.context_processors.gcd',
 )
 
-AUTH_PROFILE_MODULE = 'gcd.Indexer'
 AUTHENTICATION_BACKENDS = (
-    'apps.gcd.backends.EmailBackend',
+    'apps.indexer.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -175,6 +194,11 @@ TIME_ZONE = 'UTC'
 # International DateTime string format
 DATETIME_FORMAT = 'Y-m-d H:i:s'
 
+# Even though we are using pytest-django and don't use a Django test runner,
+# Django 1.7 and 1.8 will emit warnings every time manage.py is run unless
+# this line is here.  The false positive warning is removed in Django 1.9.
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
 #################################################################################
 # 3rd-party app settings
 #################################################################################
@@ -182,15 +206,10 @@ DATETIME_FORMAT = 'Y-m-d H:i:s'
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
                         'compressor.filters.csstidy.CSSTidyFilter']
 
-# for front page editing
+# for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
-                                'templates/gcd/front_page/')),]
+                                       'templates/managed_content/')),]
 TEMPLATESADMIN_GROUP = 'prteam'
-
-# settings for django-taggit
-SOUTH_MIGRATION_MODULES = {
-    'taggit': 'taggit.south_migration',
-}
 
 #################################################################################
 # Haystack and search
@@ -231,6 +250,10 @@ USE_ELASTICSEARCH = False
 # Debugging and development environment settings
 BETA = False
 
+# Requires the gcd-managed-content repo to be checked out under
+# templates/managed_content
+USE_TEMPLATESADMIN = False
+
 ADVERTISING = True
 CALENDAR = True
 
@@ -247,6 +270,8 @@ NO_OI = False
 
 ###
 # General GCD site settings
+
+FRONT_PAGE_LANGUAGES = ('en', 'de', 'nl', 'sv')
 
 DEFAULT_FROM_EMAIL = 'GCD Contact <contact@comics.org>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
@@ -268,6 +293,9 @@ RESERVE_MAX_DEFAULT = 12 # full year of a monthly
 RESERVE_MAX_ONGOING_INITIAL = 0
 RESERVE_MAX_ONGOING_PROBATION = 2
 RESERVE_MAX_ONGOING_DEFAULT = 4
+RESERVE_NON_ISSUE_DAYS = 7
+RESERVE_ISSUE_WEEKS = 3
+RESERVE_ISSUE_INITIAL_WEEKS = 6
 
 MEMBERSHIP_IMPS = 4000
 
@@ -314,8 +342,8 @@ MYCOMICS = False
 
 # Twitter Bootstrap
 BOOTSTRAP3 = {
-    'jquery_url': MEDIA_URL+'jquery/js/jquery.min.js',
-    'base_url': MEDIA_URL+'bootstrap/',
+    'jquery_url': STATIC_URL + 'jquery/js/jquery.min.js',
+    'base_url': STATIC_URL + 'bootstrap/',
     }
 
 # absolute path to the directory that holds election files.
@@ -343,8 +371,9 @@ try:
 except ImportError, exp:
     pass
 try:
-    import more_settings
-    more_settings.modify(globals())
+    import settings_local
+    if hasattr(settings_local, '_modify'):
+        settings_local._modify(globals())
 except ImportError:
     pass
 

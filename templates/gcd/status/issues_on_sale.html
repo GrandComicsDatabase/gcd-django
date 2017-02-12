@@ -1,5 +1,6 @@
 {% extends "gcd/base.html" %}
 {% load url from future %}
+{% load staticfiles %}
 
 {% block title %}
   GCD :: {{ heading }}
@@ -7,7 +8,7 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+      href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
 {% block body %}
@@ -33,6 +34,17 @@
 </div>
 <div id="search_reminder">
 You can filter the list using the <a href="{% url "apps.gcd.views.search.advanced_search" %}?{{ query_string }}">advanced search</a>.
+</div>
+<div class="right">
+  {% if MYCOMICS %}
+  <div class="www_comics_cross_link">
+    <a href="http://www.comics.org{{ request.path }}">Weekly on-sale list at www.comics.org</a>
+  </div>
+  {% else %}
+  <div class="my_comics_cross_link">
+    <a href="http://my.comics.org{{ request.path }}">Weekly on-sale list at my.comics.org</a>
+  </div>
+  {% endif %}
 </div>
 
   {% include "gcd/bits/issue_list.html" %}

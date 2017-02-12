@@ -21,7 +21,7 @@
 {% endif %}
 
 {% if changeset.state == states.PENDING %}
-  {% if perms.gcd.can_approve %}
+  {% if perms.indexer.can_approve %}
     {% if user != changeset.indexer %}
   <input type="submit" name="assign"
       {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and not is_cover %}

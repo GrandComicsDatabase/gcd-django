@@ -1,6 +1,6 @@
 # GCD Web Application
 
-This file last updated: *May 2015*
+This file last updated: *February 2017*
 
 This is the current implementation of the Grand Comics Database, hosted at
 http://www.comics.org/ (production) and http://beta.comics.org/ (public beta
@@ -27,9 +27,10 @@ necessarily up to date.  As of May 2015 they should work.
 
 Our primary collaboration space is the
 [gcd-tech](http://groups.google.com/group/gcd-tech/) mailing list.
-Partially due to GitHub pull requests and reviews not working well with mailing
-lists, we use a Review Board installation at http://reviews.comics.org/ for
-discussing code changes.
+Partially due to GitHub pull requests and reviews not working for us in code 
+review, we used a Review Board installation at http://reviews.comics.org/ for
+discussing code changes for a long time. We now use the inbetween improved 
+GitHub code review system.
 
 Pull requests are welcome, but you might want to poke the mailing list if
 no one seems to be paying attention.
@@ -41,38 +42,23 @@ no one seems to be paying attention.
 This is (generally) the production deployment.  For the most part, work
 should not be done here directly.
 
-Contact: [jochengcd](https://github.com/jochengcd)
+Contact: gcd-tech-team
 via [gcd-tech](http://groups.google.com/group/gcd-tech/)
 
-### `devel`
+### `beta`
 
 This is the general-purpose development branch.  It is often deployed to
 [the beta site](http://beta.comics.org/), and most work should be done here.
-Special-purpose development branches are based from `devel` unless otherwise
+Special-purpose development branches are based from `beta` unless otherwise
 noted.
 
-Contact: [jochengcd](https://github.com/jochengcd)
+Contact: gcd-tech-team
 via [gcd-tech](http://groups.google.com/group/gcd-tech/)
 
-### `mycomics`
+### `experimental`
 
-The `mycomics` branch is where the forthcoming http://my.comics.org/
-collection management site is being added to the system.  It is sometimes
-deployed to [the beta site](http://beta.comics.org/)
-
-`mycomics` predates regular use of the `devel` branch so it is based off of
-`master`, which is merged to `mycomics` periodically.
-
-Contact: [wkarpeta](https://github.com/wkarpeta)
-via [gcd-tech](http://groups.google.com/group/gcd-tech/)
-
-### `django18`
-
-This branch is for work to migrate the system from Django 1.4 to 1.8, in
-several stages.  While this is moving from one LTS release of Django to the
-next, it is our intention to keep up with each Django major release as much
-as possible going forwards.  This will `merge` to devel once we are caught up.
-Hopefully before Django 1.9 comes out.
+This branch is for experimental work to refactor the system in
+several stages.  
 
 There will probably be some modernization and code clean-up along the way.
 
@@ -93,6 +79,10 @@ via [gcd-tech](http://groups.google.com/group/gcd-tech/)
 ### Closed branches
 The `newsearch` branch is dead- it was used to add Elasticsearch to the system.
 
+The `mycomics` branch is dead - it was used to collection management to the site.
+
+The `django-17` branch is dead - it was used to upgrade to django 1.7.
+
 ## History of the Code
 
 This version of the GCD web application was initially written in Python using
@@ -106,16 +96,8 @@ of modernization and cleanup of the code.
 
 ## Reporting or Examining Bugs
 
-Bugs and feature requests are currently tracked in
-[Bugzilla](http://dev.comics.org/bugs/), from before we were using GitHub.
-We don't currently use GitHub's issue tracking system.
-
-    * Bugs in the NEW state are available for work.
-    * Bugs in the ASSIGNED state are being worked on.
-
-Be sure to "Accept" a bug to put it in the ASSIGNED state
-before you start working on it.  Unlike in many Bugzilla installations,
-"Accept"ing a bug will automatically reassign it to you.
+Bugs and feature requests are currently recorded in GitHub's issue tracking system. We previously
+used an instance of Bugzilla but all bugs/requests from that system have been moved to GitHub. 
 
 If you are unfamiliar with the code, please contact the
 [gcd-tech](http://groups.google.com/group/gcd-tech/) list before starting

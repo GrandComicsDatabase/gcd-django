@@ -1,14 +1,15 @@
 {% extends "gcd/base.html" %}
 {% load url from future %}
+{% load staticfiles %}
 
 {% block title %}
 Select front cover for {{ issue }}
 {% endblock %}
 
 {% block css %}
-  <link rel='stylesheet' href='{{ MEDIA_URL }}css/gcd/default.css' type='text/css'>
-  <link rel='stylesheet' href='{{ MEDIA_URL }}css/oi/default/cover.css' type='text/css'>
-  <link rel='stylesheet' href='{{ MEDIA_URL }}jquery/css/jquery.Jcrop.css' type='text/css'>
+  <link rel='stylesheet' href='{% static "css/gcd/default.css" %}' type='text/css'>
+  <link rel='stylesheet' href='{% static "css/oi/default/cover.css" %}' type='text/css'>
+  <link rel='stylesheet' href='{% static "jquery/css/jquery.Jcrop.css" %}' type='text/css'>
 {% endblock %}
 
 {% block body %}
