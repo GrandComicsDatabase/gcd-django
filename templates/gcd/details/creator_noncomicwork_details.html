@@ -1,0 +1,108 @@
+{% extends "gcd/base_view.html" %}
+{% load url from future %}
+{% load i18n %}
+
+{% block title %}
+  GCD :: Creator NonComicWork :: {{ creator_noncomicwork.publication_title }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+{% endblock %}
+
+{% block view_body %}
+ {% include "gcd/bits/creator_header.html" %}
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+      <dl class="pub_data">
+{#{% if indicia_publisher.is_surrogate %}#}
+{#        <dt> Surrogate:#}
+{#        <dd> This company was a surrogate for {{ indicia_publisher.parent }}, meaning that it #}
+{#             published material on behalf of {{ indicia_publisher.parent }} but was not#}
+{#             directly associated with it.#}
+{#{% endif %}#}
+        <dt> Publication Title:
+        <dd> {{ creator_noncomicwork.publication_title }}
+        <dt> Work Type:
+        <dd> {{ creator_noncomicwork.work_type }}
+        <dt> Employer Name:
+        <dd> {{ creator_noncomicwork.employer_name }}
+        <dt> Work Title:
+        <dd> {{ creator_noncomicwork.work_title }}
+        <dt> Work Role:
+        <dd> {{ creator_noncomicwork.work_role }}
+        <dt> Work Notes:
+        <dd> {{ creator_noncomicwork.work_notes }}
+
+{% if creator_noncomicwork.work_source %}
+        <dt> Work Sources:
+        {% for source in creator_noncomicwork.work_source.all %}
+        <dd> {{ source.type }}
+        {% endfor %}
+{% endif %}
+
+          <!--Creator's Degree-->
+          {% if creator_noncomicwork.cr_noncomicworkyears.all %}
+              <hr>
+              {% for workyear_obj in creator_noncomicwork.cr_noncomicworkyears.all %}
+                  <h4>Work Year Details: {{ forloop.counter }}</h4>
+                  <p><strong>Year</strong> : {{ workyear_obj.work_year }}</p>
+                  <p><strong>Year uncertain</strong>
+                      : {{ workyear_obj.work_year_uncertain }}</p>
+              {% endfor %}
+          {% elif creator_noncomicwork.noncomicworkyears.all %}
+              <hr>
+              {% for workyear_obj in creator_noncomicwork.noncomicworkyears.all %}
+                  <h4>Work Year Details: {{ forloop.counter }}</h4>
+                  <p><strong>Year</strong> : {{ workyear_obj.work_year }}</p>
+                  <p><strong>Year uncertain</strong>
+                      : {{ workyear_obj.work_year_uncertain }}</p>
+              {% endfor %}
+          {% endif %}
+
+          {% if creator_noncomicwork.cr_noncomicworklinks.all %}
+              <hr>
+              {% for worklink_obj in creator_noncomicwork.cr_noncomicworklinks.all %}
+                  <h4>Links: {{ forloop.counter }}</h4>
+                  <p><strong>Link</strong> : {{ worklink_obj.link }}</p>
+              {% endfor %}
+          {% elif creator_noncomicwork.noncomicworklinks.all %}
+              <hr>
+              {% for worklink_obj in creator_noncomicwork.noncomicworklinks.all %}
+                  <h4>Links: {{ forloop.counter }}</h4>
+                  <p><strong>Link</strong> : {{ worklink_obj.link }}</p>
+              {% endfor %}
+          {% endif %}
+      </dl>
+    </div> <!-- control_center -->
+  {% if not preview or creator_noncomicwork.source %}
+    <div id="control_rail">
+      <div class="edit_box">
+        <div class="edit_header">Editing</div>
+  {% if not preview %}
+    {% with creator_noncomicwork as object %}
+    {% with 'creator_noncomicwork' as object_class %}
+    {% with 'creator_noncomicwork' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+
+  {% endif %} <!-- not preview -->
+      </div> <!-- edit_box -->
+      <div class="change_history">
+  {% if preview %}
+        <a href="{% url "change_history" model_name='creator_noncomicwork' id=creator_noncomicwork.source.id %}">Change History</a>
+  {% else %}
+        <a href="{% url "change_history" model_name='creator_noncomicwork' id=creator_noncomicwork.id %}">Change History</a>
+  {% endif %}
+      </div>
+        </div> <!-- control_rail -->
+{% endif %}
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+
+
+{% endblock %}

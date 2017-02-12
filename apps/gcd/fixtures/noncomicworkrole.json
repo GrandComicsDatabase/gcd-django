@@ -1,0 +1,79 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Owner"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Employee"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Art Director"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Artist"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Editor"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Animator"
+        }
+    },
+    {
+        "pk": 7,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Writer"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Set Designer"
+        }
+    },
+    {
+        "pk": 9,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Actor"
+        }
+    },
+    {
+        "pk": 10,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Voice Actor"
+        }
+    },
+    {
+        "pk": 11,
+        "model": "gcd.noncomicworkrole",
+        "fields": {
+            "role_name": "Assistant"
+        }
+    }
+]

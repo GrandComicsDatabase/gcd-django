@@ -14,6 +14,7 @@ from apps.oi import states
 from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
+from apps.gcd.models.creator import Creator, Membership, Award, ArtInfluence, NonComicWork
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, \
                                       Publisher
 from apps.gcd.models.series import Series
@@ -292,6 +293,17 @@ def changed_fields(changeset, object):
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
+    elif object_class is Creator:
+        revision = changeset.creatorrevisions.all().get(creator=object.id)
+
+    elif object_class is Membership:
+        revision = changeset.creatormembershiprevisions.all().get(creator_membership=object.id)
+    elif object_class is Award:
+        revision = changeset.creatorawardrevisions.all().get(creator_award=object.id)
+    elif object_class is ArtInfluence:
+        revision = changeset.creatorartinfluencerevisions.all().get(creator_artinfluence=object.id)
+    elif object_class is NonComicWork:
+        revision = changeset.creatornoncomicworkrevisions.all().get(creator_noncomicwork=object.id)
     elif object_class in [Cover, Image]:
         return ""
 
@@ -369,6 +381,8 @@ def field_name(field):
         return u'Indicia Publisher Not Printed'
     elif field == 'title_inferred':
         return u'Unofficial Title?'
+    elif field == 'cr_creator_names':
+        return u'Creator Names'
     else:
         return title(field.replace('_', ' '))
 

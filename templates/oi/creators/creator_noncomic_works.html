@@ -1,0 +1,115 @@
+{% extends "oi/base_view.html" %}
+{% load url from future %}
+
+{% block title %}
+    Adding Creator Non Comic Work
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/gcd/default.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/oi/default/edit.css"/>
+{% endblock %}
+
+{% block view_body %}
+    {% include "oi/bits/multi_selector.html" %}
+    <div class="edit">
+        <form action='' method="post">
+            <input type="hidden" name="total_workyears" value="0" id="total_workyears">
+            <input type="hidden" name="total_worklinks" value="0" id="total_worklinks">
+            {% csrf_token %}
+            <!-- Creator's Non comic work table -->
+            <h1>Adding Creator Non Comic Work</h1>
+            <table class="editing">
+                {% for field in noncomicwork_form %}
+                <tr>
+                    <th>
+                        <label>{{ field.label|capfirst }}</label>
+                    </th>
+                    <td>
+                        {{ field.errors.as_ul }}
+                        {{field}}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <h4 style="display:inline;">Add Work Years:-</h4>
+            &nbsp;&nbsp;&nbsp;<input type="button" id="add_workyears"
+                                     class="add_workyear_class"
+                                     value="Add Work Years"><br>
+
+            <div class="workyear-div">
+            </div>
+            <br>
+
+            <h4 style="display:inline;">Add Work Links:-</h4>
+            &nbsp;&nbsp;&nbsp;<input type="button" id="add_worklinks"
+                                     class="add_worklink_class"
+                                     value="Add Work Links"><br>
+
+            <div class="worklink-div">
+            </div>
+            <br>
+
+            <input type="submit" value="Submit">
+           <a href="{% url 'show_creators' creator_id %}"><input type="button" name="cancel" value="Cancel"></a>
+        </form>
+    </div>
+
+    <script src="{{ MEDIA_URL }}jquery/js/jquery.min.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            {# Add Work Years #}
+            $(document).on("click", ".add_workyear_class", function () {
+                var total_workyears = parseInt($('#total_workyears').val());
+                var next_index = total_workyears + 1;
+                $('.workyear-div').append(
+                        '<div class="workyear-details" style="padding-left: 236px;display: inline;">' +
+                        '<label>Year:</label>' +
+                        '<input type="text" id="work_year' + next_index + '" name="work_year' + next_index + '" required>&nbsp;&nbsp;' +
+                        '<label>Work Year Uncertain:</label>' +
+                        '<input type="checkbox" id="work_year_uncertain' + next_index + '" name="work_year_uncertain' + next_index + '" style="">&nbsp;&nbsp;' +
+                        '<input type="button" id="add_workyear_divison_id" class="add_workyear_class" value="Add New" name="add_new_workyear">&nbsp;&nbsp;' +
+                        '<input type="button" id="remove_workyear_button" value="Remove" name="remove_this_workyear">' +
+                        '<br><br>' +
+                        '</div>');
+
+                $('#total_workyears').val(next_index);
+                $('#add_workyears').hide();
+            });
+
+            {# Add Work Links #}
+            $(document).on("click", ".add_worklink_class", function () {
+                var total_worklinks = parseInt($('#total_worklinks').val());
+                var next_index = total_worklinks + 1;
+                $('.worklink-div').append(
+                        '<div class="worklink-details" style="padding-left: 236px;display: inline;">' +
+                        '<label>Link:</label>' +
+                        '<input type="url" id="work_link' + next_index + '" name="work_link' + next_index + '" required>&nbsp;&nbsp;' +
+                        '<input type="button" id="add_worklink_divison_id" class="add_worklink_class" value="Add New" name="add_new_worklink">&nbsp;&nbsp;' +
+                        '<input type="button" id="remove_worklink_button" value="Remove" name="remove_this_worklink">' +
+                        '<br><br>' +
+                        '</div>');
+
+                $('#total_worklinks').val(next_index);
+                $('#add_worklinks').hide();
+
+            });
+            $(document).on("click", '#remove_workyear_button', function () {
+                $(this).closest('div').remove();
+                if ($.trim($('.workyear-div').html()).length == 0) {
+                    $('#add_workyears').show();
+                }
+            });
+            $(document).on("click", '#remove_worklink_button', function () {
+                $(this).closest('div').remove();
+                if ($.trim($('.worklink-div').html()).length == 0) {
+                    $('#add_worklinks').show();
+                }
+            });
+        });
+
+    </script>
+{% endblock %}

@@ -81,6 +81,12 @@ class Image(models.Model):
             return urlresolvers.reverse(
                 'show_brand',
                 kwargs={'brand_id': self.object.id } )
+
+        elif self.content_type == content_models.ContentType.objects\
+                                                .get(name='Creator'):
+            return urlresolvers.reverse(
+                'show_creators',
+                kwargs={'creators_id': self.object.id } )
         else:
             return ''
 

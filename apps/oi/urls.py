@@ -21,6 +21,19 @@ urlpatterns = patterns('',
     url(r'^mentoring/$', oi_views.mentoring,
         name='mentoring'),
 
+    # Creator URLs
+
+    url(r'^creators/add/$',
+     'apps.oi.views.add_creator', name='add_creator'),
+    url(r'^creators/(?P<creator_id>\d+)/membership/add/$',
+     'apps.oi.views.add_creator_membership', name='add_creator_membership'),
+    url(r'^creators/(?P<creator_id>\d+)/award/add/$',
+     'apps.oi.views.add_creator_award', name='add_creator_award'),
+    url(r'^creators/(?P<creator_id>\d+)/influence/add/$',
+     'apps.oi.views.add_creator_artinfluence', name='add_creator_artinfluence'),
+    url(r'^creators/(?P<creator_id>\d+)/non_comic_work/add/$',
+     'apps.oi.views.add_creator_noncomicwork', name='add_creator_non_comic_work'),
+
     # Publisher URLs
     url(r'^publisher/add/$',
         oi_views.add_publisher,
@@ -137,9 +150,11 @@ urlpatterns = patterns('',
         name='confirm_reprint_migration'),
 
     # Image URLs
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', oi_covers.upload_image,
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$',
+        oi_covers.upload_image,
         name='upload_image'),
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$', oi_covers.replace_image,
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$',
+        oi_covers.replace_image,
         name='replace_image'),
     url(r'^mark_image_revision/(?P<revision_id>.+)/$', oi_covers.mark_image,
       {'marked': True}, name='mark_image_revision'),

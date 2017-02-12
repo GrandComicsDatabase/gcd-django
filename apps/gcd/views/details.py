@@ -28,8 +28,9 @@ from apps.stats.models import CountStats
 
 from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
-                            IndiciaPublisher, Brand, BrandGroup, \
-                            Cover, SeriesBond
+                            IndiciaPublisher, Brand, BrandGroup, CountStats, \
+                            Country, Language, Indexer, IndexCredit, Cover, \
+                            SeriesBond, Membership, Award, ArtInfluence, NonComicWork
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -41,7 +42,8 @@ from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
-                           SeriesBondRevision, CTYPES
+                           SeriesBondRevision,CreatorRevision, CTYPES
+from apps.gcd.models.creator import Creator
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -53,6 +55,99 @@ COVER_TABLE_WIDTH = 5
 
 IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
+
+
+def creator(request, creators_id):
+    creator = get_object_or_404(Creator, id=creators_id)
+
+    if creator.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creators', 'id': creators_id}))
+
+    return show_creator(request, creator)
+
+def creator_membership(request, creator_membership_id):
+    creator_membership = get_object_or_404(Membership, id=creator_membership_id)
+    if creator_membership.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+            kwargs={'model_name': 'creator_membership',
+                    'id': creator_membership_id}))
+
+    return show_creator_membership(request, creator_membership)
+
+def creator_award(request, creator_award_id):
+    creator_award = get_object_or_404(Award, id=creator_award_id)
+    if creator_award.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creator_award', 'id': creator_award_id}))
+
+    return show_creator_award(request, creator_award)
+
+def creator_artinfluence(request, creator_artinfluence_id):
+    creator_artinfluence = get_object_or_404(ArtInfluence,
+                                             id=creator_artinfluence_id)
+    if creator_artinfluence.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creator_artinfluence',
+                  'id': creator_artinfluence_id}))
+
+    return show_creator_artinfluence(request, creator_artinfluence)
+
+def creator_noncomicwork(request, creator_noncomicwork_id):
+    creator_noncomicwork = get_object_or_404(NonComicWork,
+                                             id=creator_noncomicwork_id)
+    if creator_noncomicwork.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'creator_noncomicwork',
+                  'id': creator_noncomicwork_id}))
+
+    return show_creator_noncomicwork(request, creator_noncomicwork)
+
+def show_creator(request, creator, preview=False):
+    creator_series = []
+    vars = {'creator': creator,
+            'current': [],
+            'error_subject': creator,
+            'preview': preview}
+
+    return paginate_response(request, creator_series,
+                             'gcd/details/creator.html', vars)
+
+def show_creator_membership(request, creator_membership, preview=False):
+    creator_membership_series = []
+    vars = {'creator_membership': creator_membership,
+            'current': [],
+            'error_subject': creator_membership,
+            'preview': preview}
+    return paginate_response(request, creator_membership_series,
+                            'gcd/details/creator_membership_details.html', vars)
+
+def show_creator_award(request, creator_award, preview=False):
+    creator_award_series = []
+    vars = {'creator_award': creator_award,
+            'current': [],
+            'error_subject': creator_award,
+            'preview': preview}
+    return paginate_response(request, creator_award_series,
+                                 'gcd/details/creator_award_details.html', vars)
+
+def show_creator_artinfluence(request, creator_artinfluence, preview=False):
+    creator_artinfluence_series = []
+    vars = {'creator_artinfluence': creator_artinfluence,
+            'current': [],
+            'error_subject': creator_artinfluence,
+            'preview': preview}
+    return paginate_response(request, creator_artinfluence_series,
+                        'gcd/details/creator_artinfluence_details.html', vars)
+
+def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
+    creator_noncomicwork_series = []
+    vars = {'creator_noncomicwork': creator_noncomicwork,
+            'current': [],
+            'error_subject': creator_noncomicwork,
+            'preview': preview}
+    return paginate_response(request, creator_noncomicwork_series,
+                        'gcd/details/creator_noncomicwork_details.html', vars)
 
 def publisher(request, publisher_id):
     """
@@ -72,7 +167,7 @@ def show_publisher(request, publisher, preview=False):
                                                     is_current=True),
              'error_subject': publisher,
              'preview': preview}
-    
+
     return paginate_response(request, publisher_series,
                              'gcd/details/publisher.html', vars)
     
@@ -329,7 +424,12 @@ def series_details(request, series_id, by_date=False):
     issues_left_over = []
     bad_key_dates = []
     if by_date:
-        no_key_date_q = Q(key_date__isnull=True) | Q(key_date='')
+        no_key_date_q = Q(key_date__isnull=True
+
+
+
+
+) | Q(key_date='')
         with_key_dates = series.active_issues().exclude(no_key_date_q)
 
         prev_year = None
@@ -421,9 +521,11 @@ def change_history(request, model_name, id):
     Displays the change history of the given object of the type
     specified by model_name.
     """
+    from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
-                          'image', 'series_bond']:
+                          'image', 'series_bond', 'creators', 'creator_membership',
+                          'creator_award', 'creator_artinfluence','creator_noncomicwork']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('indexer/error.html', {
@@ -441,14 +543,18 @@ def change_history(request, model_name, id):
     if model_name == 'imprint':
         object = get_object_or_404(Publisher, id=id, is_master=False)
         filter_string = 'publisherrevisions__publisher'
+
     else:
-        # can't import up top because of circular dependency
-        from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
         object = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
 
         # filter is publisherrevisions__publisher, seriesrevisions__series, etc.
         filter_string = '%ss__%s' % (REVISION_CLASSES[model_name].__name__.lower(),
                                      model_name)
+
+        # to remove last character 's' from filter string for creators only
+        if model_name == 'creators':
+            filter_string = filter_string[:-1]
+
     kwargs = { str(filter_string): object, 'state': states.APPROVED }
     changesets = Changeset.objects.filter(**kwargs).order_by('-modified', '-id')
 

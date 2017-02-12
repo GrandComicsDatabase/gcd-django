@@ -54,10 +54,28 @@ GCD :: {{ user.indexer }} :: Approved Changes
         {% if changeset.change_type == CTYPES.issue_bulk %}
     <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue bulk changes</a></td>
         {% else %}
-    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue variant add (with base)</a></td>
+        {% if changeset.change_type == CTYPES.creators %}
+            <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
+        {% elif changeset.change_type == CTYPES.creator_membership %}
+            <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
+        {% elif changeset.change_type == CTYPES.creator_award %}
+            <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
+        {% elif changeset.change_type == CTYPES.creator_artinfluence %}
+            <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
+        {% elif changeset.change_type == CTYPES.creator_noncomicwork %}
+            <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
+        {% else %}
+            <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue variant add (with base)</a></td>
+        {% endif %}
         {% endif %}
       {% endif %}
-    <td>{{ changeset }}</td>
+    <td>
+        {% if changeset.change_type == CTYPES.creators or changeset.change_type == CTYPES.creator_membership or changeset.change_type == CTYPES.creator_award or changeset.change_type == CTYPES.creator_artinfluence or changeset.change_type == CTYPES.creator_noncomicwork %}
+            <a href="{{ changeset.inline_revision.source.get_absolute_url }}">{{ changeset }}</a>
+        {% else %}
+            {{ changeset }}
+        {% endif %}
+    </td>
     {% endif %}
 {% endif %}
     <td>{{ changeset.approver.indexer|absolute_url }}</td>
