@@ -103,7 +103,7 @@
   <li>{{ reprint }}
       {% if not story_revision.deleted %}
     <form class="story_button" method="GET"
-            action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id reprint_note=reprint %}">
+            action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id reprint_note=reprint|urlencode %}">
         <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
                value="Add reprint">
     </form>

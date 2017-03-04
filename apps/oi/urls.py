@@ -193,7 +193,7 @@ urlpatterns = patterns('',
     url(r'^reprint/revision/(?P<id>\d+)/$',
       oi_views.edit_reprint, name='edit_reprint'),
 
-    url(r'^story/revision/(?P<story_id>\d+)/add_reprint/(?P<changeset_id>\d+)/reprint_note/(?P<reprint_note>.+)/$',
+    url(r'^story/revision/(?P<story_id>\d+)/add_reprint/(?P<changeset_id>\d+)/reprint_note/(?P<reprint_note>.+|)/$',
       oi_views.add_reprint, name='add_story_reprint'),
     url(r'^story/revision/(?P<story_id>\d+)/add_reprint/(?P<changeset_id>\d+)/$',
       oi_views.add_reprint, name='add_story_reprint'),
