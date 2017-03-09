@@ -177,7 +177,7 @@ def publisher_monthly_covers(request,
     return paginate_response(request, covers,
       'gcd/details/publisher_monthly_covers.html', vars,
       per_page=50,
-      callback_key='tags', callback=lambda page: get_image_tags_per_page(page))
+      callback_key='tags', callback=get_image_tags_per_page)
 
     
 def indicia_publisher(request, indicia_publisher_id):
