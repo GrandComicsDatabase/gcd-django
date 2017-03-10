@@ -27,12 +27,14 @@ from apps.indexer.views import ViewTerminationError, render_error
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
-    Series, SeriesBond, Story, StoryType, Creator, Membership, Award, NameType, SourceType, School, Degree, RelationType,
-    ArtInfluence, NonComicWork, CreatorSchoolDetail, CreatorDegreeDetail)
+    Series, SeriesBond, Story, StoryType, Creator, Membership, Award,
+    NameType, SourceType, School, Degree, RelationType, ArtInfluence,
+    NonComicWork, CreatorSchoolDetail, CreatorDegreeDetail)
 from apps.gcd.views import paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
-    show_brand_group, show_brand, show_series, show_issue, show_creator,\
-    show_creator_membership,show_creator_award, show_creator_artinfluence, show_creator_noncomicwork
+    show_brand_group, show_brand, show_series, show_issue, show_creator, \
+    show_creator_membership, show_creator_award, show_creator_artinfluence, \
+    show_creator_noncomicwork
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -45,9 +47,10 @@ from apps.oi.models import (
     CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, OngoingReservation, CTYPES, get_issue_field_list,
-    set_series_first_last, CreatorRevision, CreatorNameDetailsRevision, CreatorMembershipRevision,
-    CreatorAwardRevision, CreatorArtInfluenceRevision, 
-    CreatorNonComicWorkRevision, CreatorSchoolDetailRevision, CreatorDegreeDetailRevision)
+    set_series_first_last, CreatorRevision, CreatorNameDetailsRevision,
+    CreatorMembershipRevision, CreatorAwardRevision,
+    CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
+    CreatorSchoolDetailRevision, CreatorDegreeDetailRevision)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -58,9 +61,9 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_revision_form,
                            get_series_revision_form,
                            get_story_revision_form,
-                           OngoingReservationForm, 
+                           OngoingReservationForm,
                            CreatorRevisionForm,
-                           CreatorArtInfluenceRevisionForm, 
+                           CreatorArtInfluenceRevisionForm,
                            CreatorMembershipRevisionForm,
                            CreatorAwardRevisionForm,
                            CreatorNonComicWorkRevisionForm)
@@ -112,7 +115,7 @@ DISPLAY_CLASSES = {
     'creators': Creator,
     'schools': CreatorSchoolDetail,
     'degrees': CreatorDegreeDetail,
-    'creator_membership':Membership,
+    'creator_membership': Membership,
     'creator_award': Award,
     'creator_artinfluence': ArtInfluence,
     'creator_noncomicwork': NonComicWork,
