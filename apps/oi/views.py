@@ -9,7 +9,8 @@ from urllib import unquote
 
 from django.core import urlresolvers
 from django.conf import settings
-from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404, render
 from django.db import transaction

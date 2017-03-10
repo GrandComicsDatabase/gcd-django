@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import calendar
 import itertools
 import operator
 import re
+import calendar
 import os
 import glob
 from stdnum import isbn
@@ -6273,7 +6273,7 @@ class NameRelationRevision(Revision):
 
     class Meta:
         db_table = 'oi_namerelation_revision'
-        ordering = ['created', '-id']
+        ordering = ('gcd_official_name', 'rel_type', 'to_name')
         verbose_name_plural = 'Name Relation Revisions'
 
     objects = NameRelationRevisionManager()
