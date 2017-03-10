@@ -23,6 +23,9 @@ from .story import get_story_revision_form, get_reprint_revision_form
 from .image import get_cover_revision_form
 from .image import (    # noqa
     UploadScanForm, UploadVariantScanForm, GatefoldScanForm, UploadImageForm)
+from .creator import (    # noqa
+    CreatorRevisionForm, CreatorArtInfluenceRevisionForm, CreatorMembershipRevisionForm,
+    CreatorAwardRevisionForm, CreatorNonComicWorkRevisionForm)
 
 
 def get_revision_form(revision=None, model_name=None, **kwargs):

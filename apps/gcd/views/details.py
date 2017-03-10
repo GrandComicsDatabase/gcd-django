@@ -28,8 +28,7 @@ from apps.stats.models import CountStats
 
 from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
-                            IndiciaPublisher, Brand, BrandGroup, CountStats, \
-                            Country, Language, Indexer, IndexCredit, Cover, \
+                            IndiciaPublisher, Brand, BrandGroup, Cover, \
                             SeriesBond, Membership, Award, ArtInfluence, NonComicWork
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO

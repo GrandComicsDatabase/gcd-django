@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from apps.gcd.models import StoryType, SeriesBondType
 
+from apps.gcd.models.creator import *
 
 class StoryTypeAdmin(admin.ModelAdmin):
     list_display = ('sort_code', 'name')
@@ -27,12 +28,8 @@ class CreatorDegreeDetailInline(admin.TabularInline):
 class CreatorAdmin(admin.ModelAdmin):
     inlines = [CreatorSchoolDetailInline, CreatorDegreeDetailInline]
 
-admin.site.register(Country, CountryAdmin)
-admin.site.register(Language, LanguageAdmin)
 admin.site.register(StoryType, StoryTypeAdmin)
 admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
-admin.site.register(Indexer, IndexerAdmin)
-admin.site.register(ImpGrant, ImpGrantAdmin)
 
 #register creator models to admin panel
 admin.site.register(NameType)
@@ -68,4 +65,3 @@ admin.site.register(NonComicWorkYear)
 admin.site.register(NonComicWorkLink)
 admin.site.register(CreatorSchoolDetail)
 admin.site.register(CreatorDegreeDetail)
-admin.site.register(Publisher)

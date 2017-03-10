@@ -7,7 +7,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 
 from apps.gcd.models import Image
-from apps.gcd.models.country import Country
+from apps.stddata.models import Country
 from apps.oi import states
 from django.contrib.contenttypes import generic
 
@@ -188,7 +188,7 @@ class Creator(models.Model):
                                                related_name='deathcitysource',
                                                through='DeathCitySource',
                                                null=True, blank=True)
-    portrait = generic.GenericRelation(Image, related_name='creator_portrait')
+    portrait = generic.GenericRelation(Image)
     portrait_source = models.ManyToManyField(SourceType,
                                              related_name='portraitsource',
                                              through='PortraitSource',
@@ -204,16 +204,13 @@ class Creator(models.Model):
     bio_source = models.ManyToManyField(SourceType, related_name='biosource',
                                         through='BioSource', null=True,
                                         blank=True)
-    sample_scan = generic.GenericRelation(Image,
-                                          related_name='creator_sample_scan')
+    sample_scan = generic.GenericRelation(Image)
     notes = models.TextField(blank=True, null=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateTimeField(auto_now_add=True,
-                                   default=datetime.datetime.now())
-    modified = models.DateTimeField(auto_now=True,
-                                    default=datetime.datetime.now())
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
 
@@ -727,10 +724,8 @@ class ArtInfluence(models.Model):
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateTimeField(auto_now_add=True,
-                                   default=datetime.datetime.now())
-    modified = models.DateTimeField(auto_now=True,
-                                    default=datetime.datetime.now())
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
 
@@ -787,10 +782,8 @@ class Membership(models.Model):
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateTimeField(auto_now_add=True,
-                                   default=datetime.datetime.now())
-    modified = models.DateTimeField(auto_now=True,
-                                    default=datetime.datetime.now())
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
 
@@ -826,10 +819,8 @@ class Award(models.Model):
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateTimeField(auto_now_add=True,
-                                   default=datetime.datetime.now())
-    modified = models.DateTimeField(auto_now=True,
-                                    default=datetime.datetime.now())
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
 
@@ -897,10 +888,8 @@ class NonComicWork(models.Model):
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateTimeField(auto_now_add=True,
-                                   default=datetime.datetime.now())
-    modified = models.DateTimeField(auto_now=True,
-                                    default=datetime.datetime.now())
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
 
