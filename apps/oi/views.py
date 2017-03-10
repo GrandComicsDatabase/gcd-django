@@ -457,10 +457,6 @@ def edit(request, id):
     form = None
     revision = None
 
-    # TODO workaround for ImageRevision, which do hang in render_to_response
-    if changeset.change_type == CTYPES['image']:
-        return compare(request, id)
-
     # TODO set inline flag for these creator changes
     if changeset.inline() or changeset.change_type == CTYPES['creators']\
             or changeset.change_type == CTYPES['creator_membership'] \

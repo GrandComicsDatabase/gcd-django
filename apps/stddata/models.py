@@ -108,6 +108,7 @@ class Language(models.Model):
 
     code = models.CharField(max_length=10, unique=True)
     name = models.CharField(max_length=255, db_index=True)
+    native_name = models.CharField(max_length=255, blank=True)
 
     def natural_key(self):
         """
@@ -116,6 +117,14 @@ class Language(models.Model):
         sufficiently limited that this is acceptable.
         """
         return (self.code,)
+
+
+    def get_native_name(self):
+        if self.native_name:
+            return self.native_name
+        else:
+            return self.name
+
 
     def __unicode__(self):
         return self.name

@@ -926,7 +926,7 @@ def daily_changes(request, show_date=None):
       context_instance=RequestContext(request)
     )
 
-def on_sale_weekly(request, year=None, week=None):
+def do_on_sale_weekly(request, year=None, week=None):
     """
     Produce a page displaying the comics on-sale in a given week.
     """
@@ -938,7 +938,7 @@ def on_sale_weekly(request, year=None, week=None):
             return HttpResponseRedirect(
                 urlresolvers.reverse(
                 'on_sale_weekly',
-                kwargs={'year': year, 'week': week} ))
+                kwargs={'year': year, 'week': week} )), None
         if year:
             year = int(year)
         if week:
@@ -988,8 +988,16 @@ def on_sale_weekly(request, year=None, week=None):
         'next_week': next_week,
         'query_string': urlencode(query_val),
     }
+    return issues_on_sale, vars
 
-    return paginate_response(request, issues_on_sale, 'gcd/status/issues_on_sale.html', vars)
+
+def on_sale_weekly(request, year=None, week=None):
+    issues_on_sale, vars = do_on_sale_weekly(request, year, week)
+    if vars == None:
+        return issues_on_sale
+    return paginate_response(request, issues_on_sale,
+                             'gcd/status/issues_on_sale.html', vars)
+
 
 def int_stats_language(request):
     """
@@ -1392,10 +1400,13 @@ def agenda(request, language):
     # js_pos_end = a[js_pos:].find('"></script>') + js_pos
     #a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
 
-    css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
-      len('<link type="text/css" rel="stylesheet" href="')
+    css_text = '<link type="text/css" rel="stylesheet" href="'
+    css_pos = a.find(css_text) + len(css_text)
     css_pos_end = a[css_pos:].find('">') + css_pos
     a = a[:css_pos]  + settings.STATIC_URL + \
       'calendar/css/c9ff6efaf72bf95e3e2b53938d3fbacaembedcompiled_fastui.css' \
       + a[css_pos_end:]
+    javascript_text = '<script type="text/javascript" src="'
+    javascript_pos = a.find(javascript_text) + len(javascript_text)
+    a = a[:javascript_pos] + '//www.google.com' + a[javascript_pos:]
     return HttpResponse(a)
