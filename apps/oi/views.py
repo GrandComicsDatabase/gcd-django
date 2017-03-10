@@ -5,6 +5,7 @@ import re
 import sys
 import glob
 import PIL.Image as pyImage
+from urllib import unquote
 
 from django.core import urlresolvers
 from django.conf import settings
@@ -3424,7 +3425,7 @@ def add_reprint(request, changeset_id,
                                   changeset__id=changeset_id)
     if reprint_note:
         publisher, series, year, number, volume = \
-            parse_reprint(reprint_note)
+            parse_reprint(unquote(reprint_note).split(';')[0])
         initial = { 'series': series, 'publisher': publisher,
                     'year': year, 'number': number }
     else:
