@@ -15,13 +15,11 @@ EARLIEST_DATA_DATE = datetime.datetime(2004,9,1,0,0)
 COMMENT_TEXT = """This change history was migrated from the old site."""
 COMMENT_TEXT_FOR_ADD = """
 This is the oldest change we have for this object, so it shows as the addition.
-However, it may just be the state of the object at the time when the data was
-first imported into the old site circa %s.
+However, it may just be the state of the object at the time when the data was first imported into the old site circa %s.
 """ % settings.OLD_SITE_CREATION_DATE
 COMMENT_TEXT_FOR_ADD_LATER = """
 This is the oldest change we have for this object, so it shows as the addition.
-If was added sometime after %s, and is likely close in time to the next change
-with an actual date. 
+It was added sometime after %s, and is likely close in time to the next change with an actual date.
 """  % EARLIEST_DATA_DATE
 
 class MigratoryTable(models.Model):
