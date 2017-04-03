@@ -28,11 +28,14 @@ from apps.indexer.views import ViewTerminationError, render_error
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
-    Series, SeriesBond, Story, StoryType)
+    Series, SeriesBond, Story, StoryType, Creator, Membership, Award,
+    NameType, SourceType, School, Degree, RelationType, ArtInfluence,
+    NonComicWork, CreatorSchoolDetail, CreatorDegreeDetail)
 from apps.gcd.views import paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
-    show_brand_group, show_brand, show_series, show_issue, show_creator,\
-    show_creator_membership,show_creator_award, show_creator_artinfluence, show_creator_noncomicwork
+    show_brand_group, show_brand, show_series, show_issue, show_creator, \
+    show_creator_membership, show_creator_award, show_creator_artinfluence, \
+    show_creator_noncomicwork
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -45,7 +48,10 @@ from apps.oi.models import (
     CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, OngoingReservation, CTYPES, get_issue_field_list,
-    set_series_first_last)
+    set_series_first_last, CreatorRevision, CreatorNameDetailsRevision,
+    CreatorMembershipRevision, CreatorAwardRevision,
+    CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
+    CreatorSchoolDetailRevision, CreatorDegreeDetailRevision)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -56,7 +62,12 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_revision_form,
                            get_series_revision_form,
                            get_story_revision_form,
-                           OngoingReservationForm)
+                           OngoingReservationForm,
+                           CreatorRevisionForm,
+                           CreatorArtInfluenceRevisionForm,
+                           CreatorMembershipRevisionForm,
+                           CreatorAwardRevisionForm,
+                           CreatorNonComicWorkRevisionForm)
 
 from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
@@ -105,7 +116,7 @@ DISPLAY_CLASSES = {
     'creators': Creator,
     'schools': CreatorSchoolDetail,
     'degrees': CreatorDegreeDetail,
-    'creator_membership':Membership,
+    'creator_membership': Membership,
     'creator_award': Award,
     'creator_artinfluence': ArtInfluence,
     'creator_noncomicwork': NonComicWork,
@@ -450,6 +461,8 @@ def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     form = None
     revision = None
+
+    # TODO set inline flag for these creator changes
     if changeset.inline() or changeset.change_type == CTYPES['creators']\
             or changeset.change_type == CTYPES['creator_membership'] \
             or changeset.change_type == CTYPES['creator_award']\
@@ -464,6 +477,7 @@ def edit(request, id):
     return _display_edit_form(request, changeset, form, revision)
 
 def _display_edit_form(request, changeset, form, revision=None):
+    # TODO set inline flag for these creator changes
     if revision is None or changeset.inline() or changeset.change_type == CTYPES['creators'] \
             or changeset.change_type == CTYPES['creator_membership']\
             or changeset.change_type == CTYPES['creator_award']\
@@ -4926,78 +4940,6 @@ def mentoring(request):
         'my_mentees': my_mentees,
         'mentees': mentees,
         'max_show_new': max_show_new
-      },
-      context_instance=RequestContext(request))
-
-
-##############################################################################
-# Downloads
-##############################################################################
-
-@login_required
-def download(request):
-
-    if request.method == 'POST':
-        form = DownloadForm(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-
-            # Note that the submit input is never present in the cleaned data.
-            file = settings.MYSQL_DUMP
-            if ('postgres' in request.POST):
-                file = settings.POSTGRES_DUMP
-            path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR, file)
-
-            delta = settings.DOWNLOAD_DELTA
-            recently = datetime.now() - timedelta(minutes=delta)
-            if Download.objects.filter(user=request.user,
-                                       description__contains=file,
-                                       timestamp__gt=recently).count():
-                return render_error(request,
-                  ("You have started a download of this file within the last %d "
-                   "minutes.  Please check your download window.  If you need to "
-                   "start a new download, please wait at least %d minutes in "
-                   "order to avoid consuming excess bandwidth.") % (delta, delta))
-
-            desc = {'file': file, 'accepted license': True}
-            if 'purpose' in cd and cd['purpose']:
-                desc['purpose'] = cd['purpose']
-            if 'usage' in cd and cd['usage']:
-                desc['usage'] = cd['usage']
-
-            record = Download(user=request.user, description=repr(desc))
-            record.save()
-
-            response = FileResponse(open(path, 'rb'), mimetype='application/zip')
-            response['Content-Disposition'] = 'attachment; filename=current.zip'
-            return response
-    else:
-        form = DownloadForm()
-
-    m_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
-                          settings.MYSQL_DUMP)
-    p_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
-                          settings.POSTGRES_DUMP)
-
-    # Use a list of tuples because we want the MySQL dump (our primary format)
-    # to be first.
-    timestamps = []
-    for dump_info in (('MySQL', m_path), ('PostgreSQL-compatible', p_path)):
-        try:
-            timestamps.append(
-              (dump_info[0],
-               datetime.utcfromtimestamp(os.stat(dump_info[1])[stat.ST_MTIME])))
-        except OSError, ose:
-            if ose.errno == errno.ENOENT:
-                timestamps.append((dump_info[0], 'never'))
-            else:
-                raise
-
-    return oi_render_to_response('oi/download.html',
-      {
-        'method': request.method,
-        'timestamps': timestamps,
-        'form': form,
       },
       context_instance=RequestContext(request))
 

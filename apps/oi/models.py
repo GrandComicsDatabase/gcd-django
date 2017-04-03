@@ -32,6 +32,8 @@ from apps.gcd.models import (
     Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
     SeriesPublicationType, SeriesBondType, StoryType, ImageType)
 
+from apps.gcd.models.creator import *
+
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 
 from apps.legacy.models import Reservation, MigrationStoryStatus
@@ -653,7 +655,6 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['image']:
             return (self.imagerevisions.all(),)
 
-<<<<<<< HEAD
         if self.change_type == CTYPES['creators']:
             return (self.creatorrevisions.all(),)
 
@@ -669,11 +670,8 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['creator_noncomicwork']:
             return (self.creatornoncomicworkrevisions.all(),)
 
-    def _revisions(self):
-=======
     @property
     def revisions(self):
->>>>>>> d7734a2699d5131e04fefefbca34db7e5e6576e7
         """
         Fake up an iterable (not actually a list) of all revisions,
         in canonical order.
@@ -741,26 +739,22 @@ class Changeset(models.Model):
         Used for conditionals in templates, as bulk issue adds and edits as
         well as deletes cannot be edited after submission.
         """
-<<<<<<< HEAD
-        return (self.inline() or self.change_type in [CTYPES['issue'],
-            CTYPES['variant_add'], CTYPES['two_issues'], CTYPES['series_bond'], CTYPES['creators'], CTYPES['creator_membership'], \
-            CTYPES['creator_award'], CTYPES['creator_artinfluence'],CTYPES['creator_noncomicwork']]
-            or (self.change_type == CTYPES['issue_add'] \
-            and self.issuerevisions.count() == 1)) \
-          and not self.deleted()
-=======
         return (
             self.inline() or
             self.change_type in [CTYPES['issue'],
                                  CTYPES['variant_add'],
                                  CTYPES['two_issues'],
-                                 CTYPES['series_bond']] or
+                                 CTYPES['series_bond'],
+                                 CTYPES['creators'], 
+                                 CTYPES['creator_membership'], 
+                                 CTYPES['creator_award'], 
+                                 CTYPES['creator_artinfluence'],
+                                 CTYPES['creator_noncomicwork']] or
             (
                 self.change_type == CTYPES['issue_add'] and
                 self.issuerevisions.count() == 1
             )
         ) and not self.deleted()
->>>>>>> d7734a2699d5131e04fefefbca34db7e5e6576e7
 
     def ordered_issue_revisions(self):
         """
@@ -1344,18 +1338,11 @@ class Revision(models.Model):
                 .order_by('-modified', '-id')
             if prev_revs.count() > 0:
                 self._prev_rev = prev_revs[0]
-<<<<<<< HEAD
-        elif type(self) == IssueRevision: # only checked for adds
-            if self.variant_of: # for variant adds compare against base issue
-                self._prev_rev = self.variant_of.revisions\
-                    .filter(changeset__state=states.APPROVED).latest('modified')
-=======
         elif type(self) == IssueRevision:  # only checked for adds
             if self.variant_of:  # for variant adds compare against base issue
                 self._prev_rev = self.variant_of.revisions \
                     .filter(changeset__state=states.APPROVED) \
                     .latest('modified')
->>>>>>> d7734a2699d5131e04fefefbca34db7e5e6576e7
         return self._prev_rev
 
     def posterior(self):
@@ -5475,7 +5462,7 @@ class ImageRevisionManager(RevisionManager):
 class ImageRevision(Revision):
     class Meta:
         db_table = 'oi_image_revision'
-        ordering = ['created']
+        ordering = ['created', '-id']
 
     objects = ImageRevisionManager()
 
@@ -5734,7 +5721,7 @@ class CreatorRevisionManager(RevisionManager):
 class CreatorRevision(Revision):
     class Meta:
         db_table = 'oi_creator_revision'
-        ordering = ['created']
+        ordering = ['created', '-id']
 
     objects = CreatorRevisionManager()
 
@@ -5789,7 +5776,7 @@ class CreatorRevision(Revision):
                                                blank=True)
     whos_who = models.URLField(blank=True, null=True)
     birth_country = models.ForeignKey(
-            'gcd.Country',
+            'stddata.Country',
             related_name='cr_birth_country',
             blank=True,
             null=True)
@@ -5813,7 +5800,7 @@ class CreatorRevision(Revision):
                                                through='BirthCitySourceRevision',
                                                null=True,
                                                blank=True)
-    death_country = models.ForeignKey('gcd.Country',
+    death_country = models.ForeignKey('stddata.Country',
                                       related_name='cr_death_country',
                                       blank=True,
                                       null=True)
@@ -5976,10 +5963,10 @@ class CreatorRevision(Revision):
     def description(self):
         return '%s' % unicode(self.gcd_official_name)
 
-    def _source(self):
+    def _get_source(self):
         return self.creator
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creators'
 
     def _imps_for(self, field_name):
@@ -6350,8 +6337,8 @@ class CreatorNameDetailsRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
+        db_table = 'oi_creator_name_details_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Creator Name Detail Revisions'
 
     objects = CreatorNameDetailsRevisionManager()
@@ -6372,10 +6359,10 @@ class CreatorNameDetailsRevision(Revision):
         return '%s - %s(%s)' % (
             unicode(self.creator), unicode(self.name), unicode(self.type.type))
 
-    def _source(self):
+    def _get_source(self):
         return self.name
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creatorname'
 
 
@@ -6414,9 +6401,8 @@ class BirthYearSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_birth_year_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Birth Year Source Revisions'
 
     objects = BirthYearSourceRevisionManager()
@@ -6469,9 +6455,8 @@ class BirthMonthSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_birth_month_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Birth Month Source Revisions'
 
     objects = BirthMonthSourceRevisionManager()
@@ -6524,9 +6509,8 @@ class BirthDateSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_birth_date_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Birth Date Source Revisions'
 
     objects = BirthDateSourceRevisionManager()
@@ -6579,9 +6563,8 @@ class DeathYearSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_death_year_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Death Year Source Revisions'
 
     objects = DeathYearSourceRevisionManager()
@@ -6634,9 +6617,8 @@ class DeathMonthSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_death_month_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Death Month Source Revisions'
 
     objects = DeathMonthSourceRevisionManager()
@@ -6689,9 +6671,8 @@ class DeathDateSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_death_date_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Death Date Source Revisions'
 
     objects = DeathDateSourceRevisionManager()
@@ -6744,9 +6725,8 @@ class BirthCountrySourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_birth_country_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Birth Country Source Revisions'
 
     objects = BirthCountrySourceRevisionManager()
@@ -6799,9 +6779,8 @@ class BirthProvinceSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_birth_province_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Birth Province Source Revisions'
 
     objects = BirthProvinceSourceRevisionManager()
@@ -6854,9 +6833,8 @@ class BirthCitySourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_birth_city_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Birth City Source Revisions'
 
     objects = BirthCitySourceRevisionManager()
@@ -6909,9 +6887,8 @@ class DeathCountrySourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_death_country_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Death Country Source Revisions'
 
     objects = DeathCountrySourceRevisionManager()
@@ -6964,9 +6941,8 @@ class DeathProvinceSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_death_province_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Death Province Source Revisions'
 
     objects = DeathProvinceSourceRevisionManager()
@@ -7019,9 +6995,8 @@ class DeathCitySourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_death_city_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Death City Source Revisions'
 
     objects = DeathCitySourceRevisionManager()
@@ -7074,9 +7049,8 @@ class PortraitSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_portrait_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Portrait Source Revisions'
 
     objects = PortraitSourceRevisionManager()
@@ -7128,9 +7102,8 @@ class BioSourceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('source_description',)
+        db_table = 'oi_bio_source_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Bio Source Revisions'
 
     objects = BioSourceRevisionManager()
@@ -7188,9 +7161,8 @@ class CreatorSchoolDetailRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('school_year_began', 'school_year_ended')
+        db_table = 'oi_creator_school_detail_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Creator School Detail Revisions'
 
     objects = CreatorSchoolDetailRevisionManager()
@@ -7253,9 +7225,8 @@ class CreatorDegreeDetailRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('degree_year',)
+        db_table = 'oi_creator_degree_detail_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Creator Degree Detail Revisions'
 
     objects = CreatorDegreeDetailRevisionManager()
@@ -7329,9 +7300,8 @@ class CreatorMembershipRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('membership_begin_year',)
+        db_table = 'oi_creator_membership_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Creator Membership Revisions'
 
     objects = CreatorMembershipRevisionManager()
@@ -7385,10 +7355,10 @@ class CreatorMembershipRevision(Revision):
             'membership_end_year_uncertain': '',
         }
 
-    def _source(self):
+    def _get_source(self):
         return self.creator_membership
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creator_membership'
 
     def _imps_for(self, field_name):
@@ -7478,9 +7448,8 @@ class CreatorAwardRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
-        ordering = ('award_year',)
+        db_table = 'oi_creator_award_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Creator Award Revisions'
 
     objects = CreatorAwardRevisionManager()
@@ -7522,10 +7491,10 @@ class CreatorAwardRevision(Revision):
             'award_year_uncertain': '',
         }
 
-    def _source(self):
+    def _get_source(self):
         return self.creator_award
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creator_award'
 
     def _imps_for(self, field_name):
@@ -7613,8 +7582,8 @@ class CreatorArtInfluenceRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
+        db_table = 'oi_creator_art_influence_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Creator Art Influence Revisions'
 
     objects = CreatorArtInfluenceRevisionManager()
@@ -7662,10 +7631,10 @@ class CreatorArtInfluenceRevision(Revision):
             'self_identify_influences_doc': '',
         }
 
-    def _source(self):
+    def _get_source(self):
         return self.creator_artinfluence
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creator_artinfluence'
 
     def _imps_for(self, field_name):
@@ -7767,8 +7736,8 @@ class CreatorNonComicWorkRevision(Revision):
     """
 
     class Meta:
-        # auto_created = True
-        app_label = 'oi'
+        db_table = 'oi_creator_non_comic_work_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'Creator NonComicWork Revisions'
 
     objects = CreatorNonComicWorkRevisionManager()
@@ -7825,10 +7794,10 @@ class CreatorNonComicWorkRevision(Revision):
             'work_notes': '',
         }
 
-    def _source(self):
+    def _get_source(self):
         return self.creator_noncomicwork
 
-    def _source_name(self):
+    def _get_source_name(self):
         return 'creator_noncomicwork'
 
     def _imps_for(self, field_name):
@@ -7934,8 +7903,8 @@ class NonComicWorkYearRevision(Revision):
     """
 
     class Meta:
-        app_label = 'oi'
-        ordering = ('work_year',)
+        db_table = 'oi_non_comic_work_year_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'NonComic Work Year Revisions'
 
     objects = NonComicWorkYearRevisionManager()
@@ -7988,8 +7957,8 @@ class NonComicWorkLinkRevision(Revision):
     """
 
     class Meta:
-        app_label = 'oi'
-        ordering = ('link',)
+        db_table = 'oi_non_comic_work_link_revision'
+        ordering = ['created', '-id']
         verbose_name_plural = 'NonComic Work Link Revisions'
 
     objects = NonComicWorkLinkRevisionManager()

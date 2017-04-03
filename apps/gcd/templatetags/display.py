@@ -14,7 +14,8 @@ from apps.oi import states
 from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
-from apps.gcd.models.creator import Creator, Membership, Award, ArtInfluence, NonComicWork
+from apps.gcd.models.creator import Creator, Membership, Award, ArtInfluence, \
+                                    NonComicWork
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, \
                                       Publisher
 from apps.gcd.models.series import Series
