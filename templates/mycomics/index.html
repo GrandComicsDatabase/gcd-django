@@ -1,5 +1,4 @@
 {% extends "mycomics/base.html" %}
-{% load url from future %}
 {% load staticfiles %}
 {% load i18n %}
 
@@ -9,6 +8,10 @@
         href="{% static "css/mycomics/front_page.css" %}"/>
 {% endblock %}
 
+{% block modals %}
+  {% include "mycomics/bits/help.html" %}
+{% endblock %}
+
 {% block header %}
 <nav class="navbar navbar-default" role="navigation">
   <div class="container">
@@ -16,11 +19,22 @@
     <div class="navbar-header">
       <a class="navbar-brand gcd-logo" href="#"></a>
     </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav" id="navbar-main">
+        <li><a href="#help-item" data-toggle="modal">{% trans 'Help' %}</a></li>
+      </ul>
+    </div>
+    <!-- /.navbar-collapse -->
   </div>
 </nav>
 {% endblock %}
 
 {% block content %}
+  <p class="text-center">
+  Backed by the largest comic database on the planet, my.comics.org allows you to track your comic collection.
+  </p>
   {% if form.errors %}
     <div class="alert alert-danger">
       {% trans "Your username and password didn't match. Please try again." %}
@@ -28,7 +42,6 @@
   {% endif %}
   <form method="post" action="{% url "my_login" %}" class="form-signin" role="form">
     {% csrf_token %}
-    <h2 class="form-signin-heading">{% trans 'Please sign in' %}</h2>
     <input name="username" type="text" class="form-control" placeholder="{% trans 'email' %}" required autofocus>
     <input name="password" type="password" class="form-control" placeholder="{% trans 'password' %}" required>
     <button class="btn btn-lg btn-primary btn-block" type="submit">{% trans 'Login' %}</button>
@@ -42,5 +55,13 @@
   <p class="text-center">
     <a href="{% url "forgot_password" %}">{% trans 'Forgot password?' %}</a> <br>
     <a href="{% url "register" %}">{% trans 'Register' %}</a>
+  </p>
+
+  <p>
+    Just search inside the GCD database using the my.comics.org site, marked by the top bar in red, and select comics from search results to add to your collection, which includes a possible separation into have and want lists. Additionally, ongoing series can be subscribed to a collection, so you can pull new issues into a collection once they are added to the database. There are some (limited) ways to import existing collection data, and you will always be able to export your collection data. Note that you can mark a collection as public and provide view access to others by giving out the link, for example to distribute your want or for sale lists.
+  </p>
+
+  <p>
+    Click on <i>help</i> above for more details on the capabilities, including how to store information such as condition, location, or was read.
   </p>
 {% endblock %}

@@ -1,52 +1,8 @@
 {% extends "mycomics/base.html" %}
-{% load url from future %}
 {% load i18n %}
 
 {% block modals %}
-  <div id="help-item" class="modal fade" tabindex="-1" style="display: none;">
-    <div class="modal-dialog">
-      <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
-            <h4 class="modal-title">{% trans "Help for " %} my.comics.org</h4>
-          </div>
-          <div class="modal-body">
-            <p>
-            First note that my.comics.org is still in development and there are known needed features. Discussion about functionality and bug reports takes place on the <a href="http://groups.google.com/group/gcd-main">gcd-main</a> mailing list, feel free to chime in.
-            </p>
-
-            <ul>
-              <li>Comics are organized in collections. Initally two collections exist, but more can be created using the "Add new"-button on the main page.</li>
-              <li>To add comics to a collection search inside the database using the top search box, or the other search operations, e.g. the <a href="{% url "advanced_search" %}">advanced search</a>. You can select and add comics from search results, from the series page, and from the individual issue pages. </li>
-              <li>Ongoing series can be subscribed to a collection. You can pull issues newly created since the last time you added an issue from the series to the collection.</li> 
-              <li>You can add a comic several times to a collection, e.g. if you have several copies, or if you want a second copy.</li>
-              <li>You can also delete or move a comic from a collection.</li>
-              <li>A collection has several settings which control what additional information can be stored about a comic in that collection. You can store information about
-              <ul>
-                <li>condition, where several grade systems are available</li>
-                <li>date of acquistion or sale</li>
-                <li>is owned, or is wanted</li>
-                <li>location of storage or purchase</li>
-                <li>was read, is for sale, or is signed</li>
-                <li>purchase price, market value, or sell price.</li>
-              </ul>
-              </li>
-              <li>Items in the default have collection will get the 'own' status per default, and all items in the default want collection will have the 'want' status. For other collections these will not be set automatically, but the defaults can be changed accordingly.</li>
-              <li>One can import existing collection data in two ways
-              <ul>
-                <li>a list of issue numbers per series, one number per line
-                <li>a cvs-file where each line consists of series name, issue number, publisher name (optional), language code (optional)
-              </ul>
-              <li>You can download the information of each collection as a csv-file, use the download button <span class="glyphicon glyphicon-download"></span>.</li>
-              <li>If a collection is set as public, indicated by <span class="glyphicon glyphicon-eye-open"></span>, others can view that collection under the same URL you use, i.e. my.comics.org/collection/&lt;number&gt;/.
-            </ul>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-dismiss="modal">{% trans "Close" %}</button>
-          </div>
-      </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-  </div><!-- /.modal -->
+  {% include "mycomics/bits/help.html" %}
 {% endblock %}
 
 {% block header %}

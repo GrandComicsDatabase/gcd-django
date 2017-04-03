@@ -1644,7 +1644,10 @@ def compute_order(data):
 
         elif target == 'issue':
             if order == 'date':
-                terms.append('key_date')
+                if data['use_on_sale_date']:
+                    terms.append('on_sale_date')
+                else:
+                    terms.append('key_date')
             elif order == 'series':
                 terms.append('series')
             elif order == 'indicia_publisher':
@@ -1668,7 +1671,10 @@ def compute_order(data):
             elif order == 'series':
                 terms.append('issue__series')
             elif order == 'date':
-                terms.append('issue__key_date')
+                if data['use_on_sale_date']:
+                    terms.append('issue__on_sale_date')
+                else:
+                    terms.append('issue__key_date')
             elif order == 'country':
                 terms.append('issue__series__country__name')
             elif order == 'language':

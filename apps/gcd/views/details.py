@@ -23,6 +23,8 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
+from apps.indexer.views import ViewTerminationError
+
 from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
 
@@ -148,6 +150,20 @@ def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
     return paginate_response(request, creator_noncomicwork_series,
                         'gcd/details/creator_noncomicwork_details.html', vars)
 
+
+def get_gcd_object(model, object_id, model_name=None):
+    object = get_object_or_404(model, id = object_id)
+    if object.deleted:
+        if not model_name:
+            model_name = model._meta.model_name
+        raise ViewTerminationError(
+          response = HttpResponseRedirect(urlresolvers.reverse(
+                                          'change_history',
+                                          kwargs={'model_name': model_name,
+                                                  'id': object_id})))
+    return object
+
+
 def publisher(request, publisher_id):
     """
     Display the details page for a Publisher.
@@ -159,6 +175,7 @@ def publisher(request, publisher_id):
 
     return show_publisher(request, publisher)
 
+
 def show_publisher(request, publisher, preview=False):
     publisher_series = publisher.active_series().order_by('sort_name')
     vars = { 'publisher': publisher,
@@ -169,6 +186,94 @@ def show_publisher(request, publisher, preview=False):
 
     return paginate_response(request, publisher_series,
                              'gcd/details/publisher.html', vars)
+
+
+def publisher_monthly_covers(request,
+                             publisher_id,
+                             year=None,
+                             month=None,
+                             use_on_sale=True):
+    """
+    Display the covers for the monthly publications of a publisher.
+    """
+    publisher = get_gcd_object(Publisher, publisher_id)
+
+    if use_on_sale:
+        date_type = 'publisher_monthly_covers_on_sale'
+    else:
+        date_type = 'publisher_monthly_covers_pub_date'
+
+    # parts are generic and should be re-factored if we ever need it elsewhere
+    try:
+        if 'month' in request.GET:
+            year = int(request.GET['year'])
+            month = int(request.GET['month'])
+            # do a redirect, otherwise pagination links point to current month
+            return HttpResponseRedirect(
+              urlresolvers.reverse(date_type,
+                                   kwargs={'publisher_id': publisher_id,
+                                           'year': year,
+                                           'month': month} ))
+        if year:
+            year = int(year)
+        if month:
+            month = int(month)
+    except ValueError:
+        year = None
+
+    if year is None:
+        year = date.today().year
+        month = date.today().month
+
+    table_width = COVER_TABLE_WIDTH
+
+    covers = Cover.objects.filter(issue__series__publisher=publisher,
+                                  deleted=False).select_related('issue')
+    if use_on_sale:
+        covers = \
+          covers.filter(issue__on_sale_date__gte='%d-%02d-00' % (year, month),
+                        issue__on_sale_date__lte='%d-%02d-32' % (year, month))\
+                .order_by('issue__on_sale_date', 'issue__series')
+    else:
+        covers = \
+          covers.filter(issue__key_date__gte='%d-%02d-00' % (year, month),
+                        issue__key_date__lte='%d-%02d-32' % (year, month))\
+                .order_by('issue__key_date', 'issue__series')
+
+    start_date = datetime(year, month, 1)
+    date_before = start_date + timedelta(-1)
+    date_after = start_date + timedelta(31)
+    choose_url = urlresolvers.reverse(date_type,
+                                      kwargs={'publisher_id': publisher_id,
+                                              'year': year,
+                                              'month': month})
+    choose_url_before = urlresolvers.reverse(date_type,
+                                             kwargs={
+                                               'publisher_id': publisher_id,
+                                               'year': date_before.year,
+                                               'month': date_before.month})
+    choose_url_after = urlresolvers.reverse(date_type,
+                                            kwargs={
+                                              'publisher_id': publisher_id,
+                                              'year': date_after.year,
+                                              'month': date_after.month})
+
+    vars = {
+      'publisher': publisher,
+      'date': start_date,
+      'choose_url': choose_url,
+      'choose_url_after': choose_url_after,
+      'choose_url_before': choose_url_before,
+      'use_on_sale': use_on_sale,
+      'table_width': table_width,
+      'NO_ADS': True
+    }
+
+    return paginate_response(request, covers,
+      'gcd/details/publisher_monthly_covers.html', vars,
+      per_page=50,
+      callback_key='tags', callback=get_image_tags_per_page)
+
     
 def indicia_publisher(request, indicia_publisher_id):
     """
