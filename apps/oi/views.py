@@ -5,6 +5,7 @@ import re
 import sys
 import glob
 import PIL.Image as pyImage
+from urllib import unquote
 
 from django.core import urlresolvers
 from django.conf import settings
@@ -404,10 +405,6 @@ def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     form = None
     revision = None
-
-    # TODO workaround for ImageRevision, which do hang in render_to_response
-    if changeset.change_type == CTYPES['image']:
-        return compare(request, id)
 
     if changeset.inline():
         revision = changeset.inline_revision()
@@ -2949,7 +2946,7 @@ def add_reprint(request, changeset_id,
                                   changeset__id=changeset_id)
     if reprint_note:
         publisher, series, year, number, volume = \
-            parse_reprint(reprint_note)
+            parse_reprint(unquote(reprint_note).split(';')[0])
         initial = { 'series': series, 'publisher': publisher,
                     'year': year, 'number': number }
     else:

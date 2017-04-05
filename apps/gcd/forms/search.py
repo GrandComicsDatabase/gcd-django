@@ -156,8 +156,8 @@ class AdvancedSearch(forms.Form):
                                         required=False)
     issue_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
       widget=forms.Select(choices=((None, ""),
-                                   (True, "From"),
-                                   (False, "In"))))
+                                   (True, "has issue level sources"),
+                                   (False, "has issue level targets"))))
 
     cover_needed = forms.BooleanField(label="Cover is Needed",
                                        required=False)
@@ -203,10 +203,11 @@ class AdvancedSearch(forms.Form):
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
-    story_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
-      widget=forms.Select(choices=((None, ""),
-                                   (True, "From"),
-                                   (False, "In"))))
+    story_reprinted = forms.ChoiceField(label="Reprinted", required=False,
+      choices=[('', ""),
+               ('from', "is a linked reprint"),
+               ('in', "has linked reprints"),
+               ('not', "is not a linked reprint")])
 
     notes = forms.CharField(label='Notes', required=False)
 
@@ -281,22 +282,24 @@ class AdvancedSearch(forms.Form):
         if self.is_valid():
             if cleaned_data['cover_needed']:
                 # use of in since after distinction stuff is cleared add series
-                if cleaned_data['target'] not in ['issue','series']:
+                if cleaned_data['target'] not in ['issue', 'series']:
                     raise forms.ValidationError(
                       "Searching for covers which are missing or need to be"
                       " replaced is valid only for issue or series searches.")
             if cleaned_data['target'] == 'cover' and cleaned_data['type']:
                 if len(cleaned_data['type']) > 1 or StoryType.objects\
                   .get(name='cover') not in cleaned_data['type']:
-                    raise forms.ValidationError("When searching for covers"
-                          " only type cover can be selected.")
+                    raise forms.ValidationError(
+                      "When searching for covers only type cover can be "
+                      "selected.")
             if cleaned_data['use_on_sale_date']:
-                if cleaned_data['target'] not in ['issue','sequence']:
+                if cleaned_data['target'] not in ['issue', 'sequence',
+                                                  'issue_cover']:
                     raise forms.ValidationError(
                       "The on-sale date can only be used in issue or story "
                       "searches.")
             if cleaned_data['keywords']:
-                if cleaned_data['target'] in ['cover','issue_cover']:
+                if cleaned_data['target'] in ['cover', 'issue_cover']:
                     raise forms.ValidationError(
                       "For technical reasons keywords cannot be used for "
                       "searches for covers and covers for issues.")

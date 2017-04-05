@@ -150,7 +150,7 @@
       </form>
         {% if changeset.change_type == CTYPES.issue %}
       <form class="story_button" method="GET"
-            action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id %}">
+            action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id reprint_note=story.reprint_notes|default:" "|urlencode %}">
         <input type="submit" id="reprint_{{ story.id }}" name="reprint_{{ story.id }}"
                value="Add reprint">
       </form>

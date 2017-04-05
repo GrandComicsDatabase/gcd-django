@@ -1263,14 +1263,16 @@ def search_stories(data, op):
         q_objs.append(Q(**{ '%sediting__%s' % (prefix, op):
                             data['story_editing'] }))
 
-    if data['story_reprinted'] is not None:
-        if data['story_reprinted'] == True:
+    if data['story_reprinted'] != '':
+        if data['story_reprinted'] == 'from':
             q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: False }) | \
                    Q(**{ '%sfrom_issue_reprints__isnull' % prefix: False }))
-        else:
+        elif data['story_reprinted'] == 'in':
             q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
                    Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
-
+        elif data['story_reprinted'] == 'not':
+            q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: True }) & \
+                   Q(**{ '%sfrom_issue_reprints__isnull' % prefix: True }))
     try:
         if data['pages'] is not None and data['pages'] != '':
             range_match = match(PAGE_RANGE_REGEXP, data['pages'])
@@ -1468,7 +1470,10 @@ def compute_order(data):
 
         elif target == 'issue':
             if order == 'date':
-                terms.append('key_date')
+                if data['use_on_sale_date']:
+                    terms.append('on_sale_date')
+                else:
+                    terms.append('key_date')
             elif order == 'series':
                 terms.append('series')
             elif order == 'indicia_publisher':
@@ -1492,7 +1497,10 @@ def compute_order(data):
             elif order == 'series':
                 terms.append('issue__series')
             elif order == 'date':
-                terms.append('issue__key_date')
+                if data['use_on_sale_date']:
+                    terms.append('issue__on_sale_date')
+                else:
+                    terms.append('issue__key_date')
             elif order == 'country':
                 terms.append('issue__series__country__name')
             elif order == 'language':
