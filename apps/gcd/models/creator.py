@@ -32,7 +32,7 @@ class NameType(models.Model):
         return '%s' % unicode(self.type)
 
 
-class CreatorNameDetails(models.Model):
+class CreatorNameDetail(models.Model):
     """
     Indicates the various names of creator
     Multiple Name could be checked per creator.
@@ -321,9 +321,9 @@ class NameRelation(models.Model):
         verbose_name_plural = 'Name Relations'
 
     gcd_official_name = models.ForeignKey(
-            CreatorNameDetails,
+            CreatorNameDetail,
             related_name='creator_gcd_official_name')
-    to_name = models.ForeignKey(CreatorNameDetails, related_name='to_name')
+    to_name = models.ForeignKey(CreatorNameDetail, related_name='to_name')
     rel_type = models.ForeignKey(RelationType, related_name='relation_type',
                                  null=True, blank=True)
     rel_source = models.ManyToManyField(SourceType, null=True)

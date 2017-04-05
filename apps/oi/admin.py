@@ -20,7 +20,7 @@ admin.site.register(OngoingReservation, OngoingReservationAdmin)
 
 
 #register creator revison models to admin panel
-admin.site.register(CreatorNameDetailsRevision)
+admin.site.register(CreatorNameDetailRevision)
 admin.site.register(CreatorRevision)
 admin.site.register(NameRelationRevision)
 admin.site.register(BirthYearSourceRevision)
