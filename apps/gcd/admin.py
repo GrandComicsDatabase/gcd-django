@@ -33,7 +33,7 @@ admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 
 #register creator models to admin panel
 admin.site.register(NameType)
-admin.site.register(CreatorNameDetails)
+admin.site.register(CreatorNameDetail)
 admin.site.register(SourceType)
 admin.site.register(RelationType)
 admin.site.register(NameRelation)

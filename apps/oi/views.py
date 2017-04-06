@@ -48,7 +48,7 @@ from apps.oi.models import (
     CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, OngoingReservation, CTYPES, get_issue_field_list,
-    set_series_first_last, CreatorRevision, CreatorNameDetailsRevision,
+    set_series_first_last, CreatorRevision, CreatorNameDetailRevision,
     CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolDetailRevision, CreatorDegreeDetailRevision)
@@ -463,11 +463,7 @@ def edit(request, id):
     revision = None
 
     # TODO set inline flag for these creator changes
-    if changeset.inline() or changeset.change_type == CTYPES['creators']\
-            or changeset.change_type == CTYPES['creator_membership'] \
-            or changeset.change_type == CTYPES['creator_award']\
-            or changeset.change_type == CTYPES['creator_artinfluence']\
-            or changeset.change_type == CTYPES['creator_noncomicwork']:
+    if changeset.inline():
         revision = changeset.inline_revision()
         form_class = get_revision_form(revision, user=request.user)
         form = form_class(instance=revision)
@@ -478,11 +474,7 @@ def edit(request, id):
 
 def _display_edit_form(request, changeset, form, revision=None):
     # TODO set inline flag for these creator changes
-    if revision is None or changeset.inline() or changeset.change_type == CTYPES['creators'] \
-            or changeset.change_type == CTYPES['creator_membership']\
-            or changeset.change_type == CTYPES['creator_award']\
-            or changeset.change_type == CTYPES['creator_artinfluence']\
-            or changeset.change_type == CTYPES['creator_noncomicwork']:
+    if revision is None or changeset.inline():
 
         template = 'oi/edit/changeset.html'
         if revision is None:
@@ -785,7 +777,7 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                     gcd_official_name_type = NameType.objects.get(
                         id=gcd_official_name_type_id)
 
-                    creatorname = CreatorNameDetailsRevision.objects.get(
+                    creatorname = CreatorNameDetailRevision.objects.get(
                         creator=revision, type=gcd_official_name_type)
                     creatorname.name = gcd_official_name
                     creatorname.save()
@@ -810,13 +802,13 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                                 'relation_sources' + str(i))
                             try:
                                 creatorothername = \
-                                    CreatorNameDetailsRevision.objects.get(
+                                    CreatorNameDetailRevision.objects.get(
                                     creator=revision,
                                     name=name,
                                     type=type)
                             except ObjectDoesNotExist:
                                 creatorothername = \
-                                    CreatorNameDetailsRevision.objects.create(
+                                    CreatorNameDetailRevision.objects.create(
                                     creator=revision,
                                     name=name,
                                     type=type,
@@ -851,7 +843,7 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                         to_name__creator=revision).exclude(
                         id__in=updated_creator_name_relation_list).delete()
 
-                    CreatorNameDetailsRevision.objects.filter(
+                    CreatorNameDetailRevision.objects.filter(
                         creator=revision).exclude(
                         id__in=updated_creator_name_list).delete()
 
@@ -5073,7 +5065,7 @@ def add_creator(request, template_name='oi/creators/creators.html'):
 
             gcd_official_name_type = NameType.objects.get(
                 id=gcd_official_name_type_id)
-            creatorofficialname = CreatorNameDetailsRevision.objects.create(
+            creatorofficialname = CreatorNameDetailRevision.objects.create(
                 creator=revision,
                 name=gcd_official_name,
                 type=gcd_official_name_type,
@@ -5091,7 +5083,7 @@ def add_creator(request, template_name='oi/creators/creators.html'):
                     relation_type = request.POST.get('relation_type' + str(i))
                     relation_sources = request.POST.getlist('relation_sources' + str(i))
                     type = NameType.objects.get(id=type_id)
-                    creatorname = CreatorNameDetailsRevision.objects.create(
+                    creatorname = CreatorNameDetailRevision.objects.create(
                         creator=revision,
                         name=name,
                         type=type,

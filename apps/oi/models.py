@@ -30,9 +30,13 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse,
     Series, SeriesBond, Cover, Image, Issue, Story,
     Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
-    SeriesPublicationType, SeriesBondType, StoryType, ImageType)
-
-from apps.gcd.models.creator import *
+    SeriesPublicationType, SeriesBondType, StoryType, ImageType,
+    ArtInfluence, Award, BirthCitySource, BirthCountrySource,
+    BirthProvinceSource, Creator, CreatorDegreeDetail, CreatorNameDetail,
+    CreatorSchoolDetail, DeathCitySource, DeathCountrySource,
+    DeathProvinceSource, Degree, Membership, NameType, NonComicWork,
+    NonComicWorkType, NonComicWorkRole, NonComicWork, NonComicWorkYear,
+    NonComicWorkLink, RelationType, School, SourceType)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 
@@ -77,6 +81,11 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['reprint'],
                            CTYPES['image'],
                            CTYPES['series_bond'],
+                           CTYPES['creators'],
+                           CTYPES['creator_membership'],
+                           CTYPES['creator_award'],
+                           CTYPES['creator_artinfluence'],
+                           CTYPES['creator_noncomicwork'],
                            ))
 
 # Change types that *might* be bulk changes.  But might just have one revision.
@@ -5615,7 +5624,7 @@ class CreatorRevisionManager(RevisionManager):
 
         name_details = creator.creator_names.all()
         for name_detail in name_details:
-            creator_other_name = CreatorNameDetailsRevision.objects.clone_revision(name_detail,
+            creator_other_name = CreatorNameDetailRevision.objects.clone_revision(name_detail,
                                                               changeset=changeset)
             name_relation_details = name_detail.to_name.all()
             for name_relation in name_relation_details:
@@ -6037,7 +6046,7 @@ class CreatorRevision(Revision):
         updated_creator_name_list = []
         for creator_name_detail_obj in creator_name_details:
             creator_name_object, created = \
-                CreatorNameDetails.objects.get_or_create(
+                CreatorNameDetail.objects.get_or_create(
                         creator=ctr,
                         name=creator_name_detail_obj.name,
                         type=creator_name_detail_obj.type)
@@ -6070,7 +6079,7 @@ class CreatorRevision(Revision):
                     creator_name_relation_object.id)
 
             updated_creator_name_list.append(creator_name_object.id)
-        CreatorNameDetails.objects.exclude(creator=ctr,
+        CreatorNameDetail.objects.exclude(creator=ctr,
                                            id__in=updated_creator_name_list).delete()
 
         BirthYearSource.objects.filter(creator=ctr).delete()
@@ -6281,9 +6290,9 @@ class NameRelationRevision(Revision):
                                       null=True,
                                       related_name='cr_name_relation')
     gcd_official_name = models.ForeignKey(
-            'CreatorNameDetailsRevision',
+            'CreatorNameDetailRevision',
             related_name='creator_revise_gcd_official_name')
-    to_name = models.ForeignKey('CreatorNameDetailsRevision',
+    to_name = models.ForeignKey('CreatorNameDetailRevision',
                                 related_name='creator_revise_to_name')
     rel_type = models.ForeignKey('gcd.RelationType',
                                  related_name='creator_revise_relation_type',
@@ -6297,7 +6306,7 @@ class NameRelationRevision(Revision):
                                                 )
 
 
-class CreatorNameDetailsRevisionManager(RevisionManager):
+class CreatorNameDetailRevisionManager(RevisionManager):
     def clone_revision(self, creatorname, changeset):
         """
         Given an existing NameSource instance, create a new revision based on
@@ -6307,14 +6316,14 @@ class CreatorNameDetailsRevisionManager(RevisionManager):
         """
         return RevisionManager.clone_revision(self,
                                               instance=creatorname,
-                                              instance_class=CreatorNameDetails,
+                                              instance_class=CreatorNameDetail,
                                               changeset=changeset)
 
     def _do_create_revision(self, creatorname, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        revision = CreatorNameDetailsRevision(
+        revision = CreatorNameDetailRevision(
                 # revision-specific fields:
                 creator=changeset.revisions.next(),
                 changeset=changeset,
@@ -6331,18 +6340,18 @@ class CreatorNameDetailsRevisionManager(RevisionManager):
         return revision
 
 
-class CreatorNameDetailsRevision(Revision):
+class CreatorNameDetailRevision(Revision):
     """
     record of the creator's name
     """
 
     class Meta:
-        db_table = 'oi_creator_name_details_revision'
+        db_table = 'oi_creator_name_detail_revision'
         ordering = ['created', '-id']
         verbose_name_plural = 'Creator Name Detail Revisions'
 
-    objects = CreatorNameDetailsRevisionManager()
-    creator_name_detail = models.ForeignKey('gcd.CreatorNameDetails',
+    objects = CreatorNameDetailRevisionManager()
+    creator_name_detail = models.ForeignKey('gcd.CreatorNameDetail',
                                             null=True,
                                             related_name='cr_creator_name_details')
     creator = models.ForeignKey(CreatorRevision,
