@@ -163,8 +163,8 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
                     # do this once per issue
                     story_existed = OldStory.objects.using('earliest_old_site').filter(\
                         issue_id=i.IssueID).exists()
-                    #revision_exists = StoryRevision.objects.filter(issue_id=i.IssueID, created__lt=EARLIEST_DATA_DATE).exists()
-                if not story_existed and story_set.exists():
+                    revision_exists = IssueRevision.objects.filter(issue_id=i.IssueID, created__lt=EARLIEST_DATA_DATE).exists()
+                if not story_existed and story_set.exists() and not revision_exists:
                     # stories created after 2004-08, make assumption on indexer
                     # i.e. assume anon-stories with no time belong to 
                     # first actual indexer, determined from the issue-logs
@@ -176,7 +176,8 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
                     if objects.exists():
                         adding_user = objects[0].UserID
                     story_set = story_set.exclude(UserID=anon.id, Modified__lt=datetime.date(2002,1,2))
-
+                else:
+                    adding_user = None
             for s in story_set.order_by('dt').select_related(*story_related):
                 if scounter % 5000 == 1:
                     logging.info("Story set loop %d" % scounter)

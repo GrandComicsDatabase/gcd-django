@@ -54,7 +54,7 @@ def main(database):
 
     for old_table, log_class in (#('LogPublishers', LogPublisher),
                                  #('LogSeries', LogSeries),
-                   #              ('LogIssues', LogIssue),
+                                 ('LogIssues', LogIssue),
                                  ('LogStories', LogStory),
                                 ):
         table_name = log_class._meta.db_table
