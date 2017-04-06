@@ -1018,11 +1018,6 @@ def search_series(data, op):
             q_objs.append(Q(**{ '%sis_comics_publication' % prefix: False }))
 
     # Format fields
-    if data['format']:
-        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op):  data['format'] }))
-    if data['has_format']:
-        # Note the ~ for negation
-        q_objs.append(~Q(**{ '%sformat' % prefix: u'' }))
     if data['color']:
         q_objs.append(Q(**{ '%scolor__%s' % (prefix, op): data['color'] }))
     if data['dimensions']:

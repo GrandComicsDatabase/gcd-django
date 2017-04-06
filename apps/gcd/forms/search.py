@@ -122,8 +122,6 @@ class AdvancedSearch(forms.Form):
                                    (True, "yes"),
                                    (False, "no"))))
 
-    format = forms.CharField(label='Format', required=False)
-    has_format = forms.BooleanField(label='Has Format', required=False)
     color = forms.CharField(label='Color', required=False)
     dimensions = forms.CharField(label='Dimensions', required=False)
     paper_stock = forms.CharField(label='Paper Stock', required=False)
