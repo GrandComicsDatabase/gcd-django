@@ -88,7 +88,7 @@ REVISION_CLASSES = {
     'cover': CoverRevision,
     'reprint': ReprintRevision,
     'image': ImageRevision,
-    'creators': CreatorRevision,
+    'creator': CreatorRevision,
     'school': CreatorSchoolDetailRevision,
     'degree': CreatorDegreeDetailRevision,
     'creator_membership': CreatorMembershipRevision,
@@ -113,7 +113,7 @@ DISPLAY_CLASSES = {
     'reprint_from_issue': ReprintFromIssue,
     'issue_reprint': IssueReprint,
     'image': Image,
-    'creators': Creator,
+    'creator': Creator,
     'schools': CreatorSchoolDetail,
     'degrees': CreatorDegreeDetail,
     'creator_membership': Membership,
@@ -353,7 +353,7 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
             indicia_publisher_revision.deleted = True
             indicia_publisher_revision.save()
 
-    elif model_name == 'creators' and delete:
+    elif model_name == 'creator' and delete:
         for creatormembership in revision.creator.active_creator_membership():
             creator_membership_revison = \
               CreatorMembershipRevision.objects.clone_revision(
@@ -482,7 +482,7 @@ def _display_edit_form(request, changeset, form, revision=None):
     else:
         template = 'oi/edit/revision.html'
 
-    if changeset.change_type == CTYPES['creators']:
+    if changeset.change_type == CTYPES['creator']:
         name_types = NameType.objects.all()
         sources = SourceType.objects.all()
         schools = School.objects.all()
@@ -631,7 +631,7 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
             # and the text 'field' is called that as well.
             if not (len(form.cleaned_data) == 1 and \
                                 'comments' in form.cleaned_data):
-                if revision.changeset.change_type == CTYPES['creators']:
+                if revision.changeset.change_type == CTYPES['creator']:
 
                     revision.gcd_official_name = request.POST.get(
                         'gcd_official_name')
@@ -1784,7 +1784,8 @@ def process(request, id):
 
     if 'submit' in request.POST:
         changeset = get_object_or_404(Changeset, id=id)
-        if changeset.inline() or changeset.change_type == CTYPES['creators'] \
+        # TODO creator inline check
+        if changeset.inline() or changeset.change_type == CTYPES['creator'] \
                 or changeset.change_type == CTYPES['creator_membership']\
                 or changeset.change_type == CTYPES['creator_award']\
                 or changeset.change_type == CTYPES['creator_artinfluence']\
@@ -4416,7 +4417,7 @@ def show_queue(request, queue_name, state):
     changes = Changeset.objects.filter(**kwargs).select_related(
       'indexer__indexer', 'approver__indexer')
 
-    creators = changes.filter(change_type=CTYPES['creators'])
+    creators = changes.filter(change_type=CTYPES['creator'])
     creator_memberships = changes.filter(change_type=CTYPES['creator_membership'])
     creator_awards = changes.filter(change_type=CTYPES['creator_award'])
     creator_artinfluences = changes.filter(change_type=CTYPES['creator_artinfluence'])
@@ -4452,7 +4453,7 @@ def show_queue(request, queue_name, state):
           'data': [
               {
                   'object_name': 'Creators',
-                  'object_type': 'creators',
+                  'object_type': 'creator',
                   'changesets': creators.order_by('modified', 'id') \
                       .annotate(
                       country=Max('creatorrevisions__birth_country__id'))
@@ -4623,7 +4624,7 @@ def compare(request, id):
         revision = changeset.issuerevisions.all()[0]
     elif changeset.change_type == CTYPES['series_bond']:
         revision = changeset.seriesbondrevisions.all()[0]
-    elif changeset.change_type == CTYPES['creators']:
+    elif changeset.change_type == CTYPES['creator']:
         revision = changeset.creatorrevisions.all()[0]
     elif changeset.change_type == CTYPES['creator_membership']:
         revision = changeset.creatormembershiprevisions.all()[0]
@@ -4879,7 +4880,7 @@ def preview(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     template = 'gcd/details/%s.html' % model_name
 
-    if 'creators' == model_name:
+    if 'creator' == model_name:
         return show_creator(request, revision, True)
     if 'creator_membership' == model_name:
         return show_creator_membership(request, revision, True)
@@ -4954,7 +4955,7 @@ def add_creator(request, template_name='oi/creators/creators.html'):
         )
         if creator_form.is_valid():
             changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                  change_type=CTYPES['creators'])
+                                  change_type=CTYPES['creator'])
             changeset.save()
             revision = creator_form.save(commit=False)
             revision.save_added_revision(changeset=changeset)
@@ -5183,7 +5184,7 @@ def add_creator_membership(request, creator_id,
             if 'cancel' in request.POST:
                 return HttpResponseRedirect(urlresolvers.reverse(
                         'apps.gcd.views.details.creator',
-                        kwargs={'creators_id': creator_id}))
+                        kwargs={'creator_id': creator_id}))
 
             membership_form = CreatorMembershipRevisionForm(
                     request.POST or None,
@@ -5234,7 +5235,7 @@ def add_creator_award(request, creator_id,
             if 'cancel' in request.POST:
                 return HttpResponseRedirect(urlresolvers.reverse(
                         'apps.gcd.views.details.creator',
-                        kwargs={'creators_id': creator_id}))
+                        kwargs={'creator_id': creator_id}))
 
             award_form = CreatorAwardRevisionForm(
                     request.POST or None,
@@ -5285,7 +5286,7 @@ def add_creator_artinfluence(request, creator_id,
             if 'cancel' in request.POST:
                 return HttpResponseRedirect(urlresolvers.reverse(
                         'apps.gcd.views.details.creator',
-                        kwargs={'creators_id': creator_id}))
+                        kwargs={'creator_id': creator_id}))
 
             artinfluence_form = CreatorArtInfluenceRevisionForm(
                     request.POST or None,
@@ -5337,7 +5338,7 @@ def add_creator_noncomicwork(request, creator_id,
             if 'cancel' in request.POST:
                 return HttpResponseRedirect(urlresolvers.reverse(
                         'apps.gcd.views.details.creator',
-                        kwargs={'creators_id': creator_id}))
+                        kwargs={'creator_id': creator_id}))
 
             noncomicwork_form = CreatorNonComicWorkRevisionForm(
                     request.POST or None,

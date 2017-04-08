@@ -64,7 +64,7 @@ CTYPES = {
     'brand_group': 13,
     'brand_use': 14,
     'series_bond': 15,
-    'creators': 16,
+    'creator': 16,
     'creator_membership':17,
     'creator_award':18,
     'creator_artinfluence':19,
@@ -81,7 +81,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['reprint'],
                            CTYPES['image'],
                            CTYPES['series_bond'],
-                           CTYPES['creators'],
+                           CTYPES['creator'],
                            CTYPES['creator_membership'],
                            CTYPES['creator_award'],
                            CTYPES['creator_artinfluence'],
@@ -664,7 +664,7 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['image']:
             return (self.imagerevisions.all(),)
 
-        if self.change_type == CTYPES['creators']:
+        if self.change_type == CTYPES['creator']:
             return (self.creatorrevisions.all(),)
 
         if self.change_type == CTYPES['creator_membership']:
@@ -749,12 +749,13 @@ class Changeset(models.Model):
         well as deletes cannot be edited after submission.
         """
         return (
+            # TODO check creators re inline
             self.inline() or
             self.change_type in [CTYPES['issue'],
                                  CTYPES['variant_add'],
                                  CTYPES['two_issues'],
                                  CTYPES['series_bond'],
-                                 CTYPES['creators'], 
+                                 CTYPES['creator'],
                                  CTYPES['creator_membership'], 
                                  CTYPES['creator_award'], 
                                  CTYPES['creator_artinfluence'],
@@ -806,7 +807,7 @@ class Changeset(models.Model):
             return self.imagerevisions.get().queue_name()
         elif self.change_type == CTYPES['series_bond']:
             return self.seriesbondrevisions.get().queue_name()
-        elif self.change_type == CTYPES['creators']:
+        elif self.change_type == CTYPES['creator']:
             return self.creatorrevisions.get().queue_name()
         else:
             return self.inline_revision(cache_safe=True).queue_name()
@@ -1142,7 +1143,7 @@ class Changeset(models.Model):
             return self.queue_name()
         if self.change_type == CTYPES['variant_add']:
             return self.queue_name() + u' [Variant]'
-        if self.change_type == CTYPES['creators']:
+        if self.change_type == CTYPES['creator']:
             return unicode(self.creatorrevisions.all()[0])
         if self.change_type == CTYPES['creator_membership']:
             return unicode(self.creatormembershiprevisions.all()[0])
@@ -5976,7 +5977,7 @@ class CreatorRevision(Revision):
         return self.creator
 
     def _get_source_name(self):
-        return 'creators'
+        return 'creator'
 
     def _imps_for(self, field_name):
         return 0
