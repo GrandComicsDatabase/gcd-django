@@ -323,8 +323,8 @@
                     <div class="edit_header">Editing</div>
                     {% if not preview %}
                         {% with creator as object %}
-                            {% with 'creators' as object_class %}
-                                {% with 'creators' as object_name %}
+                            {% with 'creator' as object_class %}
+                                {% with 'creator' as object_name %}
                                     {% include "gcd/bits/status_banner.html" %}
                                 {% endwith %}
                             {% endwith %}
@@ -351,7 +351,7 @@
                             {% else %}
                                 {% if user.is_authenticated %}
                                     <form method="GET"
-                                          action="{% url "replace_image" model_name='creators' id=creator.id image_id=creator.portrait.id %}">
+                                          action="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.portrait.id %}">
                                         <input type="submit" value="{% trans 'Replace Portrait image' %}">
                                     </form>
                                     <form method="GET"
@@ -363,7 +363,7 @@
                         {% else %}
                             {% if user.is_authenticated %}
                                 <form method="GET"
-                                      action="{% url "upload_image" model_name='creators' id=creator.id image_type='CreatorPortrait' %}">
+                                      action="{% url "upload_image" model_name='creator' id=creator.id image_type='CreatorPortrait' %}">
                                     <input type="submit" value="{% trans 'Add Portrait image' %}">
                                 </form>
                             {% endif %}
@@ -377,7 +377,7 @@
                             {% else %}
                                 {% if user.is_authenticated %}
                                     <form method="GET"
-                                          action="{% url "replace_image" model_name='creators' id=creator.id image_id=creator.samplescan.id %}">
+                                          action="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.samplescan.id %}">
                                         <input type="submit" value="{% trans 'Replace sample scan image' %}">
                                     </form>
                                     <form method="GET"
@@ -389,7 +389,7 @@
                         {% else %}
                             {% if user.is_authenticated %}
                                 <form method="GET"
-                                      action="{% url "upload_image" model_name='creators' id=creator.id image_type='SampleScan' %}">
+                                      action="{% url "upload_image" model_name='creator' id=creator.id image_type='SampleScan' %}">
                                     <input type="submit" value="{% trans 'Add Sample scan image' %}">
                                 </form>
                             {% endif %}
@@ -398,10 +398,10 @@
                 </div> <!-- control_rail -->
                 <div class="change_history">
                     {% if preview %}
-                        <a href="{% url "change_history" model_name='creators' id=creator.source.id %}">Change
+                        <a href="{% url "change_history" model_name='creator' id=creator.source.id %}">Change
                             History</a>
                     {% else %}
-                        <a href="{% url "change_history" model_name='creators' id=creator.id %}">Change History</a>
+                        <a href="{% url "change_history" model_name='creator' id=creator.id %}">Change History</a>
                     {% endif %}
                 </div>
             {% endif %}

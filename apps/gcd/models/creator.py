@@ -72,6 +72,25 @@ class SourceType(models.Model):
         return unicode(self.type)
 
 
+class CreatorDataSource(models.Model):
+    """
+    Indicates the various sources of creator data
+    """
+
+    class Meta:
+        app_label = 'gcd'
+        ordering = ('source_description',)
+        verbose_name_plural = 'Creator Data Source'
+
+    source_type = models.ForeignKey(SourceType)
+    source_description = models.TextField()
+    field = models.CharField(max_length=256)
+
+    def __unicode__(self):
+        return '%s - %s' % (
+        unicode(self.field), unicode(self.source_type.type))
+
+
 class RelationType(models.Model):
     """
     The type of relation between two creators.
@@ -107,92 +126,43 @@ class Creator(models.Model):
     gcd_official_name = models.CharField(max_length=255, db_index=True)
     birth_year = models.PositiveSmallIntegerField(null=True, blank=True)
     birth_year_uncertain = models.BooleanField(default=False)
-    birth_year_source = models.ManyToManyField(SourceType,
-                                               related_name='birthyearsource',
-                                               through='BirthYearSource',
-                                               null=True, blank=True)
     birth_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES,
                                                    null=True, blank=True)
     birth_month_uncertain = models.BooleanField(default=False)
-    birth_month_source = models.ManyToManyField(SourceType,
-                                                related_name='birthmonthsource',
-                                                through='BirthMonthSource',
-                                                null=True, blank=True)
     birth_date = models.PositiveSmallIntegerField(null=True, blank=True)
     birth_date_uncertain = models.BooleanField(default=False)
-    birth_date_source = models.ManyToManyField(SourceType,
-                                               related_name='birthdatesource',
-                                               through='BirthDateSource',
-                                               null=True, blank=True)
+
     death_year = models.PositiveSmallIntegerField(null=True, blank=True)
     death_year_uncertain = models.BooleanField(default=False)
-    death_year_source = models.ManyToManyField(SourceType,
-                                               related_name='deathyearsource',
-                                               through='DeathYearSource',
-                                               null=True, blank=True)
     death_month = models.PositiveSmallIntegerField(choices=MONTH_CHOICES,
                                                    null=True, blank=True)
     death_month_uncertain = models.BooleanField(default=False)
-    death_month_source = models.ManyToManyField(SourceType,
-                                                related_name='deathmonthsource',
-                                                through='DeathMonthSource',
-                                                null=True, blank=True)
     death_date = models.PositiveSmallIntegerField(null=True, blank=True)
     death_date_uncertain = models.BooleanField(default=False)
-    death_date_source = models.ManyToManyField(SourceType,
-                                               related_name='deathdatesource',
-                                               through='DeathDateSource',
-                                               null=True, blank=True)
+
     whos_who = models.URLField(blank=True, null=True)
-    birth_country = models.ForeignKey(
-            Country,
-            related_name='birth_country',
-            blank=True,
-            null=True)
+
+    birth_country = models.ForeignKey(Country,
+                                      related_name='birth_country',
+                                      blank=True,
+                                      null=True)
     birth_country_uncertain = models.BooleanField(default=False)
-    birth_country_source = models.ManyToManyField(SourceType,
-                                                  related_name='birthcountrysource',
-                                                  through='BirthCountrySource',
-                                                  null=True, blank=True)
     birth_province = models.CharField(max_length=50, blank=True, null=True)
     birth_province_uncertain = models.BooleanField(default=False)
-    birth_province_source = models.ManyToManyField(SourceType,
-                                                   related_name='birthprovincesource',
-                                                   through='BirthProvinceSource',
-                                                   null=True, blank=True)
     birth_city = models.CharField(max_length=200, blank=True, null=True)
     birth_city_uncertain = models.BooleanField(default=False)
-    birth_city_source = models.ManyToManyField(SourceType,
-                                               related_name='birthcitysource',
-                                               through='BirthCitySource',
-                                               null=True, blank=True)
-    death_country = models.ForeignKey(
-            Country,
-            related_name='death_country',
-            blank=True,
-            null=True)
+
+    death_country = models.ForeignKey(Country,
+                                      related_name='death_country',
+                                      blank=True,
+                                      null=True)
     death_country_uncertain = models.BooleanField(default=False)
-    death_country_source = models.ManyToManyField(SourceType,
-                                                  related_name='deathcountrysource',
-                                                  through='DeathCountrySource',
-                                                  null=True, blank=True)
     death_province = models.CharField(max_length=50, blank=True, null=True)
     death_province_uncertain = models.BooleanField(default=False)
-    death_province_source = models.ManyToManyField(SourceType,
-                                                   related_name='deathprovincesource',
-                                                   through='DeathProvinceSource',
-                                                   null=True, blank=True)
     death_city = models.CharField(max_length=200, blank=True, null=True)
     death_city_uncertain = models.BooleanField(default=False)
-    death_city_source = models.ManyToManyField(SourceType,
-                                               related_name='deathcitysource',
-                                               through='DeathCitySource',
-                                               null=True, blank=True)
+
     portrait = generic.GenericRelation(Image)
-    portrait_source = models.ManyToManyField(SourceType,
-                                             related_name='portraitsource',
-                                             through='PortraitSource',
-                                             null=True, blank=True)
     schools = models.ManyToManyField('School', related_name='schoolinformation',
                                      through='CreatorSchoolDetail', null=True,
                                      blank=True)
@@ -201,11 +171,11 @@ class Creator(models.Model):
                                      blank=True)
     # creators roles
     bio = models.TextField(blank=True, null=True)
-    bio_source = models.ManyToManyField(SourceType, related_name='biosource',
-                                        through='BioSource', null=True,
-                                        blank=True)
     sample_scan = generic.GenericRelation(Image)
     notes = models.TextField(blank=True, null=True)
+
+    data_source = models.ManyToManyField(CreatorDataSource,
+                                         blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -286,8 +256,8 @@ class Creator(models.Model):
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
-                'show_creators',
-                kwargs={'creators_id': self.id})
+                'show_creator',
+                kwargs={'creator_id': self.id})
 
     def deletable(self):
         return True

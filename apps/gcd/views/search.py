@@ -319,7 +319,7 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
 def creator_by_name(request, creator_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
         creator_name_ids = [creator_names.pk for creator_names in
-                            CreatorNameDetails.objects.filter(
+                            CreatorNameDetail.objects.filter(
                                 name__icontains=creator_name)]
         sqs = SearchQuerySet().filter(
             SQ(name__in=creator_name_ids) | SQ(

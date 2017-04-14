@@ -67,7 +67,15 @@
       {% if changeset.change_type == CTYPES.series_bond %}
         {% include 'oi/edit/series_bond_changeset.html' %}
       {% endif %}
-      {% include "oi/edit/include_frame.html" %}
+      {% if changeset.change_type == CTYPES.creator %}
+        {% include "oi/edit/include_creator_frame.html" %}
+      {% endif %}
+      {% if changeset.change_type == CTYPES.creator_noncomicwork %}
+        {% include "oi/edit/include_create_noncomicwork_frame.html" %}
+      {% endif %}
+      {% if changeset.change_type != CTYPES.creator and changeset.change_type != CTYPES.creator_noncomicwork %}
+        {% include "oi/edit/include_frame.html" %}
+      {% endif %}
     {% else %}
       {% if changeset.publisherrevisions.count %}
 <p class="error">Publishers not supported in group changesets.</p>
@@ -80,21 +88,6 @@
       {% endif %}
       {% if changeset.seriesrevisions.count %}
 <p class="error">Series not supported in group changesets.</p>
-      {% endif %}
-      {% if changeset.change_type == CTYPES.creators %}
-          {% include "oi/edit/include_creator_frame.html" %}
-      {% endif %}
-       {% if changeset.change_type == CTYPES.creator_membership %}
-          {% include "oi/edit/include_frame.html" %}
-      {% endif %}
-      {% if changeset.change_type == CTYPES.creator_award %}
-          {% include "oi/edit/include_frame.html" %}
-      {% endif %}
-      {% if changeset.change_type == CTYPES.creator_artinfluence %}
-          {% include "oi/edit/include_frame.html" %}
-      {% endif %}
-      {% if changeset.change_type == CTYPES.creator_noncomicwork %}
-          {% include "oi/edit/include_create_noncomicwork_frame.html" %}
       {% endif %}
 
 

@@ -24,8 +24,9 @@ from .image import get_cover_revision_form
 from .image import (    # noqa
     UploadScanForm, UploadVariantScanForm, GatefoldScanForm, UploadImageForm)
 from .creator import (    # noqa
-    CreatorRevisionForm, CreatorArtInfluenceRevisionForm, CreatorMembershipRevisionForm,
-    CreatorAwardRevisionForm, CreatorNonComicWorkRevisionForm)
+    CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
+    CreatorMembershipRevisionForm, CreatorAwardRevisionForm,
+    CreatorNonComicWorkRevisionForm, get_creator_revision_form)
 
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
@@ -76,6 +77,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name in ['cover', 'image']:
         return get_cover_revision_form(revision, **kwargs)
+
+    if model_name == 'creator':
+        return get_creator_revision_form(revision, **kwargs)
 
     raise NotImplementedError
 
