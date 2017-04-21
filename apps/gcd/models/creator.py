@@ -286,8 +286,8 @@ class Creator(models.Model):
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
-                'show_creators',
-                kwargs={'creators_id': self.id})
+                'show_creator',
+                kwargs={'creator_id': self.id})
 
     def deletable(self):
         return True

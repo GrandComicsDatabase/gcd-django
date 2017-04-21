@@ -22,16 +22,15 @@ urlpatterns = patterns('',
         name='mentoring'),
 
     # Creator URLs
-
-    url(r'^creators/add/$',
+    url(r'^creator/add/$',
      'apps.oi.views.add_creator', name='add_creator'),
-    url(r'^creators/(?P<creator_id>\d+)/membership/add/$',
+    url(r'^creator/(?P<creator_id>\d+)/membership/add/$',
      'apps.oi.views.add_creator_membership', name='add_creator_membership'),
-    url(r'^creators/(?P<creator_id>\d+)/award/add/$',
+    url(r'^creator/(?P<creator_id>\d+)/award/add/$',
      'apps.oi.views.add_creator_award', name='add_creator_award'),
-    url(r'^creators/(?P<creator_id>\d+)/influence/add/$',
+    url(r'^creator/(?P<creator_id>\d+)/influence/add/$',
      'apps.oi.views.add_creator_artinfluence', name='add_creator_artinfluence'),
-    url(r'^creators/(?P<creator_id>\d+)/non_comic_work/add/$',
+    url(r'^creator/(?P<creator_id>\d+)/non_comic_work/add/$',
      'apps.oi.views.add_creator_noncomicwork', name='add_creator_non_comic_work'),
 
     # Publisher URLs

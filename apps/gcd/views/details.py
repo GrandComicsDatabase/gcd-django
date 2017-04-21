@@ -58,12 +58,12 @@ IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
 
 
-def creator(request, creators_id):
-    creator = get_object_or_404(Creator, id=creators_id)
+def creator(request, creator_id):
+    creator = get_object_or_404(Creator, id=creator_id)
 
     if creator.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'creators', 'id': creators_id}))
+          kwargs={'model_name': 'creator', 'id': creator_id}))
 
     return show_creator(request, creator)
 
@@ -628,7 +628,7 @@ def change_history(request, model_name, id):
     from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
-                          'image', 'series_bond', 'creators', 'creator_membership',
+                          'image', 'series_bond', 'creator', 'creator_membership',
                           'creator_award', 'creator_artinfluence','creator_noncomicwork']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
@@ -654,10 +654,6 @@ def change_history(request, model_name, id):
         # filter is publisherrevisions__publisher, seriesrevisions__series, etc.
         filter_string = '%ss__%s' % (REVISION_CLASSES[model_name].__name__.lower(),
                                      model_name)
-
-        # to remove last character 's' from filter string for creators only
-        if model_name == 'creators':
-            filter_string = filter_string[:-1]
 
     kwargs = { str(filter_string): object, 'state': states.APPROVED }
     changesets = Changeset.objects.filter(**kwargs).order_by('-modified', '-id')
