@@ -4546,7 +4546,8 @@ def compare(request, id):
     post_rev = revision.posterior()
     field_list = revision.field_list()
     sourced_fields = None
-    revisions_before = None
+    revisions_before = []
+    revisions_after = []
     # eliminate fields that shouldn't appear in the compare
     if model_name == 'series':
         if not revision.imprint and \
@@ -4584,13 +4585,11 @@ def compare(request, id):
     elif changeset.change_type == CTYPES['creator']:
         sourced_fields = _get_creator_sourced_fields()
         creator_name_revisions = changeset.creatornamedetailrevisions.all()
-        revisions_before = []
         for creator_name_revision in creator_name_revisions:
             revisions_before.append(creator_name_revision)
             if creator_name_revision.creator_revise_to_name.count():
                 revisions_before.append(creator_name_revision\
                                         .creator_revise_to_name.get())
-        revisions_after = []
         school_revisions = changeset.creatorschooldetailrevisions.all()
         for school_revision in school_revisions:
             revisions_after.append(school_revision)
