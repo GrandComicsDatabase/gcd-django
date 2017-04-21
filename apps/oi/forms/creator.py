@@ -34,7 +34,7 @@ def get_creator_revision_form(revision=None, user=None):
             super(RuntimeCreatorRevisionForm, self).__init__(*args, **kwargs)
             if revision:
                 for field in _get_creator_sourced_fields():
-                    init_data_source_fields(field[0], revision, self.fields)
+                    init_data_source_fields(field, revision, self.fields)
     return RuntimeCreatorRevisionForm
 
 
@@ -58,8 +58,10 @@ class CreatorRevisionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(CreatorRevisionForm, self).__init__(*args, **kwargs)
         ordering = self.fields.keys()
-        for field in _get_creator_sourced_fields():
-            insert_data_source_fields(field[0], ordering, self.fields, field[1])
+        creator_sourced_fields = _get_creator_sourced_fields()
+        for field in creator_sourced_fields:
+            insert_data_source_fields(field, ordering, self.fields,
+                                      creator_sourced_fields[field])
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
 
@@ -71,14 +73,14 @@ class CreatorRevisionForm(forms.ModelForm):
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         for field in _get_creator_sourced_fields():
-            field_name = field[0]
-            data_source_type = cd['%s_source_type' % field_name]
-            data_source_description = cd['%s_source_description' % field_name]
+            data_source_type = cd['%s_source_type' % field]
+            data_source_description = cd['%s_source_description' % field]
             if data_source_type or data_source_description:
                 if not data_source_type or not data_source_description:
                     self.add_error(
-                      '%s_source_description' % field_name,
+                      '%s_source_description' % field,
                       'Source description and source type must both be set.')
+
 
 class CreatorMembershipRevisionForm(forms.ModelForm):
     class Meta:

@@ -44,12 +44,23 @@ class CreatorNameDetail(models.Model):
         verbose_name_plural = 'CreatorName Details'
 
     name = models.CharField(max_length=255, db_index=True)
-    description = models.TextField(null=True, blank=True)
     creator = models.ForeignKey('Creator', related_name='creator_names')
     type = models.ForeignKey('NameType', related_name='nametypes', null=True,
                              blank=True)
-    source = models.ManyToManyField('SourceType', related_name='namesources',
-                                    null=True, blank=True)
+    #source = models.ManyToManyField('SourceType', related_name='namesources',
+                                    #null=True, blank=True)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s - %s(%s)' % (
@@ -85,6 +96,18 @@ class CreatorDataSource(models.Model):
     source_type = models.ForeignKey(SourceType)
     source_description = models.TextField()
     field = models.CharField(max_length=256)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s - %s' % (
@@ -266,6 +289,9 @@ class Creator(models.Model):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,
                                      deleted=True).count() == 1
 
+    def active_creator_names(self):
+        return self.creator_names.exclude(deleted=True)
+
     def active_creator_membership(self):
         return self.membership_set.exclude(deleted=True)
 
@@ -296,7 +322,19 @@ class NameRelation(models.Model):
     to_name = models.ForeignKey(CreatorNameDetail, related_name='to_name')
     rel_type = models.ForeignKey(RelationType, related_name='relation_type',
                                  null=True, blank=True)
-    rel_source = models.ManyToManyField(SourceType, null=True)
+    #rel_source = models.ManyToManyField(SourceType, null=True)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s >Name_Relation< %s :: %s' % (unicode(self.gcd_official_name),
@@ -304,289 +342,6 @@ class NameRelation(models.Model):
                                                 unicode(self.rel_type)
                                                 )
 
-
-class BirthYearSource(models.Model):
-    """
-    Indicates the various sources of birthyear
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Birth Year Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatorbirthyearsource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatorbirthyearsourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class BirthMonthSource(models.Model):
-    """
-    Indicates the various sources of birthmonth
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Birth Month Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatorbirthmonthsource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatorbirthmonthsourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class BirthDateSource(models.Model):
-    """
-    Indicates the various sources of birthdate
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Birth Date Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatorbirthdatesource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatorbirthdatesourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class DeathYearSource(models.Model):
-    """
-    Indicates the various sources of deathyear
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Death Year Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatordeathyearsource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatordeathyearsourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class DeathMonthSource(models.Model):
-    """
-    Indicates the various sources of deathmonth
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Death Month Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatordeathmonthsource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatordeathmonthsourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class DeathDateSource(models.Model):
-    """
-    Indicates the various sources of deathdate
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Death Date Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatordeathdatesource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatordeathdatesourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class BirthCountrySource(models.Model):
-    """
-    Indicates the various sources of birthcountry
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Birth Country Source'
-
-    creator = models.ForeignKey(Creator,
-                                related_name='creatorbirthcountrysource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatorbirthcountrysourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class BirthProvinceSource(models.Model):
-    """
-    Indicates the various sources of birthprovince
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Birth Province Source'
-
-    creator = models.ForeignKey(Creator,
-                                related_name='creatorbirthprovincesource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatorbirthprovincesourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class BirthCitySource(models.Model):
-    """
-    Indicates the various sources of birthcity
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Birth City Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatorbirthcitysource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatorbirthcitysourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class DeathCountrySource(models.Model):
-    """
-    Indicates the various sources of deathcountry
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Death Country Source'
-
-    creator = models.ForeignKey(Creator,
-                                related_name='creatordeathcountrysource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatordeathcountrysourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class DeathProvinceSource(models.Model):
-    """
-    Indicates the various sources of deathprovince
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Death Province Source'
-
-    creator = models.ForeignKey(Creator,
-                                related_name='creatordeathprovincesource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatordeathprovincesourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class DeathCitySource(models.Model):
-    """
-    Indicates the various sources of deathcity
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Death City Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatordeathcitysource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatordeathcitysourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class PortraitSource(models.Model):
-    """
-    Indicates the various sources of portrait
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Portrait Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatorportraitsource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatorportraitsourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
-
-
-class BioSource(models.Model):
-    """
-    Indicates the various sources of bio
-    """
-
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Bio Source'
-
-    creator = models.ForeignKey(Creator, related_name='creatorbiosource')
-    source_type = models.ForeignKey(SourceType,
-                                    related_name='creatorbiosourcetype')
-    source_description = models.TextField(null=True, blank=True)
-
-    def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.source_type.type))
 
 
 class School(models.Model):
@@ -621,9 +376,21 @@ class CreatorSchoolDetail(models.Model):
     school_year_began_uncertain = models.BooleanField(default=False)
     school_year_ended = models.PositiveSmallIntegerField(null=True, blank=True)
     school_year_ended_uncertain = models.BooleanField(default=False)
-    school_source = models.ManyToManyField(SourceType,
-                                           related_name='schoolsource',
-                                           null=True, blank=True)
+    #school_source = models.ManyToManyField(SourceType,
+                                           #related_name='schoolsource',
+                                           #null=True, blank=True)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s - %s' % (
@@ -663,6 +430,18 @@ class CreatorDegreeDetail(models.Model):
     degree_year = models.PositiveSmallIntegerField(null=True, blank=True)
     degree_year_uncertain = models.BooleanField(default=False)
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
+
     def __unicode__(self):
         return '%s - %s' % (
         unicode(self.creator), unicode(self.degree.degree_name))
@@ -688,9 +467,9 @@ class ArtInfluence(models.Model):
     # self identify docs
     is_self_identify = models.BooleanField(default=False)
     self_identify_influences_doc = models.TextField(blank=True, null=True)
-    influence_source = models.ManyToManyField(SourceType,
-                                              related_name='influencesource',
-                                              null=True, blank=True)
+    #influence_source = models.ManyToManyField(SourceType,
+                                              #related_name='influencesource',
+                                              #null=True, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -698,6 +477,11 @@ class ArtInfluence(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return unicode(self.influence_name)
@@ -746,9 +530,9 @@ class Membership(models.Model):
     membership_end_year = models.PositiveSmallIntegerField(null=True,
                                                            blank=True)
     membership_end_year_uncertain = models.BooleanField(default=False)
-    membership_source = models.ManyToManyField(SourceType,
-                                               related_name='membershipsource',
-                                               null=True, blank=True)
+    #membership_source = models.ManyToManyField(SourceType,
+                                               #related_name='membershipsource',
+                                               #null=True, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -756,6 +540,11 @@ class Membership(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s' % unicode(self.organization_name)
@@ -783,9 +572,9 @@ class Award(models.Model):
     award_name = models.CharField(max_length=255)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
-    award_source = models.ManyToManyField(SourceType,
-                                          related_name='awardsource', null=True,
-                                          blank=True)
+    #award_source = models.ManyToManyField(SourceType,
+                                          #related_name='awardsource', null=True,
+                                          #blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -793,6 +582,11 @@ class Award(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return unicode(self.award_name)
@@ -852,8 +646,8 @@ class NonComicWork(models.Model):
     employer_name = models.CharField(max_length=200, null=True, blank=True)
     work_title = models.CharField(max_length=255, blank=True, null=True)
     work_role = models.ForeignKey(NonComicWorkRole, null=True)
-    work_source = models.ManyToManyField(SourceType, related_name='worksource',
-                                         null=True, blank=True)
+    #work_source = models.ManyToManyField(SourceType, related_name='worksource',
+                                         #null=True, blank=True)
     work_notes = models.TextField(blank=True, null=True)
 
     # Fields related to change management.
@@ -862,6 +656,11 @@ class NonComicWork(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s' % (unicode(self.publication_title))

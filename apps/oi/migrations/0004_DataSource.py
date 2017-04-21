@@ -259,9 +259,37 @@ class Migration(migrations.Migration):
             model_name='portraitsourcerevision',
             name='source_type',
         ),
+        migrations.AlterModelOptions(
+            name='creatornamedetailrevision',
+            options={'ordering': ['type__id', 'created', '-id'], 'verbose_name_plural': 'Creator Name Detail Revisions'},
+        ),
+        migrations.RemoveField(
+            model_name='creatorartinfluencerevision',
+            name='influence_source',
+        ),
+        migrations.RemoveField(
+            model_name='creatorawardrevision',
+            name='award_source',
+        ),
+        migrations.RemoveField(
+            model_name='creatordegreedetailrevision',
+            name='creater_degree_detail',
+        ),
+        migrations.RemoveField(
+            model_name='creatormembershiprevision',
+            name='membership_source',
+        ),
+        migrations.RemoveField(
+            model_name='creatornamedetailrevision',
+            name='description',
+        ),
         migrations.RemoveField(
             model_name='creatornamedetailrevision',
             name='source',
+        ),
+        migrations.RemoveField(
+            model_name='creatornoncomicworkrevision',
+            name='work_source',
         ),
         migrations.RemoveField(
             model_name='creatorrevision',
@@ -362,13 +390,35 @@ class Migration(migrations.Migration):
             name='PortraitSourceRevision',
         ),
         migrations.RemoveField(
+            model_name='creatorschooldetailrevision',
+            name='school_source',
+        ),
+        migrations.RemoveField(
             model_name='namerelationrevision',
             name='rel_source',
+        ),
+        migrations.AddField(
+            model_name='creatordegreedetailrevision',
+            name='creator_degree_detail',
+            field=models.ForeignKey(related_name='revisions', to='gcd.CreatorDegreeDetail', null=True),
+            preserve_default=True,
         ),
         migrations.AddField(
             model_name='creatorrevision',
             name='data_source',
             field=models.ManyToManyField(to='oi.CreatorDataSourceRevision', null=True, blank=True),
+            preserve_default=True,
+        ),
+        migrations.AlterField(
+            model_name='creatornamedetailrevision',
+            name='creator_name_detail',
+            field=models.ForeignKey(related_name='revisions', to='gcd.CreatorNameDetail', null=True),
+            preserve_default=True,
+        ),
+        migrations.AlterField(
+            model_name='namerelationrevision',
+            name='name_relation',
+            field=models.ForeignKey(related_name='revisions', to='gcd.NameRelation', null=True),
             preserve_default=True,
         ),
     ]

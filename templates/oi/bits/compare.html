@@ -2,7 +2,6 @@
 {% load credits %}
 {% load compare %}
 {% load i18n %}
-{% load url from future %}
 
 {% ifequal changeset_type 'story' %}
 <h3> Sequence {{ revision.sequence_number }}
@@ -98,27 +97,28 @@
     {% endif %}
   </tr>
 
+    {% if revisions_before %}
+      {% for revision_before in revisions_before %}
+        {% for field in revision_before.field_list %}
+          {% with revision=revision_before prev_rev=revision_before.previous check_prev=True %}
+            {% include 'oi/bits/compare_field.html' %}
+          {% endwith %}
+        {% endfor %}
+      {% endfor %}
+    {% endif %}
     {% for field in field_list %}
-  <tr class="{{ revision.changed|check_changed:field }}">
-    <td class="field_name"> {{ field|field_name }} </td>
-      {% if revision.changed|check_changed:field and prev_rev and not revision.deleted %}
-        {% diff_list prev_rev revision field as diff_list %}
-        {% if diff_list %}
-    <td> {{ diff_list|show_diff:"orig" }} </td>
-    <td> {{ diff_list|show_diff:"change" }} </td>
-        {% else %}
-    <td> {{ prev_rev|field_value:field }} </td>
-    <td> {{ revision|field_value:field }} </td>
-        {% endif %}
-      {% else %}
-        {% if prev_rev %}
-    <td> {{ prev_rev|field_value:field }} </td>
-        {% endif %}
-        {% if not revision.deleted %}
-    <td> {{ revision|field_value:field }} </td>
-        {% endif %}
-      {% endif %}
-  </tr>
+      {% include 'oi/bits/compare_field.html' %}
+    {% if field in sourced_fields %}
+      {% with changeset|get_source_revisions:field as source_revisions %}
+        {% for source_revision in source_revisions %}
+          {% for source_field in source_fields %}
+            {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
+              {% include 'oi/bits/compare_field.html' %}
+            {% endwith %}
+          {% endfor %}
+        {% endfor %}
+      {% endwith %}
+    {% endif %}
     {% endfor %}
     {% if changeset_type == 'story' %}
       {% if revision.migration_status and not revision.migration_status.reprint_confirmed or revision.migration_status.modified > revision.changeset.created and revision.changeset.modified > revision.migration_status.modified or revision.migration_status.modified > revision.changeset.created and not revision.changeset.state = states.APPROVED %}
@@ -161,6 +161,15 @@
     </td>
   </tr>
     {% endif %}
+    {% if revisions_after %}
+      {% for revision_after in revisions_after %}
+        {% for field in revision_after.field_list %}
+          {% with revision=revision_after prev_rev=revision_after.previous check_prev=True %}
+            {% include 'oi/bits/compare_field.html' %}
+          {% endwith %}
+        {% endfor %}
+      {% endfor %}
+    {% endif %}    
   {% endif %}
 {% endif %}
 </table>

@@ -1,0 +1,125 @@
+{% load compare %}
+<input type="hidden" name="total_names"
+        value="{{ other_name_details|length }}" id="total_names">
+<input type="hidden" name="total_schools"
+        value="{{ revision.cr_creator_school.all|length }}"
+        id="total_schools">
+<input type="hidden" name="total_degrees"
+        value="{{ revision.cr_creator_degree.all|length }}"
+        id="total_degrees">
+
+<div class="gcd-official-name-div">
+    <div class="name-details"
+            style="padding-left: 43px;display: inline;">
+        <label>Gcd Official Name:</label>
+        <input type="hidden" id="gcd_official_revision_id" name="gcd_official_revision_id" value="{{ official_name_details.revision_id }}">
+        <input type="text" id="gcd_official_name"
+                name="gcd_official_name"
+                value="{{ official_name_details.name }}" required
+                style="margin-left: -12px;width: 138px;"> &nbsp;
+        <label>Type:</label>
+        <select name="gcd_official_type" id="gcd_official_type"
+                style="width: 118px; margin-left: -12px;">
+            {% for name_type in name_types %}
+                {% if name_type.type == settings.GCD_OFFICIAL_NAME_FIELDNAME %}
+                    <option value={{ name_type.id }}>{{ name_type.type }}</option>
+                {% endif %}
+            {% endfor %}
+        </select> &nbsp;
+
+        
+{% comment %}
+        <label>Source:</label>
+        <select multiple
+                style="vertical-align: middle;margin-left: -12px;"
+                name="gcd_official_sources"
+                id="gcd_official_sources">
+            {% for name_source in sources %}
+                <option
+                        {% if name_source.type|is_in:official_name_details.sources %}
+                            selected {% endif %}
+                            value={{ name_source.id }}>{{ name_source.type }}</option>
+            {% endfor %}
+        </select>&nbsp;
+{% endcomment %}
+        <input type="button" id="add_name_divison_id"
+                class="add_name_class" value="Add New"
+                name="add_name_divison">
+        <br><br>
+    </div>
+</div>
+
+<div class="name-div">
+    {% for other_name_detail in other_name_details %}
+        <div class="name-details{{ forloop.counter }}"
+                style="padding-left: 113px;display: inline;">
+            <input type="hidden" id="name_revision_id_{{ forloop.counter }}" name="name_revision_id_{{ forloop.counter }}" value="{{ other_name_detail.revision_id }}">
+            <label>Name:</label>
+            <input type="text" id="name_{{ forloop.counter }}"
+                    name="name_{{ forloop.counter }}"
+                    value="{{ other_name_detail.name }}" required
+                    style="margin-left: -12px;width: 138px;"> &nbsp;
+            <label>Type:</label>
+            <select name="name_type_{{ forloop.counter }}"
+                    id="name_type_{{ forloop.counter }}"
+                    style="width: 118px; margin-left: -12px;">
+                {% for name_type in name_types %}
+                    {% if not name_type.type == settings.GCD_OFFICIAL_NAME_FIELDNAME %}
+                        <option
+                                {% if name_type.type == other_name_detail.type %}
+                                    selected {% endif %}
+                                    value={{ name_type.id }}>{{ name_type.type }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select> &nbsp;
+
+{% comment %}
+            <label>Source:</label>
+            <select multiple
+                    style="vertical-align: middle;margin-left: -12px;"
+                    name="sources{{ forloop.counter }}"
+                    id="sources{{ forloop.counter }}">
+                {% for name_source in sources %}
+                    <option
+                            {% if name_source.type|is_in:other_name_detail.sources %}
+                                selected {% endif %}
+                                value={{ name_source.id }}>{{ name_source.type }}</option>
+                {% endfor %}
+            </select>&nbsp;
+{% endcomment %}
+
+            <label>Relation Type:</label>
+            <select name="relation_type_{{ forloop.counter }}"
+                    id="relation_type_{{ forloop.counter }}"
+                    style="margin-left: -12px;">
+                <option value="">------------</option>
+                {% for relation_type in relation_types %}
+                    <option
+                            {% if relation_type.type|is_equal:other_name_detail.relation_obj %}
+                                selected {% endif %}
+                                value={{ relation_type.id }}>{{ relation_type.type }}</option>
+                {% endfor %}
+            </select> &nbsp;
+            {% comment %}
+            <label>Relation Source:</label>
+            <select multiple
+                    style="vertical-align: middle;margin-left: -12px;"
+                    name="relation_sources{{ forloop.counter }}"
+                    id="relation_sources{{ forloop.counter }}">
+                {% for name_source in sources %}
+                    <option
+                            {% if name_source.type|relation_source_is_in:other_name_detail.relation_obj %}
+                                selected {% endif %}
+                                value={{ name_source.id }}>{{ name_source.type }}</option>
+                {% endfor %}
+            </select>&nbsp;
+            {% endcomment %}
+            <input type="button" id="add_name_divison_id"
+                    class="add_name_class" value="Add New"
+                    name="add_name_divison">
+            <input type="button" id="remove_name_button" value="Remove"
+                    name="remove_this_name">`
+            <br><br>
+        </div>
+    {% endfor %}
+</div>

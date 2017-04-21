@@ -1,55 +1,55 @@
 [
     {
-        "pk": 6,
+        "pk": 2,
         "model": "gcd.nametype",
         "fields": {
             "type": "Changed"
         }
     },
     {
-        "pk": 8,
+        "pk": 3,
         "model": "gcd.nametype",
         "fields": {
             "type": "Family"
         }
     },
     {
-        "pk": 2,
+        "pk": 1,
         "model": "gcd.nametype",
         "fields": {
             "type": "GCD Official"
         }
     },
     {
-        "pk": 7,
+        "pk": 4,
         "model": "gcd.nametype",
         "fields": {
             "type": "Given (birth)"
         }
     },
     {
-        "pk": 4,
+        "pk": 5,
         "model": "gcd.nametype",
         "fields": {
             "type": "House"
         }
     },
     {
-        "pk": 9,
+        "pk": 6,
         "model": "gcd.nametype",
         "fields": {
             "type": "Other Language"
         }
     },
     {
-        "pk": 3,
+        "pk": 7,
         "model": "gcd.nametype",
         "fields": {
             "type": "Pen"
         }
     },
     {
-        "pk": 5,
+        "pk": 8,
         "model": "gcd.nametype",
         "fields": {
             "type": "Shop"

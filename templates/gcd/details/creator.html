@@ -92,9 +92,9 @@
                             {% endif %}
                         {% endfor %}
 
-                    {% elif creator.creator_names.all %}
+                    {% elif creator.creator_names.count %}
                         <hr>
-                        {% for creator_name in creator.creator_names.all %}
+                        {% for creator_name in creator.active_creator_names %}
                             <h3>Name:{{ forloop.counter }}</h3>
                             <p><strong>Name</strong> : {{ creator_name.name }}</p>
                             <p><strong>Type</strong> : {{ creator_name.type }}</p>
