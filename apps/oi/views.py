@@ -4871,7 +4871,7 @@ def process_data_source(creator_form, field_name, changeset=None,
                                 field=field_name)
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_creator(request):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -4962,7 +4962,7 @@ def add_creator(request):
     return oi_render(request, 'oi/edit/add_frame.html', context)
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_creator_membership(request, creator_id,
                            template_name='oi/creators/creator_memberships'
                                          '.html'):
@@ -5014,7 +5014,7 @@ def add_creator_membership(request, creator_id,
     return render(request, template_name, context)
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_creator_award(request, creator_id,
                       template_name='oi/creators/creator_awards.html'):
     if not request.user.indexer.can_reserve_another():
@@ -5064,7 +5064,7 @@ def add_creator_award(request, creator_id,
     return render(request, template_name, context)
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_creator_artinfluence(request, creator_id,
                              template_name='oi/creators/creator_artinfluences'
                                            '.html'):
@@ -5117,7 +5117,7 @@ def add_creator_artinfluence(request, creator_id,
     return render(request, template_name, context)
 
 
-@permission_required('gcd.can_reserve')
+@permission_required('indexer.can_reserve')
 def add_creator_noncomicwork(request, creator_id,
                              template_name='oi/creators/creator_noncomic_works.html'):
     if not request.user.indexer.can_reserve_another():
