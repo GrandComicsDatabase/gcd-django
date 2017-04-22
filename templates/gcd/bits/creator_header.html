@@ -7,7 +7,7 @@
 <h1 class="item_id">
   <div class="left">
       {% if creator %}
-        <a href="{{ creator.get_absolute_url }}">{{ creator.name }}</a>
+        <a href="{{ creator.get_absolute_url }}">{{ creator }}</a>
       {% elif creator_membership %}
         <a href="{{ creator_membership.creator.get_absolute_url }}">{{ creator_membership.creator }}</a> : <a href="{{ creator_membership.get_absolute_url }}">{{ creator_membership.organization_name }}</a>
       {% elif creator_award %}

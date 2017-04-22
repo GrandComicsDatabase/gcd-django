@@ -8,7 +8,7 @@
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{{ MEDIA_URL }}css/gcd/default.css"/>
+    href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -17,12 +17,6 @@
   <div id="control_container">
     <div id="control_center">
       <dl class="pub_data">
-{#{% if indicia_publisher.is_surrogate %}#}
-{#        <dt> Surrogate:#}
-{#        <dd> This company was a surrogate for {{ indicia_publisher.parent }}, meaning that it #}
-{#             published material on behalf of {{ indicia_publisher.parent }} but was not#}
-{#             directly associated with it.#}
-{#{% endif %}#}
         <dt> Award Name:
         <dd> {{ creator_award.award_name }}
 {% if creator_award.award_year %}
