@@ -827,7 +827,8 @@ def _save(request, form, changeset_id=None, revision_id=None, model_name=None):
                             # TODO support more than one revision
                             data_source_revision = data_source_revision[0]
                         process_data_source(form, field, revision.changeset,
-                                            data_source_revision)
+                                            revision=data_source_revision,
+                                            sourced_revision=revision)
 
                     # Update Creator's GCD Official Name
                     gcd_official_name = request.POST.get('gcd_official_name')
@@ -4998,10 +4999,10 @@ def add_creator_membership(request, creator_id,
                 revision.save_added_revision(changeset=changeset, parent=parent)
                 revision.save()
 
-                membership_sources = membership_form.cleaned_data.get(
-                    'membership_source')
-                for membership_source in membership_sources:
-                    revision.membership_source.add(membership_source)
+                #membership_sources = membership_form.cleaned_data.get(
+                    #'membership_source')
+                #for membership_source in membership_sources:
+                    #revision.membership_source.add(membership_source)
                 return submit(request, changeset.id)
 
     except(Creator.DoesNotExist, Creator.MultipleObjectsReturned):
@@ -5049,9 +5050,9 @@ def add_creator_award(request, creator_id,
                 revision.save_added_revision(changeset=changeset, parent=parent)
                 revision.save()
 
-                award_sources = award_form.cleaned_data.get('award_source')
-                for award_source in award_sources:
-                    revision.award_source.add(award_source)
+                #award_sources = award_form.cleaned_data.get('award_source')
+                #for award_source in award_sources:
+                    #revision.award_source.add(award_source)
                 return submit(request, changeset.id)
 
     except(Creator.DoesNotExist, Creator.MultipleObjectsReturned):
@@ -5101,10 +5102,10 @@ def add_creator_artinfluence(request, creator_id,
                 revision.save_added_revision(changeset=changeset, parent=parent)
                 revision.save()
 
-                influence_sources = artinfluence_form.cleaned_data.get(
-                    'influence_source')
-                for influence_source in influence_sources:
-                    revision.influence_source.add(influence_source)
+                #influence_sources = artinfluence_form.cleaned_data.get(
+                    #'influence_source')
+                #for influence_source in influence_sources:
+                    #revision.influence_source.add(influence_source)
                 return submit(request, changeset.id)
 
     except(Creator.DoesNotExist, Creator.MultipleObjectsReturned):
@@ -5178,9 +5179,9 @@ def add_creator_noncomicwork(request, creator_id,
                             link=work_link,
                             changeset=changeset)
 
-                work_sources = noncomicwork_form.cleaned_data.get('work_source')
-                for work_source in work_sources:
-                    revision.work_source.add(work_source)
+                #work_sources = noncomicwork_form.cleaned_data.get('work_source')
+                #for work_source in work_sources:
+                    #revision.work_source.add(work_source)
                 return submit(request, changeset.id)
 
     except(Creator.DoesNotExist, Creator.MultipleObjectsReturned):
