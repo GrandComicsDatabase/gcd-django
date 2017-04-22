@@ -6270,7 +6270,7 @@ class CreatorSchoolDetailRevision(Revision):
                                               null=True,
                                               related_name='revisions')
     creator = models.ForeignKey(CreatorRevision,
-                                related_name='cr_creator_school')
+                                related_name='school_revisions')
     school = models.ForeignKey('gcd.School',
                                related_name='cr_school_details')
     school_year_began = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -6382,7 +6382,7 @@ class CreatorDegreeDetailRevision(Revision):
                                               null=True,
                                               related_name='revisions')
     creator = models.ForeignKey(CreatorRevision,
-                                related_name='cr_creator_degree')
+                                related_name='degree_revisions')
     school = models.ForeignKey('gcd.School',
                                related_name='cr_schooldetails',
                                null=True)
@@ -6499,7 +6499,7 @@ class CreatorMembershipRevision(Revision):
                                            null=True,
                                            related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
-                                related_name='cr_creator_membership')
+                                related_name='membership_revisions')
     organization_name = models.CharField(max_length=200)
     membership_type = models.ForeignKey('gcd.MembershipType',
                                         related_name='cr_membershiptype',
@@ -6647,7 +6647,7 @@ class CreatorAwardRevision(Revision):
                                       null=True,
                                       related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
-                                related_name='cr_creator_award')
+                                related_name='award_revisions')
     award_name = models.CharField(max_length=255)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
@@ -6781,12 +6781,12 @@ class CreatorArtInfluenceRevision(Revision):
                                              null=True,
                                              related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
-                                related_name='cr_creator_artinfluence')
+                                related_name='art_influence_revisions')
     influence_name = models.CharField(max_length=200)
     influence_link = models.ForeignKey('gcd.Creator',
                                        null=True,
                                        blank=True,
-                                       related_name='cr_influencelink')
+                                       related_name='influenced_revisions')
     is_self_identify = models.BooleanField(default=False)
     self_identify_influences_doc = models.TextField(blank=True, null=True)
     #influence_source = models.ManyToManyField('gcd.SourceType',
@@ -6935,7 +6935,7 @@ class CreatorNonComicWorkRevision(Revision):
                                              null=True,
                                              related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
-                                related_name='cr_creator_noncomicwork')
+                                related_name='non_comic_work_revisions')
     work_type = models.ForeignKey('gcd.NonComicWorkType',
                                   null=True,
                                   blank=True,

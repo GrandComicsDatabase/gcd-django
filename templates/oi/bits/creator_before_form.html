@@ -2,10 +2,10 @@
 <input type="hidden" name="total_names"
         value="{{ other_name_details|length }}" id="total_names">
 <input type="hidden" name="total_schools"
-        value="{{ revision.cr_creator_school.all|length }}"
+        value="{{ revision.school_revisions.all|length }}"
         id="total_schools">
 <input type="hidden" name="total_degrees"
-        value="{{ revision.cr_creator_degree.all|length }}"
+        value="{{ revision.degree_revisions.all|length }}"
         id="total_degrees">
 
 <div class="gcd-official-name-div">

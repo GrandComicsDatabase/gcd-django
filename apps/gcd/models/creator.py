@@ -283,6 +283,18 @@ class Creator(models.Model):
                 kwargs={'creator_id': self.id})
 
     def deletable(self):
+        if self.award_revisions.filter(changeset__state__in=
+                                       states.ACTIVE).count():
+           return False
+        if self.non_comic_work_revisions.filter(changeset__state__in=
+                                                states.ACTIVE).count():
+           return False
+        if self.art_influence_revisions.filter(changeset__state__in=
+                                               states.ACTIVE).count():
+           return False
+        if self.membership_revisions.filter(changeset__state__in=
+                                            states.ACTIVE).count():
+           return False
         return True
 
     def pending_deletion(self):

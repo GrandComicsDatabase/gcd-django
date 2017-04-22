@@ -40,12 +40,6 @@
   {% csrf_token %}
   <input id="edit" name="edit" type="submit" value="Edit"></input>
 </form>
-{% comment %}
-TODO integrate this
-{% endcomment %}
-    {% if object_class == "creator" %}
-    {{ object_name }} cannot be deleted because there are pending Membership, Award,Art Influence or NonComicWork changes.
-    {% endif %}
 <form method="GET" action="{% url "delete_revision" model_name=object_class id=object.id %}">
   <input type="submit" value="Delete"
          {% if not object.deletable %}disabled{% endif %}>

@@ -1,12 +1,12 @@
 {% load compare %}
 <h4 style="display:inline;">School Details:-</h4>&nbsp;&nbsp;&nbsp;<input
     type="button" id="add_schools" class="add_school_class"
-    value="Add Schools" {% if revision.cr_creator_school.all|length == 0 %}
+    value="Add Schools" {% if revision.school_revisions.all|length == 0 %}
     style="display: inline;" {% endif %}>
 <br><br>
 
 <div class="school-div">
-    {% for school_obj in revision.cr_creator_school.all %}
+    {% for school_obj in revision.school_revisions.all %}
         <div class="school-details{{ forloop.counter }}"
                 style="padding-left: 16px; display: inline;">
             <label>School:</label>
@@ -71,12 +71,12 @@
 
 <h4 style="display:inline;">Degree Details:-</h4>&nbsp;&nbsp;&nbsp;<input
     type="button" id="add_degrees" class="add_degree_class"
-    value="Add Degrees" {% if revision.cr_creator_degree.all|length == 0 %}
+    value="Add Degrees" {% if revision.degree_revisions.all|length == 0 %}
     style="display: inline;" {% endif %}>
 <br><br>
 
 <div class="degree-div">
-    {% for degree_obj in revision.cr_creator_degree.all %}
+    {% for degree_obj in revision.degree_revisions.all %}
         <div class="degree-details{{ forloop.counter }}"
                 style="padding-left: 20px; display: inline;">
             <label>Degree:</label>

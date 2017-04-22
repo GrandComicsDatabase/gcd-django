@@ -4,7 +4,7 @@
 {% load i18n %}
 
 {% block title %}
-    GCD :: Creator :: {{ creator.name }}
+    GCD :: Creator :: {{ creator }}
 {% endblock %}
 
 {% block css %}
@@ -396,12 +396,11 @@
                         {% endif %}
                     {% endif %} <!-- not preview -->
                 </div> <!-- control_rail -->
-                <div class="change_history">
+                <div id="change_history" class="edit_footer">
                     {% if preview %}
-                        <a href="{% url "change_history" model_name='creator' id=creator.source.id %}">Change
-                            History</a>
+                        <a href="{% url "change_history" model_name='creator' id=creator.source.id %}">View Change History</a>
                     {% else %}
-                        <a href="{% url "change_history" model_name='creator' id=creator.id %}">Change History</a>
+                        <a href="{% url "change_history" model_name='creator' id=creator.id %}">View Change History</a>
                     {% endif %}
                 </div>
             {% endif %}
