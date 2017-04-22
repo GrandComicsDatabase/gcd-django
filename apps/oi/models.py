@@ -732,8 +732,6 @@ class Changeset(models.Model):
                         return self.cached_revisions.next()
                     else:
                         self._inline_revision = self.revisions.next()
-        else:
-            self._inline_revision = self.revisions.next()
         return self._inline_revision
 
     def deleted(self):
@@ -1213,7 +1211,7 @@ class RevisionManager(models.Manager):
     """
 
     def clone_revision(self, instance, instance_class,
-                       changeset, check=True):
+                       changeset, check=True, **kwargs):
         """
         Given an existing instance, create a new revision based on it.
 
@@ -1227,7 +1225,8 @@ class RevisionManager(models.Manager):
             raise TypeError("Please supply a valid %s." % instance_class)
 
         revision = self._do_create_revision(instance,
-                                            changeset=changeset)
+                                            changeset=changeset,
+                                            **kwargs)
         return revision
 
     def active(self):
@@ -1372,7 +1371,7 @@ class Revision(models.Model):
             if hasattr(self, 'previous_revision'):
                 if hasattr(self, 'next_revision'):
                     self._post_rev = self.next_revision
-            elif self.source:
+            else:
                 post_revs = self.source.revisions \
                     .filter(changeset__state=states.APPROVED) \
                     .filter(Q(modified__gt=self.modified) |
@@ -5567,7 +5566,7 @@ class ImageRevision(Revision):
 
 
 class CreatorDataSourceRevisionManager(RevisionManager):
-    def clone_revision(self, creator_data_source, changeset):
+    def clone_revision(self, creator_data_source, changeset, sourced_revision):
         """
         Given an existing CreatorDataSource instance, create a new revision
         based on it.
@@ -5577,23 +5576,23 @@ class CreatorDataSourceRevisionManager(RevisionManager):
         return RevisionManager.clone_revision(self,
                                               instance=creator_data_source,
                                               instance_class=CreatorDataSource,
-                                              changeset=changeset)
+                                              changeset=changeset,
+                                              sourced_revision=sourced_revision)
 
-    def _do_create_revision(self, creator_data_source, changeset, **ignore):
+    def _do_create_revision(self, creator_data_source, changeset,
+                            sourced_revision, **ignore):
         """
-        Helper delegate to do the class-specific work of clone_revision.
+        Helper delegate to do the class-specific work of c  lone_revision.
         """
-        sourced_revision = creator_data_source.creator_set.get(
-                                               revisions__changeset=changeset)
         revision = CreatorDataSourceRevision(
                 # revision-specific fields:
                 creator_data_source=creator_data_source,
                 changeset=changeset,
+                # copied fields:
                 sourced_revision=sourced_revision,
                 source_description=creator_data_source.source_description,
                 source_type=creator_data_source.source_type,
                 field=creator_data_source.field
-                # copied fields:
         )
 
         revision.save()
@@ -5764,8 +5763,10 @@ class CreatorRevisionManager(RevisionManager):
         # TODO should this be done here, or in oi/views.py, add active_*
         data_sources = creator.data_source.all()
         for data_source in data_sources:
-            CreatorDataSourceRevision.objects.clone_revision(data_source,
-                                                             changeset=changeset)
+            CreatorDataSourceRevision.objects.clone_revision(
+                                              data_source,
+                                              changeset=changeset,
+                                              sourced_revision=revision)
 
         # TODO check if this is working, add active_*
         school_list = [schools.school for schools in
