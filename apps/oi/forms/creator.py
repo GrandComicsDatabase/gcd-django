@@ -16,6 +16,8 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
 
 
+# TODO add help links as for other forms
+
 def init_data_source_fields(field_name, revision, fields):
     data_source_revision = revision.changeset.creatordatasourcerevisions\
                                              .filter(field=field_name)
@@ -82,12 +84,34 @@ class CreatorRevisionForm(forms.ModelForm):
                       'Source description and source type must both be set.')
 
 
+def get_creator_membership_revision_form(revision=None, user=None):
+    class RuntimeCreatorMembershipRevisionForm(CreatorMembershipRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeCreatorMembershipRevisionForm, self)\
+                         .__init__(*args, **kwargs)
+            #if revision:
+                #for field in _get_creator_sourced_fields():
+                    #init_data_source_fields(field, revision, self.fields)
+    return RuntimeCreatorMembershipRevisionForm
+
+
 class CreatorMembershipRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorMembershipRevision
         exclude = ['creator', 'creator_membership', 'changeset', 'deleted',]
 
     comments = _get_comments_form_field()
+
+
+def get_creator_award_revision_form(revision=None, user=None):
+    class RuntimeCreatorAwardRevisionForm(CreatorAwardRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeCreatorAwardRevisionForm, self)\
+                         .__init__(*args, **kwargs)
+            #if revision:
+                #for field in _get_creator_sourced_fields():
+                    #init_data_source_fields(field, revision, self.fields)
+    return RuntimeCreatorAwardRevisionForm
 
 
 class CreatorAwardRevisionForm(forms.ModelForm):
@@ -98,12 +122,36 @@ class CreatorAwardRevisionForm(forms.ModelForm):
     comments = _get_comments_form_field()
 
 
+def get_creator_art_influence_revision_form(revision=None, user=None):
+    class RuntimeCreatorArtInfluenceRevisionForm(\
+                 CreatorArtInfluenceRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeCreatorArtInfluenceRevisionForm, self)\
+                         .__init__(*args, **kwargs)
+            #if revision:
+                #for field in _get_creator_sourced_fields():
+                    #init_data_source_fields(field, revision, self.fields)
+    return RuntimeCreatorArtInfluenceRevisionForm
+
+
 class CreatorArtInfluenceRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorArtInfluenceRevision
         exclude = ['creator', 'creator_artinfluence','changeset', 'deleted',]
 
     comments = _get_comments_form_field()
+
+
+def get_creator_non_comic_work_revision_form(revision=None, user=None):
+    class RuntimeCreatorNonComicWorkRevisionForm(\
+                 CreatorNonComicWorkRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeCreatorNonComicWorkRevisionForm, self)\
+                         .__init__(*args, **kwargs)
+            #if revision:
+                #for field in _get_creator_sourced_fields():
+                    #init_data_source_fields(field, revision, self.fields)
+    return RuntimeCreatorNonComicWorkRevisionForm
 
 
 class CreatorNonComicWorkRevisionForm(forms.ModelForm):

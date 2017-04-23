@@ -53,7 +53,8 @@ from apps.oi.models import (
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolDetailRevision, CreatorDegreeDetailRevision,
-    NameRelationRevision, _get_creator_sourced_fields)
+    NameRelationRevision, NonComicWorkYearRevision,
+    _get_creator_sourced_fields)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,

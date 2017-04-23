@@ -26,7 +26,10 @@ from .image import (    # noqa
 from .creator import (    # noqa
     CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
     CreatorMembershipRevisionForm, CreatorAwardRevisionForm,
-    CreatorNonComicWorkRevisionForm, get_creator_revision_form)
+    CreatorNonComicWorkRevisionForm, get_creator_revision_form,
+    get_creator_art_influence_revision_form, get_creator_award_revision_form,
+    get_creator_membership_revision_form,
+    get_creator_non_comic_work_revision_form)
 
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
@@ -80,6 +83,18 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'creator':
         return get_creator_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_artinfluence':
+        return get_creator_art_influence_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_award':
+        return get_creator_award_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_membership':
+        return get_creator_membership_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_noncomicwork':
+        return get_creator_non_comic_work_revision_form(revision, **kwargs)
 
     raise NotImplementedError
 
