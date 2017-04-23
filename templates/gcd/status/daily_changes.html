@@ -25,6 +25,23 @@
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 
+{% if creators %}
+<table class="listing">
+  <tr>
+    <th> Creator </th>
+    <th> Change History </th>
+  </tr>
+  {% for creator in creators %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ creator.get_absolute_url }}">{{ creator }}</a> </td>
+    <td>
+      <a href="{% url "change_history" model_name='creator' id=creator.id %}">Change History</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
 {% if publishers %}
 <table class="listing">
   <tr>
