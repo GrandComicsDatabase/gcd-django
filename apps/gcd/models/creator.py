@@ -207,9 +207,6 @@ class Creator(models.Model):
 
     deleted = models.BooleanField(default=False, db_index=True)
 
-    def __unicode__(self):
-        return '%s' % unicode(self.gcd_official_name)
-
     def _portrait(self):
         img = Image.objects.filter(object_id=self.id, deleted=False,
                                    content_type=ContentType.objects.get_for_model(
@@ -242,21 +239,21 @@ class Creator(models.Model):
 
     def get_text_fields(self):
         fields_dict = OrderedDict()
-        fields_dict['GCD Official Name'] = self.gcd_official_name
-        fields_dict['Birth Year'] = self.birth_year
-        fields_dict['Birth Year Uncertain'] = self.birth_year_uncertain
-        fields_dict['Birth Month'] = calendar.month_name[
-            self.birth_month] if self.birth_month else None
-        fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
-        fields_dict['Birth Date'] = self.birth_date
-        fields_dict['Birth Date Uncertain'] = self.birth_date_uncertain
-        fields_dict['Death Year'] = self.death_year
-        fields_dict['Death Year Uncertain'] = self.death_year_uncertain
-        fields_dict['Death Month'] = calendar.month_name[
-            self.death_month] if self.death_month else None
-        fields_dict['Death Month Uncertain'] = self.death_month_uncertain
-        fields_dict['Death Date'] = self.death_date
-        fields_dict['Death Date Uncertain'] = self.death_date_uncertain
+        #fields_dict['GCD Official Name'] = self.gcd_official_name
+        #fields_dict['Birth Year'] = self.birth_year
+        #fields_dict['Birth Year Uncertain'] = self.birth_year_uncertain
+        #fields_dict['Birth Month'] = calendar.month_name[
+            #self.birth_month] if self.birth_month else None
+        #fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
+        #fields_dict['Birth Date'] = self.birth_date
+        #fields_dict['Birth Date Uncertain'] = self.birth_date_uncertain
+        #fields_dict['Death Year'] = self.death_year
+        #fields_dict['Death Year Uncertain'] = self.death_year_uncertain
+        #fields_dict['Death Month'] = calendar.month_name[
+            #self.death_month] if self.death_month else None
+        #fields_dict['Death Month Uncertain'] = self.death_month_uncertain
+        #fields_dict['Death Date'] = self.death_date
+        #fields_dict['Death Date Uncertain'] = self.death_date_uncertain
         fields_dict[
             'Birth Country'] = self.birth_country.name if self.birth_country \
             else None
@@ -277,10 +274,47 @@ class Creator(models.Model):
         fields_dict['Notes'] = self.notes
         return fields_dict
 
-    def get_absolute_url(self):
-        return urlresolvers.reverse(
-                'show_creator',
-                kwargs={'creator_id': self.id})
+    def _display_day(self, type):
+        year = '%s_year' % type
+        if getattr(self, year):
+            display = '%d%s ' % (
+              getattr(self, year),
+              '?' if getattr(self, year + '_uncertain') else '')
+        else:
+            display = 'year? '
+
+        month = '%s_month' % type
+        if getattr(self, month):
+            display = '%s%s%s ' % (
+              display, calendar.month_name[getattr(self, month)],
+              '?' if getattr(self, month + '_uncertain') else '')
+        else:
+            display += 'month? '
+
+        date = '%s_date' % type
+        if getattr(self, date):
+            display = '%s%s%s ' % (display, getattr(self, date),
+              '?' if getattr(self, date + '_uncertain') else '')
+        else:
+            display += 'day? '
+        return display
+
+    def display_birthday(self):
+        return self._display_day('birth')
+
+    def display_deathday(self):
+        return self._display_day('death')
+
+    def has_death_info(self):
+        if self.death_year or self.death_year_uncertain or \
+          self.death_month or self.death_month_uncertain or \
+          self.death_date or self.death_date_uncertain or \
+          self.death_country or self.death_country_uncertain or \
+          self.death_city or self.death_city_uncertain or \
+          self.death_province or self.death_province_uncertain:
+            return True
+        else:
+            return False
 
     def deletable(self):
         if self.award_revisions.filter(changeset__state__in=
@@ -315,6 +349,14 @@ class Creator(models.Model):
 
     def active_noncomicworks(self):
         return self.noncomicwork_set.exclude(deleted=True)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_creator',
+                kwargs={'creator_id': self.id})
+
+    def __unicode__(self):
+        return '%s' % unicode(self.gcd_official_name)
 
 
 class NameRelation(models.Model):

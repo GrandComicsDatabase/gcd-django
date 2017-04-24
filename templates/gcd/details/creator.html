@@ -19,22 +19,22 @@
         <div id="control_container">
             <div id="control_center">
                 <div class="pub_data">
+                    <div class="table-container">
+                    <p><strong>born:</strong> {{ creator.display_birthday }}</p>
+                    {% if creator.has_death_info %}
+                    <p><strong>died:</strong> {{ creator.display_deathday }}</p>
+                    {% endif %}
                     {% for name, value in creator.get_text_fields.items %}
-                        {% if forloop.first %}
-                            <div class="table-container">
-                        {% endif %}
-                    {% if value %}
+                        {% if value %}
                         <p><strong>{{ name }}</strong> : {{ value }}</p>
-                    {% endif %}
-                    {% if forloop.last %}
-                        {% for name, value in creator.get_link_fields.items %}
-                            {% if value %}
-                                <p><strong>{{ name }}</strong>: <a href="{{ value }}">{{ value }}</a></p>
-                            {% endif %}
-                        {% endfor %}
-                        </div>
-                    {% endif %}
+                        {% endif %}
                     {% endfor %}
+                    {% for name, value in creator.get_link_fields.items %}
+                        {% if value %}
+                            <p><strong>{{ name }}</strong>: <a href="{{ value }}">{{ value }}</a></p>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
                     {% if creator.portrait %}
                         <h3>Portrait Image:</h3>
                         <img src="{{ creator.portrait.scaled_image.url }}">
@@ -92,12 +92,12 @@
                             {% endif %}
                         {% endfor %}
 
-                    {% elif creator.creator_names.count %}
+                    {% elif creator.active_names %}
                         <hr>
+                        <h3>Names:</h3>
                         {% for creator_name in creator.active_names %}
-                            <h3>Name:{{ forloop.counter }}</h3>
-                            <p><strong>Name</strong> : {{ creator_name.name }}</p>
-                            <p><strong>Type</strong> : {{ creator_name.type }}</p>
+                            <p>{{ forloop.counter }}. {{ creator_name.name }}
+                            <strong> type</strong>: {{ creator_name.type }}</p>
                             {% if creator_name.source.all %}
                                 <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
                                     {{ source.type }},{% endfor %}</p>
