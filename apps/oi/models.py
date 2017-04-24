@@ -5750,7 +5750,7 @@ class CreatorRevisionManager(RevisionManager):
 
         revision.save()
 
-        name_details = creator.active_creator_names()
+        name_details = creator.active_names()
         for name_detail in name_details:
             creator_other_name = CreatorNameDetailRevision.objects.clone_revision(name_detail,
                                                               changeset=changeset)

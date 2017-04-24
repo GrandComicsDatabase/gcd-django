@@ -301,19 +301,19 @@ class Creator(models.Model):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,
                                      deleted=True).count() == 1
 
-    def active_creator_names(self):
+    def active_names(self):
         return self.creator_names.exclude(deleted=True)
 
-    def active_creator_membership(self):
+    def active_memberships(self):
         return self.membership_set.exclude(deleted=True)
 
-    def active_creator_award(self):
+    def active_awards(self):
         return self.award_set.exclude(deleted=True)
 
-    def active_creator_artinfluence(self):
+    def active_artinfluences(self):
         return self.artinfluence_set.exclude(deleted=True)
 
-    def active_creator_noncomicwork(self):
+    def active_noncomicworks(self):
         return self.noncomicwork_set.exclude(deleted=True)
 
 

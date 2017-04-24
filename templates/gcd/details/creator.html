@@ -94,7 +94,7 @@
 
                     {% elif creator.creator_names.count %}
                         <hr>
-                        {% for creator_name in creator.active_creator_names %}
+                        {% for creator_name in creator.active_names %}
                             <h3>Name:{{ forloop.counter }}</h3>
                             <p><strong>Name</strong> : {{ creator_name.name }}</p>
                             <p><strong>Type</strong> : {{ creator_name.type }}</p>
@@ -179,7 +179,7 @@
                     {% if creator.cr_creator_degree.all %}
                         <hr>
                         {% for degree_obj in creator.cr_creator_degree.all %}
-                            <h3>Degrees:{{ forloop.counter }}</h3>
+                            <h3>Degrees: {{ forloop.counter }}</h3>
                             <p><strong>Degree name</strong>
                                 : {{ degree_obj.degree.degree_name }}</p>
                             <p><strong>School name</strong>
@@ -194,7 +194,7 @@
                     {% elif creator.creator_degree.all %}
                         <hr>
                         {% for degree_obj in creator.creator_degree.all %}
-                            <h3>Degrees:{{ forloop.counter }}</h3>
+                            <h3>Degrees: {{ forloop.counter }}</h3>
                             <p><strong>Degree name</strong>
                                 : {{ degree_obj.degree.degree_name }}</p>
                             <p><strong>School name</strong>
@@ -210,15 +210,16 @@
 
 
                     <!--Creator's Awards-->
-                    {% if creator.award_set.all %}
+                    {% if creator.active_awards %}
                         <hr>
-                        {% for award in creator.award_set.all %}
+                        {% for award in creator.active_awards %}
+                            <h3>Awards:</h3>
                             {% if not award.deleted %}
-                                <h3>Awards:{{ forloop.counter }}</h3>
-                                <p><strong>Award name</strong> : {{ award.award_name }}</p>
+                                <p>{{ forloop.counter }}. <a href="{{ award.get_absolute_url }}">{{ award.award_name }}</a>
                                 {% if award.award_year %}
-                                    <p><strong>Award year</strong> : {{ award.award_year }}</p>
+                                    year: {{ award.award_year }}
                                 {% endif %}
+                                </p>
                                 {% if award.award_source.all %}
                                     <p><strong>Award source</strong> :{% for source in award.award_source.all %}
                                         {{ source.type }},{% endfor %}</p>
@@ -228,54 +229,50 @@
                     {% endif %}
 
                     <!--Creator's Art Influences-->
-                    {% if creator.artinfluence_set.all %}
+                    {% if creator.active_artinfluences %}
                         <hr>
-                        {% for influence in creator.artinfluence_set.all %}
-                            {% if not influence.deleted %}
-                                <h3>Art Influences:{{ forloop.counter }}</h3>
-                                <p><strong>Influence name</strong> : {{ influence.influence_name }}</p>
+                        <h3>Art Influences:</h3>
+                        {% for influence in creator.active_artinfluences %}
+                                <p>{{ forloop.counter }}. <a href="{{ influence.get_absolute_url }}">{{ influence.influence_name }}</a>
                                 {% if influence.is_self_identify %}
                                     {% if influence.self_identify_influences_doc %}
                                         <p><strong>Influence Doc. </strong>{{ influence.self_identify_influences_doc }}
                                         </p>
                                     {% endif %}
                                 {% endif %}
+                                </p>
                                 {% if influence.influence_source.all %}
                                     <p><strong>Influence source</strong> :
                                         {% for source in influence.influence_source.all %} {{ source.type }}
                                             , {% endfor %}</p>
                                 {% endif %}
-                            {% endif %}
                         {% endfor %}
                     {% endif %}
 
                     <!--Creator's Memberships-->
-                    {% if creator.membership_set.all %}
+                    {% if creator.active_memberships %}
                         <hr>
-                        {% for membership in creator.membership_set.all %}
-                            {% if not membership.deleted %}
-                                <h3>Memberships:{{ forloop.counter }}</h3>
-                                <p><strong>Organization name</strong> : {{ membership.organization_name }}</p>
-                                <p><strong>Membership type</strong> : {{ membership.membership_type.type }}</p>
-                                <p><strong>Membership begin year</strong> : {{ membership.membership_begin_year }}</p>
-                                <p><strong>Membership end year</strong> : {{ membership.membership_end_year }}</p>
+                        <h3>Memberships:</h3>
+                        {% for membership in creator.active_memberships %}
+                                <p>{{ forloop.counter }}. <a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
+                                <strong>type</strong>: {{ membership.membership_type.type }}
+                                <strong>year begin</strong> : {{ membership.membership_begin_year|default:'?' }}
+                                <strong>year ended</strong> : {{ membership.membership_end_year|default:'?' }}</p>
                                 {% if membership.membership_source.all %}
                                     <p><strong>Membership source</strong> :
                                         {% for source in membership.membership_source.all %} {{ source.type }}
                                             ,{% endfor %}</p>
                                 {% endif %}
-                            {% endif %}
                         {% endfor %}
                     {% endif %}
 
                     <!--Creator's Noncomic works-->
-                    {% if creator.noncomicwork_set.all %}
+                    {% if creator.active_noncomicworks %}
                         <hr>
-                        {% for ncw in creator.noncomicwork_set.all %}
-                            {% if not ncw.deleted %}
-                                <h3>Non Comics Works: {{ forloop.counter }}</h3>
-                                <p><strong>Publication title</strong>: {{ ncw.publication_title }}</p>
-                                <p><strong>Work type</strong> : {{ ncw.work_type.type }}</p>
+                        <h3>Non Comics Works:</h3>
+                        {% for ncw in creator.active_noncomicworks %}
+                                <p>{{ forloop.counter }}. <strong>Publication title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
+                                <strong>Work type</strong> : {{ ncw.work_type.type }}</p>
                                 {% if ncw.employer_name %}
                                     <p><strong>Employer name</strong> : {{ ncw.employer_name }}</p>
                                 {% endif %}
@@ -308,7 +305,6 @@
                                     </p>
                                 {% endif %}
                                 {% endfor %}
-                            {% endif %}
                         {% endfor %}
                     {% endif %}
                     <br>

@@ -362,28 +362,28 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
             indicia_publisher_revision.save()
 
     elif model_name == 'creator' and delete:
-        for creatormembership in revision.creator.active_creator_membership():
+        for creatormembership in revision.creator.active_memberships():
             creator_membership_revison = \
               CreatorMembershipRevision.objects.clone_revision(
                 creatormembership=creatormembership, changeset=changeset)
             creator_membership_revison.deleted = True
             creator_membership_revison.save()
 
-        for creatoraward in revision.creator.active_creator_award():
+        for creatoraward in revision.creator.active_awards():
             creator_award_revison = \
               CreatorAwardRevision.objects.clone_revision(
                 creatoraward=creatoraward, changeset=changeset)
             creator_award_revison.deleted = True
             creator_award_revison.save()
 
-        for creatorartinfluence in revision.creator.active_creator_artinfluence():
+        for creatorartinfluence in revision.creator.active_artinfluences():
             creator_artinfluence_revison = \
               CreatorArtInfluenceRevision.objects.clone_revision(
                 creatorartinfluence=creatorartinfluence, changeset=changeset)
             creator_artinfluence_revison.deleted = True
             creator_artinfluence_revison.save()
 
-        for creatornoncomicwork in revision.creator.active_creator_noncomicwork():
+        for creatornoncomicwork in revision.creator.active_noncomicworks():
             creator_noncomicwork_revison = \
               CreatorNonComicWorkRevision.objects.clone_revision(
                 creatornoncomicwork=creatornoncomicwork, changeset=changeset)
