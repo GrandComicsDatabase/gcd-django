@@ -30,7 +30,7 @@
                         {% endif %}
                     {% endfor %}
                     {% if creator.whos_who %}
-                    <p><strong>Who's Who:</strong> {{ creator.whos_who }}</p>
+                    <p><strong>Who's Who:</strong> {{ creator.whos_who|urlize }}</p>
                     {% endif %}
                     {% if creator.bio %}
                     <p><strong>Biography:</strong> {{ creator.bio|linebreaksbr }}</p>
