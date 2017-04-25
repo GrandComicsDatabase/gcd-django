@@ -29,15 +29,16 @@
                         <p><strong>{{ name }}</strong> : {{ value }}</p>
                         {% endif %}
                     {% endfor %}
-                    {% if creator.whos_who %}
-                    <p><strong>Who's Who:</strong> {{ creator.whos_who|urlize }}</p>
-                    {% endif %}
                     {% if creator.bio %}
                     <p><strong>Biography:</strong> {{ creator.bio|linebreaksbr }}</p>
                     {% endif %}
                     {% if creator.notes %}
                     <p><strong>Notes:</strong> {{ creator.notes|urlizetrunc:75|linebreaksbr }}</p>
                     {% endif %}
+                    <p><strong>Links:</strong>
+                    <a href="{% url "haystack_search" %}?q={{ creator.gcd_official_name }}&selected_facets=facet_model_name_exact:story&sort=chrono">Credits in the GCD</a>
+                    {% if creator.whos_who %}
+                    / <a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a> {% endif %}</p>
                     </div>
                     {% if creator.portrait %}
                         <h3>Portrait Image:</h3>
