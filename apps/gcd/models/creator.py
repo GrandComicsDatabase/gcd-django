@@ -14,6 +14,32 @@ from django.contrib.contenttypes import generic
 MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
 
+def _display_day(self, type):
+    year = '%s_year' % type
+    if getattr(self, year):
+        display = '%d%s ' % (
+            getattr(self, year),
+            '?' if getattr(self, year + '_uncertain') else '')
+    else:
+        display = 'year? '
+
+    month = '%s_month' % type
+    if getattr(self, month):
+        display = '%s%s%s ' % (
+            display, calendar.month_name[getattr(self, month)],
+            '?' if getattr(self, month + '_uncertain') else '')
+    else:
+        display += 'month? '
+
+    date = '%s_date' % type
+    if getattr(self, date):
+        display = '%s%s%s ' % (display, getattr(self, date),
+            '?' if getattr(self, date + '_uncertain') else '')
+    else:
+        display += 'day? '
+    return display
+
+
 class NameType(models.Model):
     """
     Indicates the various types of names
@@ -274,36 +300,11 @@ class Creator(models.Model):
         fields_dict['Notes'] = self.notes
         return fields_dict
 
-    def _display_day(self, type):
-        year = '%s_year' % type
-        if getattr(self, year):
-            display = '%d%s ' % (
-              getattr(self, year),
-              '?' if getattr(self, year + '_uncertain') else '')
-        else:
-            display = 'year? '
-
-        month = '%s_month' % type
-        if getattr(self, month):
-            display = '%s%s%s ' % (
-              display, calendar.month_name[getattr(self, month)],
-              '?' if getattr(self, month + '_uncertain') else '')
-        else:
-            display += 'month? '
-
-        date = '%s_date' % type
-        if getattr(self, date):
-            display = '%s%s%s ' % (display, getattr(self, date),
-              '?' if getattr(self, date + '_uncertain') else '')
-        else:
-            display += 'day? '
-        return display
-
     def display_birthday(self):
-        return self._display_day('birth')
+        return _display_day(self, 'birth')
 
     def display_deathday(self):
-        return self._display_day('death')
+        return _display_day(self, 'death')
 
     def has_death_info(self):
         if self.death_year or self.death_year_uncertain or \

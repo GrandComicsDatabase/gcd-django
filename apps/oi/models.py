@@ -38,6 +38,7 @@ from apps.gcd.models import (
     NonComicWorkYear, NonComicWorkLink, RelationType, School, SourceType)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
+from apps.gcd.models.creator import _display_day
 
 from apps.legacy.models import Reservation, MigrationStoryStatus
 
@@ -5892,21 +5893,21 @@ class CreatorRevision(Revision):
 
     def get_text_fields(self):
         fields_dict = OrderedDict()
-        fields_dict['GCD Official Name'] = self.gcd_official_name
-        fields_dict['Birth Year Uncertain'] = self.birth_year
-        fields_dict['Birth Year'] = self.birth_year_uncertain
-        fields_dict['Birth Month'] = calendar.month_name[
-            self.birth_month] if self.birth_month else None
-        fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
-        fields_dict['Birth Date'] = self.birth_date
-        fields_dict['Birth Date Uncertain'] = self.birth_date_uncertain
-        fields_dict['Death Year'] = self.death_year
-        fields_dict['Death Year Uncertain'] = self.death_year_uncertain
-        fields_dict['Death Month'] = calendar.month_name[
-            self.death_month] if self.death_month else None
-        fields_dict['Death Month Uncertain'] = self.death_month_uncertain
-        fields_dict['Death Date'] = self.death_date
-        fields_dict['Death Date Uncertain'] = self.death_date_uncertain
+        #fields_dict['GCD Official Name'] = self.gcd_official_name
+        #fields_dict['Birth Year Uncertain'] = self.birth_year
+        #fields_dict['Birth Year'] = self.birth_year_uncertain
+        #fields_dict['Birth Month'] = calendar.month_name[
+            #self.birth_month] if self.birth_month else None
+        #fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
+        #fields_dict['Birth Date'] = self.birth_date
+        #fields_dict['Birth Date Uncertain'] = self.birth_date_uncertain
+        #fields_dict['Death Year'] = self.death_year
+        #fields_dict['Death Year Uncertain'] = self.death_year_uncertain
+        #fields_dict['Death Month'] = calendar.month_name[
+            #self.death_month] if self.death_month else None
+        #fields_dict['Death Month Uncertain'] = self.death_month_uncertain
+        #fields_dict['Death Date'] = self.death_date
+        #fields_dict['Death Date Uncertain'] = self.death_date_uncertain
         fields_dict[
             'Birth Country'] = self.birth_country.name if self.birth_country \
             else None
@@ -5926,6 +5927,23 @@ class CreatorRevision(Revision):
         fields_dict['Bio'] = self.bio
         fields_dict['Notes'] = self.notes
         return fields_dict
+
+    def display_birthday(self):
+        return _display_day(self, 'birth')
+
+    def display_deathday(self):
+        return _display_day(self, 'death')
+
+    def has_death_info(self):
+        if self.death_year or self.death_year_uncertain or \
+          self.death_month or self.death_month_uncertain or \
+          self.death_date or self.death_date_uncertain or \
+          self.death_country or self.death_country_uncertain or \
+          self.death_city or self.death_city_uncertain or \
+          self.death_province or self.death_province_uncertain:
+            return True
+        else:
+            return False
 
     def description(self):
         return '%s' % unicode(self.gcd_official_name)

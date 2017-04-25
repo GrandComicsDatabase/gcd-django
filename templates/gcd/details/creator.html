@@ -20,9 +20,9 @@
             <div id="control_center">
                 <div class="pub_data">
                     <div class="table-container">
-                    <p><strong>born:</strong> {{ creator.display_birthday }}</p>
+                    <p><strong>Born:</strong> {{ creator.display_birthday }}</p>
                     {% if creator.has_death_info %}
-                    <p><strong>died:</strong> {{ creator.display_deathday }}</p>
+                    <p><strong>Died:</strong> {{ creator.display_deathday }}</p>
                     {% endif %}
                     {% for name, value in creator.get_text_fields.items %}
                         {% if value %}
