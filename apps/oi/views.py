@@ -505,8 +505,8 @@ def process_creator_other_names(request, changeset, revision, creator_name):
                             .exclude(id__in=updated_creator_name_list)
     if removed_creator_names:
         for removed_creator_name in removed_creator_names:
-            if removed_creator_name.creator_revise_to_name.count():
-                name_rel = removed_creator_name.creator_revise_to_name.get()
+            if removed_creator_name.cr_to_name.count():
+                name_rel = removed_creator_name.cr_to_name.get()
                 if name_rel.name_relation:
                     name_rel.deleted = True
                     name_rel.save()
@@ -674,7 +674,7 @@ def _display_edit_form(request, changeset, form, revision=None):
                   'type': creator_name_revision.type.type,
                   'revision_id': creator_name_revision.id,
                   'relation_obj':
-                    creator_name_revision.creator_revise_to_name.all()})
+                    creator_name_revision.cr_to_name.all()})
         response = oi_render_to_response(
         template,
         {
@@ -4589,9 +4589,9 @@ def compare(request, id):
         creator_name_revisions = changeset.creatornamedetailrevisions.all()
         for creator_name_revision in creator_name_revisions:
             revisions_before.append(creator_name_revision)
-            if creator_name_revision.creator_revise_to_name.count():
+            if creator_name_revision.cr_to_name.count():
                 revisions_before.append(creator_name_revision\
-                                        .creator_revise_to_name.get())
+                                        .cr_to_name.get())
         school_revisions = changeset.creatorschooldetailrevisions.all()
         for school_revision in school_revisions:
             revisions_after.append(school_revision)

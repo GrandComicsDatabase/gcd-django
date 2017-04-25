@@ -17,26 +17,52 @@ MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 def _display_day(self, type):
     year = '%s_year' % type
     if getattr(self, year):
-        display = '%d%s ' % (
-            getattr(self, year),
-            '?' if getattr(self, year + '_uncertain') else '')
+        display = '%d%s ' % (getattr(self, year),
+                  '?' if getattr(self, year + '_uncertain') else '')
     else:
         display = 'year? '
 
     month = '%s_month' % type
     if getattr(self, month):
         display = '%s%s%s ' % (
-            display, calendar.month_name[getattr(self, month)],
-            '?' if getattr(self, month + '_uncertain') else '')
+          display, calendar.month_name[getattr(self, month)],
+          '?' if getattr(self, month + '_uncertain') else '')
     else:
         display += 'month? '
 
     date = '%s_date' % type
     if getattr(self, date):
         display = '%s%s%s ' % (display, getattr(self, date),
-            '?' if getattr(self, date + '_uncertain') else '')
+                  '?' if getattr(self, date + '_uncertain') else '')
     else:
         display += 'day? '
+    return display
+
+
+def _display_place(self, type):
+    city = '%s_city' % type
+    if getattr(self, city):
+        display = '%s%s' % (getattr(self, city),
+                  '?' if getattr(self, city + '_uncertain') else '')
+    else:
+        display = ''
+
+    province = '%s_province' % type
+    if getattr(self, province):
+        if display:
+            display += ', '
+        display = '%s%s%s' % (display, getattr(self, province),
+                  '?' if getattr(self, province + '_uncertain') else '')
+
+    country = '%s_country' % type
+    if getattr(self, country):
+        if display:
+            display += ', '
+        display = '%s%s%s' % (display, getattr(self, country),
+            '?' if getattr(self, country + '_uncertain') else '')
+
+    if display == '':
+        return '?'
     return display
 
 
@@ -66,7 +92,7 @@ class CreatorNameDetail(models.Model):
 
     class Meta:
         app_label = 'gcd'
-        ordering = ('type',)
+        ordering = ['type__id', 'created', '-id']
         verbose_name_plural = 'CreatorName Details'
 
     name = models.CharField(max_length=255, db_index=True)
@@ -82,6 +108,9 @@ class CreatorNameDetail(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    def active_relations(self):
+        return self.to_name.exclude(deleted=True)
 
     def delete(self):
         self.deleted = True
@@ -258,53 +287,17 @@ class Creator(models.Model):
     def full_name(self):
         return unicode(self)
 
-    def get_link_fields(self):
-        links_dict = {}
-        links_dict['Whos Who'] = self.whos_who
-        return links_dict
-
-    def get_text_fields(self):
-        fields_dict = OrderedDict()
-        #fields_dict['GCD Official Name'] = self.gcd_official_name
-        #fields_dict['Birth Year'] = self.birth_year
-        #fields_dict['Birth Year Uncertain'] = self.birth_year_uncertain
-        #fields_dict['Birth Month'] = calendar.month_name[
-            #self.birth_month] if self.birth_month else None
-        #fields_dict['Birth Month Uncertain'] = self.birth_month_uncertain
-        #fields_dict['Birth Date'] = self.birth_date
-        #fields_dict['Birth Date Uncertain'] = self.birth_date_uncertain
-        #fields_dict['Death Year'] = self.death_year
-        #fields_dict['Death Year Uncertain'] = self.death_year_uncertain
-        #fields_dict['Death Month'] = calendar.month_name[
-            #self.death_month] if self.death_month else None
-        #fields_dict['Death Month Uncertain'] = self.death_month_uncertain
-        #fields_dict['Death Date'] = self.death_date
-        #fields_dict['Death Date Uncertain'] = self.death_date_uncertain
-        fields_dict[
-            'Birth Country'] = self.birth_country.name if self.birth_country \
-            else None
-        fields_dict['Birth Country Uncertain'] = self.birth_country_uncertain
-        fields_dict['Birth Province'] = self.birth_province
-        fields_dict['Birth Province Uncertain'] = self.birth_province_uncertain
-        fields_dict['Birth City'] = self.birth_city
-        fields_dict['Birth City Uncertain'] = self.birth_city_uncertain
-        fields_dict[
-            'Death Country'] = self.death_country.name if self.death_country \
-            else None
-        fields_dict['Death Country Uncertain'] = self.death_country_uncertain
-        fields_dict['Death Province'] = self.death_province
-        fields_dict['Death Province Uncertain'] = self.death_province_uncertain
-        fields_dict['Death City'] = self.death_city
-        fields_dict['Death City Uncertain'] = self.death_city_uncertain
-        fields_dict['Bio'] = self.bio
-        fields_dict['Notes'] = self.notes
-        return fields_dict
-
     def display_birthday(self):
         return _display_day(self, 'birth')
 
+    def display_birthplace(self):
+        return _display_place(self, 'birth')
+
     def display_deathday(self):
         return _display_day(self, 'death')
+
+    def display_deathplace(self):
+        return _display_place(self, 'death')
 
     def has_death_info(self):
         if self.death_year or self.death_year_uncertain or \

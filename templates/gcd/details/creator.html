@@ -20,20 +20,24 @@
             <div id="control_center">
                 <div class="pub_data">
                     <div class="table-container">
-                    <p><strong>Born:</strong> {{ creator.display_birthday }}</p>
+                    <p><strong>Born:</strong> {{ creator.display_birthday }} in {{ creator.display_birthplace }}</p>
                     {% if creator.has_death_info %}
-                    <p><strong>Died:</strong> {{ creator.display_deathday }}</p>
+                    <p><strong>Died:</strong> {{ creator.display_deathday }} in {{ creator.display_deathplace }}</p>
                     {% endif %}
                     {% for name, value in creator.get_text_fields.items %}
                         {% if value %}
                         <p><strong>{{ name }}</strong> : {{ value }}</p>
                         {% endif %}
                     {% endfor %}
-                    {% for name, value in creator.get_link_fields.items %}
-                        {% if value %}
-                            <p><strong>{{ name }}</strong>: <a href="{{ value }}">{{ value }}</a></p>
-                        {% endif %}
-                    {% endfor %}
+                    {% if creator.whos_who %}
+                    <p><strong>Who's Who:</strong> {{ creator.whos_who }}</p>
+                    {% endif %}
+                    {% if creator.bio %}
+                    <p><strong>Biography:</strong> {{ creator.bio|linebreaksbr }}</p>
+                    {% endif %}
+                    {% if creator.notes %}
+                    <p><strong>Notes:</strong> {{ creator.notes|urlizetrunc:75|linebreaksbr }}</p>
+                    {% endif %}
                     </div>
                     {% if creator.portrait %}
                         <h3>Portrait Image:</h3>
@@ -68,54 +72,28 @@
                     {% endif %}
 
                     <!--Creator's Names-->
-                    {% if creator.cr_creator_names.all %}
-                        <hr>
-                        {% for creator_name in creator.cr_creator_names.all %}
-                            <h3>Name:{{ forloop.counter }}</h3>
-                            <p><strong>Name</strong> : {{ creator_name.name }}</p>
-                            <p><strong>Type</strong> : {{ creator_name.type }}</p>
-                            {% if creator_name.source.all %}
-                                <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
-                                    {{ source.type }},{% endfor %}</p>
-                            {% endif %}
-                            {% if creator_name.creator_revise_to_name.all %}
-                                {% for relation in creator_name.creator_revise_to_name.all %}
-                                    <p><strong>Relation Type</strong>
-                                        : {{ relation.rel_type.type }}</p>
-                                    {% if relation.rel_source.all %}
-                                        <p><strong>Relation sources</strong> :
-                                            {% for source in relation.rel_source.all %}
-                                                {{ source.type }},{% endfor %}
-                                        </p>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        {% endfor %}
-
-                    {% elif creator.active_names %}
-                        <hr>
-                        <h3>Names:</h3>
-                        {% for creator_name in creator.active_names %}
-                            <p>{{ forloop.counter }}. {{ creator_name.name }}
-                            <strong> type</strong>: {{ creator_name.type }}</p>
-                            {% if creator_name.source.all %}
-                                <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
-                                    {{ source.type }},{% endfor %}</p>
-                            {% endif %}
-                            {% if creator_name.to_name.all %}
-                                {% for relation in creator_name.to_name.all %}
-                                    <p><strong>Relation Type</strong>
-                                        : {{ relation.rel_type.type }}</p>
-                                    {% if relation.rel_source.all %}
-                                        <p><strong>Relation sources</strong> :
-                                            {% for source in relation.rel_source.all %}
-                                                {{ source.type }},{% endfor %}
-                                        </p>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
+                    <hr>
+                    <h3>Names:</h3>
+                    {% for creator_name in creator.active_names %}
+                        <p>{{ forloop.counter }}. {{ creator_name.name }}
+                        <strong> type</strong>: {{ creator_name.type }}</p>
+                        {% if creator_name.source.all %}
+                            <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
+                                {{ source.type }},{% endfor %}</p>
+                        {% endif %}
+                        {% if creator_name.active_relations %}
+                            {% for relation in creator_name.active_relations %}
+                                <p><strong>Relation Type</strong>
+                                    : {{ relation.rel_type.type }}</p>
+                                {% if relation.rel_source.all %}
+                                    <p><strong>Relation sources</strong> :
+                                        {% for source in relation.rel_source.all %}
+                                            {{ source.type }},{% endfor %}
+                                    </p>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
 
                     <!--Creator's Schools-->
                     {% if creator.cr_creator_school.all %}
