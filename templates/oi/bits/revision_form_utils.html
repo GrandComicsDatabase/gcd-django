@@ -21,3 +21,7 @@ var limitSynopsisLength = {{ settings.LIMIT_SYNOPSIS_LENGTH }};
 </script>
   {% endif %}
 {% endif %}
+
+{% if object_name == 'Creator' %}
+  {% include 'oi/bits/creatorrevision_form_utils.html' %}
+{% endif %}

@@ -23,203 +23,23 @@ Adding Creator
             <!--Creator's basic table-->
             <h1>
                 {% ifequal mode "new" %}Adding Creator{% endifequal %}
-            </h1>
-            <h1>
                 {% ifequal mode "edit" %}Editing Creator{% endifequal %}
             </h1>
+    {% include 'oi/bits/creator_before_form.html' %}
             <table class="editing" style="padding-top: 10px;">
-                <input type="hidden" name="total_names" value="0" id="total_names">
-                <input type="hidden" name="total_schools" value="0" id="total_schools">
-                <input type="hidden" name="total_degrees" value="0" id="total_degrees">
-
-
-                <div class="name-div">
-                    <div class="name-details" style="padding-left: 33px; display: inline;">
-                        <label>GCD Official Name:</label>
-                        <input type="text" id="gcd_official_name" name="gcd_official_name" required style="margin-left: -12px;width: 138px;"> &nbsp;
-
-                        <label>Type:</label>
-                        <select name="gcd_official_type" id="gcd_official_type" style="width: 118px; margin-left: -12px;">
-                            {% for name_type in name_types %}
-                                {% if name_type.type == gcd_official_name_field %}<option value={{ name_type.id }}>{{ name_type.type }}</option>{% endif %}
-                            {% endfor %}
-                        </select> &nbsp;
-
-                        <label>Sources:</label>
-                        <select multiple style="vertical-align: middle;margin-left: -12px;" name="gcd_official_sources" id="gcd_official_sources">
-                            {% for name_source in sources %}
-                                <option value='{{ name_source.id }}'>{{ name_source.type }}</option>
-                            {% endfor %}
-                        </select>&nbsp;
-                        <input type="button" id="add_name_divison_id" class="add_name_class" value="Add New" name="add_name_divison">
-                        <br><br>
-                    </div>
-                </div>
 
                 {{creator_form.as_table}}
 
             </table>
-            <h4 style="display:inline;">School Details:-</h4>
-            &nbsp;&nbsp;&nbsp;<input type="button" id="add_schools"
-                                     class="add_school_class"
-                                     value="Add Schools">
-
-            <div class="school-div">
-            </div>
-            <br>
-
-
-            <h4 style="display:inline;">Degree Details:-</h4>
-            &nbsp;&nbsp;&nbsp;<input type="button" id="add_degrees"
-                                     class="add_degree_class"
-                                     value="Add Degrees">
-            <br>
-
-            <div class="degree-div">
-            </div>
-            <br><br>
+            
+            {% include 'oi/bits/creator_after_form.html' %}
 
             <input type="submit" value="Submit Creator" name="submit">
             <a href="{% url 'add' %}"><input type="button" name="cancel" value="Cancel"></a>
         </form>
     </div>
 
-<script src="{% static "jquery/js/jquery.min.js" %}"></script>
-
-    <script type="text/javascript">
-        $(document).ready(function () {
-            var name_type_dropdown = '';
-            {% for name_type in name_types %}
-                {% if not name_type.type == gcd_official_name_field %}
-                    name_type_dropdown = name_type_dropdown + '<option value="{{ name_type.id }}">{{ name_type.type }}</option>';
-                {% endif %}
-            {% endfor %}
-
-            var relation_types_dropdown = '<option value="">---------</option>';
-            {% for relation_type in relation_types %}
-                relation_types_dropdown += '<option value="{{ relation_type.id }}">{{ relation_type.type }}</option>';
-            {% endfor %}
-
-            var sources_dropdown = '';
-            {% for source in sources %}
-                sources_dropdown = sources_dropdown + '<option value="{{ source.id }}">{{ source.type }}</option>';
-            {% endfor %}
-
-            var schools_dropdown = '';
-            {% for school in schools %}
-                schools_dropdown = schools_dropdown + '<option value="{{ school.id }}">{{ school.school_name }}</option>';
-            {% endfor %}
-
-            var degrees_dropdown = '';
-            {% for degree in degrees %}
-                degrees_dropdown = degrees_dropdown + '<option value="{{ degree.id }}">{{ degree.degree_name }}</option>';
-            {% endfor %}
-
-            {# Add New Gcd Official Name Division #}
-            $(document).on("click", ".add_name_class", function () {
-                var total_names = parseInt($('#total_names').val());
-                var next_index = total_names + 1;
-                $('.name-div').append(
-                        '<div class="name-details" style="padding-left: 110px;display: inline;">' +
-                        ' <label>Name:</label>' +
-                        '<input type="text" id="name' + next_index + '" name="name' + next_index + '" required style="margin-left: -9px;width: 138px;"> &nbsp; ' +
-                        '<label>Type:</label>' +
-                        '<select name="type' + next_index + '" id="type' + next_index + '" style="margin-left: -9px;">'
-                        + name_type_dropdown +
-                        '</select> &nbsp;' +
-                        '<label>Sources:</label>' +
-                        '<select multiple name="sources' + next_index + '" id="sources' + next_index + '" style="vertical-align: middle; margin-left: -9px;">'
-                        + sources_dropdown +
-                        '</select> &nbsp;' +
-                        '<label>Relation Type:</label>' +
-                        '<select name="relation_type' + next_index + '" id="relation_type' + next_index + '" style="margin-left: -9px;">'
-                        + relation_types_dropdown +
-                        '</select> &nbsp;' +
-                        '<label>Relation Sources:</label>' +
-                        '<select multiple name="relation_sources' + next_index + '" id="relation_sources' + next_index + '" style="vertical-align: middle; margin-left: -9px;">'
-                        + sources_dropdown +
-                        '</select> &nbsp;' +
-                        '<input type="button" id="add_name_divison_id" class="add_name_class" value="Add New" name="add_new_name">&nbsp;' +
-                        '<input type="button" id="remove_name_button" value="Remove" name="remove_this_name">`' +
-                        '<br><br>' +
-                        '</div>');
-
-                $('#total_names').val(next_index);
-
-            });
-            $(document).on("click", '#remove_name_button', function () {
-                $(this).closest('div').remove();
-            });
-
-            {# Add New School Division #}
-            $(document).on("click", ".add_school_class", function () {
-                var total_schools = parseInt($('#total_schools').val());
-                var next_index = total_schools + 1;
-                $('.school-div').append(
-                        '<div class="school-details" style="padding-left: 35px; display: inline;">' +
-                        ' <label>School:</label>' +
-                        '<select name="school' + next_index + '" id="school' + next_index + '" style="width: 193px;">'
-                        + schools_dropdown +
-                        '</select> &nbsp;&nbsp;' +
-                        '<label>Year Began:</label>' +
-                        '<input type="text" id="school_year_began' + next_index + '" name="school_year_began' + next_index + '" style="width: 45px;">&nbsp;&nbsp;' +
-                        '<label>Year Began Uncertain:</label>' +
-                        '<input type="checkbox" id="school_year_began_uncertain' + next_index + '" name="school_year_began_uncertain' + next_index + '" style="margin-left: -11px;">&nbsp;&nbsp;' +
-                        '<label>Year Ended:</label>' +
-                        '<input type="text" id="school_year_ended' + next_index + '" name="school_year_ended' + next_index + '" style="width: 45px;">&nbsp;&nbsp;' +
-                        '<label>Year Ended Uncertain:</label>' +
-                        '<input type="checkbox" id="school_year_ended_uncertain' + next_index + '" name="school_year_ended_uncertain' + next_index + '" style="margin-left: -11px;">&nbsp;&nbsp;' +
-                        '<label>Sources:</label>' +
-                        '<select multiple name="school_sources' + next_index + '" id="school_sources' + next_index + '" style="vertical-align: middle; width: 157px;">'
-                        + sources_dropdown +
-                        '</select> &nbsp;' +
-                        '<input type="button" id="add_school_divison_id" class="add_school_class" value="Add New" name="add_new_school">&nbsp;' +
-                        '<input type="button" id="remove_school_button" value="Remove" name="remove_this_school">`' +
-                        '<br><br>' +
-                        '</div>');
-
-                $('#total_schools').val(next_index);
-                $('#add_schools').hide();
-            });
-            $(document).on("click", '#remove_school_button', function () {
-                $(this).closest('div').remove();
-                if ($.trim($('.school-div').html()).length == 0) {
-                    $('#add_schools').show();
-                }
-            });
-
-            {# Add New Degree Division #}
-            $(document).on("click", ".add_degree_class", function () {
-                var total_degrees = parseInt($('#total_degrees').val());
-                var next_index = total_degrees + 1;
-                $('.degree-div').append(
-                        '<div class="degree-details" style="padding-left: 35px; display: inline;">' +
-                        '<label>Degree:</label>' +
-                        '<select name="degree' + next_index + '" id="degree' + next_index + '" style="width: 193px;">'
-                        + degrees_dropdown +
-                        '</select>&nbsp;&nbsp;&nbsp;&nbsp;' +
-                        ' <label>School:</label>' +
-                        '<select name="degreeschool' + next_index + '" id="degreeschool' + next_index + '" style="width: 193px;">'
-                        + schools_dropdown +
-                        '</select> &nbsp;&nbsp;&nbsp;&nbsp;' +
-                        '<label>Degree Year:</label>' +
-                        '<input type="text" id="degree_year' + next_index + '" name="degree_year' + next_index + '" style="width: 95px;">&nbsp;&nbsp;&nbsp;&nbsp;' +
-                        '<label>Degree Year Uncertain:</label>' +
-                        '<input type="checkbox" id="degree_year_uncertain' + next_index + '" name="degree_year_uncertain' + next_index + '" style="margin-left: -4px;">&nbsp;&nbsp;&nbsp;&nbsp;' +
-                        '<input type="button" id="add_degree_divison_id" class="add_degree_class" value="Add New" name="add_new_degree">&nbsp;' +
-                        '<input type="button" id="remove_degree_button" value="Remove" name="remove_this_degree">`' +
-                        '<br><br>' +
-                        '</div>');
-
-                $('#total_degrees').val(next_index);
-                $('#add_degrees').hide();
-            });
-            $(document).on("click", '#remove_degree_button', function () {
-                $(this).closest('div').remove();
-                if ($.trim($('.degree-div').html()).length == 0) {
-                    $('#add_degrees').show();
-                }
-            });
-        });
-    </script>
+{% include 'oi/bits/jquery.html' %}
+{% include 'oi/bits/creatorrevision_form_utils.html' %}
+    
 {% endblock %}

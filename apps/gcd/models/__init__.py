@@ -18,11 +18,9 @@ from reprintfromissue import ReprintFromIssue
 from seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING
 from image import ImageType, Image
 from creator import ArtInfluence, Award, \
-                    BirthCitySource, BirthCountrySource, BirthProvinceSource, \
-                    Creator, CreatorDegreeDetail, CreatorNameDetail, \
-                    CreatorSchoolDetail,\
-                    DeathCitySource, DeathCountrySource, DeathProvinceSource, \
-                    Degree, Membership, NameType, \
+                    Creator, CreatorDataSource, CreatorDegreeDetail, \
+                    CreatorNameDetail, CreatorSchoolDetail,\
+                    Degree, Membership, NameRelation, NameType, \
                     NonComicWork, NonComicWorkType, NonComicWorkRole, \
                     NonComicWorkYear, NonComicWorkLink, RelationType, School, \
                     SourceType

@@ -943,6 +943,13 @@ def daily_changes(request, show_date=None):
             'deleted':False,
             'changeset__state': states.APPROVED }
 
+    # TODO what aboud awards, memberships, etc. Display separately,
+    # or display the affected creator for such changes as well.
+    creator_revisions = list(CreatorRevision.objects.filter(
+      changeset__change_type=CTYPES['creator'], **args)\
+      .exclude(changeset__indexer=anon).values_list('creator', flat=True))
+    creators = Creator.objects.filter(id__in=creator_revisions).distinct()
+
     publisher_revisions = list(PublisherRevision.objects.filter(
       changeset__change_type=CTYPES['publisher'], **args)\
       .exclude(changeset__indexer=anon).values_list('publisher', flat=True))
@@ -1015,6 +1022,7 @@ def daily_changes(request, show_date=None):
         'date' : show_date,
         'date_after' : date_after,
         'date_before' : date_before,
+        'creators' : creators,
         'publishers' : publishers,
         'brand_groups' : brand_groups,
         'brands' : brands,
