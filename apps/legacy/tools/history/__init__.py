@@ -20,6 +20,7 @@ However, it may just be the state of the object at the time when the data was fi
 COMMENT_TEXT_FOR_ADD_LATER = """
 This is the oldest change we have for this object, so it shows as the addition.
 It was added sometime after %s, and is likely close in time to the next change with an actual date.
+The assignment of an indexer to this changeset is based on a heuristic, which in some rare situations results in wrong results.
 """  % EARLIEST_DATA_DATE
 
 class MigratoryTable(models.Model):
