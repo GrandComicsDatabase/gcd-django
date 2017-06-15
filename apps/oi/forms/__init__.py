@@ -6,6 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from apps.oi.models import OngoingReservation
 from apps.gcd.models import Series
+from apps.stddata.forms import DateForm
 
 # Some imports need a 'noqa' because we are only importing them to re-export
 # through the forms module as a whole, which flake8 does not understand.
@@ -30,7 +31,7 @@ from .creator import (    # noqa
     get_creator_art_influence_revision_form, get_creator_award_revision_form,
     get_creator_membership_revision_form,
     get_creator_non_comic_work_revision_form)
-
+from .support import add_data_source_fields, init_data_source_fields
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
     if revision is not None and model_name is None:
@@ -131,3 +132,29 @@ class OngoingReservationForm(forms.ModelForm):
         help_text='The numeric database ID of a '
                   'series that does not already '
                   'have an ongoing reservation')
+
+
+def get_date_revision_form(revision=None, user=None):
+    class RuntimeDateRevisionForm(DateRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeDateRevisionForm, self).__init__(*args, **kwargs)
+            if revision:
+                init_data_source_fields(self.prefix, revision, self.fields)
+    return RuntimeDateRevisionForm
+
+
+class DateRevisionForm(DateForm):
+    def __init__(self, *args, **kwargs):
+        super(DateRevisionForm, self).__init__(*args, **kwargs)
+        add_data_source_fields(self, self.prefix)
+
+    def clean(self):
+        cd = super(DateRevisionForm, self).clean()
+        data_source_type = cd['%s_source_type' % self.prefix]
+        data_source_description = cd['%s_source_description' % self.prefix]
+        if data_source_type or data_source_description:
+            if not data_source_type or not data_source_description:
+                self.add_error(
+                    '%s_source_description' % self.prefix,
+                    'Source description and source type must both be set.')
+        return cd

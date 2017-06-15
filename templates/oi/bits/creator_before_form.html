@@ -66,7 +66,7 @@
                 {% for name_type in name_types %}
                     {% if not name_type.type == settings.GCD_OFFICIAL_NAME_FIELDNAME %}
                         <option
-                                {% if name_type.type == other_name_detail.type %}
+                                {% if name_type.id == other_name_detail.type_id %}
                                     selected {% endif %}
                                     value={{ name_type.id }}>{{ name_type.type }}</option>
                     {% endif %}
@@ -95,7 +95,7 @@
                 <option value="">------------</option>
                 {% for relation_type in relation_types %}
                     <option
-                            {% if relation_type.type|is_equal:other_name_detail.relation_obj %}
+                            {% if relation_type.id == other_name_detail.relation_id %}
                                 selected {% endif %}
                                 value={{ relation_type.id }}>{{ relation_type.type }}</option>
                 {% endfor %}
@@ -123,3 +123,7 @@
         </div>
     {% endfor %}
 </div>
+    <table class="editing">
+    {{ birth_date_form }}
+    {{ death_date_form }}
+    </table>

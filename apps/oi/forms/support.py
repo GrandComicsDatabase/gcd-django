@@ -8,7 +8,7 @@ from django.utils.encoding import force_unicode
 from django.utils.html import escape, conditional_escape
 from django.forms.widgets import TextInput
 
-from apps.gcd.models import Brand
+from apps.gcd.models import Brand, SourceType
 from apps.gcd.templatetags.credits import format_page_count
 
 
@@ -483,6 +483,37 @@ def _clean_keywords(cleaned_data):
                 '< > { } : / \ | @ ,')
 
     return keywords
+
+
+def init_data_source_fields(field_name, revision, fields):
+    data_source_revision = revision.changeset.creatordatasourcerevisions\
+                                             .filter(field=field_name)
+    if data_source_revision:
+        # TODO we want to be able to support more than one revision
+        data_source_revision = data_source_revision[0]
+        fields['%s_source_description' % field_name].initial = \
+                                    data_source_revision.source_description
+        fields['%s_source_type' % field_name].initial = \
+                                    data_source_revision.source_type
+
+
+def add_data_source_fields(form, field_name):
+    form.fields['%s_source_description' % field_name] = forms.CharField(
+                                    widget=forms.Textarea, required=False)
+    form.fields['%s_source_type' % field_name] = forms.ModelChoiceField(
+                        queryset=SourceType.objects.all(), required=False)
+
+
+def insert_data_source_fields(field_name, ordering, fields, insert_after):
+    index = ordering.index(insert_after)
+
+    ordering.insert(index+1, '%s_source_description' % field_name)
+    fields.update({'%s_source_description' % field_name: forms.CharField(
+                                    widget=forms.Textarea, required=False)})
+
+    ordering.insert(index+2, '%s_source_type' % field_name)
+    fields.update({'%s_source_type' % field_name: forms.ModelChoiceField(
+                        queryset=SourceType.objects.all(), required=False)})
 
 
 class PageCountInput(TextInput):
