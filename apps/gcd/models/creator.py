@@ -14,26 +14,26 @@ from apps.oi import states
 MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
 
-def _display_day(self, type):
-    year = '%s_year' % type
-    if getattr(self, year):
-        display = '%d%s ' % (getattr(self, year),
-                  '?' if getattr(self, year + '_uncertain') else '')
+def _display_day(date):
+    #year = '%s_year' % type
+    if date.year:
+        display = '%s%s ' % (date.year,
+                  '?' if date.year_uncertain else '')
     else:
         display = 'year? '
 
-    month = '%s_month' % type
-    if getattr(self, month):
+    #month = '%s_month' % type
+    if date.month:
         display = '%s%s%s ' % (
-          display, calendar.month_name[getattr(self, month)],
-          '?' if getattr(self, month + '_uncertain') else '')
+          display, calendar.month_name[int(date.month)],
+          '?' if date.month_uncertain else '')
     else:
         display += 'month? '
 
-    date = '%s_date' % type
-    if getattr(self, date):
-        display = '%s%s%s ' % (display, getattr(self, date),
-                  '?' if getattr(self, date + '_uncertain') else '')
+    #date = '%s_date' % type
+    if date.day:
+        display = '%s%s%s ' % (display, date.day,
+                  '?' if date.day_uncertain else '')
     else:
         display += 'day? '
     return display
@@ -278,24 +278,19 @@ class Creator(models.Model):
         return unicode(self)
 
     def display_birthday(self):
-        return _display_day(self, 'birth')
+        return _display_day(self.birth_date)
 
     def display_birthplace(self):
         return _display_place(self, 'birth')
 
     def display_deathday(self):
-        return _display_day(self, 'death')
+        return _display_day(self.death_date)
 
     def display_deathplace(self):
         return _display_place(self, 'death')
 
     def has_death_info(self):
-        if self.death_year or self.death_year_uncertain or \
-          self.death_month or self.death_month_uncertain or \
-          self.death_date or self.death_date_uncertain or \
-          self.death_country or self.death_country_uncertain or \
-          self.death_city or self.death_city_uncertain or \
-          self.death_province or self.death_province_uncertain:
+        if unicode(self.death_date) != '':
             return True
         else:
             return False
@@ -323,17 +318,23 @@ class Creator(models.Model):
     def active_names(self):
         return self.creator_names.exclude(deleted=True)
 
-    def active_memberships(self):
-        return self.membership_set.exclude(deleted=True)
+    def active_artinfluences(self):
+        return self.artinfluence_set.exclude(deleted=True)
 
     def active_awards(self):
         return self.award_set.exclude(deleted=True)
 
-    def active_artinfluences(self):
-        return self.artinfluence_set.exclude(deleted=True)
+    def active_degrees(self):
+        return self.creator_degree.exclude(deleted=True)
+
+    def active_memberships(self):
+        return self.membership_set.exclude(deleted=True)
 
     def active_noncomicworks(self):
         return self.noncomicwork_set.exclude(deleted=True)
+
+    def active_schools(self):
+        return self.creator_school.exclude(deleted=True)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -415,9 +416,9 @@ class CreatorSchoolDetail(models.Model):
     school_year_began_uncertain = models.BooleanField(default=False)
     school_year_ended = models.PositiveSmallIntegerField(null=True, blank=True)
     school_year_ended_uncertain = models.BooleanField(default=False)
-    #school_source = models.ManyToManyField(SourceType,
-                                           #related_name='schoolsource',
-                                           #null=True, blank=True)
+    notes = models.TextField()
+    data_source = models.ManyToManyField(CreatorDataSource,
+                                         blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -430,6 +431,13 @@ class CreatorSchoolDetail(models.Model):
         self.deleted = True
         self.reserved = False
         self.save()
+
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_creator_school',
+                kwargs={'creator_school_id': self.id})
+
 
     def __unicode__(self):
         return '%s - %s' % (
@@ -468,6 +476,9 @@ class CreatorDegreeDetail(models.Model):
     degree = models.ForeignKey(Degree, related_name='degreedetails')
     degree_year = models.PositiveSmallIntegerField(null=True, blank=True)
     degree_year_uncertain = models.BooleanField(default=False)
+    notes = models.TextField()
+    data_source = models.ManyToManyField(CreatorDataSource,
+                                         blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -480,6 +491,12 @@ class CreatorDegreeDetail(models.Model):
         self.deleted = True
         self.reserved = False
         self.save()
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_creator_degree',
+                kwargs={'creator_degree_id': self.id})
+
 
     def __unicode__(self):
         return '%s - %s' % (

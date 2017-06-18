@@ -97,93 +97,52 @@
                     {% endfor %}
 
                     <!--Creator's Schools-->
-                    {% if creator.cr_creator_school.all %}
+                    {% if creator.active_schools %}
                         <hr>
-                        {% for school_obj in creator.cr_creator_school.all %}
-                            <h3>Schools:{{ forloop.counter }}</h3>
-                            <p><strong>School name</strong>
-                                : {{ school_obj.school.school_name }}</p>
-                            {% if school_obj.school_year_began %}
-                                <p><strong>School year began</strong>
-                                    : {{ school_obj.school_year_began }}</p>
+                        <h3>Schools:</h3>
+                        {% for school in creator.active_schools %}
+                            <p>{{ forloop.counter }}. <a href="{{ school.get_absolute_url }}">{{ school.school }}</a>
+                            {% if school.school_year_began %}
+                            {{ school.school_year_began }}
                             {% endif %}
-                            <p><strong>School year began uncertain</strong>
-                                : {{ school_obj.school_year_began_uncertain }}
-                            </p>
-                            {% if school_obj.school_year_ended %}
-                                <p><strong>School year ended</strong>
-                                    : {{ school_obj.school_year_ended }}</p>
+                            {% if not school.school_year_began or school.school_year_began_uncertain %}
+                            ?
                             {% endif %}
-                            <p><strong>School year ended uncertain</strong>
-                                : {{ school_obj.school_year_ended_uncertain }}
-                            </p>
-                            {% if school_obj.school_source.all %}
-                                <p><strong>School source</strong> :
-                                    {% for source in school_obj.school_source.all %}
-                                        {{ source.type }},{% endfor %}</p>
+                            to
+                            {% if school.school_year_ended %}
+                            {{ school.school_year_ended }}
                             {% endif %}
-                        {% endfor %}
-
-                    {% elif creator.creator_school.all %}
-                        <hr>
-                        {% for school_obj in creator.creator_school.all %}
-                            <h3>Schools:{{ forloop.counter }}</h3>
-                            <p><strong>School name</strong>
-                                : {{ school_obj.school.school_name }}</p>
-                            {% if school_obj.school_year_began %}
-                                <p><strong>School year began</strong>
-                                    : {{ school_obj.school_year_began }}</p>
+                            {% if not school.school_year_ended or school.school_year_ended_uncertain %}
+                            ?
                             {% endif %}
-                            {% if school_obj.school_year_began_uncertain %}
-                                <p><strong>School year began uncertain</strong>
-                                    : {{ school_obj.school_year_began_uncertain }}
-                                </p>
+                            {% if school.notes %}
+                            <p><strong>Notes: </strong>{{ school.notes }}</p>
                             {% endif %}
-                            {% if school_obj.school_year_ended %}
-                                <p><strong>School year ended</strong>
-                                    : {{ school_obj.school_year_ended }}</p>
-                            {% endif %}
-                            <p><strong>School year ended uncertain</strong>
-                                : {{ school_obj.school_year_ended_uncertain }}
-                            </p>
-                            {% if school_obj.school_source.all %}
-                                <p><strong>School source</strong> :
-                                    {% for source in school_obj.school_source.all %}
-                                        {{ source.type }},{% endfor %}</p>
-                            {% endif %}
+                            <dl>
+                            {% with school.data_source.all as data_sources %}
+                            {% include "gcd/bits/show_sources.html" %}
+                            {% endwith %}
+                            </dl>
                         {% endfor %}
                     {% endif %}
 
                     <!--Creator's Degree-->
-                    {% if creator.cr_creator_degree.all %}
+                    {% if creator.active_degrees %}
                         <hr>
-                        {% for degree_obj in creator.cr_creator_degree.all %}
-                            <h3>Degrees: {{ forloop.counter }}</h3>
-                            <p><strong>Degree name</strong>
-                                : {{ degree_obj.degree.degree_name }}</p>
-                            <p><strong>School name</strong>
-                                : {{ degree_obj.school.school_name }}</p>
-                            {% if degree_obj.degree_year %}
-                                <p><strong>Degree year</strong>
-                                    : {{ degree_obj.degree_year }}</p>
+                        <h3>Degrees:</h3>
+                        {% for degree in creator.active_degrees %}
+                            <p>{{ forloop.counter }}. <a href="{{ degree.get_absolute_url }}">{{ degree.degree }}, {{ degree.school.school_name }}</a>
+                            {% if degree.degree_year or degree.degree_year_uncertain %}
+                            in {{ degree.degree_year }}{% if degree.degree_year_uncertain %}?{% endif %}
                             {% endif %}
-                            <p><strong>Degree year uncertain</strong>
-                                : {{ degree_obj.degree_year_uncertain }}</p>
-                        {% endfor %}
-                    {% elif creator.creator_degree.all %}
-                        <hr>
-                        {% for degree_obj in creator.creator_degree.all %}
-                            <h3>Degrees: {{ forloop.counter }}</h3>
-                            <p><strong>Degree name</strong>
-                                : {{ degree_obj.degree.degree_name }}</p>
-                            <p><strong>School name</strong>
-                                : {{ degree_obj.school.school_name }}</p>
-                            {% if degree_obj.degree_year %}
-                                <p><strong>Degree year</strong>
-                                    : {{ degree_obj.degree_year }}</p>
+                            {% if degree.notes %}
+                            <p><strong>Notes: </strong>{{ degree.notes }}</p>
                             {% endif %}
-                            <p><strong>Degree year uncertain</strong>
-                                : {{ degree_obj.degree_year_uncertain }}</p>
+                            <dl>
+                            {% with degree.data_source.all as data_sources %}
+                            {% include "gcd/bits/show_sources.html" %}
+                            {% endwith %}
+                            </dl>
                         {% endfor %}
                     {% endif %}
 
@@ -191,19 +150,21 @@
                     <!--Creator's Awards-->
                     {% if creator.active_awards %}
                         <hr>
+                        <h3>Awards:</h3>
                         {% for award in creator.active_awards %}
-                            <h3>Awards:</h3>
-                            {% if not award.deleted %}
-                                <p>{{ forloop.counter }}. <a href="{{ award.get_absolute_url }}">{{ award.award_name }}</a>
-                                {% if award.award_year %}
-                                    year: {{ award.award_year }}
-                                {% endif %}
-                                </p>
-                                {% if award.award_source.all %}
-                                    <p><strong>Award source</strong> :{% for source in award.award_source.all %}
-                                        {{ source.type }},{% endfor %}</p>
-                                {% endif %}
+                            <p>{{ forloop.counter }}. <a href="{{ award.get_absolute_url }}">{{ award.award_name }}</a>
+                            {% if award.award_year %}
+                                year: {{ award.award_year }}
                             {% endif %}
+                            </p>
+                            {% if award.notes %}
+                            <p><strong>Notes: </strong>{{ award.notes }}</p>
+                            {% endif %}
+                            <dl>
+                            {% with award.data_source.all as data_sources %}
+                            {% include "gcd/bits/show_sources.html" %}
+                            {% endwith %}
+                            </dl>
                         {% endfor %}
                     {% endif %}
 
@@ -212,19 +173,16 @@
                         <hr>
                         <h3>Art Influences:</h3>
                         {% for influence in creator.active_artinfluences %}
-                                <p>{{ forloop.counter }}. <a href="{{ influence.get_absolute_url }}">{{ influence.influence_name }}</a>
-                                {% if influence.is_self_identify %}
-                                    {% if influence.self_identify_influences_doc %}
-                                        <p><strong>Influence Doc. </strong>{{ influence.self_identify_influences_doc }}
-                                        </p>
-                                    {% endif %}
-                                {% endif %}
-                                </p>
-                                {% if influence.influence_source.all %}
-                                    <p><strong>Influence source</strong> :
-                                        {% for source in influence.influence_source.all %} {{ source.type }}
-                                            , {% endfor %}</p>
-                                {% endif %}
+                            <p>{{ forloop.counter }}. <a href="{{ influence.get_absolute_url }}">{{ influence.influence_name }}</a>
+                            </p>
+                            {% if influence.notes %}
+                            <p><strong>Notes: </strong>{{ influence.notes }}</p>
+                            {% endif %}
+                            <dl>
+                            {% with influence.data_source.all as data_sources %}
+                            {% include "gcd/bits/show_sources.html" %}
+                            {% endwith %}
+                            </dl>
                         {% endfor %}
                     {% endif %}
 
@@ -235,13 +193,19 @@
                         {% for membership in creator.active_memberships %}
                                 <p>{{ forloop.counter }}. <a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
                                 <strong>type</strong>: {{ membership.membership_type.type }}
-                                <strong>year begin</strong> : {{ membership.membership_begin_year|default:'?' }}
-                                <strong>year ended</strong> : {{ membership.membership_end_year|default:'?' }}</p>
-                                {% if membership.membership_source.all %}
-                                    <p><strong>Membership source</strong> :
-                                        {% for source in membership.membership_source.all %} {{ source.type }}
-                                            ,{% endfor %}</p>
+                                <strong>year begin:</strong> {{ membership.membership_year_began|default:'' }}{% if not membership.membership_year_began or membership.membership_year_began_uncertain %} ?{% endif %}
+                                {% if membership.membership_year_ended or membership.membership_year_ended_uncertain %}
+                                <strong>year ended:</strong> {{ membership.membership_year_ended|default:'' }}
+                                {% if membership.membership_year_ended_uncertain %} ?{% endif %}
                                 {% endif %}
+                                {% if membership.notes %}
+                                <p><strong>Notes: </strong>{{ membership.notes }}</p>
+                                {% endif %}
+                                <dl>
+                                {% with membership.data_source.all as data_sources %}
+                                {% include "gcd/bits/show_sources.html" %}
+                                {% endwith %}
+                                </dl>
                         {% endfor %}
                     {% endif %}
 
@@ -306,16 +270,22 @@
                         {% endwith %}
                         {% if user.is_authenticated and not creator.pending_deletion %}
                             <a href="{% url "add_creator_artinfluence" creator.id %}">
-                                <button>Add Influence</button>
-                            </a>
-                            <a href="{% url "add_creator_membership" creator.id %}">
-                                <button>Add Membership</button>
+                                <button>Add Art Influence</button>
                             </a>
                             <a href="{% url "add_creator_award" creator.id %}">
                                 <button>Add Award</button>
                             </a>
+                            <a href="{% url "add_creator_membership" creator.id %}">
+                                <button>Add Membership</button>
+                            </a>
                             <a href="{% url "add_creator_non_comic_work" creator.id %}">
                                 <button>Add NonComic Work</button>
+                            </a>
+                            <a href="{% url "add_creator_school" creator.id %}">
+                                <button>Add School</button>
+                            </a>
+                            <a href="{% url "add_creator_degree" creator.id %}">
+                                <button>Add School Degree</button>
                             </a>
                         {% endif %}
                         {% if creator.portrait %}

@@ -1,0 +1,6 @@
+{% if data_sources %}
+    <dt>Source:
+        {% for source in data_sources %}
+            <dd>{{ source.source_description }} ({{ source.source_type }}){% endfor %}
+{% endif %}
+

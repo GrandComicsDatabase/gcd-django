@@ -130,6 +130,11 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.creator_noncomicwork_by_name',
      name='creator_noncomicwork_by_name'),
 
+    url(r'^creator_school/(?P<creator_school_id>\d+)/$',
+     'apps.gcd.views.details.creator_school', name='show_creator_school'),
+    url(r'^creator_degree/(?P<creator_degree_id>\d+)/$',
+     'apps.gcd.views.details.creator_degree', name='show_creator_degree'),
+
     url(r'^imprint/(?P<imprint_id>\d+)/$', 'apps.gcd.views.details.imprint',
       name='show_imprint'),
 

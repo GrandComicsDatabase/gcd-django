@@ -28,9 +28,11 @@ from .creator import (    # noqa
     CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
     CreatorMembershipRevisionForm, CreatorAwardRevisionForm,
     CreatorNonComicWorkRevisionForm, get_creator_revision_form,
+    CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
     get_creator_art_influence_revision_form, get_creator_award_revision_form,
     get_creator_membership_revision_form,
-    get_creator_non_comic_work_revision_form)
+    get_creator_non_comic_work_revision_form,
+    get_creator_school_revision_form, get_creator_degree_revision_form)
 from .support import add_data_source_fields, init_data_source_fields
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
@@ -96,6 +98,12 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'creator_noncomicwork':
         return get_creator_non_comic_work_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_school':
+        return get_creator_school_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_degree':
+        return get_creator_degree_revision_form(revision, **kwargs)
 
     raise NotImplementedError
 
