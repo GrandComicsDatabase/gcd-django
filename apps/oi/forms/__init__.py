@@ -33,7 +33,8 @@ from .creator import (    # noqa
     get_creator_membership_revision_form,
     get_creator_non_comic_work_revision_form,
     get_creator_school_revision_form, get_creator_degree_revision_form)
-from .support import add_data_source_fields, init_data_source_fields
+from .support import ( add_data_source_fields, init_data_source_fields,
+    _set_help_labels)
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
     if revision is not None and model_name is None:
@@ -142,12 +143,17 @@ class OngoingReservationForm(forms.ModelForm):
                   'have an ongoing reservation')
 
 
-def get_date_revision_form(revision=None, user=None):
+def get_date_revision_form(revision=None, user=None, date_help_links=[]):
     class RuntimeDateRevisionForm(DateRevisionForm):
         def __init__(self, *args, **kwargs):
             super(RuntimeDateRevisionForm, self).__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields(self.prefix, revision, self.fields)
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, date_help_links)
+            return super(DateRevisionForm, self).as_table()
+
     return RuntimeDateRevisionForm
 
 
@@ -155,6 +161,8 @@ class DateRevisionForm(DateForm):
     def __init__(self, *args, **kwargs):
         super(DateRevisionForm, self).__init__(*args, **kwargs)
         add_data_source_fields(self, self.prefix)
+        self.fields['date'].help_text = 'Enter date as YYYY-MM-DD or parts '\
+          'thereof. A ? can be used in each part to indicate uncertainty.'
 
     def clean(self):
         cd = super(DateRevisionForm, self).clean()

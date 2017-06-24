@@ -10,7 +10,13 @@ from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
                            CreatorDataSourceRevision, CreatorDegreeDetailRevision, \
                            _get_creator_sourced_fields
 
-from .support import (GENERIC_ERROR_MESSAGE, 
+from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
+                      CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
+                      CREATOR_NONCOMICWORK_HELP_TEXTS, CREATOR_AWARD_HELP_LINKS,
+                      CREATOR_ARTINFLUENCE_HELP_LINKS, CREATOR_HELP_LINKS,
+                      CREATOR_DEGREE_HELP_LINKS, CREATOR_MEMBERSHIP_HELP_LINKS,
+                      CREATOR_NONCOMICWORK_HELP_LINKS,
+                      CREATOR_SCHOOL_HELP_LINKS,
                       _set_help_labels, _get_comments_form_field,
                       init_data_source_fields, insert_data_source_fields,
                       HiddenInputWithHelp)
@@ -33,6 +39,12 @@ def get_creator_revision_form(revision=None, user=None):
             if revision:
                 for field in _get_creator_sourced_fields():
                     init_data_source_fields(field, revision, self.fields)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, CREATOR_HELP_LINKS)
+            return super(CreatorRevisionForm, self).as_table()
+
     return RuntimeCreatorRevisionForm
 
 
@@ -42,6 +54,8 @@ class CreatorRevisionForm(forms.ModelForm):
         fields = get_creator_field_list()
         fields.remove('birth_date')
         fields.remove('death_date')
+        help_texts = CREATOR_HELP_TEXTS
+        labels = {'bio': 'Biography'}
 
     def __init__(self, *args, **kwargs):
         super(CreatorRevisionForm, self).__init__(*args, **kwargs)
@@ -53,6 +67,10 @@ class CreatorRevisionForm(forms.ModelForm):
         # in django 1.9 there is Form.order_fields
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
+        self.fields['bio_source_description'].label = \
+          "Biography source description"
+        self.fields['bio_source_type'].label = \
+          "Biography source type"
 
     comments = _get_comments_form_field()
 
@@ -78,8 +96,13 @@ def get_creator_school_revision_form(revision=None, user=None):
                          .__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields('', revision, self.fields)
-    return RuntimeCreatorSchoolRevisionForm
 
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, CREATOR_SCHOOL_HELP_LINKS)
+            return super(CreatorSchoolRevisionForm, self).as_table()
+
+    return RuntimeCreatorSchoolRevisionForm
 
 class CreatorSchoolRevisionForm(forms.ModelForm):
     class Meta:
@@ -111,6 +134,12 @@ def get_creator_degree_revision_form(revision=None, user=None):
                          .__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields('', revision, self.fields)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, CREATOR_DEGREE_HELP_LINKS)
+            return super(CreatorDegreeRevisionForm, self).as_table()
+
     return RuntimeCreatorDegreeRevisionForm
 
 
@@ -144,6 +173,12 @@ def get_creator_membership_revision_form(revision=None, user=None):
                          .__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields('', revision, self.fields)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, CREATOR_MEMBERSHIP_HELP_LINKS)
+            return super(CreatorMembershipRevisionForm, self).as_table()
+
     return RuntimeCreatorMembershipRevisionForm
 
 
@@ -151,6 +186,7 @@ class CreatorMembershipRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorMembershipRevision
         exclude = ['creator', 'creator_membership', 'changeset', 'deleted',]
+        help_texts = CREATOR_MEMBERSHIP_HELP_TEXTS
 
     def __init__(self, *args, **kwargs):
         super(CreatorMembershipRevisionForm, self).__init__(*args, **kwargs)
@@ -177,6 +213,12 @@ def get_creator_award_revision_form(revision=None, user=None):
                          .__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields('', revision, self.fields)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, CREATOR_AWARD_HELP_LINKS)
+            return super(CreatorAwardRevisionForm, self).as_table()
+
     return RuntimeCreatorAwardRevisionForm
 
 
@@ -211,6 +253,12 @@ def get_creator_art_influence_revision_form(revision=None, user=None):
                          .__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields('', revision, self.fields)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, CREATOR_ARTINFLUENCE_HELP_LINKS)
+            return super(CreatorArtInfluenceRevisionForm, self).as_table()
+
     return RuntimeCreatorArtInfluenceRevisionForm
 
 
@@ -218,6 +266,7 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorArtInfluenceRevision
         exclude = ['creator', 'creator_artinfluence','changeset', 'deleted',]
+        help_texts = CREATOR_ARTINFLUENCE_HELP_TEXTS
 
     def __init__(self, *args, **kwargs):
         super(CreatorArtInfluenceRevisionForm, self).__init__(*args, **kwargs)
@@ -235,6 +284,10 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         _generic_data_source_clean(self, cd)
+        if cd['influence_name'] and cd['influence_link']:
+            self.add_error('influence_name',
+                'Enter either the name of an influence or a link to an '
+                'influence, but not both.')
 
 
 def get_creator_non_comic_work_revision_form(revision=None, user=None):
@@ -246,6 +299,12 @@ def get_creator_non_comic_work_revision_form(revision=None, user=None):
             #if revision:
                 #for field in _get_creator_sourced_fields():
                     #init_data_source_fields(field, revision, self.fields)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, CREATOR_NONCOMICWORK_HELP_LINKS)
+            return super(CreatorNonComicWorkRevisionForm, self).as_table()
+
     return RuntimeCreatorNonComicWorkRevisionForm
 
 
@@ -253,5 +312,6 @@ class CreatorNonComicWorkRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorNonComicWorkRevision
         exclude = ['creator', 'creator_noncomicwork','changeset', 'deleted',]
+        help_texts = CREATOR_NONCOMICWORK_HELP_TEXTS
 
     comments = _get_comments_form_field()

@@ -52,6 +52,63 @@ BRAND_HELP_LINKS = {
     'comments': 'Comments '
 }
 
+CREATOR_HELP_LINKS = {
+    'gcd_official_name': 'Credits',
+    'date': 'Year_/_Month_/_Date_Fields',
+    'birth_country': 'Country_/_Province_/_City_Fields',
+    'death_country': 'Country_/_Province_/_City_Fields',
+    'birth_province': 'Country_/_Province_/_City_Fields',
+    'death_province': 'Country_/_Province_/_City_Fields',
+    'birth_city': 'Country_/_Province_/_City_Fields',
+    'death_city': 'Country_/_Province_/_City_Fields',
+    'bio': 'Biography',
+    'whos_who': 'Biography',
+    'notes': 'Notes_(Creators)'
+}
+
+CREATOR_ARTINFLUENCE_HELP_LINKS = {
+    'influence_name': 'Influence_Name',
+    'influence_link': 'Influence_Name',
+    'notes': 'Notes_(Creator_Influences)',
+}
+
+CREATOR_AWARD_HELP_LINKS = {
+    'award_name': 'Award_name',
+    'award_year': 'Year_fields',
+    'notes': 'Notes_(Creator_Awards)'
+}
+
+CREATOR_DEGREE_HELP_LINKS = {
+    'school': 'School',
+    'degree': 'Degree',
+    'degree_year': 'Year_fields',
+    'notes': 'Notes_(Creator_Degrees)'
+}
+
+CREATOR_MEMBERSHIP_HELP_LINKS = {
+    'organization_name': 'Organization_name',
+    'membership_type': 'Membership_type',
+    'membership_year_began': 'Year_fields',
+    'membership_year_ended': 'Year_fields',
+    'notes': 'Notes_(Creator_Memberships)'
+}
+
+CREATOR_NONCOMICWORK_HELP_LINKS = {
+    'work_type': 'Work_Type',
+    'publication_title': 'Publication_Title',
+    'employer_name': 'Employer_Name',
+    'work_title': 'Work_Title',
+    'work_role': 'Work_Role',
+    'notes': 'Work_Notes_(Non_Comic_Work)',
+}
+
+CREATOR_SCHOOL_HELP_LINKS = {
+    'school': 'School',
+    'school_year_began': 'Year_fields',
+    'school_year_ended': 'Year_fields',
+    'notes': 'Notes_(Creator_Schools)'
+}
+
 INDICIA_PUBLISHER_HELP_LINKS = {
     'name': 'Indicia_Publisher',
     'year_began': 'Years_of_Use_%28Indicia_publisher%29',
@@ -162,10 +219,42 @@ SERIES_HELP_LINKS = {
     'comments': 'Comments'
 }
 
-VARIANT_NAME_HELP_TEXT = (
-    'Name of this variant. Examples are: "Cover A" (if listed as such in '
-    'the issue), "2nd printing", "newsstand", "direct", or the name of '
-    'the artist if different from the base issue.')
+CREATOR_HELP_TEXTS = {
+    'bio':
+        "A short biography (1-4 paragraphs) noting highlights of the career "
+        "of the creator, which might include a list of characters created.",
+    'whos_who':
+         "Link to the old Who’s Who, if available.",
+}
+
+CREATOR_MEMBERSHIP_HELP_TEXTS = {
+    'organization_name':
+        "Name of society or other organization, related to an artistic "
+        "profession, that the creator holds or held a membership in.",
+}
+
+CREATOR_ARTINFLUENCE_HELP_TEXTS = {
+    'influence_name':
+        "Name of an artistic influence of the creator. We only document "
+        "influences self-identified by the creator.",
+    'influence_link':
+        "If the influence is a creator in our database, link to the creator "
+        "record instead of entering the name above.",
+}
+
+CREATOR_NONCOMICWORK_HELP_TEXTS = {
+    'publication_title':
+        "Record the publication title if a physical publication, the title of "
+        "a play, movie, television, radio, or live show series, the name or "
+        "client of an advertising campaign, name of a fine art piece or "
+        "internet site, or feature of a web comic.",
+    'employer_name':
+        "The name of the entity that paid for the work.",
+    'work_title':
+        "The title of the individual work, such as the title of an article "
+        "or web comic story, episode of a show, illustration in an "
+        "ad campaign, or blog entry."
+}
 
 PUBLISHER_HELP_TEXTS = {
     'year_began':
@@ -399,6 +488,11 @@ ISSUE_HELP_TEXTS = {
     'no_rating':
         "Check this box if there are no publisher's age guidelines.",
 }
+
+VARIANT_NAME_HELP_TEXT = (
+    'Name of this variant. Examples are: "Cover A" (if listed as such in '
+    'the issue), "2nd printing", "newsstand", "direct", or the name of '
+    'the artist if different from the base issue.')
 
 
 def _set_help_labels(self, help_links):

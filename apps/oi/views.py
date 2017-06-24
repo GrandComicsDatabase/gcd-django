@@ -78,6 +78,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            CreatorSchoolRevisionForm,
                            CreatorDegreeRevisionForm,
                            DateRevisionForm)
+from apps.oi.forms.support import CREATOR_HELP_LINKS
 
 from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
@@ -671,7 +672,8 @@ def _display_edit_form(request, changeset, form, revision=None):
 
     # TODO generalize, e.g. make a multiform-flag for a changeset
     if changeset.change_type == CTYPES['creator']:
-        form_class = get_date_revision_form(revision, user=request.user)
+        form_class = get_date_revision_form(revision, user=request.user,
+                                            date_help_links=CREATOR_HELP_LINKS)
         birth_date_form = form_class(request.POST or None,
                                      instance=revision.birth_date,
                                      prefix='birth_date')
@@ -906,7 +908,9 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                     #process_creator_school(request, changeset, revision)
                     #process_creator_degree(request, changeset, revision)
 
-                    form_class = get_date_revision_form(revision, user=request.user)
+                    form_class = get_date_revision_form(
+                                    revision, user=request.user,
+                                    date_help_links=CREATOR_HELP_LINKS)
                     birth_date_form = form_class(request.POST or None,
                                                 instance=revision.birth_date,
                                                 prefix='birth_date')
@@ -5002,9 +5006,11 @@ def add_creator(request):
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(reverse('add'))
 
-    creator_form = CreatorRevisionForm(request.POST or None)
-    birth_date_form = DateRevisionForm(request.POST or None, prefix='birth_date')
-    death_date_form = DateRevisionForm(request.POST or None, prefix='death_date')
+    creator_form = get_creator_revision_form(user=request.user)(request.POST or None)
+    form_class = get_date_revision_form(user=request.user,
+                                        date_help_links=CREATOR_HELP_LINKS)
+    birth_date_form = form_class(request.POST or None, prefix='birth_date')
+    death_date_form = form_class(request.POST or None, prefix='death_date')
 
     if creator_form.is_valid() and birth_date_form.is_valid()\
                                 and death_date_form.is_valid():
