@@ -5900,7 +5900,47 @@ class CreatorRevision(Revision):
     def _get_source_name(self):
         return 'creator'
 
+    def _start_imp_sum(self):
+        self._seen_birth_country = False
+        self._seen_birth_province = False
+        self._seen_birth_city = False
+        self._seen_death_country = False
+        self._seen_death_province = False
+        self._seen_death_city = False
+
     def _imps_for(self, field_name):
+        if field_name in ('birth_country',
+                          'birth_country_uncertain'):
+            if not self._seen_birth_country:
+                self._seen_birth_country = True
+                return 1
+        elif field_name in ('birth_province',
+                            'birth_province_uncertain'):
+            if not self._seen_birth_province:
+                self._seen_birth_province = True
+                return 1
+        elif field_name in ('birth_city',
+                            'birth_city_uncertain'):
+            if not self._seen_birth_city:
+                self._seen_birth_city = True
+                return 1
+        elif field_name in ('death_country',
+                            'death_country_uncertain'):
+            if not self._seen_death_country:
+                self._seen_death_country = True
+                return 1
+        elif field_name in ('death_province',
+                            'death_province_uncertain'):
+            if not self._seen_death_province:
+                self._seen_death_province = True
+                return 1
+        elif field_name in ('death_city',
+                            'death_city_uncertain'):
+            if not self._seen_death_city:
+                self._seen_death_city = True
+                return 1
+        elif field_name in self._field_list():
+            return 1
         return 0
 
     def commit_to_display(self, clear_reservation=True):

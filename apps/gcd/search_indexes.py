@@ -227,7 +227,8 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/creator_text.txt')
-    gcd_official_name = indexes.EdgeNgramField(model_attr="gcd_official_name")
+    gcd_official_name = indexes.EdgeNgramField(model_attr="gcd_official_name",
+                                               boost=DEFAULT_BOOST)
     name = MultiValueField()
     facet_model_name = indexes.CharField(faceted=True)
 
