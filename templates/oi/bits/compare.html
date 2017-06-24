@@ -119,7 +119,31 @@
         {% endfor %}
       {% endwith %}
     {% endif %}
+    {% if field in group_sourced_fields %}
+      {% with group_sourced_fields|lookup:field as field %}
+      {% with changeset|get_source_revisions:field as source_revisions %}
+        {% for source_revision in source_revisions %}
+          {% for source_field in source_fields %}
+            {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
+              {% include 'oi/bits/compare_field.html' %}
+            {% endwith %}
+          {% endfor %}
+        {% endfor %}
+      {% endwith %}
+      {% endwith %}
+    {% endif %}
     {% endfor %}
+    {% if '' in sourced_fields %} {# one source for model #}
+      {% with changeset|get_source_revisions:'' as source_revisions %}
+        {% for source_revision in source_revisions %}
+          {% for source_field in source_fields %}
+            {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
+              {% include 'oi/bits/compare_field.html' %}
+            {% endwith %}
+          {% endfor %}
+        {% endfor %}
+      {% endwith %}
+    {% endif %}
     {% if changeset_type == 'story' %}
       {% if revision.migration_status and not revision.migration_status.reprint_confirmed or revision.migration_status.modified > revision.changeset.created and revision.changeset.modified > revision.migration_status.modified or revision.migration_status.modified > revision.changeset.created and not revision.changeset.state = states.APPROVED %}
         {% if not revision.migration_status.reprint_confirmed %}

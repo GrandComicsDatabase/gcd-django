@@ -17,25 +17,21 @@
   <div id="control_container">
     <div id="control_center">
       <dl class="pub_data">
+        {% if creator_artinfluence.influence_name %}
         <dt> Influence Name:
         <dd> {{ creator_artinfluence.influence_name }}
+        {% endif %}
+        {% if creator_artinfluence.influence_link %}
         <dt> Influence Link:
         <dd> {{ creator_artinfluence.influence_link }}
-{% if creator_artinfluence.is_self_identify %}
-        <dt> Is Self Identify ?:
-        <dd> {{ creator_artinfluence.is_self_identify }}
-{% endif %}
-{% if creator_artinfluence.is_self_identify and creator_artinfluence.self_identify_influences_doc %}
-        <dt> Self Identify Influences Docc.:
-        <dd> {{ creator_artinfluence.self_identify_influences_doc }}
-{% endif %}
-{% if creator_artinfluence.influence_source %}
-        <dt> Influence Sources:
-        {% for source in creator_artinfluence.influence_source.all %}
-        <dd> {{ source.type }}
-        {% endfor %}
-{% endif %}
-
+        {% endif %}
+        {% if creator_artinfluence.notes %}
+        <dt>Notes
+        <dd>{{ creator_artinfluence.notes }}
+        {% endif %}
+        {% with creator_artinfluence.data_source.all as data_sources %}
+        {% include "gcd/bits/show_sources.html" %}
+        {% endwith %}
       </dl>
     </div> <!-- control_center -->
   {% if not preview or creator_artinfluence.source %}
@@ -53,11 +49,11 @@
 
   {% endif %} <!-- not preview -->
       </div> <!-- edit_box -->
-      <div class="change_history">
+      <div id="change_history" class="edit_footer">
   {% if preview %}
-        <a href="{% url "change_history" model_name='creator_artinfluence' id=creator_artinfluence.source.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='creator_artinfluence' id=creator_artinfluence.source.id %}">View Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='creator_artinfluence' id=creator_artinfluence.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='creator_artinfluence' id=creator_artinfluence.id %}">View Change History</a>
   {% endif %}
       </div>
         </div> <!-- control_rail -->

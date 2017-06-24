@@ -21,21 +21,21 @@
         <dd> {{ creator_membership.organization_name }}
         <dt> Membership Type:
         <dd> {{ creator_membership.membership_type }}
-{% if creator_membership.membership_begin_year %}
-        <dt> Membership Begin Year:
-        <dd> {{ creator_membership.membership_begin_year }}
-{% endif %}
-{% if creator_membership.membership_end_year %}
-        <dt> Membership End Year:
-        <dd> {{ creator_membership.membership_end_year }}
-{% endif %}
-{% if creator_membership.membership_source %}
-        <dt> Membership Sources:
-        {% for source in creator_membership.membership_source.all %}
-        <dd> {{ source.type }}
-        {% endfor %}
-{% endif %}
-
+        <dt> Year began:
+        <dd> {{ creator_membership.membership_year_began|default:'' }}
+        {% if not creator_membership.membership_year_began or creator_membership.membership_year_began_uncertain %} ?{% endif %}
+        {% if creator_membership.membership_year_ended or creator_membership.membership_year_ended_uncertain %}
+        <dt>Year ended:
+        <dd>{{ creator_membership.membership_year_ended|default:'' }}
+            {% if creator_membership.membership_year_ended_uncertain %} ?{% endif %}
+        {% endif %}
+        {% if creator_membership.notes %}
+        <dt>Notes:
+        <dd>{{ creator_membership.notes }}
+        {% endif %}
+        {% with creator_membership.data_source.all as data_sources %}
+        {% include "gcd/bits/show_sources.html" %}
+        {% endwith %}
       </dl>
     </div> <!-- control_center -->
   {% if not preview or creator_membership.source %}
@@ -53,11 +53,11 @@
 
   {% endif %} <!-- not preview -->
       </div> <!-- edit_box -->
-      <div class="change_history">
+      <div id="change_history" class="edit_footer">
   {% if preview %}
-        <a href="{% url "change_history" model_name='creator_membership' id=creator_membership.source.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='creator_membership' id=creator_membership.source.id %}">View Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='creator_membership' id=creator_membership.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='creator_membership' id=creator_membership.id %}">View Change History</a>
   {% endif %}
       </div>
         </div> <!-- control_rail -->

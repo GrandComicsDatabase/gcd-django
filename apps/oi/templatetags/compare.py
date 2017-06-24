@@ -369,6 +369,11 @@ def get_source_revisions(changeset, field):
 
 
 @register.filter
+def lookup(d, key):
+    return d[key]
+
+
+@register.filter
 def is_in(value, sources):
     for source in sources:
         if str(source) == str(value):

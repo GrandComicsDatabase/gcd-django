@@ -23,13 +23,13 @@
         <dt> Award Year:
         <dd> {{ creator_award.award_year }}
 {% endif %}
-{% if creator_award.award_source %}
-        <dt> Award Sources:
-        {% for source in creator_award.award_source.all %}
-        <dd> {{ source.type }}
-        {% endfor %}
-{% endif %}
-
+        {% if creator_award.notes %}
+        <dt>Notes
+        <dd>{{ creator_award.notes }}
+        {% endif %}
+        {% with creator_award.data_source.all as data_sources %}
+        {% include "gcd/bits/show_sources.html" %}
+        {% endwith %}
       </dl>
     </div> <!-- control_center -->
   {% if not preview or creator_award.source %}
@@ -47,11 +47,11 @@
 
   {% endif %} <!-- not preview -->
       </div> <!-- edit_box -->
-      <div class="change_history">
+      <div id="change_history" class="edit_footer">
   {% if preview %}
-        <a href="{% url "change_history" model_name='creator_award' id=creator_award.source.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='creator_award' id=creator_award.source.id %}">View Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='creator_award' id=creator_award.id %}">Change History</a>
+        <a href="{% url "change_history" model_name='creator_award' id=creator_award.id %}">View Change History</a>
   {% endif %}
       </div>
         </div> <!-- control_rail -->

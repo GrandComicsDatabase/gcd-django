@@ -16,7 +16,8 @@ from django.conf import settings
 from django.core import urlresolvers
 from django.shortcuts import render_to_response, \
                              get_object_or_404, \
-                             get_list_or_404
+                             get_list_or_404, \
+                             render
 from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.template import RequestContext
 from django.utils.safestring import mark_safe
@@ -29,9 +30,10 @@ from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
 
 from apps.indexer.models import Indexer
-from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
+from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
                             IndiciaPublisher, Brand, BrandGroup, Cover, \
-                            SeriesBond, Membership, Award, ArtInfluence, NonComicWork
+                            SeriesBond, Membership, Award, ArtInfluence,\
+                            NonComicWork, CreatorSchoolDetail, CreatorDegreeDetail
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -58,99 +60,6 @@ IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
 
 
-def creator(request, creator_id):
-    creator = get_object_or_404(Creator, id=creator_id)
-
-    if creator.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'creator', 'id': creator_id}))
-
-    return show_creator(request, creator)
-
-def creator_membership(request, creator_membership_id):
-    creator_membership = get_object_or_404(Membership, id=creator_membership_id)
-    if creator_membership.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-            kwargs={'model_name': 'creator_membership',
-                    'id': creator_membership_id}))
-
-    return show_creator_membership(request, creator_membership)
-
-def creator_award(request, creator_award_id):
-    creator_award = get_object_or_404(Award, id=creator_award_id)
-    if creator_award.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'creator_award', 'id': creator_award_id}))
-
-    return show_creator_award(request, creator_award)
-
-def creator_artinfluence(request, creator_artinfluence_id):
-    creator_artinfluence = get_object_or_404(ArtInfluence,
-                                             id=creator_artinfluence_id)
-    if creator_artinfluence.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'creator_artinfluence',
-                  'id': creator_artinfluence_id}))
-
-    return show_creator_artinfluence(request, creator_artinfluence)
-
-def creator_noncomicwork(request, creator_noncomicwork_id):
-    creator_noncomicwork = get_object_or_404(NonComicWork,
-                                             id=creator_noncomicwork_id)
-    if creator_noncomicwork.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'creator_noncomicwork',
-                  'id': creator_noncomicwork_id}))
-
-    return show_creator_noncomicwork(request, creator_noncomicwork)
-
-def show_creator(request, creator, preview=False):
-    creator_series = []
-    vars = {'creator': creator,
-            'current': [],
-            'error_subject': creator,
-            'preview': preview}
-
-    return paginate_response(request, creator_series,
-                             'gcd/details/creator.html', vars)
-
-def show_creator_membership(request, creator_membership, preview=False):
-    creator_membership_series = []
-    vars = {'creator_membership': creator_membership,
-            'current': [],
-            'error_subject': creator_membership,
-            'preview': preview}
-    return paginate_response(request, creator_membership_series,
-                            'gcd/details/creator_membership_details.html', vars)
-
-def show_creator_award(request, creator_award, preview=False):
-    creator_award_series = []
-    vars = {'creator_award': creator_award,
-            'current': [],
-            'error_subject': creator_award,
-            'preview': preview}
-    return paginate_response(request, creator_award_series,
-                                 'gcd/details/creator_award_details.html', vars)
-
-def show_creator_artinfluence(request, creator_artinfluence, preview=False):
-    creator_artinfluence_series = []
-    vars = {'creator_artinfluence': creator_artinfluence,
-            'current': [],
-            'error_subject': creator_artinfluence,
-            'preview': preview}
-    return paginate_response(request, creator_artinfluence_series,
-                        'gcd/details/creator_artinfluence_details.html', vars)
-
-def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
-    creator_noncomicwork_series = []
-    vars = {'creator_noncomicwork': creator_noncomicwork,
-            'current': [],
-            'error_subject': creator_noncomicwork,
-            'preview': preview}
-    return paginate_response(request, creator_noncomicwork_series,
-                        'gcd/details/creator_noncomicwork_details.html', vars)
-
-
 def get_gcd_object(model, object_id, model_name=None):
     object = get_object_or_404(model, id = object_id)
     if object.deleted:
@@ -162,6 +71,96 @@ def get_gcd_object(model, object_id, model_name=None):
                                           kwargs={'model_name': model_name,
                                                   'id': object_id})))
     return object
+
+
+def creator(request, creator_id):
+    creator = get_gcd_object(Creator, creator_id)
+    return show_creator(request, creator)
+
+
+def show_creator(request, creator, preview=False):
+    vars = {'creator': creator,
+            'error_subject': creator,
+            'preview': preview}
+    return render(request, 'gcd/details/creator.html', vars)
+
+
+def creator_membership(request, creator_membership_id):
+    creator_membership = get_gcd_object(Membership, creator_membership_id)
+    return show_creator_membership(request, creator_membership)
+
+
+def show_creator_membership(request, creator_membership, preview=False):
+    vars = {'creator_membership': creator_membership,
+            'error_subject': creator_membership,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_membership_details.html', vars)
+
+
+def creator_artinfluence(request, creator_artinfluence_id):
+    creator_artinfluence = get_gcd_object(ArtInfluence,
+                                          creator_artinfluence_id)
+    return show_creator_artinfluence(request, creator_artinfluence)
+
+
+def show_creator_artinfluence(request, creator_artinfluence, preview=False):
+    vars = {'creator_artinfluence': creator_artinfluence,
+            'error_subject': creator_artinfluence,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_artinfluence_details.html',
+                  vars)
+
+
+def creator_award(request, creator_award_id):
+    creator_award = get_gcd_object(Award, creator_award_id)
+    return show_creator_award(request, creator_award)
+
+
+def show_creator_award(request, creator_award, preview=False):
+    vars = {'creator_award': creator_award,
+            'error_subject': creator_award,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_award_details.html', vars)
+
+
+def creator_degree(request, creator_degree_id):
+    creator_degree = get_gcd_object(CreatorDegreeDetail, creator_degree_id)
+    return show_creator_degree(request, creator_degree)
+
+
+def show_creator_degree(request, creator_degree, preview=False):
+    vars = {'creator': creator_degree.creator,
+            'creator_degree': creator_degree,
+            'error_subject': creator_degree,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_degree_details.html', vars)
+
+
+def creator_noncomicwork(request, creator_noncomicwork_id):
+    creator_noncomicwork = get_gcd_object(NonComicWork,
+                                          creator_noncomicwork_id)
+    return show_creator_noncomicwork(request, creator_noncomicwork)
+
+
+def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
+    vars = {'creator_noncomicwork': creator_noncomicwork,
+            'error_subject': creator_noncomicwork,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_noncomicwork_details.html',
+                  vars)
+
+
+def creator_school(request, creator_school_id):
+    creator_school = get_gcd_object(CreatorSchoolDetail, creator_school_id)
+    return show_creator_school(request, creator_school)
+
+
+def show_creator_school(request, creator_school, preview=False):
+    vars = {'creator': creator_school.creator,
+            'creator_school': creator_school,
+            'error_subject': creator_school,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_school_details.html', vars)
 
 
 def publisher(request, publisher_id):
