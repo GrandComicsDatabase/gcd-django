@@ -3188,7 +3188,7 @@ class SeriesBondRevision(Revision):
             if not self._seen_target:
                 self._seen_target = True
                 return 1
-        if field_name == 'notes':
+        if field_name in get_series_bond_field_list():
             return 1
         return 0
 
