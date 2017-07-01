@@ -1934,7 +1934,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                    series=series,
                                    publisher=series.publisher,
                                    variant_of=variant_of,
-                                   user=request.user)
+                                   user=request.user,
+                                   edit_with_base=edit_with_base)
 
     if request.method != 'POST':
         if variant_of:
