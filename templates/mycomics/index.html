@@ -3,6 +3,10 @@
 {% load i18n %}
 
 
+{% block head_extras %}
+  <meta name="description" content = "Backed by the Grand Comics Database, the largest database about comics and their creators on the planet, my.comics.org allows you to track and manage your comic collection. " />
+{% endblock %}
+
 {% block other-stylesheets %}
   <link rel="stylesheet" type="text/css"
         href="{% static "css/mycomics/front_page.css" %}"/>
