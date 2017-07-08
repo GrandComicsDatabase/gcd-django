@@ -1,4 +1,5 @@
 from haystack import indexes
+from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES
 
