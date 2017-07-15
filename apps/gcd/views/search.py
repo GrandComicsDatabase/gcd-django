@@ -338,10 +338,16 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
 
 
 def series_by_name(request, series_name, sort=ORDER_ALPHA):
-    q_obj = Q(name__icontains = series_name) | \
-            Q(issue__title__icontains = series_name)
-    return generic_by_name(request, series_name, q_obj, sort,
-                           Series, 'gcd/search/series_list.html')
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name)) \
+                              .models(Series)
+        return generic_by_name(request, series_name, None, sort, Series,
+                               'gcd/search/series_list.html', sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=series_name) | \
+                Q(issue__title__icontains=series_name)
+        return generic_by_name(request, series_name, q_obj, sort,
+                               Series, 'gcd/search/series_list.html')
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series_name """
