@@ -42,13 +42,11 @@
 
   <hr class="divider">
 {% if this_story %}
-  {% with 1 as no_navigation %}
   {% with 1 as preview %}
   {% with this_story as story %}
   <div id="story_data">
     {% include "gcd/details/single_story.html" %}
   </div>
-  {% endwith %}
   {% endwith %}
   {% endwith %}
 {% else %}
@@ -66,12 +64,10 @@ is
 
 {% if other_story %}
   <h2>{{ other_story }} / {{ other_story.title }}  of {{ other_story.issue }}  {% if other_story.issue.publication_date %}({{ other_story.issue.publication_date }}){% endif %}</h2>
-  {% with 1 as no_navigation %}
   {% with other_story as story %}
 <div id="story_data">
     {% include "gcd/details/single_story.html" %}
 </div>
-  {% endwith %}
   {% endwith %}
 {% else %}
 <h2>{{ other_issue.full_name }}</h2>

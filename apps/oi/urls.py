@@ -133,8 +133,6 @@ urlpatterns = patterns('',
         name='toggle_delete_story_revision'),
     url(r'^story/revision/(?P<id>\d+)/move/$', oi_views.move_story_revision,
         name='move_story_revision'),
-    url(r'^story/(?P<id>\d+)/reprint_migration/(?P<changeset_id>\d+)/$', oi_views.confirm_reprint_migration,
-        name='confirm_reprint_migration'),
 
     # Image URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', oi_covers.upload_image,

@@ -188,12 +188,6 @@
                value="Move To Other Issue">
       </form>
         {% endif %}
-        {% if story.migration_status and not story.migration_status.reprint_confirmed %}
-      <form class="story_button" method="GET"
-            action="{% url "confirm_reprint_migration" id=story.story.id changeset_id=changeset.id %}">
-        <input type="submit" value="Confirm Reprint Migration">
-      </form>
-        {% endif %}
       {% else %}
       <form class="story_button" method="POST"
             action="{% url "toggle_delete_story_revision" id=story.id %}">

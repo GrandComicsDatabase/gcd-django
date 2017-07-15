@@ -61,15 +61,7 @@
             {{ story|show_credit:"genre" }}
             {{ story|show_credit:"characters"|linebreaksbr }}
             {{ story|show_credit:"synopsis"|linebreaksbr }}
-            {% if show_original %}
-              {% if no_navigation %}
-                {{ story|show_reprints:'With_Story'|linebreaksbr }}
-              {% else %}  
-                {{ story|show_reprints:'True'|linebreaksbr }}
-              {% endif %}
-            {% else %}
-              {{ story|show_reprints|linebreaksbr }}
-            {% endif %}
+            {{ story|show_reprints|linebreaksbr }}
             {{ story|show_credit:"keywords" }}
         </dl>
         {% endif %}

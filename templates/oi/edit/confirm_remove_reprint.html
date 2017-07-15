@@ -24,14 +24,12 @@ Do you want to remove the following reprint link ?
 
 {% if origin %}
   <h2>{{ origin }} / {{ origin.title }}  of {{ origin.issue }}</h2>
-  {% with 1 as no_navigation %}
   {% with 1 as preview %}
   {% with origin as story %}
   <div id="story_data">
     {% include "gcd/details/single_story.html" %}
   </div>
   <hr class="divider">
-  {% endwith %}
   {% endwith %}
   {% endwith %}
 {% else %}
@@ -42,13 +40,11 @@ Do you want to remove the following reprint link ?
 
 {% if target %}
   <h2>{{ target }} / {{ target.title }}  of {{ target.issue }}</h2>
-  {% with 1 as no_navigation %}
   {% with 1 as preview %}
   {% with target as story %}
 <div id="story_data">
     {% include "gcd/details/single_story.html" %}
 </div>
-  {% endwith %}
   {% endwith %}
   {% endwith %}
 {% else %}
