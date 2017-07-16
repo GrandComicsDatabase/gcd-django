@@ -1433,6 +1433,10 @@ class Revision(models.Model):
                 old = old.all().values_list('id', flat=True)
                 new = new.all().values_list('id', flat=True)
                 field_changed = set(old) != set(new)
+            elif isinstance(old, Date):
+                old = unicode(old)
+                new = unicode(new)
+                field_changed = old != new
             else:
                 field_changed = old != new
             self.changed[field_name] = field_changed
@@ -6003,6 +6007,7 @@ class CreatorRevision(Revision):
             death_date.pk = None
             death_date.save()
             ctr.death_date = death_date
+            ctr.save()
             self.save()
         else:
             ctr.birth_date.set(year=self.birth_date.year,
@@ -6010,14 +6015,16 @@ class CreatorRevision(Revision):
                                day=self.birth_date.day,
                                year_uncertain=self.birth_date.year_uncertain,
                                month_uncertain=self.birth_date.month_uncertain,
-                               day_uncertain=self.birth_date.day_uncertain)
+                               day_uncertain=self.birth_date.day_uncertain,
+                               empty=True)
             ctr.birth_date.save()
             ctr.death_date.set(year=self.death_date.year,
                                month=self.death_date.month,
                                day=self.death_date.day,
                                year_uncertain=self.death_date.year_uncertain,
                                month_uncertain=self.death_date.month_uncertain,
-                               day_uncertain=self.death_date.day_uncertain)
+                               day_uncertain=self.death_date.day_uncertain,
+                               empty=True)
             ctr.death_date.save()
 
     def get_absolute_url(self):
@@ -6758,7 +6765,10 @@ class CreatorAwardRevision(Revision):
     notes = models.TextField(blank=True)
 
     def __unicode__(self):
-        return '%s' % (unicode(self.award_name))
+        if self.award_year:
+            return '%s: %s (%d)' % (self.creator, unicode(self.award_name), self.award_year)
+        else:
+            return '%s: %s' % (self.creator, unicode(self.award_name))
 
     _base_field_list = ['award_name',
                         'award_year',
@@ -6891,7 +6901,7 @@ class CreatorArtInfluenceRevision(Revision):
                                              related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
                                 related_name='art_influence_revisions')
-    influence_name = models.CharField(max_length=200)
+    influence_name = models.CharField(max_length=200, blank=True)
     influence_link = models.ForeignKey('gcd.Creator',
                                        null=True,
                                        blank=True,
@@ -6900,7 +6910,12 @@ class CreatorArtInfluenceRevision(Revision):
     notes = models.TextField(blank=True)
 
     def __unicode__(self):
-        return '%s' % (unicode(self.influence_name))
+        if self.influence_name:
+             influence = self.influence_name
+        else:
+             influence = self.influence_link
+
+        return '%s: %s' % (self.creator, influence)
 
     _base_field_list = ['influence_name',
                         'influence_link',
@@ -7205,7 +7220,7 @@ class NonComicWorkYearRevision(Revision):
             return
 
         creator_noncomicworkyear.non_comic_work = \
-          self.non_comic_work.creator_non_comic_work
+          self.non_comic_work.creator_noncomicwork
         creator_noncomicworkyear.work_year = self.work_year
         creator_noncomicworkyear.work_year_uncertain = self.work_year_uncertain
         creator_noncomicworkyear.save()

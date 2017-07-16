@@ -80,21 +80,21 @@ class Date(models.Model):
         self.month = month
         self.day = day
         self.year_uncertain = year_uncertain or (not year and not empty) \
-                                             or ('?' in year)
+                                             or (year and '?' in year)
         self.month_uncertain = month_uncertain or (not month and not empty) \
-                                               or ('?' in month)
+                                               or (month and '?' in month)
         self.day_uncertain = day_uncertain or (not day and not empty) \
-                                           or ('?' in day)
+                                           or (day and '?' in day)
 
     def __unicode__(self):
         year = self.year or ''
-        if self.year_uncertain and not '?' in self.year:
+        if self.year_uncertain and not '?' in year:
             year += '?'
         month = self.month or ''
-        if self.month_uncertain and not '?' in self.month:
+        if self.month_uncertain and not '?' in month:
             month += '?'
         day = self.day or ''
-        if self.day_uncertain and not '?' in self.day:
+        if self.day_uncertain and not '?' in day:
             day += '?'
         if day:
             return year+u'-'+month+u'-'+day

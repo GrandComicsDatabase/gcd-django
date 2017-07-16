@@ -722,7 +722,6 @@ def _display_edit_form(request, changeset, form, revision=None):
             'birth_date_form': birth_date_form,
             'death_date_form': death_date_form,
             'include_before_form': 'oi/bits/creator_before_form.html',
-            'include_after_form': 'oi/bits/creator_after_form.html',
             'states': states,
             'settings': settings,
             'CTYPES': CTYPES,
@@ -4693,12 +4692,6 @@ def compare(request, id):
             if creator_name_revision.cr_to_name.count():
                 revisions_before.append(creator_name_revision\
                                         .cr_to_name.get())
-        school_revisions = changeset.creatorschooldetailrevisions.all()
-        for school_revision in school_revisions:
-            revisions_after.append(school_revision)
-        degree_revisions = changeset.creatordegreedetailrevisions.all()
-        for degree_revision in degree_revisions:
-            revisions_after.append(degree_revision)
     elif changeset.change_type == CTYPES['creator_membership']:
         sourced_fields = {'': 'membership_year_ended_uncertain'}
     elif changeset.change_type == CTYPES['creator_award']:
@@ -5091,12 +5084,9 @@ def add_creator(request):
                'object_name': 'Creator',
                'object_url': urlresolvers.reverse('add_creator'),
                'include_before_form': 'oi/bits/creator_before_form.html',
-               #'include_after_form': 'oi/bits/creator_after_form.html',
                'action_label': 'Submit new',
                'name_types': NameType.objects.all(),
                'sources': SourceType.objects.all(),
-               #'schools': School.objects.all(),
-               #'degrees': Degree.objects.all(),
                'relation_types': RelationType.objects.all(),
                'official_name_details': official_name_details,
                'other_name_details': other_name_details,
