@@ -1,7 +1,4 @@
 import calendar
-from collections import OrderedDict
-import datetime
-import calendar
 from django.core import urlresolvers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
@@ -15,14 +12,12 @@ MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
 
 def _display_day(date):
-    #year = '%s_year' % type
     if date.year:
         display = '%s%s ' % (date.year,
-                  '?' if date.year_uncertain else '')
+                             '?' if date.year_uncertain else '')
     else:
         display = 'year? '
 
-    #month = '%s_month' % type
     if date.month:
         display = '%s%s%s ' % (
           display, calendar.month_name[int(date.month)],
@@ -30,10 +25,9 @@ def _display_day(date):
     else:
         display += 'month? '
 
-    #date = '%s_date' % type
     if date.day:
         display = '%s%s%s ' % (display, date.day,
-                  '?' if date.day_uncertain else '')
+                               '?' if date.day_uncertain else '')
     else:
         display += 'day? '
     return display
@@ -43,7 +37,7 @@ def _display_place(self, type):
     city = '%s_city' % type
     if getattr(self, city):
         display = '%s%s' % (getattr(self, city),
-                  '?' if getattr(self, city + '_uncertain') else '')
+                            '?' if getattr(self, city + '_uncertain') else '')
     else:
         display = ''
 
@@ -52,14 +46,16 @@ def _display_place(self, type):
         if display:
             display += ', '
         display = '%s%s%s' % (display, getattr(self, province),
-                  '?' if getattr(self, province + '_uncertain') else '')
+                              '?' if getattr(self,
+                                             province + '_uncertain') else '')
 
     country = '%s_country' % type
     if getattr(self, country):
         if display:
             display += ', '
         display = '%s%s%s' % (display, getattr(self, country),
-            '?' if getattr(self, country + '_uncertain') else '')
+                              '?' if getattr(self,
+                                             country + '_uncertain') else '')
 
     if display == '':
         return '?'
@@ -99,8 +95,6 @@ class CreatorNameDetail(models.Model):
     creator = models.ForeignKey('Creator', related_name='creator_names')
     type = models.ForeignKey('NameType', related_name='nametypes', null=True,
                              blank=True)
-    #source = models.ManyToManyField('SourceType', related_name='namesources',
-                                    #null=True, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -118,8 +112,9 @@ class CreatorNameDetail(models.Model):
         self.save()
 
     def __unicode__(self):
-        return '%s - %s(%s)' % (
-        unicode(self.creator), unicode(self.name), unicode(self.type.type))
+        return '%s - %s(%s)' % (unicode(self.creator),
+                                unicode(self.name),
+                                unicode(self.type.type))
 
 
 class SourceType(models.Model):
@@ -165,8 +160,8 @@ class CreatorDataSource(models.Model):
         self.save()
 
     def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.field), unicode(self.source_type.type))
+        return '%s - %s' % (unicode(self.field),
+                            unicode(self.source_type.type))
 
 
 class RelationType(models.Model):
@@ -231,12 +226,15 @@ class Creator(models.Model):
     death_city_uncertain = models.BooleanField(default=False)
 
     portrait = generic.GenericRelation(Image)
-    schools = models.ManyToManyField('School', related_name='schoolinformation',
-                                     through='CreatorSchoolDetail', null=True,
-                                     blank=True)
-    degrees = models.ManyToManyField('Degree', related_name='degreeinformation',
-                                     through='CreatorDegreeDetail', null=True,
-                                     blank=True)
+    # TODO needed this way ?
+    schools = models.ManyToManyField('School',
+                                     related_name='schoolinformation',
+                                     through='CreatorSchoolDetail',
+                                     null=True, blank=True)
+    degrees = models.ManyToManyField('Degree',
+                                     related_name='degreeinformation',
+                                     through='CreatorDegreeDetail',
+                                     null=True, blank=True)
     # creators roles
     bio = models.TextField(blank=True)
     sample_scan = generic.GenericRelation(Image)
@@ -253,9 +251,9 @@ class Creator(models.Model):
     deleted = models.BooleanField(default=False, db_index=True)
 
     def _portrait(self):
+        content_type = ContentType.objects.get_for_model(self)
         img = Image.objects.filter(object_id=self.id, deleted=False,
-                                   content_type=ContentType.objects.get_for_model(
-                                       self), type__id=4)
+                                   content_type=content_type, type__id=4)
         if img:
             return img.get()
         else:
@@ -264,9 +262,9 @@ class Creator(models.Model):
     portrait = property(_portrait)
 
     def _samplescan(self):
+        content_type = ContentType.objects.get_for_model(self)
         img = Image.objects.filter(object_id=self.id, deleted=False,
-                                   content_type=ContentType.objects.get_for_model(
-                                       self), type__id=5)
+                                   content_type=content_type, type__id=5)
         if img:
             return img.get()
         else:
@@ -299,16 +297,16 @@ class Creator(models.Model):
         # TODO check once more, e.g. influence_link
         if self.award_revisions.filter(changeset__state__in=
                                        states.ACTIVE).count():
-           return False
+            return False
         if self.non_comic_work_revisions.filter(changeset__state__in=
                                                 states.ACTIVE).count():
-           return False
+            return False
         if self.art_influence_revisions.filter(changeset__state__in=
                                                states.ACTIVE).count():
-           return False
+            return False
         if self.membership_revisions.filter(changeset__state__in=
                                             states.ACTIVE).count():
-           return False
+            return False
         return True
 
     def pending_deletion(self):
@@ -362,7 +360,6 @@ class NameRelation(models.Model):
     to_name = models.ForeignKey(CreatorNameDetail, related_name='to_name')
     rel_type = models.ForeignKey(RelationType, related_name='relation_type',
                                  null=True, blank=True)
-    #rel_source = models.ManyToManyField(SourceType, null=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -381,7 +378,6 @@ class NameRelation(models.Model):
                                                 unicode(self.to_name),
                                                 unicode(self.rel_type)
                                                 )
-
 
 
 class School(models.Model):
@@ -432,16 +428,17 @@ class CreatorSchoolDetail(models.Model):
         self.reserved = False
         self.save()
 
+    def deletable(self):
+        return self.creator.pending_deletion() is False
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_creator_school',
                 kwargs={'creator_school_id': self.id})
 
-
     def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.school.school_name))
+        return '%s - %s' % (unicode(self.creator),
+                            unicode(self.school.school_name))
 
 
 class Degree(models.Model):
@@ -492,15 +489,17 @@ class CreatorDegreeDetail(models.Model):
         self.reserved = False
         self.save()
 
+    def deletable(self):
+        return self.creator.pending_deletion() is False
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_creator_degree',
                 kwargs={'creator_degree_id': self.id})
 
-
     def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.creator), unicode(self.degree.degree_name))
+        return '%s - %s' % (unicode(self.creator),
+                            unicode(self.degree.degree_name))
 
 
 class ArtInfluence(models.Model):
@@ -514,17 +513,14 @@ class ArtInfluence(models.Model):
 
     creator = models.ForeignKey(Creator)
     influence_name = models.CharField(max_length=200)
-    # is_influence_exist = models.BooleanField(default=False)
     influence_link = models.ForeignKey(
             Creator,
             null=True,
             blank=True,
             related_name='exist_influencer')
-    #is_self_identify = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     data_source = models.ManyToManyField(CreatorDataSource,
                                          blank=True)
-
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -538,16 +534,16 @@ class ArtInfluence(models.Model):
         self.reserved = False
         self.save()
 
-    def __unicode__(self):
-        return unicode(self.influence_name)
+    def deletable(self):
+        return self.creator.pending_deletion() is False
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_creator_artinfluence',
                 kwargs={'creator_artinfluence_id': self.id})
 
-    def deletable(self):
-        return self.creator.pending_deletion() == False
+    def __unicode__(self):
+        return unicode(self.influence_name)
 
 
 class MembershipType(models.Model):
@@ -583,7 +579,7 @@ class Membership(models.Model):
                                                              blank=True)
     membership_year_began_uncertain = models.BooleanField(default=False)
     membership_year_ended = models.PositiveSmallIntegerField(null=True,
-                                                           blank=True)
+                                                             blank=True)
     membership_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     data_source = models.ManyToManyField(CreatorDataSource,
@@ -601,16 +597,16 @@ class Membership(models.Model):
         self.reserved = False
         self.save()
 
-    def __unicode__(self):
-        return '%s' % unicode(self.organization_name)
-
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_creator_membership',
                 kwargs={'creator_membership_id': self.id})
 
     def deletable(self):
-        return self.creator.pending_deletion() == False
+        return self.creator.pending_deletion() is False
+
+    def __unicode__(self):
+        return '%s' % unicode(self.organization_name)
 
 
 class Award(models.Model):
@@ -643,16 +639,16 @@ class Award(models.Model):
         self.reserved = False
         self.save()
 
-    def __unicode__(self):
-        return unicode(self.award_name)
+    def deletable(self):
+        return self.creator.pending_deletion() is False
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_creator_award',
                 kwargs={'creator_award_id': self.id})
 
-    def deletable(self):
-        return self.creator.pending_deletion() == False
+    def __unicode__(self):
+        return unicode(self.award_name)
 
 
 class NonComicWorkType(models.Model):
@@ -717,16 +713,16 @@ class NonComicWork(models.Model):
         self.reserved = False
         self.save()
 
-    def __unicode__(self):
-        return '%s' % (unicode(self.publication_title))
+    def deletable(self):
+        return self.creator.pending_deletion() is False
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_creator_noncomicwork',
                 kwargs={'creator_noncomicwork_id': self.id})
 
-    def deletable(self):
-        return self.creator.pending_deletion() == False
+    def __unicode__(self):
+        return '%s' % (unicode(self.publication_title))
 
 
 class NonComicWorkYear(models.Model):
@@ -740,13 +736,14 @@ class NonComicWorkYear(models.Model):
         ordering = ('work_year',)
         verbose_name_plural = 'NonComic Work Years'
 
-    non_comic_work = models.ForeignKey(NonComicWork, related_name='noncomicworkyears')
+    non_comic_work = models.ForeignKey(NonComicWork,
+                                       related_name='noncomicworkyears')
     work_year = models.PositiveSmallIntegerField(null=True, blank=True)
     work_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return '%s - %s' % (
-        unicode(self.non_comic_work), unicode(self.work_year))
+        return '%s - %s' % (unicode(self.non_comic_work),
+                            unicode(self.work_year))
 
 
 class NonComicWorkLink(models.Model):
@@ -758,11 +755,12 @@ class NonComicWorkLink(models.Model):
         app_label = 'gcd'
         verbose_name_plural = 'NonComic Work Links'
 
-    non_comic_work = models.ForeignKey(NonComicWork, related_name='noncomicworklinks')
+    non_comic_work = models.ForeignKey(NonComicWork,
+                                       related_name='noncomicworklinks')
     link = models.URLField(max_length=255)
+
+    def deletable(self):
+        return self.creator.pending_deletion() is False
 
     def __unicode__(self):
         return unicode(self.link)
-
-    def deletable(self):
-        return self.creator.pending_deletion() == False

@@ -55,7 +55,9 @@ class CreatorRevisionForm(forms.ModelForm):
         fields.remove('birth_date')
         fields.remove('death_date')
         help_texts = CREATOR_HELP_TEXTS
-        labels = {'bio': 'Biography'}
+        labels = {'bio': 'Biography', 'whos_who': "Who's Who",
+                  'birth_province': 'Birth province or state',
+                  'death_province': 'Death province or state'}
 
     def __init__(self, *args, **kwargs):
         super(CreatorRevisionForm, self).__init__(*args, **kwargs)
@@ -288,7 +290,10 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
             self.add_error('influence_name',
                 'Enter either the name of an influence or a link to an '
                 'influence, but not both.')
-
+        if not cd['influence_name'] and not cd['influence_link']:
+            self.add_error('influence_name',
+                'Either the name of an influence or a link to an '
+                'influence needs to be given.')
 
 def get_creator_non_comic_work_revision_form(revision=None, user=None):
     class RuntimeCreatorNonComicWorkRevisionForm(\

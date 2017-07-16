@@ -232,9 +232,10 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     name = MultiValueField()
     facet_model_name = indexes.CharField(faceted=True)
 
-    birth_year = indexes.IntegerField(model_attr="birth_year")
+    year = indexes.IntegerField()
     sort_name = indexes.CharField(model_attr="gcd_official_name",indexed=False)
-    country = indexes.CharField(model_attr='birth_country__code', indexed=False)
+    country = indexes.CharField(model_attr='birth_country__code', indexed=False,
+                                null=True)
 
     def get_model(self):
         return Creator
@@ -243,7 +244,13 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "creator"
 
     def prepare_name(self, obj):
-        return [creator_name.pk for creator_name in obj.creator_names.all()]
+        return [(creator_name.name) for creator_name in obj.creator_names.all()]
+
+    def prepare_year(self, obj):
+        if obj.birth_date.year:
+            return int(obj.birth_date.year)
+        else:
+            return 9999
 
 
 class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -254,10 +261,7 @@ class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable
     name = indexes.CharField(model_attr="organization_name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    birth_year = indexes.IntegerField(model_attr="creator__birth_year")
     sort_name = indexes.CharField(model_attr='organization_name', indexed=False)
-    country = indexes.CharField(model_attr='creator__birth_country__code',
-                                indexed=False)
 
     def get_model(self):
         return Membership
@@ -294,10 +298,8 @@ class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     name = indexes.CharField(model_attr="award_name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    birth_year = indexes.IntegerField(model_attr="creator__birth_year")
+    year = indexes.IntegerField(model_attr='award_year')
     sort_name = indexes.CharField(model_attr='award_name', indexed=False)
-    country = indexes.CharField(model_attr='creator__birth_country__code',
-                                indexed=False)
 
     def get_model(self):
         return Award

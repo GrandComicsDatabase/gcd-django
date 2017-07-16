@@ -953,20 +953,26 @@ def _display_image_upload_form(request, form, display_obj, model_name,
 
     kwargs['form'] = form
     if image_type == 'IndiciaScan':
-        kwargs['header'] = 'Upload a %s scan of the indicia for' % kwargs['upload_type']
+        kwargs['header'] = 'Upload a %s scan of the indicia for' \
+                           % kwargs['upload_type']
         kwargs['guidelines'] = general_guidelines('indicia')
     if image_type == 'SoOScan':
-        kwargs['header'] = 'Upload a %s scan of the statement of ownership' % kwargs['upload_type']
+        kwargs['header'] = 'Upload a %s scan of the statement of ownership' \
+                           % kwargs['upload_type']
         kwargs['guidelines'] = general_guidelines('statement of ownership')
     if image_type == 'BrandScan':
-        kwargs['header'] = 'Upload a %s scan of the brand emblem' % kwargs['upload_type']
+        kwargs['header'] = 'Upload a %s scan of the brand emblem' \
+                           % kwargs['upload_type']
         kwargs['guidelines'] = ['Please only upload an image of the brand emblem.']
     if image_type == 'CreatorPortrait':
-        kwargs['header'] = 'Upload a %s portrait of the creator' % kwargs['upload_type']
+        kwargs['header'] = 'Upload a %s portrait of the creator' \
+                           % kwargs['upload_type']
         kwargs['guidelines'] = ['Please only upload an image of the creator']
     if image_type == 'SampleScan':
-        kwargs['header'] = 'Upload a %s scan of the creator' % kwargs['upload_type']
-        kwargs['guidelines'] = ['Please only upload an image of the creator']
+        kwargs['header'] = 'Upload a %s scan of a sample for the work of '
+                           'creator' % kwargs['upload_type']
+        kwargs['guidelines'] = ['Please upload a representative example for '
+                                'the work of the creator']
     kwargs['display_obj'] = display_obj
     kwargs['model_name'] = model_name
     kwargs['image_type'] = image_type
