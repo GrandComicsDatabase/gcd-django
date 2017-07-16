@@ -609,6 +609,18 @@ class Membership(models.Model):
         return '%s' % unicode(self.organization_name)
 
 
+class AwardType(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        ordering = ('name',)
+        verbose_name_plural = 'AwardTypes'
+
+    name = models.CharField(max_length=200)
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+
 class Award(models.Model):
     """
     record any awards and honors a creator received
@@ -620,6 +632,7 @@ class Award(models.Model):
         verbose_name_plural = 'Awards'
 
     creator = models.ForeignKey(Creator)
+    award = models.ForeignKey(AwardType, null=True)
     award_name = models.CharField(max_length=255)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
