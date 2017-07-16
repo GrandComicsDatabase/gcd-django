@@ -80,12 +80,14 @@ def get_story_revision_form(revision=None, user=None,
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
 
     else:
-        special_types = ['(backcovers) *do not use* / *please fix*', 'filler']
+        special_types = ['filler', ]
         special_types.extend([i for i in OLD_TYPES])
         queryset = StoryType.objects.all()
         if revision is None or (revision is not None and
                                 revision.type.name not in special_types):
             queryset = queryset.exclude(name__in=special_types)
+        else:
+            queryset = queryset.exclude(name__in=OLD_TYPES)
 
     class RuntimeStoryRevisionForm(StoryRevisionForm):
         type = forms.ModelChoiceField(queryset=queryset, **extra)

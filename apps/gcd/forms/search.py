@@ -122,8 +122,6 @@ class AdvancedSearch(forms.Form):
                                    (True, "yes"),
                                    (False, "no"))))
 
-    format = forms.CharField(label='Format', required=False)
-    has_format = forms.BooleanField(label='Has Format', required=False)
     color = forms.CharField(label='Color', required=False)
     dimensions = forms.CharField(label='Dimensions', required=False)
     paper_stock = forms.CharField(label='Paper Stock', required=False)
@@ -303,4 +301,16 @@ class AdvancedSearch(forms.Form):
                     raise forms.ValidationError(
                       "For technical reasons keywords cannot be used for "
                       "searches for covers and covers for issues.")
+            if cleaned_data['start_date'] or cleaned_data['end_date']:
+                if (cleaned_data['start_date'] and
+                    len(self.data['start_date'])<=4) or \
+                  (cleaned_data['end_date'] and len(self.data['end_date'])<=4):
+                    if cleaned_data['target'] in ['issue', 'issue_cover',
+                                                  'sequence', 'cover']:
+                        raise forms.ValidationError(
+                          "For issue-level search targets please use full "
+                          "dates. To get everything from a year/month you need"
+                          " to use the last day of the preceding year/month, "
+                          "e.g. 1989-12-31 will find all comics we have "
+                          "recorded with a publication date 1990 and later.")
         return cleaned_data

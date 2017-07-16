@@ -2400,7 +2400,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                    series=series,
                                    publisher=series.publisher,
                                    variant_of=variant_of,
-                                   user=request.user)
+                                   user=request.user,
+                                   edit_with_base=edit_with_base)
 
     if request.method != 'POST':
         if variant_of:
@@ -3017,29 +3018,6 @@ def add_series_bond(request, id):
 ##############################################################################
 # Reprint Link Editing
 ##############################################################################
-
-@permission_required('indexer.can_reserve')
-def confirm_reprint_migration(request, id, changeset_id):
-    changeset = get_object_or_404(Changeset, id=changeset_id)
-    if request.user != changeset.indexer:
-        return render_error(request,
-          'Only the reservation holder may confirm the reprint migration.')
-    migration_status = get_object_or_404(MigrationStoryStatus, story__id=id)
-    if request.method == 'GET':
-        story = changeset.storyrevisions.get(story__id=id)
-        return oi_render_to_response('oi/edit/confirm_reprint_migration.html',
-          {
-              'story': story,
-              'changeset': changeset,
-          },
-          context_instance=RequestContext(request))
-    else:
-        if 'confirm' in request.POST:
-            migration_status.reprint_confirmed = True
-            migration_status.reprint_needs_inspection = False
-            migration_status.save()
-        return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': changeset_id }))
 
 def parse_reprint(reprints):
     """ parse a reprint entry for exactly our standard """

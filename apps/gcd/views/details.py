@@ -1417,11 +1417,6 @@ def show_issue(request, issue, preview=False):
         oi_indexers.append(i.changeset.indexer.indexer)
     oi_indexers = list(set(oi_indexers))
 
-    show_original = False
-    if (request.GET.has_key('original_reprint_notes')):
-        if request.GET['original_reprint_notes'] == 'True':
-            show_original = True
-
     if series.is_singleton:
         country = series.country
         language = series.language
@@ -1441,7 +1436,6 @@ def show_issue(request, issue, preview=False):
         'image_tag': image_tag,
         'variant_image_tags': variant_image_tags,
         'images_count': images_count,
-        'show_original': show_original,
         'country': country,
         'language': language,
         'error_subject': '%s' % issue,

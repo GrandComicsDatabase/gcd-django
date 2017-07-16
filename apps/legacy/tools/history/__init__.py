@@ -7,12 +7,21 @@ from apps.gcd.models.publisher import Publisher
 from apps.indexer.models import Indexer
 from apps.oi.models import *
 
+LATEST_OLD_SITE = 'latest_old_site'
+EARLIEST_OLD_SITE = 'earliest_old_site'
+
+EARLIEST_DATA_DATE = datetime.datetime(2004,9,1,0,0)
+
 COMMENT_TEXT = """This change history was migrated from the old site."""
 COMMENT_TEXT_FOR_ADD = """
 This is the oldest change we have for this object, so it shows as the addition.
-However, it may just be the state of the object at the time when the data was
-first imported into the old site circa %s.
+However, it may just be the state of the object at the time when the data was first imported into the old site circa %s.
 """ % settings.OLD_SITE_CREATION_DATE
+COMMENT_TEXT_FOR_ADD_LATER = """
+This is the oldest change we have for this object, so it shows as the addition.
+It was added sometime after %s, and is likely close in time to the next change with an actual date.
+The assignment of an indexer to this changeset is based on a heuristic, which in some rare situations results in wrong results.
+"""  % EARLIEST_DATA_DATE
 
 class MigratoryTable(models.Model):
     class Meta:
@@ -35,7 +44,7 @@ class LogRecord(models.Model):
     Modified = models.DateField(db_column='modified_new', db_index=True)
     ModTime = models.TimeField(db_column='modtime_new', db_index=True)
     UserID = models.IntegerField(db_column='userid_new')
-    User = models.ForeignKey('gcd.Indexer', db_column='userid_new')
+    User = models.ForeignKey('indexer.Indexer', db_column='userid_new')
     is_add = models.BooleanField(default=False, db_index=True)
     is_duplicate = models.BooleanField(default=False, db_index=True)
     old_user_id = models.IntegerField(db_column='UserID')
@@ -149,7 +158,7 @@ class LogRecord(models.Model):
         return None
 
     @classmethod
-    def migrate(klass, anon):
+    def migrate(klass, anon, use_earlier_data=False):
         table_name = klass._meta.db_table
 
         # Migrate in order so that IMPs can be calculated- for any change,
@@ -182,9 +191,12 @@ class LogRecord(models.Model):
                 #changeset = change.create_changeset(anon)
                 #change.create_revision(changeset, anon)
 
-    def create_changeset(self, anon):
+    def create_changeset(self, anon, user=None):
         # create changeset
-        indexer_user=self.User.user
+        if user:
+            indexer_user=Indexer.objects.get(id=user).user
+        else:
+            indexer_user=self.User.user
         ctype = self.ctype
 
         # self.dt_inferred may be None so we can't just assign it as is.
@@ -200,6 +212,12 @@ class LogRecord(models.Model):
         # Circumvent automatic field behavior.
         # all dates and times guaranteed to be valid
         mc = MigratoryChangeset.objects.get(id=changeset.id)
+#        if user: # use_earlier_data
+#            if self.dt < EARLIEST_DATA_DATE:
+#                mc.created = EARLIEST_DATA_DATE
+#            else:
+#                mc.created = self.dt
+#        else:
         mc.created = self.dt
         mc.modified = mc.created
         mc.save()
@@ -207,7 +225,10 @@ class LogRecord(models.Model):
 
         comment_text = COMMENT_TEXT
         if self.is_add:
-            comment_text += COMMENT_TEXT_FOR_ADD
+            if user:
+                comment_text += COMMENT_TEXT_FOR_ADD_LATER
+            else:
+                comment_text += COMMENT_TEXT_FOR_ADD
 
         changeset.comments.create(commenter=indexer_user,
                                   text=comment_text,

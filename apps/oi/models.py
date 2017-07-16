@@ -962,13 +962,6 @@ class Changeset(models.Model):
                 if type(revision) in [ReprintRevision, SeriesBondRevision]:
                     revision.previous_revision = None
                     revision.save()
-                if type(revision) == StoryRevision:
-                    if (revision.migration_status and
-                            revision.migration_status.reprint_confirmed and
-                            (revision.migration_status.modified >
-                             revision.changeset.created)):
-                        revision.migration_status.reprint_confirmed = False
-                        revision.migration_status.save()
 
         if self.approver:
             self.approver.indexer.add_imps(IMP_APPROVER_VALUE)
@@ -1444,11 +1437,6 @@ class Revision(models.Model):
         if not self.is_changed and type(self) in [IssueRevision,
                                                   StoryRevision]:
             self.is_changed = self.has_reprint_revisions()
-        if not self.is_changed and type(self) == StoryRevision:
-            if self.migration_status and \
-               self.migration_status.reprint_confirmed and \
-               self.migration_status.modified > self.changeset.created:
-                self.is_changed = True
 
     def _start_imp_sum(self):
         """
@@ -3268,7 +3256,7 @@ class SeriesBondRevision(Revision):
             if not self._seen_target:
                 self._seen_target = True
                 return 1
-        if field_name == 'notes':
+        if field_name in get_series_bond_field_list():
             return 1
         return 0
 
@@ -4571,9 +4559,6 @@ class StoryRevision(Revision):
         self._seen_editing = False
         self._seen_page_count = False
         self._seen_title = False
-        if self.migration_status and self.migration_status.reprint_confirmed \
-                and self.migration_status.modified > self.changeset.created:
-            return 1
 
     def _imps_for(self, field_name):
         if field_name in ('sequence_number', 'type', 'feature', 'genre',
