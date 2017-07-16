@@ -20,7 +20,7 @@ from apps.gcd.models import Issue, Brand, IndiciaPublisher
 
 
 def get_issue_revision_form(publisher, series=None, revision=None,
-                            variant_of=None, user=None):
+                            variant_of=None, user=None, edit_with_base=False):
     if series is None and revision is not None:
         series = revision.series
     if revision is not None and revision.variant_of:
@@ -283,20 +283,29 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     fields = ['after'] + fields
                     labels['after'] = 'Add this issue after'
 
+                if not edit_with_base:
+                    fields = ['reservation_requested'] + fields
+
+                    help_texts = RuntimeIssueRevisionForm.Meta.help_texts
+                    help_texts.update(
+                      reservation_requested='Check this box to have this '
+                                            'issue reserved to you '
+                                            'automatically when it is '
+                                            'approved, unless someone '
+                                            "has acquired the series' "
+                                            'ongoing reservation before '
+                                            'then.')
+
             def __init__(self, *args, **kwargs):
                 super(RuntimeAddVariantIssueRevisionForm,
                       self).__init__(*args, **kwargs)
                 # can add after one of the variants
-                # TODO where to put later printings which come out later
                 if 'after' in self.fields:
                     self.fields['after'].queryset = (
                         variant_of.variant_set.filter(deleted=False) |
                         Issue.objects.filter(id=variant_of.id))
                     self.fields['after'].empty_label = None
 
-                # TODO: is this even used?  flake8 complains on it.
-                #       Turning flake8 off with 'noqa' for now.
-                widgets = RuntimeIssueRevisionForm.Meta.widgets  # noqa
 
         return RuntimeAddVariantIssueRevisionForm
 

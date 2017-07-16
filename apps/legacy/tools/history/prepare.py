@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from apps.gcd.models.publisher import Publisher
 from apps.indexer.models import Indexer
 from apps.oi.models import *
-
+django.setup()
 #from apps.legacy.tools.history.publisher import MigratoryPublisherRevision, \
 #                                                 LogPublisher
 #from apps.legacy.tools.history.series import MigratorySeriesRevision, LogSeries
@@ -17,8 +17,9 @@ from apps.legacy.tools.history.publisher import LogPublisher
 from apps.legacy.tools.history.series import LogSeries
 from apps.legacy.tools.history.issue import LogIssue
 from apps.legacy.tools.history.story import LogStory
+from apps.legacy.tools.history import EARLIEST_OLD_SITE, LATEST_OLD_SITE
 
-def main():
+def main(database):
     logging.basicConfig(level=logging.NOTSET,
                         stream=sys.stdout,
                         format='%(asctime)s %(levelname)s: %(message)s')
@@ -41,12 +42,15 @@ def main():
     cursor = connection.cursor()
 
     # Ray had two accounts which were merged in the original migration.
-    fetch_indexer = "SELECT ID FROM GCDOnline.Indexers WHERE username='%s'"
-    cursor.execute(fetch_indexer % 'rayb')
-    ray1 = cursor.fetchone()[0]
-    cursor.execute(fetch_indexer % 'RaySB')
-    ray2 = cursor.fetchone()[0]
-    cursor.close()
+    # Only for LASTEST_OLD_SITE, but not for EARLIEST_OLD_SITE
+    if database == LATEST_OLD_SITE:
+        fetch_indexer = "SELECT ID FROM %s.Indexers WHERE username='%s'"
+        cursor.execute(fetch_indexer % (LATEST_OLD_SITE, 'rayb'))
+        ray1 = cursor.fetchone()[0]
+        cursor.execute(fetch_indexer % (LATEST_OLD_SITE, 'RaySB'))
+        ray2 = cursor.fetchone()[0]
+        cursor.close()
+
 
     for old_table, log_class in (#('LogPublishers', LogPublisher),
                                  #('LogSeries', LogSeries),
@@ -59,12 +63,15 @@ def main():
         cursor = connection.cursor()
         cursor.execute("""
 CREATE TABLE %s (PRIMARY KEY (id)) ENGINE=MyISAM
-  SELECT * FROM GCDOnline.%s;
-""" % (table_name, log_class.original_table()));
+  SELECT * FROM %s.%s;
+""" % (table_name, database, log_class.original_table()));
 
         logging.info("Altering table %s and loading data" % table_name)
-        log_class.alter_table(anon)
+        log_class.alter_table(anon, database)
+        logging.info("Fixing data for table %s" % table_name)
         log_class.fix_values(anon, unknown_country, undetermined_language)
+        cursor.close()
+        cursor = connection.cursor()
 
         logging.info("Deleting rows that don't match %s" %
                      log_class.display_table())
@@ -73,12 +80,14 @@ DELETE l FROM %s l LEFT OUTER JOIN %s d
                ON l.%s = d.id
     WHERE d.id IS NULL %s;
 """ % (table_name, log_class.display_table(),
-       log_class.source_id(), log_class.extra_delete_where()))
+        log_class.source_id(), log_class.extra_delete_where()))
 
         # Set Ray's 2nd login to his first login, and set NULL users to anonymous.
-        log_class.objects.filter(old_user_id=ray2).update(old_user_id=ray1)
-        log_class.objects.filter(old_user_id__isnull=True)\
-                         .update(old_user_id=anon.id)
+        # only for LATEST not EARLIEST 
+        if database == LATEST_OLD_SITE:
+            log_class.objects.filter(old_user_id=ray2).update(old_user_id=ray1)
+            log_class.objects.filter(old_user_id__isnull=True)\
+                             .update(old_user_id=anon.id)
 
         logging.info("Setting up sort codes for %s" % table_name)
         cursor.execute("""
@@ -148,4 +157,12 @@ UPDATE %s l LEFT OUTER JOIN %s_helper h ON l.ID=h.id
 
 if __name__ == '__main__':
     django.setup()
-    main()
+    if len(sys.argv) != 2:
+        print "give 1 (earliest) / 2 latest"
+        sys.exit()
+    if sys.argv[1] == '1':
+        main(EARLIEST_OLD_SITE)
+    elif sys.argv[1] == '2':
+        main(LATEST_OLD_SITE)
+    else:
+        print "not valid: %s" % sys.argv[1]

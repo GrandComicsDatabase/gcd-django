@@ -51,8 +51,7 @@ def get_series_revision_form(publisher=None, source=None, user=None):
             class Meta(SeriesRevisionForm.Meta):
                 exclude = SeriesRevisionForm.Meta.exclude
                 exclude.append('imprint')
-                if not source.format:
-                    exclude.append('format')
+                exclude.append('format')
 
             def __init__(self, *args, **kwargs):
                 # Don't allow country and language to be un-set:
@@ -70,17 +69,6 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                               "The move of a series is only possible if no "
                               "issues are reserved. Brand and indicia "
                               "publisher entries of the issues will be reset.")
-
-            if source.format:
-                format = forms.CharField(
-                    required=False,
-                    widget=forms.TextInput(attrs={'class': 'wide'}),
-                    help_text='This field is DEPRECATED.  Please move the '
-                              'contents to the appropriate more specific '
-                              'fields (color, dimensions, paper stock, '
-                              'binding, or publishing format) or into the '
-                              'notes field if the information does not fit '
-                              'anywhere else.')
 
             def as_table(self):
                 if not user or user.indexer.show_wiki_links:
@@ -133,8 +121,6 @@ class SeriesRevisionForm(forms.ModelForm):
                     'The series name is only one word, you cannot specify '
                     'a leading article in this case.')
 
-        if 'format' in cd:
-            cd['format'] = cd['format'].strip()
         cd['color'] = cd['color'].strip()
         cd['dimensions'] = cd['dimensions'].strip()
         cd['paper_stock'] = cd['paper_stock'].strip()

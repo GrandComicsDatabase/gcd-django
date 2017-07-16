@@ -501,10 +501,16 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
 
 
 def series_by_name(request, series_name, sort=ORDER_ALPHA):
-    q_obj = Q(name__icontains = series_name) | \
-            Q(issue__title__icontains = series_name)
-    return generic_by_name(request, series_name, q_obj, sort,
-                           Series, 'gcd/search/series_list.html')
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name)) \
+                              .models(Series)
+        return generic_by_name(request, series_name, None, sort, Series,
+                               'gcd/search/series_list.html', sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=series_name) | \
+                Q(issue__title__icontains=series_name)
+        return generic_by_name(request, series_name, q_obj, sort,
+                               Series, 'gcd/search/series_list.html')
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series_name """
@@ -1192,11 +1198,6 @@ def search_series(data, op):
             q_objs.append(Q(**{ '%sis_comics_publication' % prefix: False }))
 
     # Format fields
-    if data['format']:
-        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op):  data['format'] }))
-    if data['has_format']:
-        # Note the ~ for negation
-        q_objs.append(~Q(**{ '%sformat' % prefix: u'' }))
     if data['color']:
         q_objs.append(Q(**{ '%scolor__%s' % (prefix, op): data['color'] }))
     if data['dimensions']:

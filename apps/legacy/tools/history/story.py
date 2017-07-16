@@ -3,10 +3,12 @@ import logging
 from datetime import datetime, timedelta
 from django.db import models, transaction, connection
 from django.contrib.auth.models import User
+from _mysql_exceptions import Warning
 from apps.gcd.models.publisher import Publisher
 from apps.indexer.models import Indexer
 from apps.oi.models import *
-from apps.legacy.tools.history import MigratoryTable, LogRecord
+from apps.legacy.tools.history import MigratoryTable, LogRecord, \
+                                      EARLIEST_OLD_SITE, LATEST_OLD_SITE
 
 class MigratoryStoryRevision(MigratoryTable):
     class Meta(MigratoryTable.Meta):
@@ -73,7 +75,7 @@ class LogStory(LogRecord):
                 'Notes collate utf8_bin, StoryID')
 
     @classmethod
-    def alter_table(klass, anon):
+    def alter_table(klass, anon, database):
         cursor = connection.cursor()
         cursor.execute("""
 ALTER TABLE log_story
@@ -109,8 +111,8 @@ INSERT INTO log_story
          s.Genre, s.Char_App, s.Synopsis, s.Reprints, s.JobNo, s.Notes,
          %d
     FROM
-        GCDOnline.stories s;
-""" % anon.id)
+        %s.stories s;
+""" % (anon.id, database))
 
     @classmethod
     def fix_values(klass, anon, unknown_country, undetermined_language):
@@ -126,16 +128,20 @@ DELETE ls FROM log_story ls LEFT OUTER JOIN gcd_issue gi ON ls.IssueID = gi.id
         cursor.execute("""
 UPDATE log_story SET page_count_uncertain=1,
                    Pg_Cnt=TRIM(TRAILING '?' FROM Pg_Cnt)
-    WHERE Pg_Cnt LIKE '_%?';
-UPDATE log_story SET Pg_Cnt=NULL WHERE Pg_Cnt IN ('?', 'unknown', '');
+    WHERE Pg_Cnt LIKE '_%%?';
+UPDATE log_story SET Pg_Cnt=NULL WHERE Pg_Cnt IN ('?', 'unknown', 'Unk', '');
 UPDATE log_story SET Pg_Cnt=0 WHERE Pg_Cnt IN ('none', 'n/a');
-UPDATE log_story SET Pg_Cnt=REPLACE(Pg_Cnt, ',', '.') WHERE Pg_Cnt LIKE ('%,%');
+UPDATE log_story SET Pg_Cnt=REPLACE(Pg_Cnt, ',', '.') WHERE Pg_Cnt LIKE ('%%,%%');
 UPDATE log_story SET Pg_Cnt=TRIM(Pg_Cnt);
 UPDATE log_story SET Pg_Cnt='0.5' WHERE Pg_Cnt = '1/2';
+UPDATE log_story SET Pg_Cnt='0.25' WHERE Pg_Cnt = '1/4';
 UPDATE log_story SET Pg_Cnt='20' WHERE Pg_Cnt = '[20]';
 ALTER TABLE log_story CHANGE COLUMN Pg_Cnt Pg_Cnt decimal(10, 3);
 """)
-        cursor.close()
+        try:
+            cursor.close()
+        except Warning:
+            pass
 
         # Fix types, setting up join field.
         klass.objects.filter(Type='activity').update(
@@ -159,7 +165,7 @@ ALTER TABLE log_story CHANGE COLUMN Pg_Cnt Pg_Cnt decimal(10, 3);
             StoryType=StoryType.objects.get(
               name='cover reprint (on interior page)'))
         klass.objects.filter(Type='credits').update(
-            StoryType=StoryType.objects.get(name='credits'))
+            StoryType=StoryType.objects.get(name='credits, title page'))
         klass.objects.filter(Type='filler').update(
             StoryType=StoryType.objects.get(name='filler'))
         klass.objects.filter(Type__in=('foreword', 'foreward', 'intro',

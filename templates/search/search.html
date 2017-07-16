@@ -104,6 +104,16 @@
           </td></tr>
       {% endfor %}
         </table>
+        <table class="listing left">
+          <tr>
+            <th>Publisher</th>
+          </tr>
+      {% for publisher in facets.fields.publisher %}
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_publisher_selected %}&amp;selected_facets=publisher_exact:{{ publisher.0|urlencode }}{% endif %}">{{ publisher.0 }} ({{ publisher.1}})</a>
+          </td></tr>
+      {% endfor %}
+        </table>
       </div>
       <div id="RightSearchColumn">
       <div class="left">

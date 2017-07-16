@@ -8,12 +8,14 @@ from apps.gcd.models.publisher import Publisher
 from apps.indexer.models import Indexer
 from apps.oi.models import *
 
-from apps.gcd.migration.history.publisher import MigratoryPublisherRevision, \
+django.setup()
+from apps.legacy.tools.history.publisher import MigratoryPublisherRevision, \
                                                  LogPublisher
-from apps.gcd.migration.history.series import MigratorySeriesRevision, LogSeries
-from apps.gcd.migration.history.issue import MigratoryIssueRevision, LogIssue
+from apps.legacy.tools.history.series import MigratorySeriesRevision, LogSeries
+#from apps.gcd.migration.history.issue_use_earliest import MigratoryIssueRevision, LogIssue
+from apps.legacy.tools.history.issue import MigratoryIssueRevision, LogIssue
 
-def main():
+def main(use_earlier_data=False):
     logging.basicConfig(level=logging.NOTSET,
                         stream=sys.stdout,
                         format='%(asctime)s %(levelname)s: %(message)s')
@@ -23,11 +25,19 @@ def main():
                       #LogSeries,
                       LogIssue,
                      ):
-        log_class.migrate(anon)
+        log_class.migrate(anon, use_earlier_data)
 
         # Commit the changes to the InnoDB tables for each object type.
         transaction.commit_unless_managed()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     django.setup()
-    main()
+    if len(sys.argv) != 2:
+        print "give 1 (earliest) / 2 latest"
+        sys.exit()
+    if sys.argv[1] == '1':
+        main(use_earlier_data=False)
+    elif sys.argv[1] == '2':
+        main(use_earlier_data=True)
+    else:
+        print "not valid: %s" % sys.argv[1]

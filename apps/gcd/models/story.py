@@ -15,6 +15,7 @@ STORY_TYPES = {
 
 OLD_TYPES = {
     '(unknown)',
+    '(backcovers) *do not use* / *please fix*',
     'biography (nonfictional)'
 }
 

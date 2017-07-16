@@ -36,7 +36,7 @@ if ($(window).width() < 1240) {
 }
 </script>
 
-<b>Advanced Search</b> allows field specific results. It is somewhat experimental and has <a href="#blithering">some known bugs and limitations</a>, see below for more information.
+<b>Advanced Search</b> allows field specific queries. It is somewhat experimental query builder and has <a href="#blithering">known bugs and limitations</a>, see below for more information.
 
 {% if error_text %}
 <div class="error_message">
@@ -179,8 +179,6 @@ if ($(window).width() < 1240) {
     Format Fields
   </legend>
   <ol>
-    {{ form.format|show_form }}
-    {{ form.has_format|show_form }}
     {{ form.color|show_form }}
     {{ form.dimensions|show_form }}
     {{ form.paper_stock|show_form }}
@@ -230,15 +228,17 @@ if ($(window).width() < 1240) {
 <div class="search_left">
   <div id="blithering">
   <a name="blithering"></a>
-    <b>Advanced Search</b> is somewhat experimental and has some known bugs and limitations
+    <b>Advanced Search</b> is somewhat experimental and has known bugs and limitations
     <ul>
+      <li> All searches match <b>exact substrings</b>.  Punctuation is not
+           ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
+           two different searches. This is fundamentally different to how our
+           <a href="/searchNew/">regular search</a> behaves, which ignores word
+           order, but looks for exact word occurrences (unless a * is given).
       <li> The default ordering of the search results sorts according to series
            name and issue date.
            This ordering is not very useful if you search for publishers, you might
            want to change it under "Ordering".
-      <li> All "contains" searches match exact substrings.  Punctuation is not
-           ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
-           two different searches.
       <li> There's no way to search for multiple values in a field (for instance,
            while you can search for stories written or penciled by someone,
            you cannot search for stories penciled by either Jack Kirby or
@@ -247,8 +247,8 @@ if ($(window).width() < 1240) {
            "year.month.day", "year-month-day", "month/day/year",
            "month-name day, year", "day month-name, year" and just plain year.
       <li> You cannot use 00 for month or day since that is not a date. Instead
-           use the last day of the preceding year/month, e.g. 1989.12.31
-           to 1990.12.31 will find all comics we have recorded with a publication
+           use the last day of the preceding year/month, e.g. 1989-12-31
+           to 1990-12-31 will find all comics we have recorded with a publication
            date in 1990.
       <li> Date searching for series and stories uses a hidden field that is
            not always filled out.  This is the same field used for sorting by

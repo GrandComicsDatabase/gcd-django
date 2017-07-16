@@ -49,6 +49,8 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                 faceted=True, indexed=False)
     language = indexes.CharField(model_attr='series__language__code',
                                  faceted=True, indexed=False)
+    publisher = indexes.CharField(model_attr='series__publisher__name',
+                                  faceted=True, indexed=False)
 
     def get_model(self):
         return Issue
@@ -84,6 +86,8 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     language = indexes.CharField(model_attr='language__code', faceted=True,
                                  indexed=False)
     title_search = indexes.CharField()
+    publisher = indexes.CharField(model_attr='publisher__name',
+                                  faceted=True, indexed=False)
 
     def get_model(self):
         return Series
@@ -118,6 +122,8 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                 faceted=True, indexed=False)
     language = indexes.CharField(model_attr='issue__series__language__code',
                                  faceted=True, indexed=False)
+    publisher = indexes.CharField(model_attr='issue__series__publisher__name',
+                                  faceted=True, indexed=False)
 
     def get_model(self):
         return Story
@@ -155,6 +161,8 @@ class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='country__code', faceted=True,
                                 indexed=False)
+    publisher = indexes.CharField(model_attr='name',
+                                  faceted=True, indexed=False)
 
     def get_model(self):
         return Publisher
@@ -176,6 +184,8 @@ class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='country__code', faceted=True,
                                 indexed=False)
+    publisher = indexes.CharField(model_attr='parent__name',
+                                  faceted=True, indexed=False)
 
     def get_model(self):
         return IndiciaPublisher
@@ -195,12 +205,16 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     sort_name = indexes.CharField(model_attr='name', indexed=False)
     year = indexes.IntegerField()
 
+    publisher = MultiValueField(faceted=True, indexed=False)
+
     def get_model(self):
         return Brand
 
     def prepare_facet_model_name(self, obj):
         return "brand emblem"
 
+    def prepare_publisher(self, obj):
+        return [(brand_group.parent.name) for brand_group in obj.group.all()]
 
 class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
@@ -214,6 +228,8 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     year = indexes.IntegerField()
     country = indexes.CharField(model_attr='parent__country__code',
                                 faceted=True, indexed=False)
+    publisher = indexes.CharField(model_attr='parent__name',
+                                  faceted=True, indexed=False)
 
     def get_model(self):
         return BrandGroup
