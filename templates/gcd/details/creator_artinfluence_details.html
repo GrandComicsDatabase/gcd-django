@@ -23,7 +23,7 @@
         {% endif %}
         {% if creator_artinfluence.influence_link %}
         <dt> Influence Link:
-        <dd> {{ creator_artinfluence.influence_link }}
+        <dd> <a href="{{ creator_artinfluence.influence_link.get_absolute_url }}">{{ creator_artinfluence.influence_link }}</a>
         {% endif %}
         {% if creator_artinfluence.notes %}
         <dt>Notes

@@ -263,7 +263,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return [(creator_name.name) for creator_name in obj.creator_names.all()]
 
     def prepare_year(self, obj):
-        if obj.birth_date.year:
+        if obj.birth_date.year and '?' not in obj.birth_date.year:
             return int(obj.birth_date.year)
         else:
             return 9999
@@ -294,10 +294,9 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
     name = indexes.CharField(model_attr="influence_name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    birth_year = indexes.IntegerField(model_attr="creator__birth_year")
     sort_name = indexes.CharField(model_attr='influence_name', indexed=False)
     country = indexes.CharField(model_attr='creator__birth_country__code',
-                                indexed=False)
+                                indexed=False, null=True)
 
     def get_model(self):
         return ArtInfluence
@@ -332,10 +331,9 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
     name = indexes.CharField(model_attr="publication_title", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    birth_year = indexes.IntegerField(model_attr="creator__birth_year")
     sort_name = indexes.CharField(model_attr='publication_title', indexed=False)
     country = indexes.CharField(model_attr='creator__birth_country__code',
-                                indexed=False)
+                                indexed=False, null=True)
 
     def get_model(self):
         return NonComicWork

@@ -5570,7 +5570,7 @@ class ImageRevision(Revision):
 
     def __unicode__(self):
         if self.source is None:
-            return 'Image for %s' % unicode(self.object)
+            return u'Image for %s' % unicode(self.object)
         return unicode(self.source)
 
 
@@ -5665,7 +5665,7 @@ class CreatorDataSourceRevision(Revision):
             self.save()
 
     def __unicode__(self):
-        return '%s - %s' % (
+        return u'%s - %s' % (
             unicode(self.field), unicode(self.source_type.type))
 
 
@@ -6018,7 +6018,7 @@ class CreatorRevision(Revision):
         return self.creator.get_absolute_url()
 
     def __unicode__(self):
-        return '%s' % unicode(self.gcd_official_name)
+        return u'%s' % unicode(self.gcd_official_name)
 
 
 class NameRelationRevisionManager(RevisionManager):
@@ -6120,10 +6120,10 @@ class NameRelationRevision(Revision):
             self.save()
 
     def __unicode__(self):
-        return '%s >Name_Relation< %s :: %s' % (unicode(self.gcd_official_name),
-                                                unicode(self.to_name),
-                                                unicode(self.rel_type)
-                                                )
+        return u'%s >Name_Relation< %s :: %s' % (unicode(self.gcd_official_name),
+                                                 unicode(self.to_name),
+                                                 unicode(self.rel_type)
+                                                 )
 
 
 class CreatorNameDetailRevisionManager(RevisionManager):
@@ -6227,7 +6227,7 @@ class CreatorNameDetailRevision(Revision):
 
 
     def __unicode__(self):
-        return '%s - %s (%s)' % (
+        return u'%s - %s (%s)' % (
             unicode(self.creator), unicode(self.name), unicode(self.type.type))
 
 
@@ -6374,7 +6374,7 @@ class CreatorSchoolDetailRevision(Revision):
             self.save()
 
     def __unicode__(self):
-        return '%s - %s' % (
+        return u'%s - %s' % (
             unicode(self.creator), unicode(self.school.school_name))
 
 
@@ -6505,7 +6505,7 @@ class CreatorDegreeDetailRevision(Revision):
             self.save()
 
     def __unicode__(self):
-        return '%s - %s' % (
+        return u'%s - %s' % (
             unicode(self.creator), unicode(self.degree.degree_name))
 
 
@@ -6595,7 +6595,7 @@ class CreatorMembershipRevision(Revision):
     notes = models.TextField(blank=True)
 
     def __unicode__(self):
-        return '%s' % (unicode(self.organization_name))
+        return u'%s' % (unicode(self.organization_name))
 
     _base_field_list = ['organization_name',
                         'membership_type',
@@ -6909,7 +6909,7 @@ class CreatorArtInfluenceRevision(Revision):
         else:
              influence = self.influence_link
 
-        return '%s: %s' % (self.creator, influence)
+        return u'%s: %s' % (self.creator, influence)
 
     _base_field_list = ['influence_name',
                         'influence_link',
@@ -7019,13 +7019,13 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
         noncomicworkyears = creator_noncomicwork.noncomicworkyears.all()
         for noncomicworkyear in noncomicworkyears:
             NonComicWorkYearRevision.objects.clone_revision(noncomicworkyear,
-                                                            changeset=changeset)
+              changeset=changeset, creator_noncomicwork_revision=revision)
 
         # TODO check if this is working, add active_*
         noncomicworklinks = creator_noncomicwork.noncomicworklinks.all()
         for noncomicworklink in noncomicworklinks:
             NonComicWorkLinkRevision.objects.clone_revision(noncomicworklink,
-                                                            changeset=changeset)
+              changeset=changeset, creator_noncomicwork_revision=revision)
         return revision
 
 
@@ -7060,7 +7060,7 @@ class CreatorNonComicWorkRevision(Revision):
     notes = models.TextField(blank=True)
 
     def __unicode__(self):
-        return '%s' % (unicode(self.publication_title))
+        return u'%s' % (unicode(self.publication_title))
 
     _base_field_list = ['work_type',
                         'publication_title',
@@ -7225,7 +7225,7 @@ class NonComicWorkYearRevision(Revision):
 
 
     def __unicode__(self):
-        return '%s - %s' % (
+        return u'%s - %s' % (
             unicode(self.non_comic_work.publication_title), unicode(self.work_year))
 
 
@@ -7316,5 +7316,5 @@ class NonComicWorkLinkRevision(Revision):
             self.save()
 
     def __unicode__(self):
-        return '%s - %s' % (
+        return u'%s - %s' % (
             unicode(self.non_comic_work.publication_title), unicode(self.link))

@@ -177,7 +177,7 @@
                         <hr>
                         <h3>Art Influences:</h3>
                         {% for influence in creator.active_artinfluences %}
-                            <p>{{ forloop.counter }}. <a href="{{ influence.get_absolute_url }}">{{ influence.influence_name }}</a>
+                            <p>{{ forloop.counter }}. <a href="{{ influence.get_absolute_url }}">{% if influence.influence_link %}{{ influence.influence_link }}{% else %}{{ influence.influence_name }}{% endif %}</a>
                             </p>
                             {% if influence.notes %}
                             <p><strong>Notes: </strong>{{ influence.notes }}</p>
