@@ -17,6 +17,10 @@
   <div id="control_container">
     <div id="control_center">
       <dl class="pub_data">
+{% if creator_award.award %}
+        <dt> Award:
+        <dd> {{ creator_award.award }}
+{% endif %}
         <dt> Award Name:
         <dd> {{ creator_award.award_name }}
 {% if creator_award.award_year %}

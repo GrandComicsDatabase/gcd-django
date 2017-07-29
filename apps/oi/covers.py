@@ -969,7 +969,7 @@ def _display_image_upload_form(request, form, display_obj, model_name,
                            % kwargs['upload_type']
         kwargs['guidelines'] = ['Please only upload an image of the creator']
     if image_type == 'SampleScan':
-        kwargs['header'] = 'Upload a %s scan of a sample for the work of '
+        kwargs['header'] = 'Upload a %s scan of a sample for the work of ' \
                            'creator' % kwargs['upload_type']
         kwargs['guidelines'] = ['Please upload a representative example for '
                                 'the work of the creator']

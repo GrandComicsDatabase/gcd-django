@@ -152,7 +152,11 @@
                         <hr>
                         <h3>Awards:</h3>
                         {% for award in creator.active_awards %}
-                            <p>{{ forloop.counter }}. <a href="{{ award.get_absolute_url }}">{{ award.award_name }}</a>
+                            <p>{{ forloop.counter }}.
+                            {% if award.award %}
+                                {{ award.award.name }} -
+                            {% endif %}
+                            <a href="{{ award.get_absolute_url }}">{{ award.award_name }}</a>
                             {% if award.award_year %}
                                 year: {{ award.award_year }}
                             {% endif %}

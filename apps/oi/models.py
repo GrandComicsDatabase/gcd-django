@@ -31,8 +31,8 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse,
     Series, SeriesBond, Cover, Image, Issue, Story,
     Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
-    SeriesPublicationType, SeriesBondType, StoryType, ImageType,
-    ArtInfluence, Award, Creator, CreatorDataSource, CreatorDegreeDetail,
+    SeriesPublicationType, SeriesBondType, StoryType, ImageType, ArtInfluence,
+    AwardType, Award, Creator, CreatorDataSource, CreatorDegreeDetail,
     CreatorNameDetail, CreatorSchoolDetail, Degree, Membership, NameType,
     NameRelation, NonComicWork, NonComicWorkType, NonComicWorkRole, NonComicWork,
     NonComicWorkYear, NonComicWorkLink, RelationType, School, SourceType)
@@ -6689,6 +6689,7 @@ class CreatorMembershipRevision(Revision):
 class CreatorAwardRevisionManager(RevisionManager):
     def _base_field_kwargs(self, instance):
         return {
+            'award': instance.award,
             'award_name': instance.award_name,
             'award_year': instance.award_year,
             'award_year_uncertain': instance.award_year_uncertain,
@@ -6744,18 +6745,24 @@ class CreatorAwardRevision(Revision):
                                       related_name='revisions')
     creator = models.ForeignKey('gcd.Creator',
                                 related_name='award_revisions')
+    award = models.ForeignKey(AwardType, null=True, blank=True)
     award_name = models.CharField(max_length=255)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
     def __unicode__(self):
-        if self.award_year:
-            return '%s: %s (%d)' % (self.creator, unicode(self.award_name), self.award_year)
+        if self.award:
+            name = u'%s - %s' % (self.award.name, self.award_name)
         else:
-            return '%s: %s' % (self.creator, unicode(self.award_name))
+            name = u'%s' % (self.award_name)
+        if self.award_year:
+            return u'%s: %s (%d)' % (self.creator, name, self.award_year)
+        else:
+            return u'%s: %s' % (self.creator, name)
 
-    _base_field_list = ['award_name',
+    _base_field_list = ['award',
+                        'award_name',
                         'award_year',
                         'award_year_uncertain',
                         'notes',
@@ -6773,6 +6780,7 @@ class CreatorAwardRevision(Revision):
 
     def _get_blank_values(self):
         return {
+            'award': '',
             'award_name': '',
             'award_year': '',
             'award_year_uncertain': '',
@@ -6809,6 +6817,7 @@ class CreatorAwardRevision(Revision):
             awd.save()
             return
         awd.creator = self.creator
+        awd.award = self.award
         awd.award_name = self.award_name
         awd.award_year = self.award_year
         awd.award_year_uncertain = self.award_year_uncertain

@@ -227,7 +227,7 @@ def get_creator_award_revision_form(revision=None, user=None):
 class CreatorAwardRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorAwardRevision
-        exclude = ['creator', 'creator_award','changeset', 'deleted',]
+        fields = model._base_field_list
 
     def __init__(self, *args, **kwargs):
         super(CreatorAwardRevisionForm, self).__init__(*args, **kwargs)
