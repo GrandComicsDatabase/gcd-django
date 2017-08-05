@@ -3093,8 +3093,11 @@ def confirm_reprint(request, data, object_type, selected_id):
 
     if 'which_side' in data:
         which_side = data['which_side']
+    elif 'which_side' in request.session:
+        which_side = request.session['which_side']
     else:
         which_side = None
+
     return oi_render_to_response('oi/edit/confirm_reprint.html',
         {
         'story': story,
@@ -3190,6 +3193,11 @@ def save_reprint(request, reprint_revision_id, changeset_id,
                                    target_issue=target_issue,
                                    notes=notes)
         revision.save_added_revision(changeset=changeset)
+        if request.POST['direction'] == 'from':
+            request.session['which_side'] = 'origin'
+        else:
+            request.session['which_side'] = 'target'
+
     if request.POST['comments'].strip():
         revision.comments.create(commenter=request.user,
                                  changeset=changeset,
