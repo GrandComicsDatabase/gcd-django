@@ -52,6 +52,7 @@ KEY_DATE_REGEXP = \
 MIN_GCD_YEAR = 1800
 
 COVER_TABLE_WIDTH = 5
+COVERS_PER_GALLERY_PAGE = 50
 
 IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
@@ -176,7 +177,7 @@ def publisher_monthly_covers(request,
 
     return paginate_response(request, covers,
       'gcd/details/publisher_monthly_covers.html', vars,
-      per_page=50,
+      per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags', callback=get_image_tags_per_page)
 
     
@@ -708,7 +709,7 @@ def covers_to_replace(request, starts_with=None):
         'starts_with' : starts_with,
         'NO_ADS': True,
       },
-      per_page=50,
+      per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
       callback=get_image_tags_per_page)
 
@@ -783,7 +784,7 @@ def daily_covers(request, show_date=None):
         'table_width' : table_width,
         'NO_ADS': True
       },
-      per_page=50,
+      per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
       callback=get_image_tags_per_page)
 
@@ -1077,6 +1078,11 @@ def cover(request, issue_id, size):
 
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
+    covers = Cover.objects.filter(issue__series=issue.series,
+                                  issue__sort_code__lt=issue.sort_code,
+                                  deleted=False)
+    cover_page = covers.count()/COVERS_PER_GALLERY_PAGE + 1
+
     return render_to_response(
       'gcd/details/cover.html',
       {
@@ -1084,6 +1090,7 @@ def cover(request, issue_id, size):
         'prev_issue': prev_issue,
         'next_issue': next_issue,
         'cover_tag': cover_tag,
+        'cover_page': cover_page,
         'extra': extra,
         'error_subject': '%s cover' % issue,
         'NO_ADS': True
@@ -1123,7 +1130,7 @@ def covers(request, series_id):
     }
 
     return paginate_response(request, covers, 'gcd/details/covers.html', vars,
-      per_page=50,
+      per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
       callback=lambda page: get_image_tags_per_page(page, series))
 
@@ -1249,6 +1256,7 @@ def show_issue(request, issue, preview=False):
             image_tag = mark_safe(get_image_tag(cover=None,
                                                 zoom_level=zoom_level,
                                                 alt_text=alt_text))
+        cover_page = 1
     else:
         if 'issue_detail' in request.GET:
             try:
@@ -1271,6 +1279,11 @@ def show_issue(request, issue, preview=False):
                                              alt_text=alt_text)
         images_count = Image.objects.filter(object_id=issue.id, deleted=False,
           content_type = ContentType.objects.get_for_model(issue)).count()
+
+        covers = Cover.objects.filter(issue__series=issue.series,
+                                      issue__sort_code__lt=issue.sort_code,
+                                      deleted=False)
+        cover_page = covers.count()/COVERS_PER_GALLERY_PAGE + 1
 
     variant_image_tags = []
     for variant_cover in issue.variant_covers():
@@ -1327,6 +1340,7 @@ def show_issue(request, issue, preview=False):
         'image_tag': image_tag,
         'variant_image_tags': variant_image_tags,
         'images_count': images_count,
+        'cover_page': cover_page,
         'country': country,
         'language': language,
         'error_subject': '%s' % issue,

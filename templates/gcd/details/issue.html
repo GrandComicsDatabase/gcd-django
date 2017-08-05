@@ -124,7 +124,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 </div>
 <div class="right">
 {% if issue.series.has_gallery and not issue.series.is_singleton %}
-              <a href="{{ issue.series.get_absolute_url }}covers">Cover gallery</a>
+              <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Cover gallery</a>
 {% endif %}
 </div>
             </div>
