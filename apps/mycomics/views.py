@@ -270,7 +270,11 @@ def delete_item(request, item_id, collection_id):
                                          item.issue.series.sort_name)\
                                .exclude(issue__series__sort_name=
                                           item.issue.series.sort_name,
-                                        issue__sort_code__gt=
+                                        issue__series__year_began__gt=
+                                          item.issue.series.year_began)\
+                               .exclude(issue__series_id=
+                                          item.issue.series.id,
+                                        issue__sort_code__gte=
                                           item.issue.sort_code).count()
 
     collection.items.remove(item)

@@ -33,10 +33,10 @@ def safe_split(value):
 class GcdNameQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdNameQuery, self).prepare(query_obj)
-        query_return = ''
+        query_return = u''
         for phrase in safe_split(query_string.encode('utf-8')):
             # if we also do * in front, searches with 'the' won't work somehow
-            query_return += phrase + u'* '
+            query_return += phrase.decode('utf-8') + u'* '
         return query_return
 
 class GcdAutoQuery(AutoQuery):

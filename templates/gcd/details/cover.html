@@ -29,7 +29,7 @@
   <br><a href="{{ issue.get_absolute_url }}">Issue {{ issue.display_number }}</a>
     <br><a href="{% url "edit_covers" issue_id=issue.id %}">Edit covers</a>
     <br>
-    <a href="{{ issue.series.get_absolute_url }}covers">Series Covers</a>
+    <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Series Covers</a>
   </div>
 </div>
 
