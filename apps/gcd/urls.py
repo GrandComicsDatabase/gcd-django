@@ -47,6 +47,18 @@ urlpatterns = patterns('',
      'apps.gcd.views.details.brands'),
     (r'^publisher/(?P<publisher_id>\d+)/brand_uses/$',
      'apps.gcd.views.details.brand_uses'),
+    url(r'^publisher/(?P<publisher_id>\d+)/monthly_covers_on_sale/$',
+        'apps.gcd.views.details.publisher_monthly_covers',
+        {'use_on_sale': True }, name='publisher_monthly_covers_on_sale'),
+    url(r'^publisher/(?P<publisher_id>\d+)/monthly_covers_on_sale/year/(?P<year>\d{4})/month/(?P<month>\d{1,2})/$',
+        'apps.gcd.views.details.publisher_monthly_covers',
+        {'use_on_sale': True }, name='publisher_monthly_covers_on_sale'),
+    url(r'^publisher/(?P<publisher_id>\d+)/monthly_covers_pub_date/$',
+        'apps.gcd.views.details.publisher_monthly_covers',
+        {'use_on_sale': False }, name='publisher_monthly_covers_pub_date'),
+    url(r'^publisher/(?P<publisher_id>\d+)/monthly_covers_pub_date/year/(?P<year>\d{4})/month/(?P<month>\d{1,2})/$',
+        'apps.gcd.views.details.publisher_monthly_covers',
+        {'use_on_sale': False }, name='publisher_monthly_covers_pub_date'),
 
     url(r'^brand_group/(?P<brand_group_id>\d+)/$',
      'apps.gcd.views.details.brand_group', name='show_brand_group'),
@@ -259,7 +271,8 @@ urlpatterns = patterns('',
 )
 
 # haystack search
-sqs = GcdSearchQuerySet().facet('facet_model_name')
+sqs = GcdSearchQuerySet().facet('facet_model_name').facet('country') \
+                         .facet('language').facet('publisher')
 
 urlpatterns += patterns('haystack.views',
                         url(r'^searchNew/', search_view_factory(

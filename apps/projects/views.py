@@ -45,11 +45,11 @@ def issues_with_several_covers(request):
         vars['query_string'] = get_copy.urlencode()
     else:
         form = IssuesWithCoversForm()
-        issues = issues.filter(series__publisher__id=78) # initial is Marvel, need to keep #issues smaller
+        issues = issues.filter(series__publisher__id=709) #need to keep #issues smaller
         # for the pagination bar and select box
-        vars['query_string'] = 'publisher=54'
+        vars['query_string'] = 'publisher=709'
         get_copy = request.GET.copy()
-        get_copy['items'] = [(u'publisher', 54),]
+        get_copy['items'] = [(u'publisher', 709),]
         request.GET = get_copy
     issues = issues.filter(**qargs).order_by(*qorder)
     vars['form'] = form

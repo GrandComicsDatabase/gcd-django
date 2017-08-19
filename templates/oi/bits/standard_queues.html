@@ -1,6 +1,6 @@
 {% load credits %}
 {% load display %}
-{% load url from future %}
+{% load editing %}
 
 {% for section in data %}
   {% with section.changesets.count as section_count %}
@@ -22,7 +22,12 @@
     <th> Approver</th>
       {% endif %}
     <th> State </th>
+      {% if queue_name == 'editing' %}
+    <th> Last State Change </th>
+    <th> Expires </th>
+      {% else %}
     <th> Last Activity </th>
+      {% endif %}
     <th> Actions </th>
   </tr>
       {% for changeset in section.changesets %}
@@ -52,7 +57,10 @@
     <td> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
         {% endif %}
     <td> {{ changeset.display_state }} </td>
-    <td {% if queue_name == 'editing' %} {{ changeset|is_overdue }} {% endif %}> {{ changeset.modified }} </td>
+    <td> {{ changeset.modified }} </td>
+      {% if queue_name == 'editing' %}
+    <td {{ changeset|is_overdue }} > {{ changeset.expires }} </td>
+      {% endif %}
     <td> {% with changeset.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>
       {% endfor %}

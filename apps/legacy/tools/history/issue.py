@@ -7,7 +7,8 @@ from django.contrib.auth.models import User
 from apps.gcd.models.publisher import Publisher
 from apps.indexer.models import Indexer
 from apps.oi.models import *
-from apps.legacy.tools.history import MigratoryTable, LogRecord
+from apps.legacy.tools.history import MigratoryTable, LogRecord, \
+                       EARLIEST_OLD_SITE, LATEST_OLD_SITE, EARLIEST_DATA_DATE
 from apps.legacy.tools.history.story import MigratoryStoryRevision, LogStory
 
 EPSILON = timedelta(5, 0, 0) # Five days
@@ -55,9 +56,17 @@ class LogIssue(LogRecord):
                 'Price collate utf8_bin, Key_Date, Issue collate utf8_bin, IssueID')
 
     @classmethod
-    def alter_table(klass, anon):
-        cursor = connection.cursor()
-        cursor.execute("""
+    def alter_table(klass, anon, database):
+        if database == EARLIEST_OLD_SITE:
+            cursor = connection.cursor()
+            cursor.execute("""
+ALTER TABLE log_issue
+    %s,
+    ADD INDEX (IssueID);
+""" % klass._common_alter_clauses())
+        else:
+            cursor = connection.cursor()
+            cursor.execute("""
 ALTER TABLE log_issue
     DROP COLUMN IP,
     %s,
@@ -70,8 +79,8 @@ INSERT INTO log_issue
         (VolumeNum, SeriesID, Pub_Date, Price, Key_Date, Issue, IssueID, UserID)
     SELECT
         VolumeNum, SeriesID, Pub_Date, Price, Key_Date, Issue, ID, %d
-    FROM GCDOnline.issues;
-""" % anon.id)
+    FROM %s.issues;
+""" % (anon.id, database))
 
     @classmethod
     def fix_values(klass, anon, unknown_country, undetermined_language):
@@ -85,6 +94,7 @@ DELETE li.* FROM log_issue li LEFT OUTER JOIN gcd_series gs ON li.SeriesID = gs.
     WHERE gs.id IS NULL;
 UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
 """)
+        cursor.close()
         klass.objects.filter(Pub_Date__isnull=True).update(Pub_Date='')
         klass.objects.filter(Key_Date__isnull=True).update(Key_Date='')
         klass.objects.filter(Price__isnull=True).update(Price='')
@@ -109,9 +119,12 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
                              dt_inferred=True)
 
     @classmethod
-    def migrate(klass, anon):
+    def migrate(klass, anon, use_earlier_data=False):
+        from apps.legacy.tools.history.old_models import OldIssue, OldStory
         issue_history = klass.objects.order_by('IssueID', 'dt')
         related = klass.get_related()
+
+        #issue_history = issue_history.filter(IssueID=174591)#541088)#205)
 
         if related is not None:
             issue_history = issue_history.filter(is_duplicate=False)\
@@ -123,13 +136,13 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
         attached_stories = {}
         last_user = None
         last_dt = None
+        adding_user = None
         icounter = 1
         scounter = 1
         for i in issue_history.iterator():
             if icounter % 1000 == 1:
                 logging.info("Issue record %d" % icounter)
             icounter += 1
-
 
             # Find the stories, if any, that precede this issue.  We will
             # process them first, then the issue.  This allows us to properly
@@ -139,9 +152,32 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
             story_set = LogStory.objects.filter(is_duplicate=False)\
                                         .filter(DisplayIssue=i.DisplayIssue)\
                                         .filter(dt__lt=i.dt)
-            if last_i is not None and last_i.IssueID == i.IssueID:
-                story_set = story_set.filter(dt__gte=last_i.dt)
-
+            if not use_earlier_data:
+                if last_i is not None and last_i.IssueID == i.IssueID:
+                    story_set = story_set.filter(dt__gte=last_i.dt)
+            else:
+                if last_i is not None and last_i.IssueID == i.IssueID:
+                    story_set = story_set.filter(dt__gte=last_i.dt)
+                else:
+                    # issue with stories exists in dump from 2004-08
+                    # do this once per issue
+                    story_existed = OldStory.objects.using('earliest_old_site').filter(\
+                        issue_id=i.IssueID).exists()
+                    revision_exists = IssueRevision.objects.filter(issue_id=i.IssueID, created__lt=EARLIEST_DATA_DATE).exists()
+                if not story_existed and story_set.exists() and not revision_exists:
+                    # stories created after 2004-08, make assumption on indexer
+                    # i.e. assume anon-stories with no time belong to 
+                    # first actual indexer, determined from the issue-logs
+                    anon_story_set = story_set.filter(UserID=anon.id, Modified__lt=datetime.date(2002,1,2))
+                    for s in anon_story_set.order_by('dt').select_related(*story_related):
+                        attached_stories[s.StoryID] = s
+                        last_dt = s.dt
+                    objects = klass.objects.order_by('IssueID', 'dt').filter(IssueID=i.IssueID).exclude(UserID=anon.id)
+                    if objects.exists():
+                        adding_user = objects[0].UserID
+                    story_set = story_set.exclude(UserID=anon.id, Modified__lt=datetime.date(2002,1,2))
+                else:
+                    adding_user = None
             for s in story_set.order_by('dt').select_related(*story_related):
                 if scounter % 5000 == 1:
                     logging.info("Story set loop %d" % scounter)
@@ -152,12 +188,21 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
                     # Same story, but a different user, and at least one of
                     # the current objects needs saving.  So save under the old
                     # user and mark all stories as clean.
-                    klass.gather_changeset(last_i, attached_stories, anon)
-
+                    if not use_earlier_data:
+                        klass.gather_changeset(last_i, attached_stories, anon)
+                    else:
+                        klass.gather_changeset(last_i, attached_stories, anon, 
+                                               adding_user)
+                        adding_user = None
                 elif last_dt is not None and s.dt > last_dt + EPSILON:
                     # Same story, same user, but there's a large gap, so treat
                     # it as a new change.
-                    klass.gather_changeset(last_i, attached_stories, anon)
+                    if not use_earlier_data:
+                        klass.gather_changeset(last_i, attached_stories, anon)
+                    else:
+                        klass.gather_changeset(last_i, attached_stories, anon, 
+                                               adding_user)
+                        adding_user = None
 
                 # Either there was no old story, or we saved it, or
                 # we determined that it can be supplanted by this one
@@ -185,12 +230,22 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
                         # Same story, but a different user, and at least one of
                         # the current objects needs saving.  So save under the old
                         # user and mark all stories as clean.
-                        klass.gather_changeset(last_i, attached_stories, anon)
+                        if not use_earlier_data:
+                            klass.gather_changeset(last_i, attached_stories, anon)
+                        else:
+                            klass.gather_changeset(last_i, attached_stories, anon, 
+                                                   adding_user)
+                            adding_user = None
 
                     elif last_dt is not None and s.dt > last_dt + EPSILON:
                         # Same story, same user, but there's a large gap, so treat
                         # it as a new change.
-                        klass.gather_changeset(last_i, attached_stories, anon)
+                        if not use_earlier_data:
+                            klass.gather_changeset(last_i, attached_stories, anon)
+                        else:
+                            klass.gather_changeset(last_i, attached_stories, anon, 
+                                                   adding_user)
+                            adding_user = None
 
                     # Either there was no old story, or we saved it, or
                     # we determined that it can be supplanted by this one
@@ -199,16 +254,31 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
                     last_user = s.UserID
                     last_dt = s.dt
 
-                klass.gather_changeset(last_i, attached_stories, anon)
+                if not use_earlier_data:
+                    klass.gather_changeset(last_i, attached_stories, anon)
+                else:
+                    klass.gather_changeset(last_i, attached_stories, anon, 
+                                           adding_user)
+                    adding_user = None
                 attached_stories = {}
 
             elif last_user is not None and i.UserID != last_user:
                 # Same issue, but a different user.
-                klass.gather_changeset(last_i, attached_stories, anon)
+                if not use_earlier_data:
+                    klass.gather_changeset(last_i, attached_stories, anon)
+                else:
+                    klass.gather_changeset(last_i, attached_stories, anon, 
+                                           adding_user)
+                    adding_user = None
 
             elif last_dt is not None and i.dt > last_dt + EPSILON:
                 # Same issue, same user, but there's a large gap.
-                klass.gather_changeset(last_i, attached_stories, anon)
+                if not use_earlier_data:
+                    klass.gather_changeset(last_i, attached_stories, anon)
+                else:
+                    klass.gather_changeset(last_i, attached_stories, anon, 
+                                           adding_user)
+                    adding_user = None
 
             last_i = i
             last_user = i.UserID
@@ -232,12 +302,22 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
                 # Same story, but a different user, and at least one of
                 # the current objects needs saving.  So save under the old
                 # user and mark all stories as clean.
-                klass.gather_changeset(last_i, attached_stories, anon)
+                if not use_earlier_data:
+                    klass.gather_changeset(last_i, attached_stories, anon)
+                else:
+                    klass.gather_changeset(last_i, attached_stories, anon, 
+                                           adding_user)
+                    adding_user = None
 
             elif last_dt is not None and s.dt > last_dt + EPSILON:
                 # Same story, same user, but there's a large gap, so treat
                 # it as a new change.
-                klass.gather_changeset(last_i, attached_stories, anon)
+                if not use_earlier_data:
+                    klass.gather_changeset(last_i, attached_stories, anon)
+                else:
+                    klass.gather_changeset(last_i, attached_stories, anon, 
+                                           adding_user)
+                    adding_user = None
 
             # Either there was no old story, or we saved it, or
             # we determined that it can be supplanted by this one
@@ -246,17 +326,22 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
             last_user = s.UserID
             last_dt = s.dt
 
-        klass.gather_changeset(last_i, attached_stories, anon)
+        if not use_earlier_data:
+            klass.gather_changeset(last_i, attached_stories, anon)
+        else:
+            klass.gather_changeset(last_i, attached_stories, anon, 
+                                   adding_user)
+            adding_user = None
 
     @classmethod
-    def gather_changeset(klass, issue_record, attached_stories, anon):
+    def gather_changeset(klass, issue_record, attached_stories, anon, user=None):
         records = attached_stories.values()
         if issue_record is not None:
             records.append(issue_record)
         # We want to use the most recent revision for the changeset date+time.
         use_for_changeset = reduce(lambda a, b: a if a.dt >= b.dt else b, records)
 
-        changeset = use_for_changeset.create_changeset(anon)
+        changeset = use_for_changeset.create_changeset(anon, user)
         if issue_record is None:
             # If there was no issue then there will always be at least one story.
             example_story = records[0]

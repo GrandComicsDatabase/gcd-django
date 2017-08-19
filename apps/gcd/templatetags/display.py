@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
-from datetime import datetime, timedelta
 from stdnum import ean as stdean
 from stdnum import isbn as stdisbn
 
@@ -15,17 +14,19 @@ from apps.oi import states
 from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
-from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, Publisher
+from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, \
+                                      Publisher
 from apps.gcd.models.series import Series
 from apps.gcd.models.issue import Issue
 from apps.gcd.models.cover import Cover
 from apps.gcd.models.image import Image
-from apps.gcd.models.seriesbond import SeriesBond, BOND_TRACKING, SUBNUMBER_TRACKING
+from apps.gcd.models.seriesbond import SeriesBond, BOND_TRACKING, \
+                                       SUBNUMBER_TRACKING, MERGE_TRACKING
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
 
-STATE_CSS_NAME = { 
+STATE_CSS_NAME = {
     states.UNRESERVED: 'available',
     states.BASELINE: 'baseline',
     states.OPEN: 'editing',
@@ -194,12 +195,17 @@ def show_series_tracking(series):
             near_issue_preposition = u"after"
             far_issue_preposition = u"with"
             far_preposition = u"in"
+            if srbond.bond.bond_type.id in MERGE_TRACKING:
+                far_issue_preposition = u"into"
+                far_preposition = u"into"
         else:
             # Wait, why are we here?  Should we assert on this?
             continue
 
         if srbond.bond.bond_type.id == SUBNUMBER_TRACKING:
             tracking_line += '<li> subnumbering continues '
+        elif srbond.bond.bond_type.id in MERGE_TRACKING:
+            tracking_line += '<li> merged '
         else:
             tracking_line += '<li> numbering continues '
         if (srbond.near_issue != srbond.near_issue_default):
@@ -371,14 +377,6 @@ def field_name(field):
     else:
         return title(field.replace('_', ' '))
 
-def is_overdue(changeset):
-    # do this correctly and with variables in settings if we ever do the 
-    # enforcing of the reservation limit according to the vote
-    if datetime.today() - changeset.created > timedelta(weeks=8):
-        return mark_safe("class='overdue'")
-    else:
-        return ""
-
 def link_other_reprint(reprint, is_source):
     if is_source:
         if hasattr(reprint, 'target'):
@@ -457,5 +455,4 @@ register.filter(show_revision_type)
 register.filter(changed_fields)
 register.filter(changed_story_list)
 register.filter(field_name)
-register.filter(is_overdue)
 register.filter(link_other_reprint)

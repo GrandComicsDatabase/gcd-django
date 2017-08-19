@@ -150,7 +150,7 @@
       </form>
         {% if changeset.change_type == CTYPES.issue %}
       <form class="story_button" method="GET"
-            action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id %}">
+            action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id reprint_note=story.reprint_notes|default:" "|urlencode %}">
         <input type="submit" id="reprint_{{ story.id }}" name="reprint_{{ story.id }}"
                value="Add reprint">
       </form>
@@ -186,12 +186,6 @@
           {% csrf_token %}
         <input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
                value="Move To Other Issue">
-      </form>
-        {% endif %}
-        {% if story.migration_status and not story.migration_status.reprint_confirmed %}
-      <form class="story_button" method="GET"
-            action="{% url "confirm_reprint_migration" id=story.story.id changeset_id=changeset.id %}">
-        <input type="submit" value="Confirm Reprint Migration">
       </form>
         {% endif %}
       {% else %}

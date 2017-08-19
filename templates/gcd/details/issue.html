@@ -1,6 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
-{% load url from future %}
+{% load cycle from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load display %}
@@ -124,7 +124,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 </div>
 <div class="right">
 {% if issue.series.has_gallery and not issue.series.is_singleton %}
-              <a href="{{ issue.series.get_absolute_url }}covers">Cover gallery</a>
+              <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Cover gallery</a>
 {% endif %}
 </div>
             </div>
@@ -173,24 +173,26 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
     {% endwith %}
     {% endwith %}
     {% endwith %}
-    {% if user.is_authenticated and not issue.pending_deletion and not issue.reserved %}
+    {% if user.is_authenticated and not issue.pending_deletion %}
       {% if not issue.variant_of %}
     <form method="GET"
             action="{% url "add_variant_issue" issue_id=issue.id %}">
         <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
     </form>
       {% endif %}
-      {% if issue.variant_of and not issue.variant_of.reserved %}
+      {% if issue.variant_of and not issue.variant_of.reserved and not issue.reserved %}
     <form method="POST"
             action="{% url "reserve_two_issues" issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
         {% csrf_token %}
         <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
     </form>
       {% endif %}
+      {% if not issue.reserved %}
     <form method="GET"
             action="{% url "edit_two_issues" issue_id=issue.id %}">
         <input type="submit" value="{% trans 'Edit with another issue' %}">
     </form>
+      {% endif %}
     {% endif %}
     {% if user.is_authenticated and issue.series.is_singleton %}
         <div class="edit_header">Editing Series Data</div>
@@ -266,7 +268,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 {% if cover_story %}
         <li class="even">
         0. <span class="toc_story_title">
-        <a href="#{{ cover_story.id }}">{{ cover_story|show_title }}</a></span><br/>
+        <a name="toc_{{ cover_story.id }}" href="#{{ cover_story.id }}">{{ cover_story|show_title }}</a></span><br/>
   {% if cover_story.feature %}
         <span class="toc_story_feature">{{ cover_story.feature}}</span>
   {% endif %}
@@ -275,7 +277,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
         <li class="{% cycle 'odd' 'even' %}">
         {{ forloop.counter }}.
         <span class="toc_story_title">
-        <a href="#{{ story.id }}">{{ story|show_title }}</a></span><br/>
+        <a name="toc_{{ story.id }}" href="#{{ story.id }}">{{ story|show_title }}</a></span><br/>
   {% if story.feature %}
         <span class="toc_story_feature">{{ story.feature}}</span>
   {% endif %}

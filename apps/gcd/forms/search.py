@@ -122,8 +122,6 @@ class AdvancedSearch(forms.Form):
                                    (True, "yes"),
                                    (False, "no"))))
 
-    format = forms.CharField(label='Format', required=False)
-    has_format = forms.BooleanField(label='Has Format', required=False)
     color = forms.CharField(label='Color', required=False)
     dimensions = forms.CharField(label='Dimensions', required=False)
     paper_stock = forms.CharField(label='Paper Stock', required=False)
@@ -156,8 +154,8 @@ class AdvancedSearch(forms.Form):
                                         required=False)
     issue_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
       widget=forms.Select(choices=((None, ""),
-                                   (True, "From"),
-                                   (False, "In"))))
+                                   (True, "has issue level sources"),
+                                   (False, "has issue level targets"))))
 
     cover_needed = forms.BooleanField(label="Cover is Needed",
                                        required=False)
@@ -203,10 +201,11 @@ class AdvancedSearch(forms.Form):
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
-    story_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
-      widget=forms.Select(choices=((None, ""),
-                                   (True, "From"),
-                                   (False, "In"))))
+    story_reprinted = forms.ChoiceField(label="Reprinted", required=False,
+      choices=[('', ""),
+               ('from', "is a linked reprint"),
+               ('in', "has linked reprints"),
+               ('not', "is not a linked reprint")])
 
     notes = forms.CharField(label='Notes', required=False)
 
@@ -281,23 +280,37 @@ class AdvancedSearch(forms.Form):
         if self.is_valid():
             if cleaned_data['cover_needed']:
                 # use of in since after distinction stuff is cleared add series
-                if cleaned_data['target'] not in ['issue','series']:
+                if cleaned_data['target'] not in ['issue', 'series']:
                     raise forms.ValidationError(
                       "Searching for covers which are missing or need to be"
                       " replaced is valid only for issue or series searches.")
             if cleaned_data['target'] == 'cover' and cleaned_data['type']:
                 if len(cleaned_data['type']) > 1 or StoryType.objects\
                   .get(name='cover') not in cleaned_data['type']:
-                    raise forms.ValidationError("When searching for covers"
-                          " only type cover can be selected.")
+                    raise forms.ValidationError(
+                      "When searching for covers only type cover can be "
+                      "selected.")
             if cleaned_data['use_on_sale_date']:
-                if cleaned_data['target'] not in ['issue','sequence']:
+                if cleaned_data['target'] not in ['issue', 'sequence',
+                                                  'issue_cover']:
                     raise forms.ValidationError(
                       "The on-sale date can only be used in issue or story "
                       "searches.")
             if cleaned_data['keywords']:
-                if cleaned_data['target'] in ['cover','issue_cover']:
+                if cleaned_data['target'] in ['cover', 'issue_cover']:
                     raise forms.ValidationError(
                       "For technical reasons keywords cannot be used for "
                       "searches for covers and covers for issues.")
+            if cleaned_data['start_date'] or cleaned_data['end_date']:
+                if (cleaned_data['start_date'] and
+                    len(self.data['start_date'])<=4) or \
+                  (cleaned_data['end_date'] and len(self.data['end_date'])<=4):
+                    if cleaned_data['target'] in ['issue', 'issue_cover',
+                                                  'sequence', 'cover']:
+                        raise forms.ValidationError(
+                          "For issue-level search targets please use full "
+                          "dates. To get everything from a year/month you need"
+                          " to use the last day of the preceding year/month, "
+                          "e.g. 1989-12-31 will find all comics we have "
+                          "recorded with a publication date 1990 and later.")
         return cleaned_data

@@ -242,7 +242,7 @@ def _send_result_email(topic, extra=''):
 
             result += extra
             email_body = EMAIL_RESULT % (topic.agenda, topic.text, result,
-              settings.SITE_URL.rstrip('/') + topic.agenda.get_absolute_url())
+              settings.SITE_URL.rstrip('/') + topic.get_absolute_url())
 
             list_config.send_mail(subject="GCD Vote Result: %s" % topic,
                                   message=email_body)

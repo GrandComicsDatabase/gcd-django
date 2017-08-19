@@ -23,6 +23,8 @@ from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
+from apps.indexer.views import ViewTerminationError
+
 from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
 
@@ -50,9 +52,23 @@ KEY_DATE_REGEXP = \
 MIN_GCD_YEAR = 1800
 
 COVER_TABLE_WIDTH = 5
+COVERS_PER_GALLERY_PAGE = 50
 
 IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
+
+def get_gcd_object(model, object_id, model_name=None):
+    object = get_object_or_404(model, id = object_id)
+    if object.deleted:
+        if not model_name:
+            model_name = model._meta.model_name
+        raise ViewTerminationError(
+          response = HttpResponseRedirect(urlresolvers.reverse(
+                                          'change_history',
+                                          kwargs={'model_name': model_name,
+                                                  'id': object_id})))
+    return object
+
 
 def publisher(request, publisher_id):
     """
@@ -65,6 +81,7 @@ def publisher(request, publisher_id):
 
     return show_publisher(request, publisher)
 
+
 def show_publisher(request, publisher, preview=False):
     publisher_series = publisher.active_series().order_by('sort_name')
     vars = { 'publisher': publisher,
@@ -75,6 +92,94 @@ def show_publisher(request, publisher, preview=False):
     
     return paginate_response(request, publisher_series,
                              'gcd/details/publisher.html', vars)
+
+
+def publisher_monthly_covers(request,
+                             publisher_id,
+                             year=None,
+                             month=None,
+                             use_on_sale=True):
+    """
+    Display the covers for the monthly publications of a publisher.
+    """
+    publisher = get_gcd_object(Publisher, publisher_id)
+
+    if use_on_sale:
+        date_type = 'publisher_monthly_covers_on_sale'
+    else:
+        date_type = 'publisher_monthly_covers_pub_date'
+
+    # parts are generic and should be re-factored if we ever need it elsewhere
+    try:
+        if 'month' in request.GET:
+            year = int(request.GET['year'])
+            month = int(request.GET['month'])
+            # do a redirect, otherwise pagination links point to current month
+            return HttpResponseRedirect(
+              urlresolvers.reverse(date_type,
+                                   kwargs={'publisher_id': publisher_id,
+                                           'year': year,
+                                           'month': month} ))
+        if year:
+            year = int(year)
+        if month:
+            month = int(month)
+    except ValueError:
+        year = None
+
+    if year is None:
+        year = date.today().year
+        month = date.today().month
+
+    table_width = COVER_TABLE_WIDTH
+
+    covers = Cover.objects.filter(issue__series__publisher=publisher,
+                                  deleted=False).select_related('issue')
+    if use_on_sale:
+        covers = \
+          covers.filter(issue__on_sale_date__gte='%d-%02d-00' % (year, month),
+                        issue__on_sale_date__lte='%d-%02d-32' % (year, month))\
+                .order_by('issue__on_sale_date', 'issue__series')
+    else:
+        covers = \
+          covers.filter(issue__key_date__gte='%d-%02d-00' % (year, month),
+                        issue__key_date__lte='%d-%02d-32' % (year, month))\
+                .order_by('issue__key_date', 'issue__series')
+
+    start_date = datetime(year, month, 1)
+    date_before = start_date + timedelta(-1)
+    date_after = start_date + timedelta(31)
+    choose_url = urlresolvers.reverse(date_type,
+                                      kwargs={'publisher_id': publisher_id,
+                                              'year': year,
+                                              'month': month})
+    choose_url_before = urlresolvers.reverse(date_type,
+                                             kwargs={
+                                               'publisher_id': publisher_id,
+                                               'year': date_before.year,
+                                               'month': date_before.month})
+    choose_url_after = urlresolvers.reverse(date_type,
+                                            kwargs={
+                                              'publisher_id': publisher_id,
+                                              'year': date_after.year,
+                                              'month': date_after.month})
+
+    vars = {
+      'publisher': publisher,
+      'date': start_date,
+      'choose_url': choose_url,
+      'choose_url_after': choose_url_after,
+      'choose_url_before': choose_url_before,
+      'use_on_sale': use_on_sale,
+      'table_width': table_width,
+      'NO_ADS': True
+    }
+
+    return paginate_response(request, covers,
+      'gcd/details/publisher_monthly_covers.html', vars,
+      per_page=COVERS_PER_GALLERY_PAGE,
+      callback_key='tags', callback=get_image_tags_per_page)
+
     
 def indicia_publisher(request, indicia_publisher_id):
     """
@@ -604,7 +709,7 @@ def covers_to_replace(request, starts_with=None):
         'starts_with' : starts_with,
         'NO_ADS': True,
       },
-      per_page=50,
+      per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
       callback=get_image_tags_per_page)
 
@@ -679,7 +784,7 @@ def daily_covers(request, show_date=None):
         'table_width' : table_width,
         'NO_ADS': True
       },
-      per_page=50,
+      per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
       callback=get_image_tags_per_page)
 
@@ -821,7 +926,7 @@ def daily_changes(request, show_date=None):
       context_instance=RequestContext(request)
     )
 
-def on_sale_weekly(request, year=None, week=None):
+def do_on_sale_weekly(request, year=None, week=None):
     """
     Produce a page displaying the comics on-sale in a given week.
     """
@@ -833,7 +938,7 @@ def on_sale_weekly(request, year=None, week=None):
             return HttpResponseRedirect(
                 urlresolvers.reverse(
                 'on_sale_weekly',
-                kwargs={'year': year, 'week': week} ))
+                kwargs={'year': year, 'week': week} )), None
         if year:
             year = int(year)
         if week:
@@ -883,8 +988,16 @@ def on_sale_weekly(request, year=None, week=None):
         'next_week': next_week,
         'query_string': urlencode(query_val),
     }
+    return issues_on_sale, vars
 
-    return paginate_response(request, issues_on_sale, 'gcd/status/issues_on_sale.html', vars)
+
+def on_sale_weekly(request, year=None, week=None):
+    issues_on_sale, vars = do_on_sale_weekly(request, year, week)
+    if vars == None:
+        return issues_on_sale
+    return paginate_response(request, issues_on_sale,
+                             'gcd/status/issues_on_sale.html', vars)
+
 
 def int_stats_language(request):
     """
@@ -965,6 +1078,11 @@ def cover(request, issue_id, size):
 
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
+    covers = Cover.objects.filter(issue__series=issue.series,
+                                  issue__sort_code__lt=issue.sort_code,
+                                  deleted=False)
+    cover_page = covers.count()/COVERS_PER_GALLERY_PAGE + 1
+
     return render_to_response(
       'gcd/details/cover.html',
       {
@@ -972,6 +1090,7 @@ def cover(request, issue_id, size):
         'prev_issue': prev_issue,
         'next_issue': next_issue,
         'cover_tag': cover_tag,
+        'cover_page': cover_page,
         'extra': extra,
         'error_subject': '%s cover' % issue,
         'NO_ADS': True
@@ -1011,7 +1130,7 @@ def covers(request, series_id):
     }
 
     return paginate_response(request, covers, 'gcd/details/covers.html', vars,
-      per_page=50,
+      per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
       callback=lambda page: get_image_tags_per_page(page, series))
 
@@ -1137,6 +1256,7 @@ def show_issue(request, issue, preview=False):
             image_tag = mark_safe(get_image_tag(cover=None,
                                                 zoom_level=zoom_level,
                                                 alt_text=alt_text))
+        cover_page = 1
     else:
         if 'issue_detail' in request.GET:
             try:
@@ -1159,6 +1279,11 @@ def show_issue(request, issue, preview=False):
                                              alt_text=alt_text)
         images_count = Image.objects.filter(object_id=issue.id, deleted=False,
           content_type = ContentType.objects.get_for_model(issue)).count()
+
+        covers = Cover.objects.filter(issue__series=issue.series,
+                                      issue__sort_code__lt=issue.sort_code,
+                                      deleted=False)
+        cover_page = covers.count()/COVERS_PER_GALLERY_PAGE + 1
 
     variant_image_tags = []
     for variant_cover in issue.variant_covers():
@@ -1196,11 +1321,6 @@ def show_issue(request, issue, preview=False):
         oi_indexers.append(i.changeset.indexer.indexer)
     oi_indexers = list(set(oi_indexers))
 
-    show_original = False
-    if (request.GET.has_key('original_reprint_notes')):
-        if request.GET['original_reprint_notes'] == 'True':
-            show_original = True
-
     if series.is_singleton:
         country = series.country
         language = series.language
@@ -1220,7 +1340,7 @@ def show_issue(request, issue, preview=False):
         'image_tag': image_tag,
         'variant_image_tags': variant_image_tags,
         'images_count': images_count,
-        'show_original': show_original,
+        'cover_page': cover_page,
         'country': country,
         'language': language,
         'error_subject': '%s' % issue,
@@ -1287,10 +1407,13 @@ def agenda(request, language):
     # js_pos_end = a[js_pos:].find('"></script>') + js_pos
     #a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
 
-    css_pos = a.find('<link type="text/css" rel="stylesheet" href="') + \
-      len('<link type="text/css" rel="stylesheet" href="')
+    css_text = '<link type="text/css" rel="stylesheet" href="'
+    css_pos = a.find(css_text) + len(css_text)
     css_pos_end = a[css_pos:].find('">') + css_pos
     a = a[:css_pos]  + settings.STATIC_URL + \
       'calendar/css/c9ff6efaf72bf95e3e2b53938d3fbacaembedcompiled_fastui.css' \
       + a[css_pos_end:]
+    javascript_text = '<script type="text/javascript" src="'
+    javascript_pos = a.find(javascript_text) + len(javascript_text)
+    a = a[:javascript_pos] + '//www.google.com' + a[javascript_pos:]
     return HttpResponse(a)

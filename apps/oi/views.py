@@ -5,6 +5,7 @@ import re
 import sys
 import glob
 import PIL.Image as pyImage
+from urllib import unquote
 
 from django.core import urlresolvers
 from django.conf import settings
@@ -404,6 +405,7 @@ def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
     form = None
     revision = None
+
     if changeset.inline():
         revision = changeset.inline_revision()
         form_class = get_revision_form(revision, user=request.user)
@@ -1932,7 +1934,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                    series=series,
                                    publisher=series.publisher,
                                    variant_of=variant_of,
-                                   user=request.user)
+                                   user=request.user,
+                                   edit_with_base=edit_with_base)
 
     if request.method != 'POST':
         if variant_of:
@@ -2550,29 +2553,6 @@ def add_series_bond(request, id):
 # Reprint Link Editing
 ##############################################################################
 
-@permission_required('indexer.can_reserve')
-def confirm_reprint_migration(request, id, changeset_id):
-    changeset = get_object_or_404(Changeset, id=changeset_id)
-    if request.user != changeset.indexer:
-        return render_error(request,
-          'Only the reservation holder may confirm the reprint migration.')
-    migration_status = get_object_or_404(MigrationStoryStatus, story__id=id)
-    if request.method == 'GET':
-        story = changeset.storyrevisions.get(story__id=id)
-        return oi_render_to_response('oi/edit/confirm_reprint_migration.html',
-          {
-              'story': story,
-              'changeset': changeset,
-          },
-          context_instance=RequestContext(request))
-    else:
-        if 'confirm' in request.POST:
-            migration_status.reprint_confirmed = True
-            migration_status.reprint_needs_inspection = False
-            migration_status.save()
-        return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': changeset_id }))
-
 def parse_reprint(reprints):
     """ parse a reprint entry for exactly our standard """
     reprint_direction_from = ["from", "da", "di", "de", "uit", u"från", "aus"]
@@ -2944,7 +2924,7 @@ def add_reprint(request, changeset_id,
                                   changeset__id=changeset_id)
     if reprint_note:
         publisher, series, year, number, volume = \
-            parse_reprint(reprint_note)
+            parse_reprint(unquote(reprint_note).split(';')[0])
         initial = { 'series': series, 'publisher': publisher,
                     'year': year, 'number': number }
     else:
@@ -3113,8 +3093,11 @@ def confirm_reprint(request, data, object_type, selected_id):
 
     if 'which_side' in data:
         which_side = data['which_side']
+    elif 'which_side' in request.session:
+        which_side = request.session['which_side']
     else:
         which_side = None
+
     return oi_render_to_response('oi/edit/confirm_reprint.html',
         {
         'story': story,
@@ -3210,6 +3193,11 @@ def save_reprint(request, reprint_revision_id, changeset_id,
                                    target_issue=target_issue,
                                    notes=notes)
         revision.save_added_revision(changeset=changeset)
+        if request.POST['direction'] == 'from':
+            request.session['which_side'] = 'origin'
+        else:
+            request.session['which_side'] = 'target'
+
     if request.POST['comments'].strip():
         revision.comments.create(commenter=request.user,
                                  changeset=changeset,
