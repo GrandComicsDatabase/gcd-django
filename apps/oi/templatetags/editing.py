@@ -2,13 +2,14 @@
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from django import template
 
 from apps.gcd.templatetags.display import absolute_url
-from apps.oi.models import CTYPES
+from apps.oi.models import RevisionLock, CTYPES
 from apps.oi.coordinators import issue_revision_modified
 
 register = template.Library()
@@ -78,7 +79,9 @@ def header_link(changeset):
             issue_url = revision.issue.get_absolute_url()
             issue_num = revision.issue.display_number
             header_link += mark_safe(u' and %s (%s) <a href="%s">%s</a>' %
-                            (series_url, pub_url, issue_url, issue_num))
+                                     (series_url, pub_url,
+                                      issue_url, issue_num)
+                                     )
         if changeset.change_type == CTYPES['cover']:
             if revision.issue.variant_name:
                 header_link += mark_safe(' [%s]' %
@@ -116,29 +119,31 @@ def header_link(changeset):
     else:
         return u''
 
+
 def check_for_modified(changeset, clearing_weeks):
     # at least another week to go
     if datetime.today() - changeset.created < \
-      timedelta(weeks=clearing_weeks-1):
+       timedelta(weeks=clearing_weeks-1):
         changeset.expires = changeset.created + \
           timedelta(weeks=clearing_weeks)
         return False
     # at max three weeks extensions
     if datetime.today() - changeset.created > \
-      timedelta(weeks=clearing_weeks+2):
+       timedelta(weeks=clearing_weeks+2):
         changeset.expires = changeset.created + \
           timedelta(weeks=clearing_weeks+3)
         return True
     # was there an edit to the issue in the last week
     modified = issue_revision_modified(changeset)
     if modified > changeset.created + \
-        timedelta(weeks=clearing_weeks-1):
+       timedelta(weeks=clearing_weeks-1):
         changeset.expires = modified + timedelta(weeks=1)
     else:
         # in last week with no recent changes
         changeset.expires = changeset.created + \
             timedelta(weeks=clearing_weeks)
     return True
+
 
 @register.filter
 def is_overdue(changeset):
@@ -169,3 +174,10 @@ def is_overdue(changeset):
         if check_for_modified(changeset, settings.RESERVE_ISSUE_INITIAL_WEEKS):
             return mark_safe("class='overdue'")
     return ""
+
+
+@register.filter
+def is_locked(object):
+    return RevisionLock.objects.filter(
+           object_id=object.id,
+           content_type=ContentType.objects.get_for_model(object)).first()

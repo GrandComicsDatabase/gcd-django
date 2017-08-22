@@ -5,6 +5,7 @@
 {% load i18n %}
 {% load display %}
 {% load credits %}
+{% load editing %}
 
 {% block title %}
 GCD :: Brand Emblem :: {{ brand.name }}
@@ -68,7 +69,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
       {% endwith %}
       {% endwith %}
       {% if brand.emblem %}
-        {% if brand.emblem.reserved %}
+        {% if brand.emblem|is_locked %}
         <div style='padding:.4em' class="index_status_1">
         Brand emblem changes pending
         </div>
@@ -160,7 +161,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
     <td> {{ use.notes }} </td>
   {% if user.is_authenticated and not MYCOMICS %}
     <td>
-    {% if use.reserved %}
+    {% if use|is_locked %}
     is reserved
     {% else %}
       <form method="POST"

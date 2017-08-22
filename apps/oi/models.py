@@ -8,8 +8,8 @@ import glob
 from stdnum import isbn
 
 from django.conf import settings
-from django.db import models
-from django.db.models import Q, F, Manager, Count
+from django.db import models, transaction, IntegrityError
+from django.db.models import Q, F, Manager
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes.models import ContentType
@@ -617,7 +617,8 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['series']:
             return (self.seriesrevisions.all(),
-                    self.issuerevisions.all().select_related('issue'))
+                    self.issuerevisions.all().select_related('issue'),
+                    self.storyrevisions.all())
 
         if self.change_type == CTYPES['series_bond']:
             return (self.seriesbondrevisions.all().select_related('series'),)
@@ -890,8 +891,7 @@ class Changeset(models.Model):
         self.save()
         for revision in self.revisions:
             if revision.source is not None:
-                revision.source.reserved = False
-                revision.source.save()
+                _free_revision_lock(revision.source)
                 # maybe make a method to call on discard for special stuff ?
                 if type(revision) in [ReprintRevision, SeriesBondRevision]:
                     revision.previous_revision = None
@@ -984,6 +984,8 @@ class Changeset(models.Model):
                 previous_revision = revision
         else:
             for revision in self.revisions:
+                # first free the lock, commit_to_display might delete source
+                _free_revision_lock(revision.source)
                 revision.commit_to_display()
 
         self.comments.create(commenter=self.approver,
@@ -1140,6 +1142,49 @@ class ChangesetComment(models.Model):
 
     def display_new_state(self):
         return states.DISPLAY_NAME[self.new_state]
+
+
+def _get_revision_lock(object, changeset=None):
+    try:
+        with transaction.atomic():
+            revision_lock = RevisionLock.objects.create(locked_object=object,
+                                                        changeset=changeset)
+    except IntegrityError:
+        revision_lock = None
+    return revision_lock
+
+
+def _free_revision_lock(object):
+    revision_lock = RevisionLock.objects.get(object_id=object.id)
+    revision_lock.delete()
+
+
+class RevisionLock(models.Model):
+    """
+    Indicates that a particular Changeset has a particular row locked.
+
+    In order to have an active Revision for a given row, a Changeset
+    must hold a lock on it.  Rows in this table represent locks,
+    and the unique_together constraint on the content type and object id
+    ensure that only one Changeset can hold an object's lock at a time.
+    Locks are released by deleting the row.
+
+    A lock with a NULL changeset is used to check that the object can
+    be locked before creating a Changeset that would not be used
+    if the lock fails.
+
+    TODO: cron job to periodically scan for stale locks?
+    """
+    class Meta:
+        db_table = 'oi_revision_lock'
+        unique_together = ('content_type', 'object_id')
+
+    changeset = models.ForeignKey(Changeset, null=True,
+                                  related_name='revision_locks')
+
+    content_type = models.ForeignKey(content_models.ContentType)
+    object_id = models.IntegerField(db_index=True)
+    locked_object = generic.GenericForeignKey('content_type', 'object_id')
 
 
 class RevisionManager(models.Manager):
@@ -1667,7 +1712,7 @@ class PublisherRevision(PublisherRevisionBase):
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         pub = self.publisher
         if pub is None:
             pub = Publisher(imprint_count=0,
@@ -1683,9 +1728,6 @@ class PublisherRevision(PublisherRevisionBase):
         pub.is_master = self.is_master
         pub.parent = self.parent
         self._assign_base_fields(pub)
-
-        if clear_reservation:
-            pub.reserved = False
 
         pub.save()
         if self.publisher is None:
@@ -1853,7 +1895,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         """
         self.parent = parent
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         ipub = self.indicia_publisher
         if ipub is None:
             ipub = IndiciaPublisher()
@@ -1874,9 +1916,6 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         ipub.country = self.country
         ipub.parent = self.parent
         self._assign_base_fields(ipub)
-
-        if clear_reservation:
-            ipub.reserved = False
 
         ipub.save()
         if self.indicia_publisher is None:
@@ -1993,7 +2032,7 @@ class BrandGroupRevision(PublisherRevisionBase):
         """
         self.parent = parent
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         brand_group = self.brand_group
         # TODO global stats for brand groups ?
         if brand_group is None:
@@ -2009,9 +2048,6 @@ class BrandGroupRevision(PublisherRevisionBase):
 
         brand_group.parent = self.parent
         self._assign_base_fields(brand_group)
-
-        if clear_reservation:
-            brand_group.reserved = False
 
         brand_group.save()
         if self.brand_group is None:
@@ -2141,7 +2177,7 @@ class BrandRevision(PublisherRevisionBase):
             return 0
         return self.brand.issue_count
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         brand = self.brand
         if brand is None:
             brand = Brand()
@@ -2154,9 +2190,6 @@ class BrandRevision(PublisherRevisionBase):
 
         brand.parent = self.parent
         self._assign_base_fields(brand)
-
-        if clear_reservation:
-            brand.reserved = False
 
         brand_groups = brand.group.all().values_list('id', flat=True)
         revision_groups = self.group.all().values_list('id', flat=True)
@@ -2338,7 +2371,7 @@ class BrandUseRevision(Revision):
         self.publisher = publisher
         self.emblem = emblem
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         brand_use = self.brand_use
         if brand_use is None:
             brand_use = BrandUse()
@@ -2357,9 +2390,6 @@ class BrandUseRevision(Revision):
         brand_use.year_began_uncertain = self.year_began_uncertain
         brand_use.year_ended_uncertain = self.year_ended_uncertain
         brand_use.notes = self.notes
-
-        if clear_reservation:
-            brand_use.reserved = False
 
         brand_use.save()
         if self.brand_use is None:
@@ -2447,7 +2477,7 @@ class CoverRevision(Revision):
         """
         return 0
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         # the file handling is in the view/covers code
         cover = self.cover
 
@@ -2475,9 +2505,6 @@ class CoverRevision(Revision):
                 series.has_gallery = False
                 series.save()
             return
-
-        if clear_reservation:
-            cover.reserved = False
 
         if self.cover and self.is_replacement is False:
             # this is a move of a cover
@@ -2874,7 +2901,7 @@ class SeriesRevision(Revision):
         """
         self.publisher = publisher
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         series = self.series
         if series is None:
             series = Series(issue_count=0)
@@ -3046,9 +3073,6 @@ class SeriesRevision(Revision):
                                   series.scan_count())
         series.is_comics_publication = self.is_comics_publication
 
-        if clear_reservation:
-            series.reserved = False
-
         series.save()
         save_keywords(self, series)
         series.save()
@@ -3189,7 +3213,7 @@ class SeriesBondRevision(Revision):
     def _queue_name(self):
         return u'%s continues at %s' % (self.origin, self.target)
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         series_bond = self.series_bond
         if self.deleted:
             for revision in series_bond.revisions.all():
@@ -3206,9 +3230,6 @@ class SeriesBondRevision(Revision):
         series_bond.target_issue = self.target_issue
         series_bond.notes = self.notes
         series_bond.bond_type = self.bond_type
-
-        if clear_reservation:
-            series_bond.reserved = False
 
         series_bond.save()
         if self.series_bond is None:
@@ -3503,7 +3524,7 @@ class IssueRevision(Revision):
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.issue with a story/issue
     #    in the current direction under consideration
-    # 2) existing reprints which are reserved and which link self.issue
+    # 2) existing reprints which are locked and which link self.issue
     #    with a story/issue in the current direction under consideration
     # if this is the case we return reprintrevisions and not reprint links
     # returned reprint links are three cases:
@@ -3525,10 +3546,13 @@ class IssueRevision(Revision):
     def from_reprints_oi(self, preview=False):
         if self.issue is None:
             return ReprintToIssue.objects.none()
-        elif self.issue.target_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .filter(origin_issue=None).count() \
-                or self.issue.from_reprints.filter(reserved=True).count():
+        from_reprints = self.issue.from_reprints.all()
+        if self.issue.target_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .filter(origin_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=from_reprints.values_list(
+                                              'id', flat=True)).exists():
             new_revisions = self.issue.target_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .filter(origin_issue=None)
@@ -3540,13 +3564,13 @@ class IssueRevision(Revision):
                         .filter(origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.issue.from_reprints.all()
+            existing_reprints = from_reprints
             old_revisions = self.old_revisions_base()\
                                 .filter(reprint_to_issue__in=existing_reprints,
                                         next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.issue.from_reprints.all()
+            return from_reprints
 
     @property
     def from_reprints(self):
@@ -3555,11 +3579,13 @@ class IssueRevision(Revision):
     def from_issue_reprints_oi(self, preview=False):
         if self.issue is None:
             return IssueReprint.objects.none()
-        elif self.issue.target_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .exclude(origin_issue=None).count() \
-                or self.issue.from_issue_reprints\
-                       .filter(reserved=True).count():
+        from_issue_reprints = self.issue.from_issue_reprints.all()
+        if self.issue.target_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .exclude(origin_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=from_issue_reprints.values_list(
+                                                    'id', flat=True)).exists():
             new_revisions = self.issue.target_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .exclude(origin_issue=None)
@@ -3571,13 +3597,13 @@ class IssueRevision(Revision):
                         .exclude(origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.issue.from_issue_reprints.all()
+            existing_reprints = from_issue_reprints
             old_revisions = self.old_revisions_base()\
                                 .filter(issue_reprint__in=existing_reprints,
                                         next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.issue.from_issue_reprints.all()
+            return from_issue_reprints
 
     @property
     def from_issue_reprints(self):
@@ -3586,10 +3612,13 @@ class IssueRevision(Revision):
     def to_reprints_oi(self, preview=False):
         if self.issue is None:
             return ReprintFromIssue.objects.none()
-        elif self.issue.origin_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .filter(target_issue=None).count() \
-                or self.issue.to_reprints.filter(reserved=True).count():
+        to_reprints = self.issue.to_reprints.all()
+        if self.issue.origin_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .filter(target_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=to_reprints.values_list(
+                                            'id', flat=True)).exists():
             new_revisions = self.issue.origin_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .filter(target_issue=None)
@@ -3601,14 +3630,14 @@ class IssueRevision(Revision):
                         .filter(target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.issue.to_reprints.all()
+            existing_reprints = to_reprints
             old_revisions = \
                 self.old_revisions_base()\
                     .filter(reprint_from_issue__in=existing_reprints,
                             next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.issue.to_reprints.all()
+            return to_reprints
 
     @property
     def to_reprints(self):
@@ -3617,10 +3646,13 @@ class IssueRevision(Revision):
     def to_issue_reprints_oi(self, preview=False):
         if self.issue is None:
             return IssueReprint.objects.none()
-        elif self.issue.origin_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .exclude(target_issue=None).count() \
-                or self.issue.to_issue_reprints.filter(reserved=True).count():
+        to_issue_reprints = self.issue.to_issue_reprints.all()
+        if self.issue.origin_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .exclude(target_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=to_issue_reprints.values_list(
+                                                  'id', flat=True)).exists():
             new_revisions = self.issue.origin_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .exclude(target_issue=None)
@@ -3632,13 +3664,13 @@ class IssueRevision(Revision):
                         .exclude(target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.issue.to_issue_reprints.all()
+            existing_reprints = to_issue_reprints
             old_revisions = self.old_revisions_base()\
                                 .filter(issue_reprint__in=existing_reprints,
                                         next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.issue.to_issue_reprints.all()
+            return to_issue_reprints
 
     @property
     def to_issue_reprints(self):
@@ -3660,20 +3692,21 @@ class IssueRevision(Revision):
         elif self.issue.origin_reprint_revisions\
                  .filter(changeset__id=self.changeset_id).count():
             return True
+        # TODO: before there was the reserved=True here in the filter, why ?
         if self.issue.to_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.issue.from_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.issue.to_issue_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.issue.from_issue_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.changeset.state == states.APPROVED:
@@ -3944,7 +3977,7 @@ class IssueRevision(Revision):
             return stories.order_by('-sequence_number')[0].sequence_number + 1
         return 0
 
-    def commit_to_display(self, clear_reservation=True, space_count=1):
+    def commit_to_display(self, space_count=1):
         issue = self.issue
         check_series_order = None
 
@@ -4198,9 +4231,6 @@ class IssueRevision(Revision):
             self.rating = issue.rating
             self.no_rating = issue.no_rating
             self.save()
-
-        if clear_reservation:
-            issue.reserved = False
 
         issue.save()
         save_keywords(self, issue)
@@ -4562,7 +4592,7 @@ class StoryRevision(Revision):
             self.sequence_number = self.story.sequence_number
             self.save()
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         story = self.story
         if story is None:
             story = Story()
@@ -4627,9 +4657,6 @@ class StoryRevision(Revision):
         story.job_number = self.job_number
         story.sequence_number = self.sequence_number
 
-        if clear_reservation:
-            story.reserved = False
-
         story.save()
         save_keywords(self, story)
         story.save()
@@ -4654,7 +4681,7 @@ class StoryRevision(Revision):
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue
     #    in the current direction under consideration
-    # 2) existing reprints which are reserved and which link self.story
+    # 2) existing reprints which are locked and which link self.story
     #    with a story/issue in the current direction under consideration
     # if this is the case we return reprintrevisions and not reprint links
     # returned reprint links are three cases:
@@ -4682,10 +4709,13 @@ class StoryRevision(Revision):
             return self.target_reprint_revisions\
                        .filter(changeset__id=self.changeset_id,
                                origin_issue=None)
-        elif self.story.target_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .filter(origin_issue=None).count() \
-                or self.story.from_reprints.filter(reserved=True).count():
+        from_reprints = self.story.from_reprints.all()
+        if self.story.target_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .filter(origin_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=from_reprints.values_list(
+                                              'id', flat=True)).exists():
             new_revisions = self.story.target_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .filter(origin_issue=None)
@@ -4697,13 +4727,13 @@ class StoryRevision(Revision):
                         .filter(origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.story.from_reprints.all()
+            existing_reprints = from_reprints
             old_revisions = self.old_revisions_base()\
                                 .filter(reprint__in=existing_reprints,
                                         next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.story.from_reprints.all()
+            return from_reprints
 
     @property
     def from_reprints(self):
@@ -4714,11 +4744,13 @@ class StoryRevision(Revision):
             return self.target_reprint_revisions\
                        .filter(changeset__id=self.changeset_id)\
                        .exclude(origin_issue=None)
-        elif self.story.target_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .exclude(origin_issue=None).count() \
-                or self.story.from_issue_reprints\
-                       .filter(reserved=True).count():
+        from_issue_reprints = self.story.from_issue_reprints.all()
+        if self.story.target_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .exclude(origin_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=from_issue_reprints.values_list(
+                                                    'id', flat=True)).exists():
             new_revisions = self.story.target_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .exclude(origin_issue=None)
@@ -4730,14 +4762,14 @@ class StoryRevision(Revision):
                         .exclude(origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.story.from_issue_reprints.all()
+            existing_reprints = from_issue_reprints
             old_revisions = \
                 self.old_revisions_base()\
                     .filter(reprint_from_issue__in=existing_reprints,
                             next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.story.from_issue_reprints.all()
+            return from_issue_reprints
 
     @property
     def from_issue_reprints(self):
@@ -4748,10 +4780,14 @@ class StoryRevision(Revision):
             return self.origin_reprint_revisions\
                        .filter(changeset__id=self.changeset_id,
                                target_issue=None)
-        elif self.story.origin_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .filter(target_issue=None).count() \
-                or self.story.to_reprints.filter(reserved=True).count():
+
+        to_reprints = self.story.to_reprints.all()
+        if self.story.origin_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .filter(target_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=to_reprints.values_list(
+                                            'id', flat=True)).exists():
             new_revisions = self.story.origin_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .filter(target_issue=None)
@@ -4763,13 +4799,13 @@ class StoryRevision(Revision):
                         .filter(target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.story.to_reprints.all()
+            existing_reprints = to_reprints
             old_revisions = \
                 self.old_revisions_base()\
                     .filter(reprint__in=existing_reprints, next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.story.to_reprints.all()
+            return to_reprints
 
     @property
     def to_reprints(self):
@@ -4780,10 +4816,13 @@ class StoryRevision(Revision):
             return self.origin_reprint_revisions\
                        .filter(changeset__id=self.changeset_id)\
                        .exclude(target_issue=None)
-        elif self.story.origin_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .exclude(target_issue=None).count() \
-                or self.story.to_issue_reprints.filter(reserved=True).count():
+        to_issue_reprints = self.story.to_issue_reprints.all()
+        if self.story.origin_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .exclude(target_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=to_issue_reprints.values_list(
+                                                  'id', flat=True)).exists():
             new_revisions = \
                 self.story.origin_reprint_revisions\
                     .filter(changeset__id=self.changeset_id)\
@@ -4796,14 +4835,14 @@ class StoryRevision(Revision):
                         .exclude(target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.story.to_issue_reprints.all()
+            existing_reprints = to_issue_reprints
             old_revisions = \
                 self.old_revisions_base()\
                     .filter(reprint_to_issue__in=existing_reprints,
                             next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.story.to_issue_reprints.all()
+            return to_issue_reprints
 
     @property
     def to_issue_reprints(self):
@@ -4831,20 +4870,21 @@ class StoryRevision(Revision):
         if self.story.origin_reprint_revisions\
                .filter(changeset__id=self.changeset_id).count():
             return True
+        # TODO: before there was the reserved=True here in the filter, why ?
         if self.story.to_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.story.from_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.story.to_issue_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.story.from_issue_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         return False
@@ -5149,7 +5189,7 @@ class ReprintRevision(Revision):
             return 1
         return 0
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         if self.deleted:
             deleted_link = self.source
             field_name = REPRINT_FIELD[self.in_type] + '_id'
@@ -5240,11 +5280,6 @@ class ReprintRevision(Revision):
                 self.issue_reprint.target_issue = self.target_issue
                 self.issue_reprint.notes = self.notes
                 self.issue_reprint.save()
-
-        if clear_reservation and self.source:
-            reprint = self.source
-            reprint.reserved = False
-            reprint.save()
 
         self.save()
 
@@ -5448,7 +5483,7 @@ class ImageRevision(Revision):
         """
         return 0
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         image = self.image
         if self.is_replacement:
             prev_rev = self.previous()
@@ -5484,9 +5519,6 @@ class ImageRevision(Revision):
         self.image_file.delete()
         self.image = image
         self.save()
-        if clear_reservation:
-            image.reserved = False
-            image.save()
 
     def __unicode__(self):
         if self.source is None:
