@@ -174,12 +174,15 @@ CACHES = {
     }
 }
 
-# have two choices for caches, this one has persistent, cached session data
+# We have two choices for caches, this one has persistent, cached session data.
+# Do NOT switch to cookie-based session, unless also switching away from the
+# PickleSerializer, but even the JSONSerializer has (smaller) security issues.
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-# we would like to move the default JSONSerializer, but currently that
-# causes problems (see issue #102 on GitHub).  This is a workaround
-# to retain the Django 1.5 and earlier behavior.
+# The default is JSONSerializer, but we like to store python objects in the
+# session. Since we are using chached-db sessions, and not cookie-based, the
+# potential secutiry risk for cookie-based session with PickleSerializer does
+# not arise.
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 # Corresponds to the django_site database table. As far
