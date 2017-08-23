@@ -984,8 +984,10 @@ class Changeset(models.Model):
                 previous_revision = revision
         else:
             for revision in self.revisions:
+                # adds have a (created) source only after commit_to_display
+                if revision.source:
+                    _free_revision_lock(revision.source)
                 # first free the lock, commit_to_display might delete source
-                _free_revision_lock(revision.source)
                 revision.commit_to_display()
 
         self.comments.create(commenter=self.approver,
