@@ -1,18 +1,18 @@
-{% load url from future %}
+{% load editing %}
 
-{% if object.reserved %}
-  {% with object.revisions.active as revision %}
-  {% with revision.changeset as changeset %}
+{% with object|is_locked as lock %}
+{% if lock %}
+  {% with lock.changeset as changeset %}
 <div id="index_status" class="index_status_{{ changeset.state }}">
   <span>
     {% ifequal changeset.state states.OPEN %}
     This {{ object_name }} is currently being edited by
     {{ changeset.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
-    (since {{ revision.created|date:"Y-m-d" }},
+    (since {{ changeset.created|date:"Y-m-d" }},
       {% ifequal changeset.indexer request.user %}
     <a href="{% url "edit" id=changeset.id %}"> edit this change</a>)
       {% else %}
-    last edit {{ revision.modified|date:"Y-m-d" }})
+    last edit {{ changeset.modified|date:"Y-m-d" }})
       {% endifequal %}
     {% endifequal %}
     {% ifequal changeset.state states.PENDING %}
@@ -31,7 +31,6 @@
     {% endif %}
   </span>
 </div>
-  {% endwith %}
   {% endwith %}
 {% else %}
   {% if user.is_authenticated %}
@@ -56,4 +55,4 @@
 </form>
   {% endif %}
 {% endif %}
-
+{% endwith %}

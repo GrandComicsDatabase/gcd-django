@@ -315,5 +315,6 @@ urlpatterns = patterns('',
 )
 
 urlpatterns += patterns('',
-    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare')),
+    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare',
+                                                          permanent=False)),
 )

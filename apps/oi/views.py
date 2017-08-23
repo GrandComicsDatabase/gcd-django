@@ -50,8 +50,9 @@ from apps.oi.models import (
     Changeset, BrandGroupRevision, BrandRevision, BrandUseRevision,
     CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
-    StoryRevision, OngoingReservation, CTYPES, get_issue_field_list,
-    set_series_first_last, CreatorDataSourceRevision, CreatorRevision,
+    StoryRevision, OngoingReservation, RevisionLock, _get_revision_lock,
+    _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last
+    CreatorDataSourceRevision, CreatorRevision,
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolDetailRevision, CreatorDegreeDetailRevision,
@@ -84,6 +85,7 @@ from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
 from apps.oi import states
+from apps.oi.templatetags.editing import is_locked
 from apps.legacy.models import MigrationStoryStatus
 
 REVISION_CLASSES = {
@@ -168,10 +170,6 @@ def delete(request, id, model_name):
 
         # These can only be reached if people try to paste in URLs directly,
         # but as we know, some people do that sort of thing.
-        if display_obj.reserved:
-            return render_error(request,
-              u'Cannot delete "%s" as it is curently reserved.' % display_obj,
-              redirect=False)
         if display_obj.deleted:
             return render_error(request,
               u'Cannot delete "%s" as it is already deleted.' % display_obj,
@@ -207,19 +205,8 @@ def delete(request, id, model_name):
         },
         context_instance=RequestContext(request))
 
-    return reserve(request, id, model_name, True)
+    return reserve(request, id, model_name, delete=True)
 
-@transaction.autocommit
-def _is_reservable(model_name, id):
-    # returns number of objects which got reserved, so 1 if successful
-    # with django 1.3 we can do this in reserve() using a with statement
-    return DISPLAY_CLASSES[model_name].objects.filter(id=id,
-                    reserved=False).update(reserved=True)
-
-@transaction.autocommit
-def _unreserve(display_obj):
-    display_obj.reserved = False
-    display_obj.save()
 
 @permission_required('indexer.can_reserve')
 def reserve(request, id, model_name, delete=False,
@@ -235,15 +222,16 @@ def reserve(request, id, model_name, delete=False,
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': model_name, 'id': id}))
 
-    is_reservable = _is_reservable(model_name, id)
-
-    if is_reservable == 0:
-        return render_error(request,
-          u'Cannot edit "%s" as it is already reserved.' %
-          display_obj)
+    revision_lock = _get_revision_lock(display_obj)
+    if not revision_lock:
+        return render_error(
+          request,
+          u'Cannot edit "%s" as it is already reserved.' % display_obj)
 
     try: # if something goes wrong we unreserve
         if delete:
+            # TODO, this likely should not be needed anymore with the new
+            # transaction handling ?
             # In case someone else deleted while page was open or if it is not
             # deletable because of other actions in the interim (adding to an
             # issue for brand/ind_pub, modifying covers for issue, etc.)
@@ -251,16 +239,18 @@ def reserve(request, id, model_name, delete=False,
                 # Technically nothing to roll back, but keep this here in case
                 # someone adds more code later.
                 transaction.rollback()
-                _unreserve(display_obj)
+                _free_revision_lock(display_obj)
                 return render_error(request,
                        'This object fails the requirements for deletion.')
 
-            changeset = _do_reserve(request.user, display_obj, model_name, True)
+            changeset = _do_reserve(request.user, display_obj, model_name,
+                                    revision_lock, delete=True)
         else:
-            changeset = _do_reserve(request.user, display_obj, model_name)
+            changeset = _do_reserve(request.user, display_obj, model_name,
+                                    revision_lock)
 
         if changeset is None:
-            _unreserve(display_obj)
+            _free_revision_lock(display_obj)
             return render_error(request, REACHED_CHANGE_LIMIT)
 
         if delete:
@@ -284,18 +274,20 @@ def reserve(request, id, model_name, delete=False,
                     # the callback can result in a db save of the changeset
                     # so delete it. This does not fail if no save happened
                     changeset.delete()
-                    _unreserve(display_obj)
+                    _free_revision_lock(display_obj)
                     return render_error(request,
                       'Not all objects could be reserved.')
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': changeset.id }))
 
     except:
+        # TODO, is this still needed with the new transaction handling ?
+        _free_revision_lock(display_obj)
         transaction.rollback()
-        _unreserve(display_obj)
         raise
 
-def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
+def _do_reserve(indexer, display_obj, model_name, revision_lock, delete=False,
+                changeset=None):
     if model_name != 'cover' and (delete is False or indexer.indexer.is_new)\
        and indexer.indexer.can_reserve_another() is False:
         return None
@@ -309,16 +301,19 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
 
     if not changeset:
         changeset = Changeset(indexer=indexer, state=new_state,
-                            change_type=CTYPES[model_name])
+                              change_type=CTYPES[model_name])
         changeset.save()
 
         if not delete:
             # Deletions are immediately submitted, which will add the
             # appropriate initial comment- no need to add two.
             changeset.comments.create(commenter=indexer,
-                                    text=comment,
-                                    old_state=states.UNRESERVED,
-                                    new_state=changeset.state)
+                                      text=comment,
+                                      old_state=states.UNRESERVED,
+                                      new_state=changeset.state)
+
+    revision_lock.changeset = changeset
+    revision_lock.save()
 
     revision = REVISION_CLASSES[model_name].objects.clone_revision(
       display_obj, changeset=changeset)
@@ -329,39 +324,53 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
 
     if model_name == 'issue':
         for story in revision.issue.active_stories():
+            # TODO for now, stories cannot be reserved without the issue
+            story_lock = RevisionLock.objects.create(locked_object=story,
+                                                     changeset=changeset)
             story_revision = StoryRevision.objects.clone_revision(
               story=story, changeset=changeset)
             if delete:
                 story_revision.toggle_deleted()
         if delete:
             for cover in revision.issue.active_covers():
+                # cover can be reserved, so this can fail
+                # TODO check if transaction rollback works
+                cover_lock = RevisionLock.objects.create(locked_object=cover,
+                                                         changeset=changeset)
+
                 cover_revision = CoverRevision(changeset=changeset,
                                                issue=cover.issue,
                                                cover=cover, deleted=True)
                 cover_revision.save()
     elif model_name == 'brand' and delete:
         for brand_use in revision.brand.in_use.all():
-            # TODO I think we get into trouble if we use _is_reservable here,
-            # so we do it by hand, but we will change is_reservable anyway
-            if brand_use.reserved:
-                # catched by try in reserve, transaction.rollback there
-                # should take care of the changes here
-                raise ValueError
-            else:
-                use_revision = BrandUseRevision.objects.clone_revision(\
-                                                changeset=changeset,
-                                                brand_use=brand_use)
-                use_revision.deleted = True
-                use_revision.save()
-                brand_use.reserved = True
-                brand_use.save()
+            # brand_use can be reserved, so this can fail
+            # TODO check if transaction rollback works
+            brand_use_lock = RevisionLock.objects.create(
+                             locked_object=brand_use,
+                             changeset=changeset)
+
+            use_revision = BrandUseRevision.objects.clone_revision(
+                                            changeset=changeset,
+                                            brand_use=brand_use)
+            use_revision.deleted = True
+            use_revision.save()
+            brand_use.save()
     elif model_name == 'publisher' and delete:
-        for brand in revision.publisher.active_brands():
-            brand_revision = BrandRevision.objects.clone_revision(brand=brand,
-              changeset=changeset)
+        for brand_group in revision.publisher.active_brands():
+            # TODO check if brand_group is deletable ?
+            brand_group_lock = RevisionLock.objects.create(
+                               locked_object=brand_group,
+                               changeset=changeset)
+            brand_revision = BrandGroupRevision.objects.clone_revision(
+                             brand_group=brand_group, changeset=changeset)
             brand_revision.deleted = True
             brand_revision.save()
         for indicia_publisher in revision.publisher.active_indicia_publishers():
+            # indicia_publisher is deletable if publisher is deletable
+            indicia_publishers_lock = RevisionLock.objects.create(
+                                      locked_object=indicia_publisher,
+                                      changeset=changeset)
             indicia_publisher_revision = \
               IndiciaPublisherRevision.objects.clone_revision(
                 indicia_publisher=indicia_publisher, changeset=changeset)
@@ -402,7 +411,7 @@ def _do_reserve(indexer, display_obj, model_name, delete=False, changeset=None):
 @permission_required('indexer.can_reserve')
 def edit_two_issues(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, deleted=False)
-    if issue.reserved:
+    if is_locked(issue):
         return render_error(request, 'Issue %s is reserved.' % issue,
                             redirect=False)
     data = {'issue_id': issue_id,
@@ -422,12 +431,12 @@ def confirm_two_edits(request, data, object_type, issue_two_id):
     if object_type != 'issue':
         raise ValueError
     issue_one = get_object_or_404(Issue, id=data['issue_id'], deleted=False)
-    if issue_one.reserved:
+    if is_locked(issue_one):
         return render_error(request, 'Issue %s is reserved.' % issue_one,
                             redirect=False)
 
     issue_two = get_object_or_404(Issue, id=issue_two_id, deleted=False)
-    if issue_two.reserved:
+    if is_locked(issue_two):
         return render_error(request, 'Issue %s is reserved.' % issue_two,
                             redirect=False)
     return oi_render_to_response('oi/edit/confirm_two_edits.html',
@@ -451,14 +460,13 @@ def reserve_two_issues(request, issue_one_id, issue_two_id):
                    callback_args=kwargs)
 
 def reserve_other_issue(changeset, revision, issue_one):
-    is_reservable = _is_reservable('issue', issue_one.id)
-
-    if is_reservable == 0:
+    revision_lock = _get_revision_lock(issue_one, changeset)
+    if not revision_lock:
         return False
 
     if not _do_reserve(changeset.indexer, issue_one, 'issue',
-                       changeset=changeset):
-        _unreserve(issue_one)
+                       revision_lock, changeset=changeset):
+        _free_revision_lock(issue_one)
         return False
     changeset.change_type=CTYPES['two_issues']
     changeset.save()
@@ -855,7 +863,11 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                 return show_error_with_return(request, 'Publisher %s is '
                   'pending deletion' % unicode(publisher), changeset)
             if revision.changeset.issuerevisions.count() == 0:
-                if revision.series.active_issues().filter(reserved=True):
+                revision.series.active_issues()
+                if RevisionLock.objects.filter(
+                  object_id__in=revision.series.active_issues() \
+                                               .values_list('id', flat=True)) \
+                                               .exists():
                     return show_error_with_return(request,
                       ('Some issues for series %s are reserved. '
                        'No move possible.') % revision.series,
@@ -1408,6 +1420,16 @@ thanks,
             else:
                 return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
+
+def _reserve_newly_created_issue(issue, changeset, indexer):
+    revision_lock = _get_revision_lock(issue, changeset)
+    if revision_lock:
+        new_change = _do_reserve(indexer, issue, 'issue', revision_lock)
+    else:
+        new_change = None
+    if new_change is None:
+        _send_declined_reservation_email(indexer, issue)
+
 @permission_required('indexer.can_approve')
 def approve(request, id):
 
@@ -1478,8 +1500,7 @@ thanks,
         else:
             subject = 'GCD change approved'
         changeset.indexer.email_user(subject, email_body,
-          settings.EMAIL_INDEXING)
-
+                                     settings.EMAIL_INDEXING)
 
     # Note that series ongoing reservations must be processed first, as
     # they could potentially apply to the issue reservations if we ever
@@ -1491,7 +1512,7 @@ thanks,
                                          series__is_current=True,
                                          series__ongoing_reservation=None):
         if (changeset.indexer.ongoing_reservations.count() >=
-            changeset.indexer.indexer.max_ongoing):
+           changeset.indexer.indexer.max_ongoing):
             _send_declined_ongoing_email(changeset.indexer,
                                          series_revision.series)
 
@@ -1504,45 +1525,28 @@ thanks,
                                         reservation_requested=True,
                                         issue__created__gt=F('created'),
                                         series__ongoing_reservation=None):
-        new_change = _do_reserve(changeset.indexer,
-                                 issue_revision.issue, 'issue')
-        if new_change is None:
-            _send_declined_reservation_email(changeset.indexer,
-                                             issue_revision.issue)
-        else:
-            issue_revision.issue.reserved = True
-            issue_revision.issue.save()
+        _reserve_newly_created_issue(issue_revision.issue, changeset,
+                                     changeset.indexer)
 
     for issue_revision in \
-        changeset.issuerevisions.filter(deleted=False,
-                                        reservation_requested=True,
-                                        issue__created__gt=F('created'),
-                                        series__ongoing_reservation__isnull=False,
-                                        issue__variant_of__isnull=False):
-        new_change = _do_reserve(changeset.indexer,
-                                 issue_revision.issue, 'issue')
-        if new_change is None:
-            _send_declined_reservation_email(changeset.indexer,
-                                             issue_revision.issue)
-        else:
-            issue_revision.issue.reserved = True
-            issue_revision.issue.save()
+        changeset.issuerevisions.filter(
+                                 deleted=False,
+                                 reservation_requested=True,
+                                 issue__created__gt=F('created'),
+                                 series__ongoing_reservation__isnull=False,
+                                 issue__variant_of__isnull=False):
+        _reserve_newly_created_issue(issue_revision.issue, changeset,
+                                     changeset.indexer)
 
     for issue_revision in \
-        changeset.issuerevisions.filter(deleted=False,
-                                        issue__created__gt=F('created'),
-                                        series__ongoing_reservation__isnull=False,
-                                        issue__variant_of=None):
-        new_change = _do_reserve(
-          issue_revision.series.ongoing_reservation.indexer,
-          issue_revision.issue, 'issue')
-        if new_change is None:
-            _send_declined_reservation_email(issue_revision.series.\
-                                             ongoing_reservation.indexer,
-                                             issue_revision.issue)
-        else:
-            issue_revision.issue.reserved = True
-            issue_revision.issue.save()
+        changeset.issuerevisions.filter(
+                                 deleted=False,
+                                 issue__created__gt=F('created'),
+                                 series__ongoing_reservation__isnull=False,
+                                 issue__variant_of=None):
+        _reserve_newly_created_issue(
+          issue_revision.issue, changeset,
+          issue_revision.series.ongoing_reservation.indexer)
 
     # Move brand new indexers to probationary status on first approval.
     if changeset.change_type is not CTYPES['cover'] and \
@@ -1992,10 +1996,11 @@ def edit_issues_in_bulk(request):
 
     cd = form.cleaned_data
     for issue in items:
-        is_reservable = _is_reservable('issue', issue.id)
-        if is_reservable:
-            revision = IssueRevision.objects.clone_revision(issue,
-                                                            changeset=changeset)
+        revision_lock = _get_revision_lock(issue, changeset)
+        if revision_lock:
+            revision = IssueRevision.objects.clone_revision(
+                                             issue,
+                                             changeset=changeset)
             for field in initial:
                 if field in ['brand', 'indicia_publisher'] and \
                    cd[field] is not None:
@@ -2497,15 +2502,18 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
 
 def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
     if changeset.change_type == CTYPES['cover']:
+        # via create variant for cover
         issue = revision.issue
-        if _is_reservable('issue', issue.id) == 0:
+        revision_lock = _get_revision_lock(issue, changeset)
+        if not revision_lock:
             return False
 
         # create issue revision for the issue of the cover
         if not _do_reserve(changeset.indexer, issue, 'issue',
-                           changeset=changeset):
-            _unreserve(issue)
+                           revision_lock, changeset=changeset):
+            _free_revision_lock(issue)
             return False
+
     changeset.change_type=CTYPES['variant_add']
     changeset.save()
 
@@ -3137,12 +3145,14 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
         return _cant_get(request)
     display_obj = get_object_or_404(DISPLAY_CLASSES[reprint_type],
                                     id=reprint_id)
-    if _is_reservable(reprint_type, reprint_id) == 0:
+    revision_lock = _get_revision_lock(display_obj, changeset)
+    if not revision_lock:
         return render_error(request,
           u'Cannot edit "%s" as it is already reserved.' % display_obj)
 
     revision = ReprintRevision.objects.clone_revision(display_obj,
                                                       changeset=changeset)
+
     return HttpResponseRedirect(urlresolvers.reverse('edit_reprint',
         kwargs={'id': revision.id, 'which_side': which_side }))
 
@@ -3792,23 +3802,36 @@ def move_series(request, series_revision_id, publisher_id):
         else:
             if series_revision.changeset.issuerevisions.count() == 0:
                 for issue in series_revision.series.active_issues():
-                    is_reservable = _is_reservable('issue', issue.id)
-
-                    if is_reservable == 0:
+                    revision_lock = _get_revision_lock(
+                                    issue, series_revision.changeset)
+                    if not revision_lock:
                         for issue_rev in series_revision.changeset\
                                                         .issuerevisions.all():
-                            _unreserve(issue_rev.issue)
-                        return show_error_with_return(request, 'Error while'
-                        ' reserving issues.', series_revision.changeset)
+                            _free_revision_lock(issue_rev.issue)
+                            issue_rev.delete()
+                        for story_rev in series_revision.changeset\
+                                                        .storyrevisions.all():
+                            _free_revision_lock(story_rev.story)
+                            story_rev.delete()
+                        return show_error_with_return(
+                          request, 'Error while reserving issues.',
+                          series_revision.changeset)
 
-                    if not _do_reserve(series_revision.changeset.indexer, issue,
-                                    'issue', changeset=series_revision.changeset):
-                        _unreserve(issue)
+                    if not _do_reserve(series_revision.changeset.indexer,
+                                       issue, 'issue', revision_lock,
+                                       changeset=series_revision.changeset):
+                        _free_revision_lock(issue)
                         for issue_rev in series_revision.changeset\
                                                         .issuerevisions.all():
-                            _unreserve(issue_rev.issue)
-                        return show_error_with_return(request, 'Error while'
-                        ' reserving issues.', series_revision.changeset)
+                            _free_revision_lock(issue_rev.issue)
+                            issue_rev.delete()
+                        for story_rev in series_revision.changeset\
+                                                        .storyrevisions.all():
+                            _free_revision_lock(story_rev.story)
+                            story_rev.delete()
+                        return show_error_with_return(
+                          request, 'Error while reserving issues.',
+                          series_revision.changeset)
                 for issue_revision in series_revision.changeset.issuerevisions.all():
                     if issue_revision.brand:
                         new_brand = publisher.active_brand_emblems()\
@@ -3966,7 +3989,8 @@ def move_cover(request, id, cover_id=None):
         return render_error(request,
           'Cover does not belong to an issue of this changeset.')
 
-    if _is_reservable('cover', cover_id) == 0:
+    revision_lock = _get_revision_lock(cover, changeset)
+    if not revision_lock:
         return render_error(request,
             u'Cannot move the cover as it is already reserved.')
 
