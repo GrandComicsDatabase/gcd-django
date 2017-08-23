@@ -1,5 +1,4 @@
 {% extends "oi/base_view.html" %}
-{% load url from future %}
 {% load staticfiles %}
 
 {% load credits %}
@@ -67,7 +66,17 @@
       {% if changeset.change_type == CTYPES.series_bond %}
         {% include 'oi/edit/series_bond_changeset.html' %}
       {% endif %}
-      {% include "oi/edit/include_frame.html" %}
+      {% comment %}
+      {% if changeset.change_type == CTYPES.creator %}
+        {% include "oi/edit/include_creator_frame.html" %}
+      {% endif %}
+      {% endcomment %}
+      {% if changeset.change_type == CTYPES.creator_noncomicwork %}
+        {% include "oi/edit/include_create_noncomicwork_frame.html" %}
+      {% endif %}
+      {% if changeset.change_type != CTYPES.creator_noncomicwork %}
+        {% include "oi/edit/include_frame.html" %}
+      {% endif %}
     {% else %}
       {% if changeset.publisherrevisions.count %}
 <p class="error">Publishers not supported in group changesets.</p>
@@ -81,6 +90,7 @@
       {% if changeset.seriesrevisions.count %}
 <p class="error">Series not supported in group changesets.</p>
       {% endif %}
+
 
     {% comment %}
       For now, assume the app ensures that there are either many issues and
@@ -137,3 +147,8 @@ This change is being edited by {{ changeset.indexer.indexer }}.
 </div>
 {% endblock %}
 
+{% block footer %}
+  {% if changeset.state == states.OPEN and changeset.indexer == user and object_name == 'Creator' %}
+    {% include 'oi/bits/revision_form_utils.html' %}
+  {% endif %}
+{% endblock %}

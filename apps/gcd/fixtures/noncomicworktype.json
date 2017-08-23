@@ -1,0 +1,86 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Book"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Magazine"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Newspaper"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Television"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Radio"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Movie"
+        }
+    },
+    {
+        "pk": 7,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Live Show"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Advertising"
+        }
+    },
+    {
+        "pk": 9,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Fine Arts"
+        }
+    },
+    {
+        "pk": 10,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Web Comics"
+        }
+    },
+    {
+        "pk": 11,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Internet Article"
+        }
+    },
+    {
+        "pk": 12,
+        "model": "gcd.noncomicworktype",
+        "fields": {
+            "type": "Other"
+        }
+    }
+]

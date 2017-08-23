@@ -1,0 +1,30 @@
+[
+    {
+        "pk": 3,
+        "model": "gcd.relationtype",
+        "fields": {
+            "type": "Employee"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.relationtype",
+        "fields": {
+            "type": "Owner"
+        }
+    },
+    {
+        "pk": 1,
+        "model": "gcd.relationtype",
+        "fields": {
+            "type": "Similar Name"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.relationtype",
+        "fields": {
+            "type": "User"
+        }
+    }
+]

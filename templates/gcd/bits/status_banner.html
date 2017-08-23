@@ -8,7 +8,7 @@
     {% ifequal changeset.state states.OPEN %}
     This {{ object_name }} is currently being edited by
     {{ changeset.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
-    (since {{ revision.created|date:"Y-m-d" }},  
+    (since {{ revision.created|date:"Y-m-d" }},
       {% ifequal changeset.indexer request.user %}
     <a href="{% url "edit" id=changeset.id %}"> edit this change</a>)
       {% else %}

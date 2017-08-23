@@ -1,0 +1,72 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Book citation"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Comic credit"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Comic signature"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Creator questionnaire"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Creator's records"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Internet citation"
+        }
+    },
+    {
+        "pk": 7,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Interview"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Legal document"
+        }
+    },
+    {
+        "pk": 9,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "News citation"
+        }
+    },
+    {
+        "pk": 10,
+        "model": "gcd.sourcetype",
+        "fields": {
+            "type": "Publisher's records"
+        }
+    }
+]

@@ -1,0 +1,4 @@
+{{ object.publication_title }}
+{{ objects.work_type }}
+{{ object.creator.gcd_official_name }}
+{{ objects.creator.birth_country }}

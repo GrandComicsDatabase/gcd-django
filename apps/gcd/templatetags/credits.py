@@ -289,8 +289,12 @@ def show_country_info(country, name=None):
     if name:
         code = country
     else:
-        code = country.code
-        name = country.name
+        if country:
+            code = country.code
+            name = country.name
+        else:
+            code = 'zz'
+
     src = u'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
                                               code.lower())
     alt = u'alt="%s"' % esc(code.upper())

@@ -16,7 +16,8 @@ from django.conf import settings
 from django.core import urlresolvers
 from django.shortcuts import render_to_response, \
                              get_object_or_404, \
-                             get_list_or_404
+                             get_list_or_404, \
+                             render
 from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.template import RequestContext
 from django.utils.safestring import mark_safe
@@ -29,9 +30,10 @@ from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
 
 from apps.indexer.models import Indexer
-from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image, \
-                            IndiciaPublisher, Brand, BrandGroup, \
-                            Cover, SeriesBond
+from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
+                            IndiciaPublisher, Brand, BrandGroup, Cover, \
+                            SeriesBond, Membership, Award, ArtInfluence,\
+                            NonComicWork, CreatorSchoolDetail, CreatorDegreeDetail
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -43,7 +45,8 @@ from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
-                           SeriesBondRevision, CTYPES
+                           SeriesBondRevision,CreatorRevision, CTYPES
+from apps.gcd.models.creator import Creator
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -57,6 +60,7 @@ COVERS_PER_GALLERY_PAGE = 50
 IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
 
+
 def get_gcd_object(model, object_id, model_name=None):
     object = get_object_or_404(model, id = object_id)
     if object.deleted:
@@ -68,6 +72,96 @@ def get_gcd_object(model, object_id, model_name=None):
                                           kwargs={'model_name': model_name,
                                                   'id': object_id})))
     return object
+
+
+def creator(request, creator_id):
+    creator = get_gcd_object(Creator, creator_id)
+    return show_creator(request, creator)
+
+
+def show_creator(request, creator, preview=False):
+    vars = {'creator': creator,
+            'error_subject': creator,
+            'preview': preview}
+    return render(request, 'gcd/details/creator.html', vars)
+
+
+def creator_membership(request, creator_membership_id):
+    creator_membership = get_gcd_object(Membership, creator_membership_id)
+    return show_creator_membership(request, creator_membership)
+
+
+def show_creator_membership(request, creator_membership, preview=False):
+    vars = {'creator_membership': creator_membership,
+            'error_subject': creator_membership,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_membership_details.html', vars)
+
+
+def creator_artinfluence(request, creator_artinfluence_id):
+    creator_artinfluence = get_gcd_object(ArtInfluence,
+                                          creator_artinfluence_id)
+    return show_creator_artinfluence(request, creator_artinfluence)
+
+
+def show_creator_artinfluence(request, creator_artinfluence, preview=False):
+    vars = {'creator_artinfluence': creator_artinfluence,
+            'error_subject': creator_artinfluence,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_artinfluence_details.html',
+                  vars)
+
+
+def creator_award(request, creator_award_id):
+    creator_award = get_gcd_object(Award, creator_award_id)
+    return show_creator_award(request, creator_award)
+
+
+def show_creator_award(request, creator_award, preview=False):
+    vars = {'creator_award': creator_award,
+            'error_subject': creator_award,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_award_details.html', vars)
+
+
+def creator_degree(request, creator_degree_id):
+    creator_degree = get_gcd_object(CreatorDegreeDetail, creator_degree_id)
+    return show_creator_degree(request, creator_degree)
+
+
+def show_creator_degree(request, creator_degree, preview=False):
+    vars = {'creator': creator_degree.creator,
+            'creator_degree': creator_degree,
+            'error_subject': creator_degree,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_degree_details.html', vars)
+
+
+def creator_noncomicwork(request, creator_noncomicwork_id):
+    creator_noncomicwork = get_gcd_object(NonComicWork,
+                                          creator_noncomicwork_id)
+    return show_creator_noncomicwork(request, creator_noncomicwork)
+
+
+def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
+    vars = {'creator_noncomicwork': creator_noncomicwork,
+            'error_subject': creator_noncomicwork,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_noncomicwork_details.html',
+                  vars)
+
+
+def creator_school(request, creator_school_id):
+    creator_school = get_gcd_object(CreatorSchoolDetail, creator_school_id)
+    return show_creator_school(request, creator_school)
+
+
+def show_creator_school(request, creator_school, preview=False):
+    vars = {'creator': creator_school.creator,
+            'creator_school': creator_school,
+            'error_subject': creator_school,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_school_details.html', vars)
 
 
 def publisher(request, publisher_id):
@@ -89,7 +183,7 @@ def show_publisher(request, publisher, preview=False):
                                                     is_current=True),
              'error_subject': publisher,
              'preview': preview}
-    
+
     return paginate_response(request, publisher_series,
                              'gcd/details/publisher.html', vars)
 
@@ -434,7 +528,12 @@ def series_details(request, series_id, by_date=False):
     issues_left_over = []
     bad_key_dates = []
     if by_date:
-        no_key_date_q = Q(key_date__isnull=True) | Q(key_date='')
+        no_key_date_q = Q(key_date__isnull=True
+
+
+
+
+) | Q(key_date='')
         with_key_dates = series.active_issues().exclude(no_key_date_q)
 
         prev_year = None
@@ -526,9 +625,11 @@ def change_history(request, model_name, id):
     Displays the change history of the given object of the type
     specified by model_name.
     """
+    from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
-                          'image', 'series_bond']:
+                          'image', 'series_bond', 'creator', 'creator_membership',
+                          'creator_award', 'creator_artinfluence','creator_noncomicwork']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('indexer/error.html', {
@@ -546,14 +647,14 @@ def change_history(request, model_name, id):
     if model_name == 'imprint':
         object = get_object_or_404(Publisher, id=id, is_master=False)
         filter_string = 'publisherrevisions__publisher'
+
     else:
-        # can't import up top because of circular dependency
-        from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
         object = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
 
         # filter is publisherrevisions__publisher, seriesrevisions__series, etc.
         filter_string = '%ss__%s' % (REVISION_CLASSES[model_name].__name__.lower(),
                                      model_name)
+
     kwargs = { str(filter_string): object, 'state': states.APPROVED }
     changesets = Changeset.objects.filter(**kwargs).order_by('-modified', '-id')
 
@@ -842,6 +943,13 @@ def daily_changes(request, show_date=None):
             'deleted':False,
             'changeset__state': states.APPROVED }
 
+    # TODO what aboud awards, memberships, etc. Display separately,
+    # or display the affected creator for such changes as well.
+    creator_revisions = list(CreatorRevision.objects.filter(
+      changeset__change_type=CTYPES['creator'], **args)\
+      .exclude(changeset__indexer=anon).values_list('creator', flat=True))
+    creators = Creator.objects.filter(id__in=creator_revisions).distinct()
+
     publisher_revisions = list(PublisherRevision.objects.filter(
       changeset__change_type=CTYPES['publisher'], **args)\
       .exclude(changeset__indexer=anon).values_list('publisher', flat=True))
@@ -914,6 +1022,7 @@ def daily_changes(request, show_date=None):
         'date' : show_date,
         'date_after' : date_after,
         'date_before' : date_before,
+        'creators' : creators,
         'publishers' : publishers,
         'brand_groups' : brand_groups,
         'brands' : brands,

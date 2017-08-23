@@ -1,0 +1,31 @@
+{% load display %}
+{% load compare %}
+{% comment %} the logic should be done in the view-code for the revision {% endcomment %}
+{% if prev_rev or not check_prev %}
+  {% if revision.deleted %}
+<tr class="deleted">
+  {% else %}
+<tr class="{{ revision.changed|check_changed:field }}">
+  {% endif %}
+{% else %}
+<tr class="added">
+{% endif %}
+    <td class="field_name"> {{ field|field_name }} </td>
+      {% if revision.changed|check_changed:field and prev_rev and not revision.deleted %}
+        {% diff_list prev_rev revision field as diff_list %}
+        {% if diff_list %}
+    <td> {{ diff_list|show_diff:"orig" }} </td>
+    <td> {{ diff_list|show_diff:"change" }} </td>
+        {% else %}
+    <td> {{ prev_rev|field_value:field }} </td>
+    <td> {{ revision|field_value:field }} </td>
+        {% endif %}
+      {% else %}
+        {% if prev_rev %}
+    <td> {{ prev_rev|field_value:field }} </td>
+        {% endif %}
+        {% if not revision.deleted %}
+    <td> {{ revision|field_value:field }} </td>
+        {% endif %}
+      {% endif %}
+  </tr>

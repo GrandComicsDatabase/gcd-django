@@ -17,3 +17,10 @@ from reprinttoissue import ReprintToIssue
 from reprintfromissue import ReprintFromIssue
 from seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING
 from image import ImageType, Image
+from creator import ArtInfluence, Award, AwardType, \
+                    Creator, CreatorDataSource, CreatorDegreeDetail, \
+                    CreatorNameDetail, CreatorSchoolDetail,\
+                    Degree, Membership, NameRelation, NameType, \
+                    NonComicWork, NonComicWorkType, NonComicWorkRole, \
+                    NonComicWorkYear, NonComicWorkLink, RelationType, School, \
+                    SourceType
