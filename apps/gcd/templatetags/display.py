@@ -248,7 +248,9 @@ def index_status_css(issue):
     Text form of issue indexing status.  If clauses arranged in order of most
     likely case to least.
     """
-    if issue.reserved:
+    from apps.oi.templatetags.editing import is_locked
+
+    if is_locked(issue):
         active =  issue.revisions.get(changeset__state__in=states.ACTIVE)
         return STATE_CSS_NAME[active.changeset.state]
     elif issue.is_indexed == INDEXED['full']:

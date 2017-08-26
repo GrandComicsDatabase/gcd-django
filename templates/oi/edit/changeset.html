@@ -70,13 +70,11 @@
       {% if changeset.change_type == CTYPES.creator %}
         {% include "oi/edit/include_creator_frame.html" %}
       {% endif %}
-      {% endcomment %}
       {% if changeset.change_type == CTYPES.creator_noncomicwork %}
         {% include "oi/edit/include_create_noncomicwork_frame.html" %}
       {% endif %}
-      {% if changeset.change_type != CTYPES.creator_noncomicwork %}
-        {% include "oi/edit/include_frame.html" %}
-      {% endif %}
+      {% endcomment %}
+      {% include "oi/edit/include_frame.html" %}
     {% else %}
       {% if changeset.publisherrevisions.count %}
 <p class="error">Publishers not supported in group changesets.</p>

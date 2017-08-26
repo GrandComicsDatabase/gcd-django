@@ -16,7 +16,7 @@ def load_initial_data(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('stddata', '0001_initial'),
+        ('stddata', '0003_language_native_name'),
     ]
 
     operations = [

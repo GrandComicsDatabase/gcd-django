@@ -31,7 +31,7 @@ urlpatterns = patterns('',
     url(r'^creator/(?P<creator_id>\d+)/membership/add/$',
      'apps.oi.views.add_creator_membership', name='add_creator_membership'),
     url(r'^creator/(?P<creator_id>\d+)/non_comic_work/add/$',
-     'apps.oi.views.add_creator_noncomicwork', name='add_creator_non_comic_work'),
+     'apps.oi.views.add_creator_noncomicwork', name='add_creator_noncomicwork'),
     url(r'^creator/(?P<creator_id>\d+)/school/add/$',
      'apps.oi.views.add_creator_school', name='add_creator_school'),
     url(r'^creator/(?P<creator_id>\d+)/degree/add/$',
@@ -315,5 +315,6 @@ urlpatterns = patterns('',
 )
 
 urlpatterns += patterns('',
-    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare')),
+    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare',
+                                                          permanent=False)),
 )

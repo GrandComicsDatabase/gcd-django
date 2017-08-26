@@ -6,18 +6,19 @@ import calendar
 import os
 import glob
 from stdnum import isbn
-from collections import OrderedDict
 
+from django import forms
 from django.conf import settings
-from django.db import models
-from django.db.models import Q, F, Manager, Count
+from django.db import models, transaction, IntegrityError
+from django.db.models import Q, F, Manager
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, \
                                                GenericRelation
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, URLValidator
+from django.core.exceptions import ValidationError
 
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
@@ -29,13 +30,11 @@ from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse,
-    Series, SeriesBond, Cover, Image, Issue, Story,
-    Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
-    SeriesPublicationType, SeriesBondType, StoryType, ImageType, ArtInfluence,
-    AwardType, Award, Creator, CreatorDataSource, CreatorDegreeDetail,
-    CreatorNameDetail, CreatorSchoolDetail, Degree, Membership, NameType,
-    NameRelation, NonComicWork, NonComicWorkType, NonComicWorkRole, NonComicWork,
-    NonComicWorkYear, NonComicWorkLink, RelationType, School, SourceType)
+    Series, SeriesBond, Cover, Image, Issue, Story, Reprint, ReprintToIssue,
+    ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
+    StoryType, ImageType, ArtInfluence, AwardType, Award, Creator,
+    CreatorDataSource, CreatorDegreeDetail, CreatorNameDetail,
+    CreatorSchoolDetail, Membership, NameRelation, NonComicWork)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
@@ -44,7 +43,7 @@ from apps.legacy.models import Reservation, MigrationStoryStatus
 
 LANGUAGE_STATS = ['de']
 
-MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1,13)]
+MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
 # Changeset type "constants"
 CTYPES = {
@@ -65,12 +64,12 @@ CTYPES = {
     'brand_use': 14,
     'series_bond': 15,
     'creator': 16,
-    'creator_membership':17,
-    'creator_award':18,
-    'creator_artinfluence':19,
-    'creator_noncomicwork':20,
-    'creator_school':21,
-    'creator_degree':22,
+    'creator_membership': 17,
+    'creator_award': 18,
+    'creator_artinfluence': 19,
+    'creator_noncomicwork': 20,
+    'creator_school': 21,
+    'creator_degree': 22,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -591,6 +590,14 @@ def save_keywords(revision, source):
         source.keywords.set()
 
 
+def _check_year(year):
+    year = year.strip().strip('?')
+    year_number = int(year)
+    if len(year) != 4 or year_number < 0:
+        raise forms.ValidationError('Enter valid years.')
+    return year_number
+
+
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
@@ -640,7 +647,8 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['series']:
             return (self.seriesrevisions.all(),
-                    self.issuerevisions.all().select_related('issue'))
+                    self.issuerevisions.all().select_related('issue'),
+                    self.storyrevisions.all())
 
         if self.change_type == CTYPES['series_bond']:
             return (self.seriesbondrevisions.all().select_related('series'),)
@@ -690,8 +698,6 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['creator_noncomicwork']:
             return (self.creatornoncomicworkrevisions.all(),
-                    self.noncomicworkyearrevisions.all(),
-                    self.noncomicworklinkrevisions.all(),
                     self.creatordatasourcerevisions.all())
 
         if self.change_type == CTYPES['creator_school']:
@@ -701,7 +707,6 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['creator_degree']:
             return (self.creatordegreedetailrevisions.all(),
                     self.creatordatasourcerevisions.all())
-
 
     @property
     def revisions(self):
@@ -778,8 +783,8 @@ class Changeset(models.Model):
                                  CTYPES['two_issues'],
                                  CTYPES['series_bond'],
                                  CTYPES['creator'],
-                                 CTYPES['creator_membership'], 
-                                 CTYPES['creator_award'], 
+                                 CTYPES['creator_membership'],
+                                 CTYPES['creator_award'],
                                  CTYPES['creator_artinfluence'],
                                  CTYPES['creator_noncomicwork']] or
             (
@@ -956,8 +961,7 @@ class Changeset(models.Model):
         self.save()
         for revision in self.revisions:
             if revision.source is not None:
-                revision.source.reserved = False
-                revision.source.save()
+                _free_revision_lock(revision.source)
                 # maybe make a method to call on discard for special stuff ?
                 if type(revision) in [ReprintRevision, SeriesBondRevision]:
                     revision.previous_revision = None
@@ -1050,6 +1054,10 @@ class Changeset(models.Model):
                 previous_revision = revision
         else:
             for revision in self.revisions:
+                # adds have a (created) source only after commit_to_display
+                if revision.source:
+                    _free_revision_lock(revision.source)
+                # first free the lock, commit_to_display might delete source
                 revision.commit_to_display()
 
         self.comments.create(commenter=self.approver,
@@ -1158,16 +1166,16 @@ class Changeset(models.Model):
             return self.queue_name()
         if self.change_type == CTYPES['variant_add']:
             return self.queue_name() + u' [Variant]'
-        if self.change_type == CTYPES['creator']:
-            return unicode(self.creatorrevisions.all()[0])
-        if self.change_type == CTYPES['creator_membership']:
-            return unicode(self.creatormembershiprevisions.all()[0])
-        if self.change_type == CTYPES['creator_award']:
-            return unicode(self.creatorawardrevisions.all()[0])
-        if self.change_type == CTYPES['creator_artinfluence']:
-            return unicode(self.creatorartinfluencerevisions.all()[0])
-        if self.change_type == CTYPES['creator_noncomicwork']:
-            return unicode(self.creatornoncomicworkrevisions.all()[0])
+        #if self.change_type == CTYPES['creator']:
+            #return unicode(self.creatorrevisions.all()[0])
+        #if self.change_type == CTYPES['creator_membership']:
+            #return unicode(self.creatormembershiprevisions.all()[0])
+        #if self.change_type == CTYPES['creator_award']:
+            #return unicode(self.creatorawardrevisions.all()[0])
+        #if self.change_type == CTYPES['creator_artinfluence']:
+            #return unicode(self.creatorartinfluencerevisions.all()[0])
+        #if self.change_type == CTYPES['creator_noncomicwork']:
+            #return unicode(self.creatornoncomicworkrevisions.all()[0])
         return 'Changeset: %d' % self.id
 
 
@@ -1216,6 +1224,51 @@ class ChangesetComment(models.Model):
 
     def display_new_state(self):
         return states.DISPLAY_NAME[self.new_state]
+
+
+def _get_revision_lock(object, changeset=None):
+    try:
+        with transaction.atomic():
+            revision_lock = RevisionLock.objects.create(locked_object=object,
+                                                        changeset=changeset)
+    except IntegrityError:
+        revision_lock = None
+    return revision_lock
+
+
+def _free_revision_lock(object):
+    revision_lock = RevisionLock.objects.get(
+      object_id=object.id,
+      content_type=ContentType.objects.get_for_model(object))
+    revision_lock.delete()
+
+
+class RevisionLock(models.Model):
+    """
+    Indicates that a particular Changeset has a particular row locked.
+
+    In order to have an active Revision for a given row, a Changeset
+    must hold a lock on it.  Rows in this table represent locks,
+    and the unique_together constraint on the content type and object id
+    ensure that only one Changeset can hold an object's lock at a time.
+    Locks are released by deleting the row.
+
+    A lock with a NULL changeset is used to check that the object can
+    be locked before creating a Changeset that would not be used
+    if the lock fails.
+
+    TODO: cron job to periodically scan for stale locks?
+    """
+    class Meta:
+        db_table = 'oi_revision_lock'
+        unique_together = ('content_type', 'object_id')
+
+    changeset = models.ForeignKey(Changeset, null=True,
+                                  related_name='revision_locks')
+
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.IntegerField(db_index=True)
+    locked_object = GenericForeignKey('content_type', 'object_id')
 
 
 class RevisionManager(models.Manager):
@@ -1521,12 +1574,19 @@ class Revision(models.Model):
 
     def _do_complete_added_revision(self, **kwargs):
         """
-        Hook for indiividual revisions to process additional parameters
+        Hook for individual revisions to process additional parameters
         necessary to create a new revision representing an added record.
         By default no additional processing is done, so subclasses are
         free to override this method without calling it on the parent class.
         """
         pass
+
+    def _create_dependent_revisions(self, delete=False, **kwargs):
+        """
+        Some Revisions have dependent objects, this locks the objects and
+        creates the corresponding revisions.
+        """
+        return True
 
     def has_keywords(self):
         return self.keywords
@@ -1747,7 +1807,38 @@ class PublisherRevision(PublisherRevisionBase):
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
 
-    def commit_to_display(self, clear_reservation=True):
+    def _create_dependent_revisions(self, delete=False):
+        if delete:
+            for brand_group in self.publisher.active_brands():
+                # TODO check if brand_group is deletable ?
+                brand_group_lock = _get_revision_lock(
+                                   brand_group,
+                                   changeset=self.changeset)
+                if brand_group_lock is None:
+                    raise IntegrityError("needed BrandGroup lock not possible")
+                brand_revision = BrandGroupRevision.objects.clone_revision(
+                                                    brand_group=brand_group,
+                                                    changeset=self.changeset)
+                brand_revision.deleted = True
+                brand_revision.save()
+            for indicia_publisher in self.publisher\
+                                         .active_indicia_publishers():
+                # indicia_publisher is deletable if publisher is deletable
+                indicia_publishers_lock = _get_revision_lock(
+                                          indicia_publisher,
+                                          changeset=self.changeset)
+                if indicia_publishers_lock is None:
+                    raise IntegrityError("needed IndiciaPublisher lock not"
+                                         " possible")
+                indicia_publisher_revision =\
+                  IndiciaPublisherRevision.objects.clone_revision(
+                                          indicia_publisher=indicia_publisher,
+                                          changeset=self.changeset)
+                indicia_publisher_revision.deleted = True
+                indicia_publisher_revision.save()
+        return True
+
+    def commit_to_display(self):
         pub = self.publisher
         if pub is None:
             pub = Publisher(imprint_count=0,
@@ -1763,9 +1854,6 @@ class PublisherRevision(PublisherRevisionBase):
         pub.is_master = self.is_master
         pub.parent = self.parent
         self._assign_base_fields(pub)
-
-        if clear_reservation:
-            pub.reserved = False
 
         pub.save()
         if self.publisher is None:
@@ -1933,7 +2021,7 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         """
         self.parent = parent
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         ipub = self.indicia_publisher
         if ipub is None:
             ipub = IndiciaPublisher()
@@ -1954,9 +2042,6 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         ipub.country = self.country
         ipub.parent = self.parent
         self._assign_base_fields(ipub)
-
-        if clear_reservation:
-            ipub.reserved = False
 
         ipub.save()
         if self.indicia_publisher is None:
@@ -2073,7 +2158,7 @@ class BrandGroupRevision(PublisherRevisionBase):
         """
         self.parent = parent
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         brand_group = self.brand_group
         # TODO global stats for brand groups ?
         if brand_group is None:
@@ -2089,9 +2174,6 @@ class BrandGroupRevision(PublisherRevisionBase):
 
         brand_group.parent = self.parent
         self._assign_base_fields(brand_group)
-
-        if clear_reservation:
-            brand_group.reserved = False
 
         brand_group.save()
         if self.brand_group is None:
@@ -2221,7 +2303,27 @@ class BrandRevision(PublisherRevisionBase):
             return 0
         return self.brand.issue_count
 
-    def commit_to_display(self, clear_reservation=True):
+
+    def _create_dependent_revisions(self, delete=False):
+        if delete:
+            for brand_use in self.brand.in_use.all():
+                # brand_use can be reserved, so this can fail
+                # TODO check if transaction rollback works
+                brand_use_lock = _get_revision_lock(
+                                brand_use,
+                                changeset=self.changeset)
+                if brand_use_lock is None:
+                    return False
+
+                use_revision = BrandUseRevision.objects.clone_revision(
+                                                changeset=self.changeset,
+                                                brand_use=brand_use)
+                use_revision.deleted = True
+                use_revision.save()
+        return True
+
+
+    def commit_to_display(self):
         brand = self.brand
         if brand is None:
             brand = Brand()
@@ -2234,9 +2336,6 @@ class BrandRevision(PublisherRevisionBase):
 
         brand.parent = self.parent
         self._assign_base_fields(brand)
-
-        if clear_reservation:
-            brand.reserved = False
 
         brand_groups = brand.group.all().values_list('id', flat=True)
         revision_groups = self.group.all().values_list('id', flat=True)
@@ -2418,7 +2517,7 @@ class BrandUseRevision(Revision):
         self.publisher = publisher
         self.emblem = emblem
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         brand_use = self.brand_use
         if brand_use is None:
             brand_use = BrandUse()
@@ -2437,9 +2536,6 @@ class BrandUseRevision(Revision):
         brand_use.year_began_uncertain = self.year_began_uncertain
         brand_use.year_ended_uncertain = self.year_ended_uncertain
         brand_use.notes = self.notes
-
-        if clear_reservation:
-            brand_use.reserved = False
 
         brand_use.save()
         if self.brand_use is None:
@@ -2527,7 +2623,7 @@ class CoverRevision(Revision):
         """
         return 0
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         # the file handling is in the view/covers code
         cover = self.cover
 
@@ -2555,9 +2651,6 @@ class CoverRevision(Revision):
                 series.has_gallery = False
                 series.save()
             return
-
-        if clear_reservation:
-            cover.reserved = False
 
         if self.cover and self.is_replacement is False:
             # this is a move of a cover
@@ -2954,7 +3047,7 @@ class SeriesRevision(Revision):
         """
         self.publisher = publisher
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         series = self.series
         if series is None:
             series = Series(issue_count=0)
@@ -3126,9 +3219,6 @@ class SeriesRevision(Revision):
                                   series.scan_count())
         series.is_comics_publication = self.is_comics_publication
 
-        if clear_reservation:
-            series.reserved = False
-
         series.save()
         save_keywords(self, series)
         series.save()
@@ -3269,7 +3359,7 @@ class SeriesBondRevision(Revision):
     def _queue_name(self):
         return u'%s continues at %s' % (self.origin, self.target)
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         series_bond = self.series_bond
         if self.deleted:
             for revision in series_bond.revisions.all():
@@ -3286,9 +3376,6 @@ class SeriesBondRevision(Revision):
         series_bond.target_issue = self.target_issue
         series_bond.notes = self.notes
         series_bond.bond_type = self.bond_type
-
-        if clear_reservation:
-            series_bond.reserved = False
 
         series_bond.save()
         if self.series_bond is None:
@@ -3583,7 +3670,7 @@ class IssueRevision(Revision):
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.issue with a story/issue
     #    in the current direction under consideration
-    # 2) existing reprints which are reserved and which link self.issue
+    # 2) existing reprints which are locked and which link self.issue
     #    with a story/issue in the current direction under consideration
     # if this is the case we return reprintrevisions and not reprint links
     # returned reprint links are three cases:
@@ -3605,10 +3692,13 @@ class IssueRevision(Revision):
     def from_reprints_oi(self, preview=False):
         if self.issue is None:
             return ReprintToIssue.objects.none()
-        elif self.issue.target_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .filter(origin_issue=None).count() \
-                or self.issue.from_reprints.filter(reserved=True).count():
+        from_reprints = self.issue.from_reprints.all()
+        if self.issue.target_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .filter(origin_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=from_reprints.values_list(
+                                              'id', flat=True)).exists():
             new_revisions = self.issue.target_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .filter(origin_issue=None)
@@ -3620,13 +3710,13 @@ class IssueRevision(Revision):
                         .filter(origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.issue.from_reprints.all()
+            existing_reprints = from_reprints
             old_revisions = self.old_revisions_base()\
                                 .filter(reprint_to_issue__in=existing_reprints,
                                         next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.issue.from_reprints.all()
+            return from_reprints
 
     @property
     def from_reprints(self):
@@ -3635,11 +3725,13 @@ class IssueRevision(Revision):
     def from_issue_reprints_oi(self, preview=False):
         if self.issue is None:
             return IssueReprint.objects.none()
-        elif self.issue.target_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .exclude(origin_issue=None).count() \
-                or self.issue.from_issue_reprints\
-                       .filter(reserved=True).count():
+        from_issue_reprints = self.issue.from_issue_reprints.all()
+        if self.issue.target_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .exclude(origin_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=from_issue_reprints.values_list(
+                                                    'id', flat=True)).exists():
             new_revisions = self.issue.target_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .exclude(origin_issue=None)
@@ -3651,13 +3743,13 @@ class IssueRevision(Revision):
                         .exclude(origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.issue.from_issue_reprints.all()
+            existing_reprints = from_issue_reprints
             old_revisions = self.old_revisions_base()\
                                 .filter(issue_reprint__in=existing_reprints,
                                         next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.issue.from_issue_reprints.all()
+            return from_issue_reprints
 
     @property
     def from_issue_reprints(self):
@@ -3666,10 +3758,13 @@ class IssueRevision(Revision):
     def to_reprints_oi(self, preview=False):
         if self.issue is None:
             return ReprintFromIssue.objects.none()
-        elif self.issue.origin_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .filter(target_issue=None).count() \
-                or self.issue.to_reprints.filter(reserved=True).count():
+        to_reprints = self.issue.to_reprints.all()
+        if self.issue.origin_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .filter(target_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=to_reprints.values_list(
+                                            'id', flat=True)).exists():
             new_revisions = self.issue.origin_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .filter(target_issue=None)
@@ -3681,14 +3776,14 @@ class IssueRevision(Revision):
                         .filter(target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.issue.to_reprints.all()
+            existing_reprints = to_reprints
             old_revisions = \
                 self.old_revisions_base()\
                     .filter(reprint_from_issue__in=existing_reprints,
                             next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.issue.to_reprints.all()
+            return to_reprints
 
     @property
     def to_reprints(self):
@@ -3697,10 +3792,13 @@ class IssueRevision(Revision):
     def to_issue_reprints_oi(self, preview=False):
         if self.issue is None:
             return IssueReprint.objects.none()
-        elif self.issue.origin_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .exclude(target_issue=None).count() \
-                or self.issue.to_issue_reprints.filter(reserved=True).count():
+        to_issue_reprints = self.issue.to_issue_reprints.all()
+        if self.issue.origin_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .exclude(target_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=to_issue_reprints.values_list(
+                                                  'id', flat=True)).exists():
             new_revisions = self.issue.origin_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .exclude(target_issue=None)
@@ -3712,13 +3810,13 @@ class IssueRevision(Revision):
                         .exclude(target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.issue.to_issue_reprints.all()
+            existing_reprints = to_issue_reprints
             old_revisions = self.old_revisions_base()\
                                 .filter(issue_reprint__in=existing_reprints,
                                         next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.issue.to_issue_reprints.all()
+            return to_issue_reprints
 
     @property
     def to_issue_reprints(self):
@@ -3740,20 +3838,21 @@ class IssueRevision(Revision):
         elif self.issue.origin_reprint_revisions\
                  .filter(changeset__id=self.changeset_id).count():
             return True
+        # TODO: before there was the reserved=True here in the filter, why ?
         if self.issue.to_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.issue.from_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.issue.to_issue_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.issue.from_issue_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.changeset.state == states.APPROVED:
@@ -4003,6 +4102,33 @@ class IssueRevision(Revision):
         if variant_of:
             self.variant_of = variant_of
 
+    def _create_dependent_revisions(self, delete=False):
+        for story in self.issue.active_stories():
+            # currently stories cannot be reserved without the issue, but
+            # check anyway
+            # TODO check if transaction rollback works
+            story_lock = _get_revision_lock(story, changeset=self.changeset)
+            if story_lock is None:
+                raise IntegrityError("needed Story lock not possible")
+            story_revision = StoryRevision.objects.clone_revision(
+              story=story, changeset=self.changeset)
+            if delete:
+                story_revision.toggle_deleted()
+        if delete:
+            for cover in self.issue.active_covers():
+                # cover can be reserved, so this can fail
+                # TODO check if transaction rollback works
+                cover_lock = _get_revision_lock(cover,
+                                                changeset=self.changeset)
+                if cover_lock is None:
+                    raise IntegrityError("needed Cover lock not possible")
+                # TODO change CoverRevision handling to normal one
+                cover_revision = CoverRevision(changeset=self.changeset,
+                                               issue=cover.issue,
+                                               cover=cover, deleted=True)
+                cover_revision.save()
+        return True
+
     def _post_commit_to_display(self):
         if self.changeset.changeset_action() == ACTION_MODIFY and \
            self.issue.is_indexed != INDEXED['skeleton']:
@@ -4024,7 +4150,7 @@ class IssueRevision(Revision):
             return stories.order_by('-sequence_number')[0].sequence_number + 1
         return 0
 
-    def commit_to_display(self, clear_reservation=True, space_count=1):
+    def commit_to_display(self, space_count=1):
         issue = self.issue
         check_series_order = None
 
@@ -4278,9 +4404,6 @@ class IssueRevision(Revision):
             self.rating = issue.rating
             self.no_rating = issue.no_rating
             self.save()
-
-        if clear_reservation:
-            issue.reserved = False
 
         issue.save()
         save_keywords(self, issue)
@@ -4642,7 +4765,7 @@ class StoryRevision(Revision):
             self.sequence_number = self.story.sequence_number
             self.save()
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         story = self.story
         if story is None:
             story = Story()
@@ -4707,9 +4830,6 @@ class StoryRevision(Revision):
         story.job_number = self.job_number
         story.sequence_number = self.sequence_number
 
-        if clear_reservation:
-            story.reserved = False
-
         story.save()
         save_keywords(self, story)
         story.save()
@@ -4734,7 +4854,7 @@ class StoryRevision(Revision):
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue
     #    in the current direction under consideration
-    # 2) existing reprints which are reserved and which link self.story
+    # 2) existing reprints which are locked and which link self.story
     #    with a story/issue in the current direction under consideration
     # if this is the case we return reprintrevisions and not reprint links
     # returned reprint links are three cases:
@@ -4762,10 +4882,13 @@ class StoryRevision(Revision):
             return self.target_reprint_revisions\
                        .filter(changeset__id=self.changeset_id,
                                origin_issue=None)
-        elif self.story.target_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .filter(origin_issue=None).count() \
-                or self.story.from_reprints.filter(reserved=True).count():
+        from_reprints = self.story.from_reprints.all()
+        if self.story.target_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .filter(origin_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=from_reprints.values_list(
+                                              'id', flat=True)).exists():
             new_revisions = self.story.target_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .filter(origin_issue=None)
@@ -4777,13 +4900,13 @@ class StoryRevision(Revision):
                         .filter(origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.story.from_reprints.all()
+            existing_reprints = from_reprints
             old_revisions = self.old_revisions_base()\
                                 .filter(reprint__in=existing_reprints,
                                         next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.story.from_reprints.all()
+            return from_reprints
 
     @property
     def from_reprints(self):
@@ -4794,11 +4917,13 @@ class StoryRevision(Revision):
             return self.target_reprint_revisions\
                        .filter(changeset__id=self.changeset_id)\
                        .exclude(origin_issue=None)
-        elif self.story.target_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .exclude(origin_issue=None).count() \
-                or self.story.from_issue_reprints\
-                       .filter(reserved=True).count():
+        from_issue_reprints = self.story.from_issue_reprints.all()
+        if self.story.target_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .exclude(origin_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=from_issue_reprints.values_list(
+                                                    'id', flat=True)).exists():
             new_revisions = self.story.target_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .exclude(origin_issue=None)
@@ -4810,14 +4935,14 @@ class StoryRevision(Revision):
                         .exclude(origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.story.from_issue_reprints.all()
+            existing_reprints = from_issue_reprints
             old_revisions = \
                 self.old_revisions_base()\
                     .filter(reprint_from_issue__in=existing_reprints,
                             next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.story.from_issue_reprints.all()
+            return from_issue_reprints
 
     @property
     def from_issue_reprints(self):
@@ -4828,10 +4953,14 @@ class StoryRevision(Revision):
             return self.origin_reprint_revisions\
                        .filter(changeset__id=self.changeset_id,
                                target_issue=None)
-        elif self.story.origin_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .filter(target_issue=None).count() \
-                or self.story.to_reprints.filter(reserved=True).count():
+
+        to_reprints = self.story.to_reprints.all()
+        if self.story.origin_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .filter(target_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=to_reprints.values_list(
+                                            'id', flat=True)).exists():
             new_revisions = self.story.origin_reprint_revisions\
                                 .filter(changeset__id=self.changeset_id)\
                                 .filter(target_issue=None)
@@ -4843,13 +4972,13 @@ class StoryRevision(Revision):
                         .filter(target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.story.to_reprints.all()
+            existing_reprints = to_reprints
             old_revisions = \
                 self.old_revisions_base()\
                     .filter(reprint__in=existing_reprints, next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.story.to_reprints.all()
+            return to_reprints
 
     @property
     def to_reprints(self):
@@ -4860,10 +4989,13 @@ class StoryRevision(Revision):
             return self.origin_reprint_revisions\
                        .filter(changeset__id=self.changeset_id)\
                        .exclude(target_issue=None)
-        elif self.story.origin_reprint_revisions\
-                 .filter(changeset__state__in=states.ACTIVE)\
-                 .exclude(target_issue=None).count() \
-                or self.story.to_issue_reprints.filter(reserved=True).count():
+        to_issue_reprints = self.story.to_issue_reprints.all()
+        if self.story.origin_reprint_revisions\
+               .filter(changeset__state__in=states.ACTIVE)\
+               .exclude(target_issue=None).count() \
+                or RevisionLock.objects.filter(
+                  object_id__in=to_issue_reprints.values_list(
+                                                  'id', flat=True)).exists():
             new_revisions = \
                 self.story.origin_reprint_revisions\
                     .filter(changeset__id=self.changeset_id)\
@@ -4876,14 +5008,14 @@ class StoryRevision(Revision):
                         .exclude(target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = self.story.to_issue_reprints.all()
+            existing_reprints = to_issue_reprints
             old_revisions = \
                 self.old_revisions_base()\
                     .filter(reprint_to_issue__in=existing_reprints,
                             next_revision=None)
             return new_revisions | old_revisions
         else:
-            return self.story.to_issue_reprints.all()
+            return to_issue_reprints
 
     @property
     def to_issue_reprints(self):
@@ -4911,20 +5043,21 @@ class StoryRevision(Revision):
         if self.story.origin_reprint_revisions\
                .filter(changeset__id=self.changeset_id).count():
             return True
+        # TODO: before there was the reserved=True here in the filter, why ?
         if self.story.to_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.story.from_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.story.to_issue_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         if self.story.from_issue_reprints\
-               .filter(reserved=True, revisions__changeset=self.changeset)\
+               .filter(revisions__changeset=self.changeset)\
                .count():
             return True
         return False
@@ -5229,7 +5362,7 @@ class ReprintRevision(Revision):
             return 1
         return 0
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         if self.deleted:
             deleted_link = self.source
             field_name = REPRINT_FIELD[self.in_type] + '_id'
@@ -5320,11 +5453,6 @@ class ReprintRevision(Revision):
                 self.issue_reprint.target_issue = self.target_issue
                 self.issue_reprint.notes = self.notes
                 self.issue_reprint.save()
-
-        if clear_reservation and self.source:
-            reprint = self.source
-            reprint.reserved = False
-            reprint.save()
 
         self.save()
 
@@ -5528,7 +5656,7 @@ class ImageRevision(Revision):
         """
         return 0
 
-    def commit_to_display(self, clear_reservation=True):
+    def commit_to_display(self):
         image = self.image
         if self.is_replacement:
             prev_rev = self.previous()
@@ -5564,9 +5692,6 @@ class ImageRevision(Revision):
         self.image_file.delete()
         self.image = image
         self.save()
-        if clear_reservation:
-            image.reserved = False
-            image.save()
 
     def __unicode__(self):
         if self.source is None:
@@ -5742,41 +5867,27 @@ class CreatorRevisionManager(RevisionManager):
 
         revision.save()
 
-        name_details = creator.active_names()
-        for name_detail in name_details:
-            creator_other_name = CreatorNameDetailRevision.objects\
-                                 .clone_revision(name_detail,
-                                                 changeset,
-                                                 revision)
-        # need a second loop, since otherwise all the needed
-        # CreatorNameDetailRevision do not exist
-        for name_detail in name_details:
-            name_relation_details = name_detail.to_name.all()
-            for name_relation in name_relation_details:
-                NameRelationRevision.objects.clone_revision(name_relation,
-                                                            changeset=changeset)
+        #name_details = creator.active_names()
+        #for name_detail in name_details:
+            #creator_other_name = CreatorNameDetailRevision.objects\
+                                 #.clone_revision(name_detail,
+                                                 #changeset,
+                                                 #revision)
+        ## need a second loop, since otherwise all the needed
+        ## CreatorNameDetailRevision do not exist
+        #for name_detail in name_details:
+            #name_relation_details = name_detail.to_name.all()
+            #for name_relation in name_relation_details:
+                #NameRelationRevision.objects.clone_revision(name_relation,
+                                                            #changeset=changeset)
 
-        # TODO should this be done here, or in oi/views.py, add active_*
-        data_sources = creator.data_source.all()
-        for data_source in data_sources:
-            CreatorDataSourceRevision.objects.clone_revision(
-                                              data_source,
-                                              changeset=changeset,
-                                              sourced_revision=revision)
-
-        ## TODO check if this is working, add active_*
-        #school_list = [schools.school for schools in
-                       #creator.creator_school.all()]
-        #for school in creator.creator_school.all():
-            #CreatorSchoolDetailRevision.objects.clone_revision(school,
-                                                               #changeset=changeset)
-
-        ## TODO check if this is working, add active_*
-        #degree_list = [degrees.degree for degrees in
-                       #creator.creator_degree.all()]
-        #for degree in creator.creator_degree.all():
-            #CreatorDegreeDetailRevision.objects.clone_revision(degree,
-                                                               #changeset=changeset)
+        ## TODO should this be done here, or in oi/views.py, add active_*
+        #data_sources = creator.data_source.all()
+        #for data_source in data_sources:
+            #CreatorDataSourceRevision.objects.clone_revision(
+                                              #data_source,
+                                              #changeset=changeset,
+                                              #sourced_revision=revision)
 
         return revision
 
@@ -5802,30 +5913,21 @@ class CreatorRevision(Revision):
                                       related_name='cr_birth_country',
                                       null=True, blank=True)
     birth_country_uncertain = models.BooleanField(default=False)
-    birth_province = models.CharField(max_length=50, null=True, blank=True)
+    birth_province = models.CharField(max_length=50, blank=True)
     birth_province_uncertain = models.BooleanField(default=False)
-    birth_city = models.CharField(max_length=200, null=True, blank=True)
+    birth_city = models.CharField(max_length=200, blank=True)
     birth_city_uncertain = models.BooleanField(default=False)
 
     death_country = models.ForeignKey('stddata.Country',
                                       related_name='cr_death_country',
                                       null=True, blank=True)
     death_country_uncertain = models.BooleanField(default=False)
-    death_province = models.CharField(max_length=50, null=True, blank=True)
+    death_province = models.CharField(max_length=50, blank=True)
     death_province_uncertain = models.BooleanField(default=False)
-    death_city = models.CharField(max_length=200, null=True, blank=True)
+    death_city = models.CharField(max_length=200, blank=True)
     death_city_uncertain = models.BooleanField(default=False)
 
     whos_who = models.URLField(null=True, blank=True)
-    #schools = models.ManyToManyField('gcd.School',
-                                     #related_name='cr_schoolinformation',
-                                     #through='CreatorSchoolDetailRevision',
-                                     #null=True, blank=True)
-    #degrees = models.ManyToManyField('gcd.Degree',
-                                     #related_name='cr_degreeinformation',
-                                     #through='CreatorDegreeDetailRevision',
-                                     #null=True,
-                                     #blank=True)
     bio = models.TextField(blank=True, null=True)
 
     data_source = models.ManyToManyField(CreatorDataSourceRevision,
@@ -5931,6 +6033,99 @@ class CreatorRevision(Revision):
         elif field_name in self._field_list():
             return 1
         return 0
+
+    def _create_dependent_revisions(self, delete=False):
+        name_details = self.creator.active_names()
+        for name_detail in name_details:
+            name_lock = _get_revision_lock(name_detail,
+                                           changeset=self.changeset)
+            if name_lock is None:
+                raise IntegrityError("needed Name lock not possible")
+            creator_name = CreatorNameDetailRevision.objects\
+                           .clone_revision(name_detail, self.changeset, self)
+            if delete:
+                creator_name.deleted = True
+                creator_name.save()
+
+        # need a second loop, since otherwise all the needed
+        # CreatorNameDetailRevision do not exist
+        for name_detail in name_details:
+            name_relation_details = name_detail.to_name.all()
+            for name_relation in name_relation_details:
+                name_relation_lock = _get_revision_lock(name_relation,
+                                     changeset=self.changeset)
+                if name_relation_lock is None:
+                    raise IntegrityError("needed NameRelation lock not possible")
+                name_relation = NameRelationRevision.objects.clone_revision(
+                                                     name_relation,
+                                                     changeset=self.changeset)
+                if delete:
+                    name_relation.deleted = True
+                    name_relation.save()
+
+        data_sources = self.creator.data_source.all()
+        for data_source in data_sources:
+            data_source_lock = _get_revision_lock(data_source,
+                                                  changeset=self.changeset)
+            if data_source_lock is None:
+                raise IntegrityError("needed DataSource lock not possible")
+            data_source = CreatorDataSourceRevision.objects.clone_revision(
+                                                    data_source,
+                                                    changeset=self.changeset,
+                                                    sourced_revision=self)
+            if delete:
+                data_source.deleted = True
+                data_source.save()
+            
+        if delete:
+            for creatormembership in self.creator.active_memberships():
+                membership_lock = _get_revision_lock(creatormembership,
+                                                     changeset=self.changeset)
+                if membership_lock is None:
+                    raise IntegrityError("needed Membership lock not possible")
+                creator_membership_revison = \
+                CreatorMembershipRevision.objects.clone_revision(
+                    creatormembership=creatormembership, changeset=self.changeset)
+                creator_membership_revison.deleted = True
+                creator_membership_revison.save()
+
+            for creatoraward in self.creator.active_awards():
+                award_lock = _get_revision_lock(creatoraward,
+                                                changeset=self.changeset)
+                if award_lock is None:
+                    raise IntegrityError("needed CreatorAward lock not possible")
+                creator_award_revison = \
+                CreatorAwardRevision.objects.clone_revision(
+                    creatoraward=creatoraward, changeset=self.changeset)
+                creator_award_revison.deleted = True
+                creator_award_revison.save()
+
+            for creatorartinfluence in self.creator.active_artinfluences():
+                influence_lock = _get_revision_lock(creatorartinfluence,
+                                                    changeset=self.changeset)
+                if influence_lock is None:
+                    raise IntegrityError("needed CreatorArtInfluence lock not"
+                                         " possible")
+                creator_artinfluence_revison = \
+                CreatorArtInfluenceRevision.objects.clone_revision(
+                  creatorartinfluence=creatorartinfluence,
+                  changeset=self.changeset)
+                creator_artinfluence_revison.deleted = True
+                creator_artinfluence_revison.save()
+
+            for creatornoncomicwork in self.creator.active_noncomicworks():
+                noncomicwork_lock = _get_revision_lock(
+                  creatornoncomicwork, changeset=self.changeset)
+                if noncomicwork_lock is None:
+                    raise IntegrityError("needed NonComicWork lock not"
+                                         " possible")
+                creator_noncomicwork_revison = \
+                  CreatorNonComicWorkRevision.objects.clone_revision(
+                    creatornoncomicwork=creatornoncomicwork,
+                    changeset=self.changeset)
+                creator_noncomicwork_revison.deleted = True
+                creator_noncomicwork_revison.save()
+        return True
 
     def commit_to_display(self, clear_reservation=True):
 
@@ -6594,9 +6789,6 @@ class CreatorMembershipRevision(Revision):
     membership_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
-    def __unicode__(self):
-        return u'%s' % (unicode(self.organization_name))
-
     _base_field_list = ['organization_name',
                         'membership_type',
                         'membership_year_began',
@@ -6620,10 +6812,10 @@ class CreatorMembershipRevision(Revision):
         return {
             'organization_name': '',
             'membership_type': None,
-            'membership_year_began': '',
-            'membership_year_began_uncertain': '',
+            'membership_year_began': None,
+            'membership_year_began_uncertain': False,
             'membership_year_ended': None,
-            'membership_year_ended_uncertain': '',
+            'membership_year_ended_uncertain': False,
             'notes': '',
         }
 
@@ -6685,12 +6877,16 @@ class CreatorMembershipRevision(Revision):
             return "/creator_membership/revision/%i/preview" % self.id
         return self.creator_membership.get_absolute_url()
 
+    def __unicode__(self):
+        return u'%s: %s' % (self.creator, unicode(self.organization_name))
+
 
 class CreatorAwardRevisionManager(RevisionManager):
     def _base_field_kwargs(self, instance):
         return {
             'award': instance.award,
             'award_name': instance.award_name,
+            'no_award_name': instance.no_award_name,
             'award_year': instance.award_year,
             'award_year_uncertain': instance.award_year_uncertain,
             'notes': instance.notes,            
@@ -6746,7 +6942,8 @@ class CreatorAwardRevision(Revision):
     creator = models.ForeignKey('gcd.Creator',
                                 related_name='award_revisions')
     award = models.ForeignKey(AwardType, null=True, blank=True)
-    award_name = models.CharField(max_length=255)
+    award_name = models.CharField(max_length=255, blank=True)
+    no_award_name = models.BooleanField(default=False)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
@@ -6763,6 +6960,7 @@ class CreatorAwardRevision(Revision):
 
     _base_field_list = ['award',
                         'award_name',
+                        'no_award_name',
                         'award_year',
                         'award_year_uncertain',
                         'notes',
@@ -6782,8 +6980,9 @@ class CreatorAwardRevision(Revision):
         return {
             'award': '',
             'award_name': '',
-            'award_year': '',
-            'award_year_uncertain': '',
+            'no_award_name': False,
+            'award_year': None,
+            'award_year_uncertain': False,
             'notes': '',
         }
 
@@ -6795,12 +6994,18 @@ class CreatorAwardRevision(Revision):
 
     def _start_imp_sum(self):
         self._seen_year = False
+        self._seen_award_name = False
 
     def _imps_for(self, field_name):
         if field_name in ('award_year',
                           'award_year_uncertain'):
             if not self._seen_year:
                 self._seen_year = True
+                return 1
+        elif field_name in ('award_name',
+                            'no_award_name'):
+            if not self._seen_award_name:
+                self._seen_award_name = True
                 return 1
         elif field_name in self._base_field_list:
             return 1
@@ -6975,6 +7180,18 @@ class CreatorArtInfluenceRevision(Revision):
         return self.creator_artinfluence.get_absolute_url()
 
 
+class MultiURLValidator(URLValidator):
+    def __call__(self, value):
+        for url in value.split('\n'):
+            try:
+                super(URLValidator, self).__call__(url.strip())
+            except ValidationError as e:
+                if e.message != 'Enter a valid URL.':
+                    raise
+                else:
+                    raise ValidationError('Enter one or more valid URLs, one per line.')
+
+
 class CreatorNonComicWorkRevisionManager(RevisionManager):
     def _base_field_kwargs(self, instance):
         return {
@@ -6983,12 +7200,13 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
             'employer_name': instance.employer_name,
             'work_title': instance.work_title,
             'work_role': instance.work_role,
+            'work_urls': instance.work_urls,
             'notes': instance.notes,
         }
 
     def clone_revision(self, creator_noncomicwork, changeset):
         """
-        Given an existing CreatorDegreeDetail instance, create a new revision
+        Given an existing CreatorNonComicWork instance, create a new revision
         based on it.
 
         This new revision will be where the replacement is stored.
@@ -7012,27 +7230,14 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
                 **kwargs
         )
 
+        revision.work_years = creator_noncomicwork.display_years()
         revision.save()
-
-
-        # TODO check if this is working, add active_*
-        noncomicworkyears = creator_noncomicwork.noncomicworkyears.all()
-        for noncomicworkyear in noncomicworkyears:
-            NonComicWorkYearRevision.objects.clone_revision(noncomicworkyear,
-              changeset=changeset, creator_noncomicwork_revision=revision)
-
-        # TODO check if this is working, add active_*
-        noncomicworklinks = creator_noncomicwork.noncomicworklinks.all()
-        for noncomicworklink in noncomicworklinks:
-            NonComicWorkLinkRevision.objects.clone_revision(noncomicworklink,
-              changeset=changeset, creator_noncomicwork_revision=revision)
         return revision
-
 
 
 class CreatorNonComicWorkRevision(Revision):
     """
-    record the art influences of creator
+    record the non comic work of creator
     """
 
     class Meta:
@@ -7051,22 +7256,23 @@ class CreatorNonComicWorkRevision(Revision):
                                   blank=True,
                                   related_name='cr_worktype')
     publication_title = models.CharField(max_length=200)
-    employer_name = models.CharField(max_length=200, null=True, blank=True)
-    work_title = models.CharField(max_length=255, blank=True, null=True)
+    employer_name = models.CharField(max_length=200, blank=True)
+    work_title = models.CharField(max_length=255, blank=True)
     work_role = models.ForeignKey('gcd.NonComicWorkRole',
                                   null=True,
                                   blank=True,
                                   related_name='cr_workrole')
+    work_years = models.TextField(blank=True)
+    work_urls = models.TextField(blank=True, validators=[MultiURLValidator()])
     notes = models.TextField(blank=True)
-
-    def __unicode__(self):
-        return u'%s' % (unicode(self.publication_title))
 
     _base_field_list = ['work_type',
                         'publication_title',
                         'employer_name',
                         'work_title',
                         'work_role',
+                        'work_years',
+                        'work_urls',
                         'notes',
                         ]
 
@@ -7087,6 +7293,8 @@ class CreatorNonComicWorkRevision(Revision):
             'employer_name': '',
             'work_title': '',
             'work_role': '',
+            'work_years': '',
+            'work_urls': '',
             'notes': '',
         }
 
@@ -7097,6 +7305,8 @@ class CreatorNonComicWorkRevision(Revision):
         return 'creator_noncomicwork'
 
     def _imps_for(self, field_name):
+        if field_name in self._base_field_list:
+            return 1
         return 0
 
     def commit_to_display(self, clear_reservation=True):
@@ -7116,6 +7326,7 @@ class CreatorNonComicWorkRevision(Revision):
         ncw.employer_name = self.employer_name
         ncw.work_title = self.work_title
         ncw.work_role = self.work_role
+        ncw.work_urls = self.work_urls
         ncw.notes = self.notes
 
         if clear_reservation:
@@ -7126,195 +7337,258 @@ class CreatorNonComicWorkRevision(Revision):
             self.creator_noncomicwork = ncw
             self.save()
 
+        if self.work_years:
+            existing_years = list(NonComicWorkYear.objects\
+                .filter(non_comic_work=ncw).values_list('id', flat=True))
+            for year in self.work_years.split(';'):
+                range_split = year.split('-')
+                if len(range_split) == 2:
+                    year_began = _check_year(range_split[0])
+                    year_end = _check_year(range_split[1])
+                    if year_began > year_end:
+                        raise ValueError
+                    years_uncertain = False
+
+                    ncw_year, created = NonComicWorkYear.objects\
+                      .get_or_create(non_comic_work=ncw, work_year=year_began)
+                    if '?' in range_split[0]:
+                        ncw_year.work_year_uncertain = True
+                    else:
+                        ncw_year.work_year_uncertain = False
+                    ncw_year.save()
+                    if not created:
+                        existing_years.remove(ncw_year.id)
+
+                    ncw_year, created = NonComicWorkYear.objects\
+                      .get_or_create(non_comic_work=ncw, work_year=year_end)
+                    if '?' in range_split[1]:
+                        ncw_year.work_year_uncertain = True
+                        if '?' in range_split[0]:
+                            years_uncertain = True
+                    else:
+                        ncw_year.work_year_uncertain = False
+                    ncw_year.save()
+                    if not created:
+                        existing_years.remove(ncw_year.id)
+
+                    for i in range(year_began+1, year_end):
+                        ncw_year, created = NonComicWorkYear.objects\
+                          .get_or_create(non_comic_work=ncw, work_year=i)
+                        ncw_year.work_year_uncertain = years_uncertain
+                        ncw_year.save()
+                        if not created:
+                            existing_years.remove(ncw_year.id)
+                else:
+                    year_number = _check_year(year)
+                    ncw_year, created = NonComicWorkYear.objects\
+                          .get_or_create(non_comic_work=ncw,
+                                         work_year=year_number)
+                    if '?' in year:
+                        ncw_year.work_year_uncertain = True
+                    else:
+                        ncw_year.work_year_uncertain = False
+                    ncw_year.save()
+                    if not created:
+                        existing_years.remove(ncw_year.id)
+            # remove years which are not present in value anymore
+            for i in existing_years:
+                ncw_year = NonComicWorkYear.objects.get(id=i)
+                ncw_year.delete()
+
+
     def get_absolute_url(self):
         if self.creator_noncomicwork is None:
             return "/creator_noncomicwork/revision/%i/preview" % self.id
         return self.creator_noncomicwork.get_absolute_url()
 
-
-class NonComicWorkYearRevisionManager(RevisionManager):
-    def clone_revision(self, creator_noncomicworkyear, changeset, 
-                       creator_noncomicwork_revision):
-        """
-        Given an existing CreatorDegreeDetail instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_noncomicworkyear,
-                                              instance_class=NonComicWorkYear,
-                                              changeset=changeset,
-                                              creator_noncomicwork_revision=\
-                                                creator_noncomicwork_revision)
-
-    def _do_create_revision(self, creator_noncomicworkyear, changeset, 
-                            creator_noncomicwork_revision, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = NonComicWorkYearRevision(
-                # revision-specific fields:
-                creator_noncomicworkyear=creator_noncomicworkyear,
-                changeset=changeset,
-                # copied fields:
-                non_comic_work=creator_noncomicwork_revision,
-                work_year=creator_noncomicworkyear.work_year,
-                work_year_uncertain=creator_noncomicworkyear.work_year_uncertain
-        )
-
-        revision.save()
-        return revision
-
-
-class NonComicWorkYearRevision(Revision):
-    """
-    record the year of the work
-    There may be multiple years recorded
-    """
-
-    class Meta:
-        db_table = 'oi_non_comic_work_year_revision'
-        ordering = ['created', '-id']
-        verbose_name_plural = 'NonComic Work Year Revisions'
-
-    objects = NonComicWorkYearRevisionManager()
-    creator_noncomicworkyear = models.ForeignKey('gcd.NonComicWorkYear',
-                                             null=True,
-                                             related_name='revisions')
-    non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
-                                       related_name='cr_noncomicworkyears')
-    work_year = models.PositiveSmallIntegerField(null=True, blank=True)
-    work_year_uncertain = models.BooleanField(default=False)
-
-    def field_list(self):
-        return ['work_year', 'work_year_uncertain']
-
-    def _get_blank_values(self):
-        return {
-            'work_year': None,
-            'work_year_uncertain': False,
-        }
-
-    def _get_source(self):
-        return self.creator_noncomicworkyear
-
-    def _get_source_name(self):
-        return 'creator_noncomicworkyear'
-
-    def _imps_for(self, field_name):
-        return 0
-
-    def commit_to_display(self):
-        creator_noncomicworkyear = self.creator_noncomicworkyear
-        if creator_noncomicworkyear is None:
-            creator_noncomicworkyear = NonComicWorkYear()
-        elif self.deleted:
-            creator_noncomicworkyear.delete()
-            return
-
-        creator_noncomicworkyear.non_comic_work = \
-          self.non_comic_work.creator_noncomicwork
-        creator_noncomicworkyear.work_year = self.work_year
-        creator_noncomicworkyear.work_year_uncertain = self.work_year_uncertain
-        creator_noncomicworkyear.save()
-
-        if self.creator_noncomicworkyear is None:
-            self.creator_noncomicworkyear = creator_noncomicworkyear
-            self.save()
-
-
     def __unicode__(self):
-        return u'%s - %s' % (
-            unicode(self.non_comic_work.publication_title), unicode(self.work_year))
+        return u'%s: %s' % (unicode(self.creator),
+                            unicode(self.publication_title))
 
 
-class NonComicWorkLinkRevisionManager(RevisionManager):
-    def clone_revision(self, creatornoncomicworklink, changeset,
-                       creator_noncomicwork_revision):
-        """
-        Given an existing CreatorDegreeDetail instance, create a new revision
-        based on it.
+#class NonComicWorkYearRevisionManager(RevisionManager):
+    #def clone_revision(self, creator_noncomicworkyear, changeset, 
+                       #creator_noncomicwork_revision):
+        #"""
+        #Given an existing CreatorDegreeDetail instance, create a new revision
+        #based on it.
 
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_noncomicworklink,
-                                              instance_class=NonComicWorkLink,
-                                              changeset=changeset,
-                                              creator_noncomicwork_revision=\
-                                                creator_noncomicwork_revision)
+        #This new revision will be where the replacement is stored.
+        #"""
+        #return RevisionManager.clone_revision(self,
+                                              #instance=creator_noncomicworkyear,
+                                              #instance_class=NonComicWorkYear,
+                                              #changeset=changeset,
+                                              #creator_noncomicwork_revision=\
+                                                #creator_noncomicwork_revision)
 
-    def _do_create_revision(self, creator_noncomicworklink, changeset,
-                            creator_noncomicwork_revision, **ignore):
+    #def _do_create_revision(self, creator_noncomicworkyear, changeset, 
+                            #creator_noncomicwork_revision, **ignore):
+        #"""
+        #Helper delegate to do the class-specific work of clone_revision.
+        #"""
+        #revision = NonComicWorkYearRevision(
+                ## revision-specific fields:
+                #creator_noncomicworkyear=creator_noncomicworkyear,
+                #changeset=changeset,
+                ## copied fields:
+                #non_comic_work=creator_noncomicwork_revision,
+                #work_year=creator_noncomicworkyear.work_year,
+                #work_year_uncertain=creator_noncomicworkyear.work_year_uncertain
+        #)
 
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = NonComicWorkLinkRevision(
-                # revision-specific fields:
-                creator_noncomicworklink=creator_noncomicworklink,
-                changeset=changeset,
-                # copied fields:
-                non_comic_work=creator_noncomicwork_revision,
-                link=creator_noncomicworklink.link
-        )
-        revision.save()
-        return revision
+        #revision.save()
+        #return revision
 
 
-class NonComicWorkLinkRevision(Revision):
-    """
-    record a link to either the work or more information about the work
-    """
+#class NonComicWorkYearRevision(Revision):
+    #"""
+    #record the year of the work
+    #There may be multiple years recorded
+    #"""
 
-    class Meta:
-        db_table = 'oi_non_comic_work_link_revision'
-        ordering = ['created', '-id']
-        verbose_name_plural = 'NonComic Work Link Revisions'
+    #class Meta:
+        #db_table = 'oi_non_comic_work_year_revision'
+        #ordering = ['created', '-id']
+        #verbose_name_plural = 'NonComic Work Year Revisions'
 
-    objects = NonComicWorkLinkRevisionManager()
-    creator_noncomicworklink = models.ForeignKey('gcd.NonComicWorkLink',
-                                                 null=True,
-                                                 related_name='revisions')
-    non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
-                                       related_name='cr_noncomicworklinks')
-    link = models.URLField(max_length=255)
+    #objects = NonComicWorkYearRevisionManager()
+    #creator_noncomicworkyear = models.ForeignKey('gcd.NonComicWorkYear',
+                                             #null=True,
+                                             #related_name='revisions')
+    #non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
+                                       #related_name='cr_noncomicworkyears')
+    #work_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    #work_year_uncertain = models.BooleanField(default=False)
 
-    def field_list(self):
-        return ['link']
+    #def field_list(self):
+        #return ['work_year', 'work_year_uncertain']
 
-    def _get_blank_values(self):
-        return {
-            'link': '',
-        }
+    #def _get_blank_values(self):
+        #return {
+            #'work_year': None,
+            #'work_year_uncertain': False,
+        #}
 
-    def _get_source(self):
-        return self.creator_noncomicworklink
+    #def _get_source(self):
+        #return self.creator_noncomicworkyear
 
-    def _get_source_name(self):
-        return 'creator_noncomicworklink'
+    #def _get_source_name(self):
+        #return 'creator_noncomicworkyear'
 
-    def _imps_for(self, field_name):
-        return 0
+    #def _imps_for(self, field_name):
+        #return 0
 
-    def commit_to_display(self):
-        creator_noncomicworklink = self.creator_noncomicworklink
-        if creator_noncomicworklink is None:
-            creator_noncomicworklink = NonComicWorkLink()
-        elif self.deleted:
-            creator_noncomicworklink.delete()
-            return
+    #def commit_to_display(self):
+        #creator_noncomicworkyear = self.creator_noncomicworkyear
+        #if creator_noncomicworkyear is None:
+            #creator_noncomicworkyear = NonComicWorkYear()
+        #elif self.deleted:
+            #creator_noncomicworkyear.delete()
+            #return
 
-        creator_noncomicworklink.non_comic_work = \
-          self.non_comic_work.creator_non_comic_work
-        creator_noncomicworklink.link = self.link
-        creator_noncomicworkyear.save()
+        #creator_noncomicworkyear.non_comic_work = \
+          #self.non_comic_work.creator_noncomicwork
+        #creator_noncomicworkyear.work_year = self.work_year
+        #creator_noncomicworkyear.work_year_uncertain = self.work_year_uncertain
+        #creator_noncomicworkyear.save()
 
-        if self.creator_noncomicworklink is None:
-            self.creator_noncomicworklink = creator_noncomicworklink
-            self.save()
+        #if self.creator_noncomicworkyear is None:
+            #self.creator_noncomicworkyear = creator_noncomicworkyear
+            #self.save()
 
-    def __unicode__(self):
-        return u'%s - %s' % (
-            unicode(self.non_comic_work.publication_title), unicode(self.link))
+
+    #def __unicode__(self):
+        #return u'%s - %s' % (
+            #unicode(self.non_comic_work.publication_title), unicode(self.work_year))
+
+
+#class NonComicWorkLinkRevisionManager(RevisionManager):
+    #def clone_revision(self, creatornoncomicworklink, changeset,
+                       #creator_noncomicwork_revision):
+        #"""
+        #Given an existing CreatorDegreeDetail instance, create a new revision
+        #based on it.
+
+        #This new revision will be where the replacement is stored.
+        #"""
+        #return RevisionManager.clone_revision(self,
+                                              #instance=creator_noncomicworklink,
+                                              #instance_class=NonComicWorkLink,
+                                              #changeset=changeset,
+                                              #creator_noncomicwork_revision=\
+                                                #creator_noncomicwork_revision)
+
+    #def _do_create_revision(self, creator_noncomicworklink, changeset,
+                            #creator_noncomicwork_revision, **ignore):
+
+        #"""
+        #Helper delegate to do the class-specific work of clone_revision.
+        #"""
+        #revision = NonComicWorkLinkRevision(
+                ## revision-specific fields:
+                #creator_noncomicworklink=creator_noncomicworklink,
+                #changeset=changeset,
+                ## copied fields:
+                #non_comic_work=creator_noncomicwork_revision,
+                #link=creator_noncomicworklink.link
+        #)
+        #revision.save()
+        #return revision
+
+
+#class NonComicWorkLinkRevision(Revision):
+    #"""
+    #record a link to either the work or more information about the work
+    #"""
+
+    #class Meta:
+        #db_table = 'oi_non_comic_work_link_revision'
+        #ordering = ['created', '-id']
+        #verbose_name_plural = 'NonComic Work Link Revisions'
+
+    #objects = NonComicWorkLinkRevisionManager()
+    #creator_noncomicworklink = models.ForeignKey('gcd.NonComicWorkLink',
+                                                 #null=True,
+                                                 #related_name='revisions')
+    #non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
+                                       #related_name='cr_noncomicworklinks')
+    #link = models.URLField(max_length=255)
+
+    #def field_list(self):
+        #return ['link']
+
+    #def _get_blank_values(self):
+        #return {
+            #'link': '',
+        #}
+
+    #def _get_source(self):
+        #return self.creator_noncomicworklink
+
+    #def _get_source_name(self):
+        #return 'creator_noncomicworklink'
+
+    #def _imps_for(self, field_name):
+        #return 0
+
+    #def commit_to_display(self):
+        #creator_noncomicworklink = self.creator_noncomicworklink
+        #if creator_noncomicworklink is None:
+            #creator_noncomicworklink = NonComicWorkLink()
+        #elif self.deleted:
+            #creator_noncomicworklink.delete()
+            #return
+
+        #creator_noncomicworklink.non_comic_work = \
+          #self.non_comic_work.creator_non_comic_work
+        #creator_noncomicworklink.link = self.link
+        #creator_noncomicworkyear.save()
+
+        #if self.creator_noncomicworklink is None:
+            #self.creator_noncomicworklink = creator_noncomicworklink
+            #self.save()
+
+    #def __unicode__(self):
+        #return u'%s - %s' % (
+            #unicode(self.non_comic_work.publication_title), unicode(self.link))

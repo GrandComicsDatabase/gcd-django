@@ -634,6 +634,7 @@ class Award(models.Model):
     creator = models.ForeignKey(Creator)
     award = models.ForeignKey(AwardType, null=True)
     award_name = models.CharField(max_length=255)
+    no_award_name = models.BooleanField(default=False)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
@@ -710,6 +711,7 @@ class NonComicWork(models.Model):
     employer_name = models.CharField(max_length=200, blank=True)
     work_title = models.CharField(max_length=255, blank=True)
     work_role = models.ForeignKey(NonComicWorkRole, null=True)
+    work_urls = models.TextField()
     data_source = models.ManyToManyField(CreatorDataSource,
                                          blank=True)
     notes = models.TextField()
@@ -728,6 +730,31 @@ class NonComicWork(models.Model):
 
     def deletable(self):
         return self.creator.pending_deletion() is False
+
+    def display_years(self):
+        years = self.noncomicworkyears.all().order_by('work_year')
+        year_string = u'%d' % years[0].work_year
+        if years[0].work_year_uncertain:
+            year_string += u'?'
+        year_before = years[0]
+        year_range = False
+        for year in years[1:]:
+            if year_before.work_year+1 == year.work_year and \
+              not year_before.work_year_uncertain and \
+              not year.work_year_uncertain:
+                year_range = True
+            else:
+                if year_range:
+                    year_string += u' - %d; %d' % (year_before.work_year, year.work_year)
+                    if year.work_year_uncertain:
+                        year_string += u'?'
+                else:
+                    year_string += '; %d' % (year.work_year)
+                    if year.work_year_uncertain:
+                        year_string += u'?'
+                year_range = False
+            year_before = year
+        return year_string
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -759,21 +786,21 @@ class NonComicWorkYear(models.Model):
                             unicode(self.work_year))
 
 
-class NonComicWorkLink(models.Model):
-    """
-    record a link to either the work or more information about the work
-    """
+#class NonComicWorkLink(models.Model):
+    #"""
+    #record a link to either the work or more information about the work
+    #"""
 
-    class Meta:
-        app_label = 'gcd'
-        verbose_name_plural = 'NonComic Work Links'
+    #class Meta:
+        #app_label = 'gcd'
+        #verbose_name_plural = 'NonComic Work Links'
 
-    non_comic_work = models.ForeignKey(NonComicWork,
-                                       related_name='noncomicworklinks')
-    link = models.URLField(max_length=255)
+    #non_comic_work = models.ForeignKey(NonComicWork,
+                                       #related_name='noncomicworklinks')
+    #link = models.URLField(max_length=255)
 
-    def deletable(self):
-        return self.creator.pending_deletion() is False
+    #def deletable(self):
+        #return self.creator.pending_deletion() is False
 
-    def __unicode__(self):
-        return unicode(self.link)
+    #def __unicode__(self):
+        #return unicode(self.link)
