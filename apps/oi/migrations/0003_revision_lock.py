@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0001_initial'),
-        ('oi', '0001_initial'),
+        ('oi', '0002_creators'),
     ]
 
     operations = [

@@ -15,7 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404, render
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F
 from django.utils.html import mark_safe, conditional_escape as esc
 
@@ -51,7 +51,7 @@ from apps.oi.models import (
     CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, OngoingReservation, RevisionLock, _get_revision_lock,
-    _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last
+    _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last,
     CreatorDataSourceRevision, CreatorRevision,
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
@@ -222,11 +222,11 @@ def reserve(request, id, model_name, delete=False,
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': model_name, 'id': id}))
 
-    revision_lock = _get_revision_lock(display_obj)
-    if not revision_lock:
-        return render_error(
-          request,
-          u'Cannot edit "%s" as it is already reserved.' % display_obj)
+    #revision_lock = _get_revision_lock(display_obj)
+    #if not revision_lock:
+        #return render_error(
+          #request,
+          #u'Cannot edit "%s" as it is already reserved.' % display_obj)
 
     try: # if something goes wrong we unreserve
         if delete:
@@ -238,20 +238,24 @@ def reserve(request, id, model_name, delete=False,
             if not display_obj.deletable():
                 # Technically nothing to roll back, but keep this here in case
                 # someone adds more code later.
-                transaction.rollback()
-                _free_revision_lock(display_obj)
+                #transaction.rollback()
+                #_free_revision_lock(display_obj)
                 return render_error(request,
                        'This object fails the requirements for deletion.')
 
             changeset = _do_reserve(request.user, display_obj, model_name,
-                                    revision_lock, delete=True)
+                                    delete=True)
         else:
-            changeset = _do_reserve(request.user, display_obj, model_name,
-                                    revision_lock)
+            changeset = _do_reserve(request.user, display_obj, model_name)
 
-        if changeset is None:
-            _free_revision_lock(display_obj)
+        if changeset is False:
             return render_error(request, REACHED_CHANGE_LIMIT)
+        if changeset is None:
+            return render_error(
+              request,
+              u'Cannot edit "%s" as it is reserved, or data objects required'
+               ' for its editing are reserved.' % display_obj)
+            #return render_error(request, "Something")
 
         if delete:
             changeset.submit(notes=request.POST['comments'], delete=True)
@@ -270,27 +274,32 @@ def reserve(request, id, model_name, delete=False,
         else:
             if callback:
                 if not callback(changeset, display_obj, **callback_args):
-                    transaction.rollback()
-                    # the callback can result in a db save of the changeset
-                    # so delete it. This does not fail if no save happened
-                    changeset.delete()
                     _free_revision_lock(display_obj)
+                    changeset.delete()
                     return render_error(request,
                       'Not all objects could be reserved.')
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': changeset.id }))
 
     except:
-        # TODO, is this still needed with the new transaction handling ?
-        _free_revision_lock(display_obj)
-        transaction.rollback()
+        #_free_revision_lock(display_obj)
         raise
 
-def _do_reserve(indexer, display_obj, model_name, revision_lock, delete=False,
+def _do_reserve(indexer, display_obj, model_name, delete=False,
                 changeset=None):
+    """
+    The creation of the revision and if needed changeset happens here.
+    Returns either the changeset, False (when indexer cannot reserve more)
+    or None (when something goes wrong). The revision_lock is deleted for
+    both False and None as return values.
+    TODO maybe do the revision_lock here as well ?
+    """
     if model_name != 'cover' and (delete is False or indexer.indexer.is_new)\
        and indexer.indexer.can_reserve_another() is False:
-        return None
+        _free_revision_lock(revision.source)
+        return False
+
+    revision_lock = _get_revision_lock(display_obj)
 
     if delete:
         # Deletions are submitted immediately which will set the correct state.
@@ -300,6 +309,7 @@ def _do_reserve(indexer, display_obj, model_name, revision_lock, delete=False,
         new_state = states.OPEN
 
     if not changeset:
+        changeset_created = True
         changeset = Changeset(indexer=indexer, state=new_state,
                               change_type=CTYPES[model_name])
         changeset.save()
@@ -311,6 +321,8 @@ def _do_reserve(indexer, display_obj, model_name, revision_lock, delete=False,
                                       text=comment,
                                       old_state=states.UNRESERVED,
                                       new_state=changeset.state)
+    else:
+        changeset_created = False
 
     revision_lock.changeset = changeset
     revision_lock.save()
@@ -322,89 +334,116 @@ def _do_reserve(indexer, display_obj, model_name, revision_lock, delete=False,
         revision.deleted = True
         revision.save()
 
-    if model_name == 'issue':
-        for story in revision.issue.active_stories():
-            # TODO for now, stories cannot be reserved without the issue
-            story_lock = RevisionLock.objects.create(locked_object=story,
-                                                     changeset=changeset)
-            story_revision = StoryRevision.objects.clone_revision(
-              story=story, changeset=changeset)
-            if delete:
-                story_revision.toggle_deleted()
-        if delete:
-            for cover in revision.issue.active_covers():
-                # cover can be reserved, so this can fail
-                # TODO check if transaction rollback works
-                cover_lock = RevisionLock.objects.create(locked_object=cover,
-                                                         changeset=changeset)
+    # TODO make a method on the revision for dependent data objects, their
+    # locks and revisions
+    try:
+        with transaction.atomic():
+            revision._create_dependent_revisions(delete=delete)
+    except IntegrityError:
+        _free_revision_lock(revision.source)
+        if changeset_created:
+            changeset.delete()
+        return None
 
-                cover_revision = CoverRevision(changeset=changeset,
-                                               issue=cover.issue,
-                                               cover=cover, deleted=True)
-                cover_revision.save()
-    elif model_name == 'brand' and delete:
-        for brand_use in revision.brand.in_use.all():
-            # brand_use can be reserved, so this can fail
-            # TODO check if transaction rollback works
-            brand_use_lock = RevisionLock.objects.create(
-                             locked_object=brand_use,
-                             changeset=changeset)
+    #if model_name == 'issue':
+        #for story in revision.issue.active_stories():
+            ## TODO for now, stories cannot be reserved without the issue
+            #story_lock = RevisionLock.objects.create(locked_object=story,
+                                                     #changeset=changeset)
+            #story_revision = StoryRevision.objects.clone_revision(
+              #story=story, changeset=changeset)
+            #if delete:
+                #story_revision.toggle_deleted()
+        #if delete:
+            #for cover in revision.issue.active_covers():
+                ## cover can be reserved, so this can fail
+                ## TODO check if transaction rollback works
+                #cover_lock = RevisionLock.objects.create(locked_object=cover,
+                                                         #changeset=changeset)
 
-            use_revision = BrandUseRevision.objects.clone_revision(
-                                            changeset=changeset,
-                                            brand_use=brand_use)
-            use_revision.deleted = True
-            use_revision.save()
-            brand_use.save()
-    elif model_name == 'publisher' and delete:
-        for brand_group in revision.publisher.active_brands():
-            # TODO check if brand_group is deletable ?
-            brand_group_lock = RevisionLock.objects.create(
-                               locked_object=brand_group,
-                               changeset=changeset)
-            brand_revision = BrandGroupRevision.objects.clone_revision(
-                             brand_group=brand_group, changeset=changeset)
-            brand_revision.deleted = True
-            brand_revision.save()
-        for indicia_publisher in revision.publisher.active_indicia_publishers():
-            # indicia_publisher is deletable if publisher is deletable
-            indicia_publishers_lock = RevisionLock.objects.create(
-                                      locked_object=indicia_publisher,
-                                      changeset=changeset)
-            indicia_publisher_revision = \
-              IndiciaPublisherRevision.objects.clone_revision(
-                indicia_publisher=indicia_publisher, changeset=changeset)
-            indicia_publisher_revision.deleted = True
-            indicia_publisher_revision.save()
+                #cover_revision = CoverRevision(changeset=changeset,
+                                               #issue=cover.issue,
+                                               #cover=cover, deleted=True)
+                #cover_revision.save()
+    #if model_name == 'brand' and delete:
+        #for brand_use in revision.brand.in_use.all():
+            ## brand_use can be reserved, so this can fail
+            ## TODO check if transaction rollback works
+            #brand_use_lock = RevisionLock.objects.create(
+                             #locked_object=brand_use,
+                             #changeset=changeset)
 
-    elif model_name == 'creator' and delete:
-        for creatormembership in revision.creator.active_memberships():
-            creator_membership_revison = \
-              CreatorMembershipRevision.objects.clone_revision(
-                creatormembership=creatormembership, changeset=changeset)
-            creator_membership_revison.deleted = True
-            creator_membership_revison.save()
+            #use_revision = BrandUseRevision.objects.clone_revision(
+                                            #changeset=changeset,
+                                            #brand_use=brand_use)
+            #use_revision.deleted = True
+            #use_revision.save()
+            ##brand_use.save()
+    #if model_name == 'publisher' and delete:
+        #for brand_group in revision.publisher.active_brands():
+            ## TODO check if brand_group is deletable ?
+            #brand_group_lock = RevisionLock.objects.create(
+                               #locked_object=brand_group,
+                               #changeset=changeset)
+            #brand_revision = BrandGroupRevision.objects.clone_revision(
+                             #brand_group=brand_group, changeset=changeset)
+            #brand_revision.deleted = True
+            #brand_revision.save()
+        #for indicia_publisher in revision.publisher.active_indicia_publishers():
+            ## indicia_publisher is deletable if publisher is deletable
+            #indicia_publishers_lock = RevisionLock.objects.create(
+                                      #locked_object=indicia_publisher,
+                                      #changeset=changeset)
+            #indicia_publisher_revision = \
+              #IndiciaPublisherRevision.objects.clone_revision(
+                #indicia_publisher=indicia_publisher, changeset=changeset)
+            #indicia_publisher_revision.deleted = True
+            #indicia_publisher_revision.save()
 
-        for creatoraward in revision.creator.active_awards():
-            creator_award_revison = \
-              CreatorAwardRevision.objects.clone_revision(
-                creatoraward=creatoraward, changeset=changeset)
-            creator_award_revison.deleted = True
-            creator_award_revison.save()
+    #if model_name == 'creator':
+        #name_details = revision.creator.active_names()
+        ## TODO this split over views and models, not good
+        #for name_detail in name_details:
+            #name_lock = RevisionLock.objects.create(locked_object=name_detail,
+                                                    #changeset=changeset)
+            #name_relation_details = name_detail.to_name.all()
+            #for name_relation in name_relation_details:
+                #name_relation_lock = RevisionLock.objects.create(
+                  #locked_object=name_relation, changeset=changeset)
 
-        for creatorartinfluence in revision.creator.active_artinfluences():
-            creator_artinfluence_revison = \
-              CreatorArtInfluenceRevision.objects.clone_revision(
-                creatorartinfluence=creatorartinfluence, changeset=changeset)
-            creator_artinfluence_revison.deleted = True
-            creator_artinfluence_revison.save()
+            #data_sources = revision.creator.data_source.all()
+            #for data_source in data_sources:
+                #name_relation_lock = RevisionLock.objects.create(
+                    #locked_object=name_relation, changeset=changeset)
+        ## TODO this needs work
+        #if delete:
+            #for creatormembership in revision.creator.active_memberships():
+                #creator_membership_revison = \
+                #CreatorMembershipRevision.objects.clone_revision(
+                    #creatormembership=creatormembership, changeset=changeset)
+                #creator_membership_revison.deleted = True
+                #creator_membership_revison.save()
 
-        for creatornoncomicwork in revision.creator.active_noncomicworks():
-            creator_noncomicwork_revison = \
-              CreatorNonComicWorkRevision.objects.clone_revision(
-                creatornoncomicwork=creatornoncomicwork, changeset=changeset)
-            creator_noncomicwork_revison.deleted = True
-            creator_noncomicwork_revison.save()
+            #for creatoraward in revision.creator.active_awards():
+                #creator_award_revison = \
+                #CreatorAwardRevision.objects.clone_revision(
+                    #creatoraward=creatoraward, changeset=changeset)
+                #creator_award_revison.deleted = True
+                #creator_award_revison.save()
+
+            #for creatorartinfluence in revision.creator.active_artinfluences():
+                #creator_artinfluence_revison = \
+                #CreatorArtInfluenceRevision.objects.clone_revision(
+                    #creatorartinfluence=creatorartinfluence, changeset=changeset)
+                #creator_artinfluence_revison.deleted = True
+                #creator_artinfluence_revison.save()
+
+            #for creatornoncomicwork in revision.creator.active_noncomicworks():
+                #creator_noncomicwork_revison = \
+                #CreatorNonComicWorkRevision.objects.clone_revision(
+                    #creatornoncomicwork=creatornoncomicwork, changeset=changeset)
+                #creator_noncomicwork_revison.deleted = True
+                #creator_noncomicwork_revison.save()
 
     return changeset
 
@@ -460,13 +499,12 @@ def reserve_two_issues(request, issue_one_id, issue_two_id):
                    callback_args=kwargs)
 
 def reserve_other_issue(changeset, revision, issue_one):
-    revision_lock = _get_revision_lock(issue_one, changeset)
-    if not revision_lock:
-        return False
+    #revision_lock = _get_revision_lock(issue_one, changeset)
+    #if not revision_lock:
+        #return False
 
     if not _do_reserve(changeset.indexer, issue_one, 'issue',
-                       revision_lock, changeset=changeset):
-        _free_revision_lock(issue_one)
+                       changeset=changeset):
         return False
     changeset.change_type=CTYPES['two_issues']
     changeset.save()
@@ -1009,10 +1047,10 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                         non_comic_work=revision).exclude(
                         id__in=updated_cretor_noncomicworklinks_list).delete()
 
-                    revision.work_source.clear()
-                    sources = form.cleaned_data.get('work_source')
-                    for source in sources:
-                        revision.work_source.add(source)
+                    #revision.work_source.clear()
+                    #sources = form.cleaned_data.get('work_source')
+                    #for source in sources:
+                        #revision.work_source.add(source)
                 else:
                     form.save_m2m()
 
@@ -1422,12 +1460,13 @@ thanks,
 
 
 def _reserve_newly_created_issue(issue, changeset, indexer):
-    revision_lock = _get_revision_lock(issue, changeset)
-    if revision_lock:
-        new_change = _do_reserve(indexer, issue, 'issue', revision_lock)
-    else:
-        new_change = None
-    if new_change is None:
+    #revision_lock = _get_revision_lock(issue, changeset)
+    #if revision_lock:
+    new_change = _do_reserve(indexer, issue, 'issue')
+    #else:
+        #new_change = None
+    # TODO maybe check for False vs. None here ?
+    if not new_change:
         _send_declined_reservation_email(indexer, issue)
 
 @permission_required('indexer.can_approve')
@@ -2504,14 +2543,13 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
     if changeset.change_type == CTYPES['cover']:
         # via create variant for cover
         issue = revision.issue
-        revision_lock = _get_revision_lock(issue, changeset)
-        if not revision_lock:
-            return False
+        #revision_lock = _get_revision_lock(issue, changeset)
+        #if not revision_lock:
+            #return False
 
         # create issue revision for the issue of the cover
         if not _do_reserve(changeset.indexer, issue, 'issue',
-                           revision_lock, changeset=changeset):
-            _free_revision_lock(issue)
+                           changeset=changeset):
             return False
 
     changeset.change_type=CTYPES['variant_add']
@@ -3802,25 +3840,23 @@ def move_series(request, series_revision_id, publisher_id):
         else:
             if series_revision.changeset.issuerevisions.count() == 0:
                 for issue in series_revision.series.active_issues():
-                    revision_lock = _get_revision_lock(
-                                    issue, series_revision.changeset)
-                    if not revision_lock:
-                        for issue_rev in series_revision.changeset\
-                                                        .issuerevisions.all():
-                            _free_revision_lock(issue_rev.issue)
-                            issue_rev.delete()
-                        for story_rev in series_revision.changeset\
-                                                        .storyrevisions.all():
-                            _free_revision_lock(story_rev.story)
-                            story_rev.delete()
-                        return show_error_with_return(
-                          request, 'Error while reserving issues.',
-                          series_revision.changeset)
-
+                    #revision_lock = _get_revision_lock(
+                                    #issue, series_revision.changeset)
+                    #if not revision_lock:
+                        #for issue_rev in series_revision.changeset\
+                                                        #.issuerevisions.all():
+                            #_free_revision_lock(issue_rev.issue)
+                            #issue_rev.delete()
+                        #for story_rev in series_revision.changeset\
+                                                        #.storyrevisions.all():
+                            #_free_revision_lock(story_rev.story)
+                            #story_rev.delete()
+                        #return show_error_with_return(
+                          #request, 'Error while reserving issues.',
+                          #series_revision.changeset)
                     if not _do_reserve(series_revision.changeset.indexer,
-                                       issue, 'issue', revision_lock,
+                                       issue, 'issue',
                                        changeset=series_revision.changeset):
-                        _free_revision_lock(issue)
                         for issue_rev in series_revision.changeset\
                                                         .issuerevisions.all():
                             _free_revision_lock(issue_rev.issue)

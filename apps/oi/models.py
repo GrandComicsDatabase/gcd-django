@@ -6,7 +6,6 @@ import calendar
 import os
 import glob
 from stdnum import isbn
-from collections import OrderedDict
 
 from django.conf import settings
 from django.db import models, transaction, IntegrityError
@@ -29,13 +28,12 @@ from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse,
-    Series, SeriesBond, Cover, Image, Issue, Story,
-    Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
-    SeriesPublicationType, SeriesBondType, StoryType, ImageType, ArtInfluence,
-    AwardType, Award, Creator, CreatorDataSource, CreatorDegreeDetail,
-    CreatorNameDetail, CreatorSchoolDetail, Degree, Membership, NameType,
-    NameRelation, NonComicWork, NonComicWorkType, NonComicWorkRole, NonComicWork,
-    NonComicWorkYear, NonComicWorkLink, RelationType, School, SourceType)
+    Series, SeriesBond, Cover, Image, Issue, Story, Reprint, ReprintToIssue,
+    ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
+    StoryType, ImageType, ArtInfluence, AwardType, Award, Creator,
+    CreatorDataSource, CreatorDegreeDetail, CreatorNameDetail,
+    CreatorSchoolDetail, Membership, NameRelation, NonComicWork,
+    NonComicWorkYear, NonComicWorkLink)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
@@ -44,7 +42,7 @@ from apps.legacy.models import Reservation, MigrationStoryStatus
 
 LANGUAGE_STATS = ['de']
 
-MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1,13)]
+MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
 # Changeset type "constants"
 CTYPES = {
@@ -65,12 +63,12 @@ CTYPES = {
     'brand_use': 14,
     'series_bond': 15,
     'creator': 16,
-    'creator_membership':17,
-    'creator_award':18,
-    'creator_artinfluence':19,
-    'creator_noncomicwork':20,
-    'creator_school':21,
-    'creator_degree':22,
+    'creator_membership': 17,
+    'creator_award': 18,
+    'creator_artinfluence': 19,
+    'creator_noncomicwork': 20,
+    'creator_school': 21,
+    'creator_degree': 22,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -703,7 +701,6 @@ class Changeset(models.Model):
             return (self.creatordegreedetailrevisions.all(),
                     self.creatordatasourcerevisions.all())
 
-
     @property
     def revisions(self):
         """
@@ -779,8 +776,8 @@ class Changeset(models.Model):
                                  CTYPES['two_issues'],
                                  CTYPES['series_bond'],
                                  CTYPES['creator'],
-                                 CTYPES['creator_membership'], 
-                                 CTYPES['creator_award'], 
+                                 CTYPES['creator_membership'],
+                                 CTYPES['creator_award'],
                                  CTYPES['creator_artinfluence'],
                                  CTYPES['creator_noncomicwork']] or
             (
@@ -1233,7 +1230,9 @@ def _get_revision_lock(object, changeset=None):
 
 
 def _free_revision_lock(object):
-    revision_lock = RevisionLock.objects.get(object_id=object.id)
+    revision_lock = RevisionLock.objects.get(
+      object_id=object.id,
+      content_type=ContentType.objects.get_for_model(object))
     revision_lock.delete()
 
 
@@ -1260,9 +1259,9 @@ class RevisionLock(models.Model):
     changeset = models.ForeignKey(Changeset, null=True,
                                   related_name='revision_locks')
 
-    content_type = models.ForeignKey(content_models.ContentType)
+    content_type = models.ForeignKey(ContentType)
     object_id = models.IntegerField(db_index=True)
-    locked_object = generic.GenericForeignKey('content_type', 'object_id')
+    locked_object = GenericForeignKey('content_type', 'object_id')
 
 
 class RevisionManager(models.Manager):
@@ -1568,12 +1567,19 @@ class Revision(models.Model):
 
     def _do_complete_added_revision(self, **kwargs):
         """
-        Hook for indiividual revisions to process additional parameters
+        Hook for individual revisions to process additional parameters
         necessary to create a new revision representing an added record.
         By default no additional processing is done, so subclasses are
         free to override this method without calling it on the parent class.
         """
         pass
+
+    def _create_dependent_revisions(self, delete=False, **kwargs):
+        """
+        Some Revisions have dependent objects, this locks the objects and
+        creates the corresponding revisions.
+        """
+        return True
 
     def has_keywords(self):
         return self.keywords
@@ -1793,6 +1799,37 @@ class PublisherRevision(PublisherRevisionBase):
         if field_name == 'country':
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
+
+    def _create_dependent_revisions(self, delete=False):
+        if delete:
+            for brand_group in self.publisher.active_brands():
+                # TODO check if brand_group is deletable ?
+                brand_group_lock = _get_revision_lock(
+                                   brand_group,
+                                   changeset=self.changeset)
+                if brand_group_lock is None:
+                    raise IntegrityError("needed BrandGroup lock not possible")
+                brand_revision = BrandGroupRevision.objects.clone_revision(
+                                                    brand_group=brand_group,
+                                                    changeset=self.changeset)
+                brand_revision.deleted = True
+                brand_revision.save()
+            for indicia_publisher in self.publisher\
+                                         .active_indicia_publishers():
+                # indicia_publisher is deletable if publisher is deletable
+                indicia_publishers_lock = _get_revision_lock(
+                                          indicia_publisher,
+                                          changeset=self.changeset)
+                if indicia_publishers_lock is None:
+                    raise IntegrityError("needed IndiciaPublisher lock not"
+                                         " possible")
+                indicia_publisher_revision =\
+                  IndiciaPublisherRevision.objects.clone_revision(
+                                          indicia_publisher=indicia_publisher,
+                                          changeset=self.changeset)
+                indicia_publisher_revision.deleted = True
+                indicia_publisher_revision.save()
+        return True
 
     def commit_to_display(self):
         pub = self.publisher
@@ -2258,6 +2295,26 @@ class BrandRevision(PublisherRevisionBase):
         if self.brand is None:
             return 0
         return self.brand.issue_count
+
+
+    def _create_dependent_revisions(self, delete=False):
+        if delete:
+            for brand_use in self.brand.in_use.all():
+                # brand_use can be reserved, so this can fail
+                # TODO check if transaction rollback works
+                brand_use_lock = _get_revision_lock(
+                                brand_use,
+                                changeset=self.changeset)
+                if brand_use_lock is None:
+                    return False
+
+                use_revision = BrandUseRevision.objects.clone_revision(
+                                                changeset=self.changeset,
+                                                brand_use=brand_use)
+                use_revision.deleted = True
+                use_revision.save()
+        return True
+
 
     def commit_to_display(self):
         brand = self.brand
@@ -4038,6 +4095,33 @@ class IssueRevision(Revision):
         if variant_of:
             self.variant_of = variant_of
 
+    def _create_dependent_revisions(self, delete=False):
+        for story in self.issue.active_stories():
+            # currently stories cannot be reserved without the issue, but
+            # check anyway
+            # TODO check if transaction rollback works
+            story_lock = _get_revision_lock(story, changeset=self.changeset)
+            if story_lock is None:
+                raise IntegrityError("needed Story lock not possible")
+            story_revision = StoryRevision.objects.clone_revision(
+              story=story, changeset=self.changeset)
+            if delete:
+                story_revision.toggle_deleted()
+        if delete:
+            for cover in self.issue.active_covers():
+                # cover can be reserved, so this can fail
+                # TODO check if transaction rollback works
+                cover_lock = _get_revision_lock(cover,
+                                                changeset=self.changeset)
+                if cover_lock is None:
+                    raise IntegrityError("needed Cover lock not possible")
+                # TODO change CoverRevision handling to normal one
+                cover_revision = CoverRevision(changeset=self.changeset,
+                                               issue=cover.issue,
+                                               cover=cover, deleted=True)
+                cover_revision.save()
+        return True
+
     def _post_commit_to_display(self):
         if self.changeset.changeset_action() == ACTION_MODIFY and \
            self.issue.is_indexed != INDEXED['skeleton']:
@@ -5776,41 +5860,27 @@ class CreatorRevisionManager(RevisionManager):
 
         revision.save()
 
-        name_details = creator.active_names()
-        for name_detail in name_details:
-            creator_other_name = CreatorNameDetailRevision.objects\
-                                 .clone_revision(name_detail,
-                                                 changeset,
-                                                 revision)
-        # need a second loop, since otherwise all the needed
-        # CreatorNameDetailRevision do not exist
-        for name_detail in name_details:
-            name_relation_details = name_detail.to_name.all()
-            for name_relation in name_relation_details:
-                NameRelationRevision.objects.clone_revision(name_relation,
-                                                            changeset=changeset)
+        #name_details = creator.active_names()
+        #for name_detail in name_details:
+            #creator_other_name = CreatorNameDetailRevision.objects\
+                                 #.clone_revision(name_detail,
+                                                 #changeset,
+                                                 #revision)
+        ## need a second loop, since otherwise all the needed
+        ## CreatorNameDetailRevision do not exist
+        #for name_detail in name_details:
+            #name_relation_details = name_detail.to_name.all()
+            #for name_relation in name_relation_details:
+                #NameRelationRevision.objects.clone_revision(name_relation,
+                                                            #changeset=changeset)
 
-        # TODO should this be done here, or in oi/views.py, add active_*
-        data_sources = creator.data_source.all()
-        for data_source in data_sources:
-            CreatorDataSourceRevision.objects.clone_revision(
-                                              data_source,
-                                              changeset=changeset,
-                                              sourced_revision=revision)
-
-        ## TODO check if this is working, add active_*
-        #school_list = [schools.school for schools in
-                       #creator.creator_school.all()]
-        #for school in creator.creator_school.all():
-            #CreatorSchoolDetailRevision.objects.clone_revision(school,
-                                                               #changeset=changeset)
-
-        ## TODO check if this is working, add active_*
-        #degree_list = [degrees.degree for degrees in
-                       #creator.creator_degree.all()]
-        #for degree in creator.creator_degree.all():
-            #CreatorDegreeDetailRevision.objects.clone_revision(degree,
-                                                               #changeset=changeset)
+        ## TODO should this be done here, or in oi/views.py, add active_*
+        #data_sources = creator.data_source.all()
+        #for data_source in data_sources:
+            #CreatorDataSourceRevision.objects.clone_revision(
+                                              #data_source,
+                                              #changeset=changeset,
+                                              #sourced_revision=revision)
 
         return revision
 
@@ -5851,15 +5921,6 @@ class CreatorRevision(Revision):
     death_city_uncertain = models.BooleanField(default=False)
 
     whos_who = models.URLField(null=True, blank=True)
-    #schools = models.ManyToManyField('gcd.School',
-                                     #related_name='cr_schoolinformation',
-                                     #through='CreatorSchoolDetailRevision',
-                                     #null=True, blank=True)
-    #degrees = models.ManyToManyField('gcd.Degree',
-                                     #related_name='cr_degreeinformation',
-                                     #through='CreatorDegreeDetailRevision',
-                                     #null=True,
-                                     #blank=True)
     bio = models.TextField(blank=True, null=True)
 
     data_source = models.ManyToManyField(CreatorDataSourceRevision,
@@ -5965,6 +6026,99 @@ class CreatorRevision(Revision):
         elif field_name in self._field_list():
             return 1
         return 0
+
+    def _create_dependent_revisions(self, delete=False):
+        name_details = self.creator.active_names()
+        for name_detail in name_details:
+            name_lock = _get_revision_lock(name_detail,
+                                           changeset=self.changeset)
+            if name_lock is None:
+                raise IntegrityError("needed Name lock not possible")
+            creator_name = CreatorNameDetailRevision.objects\
+                           .clone_revision(name_detail, self.changeset, self)
+            if delete:
+                creator_name.deleted = True
+                creator_name.save()
+
+        # need a second loop, since otherwise all the needed
+        # CreatorNameDetailRevision do not exist
+        for name_detail in name_details:
+            name_relation_details = name_detail.to_name.all()
+            for name_relation in name_relation_details:
+                name_relation_lock = _get_revision_lock(name_relation,
+                                     changeset=self.changeset)
+                if name_relation_lock is None:
+                    raise IntegrityError("needed NameRelation lock not possible")
+                name_relation = NameRelationRevision.objects.clone_revision(
+                                                     name_relation,
+                                                     changeset=self.changeset)
+                if delete:
+                    name_relation.deleted = True
+                    name_relation.save()
+
+        data_sources = self.creator.data_source.all()
+        for data_source in data_sources:
+            data_source_lock = _get_revision_lock(data_source,
+                                                  changeset=self.changeset)
+            if data_source_lock is None:
+                raise IntegrityError("needed DataSource lock not possible")
+            data_source = CreatorDataSourceRevision.objects.clone_revision(
+                                                    data_source,
+                                                    changeset=self.changeset,
+                                                    sourced_revision=self)
+            if delete:
+                data_source.deleted = True
+                data_source.save()
+            
+        if delete:
+            for creatormembership in self.creator.active_memberships():
+                membership_lock = _get_revision_lock(creatormembership,
+                                                     changeset=self.changeset)
+                if membership_lock is None:
+                    raise IntegrityError("needed Membership lock not possible")
+                creator_membership_revison = \
+                CreatorMembershipRevision.objects.clone_revision(
+                    creatormembership=creatormembership, changeset=self.changeset)
+                creator_membership_revison.deleted = True
+                creator_membership_revison.save()
+
+            for creatoraward in self.creator.active_awards():
+                award_lock = _get_revision_lock(creatoraward,
+                                                changeset=self.changeset)
+                if award_lock is None:
+                    raise IntegrityError("needed CreatorAward lock not possible")
+                creator_award_revison = \
+                CreatorAwardRevision.objects.clone_revision(
+                    creatoraward=creatoraward, changeset=self.changeset)
+                creator_award_revison.deleted = True
+                creator_award_revison.save()
+
+            for creatorartinfluence in self.creator.active_artinfluences():
+                influence_lock = _get_revision_lock(creatorartinfluence,
+                                                    changeset=self.changeset)
+                if influence_lock is None:
+                    raise IntegrityError("needed CreatorArtInfluence lock not"
+                                         " possible")
+                creator_artinfluence_revison = \
+                CreatorArtInfluenceRevision.objects.clone_revision(
+                  creatorartinfluence=creatorartinfluence,
+                  changeset=self.changeset)
+                creator_artinfluence_revison.deleted = True
+                creator_artinfluence_revison.save()
+
+            for creatornoncomicwork in self.creator.active_noncomicworks():
+                noncomicwork_lock = _get_revision_lock(
+                  creatornoncomicwork, changeset=self.changeset)
+                if noncomicwork_lock is None:
+                    raise IntegrityError("needed NonComicWork lock not"
+                                         " possible")
+                creator_noncomicwork_revison = \
+                  CreatorNonComicWorkRevision.objects.clone_revision(
+                    creatornoncomicwork=creatornoncomicwork,
+                    changeset=self.changeset)
+                creator_noncomicwork_revison.deleted = True
+                creator_noncomicwork_revison.save()
+        return True
 
     def commit_to_display(self, clear_reservation=True):
 
