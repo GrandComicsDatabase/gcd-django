@@ -8,6 +8,7 @@ import glob
 from stdnum import isbn
 from collections import OrderedDict
 
+from django import forms
 from django.conf import settings
 from django.db import models
 from django.db.models import Q, F, Manager, Count
@@ -17,7 +18,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey, \
                                                GenericRelation
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, URLValidator
+from django.core.exceptions import ValidationError
 
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
@@ -35,7 +37,8 @@ from apps.gcd.models import (
     AwardType, Award, Creator, CreatorDataSource, CreatorDegreeDetail,
     CreatorNameDetail, CreatorSchoolDetail, Degree, Membership, NameType,
     NameRelation, NonComicWork, NonComicWorkType, NonComicWorkRole, NonComicWork,
-    NonComicWorkYear, NonComicWorkLink, RelationType, School, SourceType)
+    NonComicWorkYear, RelationType, School, SourceType,
+    _display_uncertain)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
@@ -591,6 +594,14 @@ def save_keywords(revision, source):
         source.keywords.set()
 
 
+def _check_year(year):
+    year = year.strip().strip('?')
+    year_number = int(year)
+    if len(year) != 4 or year_number < 0:
+        raise forms.ValidationError('Enter valid years.')
+    return year_number
+
+
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
@@ -690,8 +701,6 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['creator_noncomicwork']:
             return (self.creatornoncomicworkrevisions.all(),
-                    self.noncomicworkyearrevisions.all(),
-                    self.noncomicworklinkrevisions.all(),
                     self.creatordatasourcerevisions.all())
 
         if self.change_type == CTYPES['creator_school']:
@@ -1158,16 +1167,16 @@ class Changeset(models.Model):
             return self.queue_name()
         if self.change_type == CTYPES['variant_add']:
             return self.queue_name() + u' [Variant]'
-        if self.change_type == CTYPES['creator']:
-            return unicode(self.creatorrevisions.all()[0])
-        if self.change_type == CTYPES['creator_membership']:
-            return unicode(self.creatormembershiprevisions.all()[0])
-        if self.change_type == CTYPES['creator_award']:
-            return unicode(self.creatorawardrevisions.all()[0])
-        if self.change_type == CTYPES['creator_artinfluence']:
-            return unicode(self.creatorartinfluencerevisions.all()[0])
-        if self.change_type == CTYPES['creator_noncomicwork']:
-            return unicode(self.creatornoncomicworkrevisions.all()[0])
+        #if self.change_type == CTYPES['creator']:
+            #return unicode(self.creatorrevisions.all()[0])
+        #if self.change_type == CTYPES['creator_membership']:
+            #return unicode(self.creatormembershiprevisions.all()[0])
+        #if self.change_type == CTYPES['creator_award']:
+            #return unicode(self.creatorawardrevisions.all()[0])
+        #if self.change_type == CTYPES['creator_artinfluence']:
+            #return unicode(self.creatorartinfluencerevisions.all()[0])
+        #if self.change_type == CTYPES['creator_noncomicwork']:
+            #return unicode(self.creatornoncomicworkrevisions.all()[0])
         return 'Changeset: %d' % self.id
 
 
@@ -5802,18 +5811,18 @@ class CreatorRevision(Revision):
                                       related_name='cr_birth_country',
                                       null=True, blank=True)
     birth_country_uncertain = models.BooleanField(default=False)
-    birth_province = models.CharField(max_length=50, null=True, blank=True)
+    birth_province = models.CharField(max_length=50, blank=True)
     birth_province_uncertain = models.BooleanField(default=False)
-    birth_city = models.CharField(max_length=200, null=True, blank=True)
+    birth_city = models.CharField(max_length=200, blank=True)
     birth_city_uncertain = models.BooleanField(default=False)
 
     death_country = models.ForeignKey('stddata.Country',
                                       related_name='cr_death_country',
                                       null=True, blank=True)
     death_country_uncertain = models.BooleanField(default=False)
-    death_province = models.CharField(max_length=50, null=True, blank=True)
+    death_province = models.CharField(max_length=50, blank=True)
     death_province_uncertain = models.BooleanField(default=False)
-    death_city = models.CharField(max_length=200, null=True, blank=True)
+    death_city = models.CharField(max_length=200, blank=True)
     death_city_uncertain = models.BooleanField(default=False)
 
     whos_who = models.URLField(null=True, blank=True)
@@ -6594,9 +6603,6 @@ class CreatorMembershipRevision(Revision):
     membership_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
-    def __unicode__(self):
-        return u'%s' % (unicode(self.organization_name))
-
     _base_field_list = ['organization_name',
                         'membership_type',
                         'membership_year_began',
@@ -6620,10 +6626,10 @@ class CreatorMembershipRevision(Revision):
         return {
             'organization_name': '',
             'membership_type': None,
-            'membership_year_began': '',
-            'membership_year_began_uncertain': '',
+            'membership_year_began': None,
+            'membership_year_began_uncertain': False,
             'membership_year_ended': None,
-            'membership_year_ended_uncertain': '',
+            'membership_year_ended_uncertain': False,
             'notes': '',
         }
 
@@ -6685,12 +6691,16 @@ class CreatorMembershipRevision(Revision):
             return "/creator_membership/revision/%i/preview" % self.id
         return self.creator_membership.get_absolute_url()
 
+    def __unicode__(self):
+        return u'%s: %s' % (self.creator, unicode(self.organization_name))
+
 
 class CreatorAwardRevisionManager(RevisionManager):
     def _base_field_kwargs(self, instance):
         return {
             'award': instance.award,
             'award_name': instance.award_name,
+            'no_award_name': instance.no_award_name,
             'award_year': instance.award_year,
             'award_year_uncertain': instance.award_year_uncertain,
             'notes': instance.notes,            
@@ -6746,7 +6756,8 @@ class CreatorAwardRevision(Revision):
     creator = models.ForeignKey('gcd.Creator',
                                 related_name='award_revisions')
     award = models.ForeignKey(AwardType, null=True, blank=True)
-    award_name = models.CharField(max_length=255)
+    award_name = models.CharField(max_length=255, blank=True)
+    no_award_name = models.BooleanField(default=False)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
@@ -6763,6 +6774,7 @@ class CreatorAwardRevision(Revision):
 
     _base_field_list = ['award',
                         'award_name',
+                        'no_award_name',
                         'award_year',
                         'award_year_uncertain',
                         'notes',
@@ -6782,8 +6794,9 @@ class CreatorAwardRevision(Revision):
         return {
             'award': '',
             'award_name': '',
-            'award_year': '',
-            'award_year_uncertain': '',
+            'no_award_name': False,
+            'award_year': None,
+            'award_year_uncertain': False,
             'notes': '',
         }
 
@@ -6795,12 +6808,18 @@ class CreatorAwardRevision(Revision):
 
     def _start_imp_sum(self):
         self._seen_year = False
+        self._seen_award_name = False
 
     def _imps_for(self, field_name):
         if field_name in ('award_year',
                           'award_year_uncertain'):
             if not self._seen_year:
                 self._seen_year = True
+                return 1
+        elif field_name in ('award_name',
+                            'no_award_name'):
+            if not self._seen_award_name:
+                self._seen_award_name = True
                 return 1
         elif field_name in self._base_field_list:
             return 1
@@ -6975,6 +6994,18 @@ class CreatorArtInfluenceRevision(Revision):
         return self.creator_artinfluence.get_absolute_url()
 
 
+class MultiURLValidator(URLValidator):
+    def __call__(self, value):
+        for url in value.split('\n'):
+            try:
+                super(URLValidator, self).__call__(url.strip())
+            except ValidationError as e:
+                if e.message != 'Enter a valid URL.':
+                    raise
+                else:
+                    raise ValidationError('Enter one or more valid URLs, one per line.')
+
+
 class CreatorNonComicWorkRevisionManager(RevisionManager):
     def _base_field_kwargs(self, instance):
         return {
@@ -6983,12 +7014,13 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
             'employer_name': instance.employer_name,
             'work_title': instance.work_title,
             'work_role': instance.work_role,
+            'work_urls': instance.work_urls,
             'notes': instance.notes,
         }
 
     def clone_revision(self, creator_noncomicwork, changeset):
         """
-        Given an existing CreatorDegreeDetail instance, create a new revision
+        Given an existing CreatorNonComicWork instance, create a new revision
         based on it.
 
         This new revision will be where the replacement is stored.
@@ -7012,27 +7044,14 @@ class CreatorNonComicWorkRevisionManager(RevisionManager):
                 **kwargs
         )
 
+        revision.work_years = creator_noncomicwork.display_years()
         revision.save()
-
-
-        # TODO check if this is working, add active_*
-        noncomicworkyears = creator_noncomicwork.noncomicworkyears.all()
-        for noncomicworkyear in noncomicworkyears:
-            NonComicWorkYearRevision.objects.clone_revision(noncomicworkyear,
-              changeset=changeset, creator_noncomicwork_revision=revision)
-
-        # TODO check if this is working, add active_*
-        noncomicworklinks = creator_noncomicwork.noncomicworklinks.all()
-        for noncomicworklink in noncomicworklinks:
-            NonComicWorkLinkRevision.objects.clone_revision(noncomicworklink,
-              changeset=changeset, creator_noncomicwork_revision=revision)
         return revision
-
 
 
 class CreatorNonComicWorkRevision(Revision):
     """
-    record the art influences of creator
+    record the non comic work of creator
     """
 
     class Meta:
@@ -7051,22 +7070,23 @@ class CreatorNonComicWorkRevision(Revision):
                                   blank=True,
                                   related_name='cr_worktype')
     publication_title = models.CharField(max_length=200)
-    employer_name = models.CharField(max_length=200, null=True, blank=True)
-    work_title = models.CharField(max_length=255, blank=True, null=True)
+    employer_name = models.CharField(max_length=200, blank=True)
+    work_title = models.CharField(max_length=255, blank=True)
     work_role = models.ForeignKey('gcd.NonComicWorkRole',
                                   null=True,
                                   blank=True,
                                   related_name='cr_workrole')
+    work_years = models.TextField(blank=True)
+    work_urls = models.TextField(blank=True, validators=[MultiURLValidator()])
     notes = models.TextField(blank=True)
-
-    def __unicode__(self):
-        return u'%s' % (unicode(self.publication_title))
 
     _base_field_list = ['work_type',
                         'publication_title',
                         'employer_name',
                         'work_title',
                         'work_role',
+                        'work_years',
+                        'work_urls',
                         'notes',
                         ]
 
@@ -7087,6 +7107,8 @@ class CreatorNonComicWorkRevision(Revision):
             'employer_name': '',
             'work_title': '',
             'work_role': '',
+            'work_years': '',
+            'work_urls': '',
             'notes': '',
         }
 
@@ -7097,6 +7119,8 @@ class CreatorNonComicWorkRevision(Revision):
         return 'creator_noncomicwork'
 
     def _imps_for(self, field_name):
+        if field_name in self._base_field_list:
+            return 1
         return 0
 
     def commit_to_display(self, clear_reservation=True):
@@ -7116,6 +7140,7 @@ class CreatorNonComicWorkRevision(Revision):
         ncw.employer_name = self.employer_name
         ncw.work_title = self.work_title
         ncw.work_role = self.work_role
+        ncw.work_urls = self.work_urls
         ncw.notes = self.notes
 
         if clear_reservation:
@@ -7126,195 +7151,258 @@ class CreatorNonComicWorkRevision(Revision):
             self.creator_noncomicwork = ncw
             self.save()
 
+        if self.work_years:
+            existing_years = list(NonComicWorkYear.objects\
+                .filter(non_comic_work=ncw).values_list('id', flat=True))
+            for year in self.work_years.split(';'):
+                range_split = year.split('-')
+                if len(range_split) == 2:
+                    year_began = _check_year(range_split[0])
+                    year_end = _check_year(range_split[1])
+                    if year_began > year_end:
+                        raise ValueError
+                    years_uncertain = False
+
+                    ncw_year, created = NonComicWorkYear.objects\
+                      .get_or_create(non_comic_work=ncw, work_year=year_began)
+                    if '?' in range_split[0]:
+                        ncw_year.work_year_uncertain = True
+                    else:
+                        ncw_year.work_year_uncertain = False
+                    ncw_year.save()
+                    if not created:
+                        existing_years.remove(ncw_year.id)
+
+                    ncw_year, created = NonComicWorkYear.objects\
+                      .get_or_create(non_comic_work=ncw, work_year=year_end)
+                    if '?' in range_split[1]:
+                        ncw_year.work_year_uncertain = True
+                        if '?' in range_split[0]:
+                            years_uncertain = True
+                    else:
+                        ncw_year.work_year_uncertain = False
+                    ncw_year.save()
+                    if not created:
+                        existing_years.remove(ncw_year.id)
+
+                    for i in range(year_began+1, year_end):
+                        ncw_year, created = NonComicWorkYear.objects\
+                          .get_or_create(non_comic_work=ncw, work_year=i)
+                        ncw_year.work_year_uncertain = years_uncertain
+                        ncw_year.save()
+                        if not created:
+                            existing_years.remove(ncw_year.id)
+                else:
+                    year_number = _check_year(year)
+                    ncw_year, created = NonComicWorkYear.objects\
+                          .get_or_create(non_comic_work=ncw,
+                                         work_year=year_number)
+                    if '?' in year:
+                        ncw_year.work_year_uncertain = True
+                    else:
+                        ncw_year.work_year_uncertain = False
+                    ncw_year.save()
+                    if not created:
+                        existing_years.remove(ncw_year.id)
+            # remove years which are not present in value anymore
+            for i in existing_years:
+                ncw_year = NonComicWorkYear.objects.get(id=i)
+                ncw_year.delete()
+
+
     def get_absolute_url(self):
         if self.creator_noncomicwork is None:
             return "/creator_noncomicwork/revision/%i/preview" % self.id
         return self.creator_noncomicwork.get_absolute_url()
 
-
-class NonComicWorkYearRevisionManager(RevisionManager):
-    def clone_revision(self, creator_noncomicworkyear, changeset, 
-                       creator_noncomicwork_revision):
-        """
-        Given an existing CreatorDegreeDetail instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_noncomicworkyear,
-                                              instance_class=NonComicWorkYear,
-                                              changeset=changeset,
-                                              creator_noncomicwork_revision=\
-                                                creator_noncomicwork_revision)
-
-    def _do_create_revision(self, creator_noncomicworkyear, changeset, 
-                            creator_noncomicwork_revision, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = NonComicWorkYearRevision(
-                # revision-specific fields:
-                creator_noncomicworkyear=creator_noncomicworkyear,
-                changeset=changeset,
-                # copied fields:
-                non_comic_work=creator_noncomicwork_revision,
-                work_year=creator_noncomicworkyear.work_year,
-                work_year_uncertain=creator_noncomicworkyear.work_year_uncertain
-        )
-
-        revision.save()
-        return revision
-
-
-class NonComicWorkYearRevision(Revision):
-    """
-    record the year of the work
-    There may be multiple years recorded
-    """
-
-    class Meta:
-        db_table = 'oi_non_comic_work_year_revision'
-        ordering = ['created', '-id']
-        verbose_name_plural = 'NonComic Work Year Revisions'
-
-    objects = NonComicWorkYearRevisionManager()
-    creator_noncomicworkyear = models.ForeignKey('gcd.NonComicWorkYear',
-                                             null=True,
-                                             related_name='revisions')
-    non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
-                                       related_name='cr_noncomicworkyears')
-    work_year = models.PositiveSmallIntegerField(null=True, blank=True)
-    work_year_uncertain = models.BooleanField(default=False)
-
-    def field_list(self):
-        return ['work_year', 'work_year_uncertain']
-
-    def _get_blank_values(self):
-        return {
-            'work_year': None,
-            'work_year_uncertain': False,
-        }
-
-    def _get_source(self):
-        return self.creator_noncomicworkyear
-
-    def _get_source_name(self):
-        return 'creator_noncomicworkyear'
-
-    def _imps_for(self, field_name):
-        return 0
-
-    def commit_to_display(self):
-        creator_noncomicworkyear = self.creator_noncomicworkyear
-        if creator_noncomicworkyear is None:
-            creator_noncomicworkyear = NonComicWorkYear()
-        elif self.deleted:
-            creator_noncomicworkyear.delete()
-            return
-
-        creator_noncomicworkyear.non_comic_work = \
-          self.non_comic_work.creator_noncomicwork
-        creator_noncomicworkyear.work_year = self.work_year
-        creator_noncomicworkyear.work_year_uncertain = self.work_year_uncertain
-        creator_noncomicworkyear.save()
-
-        if self.creator_noncomicworkyear is None:
-            self.creator_noncomicworkyear = creator_noncomicworkyear
-            self.save()
-
-
     def __unicode__(self):
-        return u'%s - %s' % (
-            unicode(self.non_comic_work.publication_title), unicode(self.work_year))
+        return u'%s: %s' % (unicode(self.creator),
+                            unicode(self.publication_title))
 
 
-class NonComicWorkLinkRevisionManager(RevisionManager):
-    def clone_revision(self, creatornoncomicworklink, changeset,
-                       creator_noncomicwork_revision):
-        """
-        Given an existing CreatorDegreeDetail instance, create a new revision
-        based on it.
+#class NonComicWorkYearRevisionManager(RevisionManager):
+    #def clone_revision(self, creator_noncomicworkyear, changeset, 
+                       #creator_noncomicwork_revision):
+        #"""
+        #Given an existing CreatorDegreeDetail instance, create a new revision
+        #based on it.
 
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_noncomicworklink,
-                                              instance_class=NonComicWorkLink,
-                                              changeset=changeset,
-                                              creator_noncomicwork_revision=\
-                                                creator_noncomicwork_revision)
+        #This new revision will be where the replacement is stored.
+        #"""
+        #return RevisionManager.clone_revision(self,
+                                              #instance=creator_noncomicworkyear,
+                                              #instance_class=NonComicWorkYear,
+                                              #changeset=changeset,
+                                              #creator_noncomicwork_revision=\
+                                                #creator_noncomicwork_revision)
 
-    def _do_create_revision(self, creator_noncomicworklink, changeset,
-                            creator_noncomicwork_revision, **ignore):
+    #def _do_create_revision(self, creator_noncomicworkyear, changeset, 
+                            #creator_noncomicwork_revision, **ignore):
+        #"""
+        #Helper delegate to do the class-specific work of clone_revision.
+        #"""
+        #revision = NonComicWorkYearRevision(
+                ## revision-specific fields:
+                #creator_noncomicworkyear=creator_noncomicworkyear,
+                #changeset=changeset,
+                ## copied fields:
+                #non_comic_work=creator_noncomicwork_revision,
+                #work_year=creator_noncomicworkyear.work_year,
+                #work_year_uncertain=creator_noncomicworkyear.work_year_uncertain
+        #)
 
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = NonComicWorkLinkRevision(
-                # revision-specific fields:
-                creator_noncomicworklink=creator_noncomicworklink,
-                changeset=changeset,
-                # copied fields:
-                non_comic_work=creator_noncomicwork_revision,
-                link=creator_noncomicworklink.link
-        )
-        revision.save()
-        return revision
+        #revision.save()
+        #return revision
 
 
-class NonComicWorkLinkRevision(Revision):
-    """
-    record a link to either the work or more information about the work
-    """
+#class NonComicWorkYearRevision(Revision):
+    #"""
+    #record the year of the work
+    #There may be multiple years recorded
+    #"""
 
-    class Meta:
-        db_table = 'oi_non_comic_work_link_revision'
-        ordering = ['created', '-id']
-        verbose_name_plural = 'NonComic Work Link Revisions'
+    #class Meta:
+        #db_table = 'oi_non_comic_work_year_revision'
+        #ordering = ['created', '-id']
+        #verbose_name_plural = 'NonComic Work Year Revisions'
 
-    objects = NonComicWorkLinkRevisionManager()
-    creator_noncomicworklink = models.ForeignKey('gcd.NonComicWorkLink',
-                                                 null=True,
-                                                 related_name='revisions')
-    non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
-                                       related_name='cr_noncomicworklinks')
-    link = models.URLField(max_length=255)
+    #objects = NonComicWorkYearRevisionManager()
+    #creator_noncomicworkyear = models.ForeignKey('gcd.NonComicWorkYear',
+                                             #null=True,
+                                             #related_name='revisions')
+    #non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
+                                       #related_name='cr_noncomicworkyears')
+    #work_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    #work_year_uncertain = models.BooleanField(default=False)
 
-    def field_list(self):
-        return ['link']
+    #def field_list(self):
+        #return ['work_year', 'work_year_uncertain']
 
-    def _get_blank_values(self):
-        return {
-            'link': '',
-        }
+    #def _get_blank_values(self):
+        #return {
+            #'work_year': None,
+            #'work_year_uncertain': False,
+        #}
 
-    def _get_source(self):
-        return self.creator_noncomicworklink
+    #def _get_source(self):
+        #return self.creator_noncomicworkyear
 
-    def _get_source_name(self):
-        return 'creator_noncomicworklink'
+    #def _get_source_name(self):
+        #return 'creator_noncomicworkyear'
 
-    def _imps_for(self, field_name):
-        return 0
+    #def _imps_for(self, field_name):
+        #return 0
 
-    def commit_to_display(self):
-        creator_noncomicworklink = self.creator_noncomicworklink
-        if creator_noncomicworklink is None:
-            creator_noncomicworklink = NonComicWorkLink()
-        elif self.deleted:
-            creator_noncomicworklink.delete()
-            return
+    #def commit_to_display(self):
+        #creator_noncomicworkyear = self.creator_noncomicworkyear
+        #if creator_noncomicworkyear is None:
+            #creator_noncomicworkyear = NonComicWorkYear()
+        #elif self.deleted:
+            #creator_noncomicworkyear.delete()
+            #return
 
-        creator_noncomicworklink.non_comic_work = \
-          self.non_comic_work.creator_non_comic_work
-        creator_noncomicworklink.link = self.link
-        creator_noncomicworkyear.save()
+        #creator_noncomicworkyear.non_comic_work = \
+          #self.non_comic_work.creator_noncomicwork
+        #creator_noncomicworkyear.work_year = self.work_year
+        #creator_noncomicworkyear.work_year_uncertain = self.work_year_uncertain
+        #creator_noncomicworkyear.save()
 
-        if self.creator_noncomicworklink is None:
-            self.creator_noncomicworklink = creator_noncomicworklink
-            self.save()
+        #if self.creator_noncomicworkyear is None:
+            #self.creator_noncomicworkyear = creator_noncomicworkyear
+            #self.save()
 
-    def __unicode__(self):
-        return u'%s - %s' % (
-            unicode(self.non_comic_work.publication_title), unicode(self.link))
+
+    #def __unicode__(self):
+        #return u'%s - %s' % (
+            #unicode(self.non_comic_work.publication_title), unicode(self.work_year))
+
+
+#class NonComicWorkLinkRevisionManager(RevisionManager):
+    #def clone_revision(self, creatornoncomicworklink, changeset,
+                       #creator_noncomicwork_revision):
+        #"""
+        #Given an existing CreatorDegreeDetail instance, create a new revision
+        #based on it.
+
+        #This new revision will be where the replacement is stored.
+        #"""
+        #return RevisionManager.clone_revision(self,
+                                              #instance=creator_noncomicworklink,
+                                              #instance_class=NonComicWorkLink,
+                                              #changeset=changeset,
+                                              #creator_noncomicwork_revision=\
+                                                #creator_noncomicwork_revision)
+
+    #def _do_create_revision(self, creator_noncomicworklink, changeset,
+                            #creator_noncomicwork_revision, **ignore):
+
+        #"""
+        #Helper delegate to do the class-specific work of clone_revision.
+        #"""
+        #revision = NonComicWorkLinkRevision(
+                ## revision-specific fields:
+                #creator_noncomicworklink=creator_noncomicworklink,
+                #changeset=changeset,
+                ## copied fields:
+                #non_comic_work=creator_noncomicwork_revision,
+                #link=creator_noncomicworklink.link
+        #)
+        #revision.save()
+        #return revision
+
+
+#class NonComicWorkLinkRevision(Revision):
+    #"""
+    #record a link to either the work or more information about the work
+    #"""
+
+    #class Meta:
+        #db_table = 'oi_non_comic_work_link_revision'
+        #ordering = ['created', '-id']
+        #verbose_name_plural = 'NonComic Work Link Revisions'
+
+    #objects = NonComicWorkLinkRevisionManager()
+    #creator_noncomicworklink = models.ForeignKey('gcd.NonComicWorkLink',
+                                                 #null=True,
+                                                 #related_name='revisions')
+    #non_comic_work = models.ForeignKey(CreatorNonComicWorkRevision,
+                                       #related_name='cr_noncomicworklinks')
+    #link = models.URLField(max_length=255)
+
+    #def field_list(self):
+        #return ['link']
+
+    #def _get_blank_values(self):
+        #return {
+            #'link': '',
+        #}
+
+    #def _get_source(self):
+        #return self.creator_noncomicworklink
+
+    #def _get_source_name(self):
+        #return 'creator_noncomicworklink'
+
+    #def _imps_for(self, field_name):
+        #return 0
+
+    #def commit_to_display(self):
+        #creator_noncomicworklink = self.creator_noncomicworklink
+        #if creator_noncomicworklink is None:
+            #creator_noncomicworklink = NonComicWorkLink()
+        #elif self.deleted:
+            #creator_noncomicworklink.delete()
+            #return
+
+        #creator_noncomicworklink.non_comic_work = \
+          #self.non_comic_work.creator_non_comic_work
+        #creator_noncomicworklink.link = self.link
+        #creator_noncomicworkyear.save()
+
+        #if self.creator_noncomicworklink is None:
+            #self.creator_noncomicworklink = creator_noncomicworklink
+            #self.save()
+
+    #def __unicode__(self):
+        #return u'%s - %s' % (
+            #unicode(self.non_comic_work.publication_title), unicode(self.link))

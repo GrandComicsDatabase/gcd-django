@@ -224,34 +224,18 @@
                                     <p><strong>Employer name</strong> : {{ ncw.employer_name }}</p>
                                 {% endif %}
                                 {% if ncw.work_title %}
-                                    <p><strong>Work title</strong> : {{ ncw.work_title }}</p>
+                                    <p><strong>Work title:</strong> {{ ncw.work_title }}</p>
                                 {% endif %}
-                                <p><strong>Work role</strong> : {{ ncw.work_role.role_name }}</p>
+                                <p><strong>Work role:</strong> {{ ncw.work_role.role_name }}</p>
                                 {% if ncw.work_notes %}
-                                    <p><strong>Work notes</strong> : {{ ncw.work_notes }}</p>
+                                    <p><strong>Work notes:</strong> {{ ncw.work_notes }}</p>
                                 {% endif %}
-                                {% if ncw.work_source.all %}
-                                    <p><strong>Work source</strong> :
-                                        {% for source in ncw.work_source.all %}{{ source.type }}, {% endfor %}</p>
+                                {% if ncw.display_years %}
+                                <p><strong>Work Years:</strong> {{ ncw.display_years }}</P>
                                 {% endif %}
-                                {% for year in ncw.noncomicworkyear_set.all %}
-                                    {% if forloop.first %}
-                                        <p><strong>Year(s)</strong> :
-                                    {% endif %}
-                                {{ year.work_year }}{% if not forloop.last %}, {% endif %}
-                                {% if forloop.last %}
-                                    </p>
+                                {% if ncw.work_urls %}
+                                <p><strong>Work URLs:</strong> {{ ncw.work_urls|urlize|linebreaksbr }}
                                 {% endif %}
-                                {% endfor %}
-                                {% for link in ncw.noncomicworklink_set.all %}
-                                    {% if forloop.first %}
-                                        <p><strong>Link(s)</strong> :
-                                    {% endif %}
-                                <a href="{{ link.link }}">{{ link.link }}</a>{% if not forloop.last %}, {% endif %}
-                                {% if forloop.last %}
-                                    </p>
-                                {% endif %}
-                                {% endfor %}
                         {% endfor %}
                     {% endif %}
                     <br>
@@ -282,7 +266,7 @@
                             <a href="{% url "add_creator_membership" creator.id %}">
                                 <button>Add Membership</button>
                             </a>
-                            <a href="{% url "add_creator_non_comic_work" creator.id %}">
+                            <a href="{% url "add_creator_noncomicwork" creator.id %}">
                                 <button>Add NonComic Work</button>
                             </a>
                             <a href="{% url "add_creator_school" creator.id %}">

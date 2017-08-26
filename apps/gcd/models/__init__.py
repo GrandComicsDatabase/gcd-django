@@ -22,5 +22,9 @@ from creator import ArtInfluence, Award, AwardType, \
                     CreatorNameDetail, CreatorSchoolDetail,\
                     Degree, Membership, NameRelation, NameType, \
                     NonComicWork, NonComicWorkType, NonComicWorkRole, \
-                    NonComicWorkYear, NonComicWorkLink, RelationType, School, \
+                    NonComicWorkYear, RelationType, School, \
                     SourceType
+
+
+def _display_uncertain(value, flag):
+    return u'%s?' % value if flag else value

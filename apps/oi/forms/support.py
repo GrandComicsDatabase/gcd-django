@@ -253,7 +253,13 @@ CREATOR_NONCOMICWORK_HELP_TEXTS = {
     'work_title':
         "The title of the individual work, such as the title of an article "
         "or web comic story, episode of a show, illustration in an "
-        "ad campaign, or blog entry."
+        "ad campaign, or blog entry.",
+    'work_years':
+        "The years of the work. Separate by ';', use year-year for ranges",
+    'work_urls':
+        "Links to either the work or more information about the work, such as"
+        " the person's entry in the IMDb, a WorldCat search for a creator, or"
+        " a link to a web comic site. One URL per line."
 }
 
 PUBLISHER_HELP_TEXTS = {
