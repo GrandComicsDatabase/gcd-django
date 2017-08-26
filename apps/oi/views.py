@@ -56,7 +56,7 @@ from apps.oi.models import (
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolDetailRevision, CreatorDegreeDetailRevision,
-    NameRelationRevision, NonComicWorkYearRevision, NonComicWorkLinkRevision,
+    NameRelationRevision,
     _get_creator_sourced_fields)
 
 from apps.oi.forms import (get_brand_group_revision_form,
@@ -995,57 +995,58 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                                         CTYPES['creator_award'],
                                         CTYPES['creator_artinfluence'],
                                         CTYPES['creator_school'],
-                                        CTYPES['creator_degree']]:
+                                        CTYPES['creator_degree'],
+                                        CTYPES['creator_noncomicwork']]:
                     _save_data_source_revision(form, revision, '')
 
-                elif revision.changeset.change_type == CTYPES[
-                    'creator_noncomicwork']:
+                #elif revision.changeset.change_type == CTYPES[
+                    #'creator_noncomicwork']:
 
                     # Edit work year details
-                    updated_cretor_noncomicworkyears_list = []
-                    total_workyears = int(request.POST.get('total_workyears'))
-                    for i in range(1, total_workyears + 1):
-                        if 'work_year' + str(i) in request.POST:
-                            work_year = request.POST.get('work_year' + str(i))
-                            work_year_uncertain = True if request.POST.get(
-                                'work_year_uncertain' + str(i)) == 'on' else False
-                            try:
-                                noncomicworkyear = NonComicWorkYearRevision.objects.get(
-                                    non_comic_work=revision,
-                                    work_year=work_year,
-                                    work_year_uncertain=work_year_uncertain)
-                            except ObjectDoesNotExist:
-                                noncomicworkyear = NonComicWorkYearRevision.objects.create(
-                                    non_comic_work=revision,
-                                    work_year=work_year,
-                                    work_year_uncertain=work_year_uncertain,
-                                    changeset=changeset)
-                            updated_cretor_noncomicworkyears_list.append(noncomicworkyear.id)
+                    #updated_cretor_noncomicworkyears_list = []
+                    #total_workyears = int(request.POST.get('total_workyears'))
+                    #for i in range(1, total_workyears + 1):
+                        #if 'work_year' + str(i) in request.POST:
+                            #work_year = request.POST.get('work_year' + str(i))
+                            #work_year_uncertain = True if request.POST.get(
+                                #'work_year_uncertain' + str(i)) == 'on' else False
+                            #try:
+                                #noncomicworkyear = NonComicWorkYearRevision.objects.get(
+                                    #non_comic_work=revision,
+                                    #work_year=work_year,
+                                    #work_year_uncertain=work_year_uncertain)
+                            #except ObjectDoesNotExist:
+                                #noncomicworkyear = NonComicWorkYearRevision.objects.create(
+                                    #non_comic_work=revision,
+                                    #work_year=work_year,
+                                    #work_year_uncertain=work_year_uncertain,
+                                    #changeset=changeset)
+                            #updated_cretor_noncomicworkyears_list.append(noncomicworkyear.id)
 
-                    NonComicWorkYearRevision.objects.filter(
-                        non_comic_work=revision).exclude(
-                        id__in=updated_cretor_noncomicworkyears_list).delete()
+                    #NonComicWorkYearRevision.objects.filter(
+                        #non_comic_work=revision).exclude(
+                        #id__in=updated_cretor_noncomicworkyears_list).delete()
 
                     # Edit work link details
-                    updated_cretor_noncomicworklinks_list = []
-                    total_worklinks = int(request.POST.get('total_worklinks'))
-                    for i in range(1, total_worklinks + 1):
-                        if 'work_link' + str(i) in request.POST:
-                            work_link = request.POST.get('work_link' + str(i))
-                            try:
-                                noncomicworklink = NonComicWorkLinkRevision.objects.get(
-                                    non_comic_work=revision,
-                                    link=work_link)
-                            except ObjectDoesNotExist:
-                                noncomicworklink = NonComicWorkLinkRevision.objects.create(
-                                    non_comic_work=revision,
-                                    link=work_link,
-                                    changeset=changeset)
-                            updated_cretor_noncomicworklinks_list.append(noncomicworklink.id)
+                    #updated_cretor_noncomicworklinks_list = []
+                    #total_worklinks = int(request.POST.get('total_worklinks'))
+                    #for i in range(1, total_worklinks + 1):
+                        #if 'work_link' + str(i) in request.POST:
+                            #work_link = request.POST.get('work_link' + str(i))
+                            #try:
+                                #noncomicworklink = NonComicWorkLinkRevision.objects.get(
+                                    #non_comic_work=revision,
+                                    #link=work_link)
+                            #except ObjectDoesNotExist:
+                                #noncomicworklink = NonComicWorkLinkRevision.objects.create(
+                                    #non_comic_work=revision,
+                                    #link=work_link,
+                                    #changeset=changeset)
+                            #updated_cretor_noncomicworklinks_list.append(noncomicworklink.id)
 
-                    NonComicWorkLinkRevision.objects.filter(
-                        non_comic_work=revision).exclude(
-                        id__in=updated_cretor_noncomicworklinks_list).delete()
+                    #NonComicWorkLinkRevision.objects.filter(
+                        #non_comic_work=revision).exclude(
+                        #id__in=updated_cretor_noncomicworklinks_list).delete()
 
                     #revision.work_source.clear()
                     #sources = form.cleaned_data.get('work_source')
@@ -4745,12 +4746,7 @@ def compare(request, id):
     elif changeset.change_type == CTYPES['creator_artinfluence']:
         sourced_fields = {'': 'notes'}
     elif changeset.change_type == CTYPES['creator_noncomicwork']:
-        work_year_revisions = changeset.noncomicworkyearrevisions.all()
-        for work_year_revision in work_year_revisions:
-            revisions_after.append(work_year_revision)
-        work_link_revisions = changeset.noncomicworklinkrevisions.all()
-        for work_link_revision in work_link_revisions:
-            revisions_after.append(work_link_revision)
+        sourced_fields = {'': 'notes'}
     elif changeset.change_type == CTYPES['creator_school']:
         sourced_fields = {'': 'notes'}
     elif changeset.change_type == CTYPES['creator_degree']:
@@ -5322,9 +5318,7 @@ def add_creator_award(request, creator_id):
 
 
 @permission_required('indexer.can_reserve')
-def add_creator_artinfluence(request, creator_id,
-                             template_name='oi/creators/creator_artinfluences'
-                                           '.html'):
+def add_creator_artinfluence(request, creator_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
@@ -5373,8 +5367,7 @@ def add_creator_artinfluence(request, creator_id,
 
 
 @permission_required('indexer.can_reserve')
-def add_creator_noncomicwork(request, creator_id,
-                             template_name='oi/creators/creator_noncomic_works.html'):
+def add_creator_noncomicwork(request, creator_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
@@ -5382,7 +5375,7 @@ def add_creator_noncomicwork(request, creator_id,
 
     creator = Creator.objects.get(id=creator_id)
     if creator.deleted or creator.pending_deletion():
-        return render_error(request, u'Cannot add Award '
+        return render_error(request, u'Cannot add NonComicWork '
                                         u'creators since "%s" is deleted or '
                                         u'pending deletion.' % creator)
 
@@ -5410,38 +5403,14 @@ def add_creator_noncomicwork(request, creator_id,
             revision.save_added_revision(changeset=changeset, creator=creator)
             revision.save()
 
-            # Add work years
-            total_workyears = int(request.POST.get('total_workyears'))
-            for i in range(1, total_workyears + 1):
-                if 'work_year' + str(i) in request.POST:
-                    work_year = request.POST.get('work_year' + str(i))
-                    work_year_uncertain = True if request.POST.get(
-                        'work_year_uncertain' + str(i)) == 'on' else False
-
-                    NonComicWorkYearRevision.objects.get_or_create(
-                        non_comic_work=revision,
-                        work_year=work_year,
-                        work_year_uncertain=work_year_uncertain,
-                        changeset=changeset)
-
-            # Add work links
-            total_worklinks = int(request.POST.get('total_worklinks'))
-            for i in range(1, total_worklinks + 1):
-                if 'work_link' + str(i) in request.POST:
-                    work_link = request.POST.get('work_link' + str(i))
-
-                    NonComicWorkLinkRevision.objects.get_or_create(
-                        non_comic_work=revision,
-                        link=work_link,
-                        changeset=changeset)
-
-            #work_sources = noncomicwork_form.cleaned_data.get('work_source')
-            #for work_source in work_sources:
-                #revision.work_source.add(work_source)
+            process_data_source(noncomicwork_form, '', changeset,
+                                sourced_revision=revision)
             return submit(request, changeset.id)
 
-    context = {}
-    context['noncomicwork_form'] = noncomicwork_form
-    context['creator_id'] = creator_id
-    context['mode'] = 'new'
-    return render(request, template_name, context)
+    context = {'form': noncomicwork_form,
+               'object_name': 'Non Comic Work of a Creator',
+               'object_url': urlresolvers.reverse('add_creator_noncomicwork',
+                                                  kwargs={'creator_id': creator_id}),
+               'action_label': 'Submit new',
+               'settings': settings}
+    return oi_render(request, 'oi/edit/add_frame.html', context)

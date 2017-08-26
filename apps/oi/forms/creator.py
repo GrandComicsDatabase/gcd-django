@@ -8,7 +8,7 @@ from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
                            CreatorNonComicWorkRevision, CreatorSchoolDetailRevision, \
                            get_creator_field_list,\
                            CreatorDataSourceRevision, CreatorDegreeDetailRevision, \
-                           _get_creator_sourced_fields
+                           _get_creator_sourced_fields, _check_year
 
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
@@ -242,6 +242,10 @@ class CreatorAwardRevisionForm(forms.ModelForm):
     def clean(self):
         cd = self.cleaned_data
 
+        if (not cd['award_name'] and not cd['no_award_name']):
+            self.add_error('award_name',
+              'Either enter the award name or check no award name.')
+
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         _generic_data_source_clean(self, cd)
@@ -295,15 +299,16 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
                 'Either the name of an influence or a link to an '
                 'influence needs to be given.')
 
+
 def get_creator_non_comic_work_revision_form(revision=None, user=None):
     class RuntimeCreatorNonComicWorkRevisionForm(\
                  CreatorNonComicWorkRevisionForm):
         def __init__(self, *args, **kwargs):
             super(RuntimeCreatorNonComicWorkRevisionForm, self)\
                          .__init__(*args, **kwargs)
-            #if revision:
-                #for field in _get_creator_sourced_fields():
-                    #init_data_source_fields(field, revision, self.fields)
+
+            if revision:
+                init_data_source_fields('', revision, self.fields)
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -316,7 +321,38 @@ def get_creator_non_comic_work_revision_form(revision=None, user=None):
 class CreatorNonComicWorkRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorNonComicWorkRevision
-        exclude = ['creator', 'creator_noncomicwork','changeset', 'deleted',]
+        fields = model._base_field_list
         help_texts = CREATOR_NONCOMICWORK_HELP_TEXTS
 
+    def __init__(self, *args, **kwargs):
+        super(CreatorNonComicWorkRevisionForm, self).__init__(*args, **kwargs)
+        ordering = self.fields.keys()
+        insert_data_source_fields('', ordering, self.fields, 'notes')
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
+
     comments = _get_comments_form_field()
+
+    def clean_work_years(self):
+        value = self.cleaned_data['work_years']
+        try:
+            for year in value.split(';'):
+                range_split = year.split('-')
+                if len(range_split) == 2:
+                    year_began = _check_year(range_split[0])
+                    year_end = _check_year(range_split[1])
+                    if year_began > year_end:
+                        raise forms.ValidationError(
+                                    "Years in range do not validata.")
+                else:
+                    _check_year(year)
+        except ValueError:
+            raise forms.ValidationError("Enter years separated by ';'.")
+        return value
+
+    def clean(self):
+        cd = self.cleaned_data
+
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
+        _generic_data_source_clean(self, cd)
