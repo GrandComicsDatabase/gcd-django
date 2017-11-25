@@ -863,7 +863,7 @@ def _save_data_source_revision(form, revision, field):
                         sourced_revision=revision)
 
 def _other_forms_valid(request, changeset):
-    if changeset.change_type != CTYPES['creator']:
+    if not changeset or changeset.change_type != CTYPES['creator']:
         return True
     birth_date_form = DateRevisionForm(request.POST, prefix='birth_date')
     death_date_form = DateRevisionForm(request.POST, prefix='death_date')
