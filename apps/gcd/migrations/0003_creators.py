@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('stddata', '0003_language_native_name'),
+        ('stddata', '0002_initial_data'),
         ('gcd', '0002_initial_data'),
     ]
 
@@ -33,6 +33,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('award_name', models.CharField(max_length=255)),
+                ('no_award_name', models.BooleanField(default=False)),
                 ('award_year', models.PositiveSmallIntegerField(null=True, blank=True)),
                 ('award_year_uncertain', models.BooleanField(default=False)),
                 ('notes', models.TextField(blank=True)),
@@ -248,6 +249,7 @@ class Migration(migrations.Migration):
                 ('publication_title', models.CharField(max_length=200)),
                 ('employer_name', models.CharField(max_length=200, blank=True)),
                 ('work_title', models.CharField(max_length=255, blank=True)),
+                ('work_urls', models.TextField()),
                 ('notes', models.TextField()),
                 ('reserved', models.BooleanField(default=False, db_index=True)),
                 ('created', models.DateTimeField(auto_now_add=True)),
@@ -259,18 +261,6 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('publication_title', 'employer_name', 'work_type'),
                 'verbose_name_plural': 'NonComic Works',
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
-            name='NonComicWorkLink',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('link', models.URLField(max_length=255)),
-                ('non_comic_work', models.ForeignKey(related_name='noncomicworklinks', to='gcd.NonComicWork')),
-            ],
-            options={
-                'verbose_name_plural': 'NonComic Work Links',
             },
             bases=(models.Model,),
         ),
