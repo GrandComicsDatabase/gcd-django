@@ -850,8 +850,9 @@ def handle_uploaded_image(request, display_obj, model_name, image_type,
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['image'])
     changeset.save()
-    revision_lock.changeset = changeset
-    revision_lock.save()
+    if current_image:
+        revision_lock.changeset = changeset
+        revision_lock.save()
 
     revision = ImageRevision(
       changeset=changeset,

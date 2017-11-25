@@ -34,7 +34,8 @@ from apps.gcd.models import (
     ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
     StoryType, ImageType, ArtInfluence, AwardType, Award, Creator,
     CreatorDataSource, CreatorDegreeDetail, CreatorNameDetail,
-    CreatorSchoolDetail, Membership, NameRelation, NonComicWork)
+    CreatorSchoolDetail, Membership, NameRelation, NonComicWork,
+    NonComicWorkYear)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
@@ -5794,6 +5795,20 @@ class CreatorDataSourceRevision(Revision):
             unicode(self.field), unicode(self.source_type.type))
 
 
+def reserve_data_sources(data_sources, changeset, sourced_revision,
+                         delete=False):
+    for data_source in data_sources:
+        data_source_lock = _get_revision_lock(data_source,
+                                              changeset=changeset)
+        if data_source_lock is None:
+            raise IntegrityError("needed DataSource lock not possible")
+        data_source = CreatorDataSourceRevision.objects.clone_revision(
+          data_source, changeset=changeset, sourced_revision=sourced_revision)
+        if delete:
+            data_source.deleted = True
+            data_source.save()
+
+
 def _get_creator_sourced_fields():
     return {'birth_place': 'birth_city_uncertain',
             'death_place': 'death_city_uncertain',
@@ -6064,18 +6079,7 @@ class CreatorRevision(Revision):
                     name_relation.save()
 
         data_sources = self.creator.data_source.all()
-        for data_source in data_sources:
-            data_source_lock = _get_revision_lock(data_source,
-                                                  changeset=self.changeset)
-            if data_source_lock is None:
-                raise IntegrityError("needed DataSource lock not possible")
-            data_source = CreatorDataSourceRevision.objects.clone_revision(
-                                                    data_source,
-                                                    changeset=self.changeset,
-                                                    sourced_revision=self)
-            if delete:
-                data_source.deleted = True
-                data_source.save()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
             
         if delete:
             for creatormembership in self.creator.active_memberships():
@@ -6460,7 +6464,7 @@ class CreatorSchoolDetailRevisionManager(RevisionManager):
         )
         revision.save()
 
-        _create_data_source_revision(school_detail, changeset, revision)
+        #_create_data_source_revision(school_detail, changeset, revision)
 
         return revision
 
@@ -6544,6 +6548,10 @@ class CreatorSchoolDetailRevision(Revision):
     def _get_source_name(self):
         return 'creator_school'
 
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_school_detail.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
     def commit_to_display(self):
         creator_school_detail = self.creator_school_detail
         if creator_school_detail is None:
@@ -6607,7 +6615,7 @@ class CreatorDegreeDetailRevisionManager(RevisionManager):
 
         revision.save()
         
-        _create_data_source_revision(degree_detail, changeset, revision)
+        #_create_data_source_revision(degree_detail, changeset, revision)
 
         return revision
 
@@ -6677,6 +6685,10 @@ class CreatorDegreeDetailRevision(Revision):
 
     def _get_source_name(self):
         return 'creator_degree'
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_degree_detail.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
 
     def commit_to_display(self):
         creator_degree_detail = self.creator_degree_detail
@@ -6755,7 +6767,7 @@ class CreatorMembershipRevisionManager(RevisionManager):
 
         revision.save()
 
-        _create_data_source_revision(creator_membership, changeset, revision)
+        #_create_data_source_revision(creator_membership, changeset, revision)
 
         return revision
 
@@ -6844,6 +6856,10 @@ class CreatorMembershipRevision(Revision):
             return 1
         return 0
 
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_membership.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
     def commit_to_display(self, clear_reservation=True):
         ctm = self.creator_membership
         if ctm is None:
@@ -6920,7 +6936,7 @@ class CreatorAwardRevisionManager(RevisionManager):
 
         revision.save()
 
-        _create_data_source_revision(creator_award, changeset, revision)
+        #_create_data_source_revision(creator_award, changeset, revision)
 
         return revision
 
@@ -7011,6 +7027,10 @@ class CreatorAwardRevision(Revision):
             return 1
         return 0
 
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_award.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
     def commit_to_display(self, clear_reservation=True):
         awd = self.creator_award
         if awd is None:
@@ -7079,7 +7099,7 @@ class CreatorArtInfluenceRevisionManager(RevisionManager):
 
         revision.save()
 
-        _create_data_source_revision(creator_artinfluence, changeset, revision)
+        #_create_data_source_revision(creator_artinfluence, changeset, revision)
 
         return revision
 
@@ -7148,6 +7168,10 @@ class CreatorArtInfluenceRevision(Revision):
         if field_name in self._base_field_list:
             return 1
         return 0
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_artinfluence.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
 
     def commit_to_display(self, clear_reservation=True):
         art = self.creator_artinfluence
@@ -7308,6 +7332,10 @@ class CreatorNonComicWorkRevision(Revision):
         if field_name in self._base_field_list:
             return 1
         return 0
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_noncomicwork.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
 
     def commit_to_display(self, clear_reservation=True):
         ncw = self.creator_noncomicwork

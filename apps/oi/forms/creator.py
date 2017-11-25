@@ -335,6 +335,8 @@ class CreatorNonComicWorkRevisionForm(forms.ModelForm):
 
     def clean_work_years(self):
         value = self.cleaned_data['work_years']
+        if not value:
+            return value
         try:
             for year in value.split(';'):
                 range_split = year.split('-')
@@ -343,7 +345,7 @@ class CreatorNonComicWorkRevisionForm(forms.ModelForm):
                     year_end = _check_year(range_split[1])
                     if year_began > year_end:
                         raise forms.ValidationError(
-                                    "Years in range do not validata.")
+                                    "Years in range do not validate.")
                 else:
                     _check_year(year)
         except ValueError:

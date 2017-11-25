@@ -2,15 +2,16 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import apps.oi.models
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('stddata', '0003_language_native_name'),
-        ('gcd', '0003_creators'),
+        ('gcd', '0004_initial_creator_data'),
+        ('stddata', '0002_initial_data'),
         ('contenttypes', '0001_initial'),
-        ('oi', '0001_initial'),
+        ('oi', '0003_migrate_reservations_to_locks'),
     ]
 
     operations = [
@@ -42,7 +43,8 @@ class Migration(migrations.Migration):
                 ('deleted', models.BooleanField(default=False, db_index=True)),
                 ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
                 ('modified', models.DateTimeField(auto_now=True, db_index=True)),
-                ('award_name', models.CharField(max_length=255)),
+                ('award_name', models.CharField(max_length=255, blank=True)),
+                ('no_award_name', models.BooleanField(default=False)),
                 ('award_year', models.PositiveSmallIntegerField(null=True, blank=True)),
                 ('award_year_uncertain', models.BooleanField(default=False)),
                 ('notes', models.TextField(blank=True)),
@@ -153,8 +155,10 @@ class Migration(migrations.Migration):
                 ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
                 ('modified', models.DateTimeField(auto_now=True, db_index=True)),
                 ('publication_title', models.CharField(max_length=200)),
-                ('employer_name', models.CharField(max_length=200, null=True, blank=True)),
-                ('work_title', models.CharField(max_length=255, null=True, blank=True)),
+                ('employer_name', models.CharField(max_length=200, blank=True)),
+                ('work_title', models.CharField(max_length=255, blank=True)),
+                ('work_years', models.TextField(blank=True)),
+                ('work_urls', models.TextField(blank=True, validators=[apps.oi.models.MultiURLValidator()])),
                 ('notes', models.TextField(blank=True)),
                 ('changeset', models.ForeignKey(related_name='creatornoncomicworkrevisions', to='oi.Changeset')),
                 ('creator', models.ForeignKey(related_name='non_comic_work_revisions', to='gcd.Creator')),
@@ -178,14 +182,14 @@ class Migration(migrations.Migration):
                 ('modified', models.DateTimeField(auto_now=True, db_index=True)),
                 ('gcd_official_name', models.CharField(max_length=255, db_index=True)),
                 ('birth_country_uncertain', models.BooleanField(default=False)),
-                ('birth_province', models.CharField(max_length=50, null=True, blank=True)),
+                ('birth_province', models.CharField(max_length=50, blank=True)),
                 ('birth_province_uncertain', models.BooleanField(default=False)),
-                ('birth_city', models.CharField(max_length=200, null=True, blank=True)),
+                ('birth_city', models.CharField(max_length=200, blank=True)),
                 ('birth_city_uncertain', models.BooleanField(default=False)),
                 ('death_country_uncertain', models.BooleanField(default=False)),
-                ('death_province', models.CharField(max_length=50, null=True, blank=True)),
+                ('death_province', models.CharField(max_length=50, blank=True)),
                 ('death_province_uncertain', models.BooleanField(default=False)),
-                ('death_city', models.CharField(max_length=200, null=True, blank=True)),
+                ('death_city', models.CharField(max_length=200, blank=True)),
                 ('death_city_uncertain', models.BooleanField(default=False)),
                 ('whos_who', models.URLField(null=True, blank=True)),
                 ('bio', models.TextField(null=True, blank=True)),
@@ -245,45 +249,6 @@ class Migration(migrations.Migration):
                 'ordering': ('gcd_official_name', 'rel_type', 'to_name'),
                 'db_table': 'oi_namerelation_revision',
                 'verbose_name_plural': 'Name Relation Revisions',
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
-            name='NonComicWorkLinkRevision',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('deleted', models.BooleanField(default=False, db_index=True)),
-                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
-                ('link', models.URLField(max_length=255)),
-                ('changeset', models.ForeignKey(related_name='noncomicworklinkrevisions', to='oi.Changeset')),
-                ('creator_noncomicworklink', models.ForeignKey(related_name='revisions', to='gcd.NonComicWorkLink', null=True)),
-                ('non_comic_work', models.ForeignKey(related_name='cr_noncomicworklinks', to='oi.CreatorNonComicWorkRevision')),
-            ],
-            options={
-                'ordering': ['created', '-id'],
-                'db_table': 'oi_non_comic_work_link_revision',
-                'verbose_name_plural': 'NonComic Work Link Revisions',
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
-            name='NonComicWorkYearRevision',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('deleted', models.BooleanField(default=False, db_index=True)),
-                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
-                ('work_year', models.PositiveSmallIntegerField(null=True, blank=True)),
-                ('work_year_uncertain', models.BooleanField(default=False)),
-                ('changeset', models.ForeignKey(related_name='noncomicworkyearrevisions', to='oi.Changeset')),
-                ('creator_noncomicworkyear', models.ForeignKey(related_name='revisions', to='gcd.NonComicWorkYear', null=True)),
-                ('non_comic_work', models.ForeignKey(related_name='cr_noncomicworkyears', to='oi.CreatorNonComicWorkRevision')),
-            ],
-            options={
-                'ordering': ['created', '-id'],
-                'db_table': 'oi_non_comic_work_year_revision',
-                'verbose_name_plural': 'NonComic Work Year Revisions',
             },
             bases=(models.Model,),
         ),

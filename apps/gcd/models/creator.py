@@ -26,7 +26,7 @@ def _display_day(date):
         display += 'month? '
 
     if date.day:
-        display = '%s%s%s ' % (display, date.day,
+        display = '%s%s%s ' % (display, date.day.lstrip('0'),
                                '?' if date.day_uncertain else '')
     else:
         display += 'day? '
@@ -733,6 +733,8 @@ class NonComicWork(models.Model):
 
     def display_years(self):
         years = self.noncomicworkyears.all().order_by('work_year')
+        if not years:
+            return u''
         year_string = u'%d' % years[0].work_year
         if years[0].work_year_uncertain:
             year_string += u'?'
@@ -754,6 +756,10 @@ class NonComicWork(models.Model):
                         year_string += u'?'
                 year_range = False
             year_before = year
+        if year_range:
+            year_string += u' - %d' % (year.work_year)
+            if year.work_year_uncertain:
+                year_string += u'?'
         return year_string
 
     def get_absolute_url(self):
