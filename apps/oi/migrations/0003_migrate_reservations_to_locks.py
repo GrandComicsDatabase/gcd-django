@@ -40,20 +40,23 @@ def migrate_reservation_to_lock(apps, schema_editor):
     for classname in RESERVABLE_CLASSES:
         # We can't import the model directly as it may be a newer version
         # than this migration expects. We use the historical version.
-        obj_class = apps.get_model('gcd', classname)        
-        for obj in obj_class.objects.filter(reserved=True):
-            #try:
-                rev = obj.revisions.get(changeset__state__in=states.ACTIVE)
-                
-                ContentType = apps.get_model('contenttypes', 'ContentType')
-                
-                ct = ContentType.objects.get(app_label='gcd',
-                                             model=classname.lower())
-                
-                lock = RevisionLock(changeset=rev.changeset,
-                                    object_id=obj.id,
-                                    content_type=ct)
-                lock.save()
+        obj_class = apps.get_model('gcd', classname)
+        if classname == 'Story':
+            objects = obj_class.objects.filter(issue__reserved=True)
+        else:
+            objects = obj_class.objects.filter(reserved=True)
+        for obj in objects:
+            rev = obj.revisions.get(changeset__state__in=states.ACTIVE)
+
+            ContentType = apps.get_model('contenttypes', 'ContentType')
+
+            ct = ContentType.objects.get(app_label='gcd',
+                                         model=classname.lower())
+
+            lock = RevisionLock(changeset=rev.changeset,
+                                object_id=obj.id,
+                                content_type=ct)
+            lock.save()
 
 
 class Migration(migrations.Migration):
