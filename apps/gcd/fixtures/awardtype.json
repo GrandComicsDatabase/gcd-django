@@ -1427,11 +1427,4 @@
     "model": "gcd.awardtype",
     "pk": 204
 },
-{
-    "fields": {
-        "name": ""
-    },
-    "model": "gcd.awardtype",
-    "pk": 205
-}
 ]
