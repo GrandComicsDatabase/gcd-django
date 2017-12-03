@@ -118,16 +118,22 @@ def header_link(changeset):
         return absolute_url(revision.object)
     elif changeset.change_type == CTYPES['creator']:
         return mark_safe(u'%s' % (absolute_url(revision)))
-    elif changeset.change_type == CTYPES['creator_membership']:
+    elif changeset.change_type == CTYPES['creator_art_influence']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.creator), absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_award']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.creator), absolute_url(revision)))
-    elif changeset.change_type == CTYPES['creator_artinfluence']:
+    elif changeset.change_type == CTYPES['creator_membership']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.creator), absolute_url(revision)))
-    elif changeset.change_type == CTYPES['creator_noncomicwork']:
+    elif changeset.change_type == CTYPES['creator_non_comic_work']:
+        return mark_safe(u'%s : %s' %
+                         (absolute_url(revision.creator), absolute_url(revision)))
+    elif changeset.change_type == CTYPES['creator_school']:
+        return mark_safe(u'%s : %s' %
+                         (absolute_url(revision.creator), absolute_url(revision)))
+    elif changeset.change_type == CTYPES['creator_degree']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.creator), absolute_url(revision)))
     else:

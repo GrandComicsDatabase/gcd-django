@@ -32,8 +32,9 @@ from apps.stats.models import CountStats
 from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
                             IndiciaPublisher, Brand, BrandGroup, Cover, \
-                            SeriesBond, Membership, Award, ArtInfluence,\
-                            NonComicWork, CreatorSchoolDetail, CreatorDegreeDetail
+                            SeriesBond, Creator, CreatorMembership,\
+                            CreatorAward, CreatorArtInfluence,\
+                            CreatorNonComicWork, CreatorSchool, CreatorDegree
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -45,8 +46,7 @@ from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
-                           SeriesBondRevision,CreatorRevision, CTYPES
-from apps.gcd.models.creator import Creator
+                           SeriesBondRevision, CreatorRevision, CTYPES
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -87,7 +87,8 @@ def show_creator(request, creator, preview=False):
 
 
 def creator_membership(request, creator_membership_id):
-    creator_membership = get_gcd_object(Membership, creator_membership_id)
+    creator_membership = get_gcd_object(CreatorMembership, 
+                                        creator_membership_id)
     return show_creator_membership(request, creator_membership)
 
 
@@ -95,25 +96,25 @@ def show_creator_membership(request, creator_membership, preview=False):
     vars = {'creator_membership': creator_membership,
             'error_subject': creator_membership,
             'preview': preview}
-    return render(request, 'gcd/details/creator_membership_details.html', vars)
+    return render(request, 'gcd/details/creator_membership.html', vars)
 
 
-def creator_artinfluence(request, creator_artinfluence_id):
-    creator_artinfluence = get_gcd_object(ArtInfluence,
-                                          creator_artinfluence_id)
-    return show_creator_artinfluence(request, creator_artinfluence)
+def creator_art_influence(request, creator_art_influence_id):
+    creator_art_influence = get_gcd_object(CreatorArtInfluence,
+                                           creator_art_influence_id)
+    return show_creator_art_influence(request, creator_art_influence)
 
 
-def show_creator_artinfluence(request, creator_artinfluence, preview=False):
-    vars = {'creator_artinfluence': creator_artinfluence,
-            'error_subject': creator_artinfluence,
+def show_creator_art_influence(request, creator_art_influence, preview=False):
+    vars = {'creator_art_influence': creator_art_influence,
+            'error_subject': creator_art_influence,
             'preview': preview}
-    return render(request, 'gcd/details/creator_artinfluence_details.html',
+    return render(request, 'gcd/details/creator_art_influence.html',
                   vars)
 
 
 def creator_award(request, creator_award_id):
-    creator_award = get_gcd_object(Award, creator_award_id)
+    creator_award = get_gcd_object(CreatorAward, creator_award_id)
     return show_creator_award(request, creator_award)
 
 
@@ -121,11 +122,11 @@ def show_creator_award(request, creator_award, preview=False):
     vars = {'creator_award': creator_award,
             'error_subject': creator_award,
             'preview': preview}
-    return render(request, 'gcd/details/creator_award_details.html', vars)
+    return render(request, 'gcd/details/creator_award.html', vars)
 
 
 def creator_degree(request, creator_degree_id):
-    creator_degree = get_gcd_object(CreatorDegreeDetail, creator_degree_id)
+    creator_degree = get_gcd_object(CreatorDegree, creator_degree_id)
     return show_creator_degree(request, creator_degree)
 
 
@@ -134,25 +135,25 @@ def show_creator_degree(request, creator_degree, preview=False):
             'creator_degree': creator_degree,
             'error_subject': creator_degree,
             'preview': preview}
-    return render(request, 'gcd/details/creator_degree_details.html', vars)
+    return render(request, 'gcd/details/creator_degree.html', vars)
 
 
-def creator_noncomicwork(request, creator_noncomicwork_id):
-    creator_noncomicwork = get_gcd_object(NonComicWork,
-                                          creator_noncomicwork_id)
-    return show_creator_noncomicwork(request, creator_noncomicwork)
+def creator_non_comic_work(request, creator_non_comic_work_id):
+    creator_non_comic_work = get_gcd_object(CreatorNonComicWork,
+                                            creator_non_comic_work_id)
+    return show_creator_non_comic_work(request, creator_non_comic_work)
 
 
-def show_creator_noncomicwork(request, creator_noncomicwork, preview=False):
-    vars = {'creator_noncomicwork': creator_noncomicwork,
-            'error_subject': creator_noncomicwork,
+def show_creator_non_comic_work(request, creator_non_comic_work, preview=False):
+    vars = {'creator_non_comic_work': creator_non_comic_work,
+            'error_subject': creator_non_comic_work,
             'preview': preview}
-    return render(request, 'gcd/details/creator_noncomicwork_details.html',
+    return render(request, 'gcd/details/creator_non_comic_work.html',
                   vars)
 
 
 def creator_school(request, creator_school_id):
-    creator_school = get_gcd_object(CreatorSchoolDetail, creator_school_id)
+    creator_school = get_gcd_object(CreatorSchool, creator_school_id)
     return show_creator_school(request, creator_school)
 
 
@@ -161,7 +162,7 @@ def show_creator_school(request, creator_school, preview=False):
             'creator_school': creator_school,
             'error_subject': creator_school,
             'preview': preview}
-    return render(request, 'gcd/details/creator_school_details.html', vars)
+    return render(request, 'gcd/details/creator_school.html', vars)
 
 
 def publisher(request, publisher_id):
@@ -629,7 +630,7 @@ def change_history(request, model_name, id):
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
                           'image', 'series_bond', 'creator', 'creator_membership',
-                          'creator_award', 'creator_artinfluence','creator_noncomicwork']:
+                          'creator_award', 'creator_art_influence','creator_non_comic_work']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('indexer/error.html', {

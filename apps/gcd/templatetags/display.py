@@ -14,8 +14,8 @@ from apps.oi import states
 from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
-from apps.gcd.models.creator import Creator, Membership, Award, ArtInfluence, \
-                                    NonComicWork
+from apps.gcd.models.creator import Creator, CreatorMembership, CreatorAward, \
+                                    CreatorArtInfluence, CreatorNonComicWork
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, \
                                       Publisher
 from apps.gcd.models.series import Series
@@ -304,14 +304,14 @@ def changed_fields(changeset, object):
     elif object_class is Creator:
         revision = changeset.creatorrevisions.all().get(creator=object.id)
 
-    elif object_class is Membership:
+    elif object_class is CreatorMembership:
         revision = changeset.creatormembershiprevisions.all().get(creator_membership=object.id)
-    elif object_class is Award:
+    elif object_class is CreatorAward:
         revision = changeset.creatorawardrevisions.all().get(creator_award=object.id)
-    elif object_class is ArtInfluence:
-        revision = changeset.creatorartinfluencerevisions.all().get(creator_artinfluence=object.id)
-    elif object_class is NonComicWork:
-        revision = changeset.creatornoncomicworkrevisions.all().get(creator_noncomicwork=object.id)
+    elif object_class is CreatorArtInfluence:
+        revision = changeset.creatorartinfluencerevisions.all().get(creator_art_influence=object.id)
+    elif object_class is CreatorNonComicWork:
+        revision = changeset.creatornoncomicworkrevisions.all().get(creator_non_comic_work=object.id)
     elif object_class in [Cover, Image]:
         return ""
 

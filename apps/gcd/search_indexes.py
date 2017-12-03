@@ -1,7 +1,8 @@
 from haystack import indexes
 from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
-    Brand, BrandGroup, STORY_TYPES, Creator, Membership, ArtInfluence, Award, NonComicWork
+    Brand, BrandGroup, STORY_TYPES, Creator, CreatorMembership,\
+    CreatorArtInfluence, CreatorAward, CreatorNonComicWork
 
 DEFAULT_BOOST = 15.0
 
@@ -280,7 +281,7 @@ class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable
     sort_name = indexes.CharField(model_attr='organization_name', indexed=False)
 
     def get_model(self):
-        return Membership
+        return CreatorMembership
 
     def prepare_facet_model_name(self, obj):
         return "creator membership"
@@ -299,7 +300,7 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
                                 indexed=False, null=True)
 
     def get_model(self):
-        return ArtInfluence
+        return CreatorArtInfluence
 
     def prepare_facet_model_name(self, obj):
         return "creator artinfluence"
@@ -317,7 +318,7 @@ class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     sort_name = indexes.CharField(model_attr='award_name', indexed=False)
 
     def get_model(self):
-        return Award
+        return CreatorAward
 
     def prepare_facet_model_name(self, obj):
         return "creator award"
@@ -336,7 +337,7 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
                                 indexed=False, null=True)
 
     def get_model(self):
-        return NonComicWork
+        return CreatorNonComicWork
 
     def prepare_facet_model_name(self, obj):
         return "creator noncomicwork"

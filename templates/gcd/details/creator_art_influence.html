@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block title %}
-  GCD :: Creator Art Influence :: {{ creator_artinfluence.influence_name }}
+  GCD :: Creator Art Influence :: {{ creator_art_influence.influence_name }}
 {% endblock %}
 
 {% block css %}
@@ -17,31 +17,31 @@
   <div id="control_container">
     <div id="control_center">
       <dl class="pub_data">
-        {% if creator_artinfluence.influence_name %}
+        {% if creator_art_influence.influence_name %}
         <dt> Influence Name:
-        <dd> {{ creator_artinfluence.influence_name }}
+        <dd> {{ creator_art_influence.influence_name }}
         {% endif %}
-        {% if creator_artinfluence.influence_link %}
+        {% if creator_art_influence.influence_link %}
         <dt> Influence Link:
-        <dd> <a href="{{ creator_artinfluence.influence_link.get_absolute_url }}">{{ creator_artinfluence.influence_link }}</a>
+        <dd> <a href="{{ creator_art_influence.influence_link.get_absolute_url }}">{{ creator_art_influence.influence_link }}</a>
         {% endif %}
-        {% if creator_artinfluence.notes %}
+        {% if creator_art_influence.notes %}
         <dt>Notes
-        <dd>{{ creator_artinfluence.notes }}
+        <dd>{{ creator_art_influence.notes }}
         {% endif %}
-        {% with creator_artinfluence.data_source.all as data_sources %}
+        {% with creator_art_influence.data_source.all as data_sources %}
         {% include "gcd/bits/show_sources.html" %}
         {% endwith %}
       </dl>
     </div> <!-- control_center -->
-  {% if not preview or creator_artinfluence.source %}
+  {% if not preview or creator_art_influence.source %}
     <div id="control_rail">
       <div class="edit_box">
         <div class="edit_header">Editing</div>
   {% if not preview %}
-    {% with creator_artinfluence as object %}
-    {% with 'creator_artinfluence' as object_class %}
-    {% with 'creator_artinfluence' as object_name %}
+    {% with creator_art_influence as object %}
+    {% with 'creator_art_influence' as object_class %}
+    {% with 'creator_art_influence' as object_name %}
       {% include "gcd/bits/status_banner.html" %}
     {% endwith %}
     {% endwith %}
@@ -51,9 +51,9 @@
       </div> <!-- edit_box -->
       <div id="change_history" class="edit_footer">
   {% if preview %}
-        <a href="{% url "change_history" model_name='creator_artinfluence' id=creator_artinfluence.source.id %}">View Change History</a>
+        <a href="{% url "change_history" model_name='creator_art_influence' id=creator_art_influence.source.id %}">View Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='creator_artinfluence' id=creator_artinfluence.id %}">View Change History</a>
+        <a href="{% url "change_history" model_name='creator_art_influence' id=creator_art_influence.id %}">View Change History</a>
   {% endif %}
       </div>
         </div> <!-- control_rail -->

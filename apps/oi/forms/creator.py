@@ -5,9 +5,9 @@ from django import forms
 
 from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
                            CreatorAwardRevision, CreatorArtInfluenceRevision, \
-                           CreatorNonComicWorkRevision, CreatorSchoolDetailRevision, \
+                           CreatorNonComicWorkRevision, CreatorSchoolRevision, \
                            get_creator_field_list,\
-                           CreatorDataSourceRevision, CreatorDegreeDetailRevision, \
+                           DataSourceRevision, CreatorDegreeRevision, \
                            _get_creator_sourced_fields, _check_year
 
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
@@ -108,7 +108,7 @@ def get_creator_school_revision_form(revision=None, user=None):
 
 class CreatorSchoolRevisionForm(forms.ModelForm):
     class Meta:
-        model = CreatorSchoolDetailRevision
+        model = CreatorSchoolRevision
         fields = model._base_field_list
 
     def __init__(self, *args, **kwargs):
@@ -147,7 +147,7 @@ def get_creator_degree_revision_form(revision=None, user=None):
 
 class CreatorDegreeRevisionForm(forms.ModelForm):
     class Meta:
-        model = CreatorDegreeDetailRevision
+        model = CreatorDegreeRevision
         fields = model._base_field_list
 
     def __init__(self, *args, **kwargs):
@@ -271,7 +271,7 @@ def get_creator_art_influence_revision_form(revision=None, user=None):
 class CreatorArtInfluenceRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorArtInfluenceRevision
-        exclude = ['creator', 'creator_artinfluence','changeset', 'deleted',]
+        exclude = ['creator', 'creator_art_influence','changeset', 'deleted',]
         help_texts = CREATOR_ARTINFLUENCE_HELP_TEXTS
 
     def __init__(self, *args, **kwargs):

@@ -362,7 +362,7 @@ def compare_current_reprints(object_type, changeset):
 
 @register.filter
 def get_source_revisions(changeset, field):
-    revisions = changeset.creatordatasourcerevisions.filter(field=field)
+    revisions = changeset.datasourcerevisions.filter(field=field)
     for revision in revisions:
         revision.compare_changes()
     return revisions

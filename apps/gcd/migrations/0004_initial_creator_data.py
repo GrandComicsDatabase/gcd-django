@@ -10,7 +10,7 @@ def load_initial_creator_data(apps, schema_editor):
     for model in ('degree', 'membershiptype', 'nametype',
                   'noncomicworkrole', 'noncomicworktype',
                   'relationtype', 'school', 'sourcetype',
-                  'awardtype', 'imagetype'):
+                  'award', 'imagetype'):
         call_command('loaddata', model.lower())
 
 

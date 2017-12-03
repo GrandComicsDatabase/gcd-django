@@ -173,10 +173,10 @@
                     {% endif %}
 
                     <!--Creator's Art Influences-->
-                    {% if creator.active_artinfluences %}
+                    {% if creator.active_art_influences %}
                         <hr>
                         <h3>Art Influences:</h3>
-                        {% for influence in creator.active_artinfluences %}
+                        {% for influence in creator.active_art_influences %}
                             <p>{{ forloop.counter }}. <a href="{{ influence.get_absolute_url }}">{% if influence.influence_link %}{{ influence.influence_link }}{% else %}{{ influence.influence_name }}{% endif %}</a>
                             </p>
                             {% if influence.notes %}
@@ -214,10 +214,10 @@
                     {% endif %}
 
                     <!--Creator's Noncomic works-->
-                    {% if creator.active_noncomicworks %}
+                    {% if creator.active_non_comic_works %}
                         <hr>
                         <h3>Non Comics Works:</h3>
-                        {% for ncw in creator.active_noncomicworks %}
+                        {% for ncw in creator.active_non_comic_works %}
                                 <p>{{ forloop.counter }}. <strong>Publication title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
                                 <strong>Work type</strong> : {{ ncw.work_type.type }}</p>
                                 {% if ncw.employer_name %}
@@ -257,7 +257,7 @@
                             {% endwith %}
                         {% endwith %}
                         {% if user.is_authenticated and not creator.pending_deletion %}
-                            <a href="{% url "add_creator_artinfluence" creator.id %}">
+                            <a href="{% url "add_creator_art_influence" creator.id %}">
                                 <button>Add Art Influence</button>
                             </a>
                             <a href="{% url "add_creator_award" creator.id %}">
@@ -266,7 +266,7 @@
                             <a href="{% url "add_creator_membership" creator.id %}">
                                 <button>Add Membership</button>
                             </a>
-                            <a href="{% url "add_creator_noncomicwork" creator.id %}">
+                            <a href="{% url "add_creator_non_comic_work" creator.id %}">
                                 <button>Add NonComic Work</button>
                             </a>
                             <a href="{% url "add_creator_school" creator.id %}">
