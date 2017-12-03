@@ -246,7 +246,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              'search/indexes/gcd/creator_text.txt')
     gcd_official_name = indexes.EdgeNgramField(model_attr="gcd_official_name",
                                                boost=DEFAULT_BOOST)
-    name = MultiValueField()
+    name = MultiValueField(boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()

@@ -5805,11 +5805,10 @@ def _get_creator_sourced_fields():
 
 
 def get_creator_field_list():
-    return ['birth_date', 'death_date',
-            'birth_country', 'birth_country_uncertain',
+    return ['birth_date', 'birth_country', 'birth_country_uncertain',
             'birth_province', 'birth_province_uncertain',
             'birth_city', 'birth_city_uncertain',
-            'death_country', 'death_country_uncertain',
+            'death_date', 'death_country', 'death_country_uncertain',
             'death_province', 'death_province_uncertain',
             'death_city', 'death_city_uncertain',
             'whos_who', 'bio', 'notes'
