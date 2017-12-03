@@ -12,10 +12,10 @@
         <a href="{{ creator_membership.creator.get_absolute_url }}">{{ creator_membership.creator }}</a> : <a href="{{ creator_membership.get_absolute_url }}">{{ creator_membership.organization_name }}</a>
       {% elif creator_award %}
         <a href="{{ creator_award.creator.get_absolute_url }}">{{ creator_award.creator }}</a> : <a href="{{ creator_award.get_absolute_url }}">{{ creator_award.award_name }}</a>
-      {% elif creator_artinfluence %}
-        <a href="{{ creator_artinfluence.creator.get_absolute_url }}">{{ creator_artinfluence.creator }}</a> : <a href="{{ creator_artinfluence.get_absolute_url }}">{{ creator_artinfluence.influence_name }}</a>
-      {% elif creator_noncomicwork %}
-        <a href="{{ creator_noncomicwork.creator.get_absolute_url }}">{{ creator_noncomicwork.creator }}</a> : <a href="{{ creator_noncomicwork.get_absolute_url }}">{{ creator_noncomicwork.publication_title }}</a>
+      {% elif creator_art_influence %}
+        <a href="{{ creator_art_influence.creator.get_absolute_url }}">{{ creator_art_influence.creator }}</a> : <a href="{{ creator_art_influence.get_absolute_url }}">{{ creator_art_influence.influence_name }}</a>
+      {% elif creator_non_comic_work %}
+        <a href="{{ creator_non_comic_work.creator.get_absolute_url }}">{{ creator_non_comic_work.creator }}</a> : <a href="{{ creator_non_comic_work.get_absolute_url }}">{{ creator_non_comic_work.publication_title }}</a>
       {% endif %}
 
 

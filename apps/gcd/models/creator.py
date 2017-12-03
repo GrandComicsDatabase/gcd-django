@@ -69,6 +69,7 @@ class NameType(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_name_type'
         app_label = 'gcd'
         ordering = ('type',)
         verbose_name_plural = 'Name Types'
@@ -87,6 +88,7 @@ class CreatorNameDetail(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_creator_name_detail'
         app_label = 'gcd'
         ordering = ['type__id', 'created', '-id']
         verbose_name_plural = 'CreatorName Details'
@@ -123,6 +125,7 @@ class SourceType(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_source_type'
         app_label = 'gcd'
         ordering = ('type',)
         verbose_name_plural = 'Source Types'
@@ -133,12 +136,13 @@ class SourceType(models.Model):
         return unicode(self.type)
 
 
-class CreatorDataSource(models.Model):
+class DataSource(models.Model):
     """
     Indicates the various sources of creator data
     """
 
     class Meta:
+        db_table = 'gcd_data_source'
         app_label = 'gcd'
         ordering = ('source_description',)
         verbose_name_plural = 'Creator Data Source'
@@ -170,6 +174,7 @@ class RelationType(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_relation_type'
         app_label = 'gcd'
         ordering = ('type',)
         verbose_name_plural = 'Relation Types'
@@ -229,19 +234,18 @@ class Creator(models.Model):
     # TODO needed this way ?
     schools = models.ManyToManyField('School',
                                      related_name='schoolinformation',
-                                     through='CreatorSchoolDetail',
+                                     through='CreatorSchool',
                                      null=True, blank=True)
     degrees = models.ManyToManyField('Degree',
                                      related_name='degreeinformation',
-                                     through='CreatorDegreeDetail',
+                                     through='CreatorDegree',
                                      null=True, blank=True)
     # creators roles
     bio = models.TextField(blank=True)
     sample_scan = generic.GenericRelation(Image)
     notes = models.TextField(blank=True)
 
-    data_source = models.ManyToManyField(CreatorDataSource,
-                                         blank=True)
+    data_source = models.ManyToManyField(DataSource, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -316,23 +320,23 @@ class Creator(models.Model):
     def active_names(self):
         return self.creator_names.exclude(deleted=True)
 
-    def active_artinfluences(self):
-        return self.artinfluence_set.exclude(deleted=True)
+    def active_art_influences(self):
+        return self.art_influence_set.exclude(deleted=True)
 
     def active_awards(self):
         return self.award_set.exclude(deleted=True)
 
     def active_degrees(self):
-        return self.creator_degree.exclude(deleted=True)
+        return self.degree_set.exclude(deleted=True)
 
     def active_memberships(self):
         return self.membership_set.exclude(deleted=True)
 
-    def active_noncomicworks(self):
-        return self.noncomicwork_set.exclude(deleted=True)
+    def active_non_comic_works(self):
+        return self.non_comic_work_set.exclude(deleted=True)
 
     def active_schools(self):
-        return self.creator_school.exclude(deleted=True)
+        return self.school_set.exclude(deleted=True)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -350,6 +354,7 @@ class NameRelation(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_name_relation'
         app_label = 'gcd'
         ordering = ('gcd_official_name', 'rel_type', 'to_name')
         verbose_name_plural = 'Name Relations'
@@ -396,25 +401,25 @@ class School(models.Model):
         return unicode(self.school_name)
 
 
-class CreatorSchoolDetail(models.Model):
+class CreatorSchool(models.Model):
     """
     record the schools creators attended
     """
 
     class Meta:
+        db_table = 'gcd_creator_school'
         app_label = 'gcd'
         ordering = ('school_year_began', 'school_year_ended')
-        verbose_name_plural = 'Creator School Details'
+        verbose_name_plural = 'Creator Schools'
 
-    creator = models.ForeignKey(Creator, related_name='creator_school')
-    school = models.ForeignKey(School, related_name='school_details')
+    creator = models.ForeignKey(Creator, related_name='school_set')
+    school = models.ForeignKey(School, related_name='creator')
     school_year_began = models.PositiveSmallIntegerField(null=True, blank=True)
     school_year_began_uncertain = models.BooleanField(default=False)
     school_year_ended = models.PositiveSmallIntegerField(null=True, blank=True)
     school_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
-    data_source = models.ManyToManyField(CreatorDataSource,
-                                         blank=True)
+    data_source = models.ManyToManyField(DataSource, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -457,25 +462,25 @@ class Degree(models.Model):
         return unicode(self.degree_name)
 
 
-class CreatorDegreeDetail(models.Model):
+class CreatorDegree(models.Model):
     """
     record the degrees creators received
     """
 
     class Meta:
+        db_table = 'gcd_creator_degree'
         app_label = 'gcd'
         ordering = ('degree_year',)
-        verbose_name_plural = 'Creator Degree Details'
+        verbose_name_plural = 'Creator Degrees'
 
-    creator = models.ForeignKey(Creator, related_name='creator_degree')
-    school = models.ForeignKey(School, related_name='schooldetails', null=True,
+    creator = models.ForeignKey(Creator, related_name='degree_set')
+    school = models.ForeignKey(School, related_name='degree', null=True,
                                blank=True)
-    degree = models.ForeignKey(Degree, related_name='degreedetails')
+    degree = models.ForeignKey(Degree, related_name='creator')
     degree_year = models.PositiveSmallIntegerField(null=True, blank=True)
     degree_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
-    data_source = models.ManyToManyField(CreatorDataSource,
-                                         blank=True)
+    data_source = models.ManyToManyField(DataSource, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -502,16 +507,17 @@ class CreatorDegreeDetail(models.Model):
                             unicode(self.degree.degree_name))
 
 
-class ArtInfluence(models.Model):
+class CreatorArtInfluence(models.Model):
     """
     record the Name of artistic influences for creators
     """
 
     class Meta:
+        db_table = 'gcd_creator_art_influence'
         app_label = 'gcd'
-        verbose_name_plural = 'Art Influences'
+        verbose_name_plural = 'Creator Art Influences'
 
-    creator = models.ForeignKey(Creator)
+    creator = models.ForeignKey(Creator, related_name='art_influence_set')
     influence_name = models.CharField(max_length=200)
     influence_link = models.ForeignKey(
             Creator,
@@ -519,8 +525,7 @@ class ArtInfluence(models.Model):
             blank=True,
             related_name='exist_influencer')
     notes = models.TextField(blank=True)
-    data_source = models.ManyToManyField(CreatorDataSource,
-                                         blank=True)
+    data_source = models.ManyToManyField(DataSource, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -539,8 +544,8 @@ class ArtInfluence(models.Model):
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
-                'show_creator_artinfluence',
-                kwargs={'creator_artinfluence_id': self.id})
+                'show_creator_art_influence',
+                kwargs={'creator_art_influence_id': self.id})
 
     def __unicode__(self):
         return unicode(self.influence_name)
@@ -552,6 +557,7 @@ class MembershipType(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_membership_type'
         app_label = 'gcd'
         verbose_name_plural = 'Membership Types'
 
@@ -561,18 +567,19 @@ class MembershipType(models.Model):
         return unicode(self.type)
 
 
-class Membership(models.Model):
+class CreatorMembership(models.Model):
     """
     record societies and other organizations related to their
     artistic profession that creators held memberships in
     """
 
     class Meta:
+        db_table = 'gcd_creator_membership'
         app_label = 'gcd'
         ordering = ('membership_type',)
-        verbose_name_plural = 'Memberships'
+        verbose_name_plural = 'Creator Memberships'
 
-    creator = models.ForeignKey(Creator)
+    creator = models.ForeignKey(Creator, related_name='membership_set')
     organization_name = models.CharField(max_length=200)
     membership_type = models.ForeignKey(MembershipType, null=True, blank=True)
     membership_year_began = models.PositiveSmallIntegerField(null=True,
@@ -582,8 +589,7 @@ class Membership(models.Model):
                                                              blank=True)
     membership_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
-    data_source = models.ManyToManyField(CreatorDataSource,
-                                         blank=True)
+    data_source = models.ManyToManyField(DataSource, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -609,11 +615,11 @@ class Membership(models.Model):
         return '%s' % unicode(self.organization_name)
 
 
-class AwardType(models.Model):
+class Award(models.Model):
     class Meta:
         app_label = 'gcd'
         ordering = ('name',)
-        verbose_name_plural = 'AwardTypes'
+        verbose_name_plural = 'Awards'
 
     name = models.CharField(max_length=200)
 
@@ -621,25 +627,25 @@ class AwardType(models.Model):
         return unicode(self.name)
 
 
-class Award(models.Model):
+class CreatorAward(models.Model):
     """
     record any awards and honors a creator received
     """
 
     class Meta:
+        db_table = 'gcd_creator_award'
         app_label = 'gcd'
         ordering = ('award_year',)
-        verbose_name_plural = 'Awards'
+        verbose_name_plural = 'Creator Awards'
 
-    creator = models.ForeignKey(Creator)
-    award = models.ForeignKey(AwardType, null=True)
+    creator = models.ForeignKey(Creator, related_name='award_set')
+    award = models.ForeignKey(Award, null=True)
     award_name = models.CharField(max_length=255)
     no_award_name = models.BooleanField(default=False)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
     award_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
-    data_source = models.ManyToManyField(CreatorDataSource,
-                                         blank=True)
+    data_source = models.ManyToManyField(DataSource, blank=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -671,6 +677,7 @@ class NonComicWorkType(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_non_comic_work_type'
         app_label = 'gcd'
         verbose_name_plural = 'NonComic Work Types'
 
@@ -686,6 +693,7 @@ class NonComicWorkRole(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_non_comic_work_role'
         app_label = 'gcd'
         verbose_name_plural = 'NonComic Work Roles'
 
@@ -695,25 +703,25 @@ class NonComicWorkRole(models.Model):
         return unicode(self.role_name)
 
 
-class NonComicWork(models.Model):
+class CreatorNonComicWork(models.Model):
     """
     record the non-comics work of comics creators
     """
 
     class Meta:
+        db_table = 'gcd_creator_non_comic_work'
         app_label = 'gcd'
         ordering = ('publication_title', 'employer_name', 'work_type')
-        verbose_name_plural = 'NonComic Works'
+        verbose_name_plural = 'Creator Non Comic Works'
 
-    creator = models.ForeignKey(Creator)
+    creator = models.ForeignKey(Creator, related_name='non_comic_work_set')
     work_type = models.ForeignKey(NonComicWorkType)
     publication_title = models.CharField(max_length=200)
     employer_name = models.CharField(max_length=200, blank=True)
     work_title = models.CharField(max_length=255, blank=True)
     work_role = models.ForeignKey(NonComicWorkRole, null=True)
     work_urls = models.TextField()
-    data_source = models.ManyToManyField(CreatorDataSource,
-                                         blank=True)
+    data_source = models.ManyToManyField(DataSource, blank=True)
     notes = models.TextField()
 
     # Fields related to change management.
@@ -764,8 +772,8 @@ class NonComicWork(models.Model):
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
-                'show_creator_noncomicwork',
-                kwargs={'creator_noncomicwork_id': self.id})
+                'show_creator_non_comic_work',
+                kwargs={'creator_non_comic_work_id': self.id})
 
     def __unicode__(self):
         return '%s' % (unicode(self.publication_title))
@@ -778,11 +786,12 @@ class NonComicWorkYear(models.Model):
     """
 
     class Meta:
+        db_table = 'gcd_non_comic_work_year'
         app_label = 'gcd'
         ordering = ('work_year',)
         verbose_name_plural = 'NonComic Work Years'
 
-    non_comic_work = models.ForeignKey(NonComicWork,
+    non_comic_work = models.ForeignKey(CreatorNonComicWork,
                                        related_name='noncomicworkyears')
     work_year = models.PositiveSmallIntegerField(null=True, blank=True)
     work_year_uncertain = models.BooleanField(default=False)
@@ -791,22 +800,3 @@ class NonComicWorkYear(models.Model):
         return '%s - %s' % (unicode(self.non_comic_work),
                             unicode(self.work_year))
 
-
-#class NonComicWorkLink(models.Model):
-    #"""
-    #record a link to either the work or more information about the work
-    #"""
-
-    #class Meta:
-        #app_label = 'gcd'
-        #verbose_name_plural = 'NonComic Work Links'
-
-    #non_comic_work = models.ForeignKey(NonComicWork,
-                                       #related_name='noncomicworklinks')
-    #link = models.URLField(max_length=255)
-
-    #def deletable(self):
-        #return self.creator.pending_deletion() is False
-
-    #def __unicode__(self):
-        #return unicode(self.link)

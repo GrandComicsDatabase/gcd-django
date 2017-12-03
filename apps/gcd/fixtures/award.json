@@ -3,1428 +3,1428 @@
     "fields": {
         "name": "9th Art Award, The"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 1
 },
 {
     "fields": {
         "name": "Academy of Comic Book Arts"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 2
 },
 {
     "fields": {
         "name": "Adamson Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 3
 },
 {
     "fields": {
         "name": "African Centre for Media Excellence Editorial Cartooning Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 4
 },
 {
     "fields": {
         "name": "Akatsuka Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 5
 },
 {
     "fields": {
         "name": "Alley Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 6
 },
 {
     "fields": {
         "name": "Ally Sloper Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 7
 },
 {
     "fields": {
         "name": "Alph-Art"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 8
 },
 {
     "fields": {
         "name": "Amasya Municipality Cartoon Contest"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 9
 },
 {
     "fields": {
         "name": "American Anime Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 10
 },
 {
     "fields": {
         "name": "Angoul\u00eame International Comics Festival"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 11
 },
 {
     "fields": {
         "name": "Arab Cartoon Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 12
 },
 {
     "fields": {
         "name": "Aronson Award for Cartooning"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 13
 },
 {
     "fields": {
         "name": "Asahi Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 14
 },
 {
     "fields": {
         "name": "Associated Collegiate Press Cartooning Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 15
 },
 {
     "fields": {
         "name": "Atila Ozer Internatioanal Cartoon Contest"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 16
 },
 {
     "fields": {
         "name": "Attilio Micheluzzi Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 17
 },
 {
     "fields": {
         "name": "Barcelona International Comics Convention Prizes"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 18
 },
 {
     "fields": {
         "name": "B\u00e9d\u00e9lys Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 19
 },
 {
     "fields": {
         "name": "Big Comic Original Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 20
 },
 {
     "fields": {
         "name": "Bill Finger Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 21
 },
 {
     "fields": {
         "name": "Bram Stoker Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 22
 },
 {
     "fields": {
         "name": "British Comic Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 23
 },
 {
     "fields": {
         "name": "British Fantasy Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 24
 },
 {
     "fields": {
         "name": "British Press Awards Cartoonist"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 25
 },
 {
     "fields": {
         "name": "Bronzen Adhemar"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 26
 },
 {
     "fields": {
         "name": "Bulletje en Boonestaakschaal"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 27
 },
 {
     "fields": {
         "name": "Bungei Shunju Manga Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 28
 },
 {
     "fields": {
         "name": "Bungeishunju Manga Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 29
 },
 {
     "fields": {
         "name": "Bunka ch\u014d media geijutsusai, jush\u014d sakuhin (\u6587\u5316\u5e81\u30e1\u30c7\u30a3\u30a2\u82b8\u8853\u796d \u53d7\u8cde\u4f5c\u54c1, Media Arts Awards)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 30
 },
 {
     "fields": {
         "name": "Cakovec Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 31
 },
 {
     "fields": {
         "name": "Caldecott Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 32
 },
 {
     "fields": {
         "name": "Cartoonist Studio Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 33
 },
 {
     "fields": {
         "name": "Cartoonists Rights Network International Courage in Editorial Cartooning"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 34
 },
 {
     "fields": {
         "name": "CAT Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 35
 },
 {
     "fields": {
         "name": "Charles M. Schulz Award for College Cartoonist"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 36
 },
 {
     "fields": {
         "name": "Chesley Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 37
 },
 {
     "fields": {
         "name": "Clickies"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 38
 },
 {
     "fields": {
         "name": "Clifford K. and James T. Berryman Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 39
 },
 {
     "fields": {
         "name": "Comic Fan Art Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 40
 },
 {
     "fields": {
         "name": "Comicdom Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 41
 },
 {
     "fields": {
         "name": "Comics Buyers Guide Fan Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 42
 },
 {
     "fields": {
         "name": "Comics Laureate"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 43
 },
 {
     "fields": {
         "name": "ComiIdol"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 44
 },
 {
     "fields": {
         "name": "Contest of Caricature and Cartoon of Vianden"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 45
 },
 {
     "fields": {
         "name": "De Blikken Biebel"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 46
 },
 {
     "fields": {
         "name": "Don Thompson Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 47
 },
 {
     "fields": {
         "name": "Doug Wright Awards, The"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 48
 },
 {
     "fields": {
         "name": "Dragon*Con Dragon Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 49
 },
 {
     "fields": {
         "name": "Drunken Druid Awards, The"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 50
 },
 {
     "fields": {
         "name": "Dutch International Cartoonfestival"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 51
 },
 {
     "fields": {
         "name": "Eagle Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 52
 },
 {
     "fields": {
         "name": "Eisner Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 53
 },
 {
     "fields": {
         "name": "Firecracker Alternative Book Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 54
 },
 {
     "fields": {
         "name": "Fischetti Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 55
 },
 {
     "fields": {
         "name": "Gaiman Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 56
 },
 {
     "fields": {
         "name": "Galaxy Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 57
 },
 {
     "fields": {
         "name": "Gene Day Award for Self-Publishing"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 58
 },
 {
     "fields": {
         "name": "Ghastly Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 59
 },
 {
     "fields": {
         "name": "GIN Graphic Humor Contest"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 60
 },
 {
     "fields": {
         "name": "GLAAD Media Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 61
 },
 {
     "fields": {
         "name": "Glyph Comics Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 62
 },
 {
     "fields": {
         "name": "Goethe Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 63
 },
 {
     "fields": {
         "name": "Gouden Adhemar"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 64
 },
 {
     "fields": {
         "name": "Gran Guinigi Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 65
 },
 {
     "fields": {
         "name": "Grand Prix Mi\u0119dzynarodowego Festiwalu Komiksu"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 66
 },
 {
     "fields": {
         "name": "Harvey Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 67
 },
 {
     "fields": {
         "name": "Herblock Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 68
 },
 {
     "fields": {
         "name": "Horror Writers' Association Bram Stoker Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 69
 },
 {
     "fields": {
         "name": "Howard E. Day Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 70
 },
 {
     "fields": {
         "name": "Hugo Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 71
 },
 {
     "fields": {
         "name": "Humodeva Cartoon Contest"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 72
 },
 {
     "fields": {
         "name": "Ignatz Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 73
 },
 {
     "fields": {
         "name": "Indian Comics Fandom Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 74
 },
 {
     "fields": {
         "name": "Inkpot Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 75
 },
 {
     "fields": {
         "name": "Inkwell Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 76
 },
 {
     "fields": {
         "name": "Internatinal Cartoon Contest (Sinaloa M\u00e9xico)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 77
 },
 {
     "fields": {
         "name": "Internatinal City and Citizen Cartoon Contest (Tabriz)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 78
 },
 {
     "fields": {
         "name": "Internatinal Olive Cartoon Contest Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 79
 },
 {
     "fields": {
         "name": "International Beinnial Book Cartoon Contest"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 80
 },
 {
     "fields": {
         "name": "International Car Cartoon"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 81
 },
 {
     "fields": {
         "name": "International Cartoon Contest (Syria)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 82
 },
 {
     "fields": {
         "name": "International Cartoonfestival Knokke-Heist"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 83
 },
 {
     "fields": {
         "name": "International Festival of Cartoon and Aphorisms - Srumica"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 84
 },
 {
     "fields": {
         "name": "International Green Crescent Cartoon Contest"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 85
 },
 {
     "fields": {
         "name": "International Horror Guild Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 86
 },
 {
     "fields": {
         "name": "International Manga Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 87
 },
 {
     "fields": {
         "name": "International Turhan Sel\u00e7uk Cartoon Competition"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 88
 },
 {
     "fields": {
         "name": "Iwaya Konami Bungei Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 89
 },
 {
     "fields": {
         "name": "James Tiptree, Jr. Award, The"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 90
 },
 {
     "fields": {
         "name": "Japan Academy Prize for Animation of the Year"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 91
 },
 {
     "fields": {
         "name": "Japan Culture Design Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 92
 },
 {
     "fields": {
         "name": "Japan Manga Association Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 93
 },
 {
     "fields": {
         "name": "Japanese Science Fiction Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 94
 },
 {
     "fields": {
         "name": "Joe Shuster Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 95
 },
 {
     "fields": {
         "name": "Joe Shuster Canadian Comic Book Creator Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 96
 },
 {
     "fields": {
         "name": "John Locher Memorial Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 97
 },
 {
     "fields": {
         "name": "KalDer Bursa Cartoon Contest"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 98
 },
 {
     "fields": {
         "name": "Kirby Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 99
 },
 {
     "fields": {
         "name": "Klein Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 100
 },
 {
     "fields": {
         "name": "Kodansha Manga Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 101
 },
 {
     "fields": {
         "name": "Kodansha Manga Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 102
 },
 {
     "fields": {
         "name": "Kodansha Manga Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 103
 },
 {
     "fields": {
         "name": "Ledger Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 104
 },
 {
     "fields": {
         "name": "Les Grands Prix de la Ville d'Angoul\u00eame (Grand Prize of the City of Angoul\u00eame, The)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 105
 },
 {
     "fields": {
         "name": "Les prix du Festival international de la bande dessin\u00e9e d'Angoul\u00eame (Awards of the Angoul\u00eame International Comics Festival)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 106
 },
 {
     "fields": {
         "name": "Lightning Game Manga Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 107
 },
 {
     "fields": {
         "name": "Locher Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 108
 },
 {
     "fields": {
         "name": "Lulu Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 109
 },
 {
     "fields": {
         "name": "Lurie Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 110
 },
 {
     "fields": {
         "name": "Mahmoud Kahil Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 111
 },
 {
     "fields": {
         "name": "Manga Festival in France"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 112
 },
 {
     "fields": {
         "name": "Manga Taish\u014d"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 113
 },
 {
     "fields": {
         "name": "Marten Toonderprijs"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 114
 },
 {
     "fields": {
         "name": "Max und Moritz Preis (Max & Moritz Prize)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 115
 },
 {
     "fields": {
         "name": "Maya Kamath Memorial Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 116
 },
 {
     "fields": {
         "name": "Maya Kamath Memorial Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 117
 },
 {
     "fields": {
         "name": "Mercosur International Diogenes Taborda Salon"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 118
 },
 {
     "fields": {
         "name": "Michael L. Printz Award for Excellence in Young Adult Literature"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 119
 },
 {
     "fields": {
         "name": "Molla Nasreddin"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 120
 },
 {
     "fields": {
         "name": "Narayan Debntah Comics Puroskar"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 121
 },
 {
     "fields": {
         "name": "Nasreddin Hodja Cartoon Contest Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 122
 },
 {
     "fields": {
         "name": "National Book Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 123
 },
 {
     "fields": {
         "name": "National Book Awards (U.S.)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 124
 },
 {
     "fields": {
         "name": "National Book Awards (UK)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 125
 },
 {
     "fields": {
         "name": "National Cartoonists Society Division Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 126
 },
 {
     "fields": {
         "name": "National Comics Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 127
 },
 {
     "fields": {
         "name": "National Headliner Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 128
 },
 {
     "fields": {
         "name": "National Newspaper Awards of Canada"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 129
 },
 {
     "fields": {
         "name": "New York Library Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 130
 },
 {
     "fields": {
         "name": "Newbery Medal"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 131
 },
 {
     "fields": {
         "name": "Niels Bugge Cartoon Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 132
 },
 {
     "fields": {
         "name": "\u014cfuji Nobur\u014d Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 133
 },
 {
     "fields": {
         "name": "Osamu Tezuka Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 134
 },
 {
     "fields": {
         "name": "Overstreet Hall of Fame"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 135
 },
 {
     "fields": {
         "name": "P. Hans Frankfurtherprijs"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 136
 },
 {
     "fields": {
         "name": "Pantera di Lucca Comics (Lucca Comics' Panther Award)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 137
 },
 {
     "fields": {
         "name": "Parents' Choice Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 138
 },
 {
     "fields": {
         "name": "Plastieken Plunk"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 139
 },
 {
     "fields": {
         "name": "PortoCartoon-World Festival Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 140
 },
 {
     "fields": {
         "name": "Premiados - Sal\u00e3o Internacional de Humor de Piracicaba"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 141
 },
 {
     "fields": {
         "name": "Pr\u00eamio Angelo Agostini"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 142
 },
 {
     "fields": {
         "name": "Premios Haxtur (Haxtur Awards)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 143
 },
 {
     "fields": {
         "name": "Prix B\u00e9d\u00e9is Causa"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 144
 },
 {
     "fields": {
         "name": "Prix Saint-Michel"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 145
 },
 {
     "fields": {
         "name": "Prometheus Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 146
 },
 {
     "fields": {
         "name": "Pulitzer Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 147
 },
 {
     "fields": {
         "name": "Quill Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 148
 },
 {
     "fields": {
         "name": "Reuben Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 149
 },
 {
     "fields": {
         "name": "Reuben Award/Barney Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 150
 },
 {
     "fields": {
         "name": "Ringo Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 151
 },
 {
     "fields": {
         "name": "Robert F. Kennedy Journalism Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 152
 },
 {
     "fields": {
         "name": "Robert F. Sibert Informational Book Medal"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 153
 },
 {
     "fields": {
         "name": "Rotary Cartoon Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 154
 },
 {
     "fields": {
         "name": "Russ Manning Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 155
 },
 {
     "fields": {
         "name": "Sal\u00e3o de Humor de Piracicaba"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 156
 },
 {
     "fields": {
         "name": "Satyrkon Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 157
 },
 {
     "fields": {
         "name": "Seferihisar Cartoon Competition Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 158
 },
 {
     "fields": {
         "name": "Science Fiction Grand Prix Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 159
 },
 {
     "fields": {
         "name": "Scream Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 160
 },
 {
     "fields": {
         "name": "Scripps-Howard National Journalism Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 161
 },
 {
     "fields": {
         "name": "Seiun Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 162
 },
 {
     "fields": {
         "name": "Seiyuu Awards\u200e"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 163
 },
 {
     "fields": {
         "name": "Sergio Aragones Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 164
 },
 {
     "fields": {
         "name": "SFERA Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 165
 },
 {
     "fields": {
         "name": "Shazam Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 166
 },
 {
     "fields": {
         "name": "Shibata Renzaburo Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 167
 },
 {
     "fields": {
         "name": "Sigma Delta Chi Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 168
 },
 {
     "fields": {
         "name": "Sondermann"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 169
 },
 {
     "fields": {
         "name": "Spectrum Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 170
 },
 {
     "fields": {
         "name": "SPJA Anime Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 171
 },
 {
     "fields": {
         "name": "Sports Cartoons Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 172
 },
 {
     "fields": {
         "name": "Sproing Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 173
 },
 {
     "fields": {
         "name": "Squiddy Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 174
 },
 {
     "fields": {
         "name": "Stan Lee Excelsior Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 175
 },
 {
     "fields": {
         "name": "Stanley Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 176
 },
 {
     "fields": {
         "name": "Stonewall Book Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 177
 },
 {
     "fields": {
         "name": "Stripschapprijs"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 178
 },
 {
     "fields": {
         "name": "Stripvos"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 179
 },
 {
     "fields": {
         "name": "Studio d'Arte Andromeda"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 180
 },
 {
     "fields": {
         "name": "Tanimoto Kiyoshi Peace Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 181
 },
 {
     "fields": {
         "name": "Tapir Cartoon Festival Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 182
 },
 {
     "fields": {
         "name": "Thomas Nast Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 183
 },
 {
     "fields": {
         "name": "Tokyo Anime Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 184
 },
 {
     "fields": {
         "name": "Trof\u00e9u HQ Mix"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 185
 },
 {
     "fields": {
         "name": "Urhunden Prize"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 186
 },
 {
     "fields": {
         "name": "VPRO Debuutprijs"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 187
 },
 {
     "fields": {
         "name": "Web Cartoonists' Choice Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 188
 },
 {
     "fields": {
         "name": "Wilbur"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 189
 },
 {
     "fields": {
         "name": "Willy Vandersteenprijs"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 190
 },
 {
     "fields": {
         "name": "Wizard Fan Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 191
 },
 {
     "fields": {
         "name": "World Fantasy Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 192
 },
 {
     "fields": {
         "name": "World Press Cartoon Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 193
 },
 {
     "fields": {
         "name": "Worldwide Manga Reader Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 194
 },
 {
     "fields": {
         "name": "Worldwide Manga Reader Awards"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 195
 },
 {
     "fields": {
         "name": "Xeric Foundation"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 196
 },
 {
     "fields": {
         "name": "Yamamoto Shugoro Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 197
 },
 {
     "fields": {
         "name": "Yellow Kid Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 198
 },
 {
     "fields": {
         "name": "Yomiuri International Manga Award"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 199
 },
 {
     "fields": {
         "name": "\u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac \u0392\u03c1\u03b1\u03b2\u03b5\u03af\u03b1 \u039a\u03cc\u03bc\u03b9\u03ba\u03c2 (Greek Comics Awards)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 200
 },
 {
     "fields": {
         "name": "\u5c0f\u5b66\u9928\u6f2b\u753b\u8cde (Sh\u014dgakukan Manga Sh\u014d, Shogakukan Comics Award)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 201
 },
 {
     "fields": {
         "name": "\u624b\u585a\u6cbb\u866b\u6587\u5316\u8cde (Tezuka Osamu Bunkash\u014d, Tezuka Osamu Cultural Prize)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 202
 },
 {
     "fields": {
         "name": "\u65e5\u672c\u6f2b\u753b\u5bb6\u5354\u4f1a\u8cde, (Nihon Mangaka Ky\u014dkai sh\u014d, Japanese Cartoonists' Association Award)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 203
 },
 {
     "fields": {
         "name": "\u96fb\u6483 (\u30df\u30c3\u30af\u30b0\u30e9\u30f3\u30d7\u30ea, Dengeki Komikku Guran Puri, Dengeki Comic Grand Prix)"
     },
-    "model": "gcd.awardtype",
+    "model": "gcd.award",
     "pk": 204
-},
+}
 ]

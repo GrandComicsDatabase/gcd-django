@@ -1,4 +1,4 @@
 {{ object.organization_name }}
 {{ object.creator.gcd_official_name }}
-{{ objects.creator.birth_country }}
-{{ objects.membership_type }}
+{{ object.creator.birth_country }}
+{{ object.membership_type }}

@@ -88,7 +88,7 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name == 'creator':
         return get_creator_revision_form(revision, **kwargs)
 
-    if model_name == 'creator_artinfluence':
+    if model_name == 'creator_art_influence':
         return get_creator_art_influence_revision_form(revision, **kwargs)
 
     if model_name == 'creator_award':
@@ -97,7 +97,7 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name == 'creator_membership':
         return get_creator_membership_revision_form(revision, **kwargs)
 
-    if model_name == 'creator_noncomicwork':
+    if model_name == 'creator_non_comic_work':
         return get_creator_non_comic_work_revision_form(revision, **kwargs)
 
     if model_name == 'creator_school':

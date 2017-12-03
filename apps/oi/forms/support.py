@@ -586,7 +586,7 @@ def _clean_keywords(cleaned_data):
 
 
 def init_data_source_fields(field_name, revision, fields):
-    data_source_revision = revision.changeset.creatordatasourcerevisions\
+    data_source_revision = revision.changeset.datasourcerevisions\
                                              .filter(field=field_name)
     if data_source_revision:
         # TODO we want to be able to support more than one revision
