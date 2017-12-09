@@ -529,12 +529,7 @@ def series_details(request, series_id, by_date=False):
     issues_left_over = []
     bad_key_dates = []
     if by_date:
-        no_key_date_q = Q(key_date__isnull=True
-
-
-
-
-) | Q(key_date='')
+        no_key_date_q = Q(key_date__isnull=True) | Q(key_date='')
         with_key_dates = series.active_issues().exclude(no_key_date_q)
 
         prev_year = None

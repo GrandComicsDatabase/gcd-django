@@ -1,7 +1,7 @@
 BeautifulSoup==3.2.1
 Django<1.8
 MySQL-python==1.2.5
-Pillow==4.1
+Pillow<2.0
 PyICU<2.0
 PyYAML==3.10
 Pygments==1.5
