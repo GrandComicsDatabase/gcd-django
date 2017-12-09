@@ -1,4 +1,3 @@
-{{ object.influence_name }}
+{{ object.influence }}
 {{ object.creator.gcd_official_name }}
 {{ object.creator.birth_country }}
-{{ object.influence_link }}

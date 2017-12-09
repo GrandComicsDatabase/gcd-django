@@ -8,8 +8,8 @@ import apps.oi.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gcd', '0004_initial_creator_data'),
         ('stddata', '0002_initial_data'),
+        ('gcd', '0003_creators'),
         ('contenttypes', '0001_initial'),
         ('oi', '0003_migrate_reservations_to_locks'),
     ]
@@ -152,6 +152,27 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
+            name='CreatorRelationRevision',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('deleted', models.BooleanField(default=False, db_index=True)),
+                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
+                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
+                ('notes', models.TextField(blank=True)),
+                ('changeset', models.ForeignKey(related_name='creatorrelationrevisions', to='oi.Changeset')),
+                ('creator_relation', models.ForeignKey(related_name='revisions', to='gcd.CreatorRelation', null=True)),
+                ('from_creator', models.ForeignKey(related_name='from_creator_revisions', to='gcd.Creator')),
+                ('relation_type', models.ForeignKey(related_name='revisions', to='gcd.RelationType')),
+                ('to_creator', models.ForeignKey(related_name='to_creator_revisions', to='gcd.Creator')),
+            ],
+            options={
+                'ordering': ('to_creator', 'relation_type', 'from_creator'),
+                'db_table': 'oi_creator_relation_revision',
+                'verbose_name_plural': 'Name Relation Revisions',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
             name='CreatorRevision',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
@@ -226,26 +247,6 @@ class Migration(migrations.Migration):
                 'ordering': ['created', '-id'],
                 'db_table': 'oi_data_source_revision',
                 'verbose_name_plural': 'Data Source Revisions',
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
-            name='NameRelationRevision',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('deleted', models.BooleanField(default=False, db_index=True)),
-                ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('modified', models.DateTimeField(auto_now=True, db_index=True)),
-                ('changeset', models.ForeignKey(related_name='namerelationrevisions', to='oi.Changeset')),
-                ('gcd_official_name', models.ForeignKey(related_name='cr_gcd_official_name', to='oi.CreatorNameDetailRevision')),
-                ('name_relation', models.ForeignKey(related_name='revisions', to='gcd.NameRelation', null=True)),
-                ('rel_type', models.ForeignKey(related_name='cr_relation_type', blank=True, to='gcd.RelationType', null=True)),
-                ('to_name', models.ForeignKey(related_name='cr_to_name', to='oi.CreatorNameDetailRevision')),
-            ],
-            options={
-                'ordering': ('gcd_official_name', 'rel_type', 'to_name'),
-                'db_table': 'oi_name_relation_revision',
-                'verbose_name_plural': 'Name Relation Revisions',
             },
             bases=(models.Model,),
         ),

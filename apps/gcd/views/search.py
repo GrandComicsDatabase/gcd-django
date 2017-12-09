@@ -111,10 +111,10 @@ def generic_by_name(request, name, q_obj, sort,
             query_val[base_name] = name
 
     elif class_ is Creator:
-        sort_year = "birth_date__year"
+        sort_name = "gcd_official_name"
 
         if sqs == None:
-            sort_name = "gcd_official_name"
+            sort_year = "birth_date__year"
             things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
@@ -124,7 +124,7 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.order_by(sort_year, sort_name)
             things = things.distinct()
         else:
-            sort_name = "gcd_official_name"
+            sort_year = "year"
             things = sqs
             if (sort == ORDER_ALPHA):
                 things = things.order_by(sort_name,
@@ -144,7 +144,7 @@ def generic_by_name(request, name, q_obj, sort,
     elif (class_ in (CreatorMembership, CreatorAward, CreatorArtInfluence, 
                      CreatorNonComicWork)):
         if sqs == None:
-            sort_year = "creator__birth_year"
+            sort_year = "creator__birth_date__year"
 
             if class_ is CreatorMembership:
                 sort_name = "organization_name"
@@ -164,15 +164,18 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.order_by(sort_year, sort_name)
             things = things.distinct()
         else:
-            sort_year = "birth_year"
             sort_name = "name"
             things = sqs
-            if (sort == ORDER_ALPHA):
-                things = things.order_by(sort_name,
-                                         sort_year)
-            elif (sort == ORDER_CHRONO):
-                things = things.order_by(sort_year,
-                                         sort_name)
+            if class_ != CreatorAward:
+                things = things.order_by('sort_name')
+            else:
+                sort_year = 'year'
+                if (sort == ORDER_ALPHA):
+                    things = things.order_by(sort_name,
+                                             sort_year)
+                elif (sort == ORDER_CHRONO):
+                    things = things.order_by(sort_year,
+                                             sort_name)
         display_name = class_.__name__
         base_name = display_name.lower()
         item_name = display_name.lower()
@@ -382,7 +385,8 @@ def creator_art_influence_by_name(request, creator_art_influence_name,
                                'gcd/search/creator_art_influence_list.html',
                                sqs=sqs)
     else:
-        q_obj = Q(influence_name__icontains=creator_artinfluence_name)
+        q_obj = Q(influence_name__icontains=creator_art_influence_name) | \
+                Q(influence_link__gcd_official_name__icontains=creator_art_influence_name)
         return generic_by_name(request, creator_art_influence_name, q_obj, sort,
                                CreatorArtInfluence,
                                'gcd/search/creator_art_influence_list.html')
@@ -396,13 +400,13 @@ def creator_non_comic_work_by_name(request, creator_non_comic_work_name,
             .models(CreatorNonComicWork)
         return generic_by_name(request, creator_non_comic_work_name, None, sort,
                                CreatorNonComicWork,
-                               'gcd/search/creator_noncomicwork_list.html',
+                               'gcd/search/creator_non_comic_work_list.html',
                                sqs=sqs)
     else:
         q_obj = Q(publication_title__icontains=creator_non_comic_work_name)
         return generic_by_name(request, creator_non_comic_work_name, q_obj, sort,
                                CreatorNonComicWork,
-                               'gcd/search/creator_noncomicwork_list.html')
+                               'gcd/search/creator_non_comic_work_list.html')
 
 
 def character_by_name(request, character_name, sort=ORDER_ALPHA):
@@ -645,10 +649,10 @@ def search(request):
         param_type = 'creator_membership_name'
     if view_type == 'creator_award':
         param_type = 'creator_award_name'
-    if view_type == 'creator_artinfluence':
-        param_type = 'creator_artinfluence_name'
-    if view_type == 'creator_noncomicwork':
-        param_type = 'creator_noncomicwork_name'
+    if view_type == 'creator_art_influence':
+        param_type = 'creator_art_influence_name'
+    if view_type == 'creator_non_comic_work':
+        param_type = 'creator_non_comic_work_name'
 
     view = '%s_by_name' % view_type
 

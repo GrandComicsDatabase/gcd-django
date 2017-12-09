@@ -20,7 +20,7 @@ from image import ImageType, Image
 from creator import CreatorArtInfluence, Award, CreatorAward, \
                     Creator, DataSource, CreatorDegree, \
                     CreatorNameDetail, CreatorSchool,\
-                    Degree, CreatorMembership, NameRelation, NameType, \
+                    Degree, CreatorMembership, CreatorRelation, NameType, \
                     CreatorNonComicWork, NonComicWorkType, NonComicWorkRole, \
                     NonComicWorkYear, RelationType, School, \
                     SourceType

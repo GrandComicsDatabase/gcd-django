@@ -34,7 +34,7 @@ from apps.gcd.models import (
     ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
     StoryType, ImageType, Creator, CreatorArtInfluence, CreatorAward,
     CreatorDegree, CreatorMembership, CreatorNameDetail, CreatorNonComicWork,
-    CreatorSchool, Award, DataSource, NameRelation, NonComicWorkYear)
+    CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear)
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
@@ -67,9 +67,10 @@ CTYPES = {
     'creator_art_influence': 17,
     'creator_award': 18,
     'creator_degree': 19,
-    'creator_membership': 29,
+    'creator_membership': 20,
     'creator_non_comic_work': 21,
-    'creator_school': 22,
+    'creator_relation': 22,
+    'creator_school': 23,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -88,6 +89,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['creator_degree'],
                            CTYPES['creator_membership'],
                            CTYPES['creator_non_comic_work'],
+                           CTYPES['creator_relation'],
                            CTYPES['creator_school'],
                            ))
 
@@ -679,10 +681,7 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['creator']:
             return (self.creatorrevisions.all(),
                     self.datasourcerevisions.all(),
-                    self.creatornamedetailrevisions.all(),
-                    self.namerelationrevisions.all(),
-                    self.creatorschoolrevisions.all(),
-                    self.creatordegreerevisions.all())
+                    self.creatornamedetailrevisions.all())
 
         if self.change_type == CTYPES['creator_art_influence']:
             return (self.creatorartinfluencerevisions.all(),
@@ -702,6 +701,10 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['creator_non_comic_work']:
             return (self.creatornoncomicworkrevisions.all(),
+                    self.datasourcerevisions.all())
+
+        if self.change_type == CTYPES['creator_relation']:
+            return (self.creatorrelationrevisions.all(),
                     self.datasourcerevisions.all())
 
         if self.change_type == CTYPES['creator_school']:
@@ -6029,71 +6032,106 @@ class CreatorRevision(Revision):
 
         # need a second loop, since otherwise all the needed
         # CreatorNameDetailRevision do not exist
-        for name_detail in name_details:
-            name_relation_details = name_detail.to_name.all()
-            for name_relation in name_relation_details:
-                name_relation_lock = _get_revision_lock(name_relation,
-                                     changeset=self.changeset)
-                if name_relation_lock is None:
-                    raise IntegrityError("needed NameRelation lock not possible")
-                name_relation = NameRelationRevision.objects.clone_revision(
-                                                     name_relation,
-                                                     changeset=self.changeset)
-                if delete:
-                    name_relation.deleted = True
-                    name_relation.save()
+        #for name_detail in name_details:
+            #creator_relation_details = name_detail.to_name.all()
+            #for creator_relation in creator_relation_details:
+                #creator_relation_lock = _get_revision_lock(creator_relation,
+                                     #changeset=self.changeset)
+                #if creator_relation_lock is None:
+                    #raise IntegrityError("needed CreatorRelation lock not possible")
+                #creator_relation = CreatorRelationRevision.objects.clone_revision(
+                                                     #creator_relation,
+                                                     #changeset=self.changeset)
+                #if delete:
+                    #creator_relation.deleted = True
+                    #creator_relation.save()
 
         data_sources = self.creator.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
             
         if delete:
-            for creatormembership in self.creator.active_memberships():
-                membership_lock = _get_revision_lock(creatormembership,
-                                                     changeset=self.changeset)
-                if membership_lock is None:
-                    raise IntegrityError("needed Membership lock not possible")
-                creator_membership_revison = \
-                CreatorMembershipRevision.objects.clone_revision(
-                    creatormembership=creatormembership, changeset=self.changeset)
-                creator_membership_revison.deleted = True
-                creator_membership_revison.save()
-
-            for creatoraward in self.creator.active_awards():
-                award_lock = _get_revision_lock(creatoraward,
-                                                changeset=self.changeset)
-                if award_lock is None:
-                    raise IntegrityError("needed CreatorAward lock not possible")
-                creator_award_revison = \
-                CreatorAwardRevision.objects.clone_revision(
-                    creatoraward=creatoraward, changeset=self.changeset)
-                creator_award_revison.deleted = True
-                creator_award_revison.save()
-
-            for creatorartinfluence in self.creator.active_art_influences():
-                influence_lock = _get_revision_lock(creatorartinfluence,
+            for creator_art_influence in self.creator.active_art_influences():
+                influence_lock = _get_revision_lock(creator_art_influence,
                                                     changeset=self.changeset)
                 if influence_lock is None:
                     raise IntegrityError("needed CreatorArtInfluence lock not"
                                          " possible")
                 creator_art_influence_revison = \
                 CreatorArtInfluenceRevision.objects.clone_revision(
-                  creatorartinfluence=creatorartinfluence,
+                  creator_art_influence=creator_art_influence,
                   changeset=self.changeset)
                 creator_art_influence_revison.deleted = True
                 creator_art_influence_revison.save()
 
-            for creatornoncomicwork in self.creator.active_non_comic_works():
+            for creator_award in self.creator.active_awards():
+                award_lock = _get_revision_lock(creator_award,
+                                                changeset=self.changeset)
+                if award_lock is None:
+                    raise IntegrityError("needed CreatorAward lock not possible")
+                creator_award_revison = \
+                CreatorAwardRevision.objects.clone_revision(
+                    creator_award=creator_award, changeset=self.changeset)
+                creator_award_revison.deleted = True
+                creator_award_revison.save()
+
+            for creator_degree in self.creator.active_degrees():
+                school_lock = _get_revision_lock(creator_degree,
+                                                 changeset=self.changeset)
+                if degree_lock is None:
+                    raise IntegrityError("needed CreatorDegree lock not possible")
+                creator_degree_revison = \
+                CreatorDegreeRevision.objects.clone_revision(
+                    creator_degree=creator_degree, changeset=self.changeset)
+                creator_degree_revison.deleted = True
+                creator_degree_revison.save()
+
+            for creator_membership in self.creator.active_memberships():
+                membership_lock = _get_revision_lock(creator_membership,
+                                                     changeset=self.changeset)
+                if membership_lock is None:
+                    raise IntegrityError("needed CreatorMembership lock not possible")
+                creator_membership_revison = \
+                CreatorMembershipRevision.objects.clone_revision(
+                    creator_membership=creator_membership, changeset=self.changeset)
+                creator_membership_revison.deleted = True
+                creator_membership_revison.save()
+
+            for creator_non_comic_work in self.creator.active_non_comic_works():
                 noncomicwork_lock = _get_revision_lock(
-                  creatornoncomicwork, changeset=self.changeset)
+                  creator_non_comic_work, changeset=self.changeset)
                 if noncomicwork_lock is None:
-                    raise IntegrityError("needed NonComicWork lock not"
+                    raise IntegrityError("needed CreatorNonComicWork lock not"
                                          " possible")
                 creator_non_comic_work_revison = \
                   CreatorNonComicWorkRevision.objects.clone_revision(
-                    creatornoncomicwork=creatornoncomicwork,
+                    creator_non_comic_work=creator_non_comic_work,
                     changeset=self.changeset)
                 creator_non_comic_work_revison.deleted = True
                 creator_non_comic_work_revison.save()
+
+            for creator_relation in self.creator.active_relations():
+                relation_lock = _get_revision_lock(creator_relation,
+                                                   changeset=self.changeset)
+                if relation_lock is None:
+                    raise IntegrityError("needed CreatorRelation lock not possible")
+                creator_relation_revison = \
+                CreatorRelationRevision.objects.clone_revision(
+                    creator_relation=creator_relation, changeset=self.changeset)
+                creator_relation_revison.deleted = True
+                creator_relation_revison.save()
+
+            for creator_school in self.creator.active_schools():
+                school_lock = _get_revision_lock(creator_school,
+                                                 changeset=self.changeset)
+                if school_lock is None:
+                    raise IntegrityError("needed CreatorSchool lock not possible")
+                creator_school_revison = \
+                CreatorSchoolRevision.objects.clone_revision(
+                    creator_school=creator_school, changeset=self.changeset)
+                creator_school_revison.deleted = True
+                creator_school_revison.save()
+
+
         return True
 
     def commit_to_display(self, clear_reservation=True):
@@ -6185,109 +6223,113 @@ class CreatorRevision(Revision):
         return u'%s' % unicode(self.gcd_official_name)
 
 
-class NameRelationRevisionManager(RevisionManager):
-    def clone_revision(self, name_relation, changeset):
+class CreatorRelationRevisionManager(RevisionManager):
+    def clone_revision(self, creator_relation, changeset):
         """
-        Given an existing NameRelation instance, create a new revision based
+        Given an existing CreatorRelation instance, create a new revision based
         on it.
 
         This new revision will be where the replacement is stored.
         """
         return RevisionManager.clone_revision(self,
-                                              instance=name_relation,
-                                              instance_class=NameRelation,
+                                              instance=creator_relation,
+                                              instance_class=CreatorRelation,
                                               changeset=changeset,
                                               )
 
-    def _do_create_revision(self, name_relation, changeset, **ignore):
+    def _do_create_revision(self, creator_relation, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
         """
-        gcd_official_name = changeset.creatornamedetailrevisions.get(
-                        creator_name_detail=name_relation.gcd_official_name)
-        to_name = changeset.creatornamedetailrevisions.get(
-                                    creator_name_detail=name_relation.to_name)
-        revision = NameRelationRevision(
+        revision = CreatorRelationRevision(
             # revision-specific fields:
-            name_relation=name_relation,
+            creator_relation=creator_relation,
             changeset=changeset,
             # copied fields:
-            gcd_official_name=gcd_official_name,
-            to_name=to_name,
-            rel_type=name_relation.rel_type
+            to_creator=creator_relation.to_creator,
+            from_creator=creator_relation.from_creator,
+            relation_type=creator_relation.relation_type,
+            notes=creator_relation.notes
         )
         revision.save()
         return revision
 
 
-class NameRelationRevision(Revision):
+class CreatorRelationRevision(Revision):
     """
     Relations between creators to relate any GCD Official name to any other
     name.
     """
 
     class Meta:
-        db_table = 'oi_name_relation_revision'
-        ordering = ('gcd_official_name', 'rel_type', 'to_name')
-        verbose_name_plural = 'Name Relation Revisions'
+        db_table = 'oi_creator_relation_revision'
+        ordering = ('to_creator', 'relation_type', 'from_creator')
+        verbose_name_plural = 'Creator Relation Revisions'
 
-    objects = NameRelationRevisionManager()
-    name_relation = models.ForeignKey('gcd.NameRelation',
-                                      null=True,
+    objects = CreatorRelationRevisionManager()
+    creator_relation = models.ForeignKey('gcd.CreatorRelation',
+                                         null=True,
+                                         related_name='revisions')
+
+    to_creator = models.ForeignKey('gcd.Creator',
+                                    related_name='to_creator_revisions')
+    relation_type = models.ForeignKey('gcd.RelationType',
                                       related_name='revisions')
-    gcd_official_name = models.ForeignKey(
-            'CreatorNameDetailRevision',
-            related_name='cr_gcd_official_name')
-    to_name = models.ForeignKey('CreatorNameDetailRevision',
-                                related_name='cr_to_name')
-    rel_type = models.ForeignKey('gcd.RelationType',
-                                 related_name='cr_relation_type',
-                                 null=True, blank=True)
+    from_creator = models.ForeignKey('gcd.Creator',
+                                     related_name='from_creator_revisions')
+    notes = models.TextField(blank=True)
 
+    _base_field_list = ['from_creator', 'relation_type', 'to_creator', 'notes']
+    
     def _field_list(self):
-        field_list = ['rel_type']
+        field_list = self._base_field_list
         return field_list
 
     def _get_blank_values(self):
         return {
-            'gcd_official_name': None,
-            'to_name': None,
-            'rel_type': None
+            'from_creator': None,
+            'to_creator': None,
+            'relation_type': None,
+            'notes': ''
         }
 
     def _get_source(self):
-        return self.name_relation
+        return self.creator_relation
 
     def _get_source_name(self):
-        return 'name_relation'
+        return 'creator_relation'
 
     def _imps_for(self, field_name):
-        return 0
+        return 1
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_relation.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
 
     def commit_to_display(self):
-        name_relation = self.name_relation
+        creator_relation = self.creator_relation
 
-        if name_relation is None:
-            name_relation = NameRelation()
+        if creator_relation is None:
+            creator_relation = CreatorRelation()
         elif self.deleted:
-            name_relation.delete()
+            creator_relation.delete()
             return
 
-        name_relation.gcd_official_name = \
-                                    self.gcd_official_name.creator_name_detail
-        name_relation.to_name = self.to_name.creator_name_detail
-        name_relation.rel_type = self.rel_type
-        name_relation.save()
+        creator_relation.to_creator = self.to_creator
+        creator_relation.from_creator = self.from_creator
+        creator_relation.relation_type = self.relation_type
+        creator_relation.notes = self.notes
+        creator_relation.save()
 
-        if self.name_relation is None:
-            self.name_relation = name_relation
+        if self.creator_relation is None:
+            self.creator_relation = creator_relation
             self.save()
 
     def __unicode__(self):
-        return u'%s >Name_Relation< %s :: %s' % (unicode(self.gcd_official_name),
-                                                 unicode(self.to_name),
-                                                 unicode(self.rel_type)
-                                                 )
+        return u'%s >%s< %s' % (unicode(self.from_creator),
+                                unicode(self.relation_type),
+                                unicode(self.to_creator)
+                               )
 
 
 class CreatorNameDetailRevisionManager(RevisionManager):
@@ -6342,13 +6384,8 @@ class CreatorNameDetailRevision(Revision):
     creator = models.ForeignKey(CreatorRevision,
                                 related_name='cr_creator_names')
     name = models.CharField(max_length=255, db_index=True)
-    #description = models.TextField(null=True, blank=True)
     type = models.ForeignKey('gcd.NameType', related_name='cr_nametypes',
                              null=True, blank=True)
-
-    # TODO handle data_sources here and in UI
-
-    # TODO do revision handling such as commit_to_display here
 
     def _field_list(self):
         field_list = ['name', 'type']
@@ -6360,8 +6397,8 @@ class CreatorNameDetailRevision(Revision):
             'type': None,
         }
 
-    def active_relations(self):
-        return self.cr_to_name.exclude(deleted=True)
+    #def active_relations(self):
+        #return self.cr_to_name.exclude(deleted=True)
 
     def _get_source(self):
         return self.creator_name_detail
@@ -6370,6 +6407,8 @@ class CreatorNameDetailRevision(Revision):
         return 'creator_name_detail'
 
     def _imps_for(self, field_name):
+        if field_name in self._field_list():
+            return 1
         return 0
 
     def commit_to_display(self):

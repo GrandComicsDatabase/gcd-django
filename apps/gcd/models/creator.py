@@ -1,4 +1,5 @@
 import calendar
+from operator import itemgetter
 from django.core import urlresolvers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
@@ -75,7 +76,7 @@ class NameType(models.Model):
         verbose_name_plural = 'Name Types'
 
     description = models.TextField(null=True)
-    type = models.CharField(max_length=50, blank=True)
+    type = models.CharField(max_length=50)
 
     def __unicode__(self):
         return '%s' % unicode(self.type)
@@ -95,8 +96,7 @@ class CreatorNameDetail(models.Model):
 
     name = models.CharField(max_length=255, db_index=True)
     creator = models.ForeignKey('Creator', related_name='creator_names')
-    type = models.ForeignKey('NameType', related_name='nametypes', null=True,
-                             blank=True)
+    type = models.ForeignKey('NameType', related_name='nametypes', null=True)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -104,9 +104,6 @@ class CreatorNameDetail(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
-
-    def active_relations(self):
-        return self.to_name.exclude(deleted=True)
 
     def delete(self):
         self.deleted = True
@@ -180,6 +177,7 @@ class RelationType(models.Model):
         verbose_name_plural = 'Relation Types'
 
     type = models.CharField(max_length=50)
+    reverse_type = models.CharField(max_length=50)
 
     def __unicode__(self):
         return unicode(self.type)
@@ -196,38 +194,34 @@ class CreatorManager(models.Manager):
 class Creator(models.Model):
     class Meta:
         app_label = 'gcd'
-        ordering = ('created',)
+        ordering = ('gcd_official_name', 'created',)
         verbose_name_plural = 'Creators'
 
     objects = CreatorManager()
 
     gcd_official_name = models.CharField(max_length=255, db_index=True)
 
-    birth_date = models.ForeignKey(Date, related_name='+', null=True,
-                                   blank=True)
-    death_date = models.ForeignKey(Date, related_name='+', null=True,
-                                   blank=True)
+    birth_date = models.ForeignKey(Date, related_name='+', null=True)
+    death_date = models.ForeignKey(Date, related_name='+', null=True)
 
-    whos_who = models.URLField(blank=True, null=True)
+    whos_who = models.URLField(null=True)
 
     birth_country = models.ForeignKey(Country,
                                       related_name='birth_country',
-                                      blank=True,
                                       null=True)
     birth_country_uncertain = models.BooleanField(default=False)
-    birth_province = models.CharField(max_length=50, blank=True)
+    birth_province = models.CharField(max_length=50)
     birth_province_uncertain = models.BooleanField(default=False)
-    birth_city = models.CharField(max_length=200, blank=True)
+    birth_city = models.CharField(max_length=200)
     birth_city_uncertain = models.BooleanField(default=False)
 
     death_country = models.ForeignKey(Country,
                                       related_name='death_country',
-                                      blank=True,
                                       null=True)
     death_country_uncertain = models.BooleanField(default=False)
-    death_province = models.CharField(max_length=50, blank=True)
+    death_province = models.CharField(max_length=50)
     death_province_uncertain = models.BooleanField(default=False)
-    death_city = models.CharField(max_length=200, blank=True)
+    death_city = models.CharField(max_length=200)
     death_city_uncertain = models.BooleanField(default=False)
 
     portrait = generic.GenericRelation(Image)
@@ -235,17 +229,17 @@ class Creator(models.Model):
     schools = models.ManyToManyField('School',
                                      related_name='schoolinformation',
                                      through='CreatorSchool',
-                                     null=True, blank=True)
+                                     null=True)
     degrees = models.ManyToManyField('Degree',
                                      related_name='degreeinformation',
                                      through='CreatorDegree',
-                                     null=True, blank=True)
+                                     null=True)
     # creators roles
-    bio = models.TextField(blank=True)
+    bio = models.TextField()
     sample_scan = generic.GenericRelation(Image)
-    notes = models.TextField(blank=True)
+    notes = models.TextField()
 
-    data_source = models.ManyToManyField(DataSource, blank=True)
+    data_source = models.ManyToManyField(DataSource)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -335,6 +329,18 @@ class Creator(models.Model):
     def active_non_comic_works(self):
         return self.non_comic_work_set.exclude(deleted=True)
 
+    def active_relations(self):
+        from_relations = self.from_related_creator.exclude(deleted=True)
+        relations = list(from_relations.values_list(
+                    'from_creator__id', 'from_creator__gcd_official_name',
+                    'relation_type__reverse_type'))
+        to_relations = self.to_related_creator.exclude(deleted=True)
+        relations.extend(to_relations.values_list(
+                  'to_creator__id', 'to_creator__gcd_official_name',
+                  'relation_type__type'))
+        relations.sort(key=itemgetter(2, 1))
+        return relations
+
     def active_schools(self):
         return self.school_set.exclude(deleted=True)
 
@@ -347,24 +353,26 @@ class Creator(models.Model):
         return '%s' % unicode(self.gcd_official_name)
 
 
-class NameRelation(models.Model):
+class CreatorRelation(models.Model):
     """
     Relations between creators to relate any GCD Official name to any other
     name.
     """
 
     class Meta:
-        db_table = 'gcd_name_relation'
+        db_table = 'gcd_creator_relation'
         app_label = 'gcd'
-        ordering = ('gcd_official_name', 'rel_type', 'to_name')
-        verbose_name_plural = 'Name Relations'
+        ordering = ('to_creator', 'relation_type', 'from_creator')
+        verbose_name_plural = 'Creator Relations'
 
-    gcd_official_name = models.ForeignKey(
-            CreatorNameDetail,
-            related_name='creator_gcd_official_name')
-    to_name = models.ForeignKey(CreatorNameDetail, related_name='to_name')
-    rel_type = models.ForeignKey(RelationType, related_name='relation_type',
-                                 null=True, blank=True)
+    to_creator = models.ForeignKey(Creator,
+                                   related_name='from_related_creator')
+    from_creator = models.ForeignKey(Creator,
+                                     related_name='to_related_creator')
+    relation_type = models.ForeignKey(RelationType,
+                                      related_name='relation_type')
+    notes = models.TextField()
+    data_source = models.ManyToManyField(DataSource)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -379,10 +387,10 @@ class NameRelation(models.Model):
         self.save()
 
     def __unicode__(self):
-        return '%s >Name_Relation< %s :: %s' % (unicode(self.gcd_official_name),
-                                                unicode(self.to_name),
-                                                unicode(self.rel_type)
-                                                )
+        return '%s >Relation< %s :: %s' % (unicode(self.from_creator),
+                                           unicode(self.to_creator),
+                                           unicode(self.relation_type)
+                                          )
 
 
 class School(models.Model):
@@ -414,12 +422,12 @@ class CreatorSchool(models.Model):
 
     creator = models.ForeignKey(Creator, related_name='school_set')
     school = models.ForeignKey(School, related_name='creator')
-    school_year_began = models.PositiveSmallIntegerField(null=True, blank=True)
+    school_year_began = models.PositiveSmallIntegerField(null=True)
     school_year_began_uncertain = models.BooleanField(default=False)
-    school_year_ended = models.PositiveSmallIntegerField(null=True, blank=True)
+    school_year_ended = models.PositiveSmallIntegerField(null=True)
     school_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
-    data_source = models.ManyToManyField(DataSource, blank=True)
+    data_source = models.ManyToManyField(DataSource)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -474,13 +482,12 @@ class CreatorDegree(models.Model):
         verbose_name_plural = 'Creator Degrees'
 
     creator = models.ForeignKey(Creator, related_name='degree_set')
-    school = models.ForeignKey(School, related_name='degree', null=True,
-                               blank=True)
+    school = models.ForeignKey(School, related_name='degree', null=True)
     degree = models.ForeignKey(Degree, related_name='creator')
-    degree_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    degree_year = models.PositiveSmallIntegerField(null=True)
     degree_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
-    data_source = models.ManyToManyField(DataSource, blank=True)
+    data_source = models.ManyToManyField(DataSource)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -519,13 +526,10 @@ class CreatorArtInfluence(models.Model):
 
     creator = models.ForeignKey(Creator, related_name='art_influence_set')
     influence_name = models.CharField(max_length=200)
-    influence_link = models.ForeignKey(
-            Creator,
-            null=True,
-            blank=True,
-            related_name='exist_influencer')
-    notes = models.TextField(blank=True)
-    data_source = models.ManyToManyField(DataSource, blank=True)
+    influence_link = models.ForeignKey(Creator, null=True,
+                                       related_name='exist_influencer')
+    notes = models.TextField()
+    data_source = models.ManyToManyField(DataSource)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -533,6 +537,13 @@ class CreatorArtInfluence(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     deleted = models.BooleanField(default=False, db_index=True)
+
+    # only one of the two will be set
+    def influence(self):
+        if self.influence_link:
+            return self.influence_link.gcd_official_name
+        else:
+            return self.influence_name
 
     def delete(self):
         self.deleted = True
@@ -581,15 +592,13 @@ class CreatorMembership(models.Model):
 
     creator = models.ForeignKey(Creator, related_name='membership_set')
     organization_name = models.CharField(max_length=200)
-    membership_type = models.ForeignKey(MembershipType, null=True, blank=True)
-    membership_year_began = models.PositiveSmallIntegerField(null=True,
-                                                             blank=True)
+    membership_type = models.ForeignKey(MembershipType, null=True)
+    membership_year_began = models.PositiveSmallIntegerField(null=True)
     membership_year_began_uncertain = models.BooleanField(default=False)
-    membership_year_ended = models.PositiveSmallIntegerField(null=True,
-                                                             blank=True)
+    membership_year_ended = models.PositiveSmallIntegerField(null=True)
     membership_year_ended_uncertain = models.BooleanField(default=False)
-    notes = models.TextField(blank=True)
-    data_source = models.ManyToManyField(DataSource, blank=True)
+    notes = models.TextField()
+    data_source = models.ManyToManyField(DataSource)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -642,10 +651,10 @@ class CreatorAward(models.Model):
     award = models.ForeignKey(Award, null=True)
     award_name = models.CharField(max_length=255)
     no_award_name = models.BooleanField(default=False)
-    award_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    award_year = models.PositiveSmallIntegerField(null=True)
     award_year_uncertain = models.BooleanField(default=False)
-    notes = models.TextField(blank=True)
-    data_source = models.ManyToManyField(DataSource, blank=True)
+    notes = models.TextField()
+    data_source = models.ManyToManyField(DataSource)
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
@@ -717,11 +726,11 @@ class CreatorNonComicWork(models.Model):
     creator = models.ForeignKey(Creator, related_name='non_comic_work_set')
     work_type = models.ForeignKey(NonComicWorkType)
     publication_title = models.CharField(max_length=200)
-    employer_name = models.CharField(max_length=200, blank=True)
-    work_title = models.CharField(max_length=255, blank=True)
+    employer_name = models.CharField(max_length=200)
+    work_title = models.CharField(max_length=255)
     work_role = models.ForeignKey(NonComicWorkRole, null=True)
     work_urls = models.TextField()
-    data_source = models.ManyToManyField(DataSource, blank=True)
+    data_source = models.ManyToManyField(DataSource)
     notes = models.TextField()
 
     # Fields related to change management.
@@ -793,7 +802,7 @@ class NonComicWorkYear(models.Model):
 
     non_comic_work = models.ForeignKey(CreatorNonComicWork,
                                        related_name='noncomicworkyears')
-    work_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    work_year = models.PositiveSmallIntegerField(null=True)
     work_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):

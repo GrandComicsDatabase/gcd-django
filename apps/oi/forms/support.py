@@ -102,6 +102,9 @@ CREATOR_NONCOMICWORK_HELP_LINKS = {
     'notes': 'Work_Notes_(Non_Comic_Work)',
 }
 
+CREATOR_RELATION_HELP_LINKS = {
+}
+
 CREATOR_SCHOOL_HELP_LINKS = {
     'school': 'School',
     'school_year_began': 'Year_fields',
@@ -260,6 +263,11 @@ CREATOR_NONCOMICWORK_HELP_TEXTS = {
         "Links to either the work or more information about the work, such as"
         " the person's entry in the IMDb, a WorldCat search for a creator, or"
         " a link to a web comic site. One URL per line."
+}
+
+CREATOR_RELATION_HELP_TEXTS = {
+    'relation_type': "The type of relation between the two creators, where "
+        "'Creator A' has the chosen relation with 'Creator B'"
 }
 
 PUBLISHER_HELP_TEXTS = {

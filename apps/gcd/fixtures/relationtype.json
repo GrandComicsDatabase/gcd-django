@@ -3,28 +3,48 @@
         "pk": 3,
         "model": "gcd.relationtype",
         "fields": {
-            "type": "Employee"
+            "type": "Employee",
+            "reverse_type": "Employer"
         }
     },
     {
         "pk": 2,
         "model": "gcd.relationtype",
         "fields": {
-            "type": "Owner"
+            "type": "Owner",
+            "reverse_type": "Owned by"
         }
     },
     {
         "pk": 1,
         "model": "gcd.relationtype",
         "fields": {
-            "type": "Similar Name"
+            "type": "Similar Name",
+            "reverse_type": "Similar Name"
         }
     },
     {
         "pk": 4,
         "model": "gcd.relationtype",
         "fields": {
-            "type": "User"
+            "type": "User",
+            "reverse_type": "Used by"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "gcd.relationtype",
+        "fields": {
+            "type": "Child",
+            "reverse_type": "Parent"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "gcd.relationtype",
+        "fields": {
+            "type": "Spouse",
+            "reverse_type": "Spouse"
         }
     }
 ]

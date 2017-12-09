@@ -1,3 +1,4 @@
+{{ object.award }}
 {{ object.award_name }}
 {{ object.creator.gcd_official_name }}
 {{ object.creator.birth_country }}

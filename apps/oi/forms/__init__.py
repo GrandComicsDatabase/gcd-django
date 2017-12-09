@@ -27,11 +27,11 @@ from .image import (    # noqa
 from .creator import (    # noqa
     CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
     CreatorMembershipRevisionForm, CreatorAwardRevisionForm,
-    CreatorNonComicWorkRevisionForm, get_creator_revision_form,
+    CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm, 
     CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
     get_creator_art_influence_revision_form, get_creator_award_revision_form,
-    get_creator_membership_revision_form,
-    get_creator_non_comic_work_revision_form,
+    get_creator_membership_revision_form, get_creator_revision_form,
+    get_creator_non_comic_work_revision_form, get_creator_relation_revision_form,
     get_creator_school_revision_form, get_creator_degree_revision_form)
 from .support import ( add_data_source_fields, init_data_source_fields,
     _set_help_labels)
@@ -99,6 +99,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'creator_non_comic_work':
         return get_creator_non_comic_work_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_relation':
+        return get_creator_relation_revision_form(revision, **kwargs)
 
     if model_name == 'creator_school':
         return get_creator_school_revision_form(revision, **kwargs)

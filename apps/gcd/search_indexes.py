@@ -244,8 +244,8 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/creator_text.txt')
-    gcd_official_name = indexes.EdgeNgramField(model_attr="gcd_official_name",
-                                               boost=DEFAULT_BOOST)
+    gcd_official_name = indexes.CharField(model_attr="gcd_official_name",
+                                          boost=DEFAULT_BOOST)
     name = MultiValueField(boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
@@ -291,11 +291,11 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
-                             'search/indexes/gcd/creator_artinfluence_text.txt')
-    name = indexes.CharField(model_attr="influence_name", boost=DEFAULT_BOOST)
+                             'search/indexes/gcd/creator_art_influence_text.txt')
+    name = indexes.CharField(model_attr="influence", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    sort_name = indexes.CharField(model_attr='influence_name', indexed=False)
+    sort_name = indexes.CharField(model_attr='influence', indexed=False)
     country = indexes.CharField(model_attr='creator__birth_country__code',
                                 indexed=False, null=True)
 
@@ -303,7 +303,7 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
         return CreatorArtInfluence
 
     def prepare_facet_model_name(self, obj):
-        return "creator artinfluence"
+        return "creator art influence"
 
 
 class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -317,6 +317,12 @@ class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     year = indexes.IntegerField(model_attr='award_year')
     sort_name = indexes.CharField(model_attr='award_name', indexed=False)
 
+    def prepare_year(self, obj):
+        if obj.award_year:
+            return obj.award_year
+        else:
+            return 9999
+
     def get_model(self):
         return CreatorAward
 
@@ -328,7 +334,7 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
-                             'search/indexes/gcd/creator_noncomicwork_text.txt')
+                             'search/indexes/gcd/creator_non_comic_work_text.txt')
     name = indexes.CharField(model_attr="publication_title", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
@@ -340,6 +346,6 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
         return CreatorNonComicWork
 
     def prepare_facet_model_name(self, obj):
-        return "creator noncomicwork"
+        return "creator non comic work"
 
 

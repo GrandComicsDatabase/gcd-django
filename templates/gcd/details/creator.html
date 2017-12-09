@@ -1,5 +1,4 @@
 {% extends "gcd/base_view.html" %}
-{% load url from future %}
 {% load staticfiles %}
 {% load i18n %}
 
@@ -81,18 +80,6 @@
                         {% if creator_name.source.all %}
                             <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
                                 {{ source.type }},{% endfor %}</p>
-                        {% endif %}
-                        {% if creator_name.active_relations %}
-                            {% for relation in creator_name.active_relations %}
-                                <p><strong>Relation Type</strong>
-                                    : {{ relation.rel_type.type }}</p>
-                                {% if relation.rel_source.all %}
-                                    <p><strong>Relation sources</strong> :
-                                        {% for source in relation.rel_source.all %}
-                                            {{ source.type }},{% endfor %}
-                                    </p>
-                                {% endif %}
-                            {% endfor %}
                         {% endif %}
                     {% endfor %}
 
@@ -238,6 +225,18 @@
                                 {% endif %}
                         {% endfor %}
                     {% endif %}
+
+                    {% if creator.active_relations %}
+                        <hr>
+                        <h3>Relations:</h3>
+                        {% for relation in creator.active_relations %}
+                            <p>{{ forloop.counter }}. {{ relation.2 }} - <a href="/creator/{{ relation.0 }}/">{{ relation.1 }}</a></p>
+                            {% with relation.data_source.all as data_sources %}
+                            {% include "gcd/bits/show_sources.html" %}
+                            {% endwith %}
+                        {% endfor %}
+                    {% endif %}
+                    
                     <br>
 
                 </div> <!-- pub_data -->
@@ -267,7 +266,10 @@
                                 <button>Add Membership</button>
                             </a>
                             <a href="{% url "add_creator_non_comic_work" creator.id %}">
-                                <button>Add NonComic Work</button>
+                                <button>Add Non Comic Work</button>
+                            </a>
+                            <a href="{% url "add_creator_relation" creator.id %}">
+                                <button>Add Relation</button>
                             </a>
                             <a href="{% url "add_creator_school" creator.id %}">
                                 <button>Add School</button>

@@ -56,7 +56,7 @@ from apps.oi.models import (
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
-    NameRelationRevision,
+    CreatorRelationRevision,
     _get_creator_sourced_fields)
 
 from apps.oi.forms import (get_brand_group_revision_form,
@@ -76,6 +76,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            CreatorMembershipRevisionForm,
                            CreatorAwardRevisionForm,
                            CreatorNonComicWorkRevisionForm,
+                           CreatorRelationRevisionForm,
                            CreatorSchoolRevisionForm,
                            CreatorDegreeRevisionForm,
                            DateRevisionForm)
@@ -443,23 +444,23 @@ def process_creator_other_names(request, changeset, revision, creator_name):
             creator_other_name.name = other_name['name']
             creator_other_name.type = type
             creator_other_name.save()
-            name_relation = NameRelationRevision.objects.get(
-                gcd_official_name=creator_name,
-                to_name=creator_other_name
-            )
-            name_relation.rel_type_id=other_name['relation_type_id']
-            name_relation.save()
+            #name_relation = NameRelationRevision.objects.get(
+                #gcd_official_name=creator_name,
+                #to_name=creator_other_name
+            #)
+            #name_relation.rel_type_id=other_name['relation_type_id']
+            #name_relation.save()
         else:
             creator_other_name = CreatorNameDetailRevision.objects.create(
                 creator=revision,
                 name=other_name['name'],
                 type=type,
                 changeset=changeset)
-            name_relation = NameRelationRevision.objects.create(
-                gcd_official_name=creator_name,
-                to_name=creator_other_name,
-                rel_type_id=other_name['relation_type_id'],
-                changeset=changeset)
+            #name_relation = NameRelationRevision.objects.create(
+                #gcd_official_name=creator_name,
+                #to_name=creator_other_name,
+                #rel_type_id=other_name['relation_type_id'],
+                #changeset=changeset)
         updated_creator_name_list.append(creator_other_name.id)
 
     removed_creator_names = CreatorNameDetailRevision.objects\
@@ -467,13 +468,13 @@ def process_creator_other_names(request, changeset, revision, creator_name):
                             .exclude(id__in=updated_creator_name_list)
     if removed_creator_names:
         for removed_creator_name in removed_creator_names:
-            if removed_creator_name.cr_to_name.count():
-                name_rel = removed_creator_name.cr_to_name.get()
-                if name_rel.name_relation:
-                    name_rel.deleted = True
-                    name_rel.save()
-                else:
-                    name_rel.delete()
+            #if removed_creator_name.cr_to_name.count():
+                #name_rel = removed_creator_name.cr_to_name.get()
+                #if name_rel.name_relation:
+                    #name_rel.deleted = True
+                    #name_rel.save()
+                #else:
+                    #name_rel.delete()
             if removed_creator_name.creator_name_detail:
                 removed_creator_name.deleted = True
                 removed_creator_name.save()
@@ -646,8 +647,9 @@ def _display_edit_form(request, changeset, form, revision=None):
                   'name': creator_name_revision.name,
                   'type_id': creator_name_revision.type_id,
                   'revision_id': creator_name_revision.id,
-                  'relation_id':
-                    creator_name_revision.cr_to_name.get().rel_type_id})
+                  #'relation_id':
+                    #creator_name_revision.cr_to_name.get().rel_type_id
+                    })
         if request.POST:
             creator_names = extract_creator_names(request)
             for creator_name in creator_names:
@@ -890,12 +892,13 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                                         sourced_revision=revision)
 
                 elif revision.changeset.change_type in [
-                                        CTYPES['creator_membership'],
                                         CTYPES['creator_award'],
                                         CTYPES['creator_art_influence'],
-                                        CTYPES['creator_school'],
                                         CTYPES['creator_degree'],
-                                        CTYPES['creator_non_comic_work']]:
+                                        CTYPES['creator_membership'],
+                                        CTYPES['creator_non_comic_work'],
+                                        CTYPES['creator_relation'],
+                                        CTYPES['creator_school']]:
                     _save_data_source_revision(form, revision, '')
                 else:
                     form.save_m2m()
@@ -4294,6 +4297,7 @@ def show_queue(request, queue_name, state):
     creator_awards = changes.filter(change_type=CTYPES['creator_award'])
     creator_memberships = changes.filter(change_type=CTYPES['creator_membership'])
     creator_non_comic_works = changes.filter(change_type=CTYPES['creator_non_comic_work'])
+    creator_relations = changes.filter(change_type=CTYPES['creator_relation'])
     creator_schools = changes.filter(change_type=CTYPES['creator_school'])
     creator_degres = changes.filter(change_type=CTYPES['creator_degree'])
     publishers = changes.filter(change_type=CTYPES['publisher'])
@@ -4360,6 +4364,13 @@ def show_queue(request, queue_name, state):
                   'changesets': creator_non_comic_works.order_by('modified', 'id') \
                       .annotate(country=Max(
                       'creatornoncomicworkrevisions__creator__birth_country__id'))
+              },
+              {
+                  'object_name': 'Creator Relations',
+                  'object_type': 'creator_relation',
+                  'changesets': creator_relations.order_by('modified', 'id') \
+                      .annotate(country=Max(
+                      'creatorrelationrevisions__from_creator__birth_country__id'))
               },
               {
                   'object_name': 'Creator Schools',
@@ -4581,20 +4592,18 @@ def compare(request, id):
         creator_name_revisions = changeset.creatornamedetailrevisions.all()
         for creator_name_revision in creator_name_revisions:
             revisions_before.append(creator_name_revision)
-            if creator_name_revision.cr_to_name.count():
-                revisions_before.append(creator_name_revision\
-                                        .cr_to_name.get())
+            #if creator_name_revision.cr_to_name.count():
+                #revisions_before.append(creator_name_revision\
+                                        #.cr_to_name.get())
     elif changeset.change_type == CTYPES['creator_membership']:
         sourced_fields = {'': 'membership_year_ended_uncertain'}
     elif changeset.change_type == CTYPES['creator_award']:
         sourced_fields = {'': 'award_year_uncertain'}
-    elif changeset.change_type == CTYPES['creator_art_influence']:
-        sourced_fields = {'': 'notes'}
-    elif changeset.change_type == CTYPES['creator_non_comic_work']:
-        sourced_fields = {'': 'notes'}
-    elif changeset.change_type == CTYPES['creator_school']:
-        sourced_fields = {'': 'notes'}
-    elif changeset.change_type == CTYPES['creator_degree']:
+    elif changeset.change_type in [CTYPES['creator_art_influence'],
+                                   CTYPES['creator_degree'],
+                                   CTYPES['creator_non_comic_work'],
+                                   CTYPES['creator_relation'],
+                                   CTYPES['creator_school']]:
         sourced_fields = {'': 'notes'}
         
     for revision_before in revisions_before:
@@ -4956,8 +4965,7 @@ def add_creator(request):
         for creator_name in creator_names:
             other_name_details.append({
                 'name': creator_name['name'],
-                'type_id': creator_name['type_id'],
-                'relation_id': creator_name['relation_type_id']})
+                'type_id': creator_name['type_id']})
     else:
         official_name_details = None
         other_name_details = []
@@ -4974,10 +4982,55 @@ def add_creator(request):
                'action_label': 'Submit new',
                'name_types': NameType.objects.all(),
                'sources': SourceType.objects.all(),
-               'relation_types': RelationType.objects.all(),
                'official_name_details': official_name_details,
                'other_name_details': other_name_details,
                'mode': 'new',
+               'settings': settings}
+    return oi_render(request, 'oi/edit/add_frame.html', context)
+
+
+@permission_required('indexer.can_reserve')
+def add_creator_relation(request, creator_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+    
+    creator = get_object_or_404(Creator, id=creator_id, deleted=False)
+
+    if creator.pending_deletion():
+        return render_error(request, u'Cannot add Relation for '
+                                     u'creator "%s" since the record is '
+                                     u'pending deletion.' % creator)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+                'apps.gcd.views.details.creator',
+                kwargs={'creator_id': creator_id}))
+
+    initial = {}
+    initial['from_creator'] = creator
+    relation_form = CreatorRelationRevisionForm(request.POST or None,
+                                                initial=initial)
+
+
+    if relation_form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['creator_relation'])
+        changeset.save()
+
+        revision = relation_form.save(commit=False)
+        revision.save_added_revision(changeset=changeset, creator=creator)
+        revision.save()
+
+        process_data_source(relation_form, '', changeset,
+                            sourced_revision=revision)
+
+        return submit(request, changeset.id)
+
+    context = {'form': relation_form,
+               'object_name': 'Relation with Creator',
+               'object_url': urlresolvers.reverse('add_creator_relation',
+                                                  kwargs={'creator_id': creator_id}),
+               'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
 

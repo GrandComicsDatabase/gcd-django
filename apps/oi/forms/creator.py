@@ -5,18 +5,20 @@ from django import forms
 
 from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
                            CreatorAwardRevision, CreatorArtInfluenceRevision, \
-                           CreatorNonComicWorkRevision, CreatorSchoolRevision, \
-                           get_creator_field_list,\
+                           CreatorNonComicWorkRevision, CreatorRelationRevision, \
+                           CreatorSchoolRevision, get_creator_field_list,\
                            DataSourceRevision, CreatorDegreeRevision, \
                            _get_creator_sourced_fields, _check_year
 
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
-                      CREATOR_NONCOMICWORK_HELP_TEXTS, CREATOR_AWARD_HELP_LINKS,
-                      CREATOR_ARTINFLUENCE_HELP_LINKS, CREATOR_HELP_LINKS,
+                      CREATOR_NONCOMICWORK_HELP_TEXTS,
+                      CREATOR_RELATION_HELP_TEXTS,
+                      CREATOR_HELP_LINKS, CREATOR_AWARD_HELP_LINKS,
+                      CREATOR_ARTINFLUENCE_HELP_LINKS,
                       CREATOR_DEGREE_HELP_LINKS, CREATOR_MEMBERSHIP_HELP_LINKS,
                       CREATOR_NONCOMICWORK_HELP_LINKS,
-                      CREATOR_SCHOOL_HELP_LINKS,
+                      CREATOR_RELATION_HELP_LINKS, CREATOR_SCHOOL_HELP_LINKS,
                       _set_help_labels, _get_comments_form_field,
                       init_data_source_fields, insert_data_source_fields,
                       HiddenInputWithHelp)
@@ -30,7 +32,6 @@ def _generic_data_source_clean(form, cd):
             form.add_error('_source_description',
               'Source description and source type must both be set.')
 
-# TODO add help links as for other forms
 
 def get_creator_revision_form(revision=None, user=None):
     class RuntimeCreatorRevisionForm(CreatorRevisionForm):
@@ -290,7 +291,8 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         _generic_data_source_clean(self, cd)
-        if cd['influence_name'] and cd['influence_link']:
+        if 'influence_name' in cd and cd['influence_name'] \
+          and cd['influence_link']:
             self.add_error('influence_name',
                 'Enter either the name of an influence or a link to an '
                 'influence, but not both.')
@@ -351,6 +353,47 @@ class CreatorNonComicWorkRevisionForm(forms.ModelForm):
         except ValueError:
             raise forms.ValidationError("Enter years separated by ';'.")
         return value
+
+    def clean(self):
+        cd = self.cleaned_data
+
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
+        _generic_data_source_clean(self, cd)
+
+
+def get_creator_relation_revision_form(revision=None, user=None):
+    class RuntimeCreatorRelationRevisionForm(\
+                 CreatorRelationRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeCreatorRelationRevisionForm, self)\
+                         .__init__(*args, **kwargs)
+            if revision:
+                init_data_source_fields('', revision, self.fields)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
+            return super(CreatorRelationRevisionForm, self).as_table()
+
+    return RuntimeCreatorRelationRevisionForm
+
+
+class CreatorRelationRevisionForm(forms.ModelForm):
+    class Meta:
+        model = CreatorRelationRevision
+        fields = model._base_field_list
+        help_texts = CREATOR_RELATION_HELP_TEXTS
+        labels = {'from_creator': 'Creator A', 'relation_type': 'Relation',
+                  'to_creator': 'Creator B'}
+    def __init__(self, *args, **kwargs):
+        super(CreatorRelationRevisionForm, self).__init__(*args, **kwargs)
+        ordering = self.fields.keys()
+        insert_data_source_fields('', ordering, self.fields, 'notes')
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
+
+    comments = _get_comments_form_field()
 
     def clean(self):
         cd = self.cleaned_data
