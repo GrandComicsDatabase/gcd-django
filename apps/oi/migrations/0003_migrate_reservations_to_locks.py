@@ -42,7 +42,8 @@ def migrate_reservation_to_lock(apps, schema_editor):
         # than this migration expects. We use the historical version.
         obj_class = apps.get_model('gcd', classname)
         if classname == 'Story':
-            objects = obj_class.objects.filter(issue__reserved=True)
+            objects = obj_class.objects.filter(issue__reserved=True,
+                                               deleted=False)
         else:
             objects = obj_class.objects.filter(reserved=True)
         for obj in objects:
