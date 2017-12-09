@@ -169,6 +169,19 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                                              'sort_name',
                                                              'sort_code',
                                                              'sequence_number')
+
+                elif self.form.selected_facets[0] in \
+                   [u'facet_model_name_exact:creator',
+                    u'facet_model_name_exact:creator membership',
+                    u'facet_model_name_exact:creator artinfluence',
+                    u'facet_model_name_exact:creator award',
+                    u'facet_model_name_exact:creator noncomicwork']:
+                    if request.GET['sort'] == 'alpha':
+                        self.results = self.results.order_by('sort_name',
+                                                             'year')
+                    elif request.GET['sort'] == 'chrono':
+                        self.results = self.results.order_by('year',
+                                                             'sort_name')
         if self.query:
             self.query = urlencode({'q': self.query.encode('utf-8')})
         self.paginator = ResponsePaginator(self.results,

@@ -1,0 +1,24 @@
+{% load i18n %}
+
+<!-- Probably needs to be refactored with the series_issue_header.html file
+     somehow, but deal with that later. -->
+
+{% ifnotequal paginate_only 1 %}
+<h1 class="item_id">
+  <div class="left">
+      {% if creator %}
+        <a href="{{ creator.get_absolute_url }}">{{ creator }}</a>
+      {% elif creator_membership %}
+        <a href="{{ creator_membership.creator.get_absolute_url }}">{{ creator_membership.creator }}</a> : <a href="{{ creator_membership.get_absolute_url }}">{{ creator_membership.organization_name }}</a>
+      {% elif creator_award %}
+        <a href="{{ creator_award.creator.get_absolute_url }}">{{ creator_award.creator }}</a> : <a href="{{ creator_award.get_absolute_url }}">{{ creator_award.award_name }}</a>
+      {% elif creator_art_influence %}
+        <a href="{{ creator_art_influence.creator.get_absolute_url }}">{{ creator_art_influence.creator }}</a> : <a href="{{ creator_art_influence.get_absolute_url }}">{{ creator_art_influence.influence_name }}</a>
+      {% elif creator_non_comic_work %}
+        <a href="{{ creator_non_comic_work.creator.get_absolute_url }}">{{ creator_non_comic_work.creator }}</a> : <a href="{{ creator_non_comic_work.get_absolute_url }}">{{ creator_non_comic_work.publication_title }}</a>
+      {% endif %}
+
+
+  </div>
+</h1>
+{% endifnotequal %}

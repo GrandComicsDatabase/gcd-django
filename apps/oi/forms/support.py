@@ -8,7 +8,7 @@ from django.utils.encoding import force_unicode
 from django.utils.html import escape, conditional_escape
 from django.forms.widgets import TextInput
 
-from apps.gcd.models import Brand
+from apps.gcd.models import Brand, SourceType
 from apps.gcd.templatetags.credits import format_page_count
 
 
@@ -50,6 +50,66 @@ BRAND_HELP_LINKS = {
     'notes': 'Notes_%28Brand%29',
     'keywords': 'Keywords',
     'comments': 'Comments '
+}
+
+CREATOR_HELP_LINKS = {
+    'gcd_official_name': 'Credits',
+    'date': 'Year_/_Month_/_Date_Fields',
+    'birth_country': 'Country_/_Province_/_City_Fields',
+    'death_country': 'Country_/_Province_/_City_Fields',
+    'birth_province': 'Country_/_Province_/_City_Fields',
+    'death_province': 'Country_/_Province_/_City_Fields',
+    'birth_city': 'Country_/_Province_/_City_Fields',
+    'death_city': 'Country_/_Province_/_City_Fields',
+    'bio': 'Biography',
+    'whos_who': 'Biography',
+    'notes': 'Notes_(Creators)'
+}
+
+CREATOR_ARTINFLUENCE_HELP_LINKS = {
+    'influence_name': 'Influence_Name',
+    'influence_link': 'Influence_Name',
+    'notes': 'Notes_(Creator_Influences)',
+}
+
+CREATOR_AWARD_HELP_LINKS = {
+    'award_name': 'Award_name',
+    'award_year': 'Year_fields',
+    'notes': 'Notes_(Creator_Awards)'
+}
+
+CREATOR_DEGREE_HELP_LINKS = {
+    'school': 'School',
+    'degree': 'Degree',
+    'degree_year': 'Year_fields',
+    'notes': 'Notes_(Creator_Degrees)'
+}
+
+CREATOR_MEMBERSHIP_HELP_LINKS = {
+    'organization_name': 'Organization_name',
+    'membership_type': 'Membership_type',
+    'membership_year_began': 'Year_fields',
+    'membership_year_ended': 'Year_fields',
+    'notes': 'Notes_(Creator_Memberships)'
+}
+
+CREATOR_NONCOMICWORK_HELP_LINKS = {
+    'work_type': 'Work_Type',
+    'publication_title': 'Publication_Title',
+    'employer_name': 'Employer_Name',
+    'work_title': 'Work_Title',
+    'work_role': 'Work_Role',
+    'notes': 'Work_Notes_(Non_Comic_Work)',
+}
+
+CREATOR_RELATION_HELP_LINKS = {
+}
+
+CREATOR_SCHOOL_HELP_LINKS = {
+    'school': 'School',
+    'school_year_began': 'Year_fields',
+    'school_year_ended': 'Year_fields',
+    'notes': 'Notes_(Creator_Schools)'
 }
 
 INDICIA_PUBLISHER_HELP_LINKS = {
@@ -162,10 +222,53 @@ SERIES_HELP_LINKS = {
     'comments': 'Comments'
 }
 
-VARIANT_NAME_HELP_TEXT = (
-    'Name of this variant. Examples are: "Cover A" (if listed as such in '
-    'the issue), "2nd printing", "newsstand", "direct", or the name of '
-    'the artist if different from the base issue.')
+CREATOR_HELP_TEXTS = {
+    'bio':
+        "A short biography (1-4 paragraphs) noting highlights of the career "
+        "of the creator, which might include a list of characters created.",
+    'whos_who':
+         "Link to the old Who’s Who, if available.",
+}
+
+CREATOR_MEMBERSHIP_HELP_TEXTS = {
+    'organization_name':
+        "Name of society or other organization, related to an artistic "
+        "profession, that the creator holds or held a membership in.",
+}
+
+CREATOR_ARTINFLUENCE_HELP_TEXTS = {
+    'influence_name':
+        "Name of an artistic influence of the creator. We only document "
+        "influences self-identified by the creator.",
+    'influence_link':
+        "If the influence is a creator in our database, link to the creator "
+        "record instead of entering the name above.",
+}
+
+CREATOR_NONCOMICWORK_HELP_TEXTS = {
+    'publication_title':
+        "Record the publication title if a physical publication, the title of "
+        "a play, movie, television, radio, or live show series, the name or "
+        "client of an advertising campaign, name of a fine art piece or "
+        "internet site, or feature of a web comic.",
+    'employer_name':
+        "The name of the entity that paid for the work.",
+    'work_title':
+        "The title of the individual work, such as the title of an article "
+        "or web comic story, episode of a show, illustration in an "
+        "ad campaign, or blog entry.",
+    'work_years':
+        "The years of the work. Separate by ';', use year-year for ranges",
+    'work_urls':
+        "Links to either the work or more information about the work, such as"
+        " the person's entry in the IMDb, a WorldCat search for a creator, or"
+        " a link to a web comic site. One URL per line."
+}
+
+CREATOR_RELATION_HELP_TEXTS = {
+    'relation_type': "The type of relation between the two creators, where "
+        "'Creator A' has the chosen relation with 'Creator B'"
+}
 
 PUBLISHER_HELP_TEXTS = {
     'year_began':
@@ -400,6 +503,11 @@ ISSUE_HELP_TEXTS = {
         "Check this box if there are no publisher's age guidelines.",
 }
 
+VARIANT_NAME_HELP_TEXT = (
+    'Name of this variant. Examples are: "Cover A" (if listed as such in '
+    'the issue), "2nd printing", "newsstand", "direct", or the name of '
+    'the artist if different from the base issue.')
+
 
 def _set_help_labels(self, help_links):
     for field in self.fields:
@@ -483,6 +591,37 @@ def _clean_keywords(cleaned_data):
                 '< > { } : / \ | @ ,')
 
     return keywords
+
+
+def init_data_source_fields(field_name, revision, fields):
+    data_source_revision = revision.changeset.datasourcerevisions\
+                                             .filter(field=field_name)
+    if data_source_revision:
+        # TODO we want to be able to support more than one revision
+        data_source_revision = data_source_revision[0]
+        fields['%s_source_description' % field_name].initial = \
+                                    data_source_revision.source_description
+        fields['%s_source_type' % field_name].initial = \
+                                    data_source_revision.source_type
+
+
+def add_data_source_fields(form, field_name):
+    form.fields['%s_source_description' % field_name] = forms.CharField(
+                                    widget=forms.Textarea, required=False)
+    form.fields['%s_source_type' % field_name] = forms.ModelChoiceField(
+                        queryset=SourceType.objects.all(), required=False)
+
+
+def insert_data_source_fields(field_name, ordering, fields, insert_after):
+    index = ordering.index(insert_after)
+
+    ordering.insert(index+1, '%s_source_description' % field_name)
+    fields.update({'%s_source_description' % field_name: forms.CharField(
+                                    widget=forms.Textarea, required=False)})
+
+    ordering.insert(index+2, '%s_source_type' % field_name)
+    fields.update({'%s_source_type' % field_name: forms.ModelChoiceField(
+                        queryset=SourceType.objects.all(), required=False)})
 
 
 class PageCountInput(TextInput):

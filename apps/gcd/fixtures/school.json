@@ -1,0 +1,4447 @@
+[
+{
+  "fields": {
+    "school_name": "Abilene Christian College"
+  },
+  "model": "gcd.school",
+  "pk": 1
+},
+{
+  "fields": {
+    "school_name": "Acad\u00e9mie de la Grande Chaumi\u00e8re [Paris]"
+  },
+  "model": "gcd.school",
+  "pk": 2
+},
+{
+  "fields": {
+    "school_name": "Acad\u00e9mie Julian [Paris]"
+  },
+  "model": "gcd.school",
+  "pk": 3
+},
+{
+  "fields": {
+    "school_name": "Acad\u00e9mie Royale des Beaux-Arts [Brussels]"
+  },
+  "model": "gcd.school",
+  "pk": 4
+},
+{
+  "fields": {
+    "school_name": "Academy of Art College"
+  },
+  "model": "gcd.school",
+  "pk": 5
+},
+{
+  "fields": {
+    "school_name": "Academy of Art College [San Francisco]"
+  },
+  "model": "gcd.school",
+  "pk": 6
+},
+{
+  "fields": {
+    "school_name": "Academy of Brera [Milan]"
+  },
+  "model": "gcd.school",
+  "pk": 7
+},
+{
+  "fields": {
+    "school_name": "Academy of Design"
+  },
+  "model": "gcd.school",
+  "pk": 8
+},
+{
+  "fields": {
+    "school_name": "Academy of Design [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 9
+},
+{
+  "fields": {
+    "school_name": "Academy of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 10
+},
+{
+  "fields": {
+    "school_name": "Academy of Fine Arts [Bologna, Italy]"
+  },
+  "model": "gcd.school",
+  "pk": 11
+},
+{
+  "fields": {
+    "school_name": "Academy of Fine Arts [Chicago]"
+  },
+  "model": "gcd.school",
+  "pk": 12
+},
+{
+  "fields": {
+    "school_name": "Academy of Fine Arts [Italy]"
+  },
+  "model": "gcd.school",
+  "pk": 13
+},
+{
+  "fields": {
+    "school_name": "Academy of Fine Arts [Paris]"
+  },
+  "model": "gcd.school",
+  "pk": 14
+},
+{
+  "fields": {
+    "school_name": "Academy of Fine Arts [Rome]"
+  },
+  "model": "gcd.school",
+  "pk": 15
+},
+{
+  "fields": {
+    "school_name": "Adelphi University [Long Island, New York]"
+  },
+  "model": "gcd.school",
+  "pk": 16
+},
+{
+  "fields": {
+    "school_name": "Advertising Art School [Portland]"
+  },
+  "model": "gcd.school",
+  "pk": 17
+},
+{
+  "fields": {
+    "school_name": "Alberta College of Art"
+  },
+  "model": "gcd.school",
+  "pk": 18
+},
+{
+  "fields": {
+    "school_name": "Albright College"
+  },
+  "model": "gcd.school",
+  "pk": 19
+},
+{
+  "fields": {
+    "school_name": "Albright School of Art [Buffalo, New York]"
+  },
+  "model": "gcd.school",
+  "pk": 20
+},
+{
+  "fields": {
+    "school_name": "Alexander Mackie School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 21
+},
+{
+  "fields": {
+    "school_name": "Alfred University"
+  },
+  "model": "gcd.school",
+  "pk": 22
+},
+{
+  "fields": {
+    "school_name": "American Academy of Art [Chicago]"
+  },
+  "model": "gcd.school",
+  "pk": 23
+},
+{
+  "fields": {
+    "school_name": "American Artists School"
+  },
+  "model": "gcd.school",
+  "pk": 24
+},
+{
+  "fields": {
+    "school_name": "American School of Design [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 25
+},
+{
+  "fields": {
+    "school_name": "American University [Washington, D.C.]"
+  },
+  "model": "gcd.school",
+  "pk": 26
+},
+{
+  "fields": {
+    "school_name": "Amherst College"
+  },
+  "model": "gcd.school",
+  "pk": 27
+},
+{
+  "fields": {
+    "school_name": "Antioch College [Yellow Springs, Ohio]"
+  },
+  "model": "gcd.school",
+  "pk": 28
+},
+{
+  "fields": {
+    "school_name": "Arizona State University"
+  },
+  "model": "gcd.school",
+  "pk": 29
+},
+{
+  "fields": {
+    "school_name": "Armed Forces Information School [Pennsylvania]"
+  },
+  "model": "gcd.school",
+  "pk": 30
+},
+{
+  "fields": {
+    "school_name": "Army Extension Correspondence Course"
+  },
+  "model": "gcd.school",
+  "pk": 31
+},
+{
+  "fields": {
+    "school_name": "Art Academy of Cincinnati"
+  },
+  "model": "gcd.school",
+  "pk": 32
+},
+{
+  "fields": {
+    "school_name": "Art Career School [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 33
+},
+{
+  "fields": {
+    "school_name": "Art Center College of Design [Pasadena, California]"
+  },
+  "model": "gcd.school",
+  "pk": 34
+},
+{
+  "fields": {
+    "school_name": "Art Center School [Los Angeles]"
+  },
+  "model": "gcd.school",
+  "pk": 35
+},
+{
+  "fields": {
+    "school_name": "Art College [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 36
+},
+{
+  "fields": {
+    "school_name": "Art Institute of Boston"
+  },
+  "model": "gcd.school",
+  "pk": 37
+},
+{
+  "fields": {
+    "school_name": "Art Institute of Chicago"
+  },
+  "model": "gcd.school",
+  "pk": 38
+},
+{
+  "fields": {
+    "school_name": "Art Institute of Ft. Lauderdale"
+  },
+  "model": "gcd.school",
+  "pk": 39
+},
+{
+  "fields": {
+    "school_name": "Art Institute of Minneapolis"
+  },
+  "model": "gcd.school",
+  "pk": 40
+},
+{
+  "fields": {
+    "school_name": "Art Institute of Pittsburgh"
+  },
+  "model": "gcd.school",
+  "pk": 41
+},
+{
+  "fields": {
+    "school_name": "Art Institute School [Chicago]"
+  },
+  "model": "gcd.school",
+  "pk": 42
+},
+{
+  "fields": {
+    "school_name": "Art Instruction Schools [Minneapolis, Minnesota]"
+  },
+  "model": "gcd.school",
+  "pk": 43
+},
+{
+  "fields": {
+    "school_name": "Art Instruction, Inc."
+  },
+  "model": "gcd.school",
+  "pk": 44
+},
+{
+  "fields": {
+    "school_name": "Art School of Brera"
+  },
+  "model": "gcd.school",
+  "pk": 45
+},
+{
+  "fields": {
+    "school_name": "Art School, Richmond Professional Institute, Virginia Commonwealth University"
+  },
+  "model": "gcd.school",
+  "pk": 46
+},
+{
+  "fields": {
+    "school_name": "Art Students League"
+  },
+  "model": "gcd.school",
+  "pk": 47
+},
+{
+  "fields": {
+    "school_name": "Artist Guild"
+  },
+  "model": "gcd.school",
+  "pk": 48
+},
+{
+  "fields": {
+    "school_name": "Arts and Crafts [Detroit]"
+  },
+  "model": "gcd.school",
+  "pk": 49
+},
+{
+  "fields": {
+    "school_name": "Arts and Crafts Club [New Orleans]"
+  },
+  "model": "gcd.school",
+  "pk": 50
+},
+{
+  "fields": {
+    "school_name": "Ashland University"
+  },
+  "model": "gcd.school",
+  "pk": 51
+},
+{
+  "fields": {
+    "school_name": "Asnuntuck College"
+  },
+  "model": "gcd.school",
+  "pk": 52
+},
+{
+  "fields": {
+    "school_name": "ASU Art College"
+  },
+  "model": "gcd.school",
+  "pk": 53
+},
+{
+  "fields": {
+    "school_name": "Atelier Julian [Paris, France]"
+  },
+  "model": "gcd.school",
+  "pk": 54
+},
+{
+  "fields": {
+    "school_name": "Auburn University"
+  },
+  "model": "gcd.school",
+  "pk": 55
+},
+{
+  "fields": {
+    "school_name": "Auckland University [New Zealand]"
+  },
+  "model": "gcd.school",
+  "pk": 56
+},
+{
+  "fields": {
+    "school_name": "Austin Community College"
+  },
+  "model": "gcd.school",
+  "pk": 57
+},
+{
+  "fields": {
+    "school_name": "Avionics Systems Tech."
+  },
+  "model": "gcd.school",
+  "pk": 58
+},
+{
+  "fields": {
+    "school_name": "Bakersfield College"
+  },
+  "model": "gcd.school",
+  "pk": 59
+},
+{
+  "fields": {
+    "school_name": "Ball State University"
+  },
+  "model": "gcd.school",
+  "pk": 60
+},
+{
+  "fields": {
+    "school_name": "Banbury Art College [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 61
+},
+{
+  "fields": {
+    "school_name": "Bankstown Technical College"
+  },
+  "model": "gcd.school",
+  "pk": 62
+},
+{
+  "fields": {
+    "school_name": "Bard College"
+  },
+  "model": "gcd.school",
+  "pk": 63
+},
+{
+  "fields": {
+    "school_name": "Barstow Community College"
+  },
+  "model": "gcd.school",
+  "pk": 64
+},
+{
+  "fields": {
+    "school_name": "Baylor University"
+  },
+  "model": "gcd.school",
+  "pk": 65
+},
+{
+  "fields": {
+    "school_name": "Beaux Arts Institute"
+  },
+  "model": "gcd.school",
+  "pk": 66
+},
+{
+  "fields": {
+    "school_name": "Beckenham School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 67
+},
+{
+  "fields": {
+    "school_name": "Benedictine College"
+  },
+  "model": "gcd.school",
+  "pk": 68
+},
+{
+  "fields": {
+    "school_name": "Benjamin Cardoz School of Law"
+  },
+  "model": "gcd.school",
+  "pk": 69
+},
+{
+  "fields": {
+    "school_name": "Berry College"
+  },
+  "model": "gcd.school",
+  "pk": 70
+},
+{
+  "fields": {
+    "school_name": "Beth Isreal Medical Center School of Nursing"
+  },
+  "model": "gcd.school",
+  "pk": 71
+},
+{
+  "fields": {
+    "school_name": "Billy Hon's Cartoon School"
+  },
+  "model": "gcd.school",
+  "pk": 72
+},
+{
+  "fields": {
+    "school_name": "Birmingham Southern College [Alabama]"
+  },
+  "model": "gcd.school",
+  "pk": 73
+},
+{
+  "fields": {
+    "school_name": "Bliss College"
+  },
+  "model": "gcd.school",
+  "pk": 74
+},
+{
+  "fields": {
+    "school_name": "Boise State University [Idaho]"
+  },
+  "model": "gcd.school",
+  "pk": 75
+},
+{
+  "fields": {
+    "school_name": "Boston College"
+  },
+  "model": "gcd.school",
+  "pk": 76
+},
+{
+  "fields": {
+    "school_name": "Boston University"
+  },
+  "model": "gcd.school",
+  "pk": 77
+},
+{
+  "fields": {
+    "school_name": "Bowdoin College [Maine]"
+  },
+  "model": "gcd.school",
+  "pk": 78
+},
+{
+  "fields": {
+    "school_name": "Bowling Green University"
+  },
+  "model": "gcd.school",
+  "pk": 79
+},
+{
+  "fields": {
+    "school_name": "Bradley University"
+  },
+  "model": "gcd.school",
+  "pk": 80
+},
+{
+  "fields": {
+    "school_name": "Brandeis University"
+  },
+  "model": "gcd.school",
+  "pk": 81
+},
+{
+  "fields": {
+    "school_name": "Brigham Young University"
+  },
+  "model": "gcd.school",
+  "pk": 82
+},
+{
+  "fields": {
+    "school_name": "Brighton Polytech [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 83
+},
+{
+  "fields": {
+    "school_name": "Brock University"
+  },
+  "model": "gcd.school",
+  "pk": 84
+},
+{
+  "fields": {
+    "school_name": "Brooklyn Academy of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 85
+},
+{
+  "fields": {
+    "school_name": "Brooklyn College of the City University of New York (CUNY)"
+  },
+  "model": "gcd.school",
+  "pk": 86
+},
+{
+  "fields": {
+    "school_name": "Brooklyn Community College"
+  },
+  "model": "gcd.school",
+  "pk": 87
+},
+{
+  "fields": {
+    "school_name": "Brooklyn High School of Music and Art"
+  },
+  "model": "gcd.school",
+  "pk": 88
+},
+{
+  "fields": {
+    "school_name": "Brooklyn Museum Art School"
+  },
+  "model": "gcd.school",
+  "pk": 89
+},
+{
+  "fields": {
+    "school_name": "Brooklyn School of Law"
+  },
+  "model": "gcd.school",
+  "pk": 90
+},
+{
+  "fields": {
+    "school_name": "Brooklyn School of Visual Arts"
+  },
+  "model": "gcd.school",
+  "pk": 91
+},
+{
+  "fields": {
+    "school_name": "Brown University"
+  },
+  "model": "gcd.school",
+  "pk": 92
+},
+{
+  "fields": {
+    "school_name": "Burnley School of Commercial Art"
+  },
+  "model": "gcd.school",
+  "pk": 93
+},
+{
+  "fields": {
+    "school_name": "Buscema School"
+  },
+  "model": "gcd.school",
+  "pk": 94
+},
+{
+  "fields": {
+    "school_name": "California Art School [Los Angeles]"
+  },
+  "model": "gcd.school",
+  "pk": 95
+},
+{
+  "fields": {
+    "school_name": "California College of Arts and Crafts [Oakland]"
+  },
+  "model": "gcd.school",
+  "pk": 96
+},
+{
+  "fields": {
+    "school_name": "California College of Arts and Crafts [San Francisco]"
+  },
+  "model": "gcd.school",
+  "pk": 97
+},
+{
+  "fields": {
+    "school_name": "California Institute of Arts [Valencia, CA]"
+  },
+  "model": "gcd.school",
+  "pk": 98
+},
+{
+  "fields": {
+    "school_name": "California School of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 99
+},
+{
+  "fields": {
+    "school_name": "California State University"
+  },
+  "model": "gcd.school",
+  "pk": 100
+},
+{
+  "fields": {
+    "school_name": "California State University [Chico]"
+  },
+  "model": "gcd.school",
+  "pk": 101
+},
+{
+  "fields": {
+    "school_name": "California State University [Fresno]"
+  },
+  "model": "gcd.school",
+  "pk": 102
+},
+{
+  "fields": {
+    "school_name": "California State University [Long Beach]"
+  },
+  "model": "gcd.school",
+  "pk": 103
+},
+{
+  "fields": {
+    "school_name": "California State University [Los Angeles]"
+  },
+  "model": "gcd.school",
+  "pk": 104
+},
+{
+  "fields": {
+    "school_name": "California State University [Northridge]"
+  },
+  "model": "gcd.school",
+  "pk": 105
+},
+{
+  "fields": {
+    "school_name": "Camberwell College of Art"
+  },
+  "model": "gcd.school",
+  "pk": 106
+},
+{
+  "fields": {
+    "school_name": "Cambridge"
+  },
+  "model": "gcd.school",
+  "pk": 107
+},
+{
+  "fields": {
+    "school_name": "Cambridge Junior College"
+  },
+  "model": "gcd.school",
+  "pk": 108
+},
+{
+  "fields": {
+    "school_name": "Cambridge University [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 109
+},
+{
+  "fields": {
+    "school_name": "Carlos Academy [New York]"
+  },
+  "model": "gcd.school",
+  "pk": 110
+},
+{
+  "fields": {
+    "school_name": "Carnegie Institute of Technology"
+  },
+  "model": "gcd.school",
+  "pk": 111
+},
+{
+  "fields": {
+    "school_name": "Carnegie-Mellon University"
+  },
+  "model": "gcd.school",
+  "pk": 112
+},
+{
+  "fields": {
+    "school_name": "Cartoonists and Illustrators School"
+  },
+  "model": "gcd.school",
+  "pk": 113
+},
+{
+  "fields": {
+    "school_name": "Catholic University"
+  },
+  "model": "gcd.school",
+  "pk": 114
+},
+{
+  "fields": {
+    "school_name": "Center for Creative Studies [Detroit]"
+  },
+  "model": "gcd.school",
+  "pk": 115
+},
+{
+  "fields": {
+    "school_name": "Central School of Art [London, U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 116
+},
+{
+  "fields": {
+    "school_name": "Central School of London"
+  },
+  "model": "gcd.school",
+  "pk": 117
+},
+{
+  "fields": {
+    "school_name": "Central State University"
+  },
+  "model": "gcd.school",
+  "pk": 118
+},
+{
+  "fields": {
+    "school_name": "Central State University [Oklahoma]"
+  },
+  "model": "gcd.school",
+  "pk": 119
+},
+{
+  "fields": {
+    "school_name": "Central Texas College"
+  },
+  "model": "gcd.school",
+  "pk": 120
+},
+{
+  "fields": {
+    "school_name": "Centre Pompidou"
+  },
+  "model": "gcd.school",
+  "pk": 121
+},
+{
+  "fields": {
+    "school_name": "Chabot College, University of California [Berkely]"
+  },
+  "model": "gcd.school",
+  "pk": 122
+},
+{
+  "fields": {
+    "school_name": "Chare Art School"
+  },
+  "model": "gcd.school",
+  "pk": 123
+},
+{
+  "fields": {
+    "school_name": "Chelsea School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 124
+},
+{
+  "fields": {
+    "school_name": "Chicago Academy of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 125
+},
+{
+  "fields": {
+    "school_name": "Chicago Art Institute"
+  },
+  "model": "gcd.school",
+  "pk": 126
+},
+{
+  "fields": {
+    "school_name": "Chicago Professional School of Cartooning"
+  },
+  "model": "gcd.school",
+  "pk": 127
+},
+{
+  "fields": {
+    "school_name": "Chouinard Art Institute [Los Angeles]"
+  },
+  "model": "gcd.school",
+  "pk": 128
+},
+{
+  "fields": {
+    "school_name": "Christopher Newport University [Virginia]"
+  },
+  "model": "gcd.school",
+  "pk": 129
+},
+{
+  "fields": {
+    "school_name": "Cincinnati Art Institute"
+  },
+  "model": "gcd.school",
+  "pk": 130
+},
+{
+  "fields": {
+    "school_name": "City College of the City University of New York (CUNY)"
+  },
+  "model": "gcd.school",
+  "pk": 131
+},
+{
+  "fields": {
+    "school_name": "City University of New York (CUNY)"
+  },
+  "model": "gcd.school",
+  "pk": 132
+},
+{
+  "fields": {
+    "school_name": "Clarkamus Community College"
+  },
+  "model": "gcd.school",
+  "pk": 133
+},
+{
+  "fields": {
+    "school_name": "Clemson University"
+  },
+  "model": "gcd.school",
+  "pk": 134
+},
+{
+  "fields": {
+    "school_name": "Cleveland College of Art and Design [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 135
+},
+{
+  "fields": {
+    "school_name": "Cleveland Institute of Art"
+  },
+  "model": "gcd.school",
+  "pk": 136
+},
+{
+  "fields": {
+    "school_name": "Cleveland School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 137
+},
+{
+  "fields": {
+    "school_name": "Coastal Carolina Community College in Jacksonville"
+  },
+  "model": "gcd.school",
+  "pk": 138
+},
+{
+  "fields": {
+    "school_name": "Colgate University"
+  },
+  "model": "gcd.school",
+  "pk": 139
+},
+{
+  "fields": {
+    "school_name": "College of Commerce"
+  },
+  "model": "gcd.school",
+  "pk": 140
+},
+{
+  "fields": {
+    "school_name": "College of Industrial Arts [Denton, Texas]"
+  },
+  "model": "gcd.school",
+  "pk": 141
+},
+{
+  "fields": {
+    "school_name": "College of Mt. St. Joseph"
+  },
+  "model": "gcd.school",
+  "pk": 142
+},
+{
+  "fields": {
+    "school_name": "College of New Rochelle"
+  },
+  "model": "gcd.school",
+  "pk": 143
+},
+{
+  "fields": {
+    "school_name": "College of St. Thomas [St. Paul]"
+  },
+  "model": "gcd.school",
+  "pk": 144
+},
+{
+  "fields": {
+    "school_name": "College of Staten Island of the City University of New York (CUNY)"
+  },
+  "model": "gcd.school",
+  "pk": 145
+},
+{
+  "fields": {
+    "school_name": "Colorado Institute of Art [Denver]"
+  },
+  "model": "gcd.school",
+  "pk": 146
+},
+{
+  "fields": {
+    "school_name": "Colorado State University"
+  },
+  "model": "gcd.school",
+  "pk": 147
+},
+{
+  "fields": {
+    "school_name": "Columbia College"
+  },
+  "model": "gcd.school",
+  "pk": 148
+},
+{
+  "fields": {
+    "school_name": "Columbia College [Chicago]"
+  },
+  "model": "gcd.school",
+  "pk": 149
+},
+{
+  "fields": {
+    "school_name": "Columbia College of Radio Announcing and Writing"
+  },
+  "model": "gcd.school",
+  "pk": 150
+},
+{
+  "fields": {
+    "school_name": "Columbia University"
+  },
+  "model": "gcd.school",
+  "pk": 151
+},
+{
+  "fields": {
+    "school_name": "Columbus College of Art and Design [Ohio]"
+  },
+  "model": "gcd.school",
+  "pk": 152
+},
+{
+  "fields": {
+    "school_name": "Commercial Art Technical Schools"
+  },
+  "model": "gcd.school",
+  "pk": 153
+},
+{
+  "fields": {
+    "school_name": "Commercial Illustrators School"
+  },
+  "model": "gcd.school",
+  "pk": 154
+},
+{
+  "fields": {
+    "school_name": "Cooper School [Cleveland]"
+  },
+  "model": "gcd.school",
+  "pk": 155
+},
+{
+  "fields": {
+    "school_name": "Cooper Union School of Art [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 156
+},
+{
+  "fields": {
+    "school_name": "Corcoran School of Art [Washington D.C.]"
+  },
+  "model": "gcd.school",
+  "pk": 157
+},
+{
+  "fields": {
+    "school_name": "Cornell University"
+  },
+  "model": "gcd.school",
+  "pk": 158
+},
+{
+  "fields": {
+    "school_name": "Correspondence Art Institute"
+  },
+  "model": "gcd.school",
+  "pk": 159
+},
+{
+  "fields": {
+    "school_name": "Couinard Art School, California Institute of Arts"
+  },
+  "model": "gcd.school",
+  "pk": 160
+},
+{
+  "fields": {
+    "school_name": "Cranbrook Academy of Art [Michigan]"
+  },
+  "model": "gcd.school",
+  "pk": 161
+},
+{
+  "fields": {
+    "school_name": "Dana College, Blair [Maine]"
+  },
+  "model": "gcd.school",
+  "pk": 162
+},
+{
+  "fields": {
+    "school_name": "Danforth Tech [Toronto]"
+  },
+  "model": "gcd.school",
+  "pk": 163
+},
+{
+  "fields": {
+    "school_name": "Dartmouth University"
+  },
+  "model": "gcd.school",
+  "pk": 164
+},
+{
+  "fields": {
+    "school_name": "Dawson College"
+  },
+  "model": "gcd.school",
+  "pk": 165
+},
+{
+  "fields": {
+    "school_name": "Dayton Art Institute [Ohio]"
+  },
+  "model": "gcd.school",
+  "pk": 166
+},
+{
+  "fields": {
+    "school_name": "De Pauw University"
+  },
+  "model": "gcd.school",
+  "pk": 167
+},
+{
+  "fields": {
+    "school_name": "Defense Information School"
+  },
+  "model": "gcd.school",
+  "pk": 168
+},
+{
+  "fields": {
+    "school_name": "Detroit Art Academy"
+  },
+  "model": "gcd.school",
+  "pk": 169
+},
+{
+  "fields": {
+    "school_name": "Detroit City College"
+  },
+  "model": "gcd.school",
+  "pk": 170
+},
+{
+  "fields": {
+    "school_name": "DeWitt Clinton High School [Bronx]"
+  },
+  "model": "gcd.school",
+  "pk": 171
+},
+{
+  "fields": {
+    "school_name": "Drexel Institute"
+  },
+  "model": "gcd.school",
+  "pk": 172
+},
+{
+  "fields": {
+    "school_name": "East Carolina State College"
+  },
+  "model": "gcd.school",
+  "pk": 173
+},
+{
+  "fields": {
+    "school_name": "East Central University [Ada, Oklahoma]"
+  },
+  "model": "gcd.school",
+  "pk": 174
+},
+{
+  "fields": {
+    "school_name": "East Ham Technical College [London, U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 175
+},
+{
+  "fields": {
+    "school_name": "Eastbourne College"
+  },
+  "model": "gcd.school",
+  "pk": 176
+},
+{
+  "fields": {
+    "school_name": "Eastern Michigan University"
+  },
+  "model": "gcd.school",
+  "pk": 177
+},
+{
+  "fields": {
+    "school_name": "Eastern Montana College"
+  },
+  "model": "gcd.school",
+  "pk": 178
+},
+{
+  "fields": {
+    "school_name": "\u00c9cole des Arts Appliqu\u00e9s [Paris]"
+  },
+  "model": "gcd.school",
+  "pk": 179
+},
+{
+  "fields": {
+    "school_name": "\u00c9cole des Beaux-Arts [Paris]"
+  },
+  "model": "gcd.school",
+  "pk": 180
+},
+{
+  "fields": {
+    "school_name": "\u00c9cole Industrielle [Luxumberg]"
+  },
+  "model": "gcd.school",
+  "pk": 181
+},
+{
+  "fields": {
+    "school_name": "Emily Carr College of Art"
+  },
+  "model": "gcd.school",
+  "pk": 182
+},
+{
+  "fields": {
+    "school_name": "Escuela Superior de Arte [Spain]"
+  },
+  "model": "gcd.school",
+  "pk": 183
+},
+{
+  "fields": {
+    "school_name": "Essex Art Institute [Boston]"
+  },
+  "model": "gcd.school",
+  "pk": 184
+},
+{
+  "fields": {
+    "school_name": "Evergreen State College [Washington]"
+  },
+  "model": "gcd.school",
+  "pk": 185
+},
+{
+  "fields": {
+    "school_name": "Famous Artists School"
+  },
+  "model": "gcd.school",
+  "pk": 186
+},
+{
+  "fields": {
+    "school_name": "Fanshawe College [Ontario]"
+  },
+  "model": "gcd.school",
+  "pk": 187
+},
+{
+  "fields": {
+    "school_name": "Farmingdale College"
+  },
+  "model": "gcd.school",
+  "pk": 188
+},
+{
+  "fields": {
+    "school_name": "Fawcett Art School [Newark]"
+  },
+  "model": "gcd.school",
+  "pk": 189
+},
+{
+  "fields": {
+    "school_name": "FEATI University [Sta. Cruz, Philippines]"
+  },
+  "model": "gcd.school",
+  "pk": 190
+},
+{
+  "fields": {
+    "school_name": "Federal School of Illustrating [Minneapolis]"
+  },
+  "model": "gcd.school",
+  "pk": 191
+},
+{
+  "fields": {
+    "school_name": "Federal Schools, Art Institute Inc."
+  },
+  "model": "gcd.school",
+  "pk": 192
+},
+{
+  "fields": {
+    "school_name": "Filton Technical College"
+  },
+  "model": "gcd.school",
+  "pk": 193
+},
+{
+  "fields": {
+    "school_name": "Finch College"
+  },
+  "model": "gcd.school",
+  "pk": 194
+},
+{
+  "fields": {
+    "school_name": "Florida State University"
+  },
+  "model": "gcd.school",
+  "pk": 195
+},
+{
+  "fields": {
+    "school_name": "Fordham University"
+  },
+  "model": "gcd.school",
+  "pk": 196
+},
+{
+  "fields": {
+    "school_name": "Frank J. Reilly School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 197
+},
+{
+  "fields": {
+    "school_name": "Franklin and Marshall Academy"
+  },
+  "model": "gcd.school",
+  "pk": 198
+},
+{
+  "fields": {
+    "school_name": "Franklin Art School"
+  },
+  "model": "gcd.school",
+  "pk": 199
+},
+{
+  "fields": {
+    "school_name": "Ft. Wayne Art School [Indiana]"
+  },
+  "model": "gcd.school",
+  "pk": 200
+},
+{
+  "fields": {
+    "school_name": "General Motors Institute [Flint, Michigan]"
+  },
+  "model": "gcd.school",
+  "pk": 201
+},
+{
+  "fields": {
+    "school_name": "Genesee Area Skill Center"
+  },
+  "model": "gcd.school",
+  "pk": 202
+},
+{
+  "fields": {
+    "school_name": "George Mason University"
+  },
+  "model": "gcd.school",
+  "pk": 203
+},
+{
+  "fields": {
+    "school_name": "George Washington University"
+  },
+  "model": "gcd.school",
+  "pk": 204
+},
+{
+  "fields": {
+    "school_name": "George Watson's Ladies' College [Edinburgh]"
+  },
+  "model": "gcd.school",
+  "pk": 205
+},
+{
+  "fields": {
+    "school_name": "Georgetown University"
+  },
+  "model": "gcd.school",
+  "pk": 206
+},
+{
+  "fields": {
+    "school_name": "Georgia State College"
+  },
+  "model": "gcd.school",
+  "pk": 207
+},
+{
+  "fields": {
+    "school_name": "Georgia State University"
+  },
+  "model": "gcd.school",
+  "pk": 208
+},
+{
+  "fields": {
+    "school_name": "Girls Commercial High School"
+  },
+  "model": "gcd.school",
+  "pk": 209
+},
+{
+  "fields": {
+    "school_name": "Glasgow School of Art [Scotland]"
+  },
+  "model": "gcd.school",
+  "pk": 210
+},
+{
+  "fields": {
+    "school_name": "Glassboro State College [New Jersey]"
+  },
+  "model": "gcd.school",
+  "pk": 211
+},
+{
+  "fields": {
+    "school_name": "Grand Central School of Art [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 212
+},
+{
+  "fields": {
+    "school_name": "Graphic Arts School"
+  },
+  "model": "gcd.school",
+  "pk": 213
+},
+{
+  "fields": {
+    "school_name": "Green River Community College [Washington]"
+  },
+  "model": "gcd.school",
+  "pk": 214
+},
+{
+  "fields": {
+    "school_name": "Greenfield Community College"
+  },
+  "model": "gcd.school",
+  "pk": 215
+},
+{
+  "fields": {
+    "school_name": "Hamilton Ontario Art School"
+  },
+  "model": "gcd.school",
+  "pk": 216
+},
+{
+  "fields": {
+    "school_name": "Hamlin University"
+  },
+  "model": "gcd.school",
+  "pk": 217
+},
+{
+  "fields": {
+    "school_name": "Hartford Art School [Connecticut]"
+  },
+  "model": "gcd.school",
+  "pk": 218
+},
+{
+  "fields": {
+    "school_name": "Harvard Univserity"
+  },
+  "model": "gcd.school",
+  "pk": 219
+},
+{
+  "fields": {
+    "school_name": "Hastings Animation School"
+  },
+  "model": "gcd.school",
+  "pk": 220
+},
+{
+  "fields": {
+    "school_name": "Hayward State University"
+  },
+  "model": "gcd.school",
+  "pk": 221
+},
+{
+  "fields": {
+    "school_name": "Hewitt School of Journalism [Chicago]"
+  },
+  "model": "gcd.school",
+  "pk": 222
+},
+{
+  "fields": {
+    "school_name": "High Point University [North Carolina]"
+  },
+  "model": "gcd.school",
+  "pk": 223
+},
+{
+  "fields": {
+    "school_name": "High School of Art and Design [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 224
+},
+{
+  "fields": {
+    "school_name": "High School of Industrial Arts [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 225
+},
+{
+  "fields": {
+    "school_name": "High School of Music and Art [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 226
+},
+{
+  "fields": {
+    "school_name": "HND Graphics, Granville College"
+  },
+  "model": "gcd.school",
+  "pk": 227
+},
+{
+  "fields": {
+    "school_name": "Hofstra University [New York]"
+  },
+  "model": "gcd.school",
+  "pk": 228
+},
+{
+  "fields": {
+    "school_name": "Hollywood Art Center"
+  },
+  "model": "gcd.school",
+  "pk": 229
+},
+{
+  "fields": {
+    "school_name": "Holy Cross College"
+  },
+  "model": "gcd.school",
+  "pk": 230
+},
+{
+  "fields": {
+    "school_name": "Honolulu Academy of Art"
+  },
+  "model": "gcd.school",
+  "pk": 231
+},
+{
+  "fields": {
+    "school_name": "Humbolt State [Arcata, California]"
+  },
+  "model": "gcd.school",
+  "pk": 232
+},
+{
+  "fields": {
+    "school_name": "Hunter College of the City University of New York (CUNY)"
+  },
+  "model": "gcd.school",
+  "pk": 233
+},
+{
+  "fields": {
+    "school_name": "Hussian School of Art [Philadelphia]"
+  },
+  "model": "gcd.school",
+  "pk": 234
+},
+{
+  "fields": {
+    "school_name": "Illinois State University"
+  },
+  "model": "gcd.school",
+  "pk": 235
+},
+{
+  "fields": {
+    "school_name": "Indiana University"
+  },
+  "model": "gcd.school",
+  "pk": 236
+},
+{
+  "fields": {
+    "school_name": "Iona College"
+  },
+  "model": "gcd.school",
+  "pk": 237
+},
+{
+  "fields": {
+    "school_name": "Iowa Academy of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 238
+},
+{
+  "fields": {
+    "school_name": "Iowa State University"
+  },
+  "model": "gcd.school",
+  "pk": 239
+},
+{
+  "fields": {
+    "school_name": "Ithaca College [New York]"
+  },
+  "model": "gcd.school",
+  "pk": 240
+},
+{
+  "fields": {
+    "school_name": "Ivy School of Professional Art [Pittsburgh]"
+  },
+  "model": "gcd.school",
+  "pk": 241
+},
+{
+  "fields": {
+    "school_name": "Jean Morgan School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 242
+},
+{
+  "fields": {
+    "school_name": "Jefferson Davis Jr. College [Gulfport, Mississippi]"
+  },
+  "model": "gcd.school",
+  "pk": 243
+},
+{
+  "fields": {
+    "school_name": "Joe Kubert School of Cartoon and Graphic Arts"
+  },
+  "model": "gcd.school",
+  "pk": 244
+},
+{
+  "fields": {
+    "school_name": "Joe Rubinstein Invitational Masters Class"
+  },
+  "model": "gcd.school",
+  "pk": 245
+},
+{
+  "fields": {
+    "school_name": "John Cass School [London, U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 246
+},
+{
+  "fields": {
+    "school_name": "John Herron School of Art, Indiana University"
+  },
+  "model": "gcd.school",
+  "pk": 247
+},
+{
+  "fields": {
+    "school_name": "John Huntington Polytechnical Institute [Cleveland, Ohio]"
+  },
+  "model": "gcd.school",
+  "pk": 248
+},
+{
+  "fields": {
+    "school_name": "John Machamer's School of Art [California]"
+  },
+  "model": "gcd.school",
+  "pk": 249
+},
+{
+  "fields": {
+    "school_name": "Johnson County Community College [Kansas City, Kansas]"
+  },
+  "model": "gcd.school",
+  "pk": 250
+},
+{
+  "fields": {
+    "school_name": "Johnson State College [Vermont]"
+  },
+  "model": "gcd.school",
+  "pk": 251
+},
+{
+  "fields": {
+    "school_name": "Joliet Junior College [Joliet, Illinois]"
+  },
+  "model": "gcd.school",
+  "pk": 252
+},
+{
+  "fields": {
+    "school_name": "Junior College of Albany [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 253
+},
+{
+  "fields": {
+    "school_name": "Kansas City Art Institute [Missouri]"
+  },
+  "model": "gcd.school",
+  "pk": 254
+},
+{
+  "fields": {
+    "school_name": "Kansas State University [Manhattan, Kansas]"
+  },
+  "model": "gcd.school",
+  "pk": 255
+},
+{
+  "fields": {
+    "school_name": "Kendall College of Art and Design"
+  },
+  "model": "gcd.school",
+  "pk": 256
+},
+{
+  "fields": {
+    "school_name": "Kent State University"
+  },
+  "model": "gcd.school",
+  "pk": 257
+},
+{
+  "fields": {
+    "school_name": "Kingston School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 258
+},
+{
+  "fields": {
+    "school_name": "Knox College"
+  },
+  "model": "gcd.school",
+  "pk": 259
+},
+{
+  "fields": {
+    "school_name": "Kushuin University"
+  },
+  "model": "gcd.school",
+  "pk": 260
+},
+{
+  "fields": {
+    "school_name": "Kutztown State University [Pennsylvania]"
+  },
+  "model": "gcd.school",
+  "pk": 261
+},
+{
+  "fields": {
+    "school_name": "La Roche College [Pittsburgh]"
+  },
+  "model": "gcd.school",
+  "pk": 262
+},
+{
+  "fields": {
+    "school_name": "Lake Forest College"
+  },
+  "model": "gcd.school",
+  "pk": 263
+},
+{
+  "fields": {
+    "school_name": "Landon School [high school]"
+  },
+  "model": "gcd.school",
+  "pk": 264
+},
+{
+  "fields": {
+    "school_name": "Landon School of Illustrating and Cartooning [Cleveland]"
+  },
+  "model": "gcd.school",
+  "pk": 265
+},
+{
+  "fields": {
+    "school_name": "Leeds College of Art [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 266
+},
+{
+  "fields": {
+    "school_name": "Leeds Polytechnic University [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 267
+},
+{
+  "fields": {
+    "school_name": "Leicester Polytechnic"
+  },
+  "model": "gcd.school",
+  "pk": 268
+},
+{
+  "fields": {
+    "school_name": "Liege University [Belgium]"
+  },
+  "model": "gcd.school",
+  "pk": 269
+},
+{
+  "fields": {
+    "school_name": "London Cartoon Centre"
+  },
+  "model": "gcd.school",
+  "pk": 270
+},
+{
+  "fields": {
+    "school_name": "Long Beach State University"
+  },
+  "model": "gcd.school",
+  "pk": 271
+},
+{
+  "fields": {
+    "school_name": "Long Island University"
+  },
+  "model": "gcd.school",
+  "pk": 272
+},
+{
+  "fields": {
+    "school_name": "Los Angeles Art Center School"
+  },
+  "model": "gcd.school",
+  "pk": 273
+},
+{
+  "fields": {
+    "school_name": "Los Angeles Art Institute"
+  },
+  "model": "gcd.school",
+  "pk": 274
+},
+{
+  "fields": {
+    "school_name": "Los Angeles City College"
+  },
+  "model": "gcd.school",
+  "pk": 275
+},
+{
+  "fields": {
+    "school_name": "Los Angeles County Art Institute"
+  },
+  "model": "gcd.school",
+  "pk": 276
+},
+{
+  "fields": {
+    "school_name": "Los Angeles School of Design"
+  },
+  "model": "gcd.school",
+  "pk": 277
+},
+{
+  "fields": {
+    "school_name": "Louisiana State University"
+  },
+  "model": "gcd.school",
+  "pk": 278
+},
+{
+  "fields": {
+    "school_name": "Louisiana Tech"
+  },
+  "model": "gcd.school",
+  "pk": 279
+},
+{
+  "fields": {
+    "school_name": "Loyola University"
+  },
+  "model": "gcd.school",
+  "pk": 280
+},
+{
+  "fields": {
+    "school_name": "Lukits [Los Angeles]"
+  },
+  "model": "gcd.school",
+  "pk": 281
+},
+{
+  "fields": {
+    "school_name": "Madison Area Technical College"
+  },
+  "model": "gcd.school",
+  "pk": 282
+},
+{
+  "fields": {
+    "school_name": "Manhattan's High School of Music and Art"
+  },
+  "model": "gcd.school",
+  "pk": 283
+},
+{
+  "fields": {
+    "school_name": "Mapau Institute of Technology [Philippines]"
+  },
+  "model": "gcd.school",
+  "pk": 284
+},
+{
+  "fields": {
+    "school_name": "Maricopa Tech [Arizona]"
+  },
+  "model": "gcd.school",
+  "pk": 285
+},
+{
+  "fields": {
+    "school_name": "Mark Hopkins Institute of Art [San Francisco]"
+  },
+  "model": "gcd.school",
+  "pk": 286
+},
+{
+  "fields": {
+    "school_name": "Marquette University"
+  },
+  "model": "gcd.school",
+  "pk": 287
+},
+{
+  "fields": {
+    "school_name": "Marshall University"
+  },
+  "model": "gcd.school",
+  "pk": 288
+},
+{
+  "fields": {
+    "school_name": "Maryland Institute College of Art"
+  },
+  "model": "gcd.school",
+  "pk": 289
+},
+{
+  "fields": {
+    "school_name": "Massachusetts College of Art and Design"
+  },
+  "model": "gcd.school",
+  "pk": 290
+},
+{
+  "fields": {
+    "school_name": "McGill University"
+  },
+  "model": "gcd.school",
+  "pk": 291
+},
+{
+  "fields": {
+    "school_name": "Mechanics Art Institute"
+  },
+  "model": "gcd.school",
+  "pk": 292
+},
+{
+  "fields": {
+    "school_name": "Mechanics Institute"
+  },
+  "model": "gcd.school",
+  "pk": 293
+},
+{
+  "fields": {
+    "school_name": "Mechanics Institute [Rochester, New York]"
+  },
+  "model": "gcd.school",
+  "pk": 294
+},
+{
+  "fields": {
+    "school_name": "Medical College of Virginia"
+  },
+  "model": "gcd.school",
+  "pk": 295
+},
+{
+  "fields": {
+    "school_name": "Meinzinger School of Art [Detroit]"
+  },
+  "model": "gcd.school",
+  "pk": 296
+},
+{
+  "fields": {
+    "school_name": "Metro Art School [Phoenix]"
+  },
+  "model": "gcd.school",
+  "pk": 297
+},
+{
+  "fields": {
+    "school_name": "Miami School of Art [Florida]"
+  },
+  "model": "gcd.school",
+  "pk": 298
+},
+{
+  "fields": {
+    "school_name": "Miami University"
+  },
+  "model": "gcd.school",
+  "pk": 299
+},
+{
+  "fields": {
+    "school_name": "Miami-Dade Community College"
+  },
+  "model": "gcd.school",
+  "pk": 300
+},
+{
+  "fields": {
+    "school_name": "Michigan State University"
+  },
+  "model": "gcd.school",
+  "pk": 301
+},
+{
+  "fields": {
+    "school_name": "Midland College"
+  },
+  "model": "gcd.school",
+  "pk": 302
+},
+{
+  "fields": {
+    "school_name": "Midland College [Fremont, Nebraska]"
+  },
+  "model": "gcd.school",
+  "pk": 303
+},
+{
+  "fields": {
+    "school_name": "Mills Academy [St. Paul]"
+  },
+  "model": "gcd.school",
+  "pk": 304
+},
+{
+  "fields": {
+    "school_name": "Milwaukee Institute of Design"
+  },
+  "model": "gcd.school",
+  "pk": 305
+},
+{
+  "fields": {
+    "school_name": "Milwaukee State Teachers College [University of Wisconsin]"
+  },
+  "model": "gcd.school",
+  "pk": 306
+},
+{
+  "fields": {
+    "school_name": "Milwaukee Technical High School"
+  },
+  "model": "gcd.school",
+  "pk": 307
+},
+{
+  "fields": {
+    "school_name": "Minneapolis College Art and Design"
+  },
+  "model": "gcd.school",
+  "pk": 308
+},
+{
+  "fields": {
+    "school_name": "Minneapolis Institute of Art"
+  },
+  "model": "gcd.school",
+  "pk": 309
+},
+{
+  "fields": {
+    "school_name": "Minnesota School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 310
+},
+{
+  "fields": {
+    "school_name": "Mont Saint-Louis"
+  },
+  "model": "gcd.school",
+  "pk": 311
+},
+{
+  "fields": {
+    "school_name": "Montana State University"
+  },
+  "model": "gcd.school",
+  "pk": 312
+},
+{
+  "fields": {
+    "school_name": "Montreal School of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 313
+},
+{
+  "fields": {
+    "school_name": "Moody Bible School"
+  },
+  "model": "gcd.school",
+  "pk": 314
+},
+{
+  "fields": {
+    "school_name": "Murray State University [Kentucky]"
+  },
+  "model": "gcd.school",
+  "pk": 315
+},
+{
+  "fields": {
+    "school_name": "Museum of Art"
+  },
+  "model": "gcd.school",
+  "pk": 316
+},
+{
+  "fields": {
+    "school_name": "Museum School of Modern Art"
+  },
+  "model": "gcd.school",
+  "pk": 317
+},
+{
+  "fields": {
+    "school_name": "Nassau Community College"
+  },
+  "model": "gcd.school",
+  "pk": 318
+},
+{
+  "fields": {
+    "school_name": "National Academy of Design [Dartmouth]"
+  },
+  "model": "gcd.school",
+  "pk": 319
+},
+{
+  "fields": {
+    "school_name": "National School of Fine Arts [Peru]"
+  },
+  "model": "gcd.school",
+  "pk": 320
+},
+{
+  "fields": {
+    "school_name": "New College of California"
+  },
+  "model": "gcd.school",
+  "pk": 321
+},
+{
+  "fields": {
+    "school_name": "New England School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 322
+},
+{
+  "fields": {
+    "school_name": "New Haven State Teachers College"
+  },
+  "model": "gcd.school",
+  "pk": 323
+},
+{
+  "fields": {
+    "school_name": "New School"
+  },
+  "model": "gcd.school",
+  "pk": 324
+},
+{
+  "fields": {
+    "school_name": "New School of Social Research"
+  },
+  "model": "gcd.school",
+  "pk": 325
+},
+{
+  "fields": {
+    "school_name": "New School, Parsons School of Design [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 326
+},
+{
+  "fields": {
+    "school_name": "New School, Parsons School of Design [Paris]"
+  },
+  "model": "gcd.school",
+  "pk": 327
+},
+{
+  "fields": {
+    "school_name": "New York Advertising Art School"
+  },
+  "model": "gcd.school",
+  "pk": 328
+},
+{
+  "fields": {
+    "school_name": "New York Art School"
+  },
+  "model": "gcd.school",
+  "pk": 329
+},
+{
+  "fields": {
+    "school_name": "New York City Community College"
+  },
+  "model": "gcd.school",
+  "pk": 330
+},
+{
+  "fields": {
+    "school_name": "New York City Technical College"
+  },
+  "model": "gcd.school",
+  "pk": 331
+},
+{
+  "fields": {
+    "school_name": "New York Law School"
+  },
+  "model": "gcd.school",
+  "pk": 332
+},
+{
+  "fields": {
+    "school_name": "New York Maritime College"
+  },
+  "model": "gcd.school",
+  "pk": 333
+},
+{
+  "fields": {
+    "school_name": "New York Musical Institute"
+  },
+  "model": "gcd.school",
+  "pk": 334
+},
+{
+  "fields": {
+    "school_name": "New York School of Art and Design"
+  },
+  "model": "gcd.school",
+  "pk": 335
+},
+{
+  "fields": {
+    "school_name": "New York School of Fine and Applied Arts [Parsons]"
+  },
+  "model": "gcd.school",
+  "pk": 336
+},
+{
+  "fields": {
+    "school_name": "New York School of Industrial Arts"
+  },
+  "model": "gcd.school",
+  "pk": 337
+},
+{
+  "fields": {
+    "school_name": "New York School of Printing"
+  },
+  "model": "gcd.school",
+  "pk": 338
+},
+{
+  "fields": {
+    "school_name": "New York School of Visual Arts"
+  },
+  "model": "gcd.school",
+  "pk": 339
+},
+{
+  "fields": {
+    "school_name": "New York State University"
+  },
+  "model": "gcd.school",
+  "pk": 340
+},
+{
+  "fields": {
+    "school_name": "New York University"
+  },
+  "model": "gcd.school",
+  "pk": 341
+},
+{
+  "fields": {
+    "school_name": "New York University Film School"
+  },
+  "model": "gcd.school",
+  "pk": 342
+},
+{
+  "fields": {
+    "school_name": "New York University School of Arts"
+  },
+  "model": "gcd.school",
+  "pk": 343
+},
+{
+  "fields": {
+    "school_name": "Newark School of Fine and Industrial Arts"
+  },
+  "model": "gcd.school",
+  "pk": 344
+},
+{
+  "fields": {
+    "school_name": "Newark State College"
+  },
+  "model": "gcd.school",
+  "pk": 345
+},
+{
+  "fields": {
+    "school_name": "Northeast Louisiana University"
+  },
+  "model": "gcd.school",
+  "pk": 346
+},
+{
+  "fields": {
+    "school_name": "Northeastern University"
+  },
+  "model": "gcd.school",
+  "pk": 347
+},
+{
+  "fields": {
+    "school_name": "Northern Illinois University"
+  },
+  "model": "gcd.school",
+  "pk": 348
+},
+{
+  "fields": {
+    "school_name": "Northern Michigan University"
+  },
+  "model": "gcd.school",
+  "pk": 349
+},
+{
+  "fields": {
+    "school_name": "Northern State College [Aberdeen, South Dakota]"
+  },
+  "model": "gcd.school",
+  "pk": 350
+},
+{
+  "fields": {
+    "school_name": "Northwestern University"
+  },
+  "model": "gcd.school",
+  "pk": 351
+},
+{
+  "fields": {
+    "school_name": "Northwestern University of Louisiana"
+  },
+  "model": "gcd.school",
+  "pk": 352
+},
+{
+  "fields": {
+    "school_name": "Notre Dame University"
+  },
+  "model": "gcd.school",
+  "pk": 353
+},
+{
+  "fields": {
+    "school_name": "Oakland University"
+  },
+  "model": "gcd.school",
+  "pk": 354
+},
+{
+  "fields": {
+    "school_name": "Oberlin College"
+  },
+  "model": "gcd.school",
+  "pk": 355
+},
+{
+  "fields": {
+    "school_name": "Occidental College [California]"
+  },
+  "model": "gcd.school",
+  "pk": 356
+},
+{
+  "fields": {
+    "school_name": "Ohio State University"
+  },
+  "model": "gcd.school",
+  "pk": 357
+},
+{
+  "fields": {
+    "school_name": "Oklahoma City Southwestern"
+  },
+  "model": "gcd.school",
+  "pk": 358
+},
+{
+  "fields": {
+    "school_name": "Oklahoma State University at Okmulgee"
+  },
+  "model": "gcd.school",
+  "pk": 359
+},
+{
+  "fields": {
+    "school_name": "Ontario College of Art"
+  },
+  "model": "gcd.school",
+  "pk": 360
+},
+{
+  "fields": {
+    "school_name": "Otis Art Institute [Los Angeles]"
+  },
+  "model": "gcd.school",
+  "pk": 361
+},
+{
+  "fields": {
+    "school_name": "Oxford University"
+  },
+  "model": "gcd.school",
+  "pk": 362
+},
+{
+  "fields": {
+    "school_name": "Pace College [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 363
+},
+{
+  "fields": {
+    "school_name": "Palette and Chisel Academy [Chicago]"
+  },
+  "model": "gcd.school",
+  "pk": 364
+},
+{
+  "fields": {
+    "school_name": "Pan American Art School"
+  },
+  "model": "gcd.school",
+  "pk": 365
+},
+{
+  "fields": {
+    "school_name": "Paris School of Design [France]"
+  },
+  "model": "gcd.school",
+  "pk": 366
+},
+{
+  "fields": {
+    "school_name": "Park College"
+  },
+  "model": "gcd.school",
+  "pk": 367
+},
+{
+  "fields": {
+    "school_name": "Pasadena City College"
+  },
+  "model": "gcd.school",
+  "pk": 368
+},
+{
+  "fields": {
+    "school_name": "Penn State University"
+  },
+  "model": "gcd.school",
+  "pk": 369
+},
+{
+  "fields": {
+    "school_name": "Pennsylvania Academy of the Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 370
+},
+{
+  "fields": {
+    "school_name": "Phil Stel's Rocky Mountain School of Art [Denver]"
+  },
+  "model": "gcd.school",
+  "pk": 371
+},
+{
+  "fields": {
+    "school_name": "Philadelphia College of Art"
+  },
+  "model": "gcd.school",
+  "pk": 372
+},
+{
+  "fields": {
+    "school_name": "Philadelphia Museum School of Industrial Art"
+  },
+  "model": "gcd.school",
+  "pk": 373
+},
+{
+  "fields": {
+    "school_name": "Phillips Junior College"
+  },
+  "model": "gcd.school",
+  "pk": 374
+},
+{
+  "fields": {
+    "school_name": "Phoenix Art Institute [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 375
+},
+{
+  "fields": {
+    "school_name": "Phoenix School of Design [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 376
+},
+{
+  "fields": {
+    "school_name": "Polytechnic [Huddersfield, U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 377
+},
+{
+  "fields": {
+    "school_name": "Polytechnic Institute of New York"
+  },
+  "model": "gcd.school",
+  "pk": 378
+},
+{
+  "fields": {
+    "school_name": "Pomona College [California]"
+  },
+  "model": "gcd.school",
+  "pk": 379
+},
+{
+  "fields": {
+    "school_name": "Port Royal Atelier Studios"
+  },
+  "model": "gcd.school",
+  "pk": 380
+},
+{
+  "fields": {
+    "school_name": "Portfolio Center"
+  },
+  "model": "gcd.school",
+  "pk": 381
+},
+{
+  "fields": {
+    "school_name": "Portland Academy of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 382
+},
+{
+  "fields": {
+    "school_name": "Portland Art Museum Film Study Center"
+  },
+  "model": "gcd.school",
+  "pk": 383
+},
+{
+  "fields": {
+    "school_name": "Portland State University"
+  },
+  "model": "gcd.school",
+  "pk": 384
+},
+{
+  "fields": {
+    "school_name": "Pratt Institute [Brooklyn]"
+  },
+  "model": "gcd.school",
+  "pk": 385
+},
+{
+  "fields": {
+    "school_name": "Preston Polytech"
+  },
+  "model": "gcd.school",
+  "pk": 386
+},
+{
+  "fields": {
+    "school_name": "Prince George Community College"
+  },
+  "model": "gcd.school",
+  "pk": 387
+},
+{
+  "fields": {
+    "school_name": "Princeton University"
+  },
+  "model": "gcd.school",
+  "pk": 388
+},
+{
+  "fields": {
+    "school_name": "Providence College [Rhode Island]"
+  },
+  "model": "gcd.school",
+  "pk": 389
+},
+{
+  "fields": {
+    "school_name": "Purdue University"
+  },
+  "model": "gcd.school",
+  "pk": 390
+},
+{
+  "fields": {
+    "school_name": "Queens College of the City University of New York (CUNY)"
+  },
+  "model": "gcd.school",
+  "pk": 391
+},
+{
+  "fields": {
+    "school_name": "Quinnipiac College"
+  },
+  "model": "gcd.school",
+  "pk": 392
+},
+{
+  "fields": {
+    "school_name": "Radcliffe Museum of Modern Art"
+  },
+  "model": "gcd.school",
+  "pk": 393
+},
+{
+  "fields": {
+    "school_name": "Ravensbourne College of Art"
+  },
+  "model": "gcd.school",
+  "pk": 394
+},
+{
+  "fields": {
+    "school_name": "Red River Community College [Winnipeg]"
+  },
+  "model": "gcd.school",
+  "pk": 395
+},
+{
+  "fields": {
+    "school_name": "Reformed Eposcopal Seminary"
+  },
+  "model": "gcd.school",
+  "pk": 396
+},
+{
+  "fields": {
+    "school_name": "Rhode Island School of Design"
+  },
+  "model": "gcd.school",
+  "pk": 397
+},
+{
+  "fields": {
+    "school_name": "Rhodes School"
+  },
+  "model": "gcd.school",
+  "pk": 398
+},
+{
+  "fields": {
+    "school_name": "Richmond Art School"
+  },
+  "model": "gcd.school",
+  "pk": 399
+},
+{
+  "fields": {
+    "school_name": "Richmond Professional Institute"
+  },
+  "model": "gcd.school",
+  "pk": 400
+},
+{
+  "fields": {
+    "school_name": "Rider College"
+  },
+  "model": "gcd.school",
+  "pk": 401
+},
+{
+  "fields": {
+    "school_name": "Ringling School of Art and Design [Sarasota, Florida]"
+  },
+  "model": "gcd.school",
+  "pk": 402
+},
+{
+  "fields": {
+    "school_name": "Rio Grande College"
+  },
+  "model": "gcd.school",
+  "pk": 403
+},
+{
+  "fields": {
+    "school_name": "Rochester Art Institute"
+  },
+  "model": "gcd.school",
+  "pk": 404
+},
+{
+  "fields": {
+    "school_name": "Rochester Institute of Technology"
+  },
+  "model": "gcd.school",
+  "pk": 405
+},
+{
+  "fields": {
+    "school_name": "Rome Academy"
+  },
+  "model": "gcd.school",
+  "pk": 406
+},
+{
+  "fields": {
+    "school_name": "Roosevelt College"
+  },
+  "model": "gcd.school",
+  "pk": 407
+},
+{
+  "fields": {
+    "school_name": "Roosevelt University"
+  },
+  "model": "gcd.school",
+  "pk": 408
+},
+{
+  "fields": {
+    "school_name": "Royal Ontario College of Art"
+  },
+  "model": "gcd.school",
+  "pk": 409
+},
+{
+  "fields": {
+    "school_name": "Russell Sage"
+  },
+  "model": "gcd.school",
+  "pk": 410
+},
+{
+  "fields": {
+    "school_name": "Rutgers University"
+  },
+  "model": "gcd.school",
+  "pk": 411
+},
+{
+  "fields": {
+    "school_name": "Sacramento City College [California]"
+  },
+  "model": "gcd.school",
+  "pk": 412
+},
+{
+  "fields": {
+    "school_name": "Salem Commercial"
+  },
+  "model": "gcd.school",
+  "pk": 413
+},
+{
+  "fields": {
+    "school_name": "San Francisco Academy of Art"
+  },
+  "model": "gcd.school",
+  "pk": 414
+},
+{
+  "fields": {
+    "school_name": "San Francisco State University"
+  },
+  "model": "gcd.school",
+  "pk": 415
+},
+{
+  "fields": {
+    "school_name": "San Jose State University [California]"
+  },
+  "model": "gcd.school",
+  "pk": 416
+},
+{
+  "fields": {
+    "school_name": "Santa Monica College"
+  },
+  "model": "gcd.school",
+  "pk": 417
+},
+{
+  "fields": {
+    "school_name": "Sarah Lawrence College [New York]"
+  },
+  "model": "gcd.school",
+  "pk": 418
+},
+{
+  "fields": {
+    "school_name": "School of Art and Design"
+  },
+  "model": "gcd.school",
+  "pk": 419
+},
+{
+  "fields": {
+    "school_name": "School of Art and Design [Boston]"
+  },
+  "model": "gcd.school",
+  "pk": 420
+},
+{
+  "fields": {
+    "school_name": "School of Art in Barcelona"
+  },
+  "model": "gcd.school",
+  "pk": 421
+},
+{
+  "fields": {
+    "school_name": "School of Art Studies [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 422
+},
+{
+  "fields": {
+    "school_name": "School of Art-Life Illustration [New Jersey]"
+  },
+  "model": "gcd.school",
+  "pk": 423
+},
+{
+  "fields": {
+    "school_name": "School of Industrial Arts [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 424
+},
+{
+  "fields": {
+    "school_name": "School of Music and Art [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 425
+},
+{
+  "fields": {
+    "school_name": "School of the Art Institute of Chicago"
+  },
+  "model": "gcd.school",
+  "pk": 426
+},
+{
+  "fields": {
+    "school_name": "School of the Museum of Fine Arts [Tufts, Boston]"
+  },
+  "model": "gcd.school",
+  "pk": 427
+},
+{
+  "fields": {
+    "school_name": "School of Visual Arts [NYC]"
+  },
+  "model": "gcd.school",
+  "pk": 428
+},
+{
+  "fields": {
+    "school_name": "Schule Reimann [Berlin]"
+  },
+  "model": "gcd.school",
+  "pk": 429
+},
+{
+  "fields": {
+    "school_name": "Scranton Correspondence School"
+  },
+  "model": "gcd.school",
+  "pk": 430
+},
+{
+  "fields": {
+    "school_name": "Scuola di Magistero d'Arte"
+  },
+  "model": "gcd.school",
+  "pk": 431
+},
+{
+  "fields": {
+    "school_name": "Seddon Memorial Polytechnic"
+  },
+  "model": "gcd.school",
+  "pk": 432
+},
+{
+  "fields": {
+    "school_name": "Shepherd College [West Virginia]"
+  },
+  "model": "gcd.school",
+  "pk": 433
+},
+{
+  "fields": {
+    "school_name": "Sheridan College"
+  },
+  "model": "gcd.school",
+  "pk": 434
+},
+{
+  "fields": {
+    "school_name": "Sheridan College School of Visual Arts [Oakville, Ontario]"
+  },
+  "model": "gcd.school",
+  "pk": 435
+},
+{
+  "fields": {
+    "school_name": "Shimer College, Museum Art"
+  },
+  "model": "gcd.school",
+  "pk": 436
+},
+{
+  "fields": {
+    "school_name": "Silvermine Guild"
+  },
+  "model": "gcd.school",
+  "pk": 437
+},
+{
+  "fields": {
+    "school_name": "Smith College"
+  },
+  "model": "gcd.school",
+  "pk": 438
+},
+{
+  "fields": {
+    "school_name": "Society of Arts and Crafts [Detroit]"
+  },
+  "model": "gcd.school",
+  "pk": 439
+},
+{
+  "fields": {
+    "school_name": "Society of Typographic Art [Chicago]"
+  },
+  "model": "gcd.school",
+  "pk": 440
+},
+{
+  "fields": {
+    "school_name": "Sonoma State University of California"
+  },
+  "model": "gcd.school",
+  "pk": 441
+},
+{
+  "fields": {
+    "school_name": "Sorbonne [Paris]"
+  },
+  "model": "gcd.school",
+  "pk": 442
+},
+{
+  "fields": {
+    "school_name": "Sorsogon School of Arts and Trades [Philippines]"
+  },
+  "model": "gcd.school",
+  "pk": 443
+},
+{
+  "fields": {
+    "school_name": "South West Essex Tech and School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 444
+},
+{
+  "fields": {
+    "school_name": "Southeast Missouri State University [Cape Girardeau]"
+  },
+  "model": "gcd.school",
+  "pk": 445
+},
+{
+  "fields": {
+    "school_name": "Southeastern Massachusetts University"
+  },
+  "model": "gcd.school",
+  "pk": 446
+},
+{
+  "fields": {
+    "school_name": "Southern Illinois University"
+  },
+  "model": "gcd.school",
+  "pk": 447
+},
+{
+  "fields": {
+    "school_name": "Southwest Texas State University"
+  },
+  "model": "gcd.school",
+  "pk": 448
+},
+{
+  "fields": {
+    "school_name": "Spertus College"
+  },
+  "model": "gcd.school",
+  "pk": 449
+},
+{
+  "fields": {
+    "school_name": "St. Andrews University"
+  },
+  "model": "gcd.school",
+  "pk": 450
+},
+{
+  "fields": {
+    "school_name": "St. Anselm's College [New Hampshire]"
+  },
+  "model": "gcd.school",
+  "pk": 451
+},
+{
+  "fields": {
+    "school_name": "St. Edmond Hall [Oxford, U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 452
+},
+{
+  "fields": {
+    "school_name": "St. John's College"
+  },
+  "model": "gcd.school",
+  "pk": 453
+},
+{
+  "fields": {
+    "school_name": "St. John's Law School"
+  },
+  "model": "gcd.school",
+  "pk": 454
+},
+{
+  "fields": {
+    "school_name": "St. John's University"
+  },
+  "model": "gcd.school",
+  "pk": 455
+},
+{
+  "fields": {
+    "school_name": "St. Louis Brush and Pencil Club"
+  },
+  "model": "gcd.school",
+  "pk": 456
+},
+{
+  "fields": {
+    "school_name": "St. Louis School of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 457
+},
+{
+  "fields": {
+    "school_name": "St. Louis University"
+  },
+  "model": "gcd.school",
+  "pk": 458
+},
+{
+  "fields": {
+    "school_name": "St. Martin's School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 459
+},
+{
+  "fields": {
+    "school_name": "St. Peter's College"
+  },
+  "model": "gcd.school",
+  "pk": 460
+},
+{
+  "fields": {
+    "school_name": "Staffordshire Polytechnic"
+  },
+  "model": "gcd.school",
+  "pk": 461
+},
+{
+  "fields": {
+    "school_name": "Stanford University"
+  },
+  "model": "gcd.school",
+  "pk": 462
+},
+{
+  "fields": {
+    "school_name": "State Normal College [Ohio]"
+  },
+  "model": "gcd.school",
+  "pk": 463
+},
+{
+  "fields": {
+    "school_name": "State University of New York"
+  },
+  "model": "gcd.school",
+  "pk": 464
+},
+{
+  "fields": {
+    "school_name": "State University of New York [Albany]"
+  },
+  "model": "gcd.school",
+  "pk": 465
+},
+{
+  "fields": {
+    "school_name": "State University of New York [Binghamton]"
+  },
+  "model": "gcd.school",
+  "pk": 466
+},
+{
+  "fields": {
+    "school_name": "State University of New York [Buffalo]"
+  },
+  "model": "gcd.school",
+  "pk": 467
+},
+{
+  "fields": {
+    "school_name": "State University of New York [Farmingdale]"
+  },
+  "model": "gcd.school",
+  "pk": 468
+},
+{
+  "fields": {
+    "school_name": "State University of New York [Fredonia]"
+  },
+  "model": "gcd.school",
+  "pk": 469
+},
+{
+  "fields": {
+    "school_name": "State University of New York [New Paltz]"
+  },
+  "model": "gcd.school",
+  "pk": 470
+},
+{
+  "fields": {
+    "school_name": "State University of New York [Oswego]"
+  },
+  "model": "gcd.school",
+  "pk": 471
+},
+{
+  "fields": {
+    "school_name": "Stockton State College"
+  },
+  "model": "gcd.school",
+  "pk": 472
+},
+{
+  "fields": {
+    "school_name": "Stony Brook University"
+  },
+  "model": "gcd.school",
+  "pk": 473
+},
+{
+  "fields": {
+    "school_name": "Suffolk Law School"
+  },
+  "model": "gcd.school",
+  "pk": 474
+},
+{
+  "fields": {
+    "school_name": "Suhrabul Art College [Seoul]"
+  },
+  "model": "gcd.school",
+  "pk": 475
+},
+{
+  "fields": {
+    "school_name": "Sunderland College of Art [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 476
+},
+{
+  "fields": {
+    "school_name": "Syracuse University"
+  },
+  "model": "gcd.school",
+  "pk": 477
+},
+{
+  "fields": {
+    "school_name": "Technikum [Bingen, Germany]"
+  },
+  "model": "gcd.school",
+  "pk": 478
+},
+{
+  "fields": {
+    "school_name": "Temple University"
+  },
+  "model": "gcd.school",
+  "pk": 479
+},
+{
+  "fields": {
+    "school_name": "Temple University, Tyler School of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 480
+},
+{
+  "fields": {
+    "school_name": "Texarkana College"
+  },
+  "model": "gcd.school",
+  "pk": 481
+},
+{
+  "fields": {
+    "school_name": "Texas A&M University"
+  },
+  "model": "gcd.school",
+  "pk": 482
+},
+{
+  "fields": {
+    "school_name": "Texas Technological University"
+  },
+  "model": "gcd.school",
+  "pk": 483
+},
+{
+  "fields": {
+    "school_name": "Thomas School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 484
+},
+{
+  "fields": {
+    "school_name": "Towson State University [Maryland]"
+  },
+  "model": "gcd.school",
+  "pk": 485
+},
+{
+  "fields": {
+    "school_name": "Traphagen School of Fashion"
+  },
+  "model": "gcd.school",
+  "pk": 486
+},
+{
+  "fields": {
+    "school_name": "Trinity College"
+  },
+  "model": "gcd.school",
+  "pk": 487
+},
+{
+  "fields": {
+    "school_name": "Trinity University"
+  },
+  "model": "gcd.school",
+  "pk": 488
+},
+{
+  "fields": {
+    "school_name": "Trinity University [San Antonio, Texas]"
+  },
+  "model": "gcd.school",
+  "pk": 489
+},
+{
+  "fields": {
+    "school_name": "Twickenham Art College"
+  },
+  "model": "gcd.school",
+  "pk": 490
+},
+{
+  "fields": {
+    "school_name": "Tyler School of Art [Philadelphia]"
+  },
+  "model": "gcd.school",
+  "pk": 491
+},
+{
+  "fields": {
+    "school_name": "U.S. International University [U.K.]"
+  },
+  "model": "gcd.school",
+  "pk": 492
+},
+{
+  "fields": {
+    "school_name": "Union Graduate School [Cincinnati]"
+  },
+  "model": "gcd.school",
+  "pk": 493
+},
+{
+  "fields": {
+    "school_name": "Universidad de Michoacan [Mexico]"
+  },
+  "model": "gcd.school",
+  "pk": 494
+},
+{
+  "fields": {
+    "school_name": "University College, University of London"
+  },
+  "model": "gcd.school",
+  "pk": 495
+},
+{
+  "fields": {
+    "school_name": "University of Akron"
+  },
+  "model": "gcd.school",
+  "pk": 496
+},
+{
+  "fields": {
+    "school_name": "University of Alabama"
+  },
+  "model": "gcd.school",
+  "pk": 497
+},
+{
+  "fields": {
+    "school_name": "University of Arizona"
+  },
+  "model": "gcd.school",
+  "pk": 498
+},
+{
+  "fields": {
+    "school_name": "University of Arizona"
+  },
+  "model": "gcd.school",
+  "pk": 499
+},
+{
+  "fields": {
+    "school_name": "University of Baltimore"
+  },
+  "model": "gcd.school",
+  "pk": 500
+},
+{
+  "fields": {
+    "school_name": "University of Berlin"
+  },
+  "model": "gcd.school",
+  "pk": 501
+},
+{
+  "fields": {
+    "school_name": "University of Bridgeport"
+  },
+  "model": "gcd.school",
+  "pk": 502
+},
+{
+  "fields": {
+    "school_name": "University of British Columbia"
+  },
+  "model": "gcd.school",
+  "pk": 503
+},
+{
+  "fields": {
+    "school_name": "University of California"
+  },
+  "model": "gcd.school",
+  "pk": 504
+},
+{
+  "fields": {
+    "school_name": "University of California [Berkeley]"
+  },
+  "model": "gcd.school",
+  "pk": 505
+},
+{
+  "fields": {
+    "school_name": "University of California [Davis]"
+  },
+  "model": "gcd.school",
+  "pk": 506
+},
+{
+  "fields": {
+    "school_name": "University of California [Irvine]"
+  },
+  "model": "gcd.school",
+  "pk": 507
+},
+{
+  "fields": {
+    "school_name": "University of California [Los Angeles]"
+  },
+  "model": "gcd.school",
+  "pk": 508
+},
+{
+  "fields": {
+    "school_name": "University of California [Riverside]"
+  },
+  "model": "gcd.school",
+  "pk": 509
+},
+{
+  "fields": {
+    "school_name": "University of California [San Diego]"
+  },
+  "model": "gcd.school",
+  "pk": 510
+},
+{
+  "fields": {
+    "school_name": "University of California [Santa Barbara]"
+  },
+  "model": "gcd.school",
+  "pk": 511
+},
+{
+  "fields": {
+    "school_name": "University of California [Santa Cruz]"
+  },
+  "model": "gcd.school",
+  "pk": 512
+},
+{
+  "fields": {
+    "school_name": "University of Central Florida"
+  },
+  "model": "gcd.school",
+  "pk": 513
+},
+{
+  "fields": {
+    "school_name": "University of Chicago"
+  },
+  "model": "gcd.school",
+  "pk": 514
+},
+{
+  "fields": {
+    "school_name": "University of Cincinnati"
+  },
+  "model": "gcd.school",
+  "pk": 515
+},
+{
+  "fields": {
+    "school_name": "University of Colorado"
+  },
+  "model": "gcd.school",
+  "pk": 516
+},
+{
+  "fields": {
+    "school_name": "University of Connecticut"
+  },
+  "model": "gcd.school",
+  "pk": 517
+},
+{
+  "fields": {
+    "school_name": "University of Dayton [Ohio]"
+  },
+  "model": "gcd.school",
+  "pk": 518
+},
+{
+  "fields": {
+    "school_name": "University of Delaware"
+  },
+  "model": "gcd.school",
+  "pk": 519
+},
+{
+  "fields": {
+    "school_name": "University of Evansville [Indiana]"
+  },
+  "model": "gcd.school",
+  "pk": 520
+},
+{
+  "fields": {
+    "school_name": "University of Florida [Gainesville]"
+  },
+  "model": "gcd.school",
+  "pk": 521
+},
+{
+  "fields": {
+    "school_name": "University of Frankfurt"
+  },
+  "model": "gcd.school",
+  "pk": 522
+},
+{
+  "fields": {
+    "school_name": "University of Georgia"
+  },
+  "model": "gcd.school",
+  "pk": 523
+},
+{
+  "fields": {
+    "school_name": "University of Georgia [Athens]"
+  },
+  "model": "gcd.school",
+  "pk": 524
+},
+{
+  "fields": {
+    "school_name": "University of Hartford"
+  },
+  "model": "gcd.school",
+  "pk": 525
+},
+{
+  "fields": {
+    "school_name": "University of Hawaii"
+  },
+  "model": "gcd.school",
+  "pk": 526
+},
+{
+  "fields": {
+    "school_name": "University of Idaho"
+  },
+  "model": "gcd.school",
+  "pk": 527
+},
+{
+  "fields": {
+    "school_name": "University of Illinois"
+  },
+  "model": "gcd.school",
+  "pk": 528
+},
+{
+  "fields": {
+    "school_name": "University of Illinois [Campagne-Urbana]"
+  },
+  "model": "gcd.school",
+  "pk": 529
+},
+{
+  "fields": {
+    "school_name": "University of Illinois [Chicago]"
+  },
+  "model": "gcd.school",
+  "pk": 530
+},
+{
+  "fields": {
+    "school_name": "University of Illinois Fine Arts School"
+  },
+  "model": "gcd.school",
+  "pk": 531
+},
+{
+  "fields": {
+    "school_name": "University of Iowa"
+  },
+  "model": "gcd.school",
+  "pk": 532
+},
+{
+  "fields": {
+    "school_name": "University of Kansas"
+  },
+  "model": "gcd.school",
+  "pk": 533
+},
+{
+  "fields": {
+    "school_name": "University of Louisiana"
+  },
+  "model": "gcd.school",
+  "pk": 534
+},
+{
+  "fields": {
+    "school_name": "University of Louisville"
+  },
+  "model": "gcd.school",
+  "pk": 535
+},
+{
+  "fields": {
+    "school_name": "University of Lowell [Massachusetts]"
+  },
+  "model": "gcd.school",
+  "pk": 536
+},
+{
+  "fields": {
+    "school_name": "University of Maine"
+  },
+  "model": "gcd.school",
+  "pk": 537
+},
+{
+  "fields": {
+    "school_name": "University of Manitoba [Canada]"
+  },
+  "model": "gcd.school",
+  "pk": 538
+},
+{
+  "fields": {
+    "school_name": "University of Maryland"
+  },
+  "model": "gcd.school",
+  "pk": 539
+},
+{
+  "fields": {
+    "school_name": "University of Maryland Nursing School"
+  },
+  "model": "gcd.school",
+  "pk": 540
+},
+{
+  "fields": {
+    "school_name": "University of Massachusetts"
+  },
+  "model": "gcd.school",
+  "pk": 541
+},
+{
+  "fields": {
+    "school_name": "University of Massachusetts [Amherst]"
+  },
+  "model": "gcd.school",
+  "pk": 542
+},
+{
+  "fields": {
+    "school_name": "University of Massechusetts [Dorchester]"
+  },
+  "model": "gcd.school",
+  "pk": 543
+},
+{
+  "fields": {
+    "school_name": "University of Miami"
+  },
+  "model": "gcd.school",
+  "pk": 544
+},
+{
+  "fields": {
+    "school_name": "University of Miami Film School"
+  },
+  "model": "gcd.school",
+  "pk": 545
+},
+{
+  "fields": {
+    "school_name": "University of Michigan"
+  },
+  "model": "gcd.school",
+  "pk": 546
+},
+{
+  "fields": {
+    "school_name": "University of Minnesota"
+  },
+  "model": "gcd.school",
+  "pk": 547
+},
+{
+  "fields": {
+    "school_name": "University of Missouri"
+  },
+  "model": "gcd.school",
+  "pk": 548
+},
+{
+  "fields": {
+    "school_name": "University of Missouri [Columbia]"
+  },
+  "model": "gcd.school",
+  "pk": 549
+},
+{
+  "fields": {
+    "school_name": "University of Missouri [Kansas City]"
+  },
+  "model": "gcd.school",
+  "pk": 550
+},
+{
+  "fields": {
+    "school_name": "University of Nebraska"
+  },
+  "model": "gcd.school",
+  "pk": 551
+},
+{
+  "fields": {
+    "school_name": "University of Nevada"
+  },
+  "model": "gcd.school",
+  "pk": 552
+},
+{
+  "fields": {
+    "school_name": "University of North Carolina"
+  },
+  "model": "gcd.school",
+  "pk": 553
+},
+{
+  "fields": {
+    "school_name": "University of North Carolina [Greensboro]"
+  },
+  "model": "gcd.school",
+  "pk": 554
+},
+{
+  "fields": {
+    "school_name": "University of Northern Colorado"
+  },
+  "model": "gcd.school",
+  "pk": 555
+},
+{
+  "fields": {
+    "school_name": "University of Oklahoma"
+  },
+  "model": "gcd.school",
+  "pk": 556
+},
+{
+  "fields": {
+    "school_name": "University of Oregon"
+  },
+  "model": "gcd.school",
+  "pk": 557
+},
+{
+  "fields": {
+    "school_name": "University of Ottawa"
+  },
+  "model": "gcd.school",
+  "pk": 558
+},
+{
+  "fields": {
+    "school_name": "University of Pennsylvania"
+  },
+  "model": "gcd.school",
+  "pk": 559
+},
+{
+  "fields": {
+    "school_name": "University of Santa Clara"
+  },
+  "model": "gcd.school",
+  "pk": 560
+},
+{
+  "fields": {
+    "school_name": "University of Santiago [Chile]"
+  },
+  "model": "gcd.school",
+  "pk": 561
+},
+{
+  "fields": {
+    "school_name": "University of Sao Paolo"
+  },
+  "model": "gcd.school",
+  "pk": 562
+},
+{
+  "fields": {
+    "school_name": "University of South Carolina"
+  },
+  "model": "gcd.school",
+  "pk": 563
+},
+{
+  "fields": {
+    "school_name": "University of South Dakota"
+  },
+  "model": "gcd.school",
+  "pk": 564
+},
+{
+  "fields": {
+    "school_name": "University of Southern California"
+  },
+  "model": "gcd.school",
+  "pk": 565
+},
+{
+  "fields": {
+    "school_name": "University of Southern Florida"
+  },
+  "model": "gcd.school",
+  "pk": 566
+},
+{
+  "fields": {
+    "school_name": "University of Southern Mississippi"
+  },
+  "model": "gcd.school",
+  "pk": 567
+},
+{
+  "fields": {
+    "school_name": "University of Southwestern Louisiana"
+  },
+  "model": "gcd.school",
+  "pk": 568
+},
+{
+  "fields": {
+    "school_name": "University of St. Thomas"
+  },
+  "model": "gcd.school",
+  "pk": 569
+},
+{
+  "fields": {
+    "school_name": "University of Texas"
+  },
+  "model": "gcd.school",
+  "pk": 570
+},
+{
+  "fields": {
+    "school_name": "University of Texas [Austin]"
+  },
+  "model": "gcd.school",
+  "pk": 571
+},
+{
+  "fields": {
+    "school_name": "University of Texas [El Paso]"
+  },
+  "model": "gcd.school",
+  "pk": 572
+},
+{
+  "fields": {
+    "school_name": "University of the Philippines"
+  },
+  "model": "gcd.school",
+  "pk": 573
+},
+{
+  "fields": {
+    "school_name": "University of the State of New York"
+  },
+  "model": "gcd.school",
+  "pk": 574
+},
+{
+  "fields": {
+    "school_name": "University of Toledo"
+  },
+  "model": "gcd.school",
+  "pk": 575
+},
+{
+  "fields": {
+    "school_name": "University of Toronto"
+  },
+  "model": "gcd.school",
+  "pk": 576
+},
+{
+  "fields": {
+    "school_name": "University of Washington"
+  },
+  "model": "gcd.school",
+  "pk": 577
+},
+{
+  "fields": {
+    "school_name": "University of Waterloo"
+  },
+  "model": "gcd.school",
+  "pk": 578
+},
+{
+  "fields": {
+    "school_name": "University of Winnipeg [Canada]"
+  },
+  "model": "gcd.school",
+  "pk": 579
+},
+{
+  "fields": {
+    "school_name": "University of Wisconsin"
+  },
+  "model": "gcd.school",
+  "pk": 580
+},
+{
+  "fields": {
+    "school_name": "University of Wisconsin [Madison]"
+  },
+  "model": "gcd.school",
+  "pk": 581
+},
+{
+  "fields": {
+    "school_name": "University of Wisconsin [Milwaukee]"
+  },
+  "model": "gcd.school",
+  "pk": 582
+},
+{
+  "fields": {
+    "school_name": "University of Wisconsin [Oshkosh]"
+  },
+  "model": "gcd.school",
+  "pk": 583
+},
+{
+  "fields": {
+    "school_name": "University of Wisconsin Extension"
+  },
+  "model": "gcd.school",
+  "pk": 584
+},
+{
+  "fields": {
+    "school_name": "University of Wyoming"
+  },
+  "model": "gcd.school",
+  "pk": 585
+},
+{
+  "fields": {
+    "school_name": "University of Zagreb [Croatia]"
+  },
+  "model": "gcd.school",
+  "pk": 586
+},
+{
+  "fields": {
+    "school_name": "Upper Canada College"
+  },
+  "model": "gcd.school",
+  "pk": 587
+},
+{
+  "fields": {
+    "school_name": "Valley City College"
+  },
+  "model": "gcd.school",
+  "pk": 588
+},
+{
+  "fields": {
+    "school_name": "Valley State"
+  },
+  "model": "gcd.school",
+  "pk": 589
+},
+{
+  "fields": {
+    "school_name": "Venice School of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 590
+},
+{
+  "fields": {
+    "school_name": "Vesper George School of Art [Boston]"
+  },
+  "model": "gcd.school",
+  "pk": 591
+},
+{
+  "fields": {
+    "school_name": "Vienna Academy of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 592
+},
+{
+  "fields": {
+    "school_name": "Virginia Commonwealth University"
+  },
+  "model": "gcd.school",
+  "pk": 593
+},
+{
+  "fields": {
+    "school_name": "Virginia Polytechnic Institute (Virginia Tech)"
+  },
+  "model": "gcd.school",
+  "pk": 594
+},
+{
+  "fields": {
+    "school_name": "Virginia Union University"
+  },
+  "model": "gcd.school",
+  "pk": 595
+},
+{
+  "fields": {
+    "school_name": "Wabash College"
+  },
+  "model": "gcd.school",
+  "pk": 596
+},
+{
+  "fields": {
+    "school_name": "Waco Tech"
+  },
+  "model": "gcd.school",
+  "pk": 597
+},
+{
+  "fields": {
+    "school_name": "Walt Disney Animation School"
+  },
+  "model": "gcd.school",
+  "pk": 598
+},
+{
+  "fields": {
+    "school_name": "Walt Disney Studios Training Program"
+  },
+  "model": "gcd.school",
+  "pk": 599
+},
+{
+  "fields": {
+    "school_name": "Waseda University [Tokyo]"
+  },
+  "model": "gcd.school",
+  "pk": 600
+},
+{
+  "fields": {
+    "school_name": "Washburn Tech"
+  },
+  "model": "gcd.school",
+  "pk": 601
+},
+{
+  "fields": {
+    "school_name": "Washburn University [Kansas]"
+  },
+  "model": "gcd.school",
+  "pk": 602
+},
+{
+  "fields": {
+    "school_name": "Washington School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 603
+},
+{
+  "fields": {
+    "school_name": "Washington State University"
+  },
+  "model": "gcd.school",
+  "pk": 604
+},
+{
+  "fields": {
+    "school_name": "Washington University"
+  },
+  "model": "gcd.school",
+  "pk": 605
+},
+{
+  "fields": {
+    "school_name": "Washington University [St. Louis]"
+  },
+  "model": "gcd.school",
+  "pk": 606
+},
+{
+  "fields": {
+    "school_name": "Wayne County Community College"
+  },
+  "model": "gcd.school",
+  "pk": 607
+},
+{
+  "fields": {
+    "school_name": "Wayne State University [Detroit]"
+  },
+  "model": "gcd.school",
+  "pk": 608
+},
+{
+  "fields": {
+    "school_name": "Wellesley College"
+  },
+  "model": "gcd.school",
+  "pk": 609
+},
+{
+  "fields": {
+    "school_name": "Wesleyan University"
+  },
+  "model": "gcd.school",
+  "pk": 610
+},
+{
+  "fields": {
+    "school_name": "Wesleyan University [Connecticut]"
+  },
+  "model": "gcd.school",
+  "pk": 611
+},
+{
+  "fields": {
+    "school_name": "West Texas State University"
+  },
+  "model": "gcd.school",
+  "pk": 612
+},
+{
+  "fields": {
+    "school_name": "West Valley Occupational Center [California]"
+  },
+  "model": "gcd.school",
+  "pk": 613
+},
+{
+  "fields": {
+    "school_name": "West Virginia University"
+  },
+  "model": "gcd.school",
+  "pk": 614
+},
+{
+  "fields": {
+    "school_name": "Western Connecticut State University"
+  },
+  "model": "gcd.school",
+  "pk": 615
+},
+{
+  "fields": {
+    "school_name": "Western Kentucky University"
+  },
+  "model": "gcd.school",
+  "pk": 616
+},
+{
+  "fields": {
+    "school_name": "Western Oregon State College"
+  },
+  "model": "gcd.school",
+  "pk": 617
+},
+{
+  "fields": {
+    "school_name": "Western Tech [Toronto]"
+  },
+  "model": "gcd.school",
+  "pk": 618
+},
+{
+  "fields": {
+    "school_name": "Western Washington State University"
+  },
+  "model": "gcd.school",
+  "pk": 619
+},
+{
+  "fields": {
+    "school_name": "Western Washington University"
+  },
+  "model": "gcd.school",
+  "pk": 620
+},
+{
+  "fields": {
+    "school_name": "Westminster College"
+  },
+  "model": "gcd.school",
+  "pk": 621
+},
+{
+  "fields": {
+    "school_name": "Whitney School of Art [Connecticut]"
+  },
+  "model": "gcd.school",
+  "pk": 622
+},
+{
+  "fields": {
+    "school_name": "Wicker Art School"
+  },
+  "model": "gcd.school",
+  "pk": 623
+},
+{
+  "fields": {
+    "school_name": "Wigan School of Art"
+  },
+  "model": "gcd.school",
+  "pk": 624
+},
+{
+  "fields": {
+    "school_name": "Wilcox Technical School [Meriden, Connecticut]"
+  },
+  "model": "gcd.school",
+  "pk": 625
+},
+{
+  "fields": {
+    "school_name": "Williams College"
+  },
+  "model": "gcd.school",
+  "pk": 626
+},
+{
+  "fields": {
+    "school_name": "Williams College [Massachusetts]"
+  },
+  "model": "gcd.school",
+  "pk": 627
+},
+{
+  "fields": {
+    "school_name": "Wittenberg University [Ohio]"
+  },
+  "model": "gcd.school",
+  "pk": 628
+},
+{
+  "fields": {
+    "school_name": "World Campus Afloat"
+  },
+  "model": "gcd.school",
+  "pk": 629
+},
+{
+  "fields": {
+    "school_name": "WPA Art Classes"
+  },
+  "model": "gcd.school",
+  "pk": 630
+},
+{
+  "fields": {
+    "school_name": "Yale School of Fine Arts"
+  },
+  "model": "gcd.school",
+  "pk": 631
+},
+{
+  "fields": {
+    "school_name": "Yale University"
+  },
+  "model": "gcd.school",
+  "pk": 632
+},
+{
+  "fields": {
+    "school_name": "Yale University School of Art and Architecture"
+  },
+  "model": "gcd.school",
+  "pk": 633
+},
+{
+  "fields": {
+    "school_name": "York University [Toronto]"
+  },
+  "model": "gcd.school",
+  "pk": 634
+},
+{
+  "fields": {
+    "school_name": "Youngstown State"
+  },
+  "model": "gcd.school",
+  "pk": 635
+}
+]

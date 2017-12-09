@@ -21,6 +21,24 @@ urlpatterns = patterns('',
     url(r'^mentoring/$', oi_views.mentoring,
         name='mentoring'),
 
+    # Creator URLs
+    url(r'^creator/add/$',
+     'apps.oi.views.add_creator', name='add_creator'),
+    url(r'^creator/(?P<creator_id>\d+)/award/add/$',
+     'apps.oi.views.add_creator_award', name='add_creator_award'),
+    url(r'^creator/(?P<creator_id>\d+)/influence/add/$',
+     'apps.oi.views.add_creator_art_influence', name='add_creator_art_influence'),
+    url(r'^creator/(?P<creator_id>\d+)/membership/add/$',
+     'apps.oi.views.add_creator_membership', name='add_creator_membership'),
+    url(r'^creator/(?P<creator_id>\d+)/non_comic_work/add/$',
+     'apps.oi.views.add_creator_non_comic_work', name='add_creator_non_comic_work'),
+    url(r'^creator/(?P<creator_id>\d+)/relation/add/$',
+     'apps.oi.views.add_creator_relation', name='add_creator_relation'),
+    url(r'^creator/(?P<creator_id>\d+)/school/add/$',
+     'apps.oi.views.add_creator_school', name='add_creator_school'),
+    url(r'^creator/(?P<creator_id>\d+)/degree/add/$',
+     'apps.oi.views.add_creator_degree', name='add_creator_degree'),
+
     # Publisher URLs
     url(r'^publisher/add/$',
         oi_views.add_publisher,
@@ -135,9 +153,11 @@ urlpatterns = patterns('',
         name='move_story_revision'),
 
     # Image URLs
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', oi_covers.upload_image,
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$',
+        oi_covers.upload_image,
         name='upload_image'),
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$', oi_covers.replace_image,
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$',
+        oi_covers.replace_image,
         name='replace_image'),
     url(r'^mark_image_revision/(?P<revision_id>.+)/$', oi_covers.mark_image,
       {'marked': True}, name='mark_image_revision'),
@@ -297,5 +317,6 @@ urlpatterns = patterns('',
 )
 
 urlpatterns += patterns('',
-    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare')),
+    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare',
+                                                          permanent=False)),
 )

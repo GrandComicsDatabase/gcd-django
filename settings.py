@@ -68,6 +68,7 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': '',
         'PORT': '',
+        'ATOMIC_REQUESTS': True,
     },
 }
 
@@ -79,7 +80,6 @@ MIDDLEWARE_CLASSES = (
    'django.contrib.messages.middleware.MessageMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.common.CommonMiddleware',
-   'django.middleware.transaction.TransactionMiddleware',
    'django_mobile.middleware.MobileDetectionMiddleware',
    'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
@@ -175,12 +175,15 @@ CACHES = {
     }
 }
 
-# have two choices for caches, this one has persistent, cached session data
+# We have two choices for caches, this one has persistent, cached session data.
+# Do NOT switch to cookie-based session, unless also switching away from the
+# PickleSerializer, but even the JSONSerializer has (smaller) security issues.
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-# we would like to move the default JSONSerializer, but currently that
-# causes problems (see issue #102 on GitHub).  This is a workaround
-# to retain the Django 1.5 and earlier behavior.
+# The default is JSONSerializer, but we like to store python objects in the
+# session. Since we are using chached-db sessions, and not cookie-based, the
+# potential secutiry risk for cookie-based session with PickleSerializer does
+# not arise.
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 # Corresponds to the django_site database table. As far
@@ -378,6 +381,9 @@ except ImportError:
 #################################################################################
 # Code dependent on debug or maintenance flag states.
 #################################################################################
+
+#GCD Official name field name in NameType model
+GCD_OFFICIAL_NAME_FIELDNAME = 'GCD Official'
 
 if READ_ONLY or NO_OI:
     MIDDLEWARE_CLASSES += \

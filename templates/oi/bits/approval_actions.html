@@ -1,5 +1,3 @@
-{% load url from future %}
-
 <form action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
   <input type="submit" name="release" value="Unassign" />

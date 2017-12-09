@@ -7,6 +7,7 @@ from re import *
 from urllib import urlopen, urlencode
 from decimal import Decimal
 from string import capitalize
+from haystack.backends import SQ
 from stdnum import isbn as stdisbn
 from random import randint
 
@@ -29,7 +30,10 @@ from apps.indexer.models import Indexer
 from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            BrandGroup, Brand, IndiciaPublisher, STORY_TYPES
+                            BrandGroup, Brand, IndiciaPublisher, STORY_TYPES, \
+                            Creator, CreatorMembership, CreatorAward, \
+                            CreatorArtInfluence, CreatorNonComicWork, \
+                            CreatorNameDetail
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
@@ -73,6 +77,7 @@ def generic_by_name(request, name, q_obj, sort,
             display_name = class_.__name__
             base_name = display_name.lower()
         item_name = display_name.lower()
+
         if class_ is Brand:
             selected = 'brand'
         else:
@@ -104,6 +109,81 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['pub_name'] = name
         else:
             query_val[base_name] = name
+
+    elif class_ is Creator:
+        sort_name = "gcd_official_name"
+
+        if sqs == None:
+            sort_year = "birth_date__year"
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if related:
+                things = things.select_related(*related)
+            if (sort == ORDER_ALPHA):
+                things = things.order_by(sort_name, sort_year)
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by(sort_year, sort_name)
+            things = things.distinct()
+        else:
+            sort_year = "year"
+            things = sqs
+            if (sort == ORDER_ALPHA):
+                things = things.order_by(sort_name,
+                                         sort_year)
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by(sort_year,
+                                         sort_name)
+        display_name = class_.__name__
+        base_name = display_name.lower()
+        item_name = display_name.lower()
+
+        heading = '%s Search Results' % display_name
+        # query_string for the link to the advanced search
+        query_val['target'] = base_name
+        query_val[base_name] = name
+
+    elif (class_ in (CreatorMembership, CreatorAward, CreatorArtInfluence, 
+                     CreatorNonComicWork)):
+        if sqs == None:
+            sort_year = "creator__birth_date__year"
+
+            if class_ is CreatorMembership:
+                sort_name = "organization_name"
+            elif class_ is CreatorAward:
+                sort_name = "award_name"
+            elif class_ is CreatorArtInfluence:
+                sort_name = "influence_name"
+            elif class_ is CreatorNonComicWork:
+                sort_name = "publication_title"
+
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if related:
+                things = things.select_related(*related)
+            if (sort == ORDER_ALPHA):
+                things = things.order_by(sort_name, sort_year)
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by(sort_year, sort_name)
+            things = things.distinct()
+        else:
+            sort_name = "name"
+            things = sqs
+            if class_ != CreatorAward:
+                things = things.order_by('sort_name')
+            else:
+                sort_year = 'year'
+                if (sort == ORDER_ALPHA):
+                    things = things.order_by(sort_name,
+                                             sort_year)
+                elif (sort == ORDER_CHRONO):
+                    things = things.order_by(sort_year,
+                                             sort_name)
+        display_name = class_.__name__
+        base_name = display_name.lower()
+        item_name = display_name.lower()
+
+        heading = '%s Search Results' % display_name
+        # query_string for the link to the advanced search
+        query_val['target'] = base_name
+        query_val[base_name] = name
 
     elif class_ is Issue:
         item_name = 'issue'
@@ -239,6 +319,95 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
         return generic_by_name(request, ind_pub_name, q_obj, sort,
                                IndiciaPublisher,
                                'gcd/search/indicia_publisher_list.html')
+
+
+def creator_by_name(request, creator_name, sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        creator_name_ids = [creator_names.pk for creator_names in
+                            CreatorNameDetail.objects.filter(
+                                name__icontains=creator_name)]
+        sqs = SearchQuerySet().filter(
+            SQ(name__in=creator_name_ids) | SQ(
+                    gcd_official_name=creator_name)) \
+            .models(Creator)
+        return generic_by_name(request, creator_name, None, sort,
+                               Creator,
+                               'gcd/search/creator_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(creator_names__name__icontains=creator_name) | Q(
+            gcd_official_name__icontains=creator_name)
+        return generic_by_name(request, creator_name, q_obj, sort,
+                               Creator,
+                               'gcd/search/creator_list.html')
+
+
+def creator_membership_by_name(request, creator_membership_name,
+                               sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(
+            name=GcdNameQuery(creator_membership_name)) \
+            .models(CreatorMembership)
+        return generic_by_name(request, creator_membership_name, None, sort,
+                               CreatorMembership,
+                               'gcd/search/creator_membership_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(organization_name__icontains=creator_membership_name)
+        return generic_by_name(request, creator_membership_name, q_obj, sort,
+                               CreatorMembership,
+                               'gcd/search/creator_membership_list.html')
+
+
+def creator_award_by_name(request, creator_award_name, sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(creator_award_name)) \
+            .models(CreatorAward)
+        return generic_by_name(request, creator_award_name, None, sort,
+                               CreatorAward,
+                               'gcd/search/creator_award_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(award_name__icontains=creator_award_name)
+        return generic_by_name(request, creator_award_name, q_obj, sort,
+                               CreatorAward,
+                               'gcd/search/creator_award_list.html')
+
+
+def creator_art_influence_by_name(request, creator_art_influence_name,
+                                 sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(
+            name=GcdNameQuery(creator_art_influence_name)) \
+            .models(CreatorArtInfluence)
+        return generic_by_name(request, creator_art_influence_name, None, sort,
+                               CreatorArtInfluence,
+                               'gcd/search/creator_art_influence_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(influence_name__icontains=creator_art_influence_name) | \
+                Q(influence_link__gcd_official_name__icontains=creator_art_influence_name)
+        return generic_by_name(request, creator_art_influence_name, q_obj, sort,
+                               CreatorArtInfluence,
+                               'gcd/search/creator_art_influence_list.html')
+
+
+def creator_non_comic_work_by_name(request, creator_non_comic_work_name,
+                                   sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(
+            name=GcdNameQuery(creator_non_comic_work_name)) \
+            .models(CreatorNonComicWork)
+        return generic_by_name(request, creator_non_comic_work_name, None, sort,
+                               CreatorNonComicWork,
+                               'gcd/search/creator_non_comic_work_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(publication_title__icontains=creator_non_comic_work_name)
+        return generic_by_name(request, creator_non_comic_work_name, q_obj, sort,
+                               CreatorNonComicWork,
+                               'gcd/search/creator_non_comic_work_list.html')
+
 
 def character_by_name(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
@@ -465,6 +634,7 @@ def search(request):
     object_type = str(request.GET['type'])
     param_type = object_type
     view_type = object_type
+
     if view_type == 'publisher':
         param_type = 'publisher_name'
     elif view_type == 'brand_group':
@@ -473,6 +643,16 @@ def search(request):
         param_type = 'brand_name'
     elif view_type == 'indicia_publisher':
         param_type = 'ind_pub_name'
+    elif view_type == 'creator':
+        param_type = 'creator_name'
+    if view_type == 'creator_membership':
+        param_type = 'creator_membership_name'
+    if view_type == 'creator_award':
+        param_type = 'creator_award_name'
+    if view_type == 'creator_art_influence':
+        param_type = 'creator_art_influence_name'
+    if view_type == 'creator_non_comic_work':
+        param_type = 'creator_non_comic_work_name'
 
     view = '%s_by_name' % view_type
 
@@ -494,8 +674,8 @@ def search(request):
     param_type_value = request.GET['query'].strip().encode('utf-8')
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
-                           kwargs = { param_type: param_type_value,
-                                      'sort': sort }))
+                           kwargs={param_type: param_type_value,
+                                      'sort': sort}))
 
 
 def checklist_by_name(request, creator, country=None, language=None):
@@ -806,8 +986,8 @@ def process_advanced(request):
         context['table_width'] = COVER_TABLE_WIDTH
         context['NO_ADS'] = True
         return paginate_response(request, items, template, context,
-                                 per_page=50, callback_key='tags',
-                                 callback=get_image_tags_per_page)
+                             page_size=50, callback_key='tags',
+                             callback=get_image_tags_per_page)
     else:
         return paginate_response(request, items, template, context)
 

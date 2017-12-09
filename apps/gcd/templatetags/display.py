@@ -14,6 +14,8 @@ from apps.oi import states
 from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
+from apps.gcd.models.creator import Creator, CreatorMembership, CreatorAward, \
+                                    CreatorArtInfluence, CreatorNonComicWork
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, \
                                       Publisher
 from apps.gcd.models.series import Series
@@ -246,7 +248,9 @@ def index_status_css(issue):
     Text form of issue indexing status.  If clauses arranged in order of most
     likely case to least.
     """
-    if issue.reserved:
+    from apps.oi.templatetags.editing import is_locked
+
+    if is_locked(issue):
         active =  issue.revisions.get(changeset__state__in=states.ACTIVE)
         return STATE_CSS_NAME[active.changeset.state]
     elif issue.is_indexed == INDEXED['full']:
@@ -297,6 +301,17 @@ def changed_fields(changeset, object):
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
+    elif object_class is Creator:
+        revision = changeset.creatorrevisions.all().get(creator=object.id)
+
+    elif object_class is CreatorMembership:
+        revision = changeset.creatormembershiprevisions.all().get(creator_membership=object.id)
+    elif object_class is CreatorAward:
+        revision = changeset.creatorawardrevisions.all().get(creator_award=object.id)
+    elif object_class is CreatorArtInfluence:
+        revision = changeset.creatorartinfluencerevisions.all().get(creator_art_influence=object.id)
+    elif object_class is CreatorNonComicWork:
+        revision = changeset.creatornoncomicworkrevisions.all().get(creator_non_comic_work=object.id)
     elif object_class in [Cover, Image]:
         return ""
 
@@ -374,6 +389,8 @@ def field_name(field):
         return u'Indicia Publisher Not Printed'
     elif field == 'title_inferred':
         return u'Unofficial Title?'
+    elif field == 'cr_creator_names':
+        return u'Creator Names'
     else:
         return title(field.replace('_', ' '))
 
