@@ -34,7 +34,11 @@ def issue_descriptor(issue):
     else:
         title = u''
     if issue.display_volume_with_number:
-        return u'v%s#%s%s' % (issue.volume, issue.number, title)
+        if issue.volume_not_printed:
+            volume = u'[v%s]' % issue.volume
+        else:
+            volume = u'v%s' % issue.volume
+        return u'%s#%s%s' % (volume, issue.number, title)
     return issue.number + title
 
 class Issue(models.Model):
@@ -49,6 +53,7 @@ class Issue(models.Model):
     no_title = models.BooleanField(default=False, db_index=True)
     volume = models.CharField(max_length=50, db_index=True)
     no_volume = models.BooleanField(default=False, db_index=True)
+    volume_not_printed = models.BooleanField(default=False)
     display_volume_with_number = models.BooleanField(default=False, db_index=True)
     isbn = models.CharField(max_length=32, db_index=True)
     no_isbn = models.BooleanField(default=False, db_index=True)

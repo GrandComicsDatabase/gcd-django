@@ -102,6 +102,8 @@ def show_volume(issue):
         return u''
     if issue.volume == '':
         return u'?'
+    if issue.volume_not_printed:
+        return u'[%s]' % issue.volume
     return issue.volume
 
 def show_issue_number(issue_number):

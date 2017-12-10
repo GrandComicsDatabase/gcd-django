@@ -3419,6 +3419,7 @@ class IssueRevisionManager(RevisionManager):
             no_title=issue.no_title,
             volume=issue.volume,
             no_volume=issue.no_volume,
+            volume_not_printed = issue.volume_not_printed,
             display_volume_with_number=issue.display_volume_with_number,
             publication_date=issue.publication_date,
             key_date=issue.key_date,
@@ -3456,8 +3457,8 @@ class IssueRevisionManager(RevisionManager):
 
 
 def get_issue_field_list():
-    return ['number', 'title', 'no_title',
-            'volume', 'no_volume', 'display_volume_with_number',
+    return ['number', 'title', 'no_title', 'volume',
+            'no_volume', 'volume_not_printed', 'display_volume_with_number',
             'indicia_publisher', 'indicia_pub_not_printed',
             'brand', 'no_brand', 'publication_date', 'year_on_sale',
             'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
@@ -3499,6 +3500,7 @@ class IssueRevision(Revision):
 
     volume = models.CharField(max_length=50, blank=True, default='')
     no_volume = models.BooleanField(default=False)
+    volume_not_printed = models.BooleanField(default=False)
     display_volume_with_number = models.BooleanField(default=False)
     variant_of = models.ForeignKey(Issue, null=True,
                                    related_name='variant_revisions')
@@ -3962,6 +3964,7 @@ class IssueRevision(Revision):
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('volume')
             fields.remove('no_volume')
+            field.remove('volume_not_printed')
             fields.remove('display_volume_with_number')
         if self.variant_of or (self.issue and self.issue.variant_set.count()) \
            or self.changeset.change_type == CTYPES['variant_add']:
@@ -3977,6 +3980,7 @@ class IssueRevision(Revision):
             'no_title': False,
             'volume': '',
             'no_volume': False,
+            'volume_not_printed': False,
             'display_volume_with_number': None,
             'publication_date': '',
             'price': '',
@@ -4027,7 +4031,8 @@ class IssueRevision(Revision):
                           'price', 'notes', 'variant_name', 'keywords'):
             return 1
         if not self._seen_volume and \
-           field_name in ('volume', 'no_volume', 'display_volume_with_number'):
+           field_name in ('volume', 'no_volume', 'volume_not_printed',
+                          'display_volume_with_number'):
             self._seen_volume = True
             return 1
         if not self._seen_title and field_name in ('title', 'no_title'):
@@ -4337,10 +4342,12 @@ class IssueRevision(Revision):
         if self.series.has_volume:
             issue.volume = self.volume
             issue.no_volume = self.no_volume
+            issue.volume_not_printed = self.volume_not_printed
             issue.display_volume_with_number = self.display_volume_with_number
         else:
             self.volume = issue.volume
             self.no_volume = issue.no_volume
+            self.volume_not_printed = issue.volume_not_printed
             self.display_volume_with_number = issue.display_volume_with_number
             self.save()
 
