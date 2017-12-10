@@ -107,6 +107,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             display_volume_with_number = forms.BooleanField(
                 widget=forms.HiddenInput, required=False)
             volume = forms.CharField(widget=HiddenInput, required=False)
+            volume_not_printed = forms.BooleanField(widget=forms.HiddenInput,
+                                                    required=False)
             turned_off_list += 'volume, '
 
         if not series.has_indicia_frequency:
@@ -441,6 +443,8 @@ def get_bulk_issue_revision_form(series, method, user=None):
                 no_volume = forms.CharField(
                     widget=forms.HiddenInput, required=False)
                 display_volume_with_number = forms.CharField(
+                    widget=forms.HiddenInput, required=False)
+                volume_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_isbn:
                 no_isbn = forms.CharField(
