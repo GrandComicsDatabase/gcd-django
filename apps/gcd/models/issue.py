@@ -4,8 +4,8 @@ from decimal import Decimal
 from django.db import models
 from django.core import urlresolvers
 from django.db.models import Sum, Count
-from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -34,7 +34,11 @@ def issue_descriptor(issue):
     else:
         title = u''
     if issue.display_volume_with_number:
-        return u'v%s#%s%s' % (issue.volume, issue.number, title)
+        if issue.volume_not_printed:
+            volume = u'[v%s]' % issue.volume
+        else:
+            volume = u'v%s' % issue.volume
+        return u'%s#%s%s' % (volume, issue.number, title)
     return issue.number + title
 
 class Issue(models.Model):
@@ -49,6 +53,7 @@ class Issue(models.Model):
     no_title = models.BooleanField(default=False, db_index=True)
     volume = models.CharField(max_length=50, db_index=True)
     no_volume = models.BooleanField(default=False, db_index=True)
+    volume_not_printed = models.BooleanField(default=False)
     display_volume_with_number = models.BooleanField(default=False, db_index=True)
     isbn = models.CharField(max_length=32, db_index=True)
     no_isbn = models.BooleanField(default=False, db_index=True)
@@ -85,7 +90,7 @@ class Issue(models.Model):
     series = models.ForeignKey(Series)
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
-    image_resources = generic.GenericRelation(Image)
+    image_resources = GenericRelation(Image)
 
     @property
     def indicia_image(self):

@@ -17,3 +17,14 @@ from reprinttoissue import ReprintToIssue
 from reprintfromissue import ReprintFromIssue
 from seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING
 from image import ImageType, Image
+from creator import CreatorArtInfluence, Award, CreatorAward, \
+                    Creator, DataSource, CreatorDegree, \
+                    CreatorNameDetail, CreatorSchool,\
+                    Degree, CreatorMembership, CreatorRelation, NameType, \
+                    CreatorNonComicWork, NonComicWorkType, NonComicWorkRole, \
+                    NonComicWorkYear, RelationType, School, \
+                    SourceType
+
+
+def _display_uncertain(value, flag):
+    return u'%s?' % value if flag else value

@@ -4,7 +4,7 @@ from string import capitalize
 from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes import models as content_models
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core import urlresolvers
 
 from imagekit.models import ImageSpecField
@@ -36,7 +36,7 @@ class Image(models.Model):
 
     content_type = models.ForeignKey(content_models.ContentType, null=True)
     object_id = models.PositiveIntegerField(db_index=True, null=True)
-    object = generic.GenericForeignKey('content_type', 'object_id')
+    object = GenericForeignKey('content_type', 'object_id')
 
     type = models.ForeignKey(ImageType)
 
@@ -81,6 +81,12 @@ class Image(models.Model):
             return urlresolvers.reverse(
                 'show_brand',
                 kwargs={'brand_id': self.object.id } )
+
+        elif self.content_type == content_models.ContentType.objects\
+                                                .get(name='Creator'):
+            return urlresolvers.reverse(
+                'show_creator',
+                kwargs={'creator_id': self.object.id } )
         else:
             return ''
 

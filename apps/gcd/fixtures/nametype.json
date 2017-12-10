@@ -1,0 +1,58 @@
+[
+    {
+        "pk": 2,
+        "model": "gcd.nametype",
+        "fields": {
+            "type": "Changed"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.nametype",
+        "fields": {
+            "type": "Family"
+        }
+    },
+    {
+        "pk": 1,
+        "model": "gcd.nametype",
+        "fields": {
+            "type": "GCD Official"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.nametype",
+        "fields": {
+            "type": "Given (birth)"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "gcd.nametype",
+        "fields": {
+            "type": "House"
+        }
+    },
+    {
+        "pk": 6,
+        "model": "gcd.nametype",
+        "fields": {
+            "type": "Other Language"
+        }
+    },
+    {
+        "pk": 7,
+        "model": "gcd.nametype",
+        "fields": {
+            "type": "Pen"
+        }
+    },
+    {
+        "pk": 8,
+        "model": "gcd.nametype",
+        "fields": {
+            "type": "Shop"
+        }
+    }
+]

@@ -5,6 +5,7 @@
 {% load i18n %}
 {% load display %}
 {% load credits %}
+{% load editing %}
 
 {% block title %}
   GCD :: Issue :: {{ issue.short_name }}
@@ -180,14 +181,14 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
         <input id="add_variant" name="add_variant" type="submit" value="Add variant issue" />
     </form>
       {% endif %}
-      {% if issue.variant_of and not issue.variant_of.reserved and not issue.reserved %}
+      {% if issue.variant_of and not issue.variant_of|is_locked and not issue|is_locked %}
     <form method="POST"
             action="{% url "reserve_two_issues" issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
         {% csrf_token %}
         <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
     </form>
       {% endif %}
-      {% if not issue.reserved %}
+      {% if not issue|is_locked %}
     <form method="GET"
             action="{% url "edit_two_issues" issue_id=issue.id %}">
         <input type="submit" value="{% trans 'Edit with another issue' %}">

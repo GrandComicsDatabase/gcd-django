@@ -1,0 +1,164 @@
+{% load staticfiles %}
+
+<form action="{% url "process" id=changeset.id %}" method="POST">
+    <input type="hidden" name="total_workyears"
+           value="{{ changeset.inline_revision.cr_noncomicworkyears.all|length }}"
+           id="total_workyears">
+    <input type="hidden" name="total_worklinks"
+           value="{{ changeset.inline_revision.cr_noncomicworklinks.all|length }}"
+           id="total_worklinks">
+    {% csrf_token %}
+    <table class="editing">
+        {{ form.as_table }}
+    </table>
+    <h4 style="display:inline;">Add Work Years:-</h4>&nbsp;&nbsp;&nbsp;<input
+        type="button" id="add_workyears" class="add_workyear_class"
+        value="Add Work Years"
+        {% if not changeset.inline_revision.cr_noncomicworkyears.all|length == 0 %}
+        style="display: none;" {% endif %}><br>
+
+    <div class="workyear-div">
+        {% for work_year_obj in changeset.inline_revision.cr_noncomicworkyears.all %}
+            <div class="workyear-details"
+                 style="padding-left: 236px;display: inline;">
+                <label>Year:</label>
+                <input type="text" id="work_year{{ forloop.counter }}"
+                       name="work_year{{ forloop.counter }}"
+                       value="{{ work_year_obj.work_year }}" required>
+                <label>Work Year Uncertain:</label>
+                <input type="checkbox"
+                       id="work_year_uncertain{{ forloop.counter }}"
+                       name="work_year_uncertain{{ forloop.counter }}"
+                        {% if work_year_obj.work_year_uncertain %}
+                       checked {% endif %}>&nbsp;&nbsp;
+                <input type="button" id="add_workyear_divison_id"
+                       class="add_workyear_class" value="Add New"
+                       name="add_new_workyear">&nbsp;&nbsp;
+                <input type="button" id="remove_workyear_button" value="Remove"
+                       name="remove_this_workyear"><br><br>
+            </div>
+        {% endfor %}
+    </div>
+    <br><br>
+
+    <h4 style="display:inline;">Add Work Links:-</h4>&nbsp;&nbsp;&nbsp;<input
+        type="button" id="add_worklinks" class="add_worklink_class"
+        value="Add Work Links"
+        {% if not changeset.inline_revision.cr_noncomicworklinks.all|length == 0 %}
+        style="display: none;" {% endif %}><br>
+
+    <div class="worklink-div">
+        {% for work_link_obj in changeset.inline_revision.cr_noncomicworklinks.all %}
+            <div class="worklink-details"
+                 style="padding-left: 236px;display: inline;">
+                <label>Link:</label>
+                <input type="url" id="work_link{{ forloop.counter }}"
+                       name="work_link{{ forloop.counter }}"
+                       value="{{ work_link_obj.link }}" required>&nbsp;&nbsp;
+                <input type="button" id="add_worklink_divison_id"
+                       class="add_worklink_class" value="Add New"
+                       name="add_new_worklink">&nbsp;&nbsp;
+                <input type="button" id="remove_worklink_button" value="Remove"
+                       name="remove_this_worklink"><br><br>
+            </div>
+        {% endfor %}
+    </div>
+    <br><br><br>
+
+
+    {% if changeset.comments.count > 1 %}
+        {% comment %} change was sent back {% endcomment %}
+        <p>
+            <a href="{% url "compare" id=changeset.id %}">Compare changes</a>
+        </p>
+    {% endif %}
+    {% with changeset.comments as comments %}
+        {% include 'oi/bits/comments.html' %}
+    {% endwith %}
+    {% ifequal revision.source_label "story" %}
+        <input type="submit" name="save"
+               value="Save and continue editing"></input>
+        <input type="submit" name="save_return"
+               value="Save and return to issue"></input>
+        <input type="submit" name="cancel_return"
+               value="Return to issue without saving"></input>
+    {% else %}
+        {% ifequal revision.source_label "issue" %}
+            <input type="submit" name="save"
+                   value="Save and continue editing"></input>
+        {% endifequal %}
+        <input type="submit" name="submit"
+               value="Submit changes for approval"></input>
+        {% if changeset.approver %}
+            <input type="submit" name="discuss" value="Discuss">
+        {% endif %}
+        <input type="submit" name="discard" value="Discard all changes"
+               id="confirm-discard"></input>
+    {% endifequal %}
+</form>
+
+{% include 'oi/bits/jquery.html' %}
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        {# Add Work Years #}
+        $(document).on("click", ".add_workyear_class", function () {
+            var total_workyears = parseInt($('#total_workyears').val());
+            var next_index = total_workyears + 1;
+            $('.workyear-div').append(
+                    '<div class="workyear-details" style="padding-left: 236px;display: inline;">' +
+                    '<label>Year:</label>' +
+                    '<input type="text" id="work_year' + next_index + '" name="work_year' + next_index + '" required>&nbsp;&nbsp;&nbsp;' +
+                    '<label>Work Year Uncertain:</label>' +
+                    '<input type="checkbox" id="work_year_uncertain' + next_index + '" name="work_year_uncertain' + next_index + '" style="">&nbsp;&nbsp;&nbsp;' +
+                    '<input type="button" id="add_workyear_divison_id" class="add_workyear_class" value="Add New" name="add_new_workyear">&nbsp;&nbsp;&nbsp;' +
+                    '<input type="button" id="remove_workyear_button" value="Remove" name="remove_this_workyear">' +
+                    '<br><br>' +
+                    '</div>');
+
+            $('#total_workyears').val(next_index);
+            $('#add_workyears').hide();
+        });
+
+        {# Add Work Links #}
+        $(document).on("click", ".add_worklink_class", function () {
+            var total_worklinks = parseInt($('#total_worklinks').val());
+            var next_index = total_worklinks + 1;
+            $('.worklink-div').append(
+                    '<div class="worklink-details" style="padding-left: 236px;display: inline;">' +
+                    '<label>Link:</label>' +
+                    '<input type="url" id="work_link' + next_index + '" name="work_link' + next_index + '" required>&nbsp;&nbsp;&nbsp;&nbsp;' +
+                    '<input type="button" id="add_worklink_divison_id" class="add_worklink_class" value="Add New" name="add_new_worklink">&nbsp;&nbsp;&nbsp;' +
+                    '<input type="button" id="remove_worklink_button" value="Remove" name="remove_this_worklink">' +
+                    '<br><br>' +
+                    '</div>');
+
+            $('#total_worklinks').val(next_index);
+            $('#add_worklinks').hide();
+        });
+
+        $(document).on("click", '#remove_workyear_button', function () {
+            $(this).closest('div').remove();
+            if ($.trim($('.workyear-div').html()).length == 0) {
+                $('#add_workyears').attr('style', "display: inline;");
+            }
+        });
+        $(document).on("click", '#remove_worklink_button', function () {
+            $(this).closest('div').remove();
+            if ($.trim($('.worklink-div').html()).length == 0) {
+                $('#add_worklinks').attr('style', "display: inline;");
+            }
+        });
+        $('#confirm-discard').click(function () {
+            if ($('#id_comments').val() == "") {
+                var is_comment = 0;
+            } else {
+                var is_comment = 1;
+            }
+            window.location.assign("{% url 'confirm_discard' changeset.id 0 %}".replace(0, is_comment));
+
+        });
+    });
+
+</script>
+

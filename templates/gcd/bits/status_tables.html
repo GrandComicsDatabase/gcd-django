@@ -15,7 +15,7 @@
   <tr>
   {% for issue in series.active_base_issues %}
     <td class="status_{{ issue|index_status_css }}">
-      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor }}</a> </td>
+      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor|default:issue }}</a> </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>
       {% if not forloop.last %}

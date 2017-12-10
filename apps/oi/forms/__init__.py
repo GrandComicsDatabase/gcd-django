@@ -6,6 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from apps.oi.models import OngoingReservation
 from apps.gcd.models import Series
+from apps.stddata.forms import DateForm
 
 # Some imports need a 'noqa' because we are only importing them to re-export
 # through the forms module as a whole, which flake8 does not understand.
@@ -23,7 +24,17 @@ from .story import get_story_revision_form, get_reprint_revision_form
 from .image import get_cover_revision_form
 from .image import (    # noqa
     UploadScanForm, UploadVariantScanForm, GatefoldScanForm, UploadImageForm)
-
+from .creator import (    # noqa
+    CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
+    CreatorMembershipRevisionForm, CreatorAwardRevisionForm,
+    CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm, 
+    CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
+    get_creator_art_influence_revision_form, get_creator_award_revision_form,
+    get_creator_membership_revision_form, get_creator_revision_form,
+    get_creator_non_comic_work_revision_form, get_creator_relation_revision_form,
+    get_creator_school_revision_form, get_creator_degree_revision_form)
+from .support import ( add_data_source_fields, init_data_source_fields,
+    _set_help_labels)
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
     if revision is not None and model_name is None:
@@ -74,6 +85,30 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name in ['cover', 'image']:
         return get_cover_revision_form(revision, **kwargs)
 
+    if model_name == 'creator':
+        return get_creator_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_art_influence':
+        return get_creator_art_influence_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_award':
+        return get_creator_award_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_membership':
+        return get_creator_membership_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_non_comic_work':
+        return get_creator_non_comic_work_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_relation':
+        return get_creator_relation_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_school':
+        return get_creator_school_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_degree':
+        return get_creator_degree_revision_form(revision, **kwargs)
+
     raise NotImplementedError
 
 
@@ -109,3 +144,36 @@ class OngoingReservationForm(forms.ModelForm):
         help_text='The numeric database ID of a '
                   'series that does not already '
                   'have an ongoing reservation')
+
+
+def get_date_revision_form(revision=None, user=None, date_help_links=[]):
+    class RuntimeDateRevisionForm(DateRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeDateRevisionForm, self).__init__(*args, **kwargs)
+            if revision:
+                init_data_source_fields(self.prefix, revision, self.fields)
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, date_help_links)
+            return super(DateRevisionForm, self).as_table()
+
+    return RuntimeDateRevisionForm
+
+
+class DateRevisionForm(DateForm):
+    def __init__(self, *args, **kwargs):
+        super(DateRevisionForm, self).__init__(*args, **kwargs)
+        add_data_source_fields(self, self.prefix)
+        self.fields['date'].help_text = 'Enter date as YYYY-MM-DD or parts '\
+          'thereof. A ? can be used in each part to indicate uncertainty.'
+
+    def clean(self):
+        cd = super(DateRevisionForm, self).clean()
+        data_source_type = cd['%s_source_type' % self.prefix]
+        data_source_description = cd['%s_source_description' % self.prefix]
+        if data_source_type or data_source_description:
+            if not data_source_type or not data_source_description:
+                self.add_error(
+                    '%s_source_description' % self.prefix,
+                    'Source description and source type must both be set.')
+        return cd
