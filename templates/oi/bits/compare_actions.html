@@ -1,5 +1,3 @@
-{% load url from future %}
-
 <form id="review" action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
   <div>

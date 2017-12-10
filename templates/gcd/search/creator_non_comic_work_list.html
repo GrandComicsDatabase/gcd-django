@@ -1,0 +1,31 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% load display %}
+{% load credits %}
+
+{% block list_contents %}
+<table class="listing">
+  <tr>
+    <th>Creator</th>
+    <th>Publication Title</th>
+    <th>Work Type</th>
+    <th>Employer Name</th>
+    <th>Work Title</th>
+    <th>Work Role</th>
+  </tr>
+
+  {% for creator_noncomicwork in items %}
+    {% with creator_noncomicwork|object_filter as creator_noncomicwork %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td>{{ creator_noncomicwork.creator }}</td>
+      <td><a href="{{ creator_noncomicwork.get_absolute_url }}"> {{ creator_noncomicwork.publication_title }}</a> </td>
+      <td> {{ creator_noncomicwork.work_type }} </td>
+      <td> {{ creator_noncomicwork.employer_name}} </td>
+      <td> {{ creator_noncomicwork.work_title}} </td>
+      <td> {{ creator_noncomicwork.work_role}} </td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>
+{% endblock %}
+
