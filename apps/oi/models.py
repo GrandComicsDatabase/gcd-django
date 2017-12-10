@@ -3221,7 +3221,6 @@ class SeriesRevision(Revision):
             if self.is_singleton:
                 issue_revision.series = series
                 issue_revision.save()
-                issue_revision.commit_to_display()
 
     def get_absolute_url(self):
         if self.series is None:
@@ -3964,7 +3963,7 @@ class IssueRevision(Revision):
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('volume')
             fields.remove('no_volume')
-            field.remove('volume_not_printed')
+            fields.remove('volume_not_printed')
             fields.remove('display_volume_with_number')
         if self.variant_of or (self.issue and self.issue.variant_set.count()) \
            or self.changeset.change_type == CTYPES['variant_add']:

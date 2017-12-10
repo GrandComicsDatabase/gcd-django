@@ -130,6 +130,10 @@ def header_link(changeset):
     elif changeset.change_type == CTYPES['creator_non_comic_work']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.creator), absolute_url(revision)))
+    elif changeset.change_type == CTYPES['creator_relation']:
+        return mark_safe(u'%s : %s' %
+                         (absolute_url(revision.from_creator),
+                          absolute_url(revision.to_creator)))
     elif changeset.change_type == CTYPES['creator_school']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.creator), absolute_url(revision)))
@@ -186,7 +190,8 @@ def is_overdue(changeset):
         if datetime.today() - changeset.created > \
                 timedelta(weeks=settings.RESERVE_ISSUE_WEEKS-1):
             return mark_safe("class='overdue'")
-    elif changeset.issuerevisions.earliest('created').issue.revisions\
+    elif changeset.issuerevisions.earliest('created').issue and \
+      changeset.issuerevisions.earliest('created').issue.revisions\
                                                            .count() > 2:
         if check_for_modified(changeset, settings.RESERVE_ISSUE_WEEKS):
             return mark_safe("class='overdue'")
