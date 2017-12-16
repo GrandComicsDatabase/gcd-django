@@ -121,8 +121,8 @@ Disallow: /
 User-agent: msnbot
 Crawl-delay: 1
 
-User-agent: bingbot
-Crawl-delay: 1
+#User-agent: bingbot
+#Crawl-delay: 1
 
 # Google AdSense bot.  We no longer use AdSense.
 # Note that Google's regular search indexing bot is different.
@@ -138,6 +138,7 @@ Disallow: /series.lasso
 ## editing pages
 Disallow: /accounts/
 Disallow: /upload_cover/
+Disallow: /covers_to_replace/
 Disallow: /edit_covers/
 Disallow: /special/
 Disallow: /data/
@@ -152,8 +153,10 @@ Disallow: /*history/$
 Disallow: /character/name/
 Disallow: /credit/name/
 Disallow: /search/advanced/process/
+## data withheld from search sites by individual requests
+Disallow: /issue/711094/
 
-Sitemap: http://www.comics.org/sitemap.xml
+Sitemap: https://www.comics.org/sitemap.xml
 
 User-agent: Yandex
 Crawl-delay: 1 # sets a 1 second time-out

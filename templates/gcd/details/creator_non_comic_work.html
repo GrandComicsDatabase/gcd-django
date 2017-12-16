@@ -47,6 +47,10 @@
         <dt> Work URLs:
         <dd> {{ creator_non_comic_work.work_urls|urlize|linebreaksbr }}
         {% endif %}
+        {% if creator_non_comic_work.notes %}
+        <dt>Notes
+        <dd>{{ creator_non_comic_work.notes }}
+        {% endif %}
       </dl>
     </div> <!-- control_center -->
   {% if not preview or creator_non_comic_work.source %}

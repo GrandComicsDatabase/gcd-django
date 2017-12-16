@@ -107,6 +107,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             display_volume_with_number = forms.BooleanField(
                 widget=forms.HiddenInput, required=False)
             volume = forms.CharField(widget=HiddenInput, required=False)
+            volume_not_printed = forms.BooleanField(widget=forms.HiddenInput,
+                                                    required=False)
             turned_off_list += 'volume, '
 
         if not series.has_indicia_frequency:
@@ -442,6 +444,8 @@ def get_bulk_issue_revision_form(series, method, user=None):
                     widget=forms.HiddenInput, required=False)
                 display_volume_with_number = forms.CharField(
                     widget=forms.HiddenInput, required=False)
+                volume_not_printed = forms.BooleanField(
+                    widget=forms.HiddenInput, required=False)
             if not series.has_isbn:
                 no_isbn = forms.CharField(
                     widget=forms.HiddenInput, required=False)
@@ -551,7 +555,7 @@ class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
     def __init__(self, *args, **kwargs):
         super(BulkEditIssueRevisionForm, self).__init__(*args, **kwargs)
         ordering = ['no_title', 'volume', 'display_volume_with_number',
-                    'no_volume']
+                    'no_volume', 'volume_not_printed']
         ordering.extend(self._shared_key_order())
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields

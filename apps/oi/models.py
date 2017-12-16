@@ -642,9 +642,9 @@ class Changeset(models.Model):
                                                              'series'),)
 
         if self.change_type == CTYPES['cover']:
-            return (self.coverrevisions.all(),
-                    self.issuerevisions.all().select_related('issue',
+            return (self.issuerevisions.all().select_related('issue',
                                                              'series'),
+                    self.coverrevisions.all(),
                     self.storyrevisions.all())
 
         if self.change_type == CTYPES['series']:
@@ -716,6 +716,8 @@ class Changeset(models.Model):
         """
         Fake up an iterable (not actually a list) of all revisions,
         in canonical order.
+        This also iterates over freshly created revisions in one of the
+        existing ones, if done in the correct order.
         """
         return itertools.chain(*self._revision_sets())
 
@@ -755,6 +757,8 @@ class Changeset(models.Model):
                     else:
                         self._inline_revision = \
                             self.publisherrevisions.get()
+                if self.change_type == CTYPES['cover']:
+                    self._inline_revision = self.coverrevisions.get()
                 else:
                     if cache_safe is True:
                         return self.cached_revisions.next()
@@ -2181,7 +2185,6 @@ class BrandGroupRevision(PublisherRevisionBase):
                 year_ended_uncertain=self.year_ended_uncertain)
             brand_revision.save()
             brand_revision.group.add(self.brand_group)
-            brand_revision.commit_to_display()
 
     def get_absolute_url(self):
         if self.brand_group is None:
@@ -2364,7 +2367,6 @@ class BrandRevision(PublisherRevisionBase):
                 year_ended=self.year_ended,
                 year_ended_uncertain=self.year_ended_uncertain)
             use.save()
-            use.commit_to_display()
 
     def get_absolute_url(self):
         if self.brand is None:
@@ -3221,7 +3223,6 @@ class SeriesRevision(Revision):
             if self.is_singleton:
                 issue_revision.series = series
                 issue_revision.save()
-                issue_revision.commit_to_display()
 
     def get_absolute_url(self):
         if self.series is None:
@@ -3964,7 +3965,7 @@ class IssueRevision(Revision):
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('volume')
             fields.remove('no_volume')
-            field.remove('volume_not_printed')
+            fields.remove('volume_not_printed')
             fields.remove('display_volume_with_number')
         if self.variant_of or (self.issue and self.issue.variant_set.count()) \
            or self.changeset.change_type == CTYPES['variant_add']:

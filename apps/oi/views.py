@@ -298,10 +298,11 @@ def _do_reserve(indexer, display_obj, model_name, delete=False,
     """
     if model_name != 'cover' and (delete is False or indexer.indexer.is_new)\
        and indexer.indexer.can_reserve_another() is False:
-        _free_revision_lock(revision.source)
         return False
 
     revision_lock = _get_revision_lock(display_obj)
+    if not revision_lock:
+        return None
 
     if delete:
         # Deletions are submitted immediately which will set the correct state.

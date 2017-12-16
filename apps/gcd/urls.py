@@ -249,11 +249,11 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.story_by_credit'),
 
     # Special display pages
-    url(r'^checklist/name/(?P<creators>.+)/country/(?P<country>.+)/$',
+    url(r'^checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
      'apps.gcd.views.search.checklist_by_name', name='checklist_by_name'),
-    url(r'^checklist/name/(?P<creators>.+)/language/(?P<language>.+)/$',
+    url(r'^checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
      'apps.gcd.views.search.checklist_by_name', name='checklist_by_name'),
-    url(r'^checklist/name/(?P<creators>.+)/$',
+    url(r'^checklist/name/(?P<creator>.+)/$',
      'apps.gcd.views.search.checklist_by_name', name='checklist_by_name'),
 
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.

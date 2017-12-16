@@ -76,16 +76,18 @@ def pull_feed(feed_url, posts_to_show=None, cache_expires=None):
                 'author': 'Grand Comics Database',
                 'summary_html': summarize_html(entry['message']),
                 'content': linebreaksbr(urlizetrunc(entry['message'], 75)),
+                'mail_body': urlquote(entry['message']),
+                'mail_subject': urlquote('From the %s' % settings.SITE_NAME),
                 'url': entry['link'],
                 'picture': entry['full_picture'],
-                'published': entry['created_time'],
-                'application': entry['application']}
+                'published': entry['created_time']}
               for entry in entries if all (k in entry for k in ('message',
-                                           'full_picture', 'application')) ]
-            # only use posts coming via hootsuite
-            for post in reversed(posts):
-                if post['application']['name'] != 'Hootsuite':
-                    posts.remove(post)
+                                           'full_picture'))]
+            # one used to get info about application via entry['application']
+            # post['application']['name'] would filter those from hootsuite
+            #
+            # this is now restricted to admins / or site owner, and it is
+            # not clear how to do that now via the API
             posts = posts[:posts_to_show]
         except:
             if settings.DEBUG:

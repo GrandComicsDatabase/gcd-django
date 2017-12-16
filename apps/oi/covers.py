@@ -340,27 +340,27 @@ def process_edited_gatefold_cover(request):
     # create OI records
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                             change_type=CTYPES['cover'])
-    changeset.save()
 
     if cd['cover_id']:
         cover = get_object_or_404(Cover, id=cd['cover_id'])
         issue = cover.issue
         # check if there is a pending change for the cover
-        if CoverRevision.objects.filter(cover=cover,
-                                 changeset__state__in=states.ACTIVE):
-            revision = CoverRevision.objects.get(cover=cover,
-                                     changeset__state__in=states.ACTIVE)
-            changeset.delete()
-            return render_error(request,
-              ('There currently is a <a href="%s">pending replacement</a> '
-               'for this cover of %s.') % (urlresolvers.reverse('compare',
-                kwargs={'id': revision.changeset.id}), esc(cover.issue)),
-            redirect=False, is_safe=True)
+        revision_lock = _get_revision_lock(cover)
+        if not revision_lock:
+            return render_error(
+              request,
+              u'Cannot replace %s as it is already reserved.' %
+              cover.issue)
+        changeset.save()
+        revision_lock.changeset = changeset
+        revision_lock.save()
+
         revision = CoverRevision(changeset=changeset, issue=issue,
             cover=cover, file_source=cd['source'], marked=cd['marked'],
             is_replacement = True)
     # no cover_id, therefore upload a cover to an issue (first or variant)
     else:
+        changeset.save()
         issue = get_object_or_404(Issue, id=cd['issue_id'])
         cover = None
         revision = CoverRevision(changeset=changeset, issue=issue,
@@ -447,7 +447,8 @@ def handle_gatefold_cover(request, cover, issue, form):
                               context_instance=RequestContext(request))
 
 
-def handle_uploaded_cover(request, cover, issue, variant=False):
+def handle_uploaded_cover(request, cover, issue, variant=False,
+                          revision_lock=None):
     ''' process the uploaded file and generate CoverRevision '''
 
     try:
@@ -481,6 +482,8 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
         revision = CoverRevision(changeset=changeset, issue=issue,
             cover=cover, file_source=file_source, marked=marked,
             is_replacement = True)
+        revision_lock.changeset = changeset
+        revision_lock.save()
     else:
         revision = CoverRevision(changeset=changeset, issue=issue,
             file_source=file_source, marked=marked)
@@ -678,19 +681,27 @@ def upload_cover(request, cover_id=None, issue_id=None):
           redirect=False, is_safe=True)
 
     # check if there is a pending change for the cover
-    if cover_id and CoverRevision.objects.filter(cover=cover,
-                    changeset__state__in=states.ACTIVE):
-        revision = CoverRevision.objects.get(cover=cover,
-          changeset__state__in=states.ACTIVE)
-        return render_error(request,
-          ('There currently is a <a href="%s">pending replacement</a> '
-          'for this cover of %s.') % (urlresolvers.reverse('compare',
-          kwargs={'id': revision.changeset.id}), esc(cover.issue)),
-          redirect=False, is_safe=True)
+    # if POST, get a lock
+    if cover_id and request.method == 'POST':
+        revision_lock = _get_revision_lock(cover)
+        if not revision_lock:
+            return render_error(
+              request,
+              u'Cannot replace %s as it is already reserved.' %
+              cover.issue)
+    # if GET, check for a lock
+    elif cover_id and is_locked(cover):
+        return render_error(
+          request,
+          ('There currently is a pending replacement for this cover of %s.')
+          % (cover.issue), redirect=False, is_safe=True)
+    else:
+        revision_lock = None
 
     # current request is an upload
     if request.method == 'POST':
-        return handle_uploaded_cover(request, cover, issue)
+        return handle_uploaded_cover(request, cover, issue,
+                                     revision_lock=revision_lock)
     # request is a GET for the form
     else:
         if 'oi_file_source' in request.session:
