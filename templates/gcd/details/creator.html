@@ -223,6 +223,9 @@
                                 {% if ncw.work_urls %}
                                 <p><strong>Work URLs:</strong> {{ ncw.work_urls|urlize|linebreaksbr }}
                                 {% endif %}
+                                {% if ncw.notes %}
+                                <p><strong>Notes: </strong>{{ ncw.notes }}</p>
+                                {% endif %}
                         {% endfor %}
                     {% endif %}
 

@@ -555,7 +555,7 @@ class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
     def __init__(self, *args, **kwargs):
         super(BulkEditIssueRevisionForm, self).__init__(*args, **kwargs)
         ordering = ['no_title', 'volume', 'display_volume_with_number',
-                    'no_volume']
+                    'no_volume', 'volume_not_printed']
         ordering.extend(self._shared_key_order())
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
