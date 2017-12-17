@@ -130,6 +130,9 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.creator_non_comic_work_by_name',
      name='creator_non_comic_work_by_name'),
 
+    url(r'^creator_relation/(?P<creator_relation_id>\d+)/$',
+     'apps.gcd.views.details.creator_relation', name='show_creator_relation'),
+
     url(r'^creator_school/(?P<creator_school_id>\d+)/$',
      'apps.gcd.views.details.creator_school', name='show_creator_school'),
     url(r'^creator_degree/(?P<creator_degree_id>\d+)/$',

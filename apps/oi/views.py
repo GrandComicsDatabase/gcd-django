@@ -33,7 +33,8 @@ from apps.gcd.models import (
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
     Series, SeriesBond, Story, StoryType, Creator, CreatorMembership,
     CreatorArtInfluence, CreatorAward, CreatorDegree, CreatorNonComicWork, 
-    CreatorSchool, NameType, SourceType, School, Degree, RelationType)
+    CreatorRelation, CreatorSchool, NameType, SourceType, School, Degree,
+    RelationType)
 from apps.gcd.views import paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
@@ -108,6 +109,7 @@ REVISION_CLASSES = {
     'creator_degree': CreatorDegreeRevision,
     'creator_membership': CreatorMembershipRevision,
     'creator_non_comic_work': CreatorNonComicWorkRevision,
+    'creator_relation': CreatorRelationRevision,
     'creator_school': CreatorSchoolRevision,
 }
 
@@ -134,6 +136,7 @@ DISPLAY_CLASSES = {
     'creator_degree': CreatorDegree,
     'creator_membership': CreatorMembership,
     'creator_non_comic_work': CreatorNonComicWork,
+    'creator_relation': CreatorRelation,
     'creator_school': CreatorSchool,
 }
 

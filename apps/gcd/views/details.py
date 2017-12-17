@@ -33,8 +33,8 @@ from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
                             IndiciaPublisher, Brand, BrandGroup, Cover, \
                             SeriesBond, Creator, CreatorMembership,\
-                            CreatorAward, CreatorArtInfluence,\
-                            CreatorNonComicWork, CreatorSchool, CreatorDegree
+                            CreatorAward, CreatorDegree, CreatorArtInfluence,\
+                            CreatorNonComicWork, CreatorSchool, CreatorRelation
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -149,6 +149,20 @@ def show_creator_non_comic_work(request, creator_non_comic_work, preview=False):
             'error_subject': creator_non_comic_work,
             'preview': preview}
     return render(request, 'gcd/details/creator_non_comic_work.html',
+                  vars)
+
+
+def creator_relation(request, creator_relation_id):
+    creator_relation = get_gcd_object(CreatorRelation,
+                                      creator_relation_id)
+    return show_creator_relation(request, creator_relation)
+
+
+def show_creator_relation(request, creator_relation, preview=False):
+    vars = {'creator_relation': creator_relation,
+            'error_subject': creator_relation,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_relation.html',
                   vars)
 
 

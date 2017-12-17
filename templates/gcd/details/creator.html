@@ -74,21 +74,26 @@
                     <!--Creator's Names-->
                     <hr>
                     <h3>Names:</h3>
+                    <ol>
                     {% for creator_name in creator.active_names %}
-                        <p>{{ forloop.counter }}. {{ creator_name.name }}
+                        <li><p>{{ creator_name.name }}
                         <strong> type</strong>: {{ creator_name.type }}</p>
                         {% if creator_name.source.all %}
                             <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
                                 {{ source.type }},{% endfor %}</p>
                         {% endif %}
+                        </li>
                     {% endfor %}
+                    </ol>
 
                     <!--Creator's Schools-->
                     {% if creator.active_schools %}
                         <hr>
                         <h3>Schools:</h3>
+                        <ol>
                         {% for school in creator.active_schools %}
-                            <p>{{ forloop.counter }}. <a href="{{ school.get_absolute_url }}">{{ school.school }}</a>
+                            <li>
+                            <p><a href="{{ school.get_absolute_url }}">{{ school.school }}</a>
                             {% if school.school_year_began %}
                             {{ school.school_year_began }}
                             {% endif %}
@@ -110,15 +115,19 @@
                             {% include "gcd/bits/show_sources.html" %}
                             {% endwith %}
                             </dl>
+                            </li>
                         {% endfor %}
+                        </ol>
                     {% endif %}
 
                     <!--Creator's Degree-->
                     {% if creator.active_degrees %}
                         <hr>
                         <h3>Degrees:</h3>
+                        <ol>
                         {% for degree in creator.active_degrees %}
-                            <p>{{ forloop.counter }}. <a href="{{ degree.get_absolute_url }}">{{ degree.degree }}, {{ degree.school.school_name }}</a>
+                            <li>
+                            <p><a href="{{ degree.get_absolute_url }}">{{ degree.degree }}, {{ degree.school.school_name }}</a>
                             {% if degree.degree_year or degree.degree_year_uncertain %}
                             in {{ degree.degree_year }}{% if degree.degree_year_uncertain %}?{% endif %}
                             {% endif %}
@@ -130,7 +139,9 @@
                             {% include "gcd/bits/show_sources.html" %}
                             {% endwith %}
                             </dl>
+                            </li>
                         {% endfor %}
+                        </ol>
                     {% endif %}
 
 
@@ -138,8 +149,10 @@
                     {% if creator.active_awards %}
                         <hr>
                         <h3>Awards:</h3>
+                        <ol>
                         {% for award in creator.active_awards %}
-                            <p>{{ forloop.counter }}.
+                            <li>
+                            <p>
                             {% if award.award %}
                                 {{ award.award.name }} -
                             {% endif %}
@@ -156,15 +169,19 @@
                             {% include "gcd/bits/show_sources.html" %}
                             {% endwith %}
                             </dl>
+                            </li>
                         {% endfor %}
+                        </ol>
                     {% endif %}
 
                     <!--Creator's Art Influences-->
                     {% if creator.active_art_influences %}
                         <hr>
                         <h3>Art Influences:</h3>
+                        <ol>
                         {% for influence in creator.active_art_influences %}
-                            <p>{{ forloop.counter }}. <a href="{{ influence.get_absolute_url }}">{% if influence.influence_link %}{{ influence.influence_link }}{% else %}{{ influence.influence_name }}{% endif %}</a>
+                            <li>
+                            <p><a href="{{ influence.get_absolute_url }}">{% if influence.influence_link %}{{ influence.influence_link }}{% else %}{{ influence.influence_name }}{% endif %}</a>
                             </p>
                             {% if influence.notes %}
                             <p><strong>Notes: </strong>{{ influence.notes }}</p>
@@ -174,15 +191,19 @@
                             {% include "gcd/bits/show_sources.html" %}
                             {% endwith %}
                             </dl>
+                            </li>
                         {% endfor %}
+                        </ol>
                     {% endif %}
 
                     <!--Creator's Memberships-->
                     {% if creator.active_memberships %}
                         <hr>
                         <h3>Memberships:</h3>
+                        <ol>
                         {% for membership in creator.active_memberships %}
-                                <p>{{ forloop.counter }}. <a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
+                                <li>
+                                <p><a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
                                 <strong>type</strong>: {{ membership.membership_type.type }}
                                 <strong>year begin:</strong> {{ membership.membership_year_began|default:'' }}{% if not membership.membership_year_began or membership.membership_year_began_uncertain %} ?{% endif %}
                                 {% if membership.membership_year_ended or membership.membership_year_ended_uncertain %}
@@ -197,15 +218,19 @@
                                 {% include "gcd/bits/show_sources.html" %}
                                 {% endwith %}
                                 </dl>
+                                </li>
                         {% endfor %}
+                        </ol>
                     {% endif %}
 
                     <!--Creator's Noncomic works-->
                     {% if creator.active_non_comic_works %}
                         <hr>
                         <h3>Non Comics Works:</h3>
+                        <ol>
                         {% for ncw in creator.active_non_comic_works %}
-                                <p>{{ forloop.counter }}. <strong>Publication title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
+                                <li>
+                                <p><strong>Publication title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
                                 <strong>Work type</strong> : {{ ncw.work_type.type }}</p>
                                 {% if ncw.employer_name %}
                                     <p><strong>Employer name</strong> : {{ ncw.employer_name }}</p>
@@ -213,31 +238,43 @@
                                 {% if ncw.work_title %}
                                     <p><strong>Work title:</strong> {{ ncw.work_title }}</p>
                                 {% endif %}
-                                <p><strong>Work role:</strong> {{ ncw.work_role.role_name }}</p>
-                                {% if ncw.work_notes %}
-                                    <p><strong>Work notes:</strong> {{ ncw.work_notes }}</p>
-                                {% endif %}
+                                <p><strong>Role:</strong> {{ ncw.work_role.role_name }}
                                 {% if ncw.display_years %}
-                                <p><strong>Work Years:</strong> {{ ncw.display_years }}</P>
+                                <strong>Years:</strong> {{ ncw.display_years }}
                                 {% endif %}
+                                </p>
                                 {% if ncw.work_urls %}
                                 <p><strong>Work URLs:</strong> {{ ncw.work_urls|urlize|linebreaksbr }}
                                 {% endif %}
                                 {% if ncw.notes %}
                                 <p><strong>Notes: </strong>{{ ncw.notes }}</p>
                                 {% endif %}
+                                <dl>
+                                {% with membership.data_source.all as data_sources %}
+                                {% include "gcd/bits/show_sources.html" %}
+                                {% endwith %}
+                                </dl>
+                                </li>
                         {% endfor %}
+                        </ol>
                     {% endif %}
 
                     {% if creator.active_relations %}
                         <hr>
                         <h3>Relations:</h3>
+                        <ol>
                         {% for relation in creator.active_relations %}
-                            <p>{{ forloop.counter }}. {{ relation.2 }} - <a href="/creator/{{ relation.0 }}/">{{ relation.1 }}</a></p>
+                            <li>
+                            <p><a href="{% url 'show_creator_relation' creator_relation_id=relation.4 %}">{{ relation.2 }}</a> - <a href="/creator/{{ relation.0 }}/">{{ relation.1 }}</a></p>
+                            {% if relation.3 %}
+                            <p><strong>Notes: </strong>{{ relation.3 }}</p>
+                            {% endif %}
                             {% with relation.data_source.all as data_sources %}
                             {% include "gcd/bits/show_sources.html" %}
                             {% endwith %}
+                            </li>
                         {% endfor %}
+                        </ol>
                     {% endif %}
                     
                     <br>

@@ -296,7 +296,8 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
             self.add_error('influence_name',
                 'Enter either the name of an influence or a link to an '
                 'influence, but not both.')
-        if not cd['influence_name'] and not cd['influence_link']:
+        if not cd['influence_link'] and ('influence_name' not in cd
+                                         or not cd['influence_name']):
             self.add_error('influence_name',
                 'Either the name of an influence or a link to an '
                 'influence needs to be given.')

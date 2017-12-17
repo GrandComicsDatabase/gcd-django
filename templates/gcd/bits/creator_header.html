@@ -16,9 +16,9 @@
         <a href="{{ creator_art_influence.creator.get_absolute_url }}">{{ creator_art_influence.creator }}</a> : <a href="{{ creator_art_influence.get_absolute_url }}">{{ creator_art_influence.influence_name }}</a>
       {% elif creator_non_comic_work %}
         <a href="{{ creator_non_comic_work.creator.get_absolute_url }}">{{ creator_non_comic_work.creator }}</a> : <a href="{{ creator_non_comic_work.get_absolute_url }}">{{ creator_non_comic_work.publication_title }}</a>
+      {% elif creator_relation %}
+        <a href="{{ creator_relation.creator.from_creator.get_absolute_url }}">{{ creator_relation.from_creator }}</a> : <a href="{{ creator_relation.creator.to_creator.get_absolute_url }}">{{ creator_relation.to_creator }}</a>
       {% endif %}
-
-
   </div>
 </h1>
 {% endifnotequal %}

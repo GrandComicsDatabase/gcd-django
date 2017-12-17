@@ -333,11 +333,11 @@ class Creator(models.Model):
         from_relations = self.from_related_creator.exclude(deleted=True)
         relations = list(from_relations.values_list(
                     'from_creator__id', 'from_creator__gcd_official_name',
-                    'relation_type__reverse_type'))
+                    'relation_type__reverse_type', 'notes', 'id'))
         to_relations = self.to_related_creator.exclude(deleted=True)
         relations.extend(to_relations.values_list(
                   'to_creator__id', 'to_creator__gcd_official_name',
-                  'relation_type__type'))
+                  'relation_type__type', 'notes', 'id'))
         relations.sort(key=itemgetter(2, 1))
         return relations
 
