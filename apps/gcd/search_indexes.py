@@ -252,7 +252,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     year = indexes.IntegerField()
     sort_name = indexes.CharField(model_attr="gcd_official_name",indexed=False)
     country = indexes.CharField(model_attr='birth_country__code', indexed=False,
-                                null=True)
+                                faceted=True, null=True)
 
     def get_model(self):
         return Creator
@@ -314,7 +314,7 @@ class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     name = indexes.CharField(model_attr="award_name", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    year = indexes.IntegerField(model_attr='award_year')
+    year = indexes.IntegerField()
     sort_name = indexes.CharField(model_attr='award_name', indexed=False)
 
     def prepare_year(self, obj):

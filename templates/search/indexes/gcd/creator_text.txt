@@ -1,4 +1,7 @@
 {{ object.gcd_official_name }}
-{{ object.birth_country }}
-{{ object.birth_date }}
+{{ object.display_birthplace }}
+{{ object.display_birthday }}
+{{ object.display_deathplace }}
+{{ object.display_deathday }}
+{{ object.bio }}
 {{ object.notes }}
