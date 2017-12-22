@@ -87,33 +87,6 @@
                 {% endfor %}
             </select>&nbsp;
 {% endcomment %}
-
-            <label>Relation Type:</label>
-            <select name="relation_type_{{ forloop.counter }}"
-                    id="relation_type_{{ forloop.counter }}"
-                    style="margin-left: -12px;">
-                <option value="">------------</option>
-                {% for relation_type in relation_types %}
-                    <option
-                            {% if relation_type.id == other_name_detail.relation_id %}
-                                selected {% endif %}
-                                value={{ relation_type.id }}>{{ relation_type.type }}</option>
-                {% endfor %}
-            </select> &nbsp;
-            {% comment %}
-            <label>Relation Source:</label>
-            <select multiple
-                    style="vertical-align: middle;margin-left: -12px;"
-                    name="relation_sources{{ forloop.counter }}"
-                    id="relation_sources{{ forloop.counter }}">
-                {% for name_source in sources %}
-                    <option
-                            {% if name_source.type|relation_source_is_in:other_name_detail.relation_obj %}
-                                selected {% endif %}
-                                value={{ name_source.id }}>{{ name_source.type }}</option>
-                {% endfor %}
-            </select>&nbsp;
-            {% endcomment %}
             <input type="button" id="add_name_divison_id"
                     class="add_name_class" value="Add New"
                     name="add_name_divison">
