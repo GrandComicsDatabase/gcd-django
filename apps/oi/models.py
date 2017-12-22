@@ -6147,6 +6147,7 @@ class CreatorRevision(Revision):
         ctr = self.creator
         if ctr is None:
             ctr = Creator()
+            update_count('creators', 1)
         elif self.deleted:
             memberships = ctr.membership_set.exclude(deleted=True)
             for membership in memberships:
@@ -6168,6 +6169,7 @@ class CreatorRevision(Revision):
             ctr.reserved = False
             ctr.deleted = True
             ctr.save()
+            update_count('creators', -1)
             return
 
         ctr.gcd_official_name = self.gcd_official_name
