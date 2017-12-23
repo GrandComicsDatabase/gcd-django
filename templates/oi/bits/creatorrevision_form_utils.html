@@ -7,24 +7,9 @@
             {% endif %}
         {% endfor %}
 
-        var relation_types_dropdown = '<option value="">---------</option>';
-        {% for relation_type in relation_types %}
-            relation_types_dropdown += '<option value="{{ relation_type.id }}">{{ relation_type.type }}</option>';
-        {% endfor %}
-
         var sources_dropdown = '';
         {% for source in sources %}
             sources_dropdown = sources_dropdown + '<option value="{{ source.id }}">{{ source.type }}</option>';
-        {% endfor %}
-
-        var schools_dropdown = '';
-        {% for school in schools %}
-            schools_dropdown = schools_dropdown + '<option value="{{ school.id }}">{{ school.school_name }}</option>';
-        {% endfor %}
-
-        var degrees_dropdown = '';
-        {% for degree in degrees %}
-            degrees_dropdown = degrees_dropdown + '<option value="{{ degree.id }}">{{ degree.degree_name }}</option>';
         {% endfor %}
 
         if (parseInt($('#total_schools').val()) > 0) {
@@ -52,16 +37,6 @@
                     + sources_dropdown +
                     '</select> &nbsp;' +
 {% endcomment %}
-                    '<label>Relation Type:</label>' +
-                    '<select name="relation_type_' + next_index + '" id="relation_type_' + next_index + '" style="margin-left: -9px;">'
-                    + relation_types_dropdown +
-                    '</select> &nbsp;' +
-{% comment %}
-                    '<label>Relation Sources:</label>' +
-                    '<select multiple name="relation_sources' + next_index + '" id="relation_sources' + next_index + '" style="vertical-align: middle; margin-left: -9px;">'
-                    + sources_dropdown +
-                    '</select> &nbsp;' +
-{% endcomment %}
                     '<input type="button" id="add_name_division_id" class="add_name_class" value="Add New" name="add_new_name">&nbsp;' +
                     '<input type="button" id="remove_name_button" value="Remove" name="remove_this_name">' +
                     '<br><br>' +
@@ -72,78 +47,6 @@
         });
         $(document).on("click", '#remove_name_button', function () {
             $(this).closest('div').remove();
-        });
-
-        {# Add New School Division #}
-        $(document).on("click", ".add_school_class", function () {
-            var total_schools = parseInt($('#total_schools').val());
-            var next_index = total_schools + 1;
-            $('.school-div').append(
-                    '<div class="school-details" style="padding-left: 35px; display: inline;">' +
-                    ' <label>School:</label>' +
-                    '<select name="school_' + next_index + '" id="school_' + next_index + '" style="width: 193px;">'
-                    + schools_dropdown +
-                    '</select> &nbsp;&nbsp;' +
-                    '<label>Year Began:</label>' +
-                    '<input type="text" id="school_year_began_' + next_index + '" name="school_year_began_' + next_index + '" style="width: 45px;">&nbsp;&nbsp;' +
-                    '<label>Year Began Uncertain:</label>' +
-                    '<input type="checkbox" id="school_year_began_uncertain_' + next_index + '" name="school_year_began_uncertain_' + next_index + '" style="margin-left: -11px;">&nbsp;&nbsp;' +
-                    '<label>Year Ended:</label>' +
-                    '<input type="text" id="school_year_ended_' + next_index + '" name="school_year_ended_' + next_index + '" style="width: 45px;">&nbsp;&nbsp;' +
-                    '<label>Year Ended Uncertain:</label>' +
-                    '<input type="checkbox" id="school_year_ended_uncertain_' + next_index + '" name="school_year_ended_uncertain_' + next_index + '" style="margin-left: -11px;">&nbsp;&nbsp;' +
-{% comment %}
-                    '<label>Sources:</label>' +
-                    '<select multiple name="school_sources' + next_index + '" id="school_sources' + next_index + '" style="vertical-align: middle; width: 157px;">'
-                    + sources_dropdown +
-                    '</select> &nbsp;' +
-{% endcomment %}
-                    '<input type="button" id="add_school_division_id" class="add_school_class" value="Add New" name="add_new_school">&nbsp;' +
-                    '<input type="button" id="remove_school_button" value="Remove" name="remove_this_school">`' +
-                    '<br><br>' +
-                    '</div>');
-
-            $('#total_schools').val(next_index);
-            $('#add_schools').hide();
-        });
-        $(document).on("click", '#remove_school_button', function () {
-            $(this).closest('div').remove();
-            if ($.trim($('.school-div').html()).length == 0) {
-                $('#add_schools').show();
-            }
-        });
-
-        {# Add New Degree Division #}
-        $(document).on("click", ".add_degree_class", function () {
-            var total_degrees = parseInt($('#total_degrees').val());
-            var next_index = total_degrees + 1;
-            $('.degree-div').append(
-                    '<div class="degree-details" style="padding-left: 35px; display: inline;">' +
-                    '<label>Degree:</label>' +
-                    '<select name="degree_' + next_index + '" id="degree' + next_index + '" style="width: 193px;">'
-                    + degrees_dropdown +
-                    '</select>&nbsp;&nbsp;&nbsp;&nbsp;' +
-                    ' <label>School:</label>' +
-                    '<select name="degree_school_' + next_index + '" id="degree_school_' + next_index + '" style="width: 193px;">'
-                    + schools_dropdown +
-                    '</select> &nbsp;&nbsp;&nbsp;&nbsp;' +
-                    '<label>Degree Year:</label>' +
-                    '<input type="text" id="degree_year_' + next_index + '" name="degree_year_' + next_index + '" style="width: 95px;">&nbsp;&nbsp;&nbsp;&nbsp;' +
-                    '<label>Degree Year Uncertain:</label>' +
-                    '<input type="checkbox" id="degree_year_uncertain_' + next_index + '" name="degree_year_uncertain_' + next_index + '" style="margin-left: -4px;">&nbsp;&nbsp;&nbsp;&nbsp;' +
-                    '<input type="button" id="add_degree_division_id" class="add_degree_class" value="Add New" name="add_new_degree">&nbsp;' +
-                    '<input type="button" id="remove_degree_button" value="Remove" name="remove_this_degree">`' +
-                    '<br><br>' +
-                    '</div>');
-
-            $('#total_degrees').val(next_index);
-            $('#add_degrees').hide();
-        });
-        $(document).on("click", '#remove_degree_button', function () {
-            $(this).closest('div').remove();
-            if ($.trim($('.degree-div').html()).length == 0) {
-                $('#add_degrees').show();
-            }
         });
     });
 </script>

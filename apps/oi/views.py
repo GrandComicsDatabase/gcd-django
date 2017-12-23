@@ -485,110 +485,6 @@ def process_creator_other_names(request, changeset, revision, creator_name):
             else:
                 removed_creator_name.delete()
 
-def process_creator_school(request, changeset, revision):
-    # Update Creator's School details
-    total_creator_schools = int(request.POST.get('total_schools'))
-    updated_creator_school_list = []
-    for i in range(1, total_creator_schools + 1):
-        if 'school_' + str(i) in request.POST:
-            school = request.POST.get('school_' + str(i))
-            try:
-                school_year_began = int(request.POST.get(
-                    'school_year_began_' + str(i)))
-            except ValueError:
-                school_year_began = None
-            school_year_began_uncertain = True if request.POST.get(
-                'school_year_began_uncertain_' + str(
-                    i)) == 'on' else False
-            try:
-                school_year_ended = int(request.POST.get(
-                    'school_year_ended_' + str(i)))
-            except ValueError:
-                school_year_ended = None
-            school_year_ended_uncertain = True if request.POST.get(
-                'school_year_ended_uncertain_' + str(
-                    i)) == 'on' else False
-            revision_id = request.POST.get('school_revision_id_' + str(i))
-            if revision_id:
-                creator_school = CreatorSchoolRevision.objects.get(
-                                                       changeset=changeset,
-                                                       id=int(revision_id))
-                creator_school.school_id = int(school)
-                creator_school.school_year_began = school_year_began
-                creator_school.school_year_began_uncertain = school_year_began_uncertain
-                creator_school.school_year_ended = school_year_ended
-                creator_school.school_year_ended_uncertain = school_year_ended_uncertain
-                creator_school.save()
-            else:
-                creator_school = \
-                    CreatorSchoolRevision.objects.create(
-                        creator=revision,
-                        school_id=int(school),
-                        school_year_began=school_year_began,
-                        school_year_began_uncertain=school_year_began_uncertain,
-                        school_year_ended=school_year_ended,
-                        school_year_ended_uncertain=school_year_ended_uncertain,
-                        changeset=changeset)
-            updated_creator_school_list.append(creator_school.id)
-    removed_creator_schools = CreatorSchoolRevision.objects\
-                              .filter(creator=revision, changeset=changeset)\
-                              .exclude(id__in=updated_creator_school_list)
-    if removed_creator_schools:
-        for removed_creator_school in removed_creator_schools:
-            if removed_creator_school.creator_school:
-                removed_creator_school.deleted = True
-                removed_creator_school.save()
-            else:
-                removed_creator_school.delete()
-
-
-def process_creator_degree(request, changeset, revision):
-    # Update Creator's Degree details
-    total_creator_degrees = int(request.POST.get('total_degrees'))
-    updated_creator_degree_list = []
-    for i in range(1, total_creator_degrees + 1):
-        if 'degree_' + str(i) in request.POST:
-            degree = request.POST.get('degree_' + str(i))
-            school = request.POST.get('degree_school_' + str(i))
-            try:
-                degree_year = int(request.POST.get('degree_year_' + str(i)))
-            except ValueError:
-                degree_year = None
-            degree_year_uncertain = True if request.POST.get(
-                'degree_year_uncertain_' + str(
-                    i)) == 'on' else False
-            revision_id = request.POST.get('degree_revision_id_' + str(i))
-            if revision_id:
-                creator_degree = CreatorDegreeRevision.objects.get(
-                                                        creator=revision,
-                                                        id=int(revision_id))
-                creator_degree.degree_id=int(degree)
-                creator_degree.school_id=int(school)
-                creator_degree.degree_year=degree_year
-                creator_degree.degree_year_uncertain=degree_year_uncertain
-                creator_degree.save()
-            else:
-                creator_degree = \
-                    CreatorDegreeRevision.objects.create(
-                        creator=revision,
-                        degree_id=int(degree),
-                        school_id=int(school),
-                        degree_year=degree_year,
-                        degree_year_uncertain=degree_year_uncertain,
-                        changeset=changeset)
-
-            updated_creator_degree_list.append(creator_degree.id)
-    removed_creator_degrees = CreatorDegreeRevision.objects\
-                              .filter(creator=revision, changeset=changeset)\
-                              .exclude(id__in=updated_creator_degree_list)
-    if removed_creator_degrees:
-        for removed_creator_degree in removed_creator_degrees:
-            if removed_creator_degree.creator_degree:
-                removed_creator_degree.deleted = True
-                removed_creator_degree.save()
-            else:
-                removed_creator_degrees.delete()
-
 
 @permission_required('indexer.can_reserve')
 def edit_revision(request, id, model_name):
@@ -635,9 +531,6 @@ def _display_edit_form(request, changeset, form, revision=None):
 
         name_types = NameType.objects.all()
         sources = SourceType.objects.all()
-        schools = School.objects.all()
-        degrees = Degree.objects.all()
-        relation_types = RelationType.objects.all()
         other_name_details = []
         for creator_name_revision in revision.cr_creator_names\
                                              .filter(deleted=False):
@@ -678,9 +571,6 @@ def _display_edit_form(request, changeset, form, revision=None):
             'CTYPES': CTYPES,
             'name_types': name_types,
             'sources': sources,
-            'schools': schools,
-            'degrees':degrees,
-            'relation_types':relation_types,
             'official_name_details': official_name_details,
             'other_name_details': other_name_details,
         },
@@ -859,8 +749,6 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
 
                     process_creator_other_names(request, changeset, revision,
                                                 creator_name)
-                    #process_creator_school(request, changeset, revision)
-                    #process_creator_degree(request, changeset, revision)
 
                     form_class = get_date_revision_form(
                                     revision, user=request.user,
@@ -4956,8 +4844,6 @@ def add_creator(request):
 
         process_creator_other_names(request, changeset, revision,
                                     creator_name)
-        #process_creator_school(request, changeset, revision)
-        #process_creator_degree(request, changeset, revision)
 
         return submit(request, changeset.id)
     elif request.POST:
