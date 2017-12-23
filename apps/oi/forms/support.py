@@ -258,7 +258,8 @@ CREATOR_NONCOMICWORK_HELP_TEXTS = {
         "or web comic story, episode of a show, illustration in an "
         "ad campaign, or blog entry.",
     'work_years':
-        "The years of the work. Separate by ';', use year-year for ranges",
+        "The years of the work. Separate years by ';', use year-year for "
+        "ranges and question marks for uncertain years.",
     'work_urls':
         "Links to either the work or more information about the work, such as"
         " the person's entry in the IMDb, a WorldCat search for a creator, or"
