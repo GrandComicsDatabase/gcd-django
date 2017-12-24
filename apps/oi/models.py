@@ -6083,7 +6083,7 @@ class CreatorRevision(Revision):
                 creator_award_revison.save()
 
             for creator_degree in self.creator.active_degrees():
-                school_lock = _get_revision_lock(creator_degree,
+                degree_lock = _get_revision_lock(creator_degree,
                                                  changeset=self.changeset)
                 if degree_lock is None:
                     raise IntegrityError("needed CreatorDegree lock not possible")
