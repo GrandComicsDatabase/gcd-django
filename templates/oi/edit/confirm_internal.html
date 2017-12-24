@@ -55,8 +55,8 @@
 
 is
 <select name="direction" id="id_direction">
-<option value="from" {% if which_side = 'target' %}selected="selected"{% else %}disabled="disabled"{% endif %}>reprinted from
-<option type="hidden" value="to" {% if which_side = 'origin' %}selected="selected"{% else %}disabled="disabled"{% endif %}>reprinted in
+<option value="from" {% if which_side == 'target' %}selected="selected"{% else %}disabled="disabled"{% endif %}>reprinted from
+<option type="hidden" value="to" {% if which_side == 'origin' %}selected="selected"{% else %}disabled="disabled"{% endif %}>reprinted in
 </select>
 
 <hr class="divider">

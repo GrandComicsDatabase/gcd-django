@@ -24,7 +24,7 @@ urlpatterns = patterns('',
     ###########################################################################
 
     url(r'^$', 'apps.gcd.views.index', name='home'),
-    (r'^search/$', 'apps.gcd.views.search.search'),
+    url(r'^search/$', 'apps.gcd.views.search.search', name='basic_search'),
     url(r'^search/advanced/$', 'apps.gcd.views.search.advanced_search',
       name='advanced_search'),
     url(r'^search/advanced/process/$',

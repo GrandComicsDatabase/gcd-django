@@ -64,8 +64,8 @@
 
 is 
 <select name="direction" id="id_direction">
-<option value="from" {% if which_side = 'origin' %}selected="selected"{% endif %}>reprinted from
-<option value="to" {% if which_side = 'target' %}selected="selected"{% endif %}>reprinted in
+<option value="from" {% if which_side == 'origin' %}selected="selected"{% endif %}>reprinted from
+<option value="to" {% if which_side == 'target' %}selected="selected"{% endif %}>reprinted in
 </select>
 
 <hr class="divider">
