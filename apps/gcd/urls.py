@@ -160,14 +160,14 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.series_by_name', name='series_by_name'),
 
     # Series index and cover status / gallery
-    (r'^series/(?P<series_id>\d+)/status/$',
-     'apps.gcd.views.details.status'),
+    url(r'^series/(?P<series_id>\d+)/status/$',
+     'apps.gcd.views.details.status', name='series_status'),
 
-    (r'^series/(?P<series_id>\d+)/covers/$',
-     'apps.gcd.views.details.covers'),
+    url(r'^series/(?P<series_id>\d+)/covers/$',
+     'apps.gcd.views.details.covers', name='series_covers'),
 
-    (r'^series/(?P<series_id>\d+)/scans/$',
-     'apps.gcd.views.details.scans'),
+    url(r'^series/(?P<series_id>\d+)/scans/$',
+     'apps.gcd.views.details.scans', name='series_scan_table'),
 
     # Issue
     url(r'^issue/(?P<issue_id>\d+)/$',
