@@ -23,12 +23,12 @@
   {% endwith %}
 </div>
 </div>
-{% if position = 'top' and not select_key and not confirm_selection %}
+{% if position == 'top' and not select_key and not confirm_selection %}
 <div id="search_reminder">
 Refine your search using an <a href="{% url "apps.gcd.views.search.advanced_search" %}?{{ query_string }}">advanced search query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>.
 {% if change_order %}
 Change sort order to <a href="{{ change_order}}">{% if 'chrono' in change_order %} chronological{% else %} alphabetical{% endif %}</a>.
-  {% if item_name = 'series' %}
+  {% if item_name == 'series' %}
 <br>This series search result also shows series for which an issue title matches.
   {% endif %}
 {% endif %}
