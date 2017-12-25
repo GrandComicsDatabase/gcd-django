@@ -5,9 +5,9 @@
 {% else %}
 <div class="search_bar">
 {% endif %}
-  <form action="{% url "apps.gcd.views.search.search" %}" method="get">
-    <a href="{% url "apps.gcd.views.index" %}"><img src="{% static "img/gcd_logo_icon.png" %}" alt="GCD" style="border:0;"></a>
-    | <a href="{% url "apps.gcd.views.index" %}">Home</a> |
+  <form action="{% url "basic_search" %}" method="get">
+    <a href="{% url "home" %}"><img src="{% static "img/gcd_logo_icon.png" %}" alt="GCD" style="border:0;"></a>
+    | <a href="{% url "home" %}">Home</a> |
     <span class="search_message">Search</span>
     {% include "gcd/bits/search_for.html" %}
     <input type="text" name="query" size="15" value="{{ search_term|default:"" }}">
@@ -16,7 +16,7 @@
     &nbsp;
     <input type="submit" name="submit" value="Go">
   </form>
-  | <a href="{% url "apps.gcd.views.search.advanced_search" %}">Advanced Search</a> |
+  | <a href="{% url "advanced_search" %}">Advanced Search</a> |
 {% if user.is_authenticated %}
   {% if MYCOMICS %}
   <a href="{% url "collections_list" %}">Collections</a> |

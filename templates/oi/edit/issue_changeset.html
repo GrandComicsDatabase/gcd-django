@@ -81,7 +81,7 @@
     </td>
   </tr>
   {% endif %}
-  {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count = 1 and changeset.reprintrevisions.count = 0 %}
+  {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
   <tr>
     <td colspan="2">
       <form class="changeset" method="GET"
@@ -131,7 +131,7 @@
   {% for issuerevision in changeset.issuerevisions.all %}
     {% if changeset.issuerevisions.count > 1 %}
       {{ issuerevision.full_name }}
-      {% if issuerevision.story_set.count = 0 %}
+      {% if issuerevision.story_set.count == 0 %}
 <p>No stories for this issue/variant.</p>
       {% endif %}
     {% endif %}
