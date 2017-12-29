@@ -533,6 +533,8 @@ def add_issues_to_collection(request, collection_id, issues, redirect,
 
 @login_required
 def add_single_issue_to_collection(request, issue_id):
+    if not request.POST:
+        raise ErrorWithMessage("No collection was selected.")
     issue = Issue.objects.get(id=issue_id)
     collection, error_return = get_collection_for_owner(request,
                    collection_id=int(request.POST['collection_id']))

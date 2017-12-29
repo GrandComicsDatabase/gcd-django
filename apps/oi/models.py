@@ -2041,13 +2041,11 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
             self.parent.indicia_publisher_count = \
                 F('indicia_publisher_count') + 1
             self.parent.save()
-            update_count('indicia publishers', 1, country=self.country)
 
         elif self.deleted:
             self.parent.indicia_publisher_count = \
                 F('indicia_publisher_count') - 1
             self.parent.save()
-            update_count('indicia publishers', -1, country=ipub.country)
             ipub.delete()
             return
 
@@ -2334,10 +2332,8 @@ class BrandRevision(PublisherRevisionBase):
         brand = self.brand
         if brand is None:
             brand = Brand()
-            update_count('brands', 1)
 
         elif self.deleted:
-            update_count('brands', -1)
             brand.delete()
             return
 

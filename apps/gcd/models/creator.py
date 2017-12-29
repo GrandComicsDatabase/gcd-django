@@ -3,7 +3,7 @@ from operator import itemgetter
 from django.core import urlresolvers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.fields import GenericRelation
 
 from .gcddata import GcdData
 from .image import Image
@@ -201,7 +201,7 @@ class Creator(GcdData):
     death_city = models.CharField(max_length=200)
     death_city_uncertain = models.BooleanField(default=False)
 
-    portrait = generic.GenericRelation(Image)
+    portrait = GenericRelation(Image)
     # TODO needed this way ?
     schools = models.ManyToManyField('School',
                                      related_name='schoolinformation',
@@ -213,7 +213,7 @@ class Creator(GcdData):
                                      null=True)
     # creators roles
     bio = models.TextField()
-    sample_scan = generic.GenericRelation(Image)
+    sample_scan = GenericRelation(Image)
     notes = models.TextField()
 
     data_source = models.ManyToManyField(DataSource)

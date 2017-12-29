@@ -58,7 +58,7 @@
       <select name="id" id="id">
     {% for other_issue in series.active_base_issues_variant_count %}
         <option value="{{ other_issue.id }}"
-      {% if issue = other_issue or issue.variant_of = other_issue %}
+      {% if issue == other_issue or issue.variant_of == other_issue %}
                 selected
       {% endif %}>{{ other_issue.issue_descriptor }}
       {% if other_issue.variant_count %}*{{ other_issue.variant_count|add:1 }}{% endif %}

@@ -26,7 +26,6 @@
                 {% endif %}
             {% endfor %}
         </select> &nbsp;
-
         
 {% comment %}
         <label>Source:</label>
@@ -45,7 +44,7 @@
         <input type="button" id="add_name_divison_id"
                 class="add_name_class" value="Add New"
                 name="add_name_divison">
-        <br><br>
+        <br>
     </div>
 </div>
 
@@ -95,6 +94,10 @@
             <br><br>
         </div>
     {% endfor %}
+</div>
+<div>
+<span class="helptext"> All known names for a creator can be recorded, where we record various types of name. In particular pen name for any known signature, alias, etc., or the full name separated into the name(s) given at birth and the family name.</span>
+        <br><br>
 </div>
     <table class="editing">
     {{ birth_date_form }}

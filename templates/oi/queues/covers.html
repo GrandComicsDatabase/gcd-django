@@ -40,7 +40,7 @@
         {% endif %}
         {{ cover.created }}<br>
         {{ cover.changeset.indexer.indexer|absolute_url }}<br>
-        {% if cover.changeset.state = states.REVIEWING or cover.changeset.state = states.DISCUSSED %}
+        {% if cover.changeset.state == states.REVIEWING or cover.changeset.state == states.DISCUSSED %}
           reviewed by {{ cover.changeset.approver.indexer|absolute_url }}
         {% else %}
             {% if perms.indexer.can_approve %}
