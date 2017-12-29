@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.db import models
 from django.core import urlresolvers
-from django.db.models import Sum, Count
+from django.db.models import Sum
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.safestring import mark_safe
@@ -11,9 +11,10 @@ from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
-from publisher import IndiciaPublisher, Brand
-from series import Series
-from image import Image
+from .gcddata import GcdData
+from .publisher import IndiciaPublisher, Brand
+from .image import Image
+from .story import StoryType, STORY_TYPES
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -25,6 +26,7 @@ INDEXED = {
     'partial': 2,
     'ten_percent': 3,
 }
+
 
 def issue_descriptor(issue):
     if issue.number == '[nn]' and issue.series.is_singleton:
@@ -41,7 +43,8 @@ def issue_descriptor(issue):
         return u'%s#%s%s' % (volume, issue.number, title)
     return issue.number + title
 
-class Issue(models.Model):
+
+class Issue(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['series', 'sort_code']
@@ -54,7 +57,8 @@ class Issue(models.Model):
     volume = models.CharField(max_length=50, db_index=True)
     no_volume = models.BooleanField(default=False, db_index=True)
     volume_not_printed = models.BooleanField(default=False)
-    display_volume_with_number = models.BooleanField(default=False, db_index=True)
+    display_volume_with_number = models.BooleanField(default=False,
+                                                     db_index=True)
     isbn = models.CharField(max_length=32, db_index=True)
     no_isbn = models.BooleanField(default=False, db_index=True)
     valid_isbn = models.CharField(max_length=13, db_index=True)
@@ -77,7 +81,8 @@ class Issue(models.Model):
 
     # Price, page count and format fields
     price = models.CharField(max_length=255)
-    page_count = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+    page_count = models.DecimalField(max_digits=10, decimal_places=3,
+                                     null=True)
     page_count_uncertain = models.BooleanField(default=False)
 
     editing = models.TextField()
@@ -87,10 +92,16 @@ class Issue(models.Model):
     keywords = TaggableManager()
 
     # Series and publisher links
-    series = models.ForeignKey(Series)
+    series = models.ForeignKey('Series')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
+    brand = models.ForeignKey(Brand, null=True)
+    no_brand = models.BooleanField(default=False, db_index=True)
     image_resources = GenericRelation(Image)
+
+    # In production, this is a tinyint(1) because the set of numbers
+    # is very small.  But syncdb produces an int(11).
+    is_indexed = models.IntegerField(default=0, db_index=True)
 
     @property
     def indicia_image(self):
@@ -101,9 +112,6 @@ class Issue(models.Model):
         else:
             return None
 
-    brand = models.ForeignKey(Brand, null=True)
-    no_brand = models.BooleanField(default=False, db_index=True)
-
     @property
     def soo_image(self):
         img = Image.objects.filter(object_id=self.id, deleted=False,
@@ -112,18 +120,6 @@ class Issue(models.Model):
             return img.get()
         else:
             return None
-
-    # In production, this is a tinyint(1) because the set of numbers
-    # is very small.  But syncdb produces an int(11).
-    is_indexed = models.IntegerField(default=0, db_index=True)
-
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True, db_index=True)
-
-    deleted = models.BooleanField(default=False, db_index=True)
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
@@ -160,14 +156,14 @@ class Issue(models.Model):
 
     def variant_covers(self):
         """ returns the images from the variant issues """
-        from cover import Cover
+        from .cover import Cover
         if self.variant_of:
-            variant_issues = list(self.variant_of.variant_set\
-                                      .exclude(id=self.id)\
-                                      .exclude(deleted=True)\
+            variant_issues = list(self.variant_of.variant_set
+                                      .exclude(id=self.id)
+                                      .exclude(deleted=True)
                                       .values_list('id', flat=True))
         else:
-            variant_issues = list(self.variant_set.exclude(deleted=True)\
+            variant_issues = list(self.variant_set.exclude(deleted=True)
                                       .values_list('id', flat=True))
         variant_covers = Cover.objects.filter(issue__id__in=variant_issues)\
                                       .exclude(deleted=True)
@@ -179,7 +175,7 @@ class Issue(models.Model):
         return self.active_covers(), self.variant_covers()
 
     def has_covers(self):
-        return self.can_have_cover() and self.active_covers().count() > 0
+        return self.can_have_cover() and self.active_covers().exists()
 
     def can_have_cover(self):
         if self.series.is_comics_publication:
@@ -212,7 +208,6 @@ class Issue(models.Model):
 
     # determine and set whether something has been indexed at all or not
     def set_indexed_status(self):
-        from story import StoryType
         if not self.variant_of:
             is_indexed = INDEXED['skeleton']
             if self.page_count > 0:
@@ -265,13 +260,7 @@ class Issue(models.Model):
 
         return [prev_issue, next_issue]
 
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
-
     def has_reprints(self):
-        from story import STORY_TYPES
         """Simplifies UI checks for conditionals.  notes and reprint fields"""
         return self.from_reprints.count() or \
                self.to_reprints.exclude(target__type__id=STORY_TYPES['promo']).count() or \

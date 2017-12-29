@@ -9,8 +9,11 @@ from django.utils.html import conditional_escape as esc
 from taggit.managers import TaggableManager
 
 from apps.stddata.models import Country, Language
-from apps.gcd.models.publisher import Publisher, Brand, IndiciaPublisher
-from apps.gcd.models.seriesbond import SeriesRelativeBond
+from .gcddata import GcdData
+from .publisher import Publisher, Brand, IndiciaPublisher
+from .issue import Issue, INDEXED
+from .cover import Cover
+from .seriesbond import SeriesRelativeBond
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -28,7 +31,7 @@ class SeriesPublicationType(models.Model):
     def __unicode__(self):
         return self.name
 
-class Series(models.Model):
+class Series(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['sort_name', 'year_began']
@@ -46,7 +49,8 @@ class Series(models.Model):
     binding = models.CharField(max_length=255, default=u'')
     publishing_format = models.CharField(max_length=255, default=u'')
 
-    publication_type = models.ForeignKey(SeriesPublicationType, null=True, blank=True)
+    publication_type = models.ForeignKey(SeriesPublicationType, null=True,
+                                         blank=True)
     notes = models.TextField()
     keywords = TaggableManager()
 
@@ -58,13 +62,10 @@ class Series(models.Model):
     publication_dates = models.CharField(max_length=255)
 
     first_issue = models.ForeignKey('Issue', null=True,
-      related_name='first_issue_series_set')
+                                    related_name='first_issue_series_set')
     last_issue = models.ForeignKey('Issue', null=True,
-      related_name='last_issue_series_set')
+                                   related_name='last_issue_series_set')
     issue_count = models.IntegerField()
-
-    # Publication notes may be merged with regular notes in the near future.
-    publication_notes = models.TextField()
 
     # Fields for tracking relationships between series.
     # Crossref fields don't appear to really be used- nearly all null.
@@ -84,24 +85,12 @@ class Series(models.Model):
     # Fields related to cover image galleries.
     has_gallery = models.BooleanField(default=False, db_index=True)
 
-    # Fields related to indexing activities.
-    # Only "reserved" is in active use.  "open_reserve" is a legacy field
-    # used only by migration scripts.
-    reserved = models.BooleanField(default=False, db_index=True)
-    open_reserve = models.IntegerField(null=True)
-
     # Country and Language info.
     country = models.ForeignKey(Country)
     language = models.ForeignKey(Language)
 
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher)
-
-    # Fields related to change management.
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-
-    deleted = models.BooleanField(default=False, db_index=True)
 
     def has_keywords(self):
         return self.keywords.exists()
@@ -121,17 +110,11 @@ class Series(models.Model):
 
         Does *not* automatically call has_series_bonds.
         """
-        bonds = []
         bonds = [SeriesRelativeBond(self, b)
                  for b in self.to_series_bond.filter(**filter_args)]
         bonds.extend([SeriesRelativeBond(self, b)
                       for b in self.from_series_bond.filter(**filter_args)])
         return bonds
-
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
 
     def deletable(self):
         active = self.issue_revisions.filter(changeset__state__in=states.ACTIVE)
@@ -145,6 +128,16 @@ class Series(models.Model):
         return self.issue_set.exclude(deleted=True)
 
     def active_base_issues(self):
+        """
+        All base issues, plus variants whose base is not in this series.
+
+        For the purpose of ensuring that each logical issue has
+        a representative in a list, logical issues that do not have
+        a base issue in this series need to be represented by a variant.
+        """
+        # TODO:  What happens if there are two variants in this series
+        #        of the same logical issue that has its base in a
+        #        different series?
         return self.active_issues().exclude(variant_of__series=self)
 
     def active_base_issues_variant_count(self):
@@ -217,26 +210,23 @@ class Series(models.Model):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_series',
-            kwargs={'series_id': self.id } )
+            kwargs={'series_id': self.id})
 
     def marked_scans_count(self):
-        from apps.gcd.models.cover import Cover
         return Cover.objects.filter(issue__series=self, marked=True).count()
 
     def scan_count(self):
-        from apps.gcd.models.cover import Cover
         return Cover.objects.filter(issue__series=self, deleted=False).count()
 
     def issues_without_covers(self):
-        from apps.gcd.models.issue import Issue
         issues = Issue.objects.filter(series=self).exclude(deleted=True)
-        return issues.exclude(cover__isnull=False, cover__deleted=False).distinct()
+        return issues.exclude(cover__isnull=False, cover__deleted=False)\
+                     .distinct()
 
     def scan_needed_count(self):
         return self.issues_without_covers().count() + self.marked_scans_count()
 
     def issue_indexed_count(self):
-        from apps.gcd.models.issue import INDEXED
         return self.active_base_issues()\
                    .exclude(is_indexed=INDEXED['skeleton']).count()
 
