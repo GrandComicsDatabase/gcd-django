@@ -182,6 +182,8 @@ def __format_credit(story, credit):
 
     if (credit == 'job_number'):
         label = _('Job Number:')
+    elif (credit == 'first_line'):
+        label = _('First Line of Dialogue:')
     else:
         label = _(credit.title()) + ':'
 
@@ -200,7 +202,7 @@ def __format_credit(story, credit):
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
-    if credit == 'genre':
+    if credit == 'genre' or credit == 'first_line':
         dt += ' short'
         dd += ' short'
     dt += '">'
@@ -357,14 +359,17 @@ def format_page_count(page_count):
 
 
 @register.filter
-def show_title(story):
+def show_title(story, use_first_line=False):
     """
     Return a properly formatted title.
     """
     if story is None:
         return u''
     if story.title == '':
-        return u'[no title indexed]'
+        if use_first_line and story.first_line:
+            return u'["%s"]' % story.first_line
+        else:
+            return u'[no title indexed]'
     if story.title_inferred:
         return u'[%s]' % story.title
     return story.title
