@@ -1304,6 +1304,12 @@ class RevisionManager(models.Manager):
 
         return revision
 
+    def active_set(self):
+        """
+        Get the active revision as a query set, which might be empty
+        """
+        return self.filter(changeset__state__in=states.ACTIVE)
+
     def active(self):
         """
         Get the active revision, assuming that there is one.
@@ -1311,7 +1317,7 @@ class RevisionManager(models.Manager):
         Throws the DoesNotExist or MultipleObjectsReturned exceptions on
         the appropriate Revision subclass, as it calls get() underneath.
         """
-        return self.get(changeset__state__in=states.ACTIVE)
+        return self.active_set().get()
 
 
 class Revision(models.Model):
@@ -3686,7 +3692,7 @@ class IssueRevision(Revision):
         if self.issue is None:
             return ReprintToIssue.objects.none()
         from_reprints = self.issue.from_reprints.all()
-        if self.issue.target_reprint_revisions.active()\
+        if self.issue.target_reprint_revisions.active_set()\
                .filter(origin_issue=None).count() \
                 or RevisionLock.objects.filter(
                   object_id__in=from_reprints.values_list(
@@ -3696,7 +3702,7 @@ class IssueRevision(Revision):
                                 .filter(origin_issue=None)
             if not preview:
                 new_revisions |= \
-                    self.issue.target_reprint_revisions.active()\
+                    self.issue.target_reprint_revisions.active_set()\
                         .filter(in_type=None, origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
@@ -3716,7 +3722,7 @@ class IssueRevision(Revision):
         if self.issue is None:
             return IssueReprint.objects.none()
         from_issue_reprints = self.issue.from_issue_reprints.all()
-        if self.issue.target_reprint_revisions.active()\
+        if self.issue.target_reprint_revisions.active_set()\
                .exclude(origin_issue=None).count() \
                 or RevisionLock.objects.filter(
                   object_id__in=from_issue_reprints.values_list(
@@ -3726,7 +3732,7 @@ class IssueRevision(Revision):
                                 .exclude(origin_issue=None)
             if not preview:
                 new_revisions |= \
-                    self.issue.target_reprint_revisions.active()\
+                    self.issue.target_reprint_revisions.active_set()\
                         .filter(in_type=None)\
                         .exclude(origin_issue=None)
             else:
@@ -3747,7 +3753,7 @@ class IssueRevision(Revision):
         if self.issue is None:
             return ReprintFromIssue.objects.none()
         to_reprints = self.issue.to_reprints.all()
-        if self.issue.origin_reprint_revisions.active()\
+        if self.issue.origin_reprint_revisions.active_set()\
                .filter(target_issue=None).count() \
                 or RevisionLock.objects.filter(
                   object_id__in=to_reprints.values_list(
@@ -3757,7 +3763,7 @@ class IssueRevision(Revision):
                                 .filter(target_issue=None)
             if not preview:
                 new_revisions |= \
-                    self.issue.origin_reprint_revisions.active()\
+                    self.issue.origin_reprint_revisions.active_set()\
                         .filter(in_type=None, target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
@@ -3778,7 +3784,7 @@ class IssueRevision(Revision):
         if self.issue is None:
             return IssueReprint.objects.none()
         to_issue_reprints = self.issue.to_issue_reprints.all()
-        if self.issue.origin_reprint_revisions.active()\
+        if self.issue.origin_reprint_revisions.active_set()\
                .exclude(target_issue=None).count() \
                 or RevisionLock.objects.filter(
                   object_id__in=to_issue_reprints.values_list(
@@ -3788,7 +3794,7 @@ class IssueRevision(Revision):
                                 .exclude(target_issue=None)
             if not preview:
                 new_revisions |= \
-                    self.issue.origin_reprint_revisions.active()\
+                    self.issue.origin_reprint_revisions.active_set()\
                         .filter(in_type=None)\
                         .exclude(target_issue=None)
             else:
@@ -4446,8 +4452,8 @@ class IssueRevision(Revision):
 
 
 def get_story_field_list():
-    return ['sequence_number', 'title', 'title_inferred', 'type',
-            'feature', 'genre', 'job_number',
+    return ['sequence_number', 'title', 'title_inferred', 'first_line',
+            'type', 'feature', 'genre', 'job_number',
             'script', 'no_script', 'pencils', 'no_pencils', 'inks',
             'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
             'editing', 'no_editing', 'page_count', 'page_count_uncertain',
@@ -4483,6 +4489,7 @@ class StoryRevisionManager(RevisionManager):
             # copied fields:
             title=story.title,
             title_inferred=story.title_inferred,
+            first_line=story.first_line,
             feature=story.feature,
             page_count=story.page_count,
             page_count_uncertain=story.page_count_uncertain,
@@ -4529,6 +4536,7 @@ class StoryRevision(Revision):
 
     title = models.CharField(max_length=255, blank=True)
     title_inferred = models.BooleanField(default=False)
+    first_line = models.CharField(max_length=255, blank=True)
     feature = models.CharField(max_length=255, blank=True)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
@@ -4634,6 +4642,7 @@ class StoryRevision(Revision):
         return {
             'title': '',
             'title_inferred': '',
+            'first_line': '',
             'feature': '',
             'page_count': None,
             'page_count_uncertain': False,
@@ -4672,7 +4681,7 @@ class StoryRevision(Revision):
         self._seen_title = False
 
     def _imps_for(self, field_name):
-        if field_name in ('sequence_number', 'type', 'feature', 'genre',
+        if field_name in ('first_line', 'type', 'feature', 'genre',
                           'characters', 'synopsis', 'job_number',
                           'reprint_notes', 'notes', 'keywords'):
             return 1
@@ -4725,6 +4734,7 @@ class StoryRevision(Revision):
             # final state of the story.
             self.title = self.story.title
             self.title_inferred = self.story.title_inferred
+            self.first_line = self.first_line
             self.feature = self.story.feature
             self.page_count = self.story.page_count
             self.page_count_uncertain = self.story.page_count_uncertain
@@ -4774,6 +4784,7 @@ class StoryRevision(Revision):
 
         story.title = self.title
         story.title_inferred = self.title_inferred
+        story.first_line = self.first_line
         story.feature = self.feature
         if hasattr(story, 'issue') and (story.issue != self.issue):
             if story.issue.series.language != self.issue.series.language or \
@@ -4871,7 +4882,7 @@ class StoryRevision(Revision):
                        .filter(changeset__id=self.changeset_id,
                                origin_issue=None)
         from_reprints = self.story.from_reprints.all()
-        if self.story.target_reprint_revisions.active()\
+        if self.story.target_reprint_revisions.active_set()\
                .filter(origin_issue=None).count() \
                 or RevisionLock.objects.filter(
                   object_id__in=from_reprints.values_list(
@@ -4881,7 +4892,7 @@ class StoryRevision(Revision):
                                 .filter(origin_issue=None)
             if not preview:
                 new_revisions |= \
-                    self.story.target_reprint_revisions.active()\
+                    self.story.target_reprint_revisions.active_set()\
                         .filter(in_type=None, origin_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
@@ -4903,7 +4914,7 @@ class StoryRevision(Revision):
                        .filter(changeset__id=self.changeset_id)\
                        .exclude(origin_issue=None)
         from_issue_reprints = self.story.from_issue_reprints.all()
-        if self.story.target_reprint_revisions.active()\
+        if self.story.target_reprint_revisions.active_set()\
                .exclude(origin_issue=None).count() \
                 or RevisionLock.objects.filter(
                   object_id__in=from_issue_reprints.values_list(
@@ -4913,7 +4924,7 @@ class StoryRevision(Revision):
                                 .exclude(origin_issue=None)
             if not preview:
                 new_revisions |= \
-                    self.story.target_reprint_revisions.active()\
+                    self.story.target_reprint_revisions.active_set()\
                         .filter(in_type=None)\
                         .exclude(origin_issue=None)
             else:
@@ -4938,7 +4949,7 @@ class StoryRevision(Revision):
                                target_issue=None)
 
         to_reprints = self.story.to_reprints.all()
-        if self.story.origin_reprint_revisions.active()\
+        if self.story.origin_reprint_revisions.active_set()\
                .filter(target_issue=None).count() \
                 or RevisionLock.objects.filter(
                   object_id__in=to_reprints.values_list(
@@ -4948,7 +4959,7 @@ class StoryRevision(Revision):
                                 .filter(target_issue=None)
             if not preview:
                 new_revisions |= \
-                    self.story.origin_reprint_revisions.active()\
+                    self.story.origin_reprint_revisions.active_set()\
                         .filter(in_type=None, target_issue=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
@@ -4970,7 +4981,7 @@ class StoryRevision(Revision):
                        .filter(changeset__id=self.changeset_id)\
                        .exclude(target_issue=None)
         to_issue_reprints = self.story.to_issue_reprints.all()
-        if self.story.origin_reprint_revisions.active()\
+        if self.story.origin_reprint_revisions.active_set()\
                .exclude(target_issue=None).count() \
                 or RevisionLock.objects.filter(
                   object_id__in=to_issue_reprints.values_list(
@@ -4981,7 +4992,7 @@ class StoryRevision(Revision):
                     .exclude(target_issue=None)
             if not preview:
                 new_revisions |= \
-                    self.story.origin_reprint_revisions.active()\
+                    self.story.origin_reprint_revisions.active_set()\
                         .filter(in_type=None)\
                         .exclude(target_issue=None)
             else:

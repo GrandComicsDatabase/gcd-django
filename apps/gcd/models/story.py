@@ -57,6 +57,7 @@ class Story(GcdData):
     # Core story fields.
     title = models.CharField(max_length=255)
     title_inferred = models.BooleanField(default=False, db_index=True)
+    first_line = models.CharField(max_length=255, default='')
     feature = models.CharField(max_length=255)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
