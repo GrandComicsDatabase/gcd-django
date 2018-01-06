@@ -3,7 +3,8 @@ from django.core import urlresolvers
 
 from taggit.managers import TaggableManager
 
-from .gcddata import GcdData
+from series import Series
+from issue import Issue
 
 STORY_TYPES = {
     'insert': 11,
@@ -25,11 +26,9 @@ AD_TYPES = [2, 16]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
 
-
 class StoryTypeManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
-
 
 class StoryType(models.Model):
     class Meta:
@@ -48,8 +47,7 @@ class StoryType(models.Model):
     def __unicode__(self):
         return self.name
 
-
-class Story(GcdData):
+class Story(models.Model):
     class Meta:
         app_label = 'gcd'
         ordering = ['sequence_number']
@@ -57,7 +55,6 @@ class Story(GcdData):
     # Core story fields.
     title = models.CharField(max_length=255)
     title_inferred = models.BooleanField(default=False, db_index=True)
-    first_line = models.CharField(max_length=255, default='')
     feature = models.CharField(max_length=255)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
@@ -89,7 +86,19 @@ class Story(GcdData):
     keywords = TaggableManager()
 
     # Fields from issue.
-    issue = models.ForeignKey('Issue')
+    issue = models.ForeignKey(Issue)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True, db_index=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def has_credits(self):
         """Simplifies UI checks for conditionals.  Credit fields.

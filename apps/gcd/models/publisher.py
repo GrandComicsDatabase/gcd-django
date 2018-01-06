@@ -8,8 +8,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from taggit.managers import TaggableManager
 
 from apps.oi import states
-from .gcddata import GcdData
-from .image import Image
+from image import Image
 
 def _display_year(year, flag):
     if year:
@@ -17,7 +16,7 @@ def _display_year(year, flag):
     else:
         return '?'
 
-class BasePublisher(GcdData):
+class BasePublisher(models.Model):
     class Meta:
         abstract = True
 
@@ -31,8 +30,20 @@ class BasePublisher(GcdData):
     keywords = TaggableManager()
     url = models.URLField(max_length=255, blank=True, default=u'')
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
     def has_keywords(self):
         return self.keywords.exists()
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return self.name
@@ -45,10 +56,17 @@ class Publisher(BasePublisher):
     country = models.ForeignKey(Country)
 
     # Cached counts.
+    imprint_count = models.IntegerField(default=0)
     brand_count = models.IntegerField(default=0, db_index=True)
     indicia_publisher_count = models.IntegerField(default=0, db_index=True)
     series_count = models.IntegerField(default=0)
     issue_count = models.IntegerField(default=0)
+
+    # Deprecated fields about relating publishers/imprints to each other
+    # Probably can be removed from model definition
+    is_master = models.BooleanField(default=False, db_index=True)
+    parent = models.ForeignKey('self', null=True,
+                               related_name='imprint_set')
 
     def active_brand_groups(self):
         return self.brandgroup_set.exclude(deleted=True)
@@ -192,6 +210,8 @@ class Brand(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
+    # TODO parent will be removed after the introduction of two layer scheme
+    parent = models.ForeignKey(Publisher, blank=True, null=True)
     group = models.ManyToManyField(BrandGroup, blank=True,
                                    db_table='gcd_brand_emblem_group')
     issue_count = models.IntegerField(default=0)

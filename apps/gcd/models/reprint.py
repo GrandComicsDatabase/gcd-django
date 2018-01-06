@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.db import models
+from story import Story
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
-
-from .story import Story
 
 class Reprint(models.Model):
     class Meta:

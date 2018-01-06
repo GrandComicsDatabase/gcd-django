@@ -39,7 +39,7 @@ Highlighted fields represent <span class="added_highlight">added</span>,
   {% endif %}
   {% include 'oi/bits/compare_issue.html' %}
   {% if changeset.change_type == CTYPES.variant_add or changeset.change_type == CTYPES.two_issues %}
-    {% if changeset.change_type == CTYPES.variant_add and not revision.ordered_story_revisions.0.added %}
+    {% if changeset.change_type == CTYPES.variant_add and revision.ordered_story_revisions.0.source %}
 <h2>
 The above sequence was moved from the following issue.
 </h2>

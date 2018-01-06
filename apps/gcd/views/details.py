@@ -367,16 +367,27 @@ def show_brand(request, brand, preview=False):
                              'gcd/details/brand.html',
                              vars)
 
-
 def imprint(request, imprint_id):
     """
-    Redirect to the change history page for an Imprint, which all are deleted.
+    Display the details page for an Imprint.
     """
-    imprint = get_object_or_404(Publisher, id = imprint_id, deleted=True)
+    imprint = get_object_or_404(Publisher, id = imprint_id, parent__isnull=False)
+    if imprint.parent.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'publisher', 'id': imprint.parent_id}))
 
-    return HttpResponseRedirect(urlresolvers.reverse('change_history',
-      kwargs={'model_name': 'imprint', 'id': imprint_id}))
+    if imprint.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'imprint', 'id': imprint_id}))
 
+    imprint_series = imprint.imprint_series_set.exclude(deleted=True) \
+      .order_by('sort_name')
+
+    vars = { 'publisher' : imprint, 'error_subject': '%s' % imprint }
+    return paginate_response(request,
+                             imprint_series,
+                             'gcd/details/publisher.html',
+                             vars)
 
 def brands(request, publisher_id):
     """
@@ -630,7 +641,7 @@ def change_history(request, model_name, id):
                           'image', 'series_bond', 'creator', 'creator_membership',
                           'creator_award', 'creator_art_influence','creator_non_comic_work']:
         if not (model_name == 'imprint' and
-          get_object_or_404(Publisher, id=id).deleted):
+          get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('indexer/error.html', {
               'error_text': 'There is no change history for this type of object.'},
               context_instance=RequestContext(request))
@@ -644,7 +655,7 @@ def change_history(request, model_name, id):
     next_issue = None
 
     if model_name == 'imprint':
-        object = get_object_or_404(Publisher, id=id)
+        object = get_object_or_404(Publisher, id=id, is_master=False)
         filter_string = 'publisherrevisions__publisher'
 
     else:
@@ -952,8 +963,8 @@ def daily_changes(request, show_date=None):
     publisher_revisions = list(PublisherRevision.objects.filter(
       changeset__change_type=CTYPES['publisher'], **args)\
       .exclude(changeset__indexer=anon).values_list('publisher', flat=True))
-    publishers = Publisher.objects.filter(id__in=publisher_revisions)\
-                                  .distinct().select_related('country')
+    publishers = Publisher.objects.filter(is_master=1,
+      id__in=publisher_revisions).distinct().select_related('country')
 
     brand_group_revisions = list(BrandGroupRevision.objects.filter(
       changeset__change_type=CTYPES['brand_group'], **args)\

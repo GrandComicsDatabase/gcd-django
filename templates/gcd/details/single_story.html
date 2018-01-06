@@ -57,7 +57,6 @@
         {% if story.has_content %}
         <hr class="content_header"></hr>
         <dl class="contents">
-            {{ story|show_credit:"first_line" }}
             {{ story|show_credit:"genre" }}
             {{ story|show_credit:"characters"|linebreaksbr }}
             {{ story|show_credit:"synopsis"|linebreaksbr }}

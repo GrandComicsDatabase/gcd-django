@@ -5,8 +5,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 
-from .gcddata import GcdData
-from .image import Image
+from apps.gcd.models import Image
 from apps.stddata.models import Country, Date
 from apps.oi import states
 
@@ -83,7 +82,7 @@ class NameType(models.Model):
         return '%s' % unicode(self.type)
 
 
-class CreatorNameDetail(GcdData):
+class CreatorNameDetail(models.Model):
     """
     Indicates the various names of creator
     Multiple Name could be checked per creator.
@@ -98,6 +97,18 @@ class CreatorNameDetail(GcdData):
     name = models.CharField(max_length=255, db_index=True)
     creator = models.ForeignKey('Creator', related_name='creator_names')
     type = models.ForeignKey('NameType', related_name='nametypes', null=True)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s - %s(%s)' % (unicode(self.creator),
@@ -122,7 +133,7 @@ class SourceType(models.Model):
         return unicode(self.type)
 
 
-class DataSource(GcdData):
+class DataSource(models.Model):
     """
     Indicates the various sources of creator data
     """
@@ -136,6 +147,18 @@ class DataSource(GcdData):
     source_type = models.ForeignKey(SourceType)
     source_description = models.TextField()
     field = models.CharField(max_length=256)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s - %s' % (unicode(self.field),
@@ -168,7 +191,7 @@ class CreatorManager(models.Manager):
     pass
 
 
-class Creator(GcdData):
+class Creator(models.Model):
     class Meta:
         app_label = 'gcd'
         ordering = ('gcd_official_name', 'created',)
@@ -217,6 +240,13 @@ class Creator(GcdData):
     notes = models.TextField()
 
     data_source = models.ManyToManyField(DataSource)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
 
     def _portrait(self):
         content_type = ContentType.objects.get_for_model(self)
@@ -323,7 +353,7 @@ class Creator(GcdData):
         return '%s' % unicode(self.gcd_official_name)
 
 
-class CreatorRelation(GcdData):
+class CreatorRelation(models.Model):
     """
     Relations between creators to relate any GCD Official name to any other
     name.
@@ -343,6 +373,18 @@ class CreatorRelation(GcdData):
                                       related_name='relation_type')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def __unicode__(self):
         return '%s >Relation< %s :: %s' % (unicode(self.from_creator),
@@ -367,7 +409,7 @@ class School(models.Model):
         return unicode(self.school_name)
 
 
-class CreatorSchool(GcdData):
+class CreatorSchool(models.Model):
     """
     record the schools creators attended
     """
@@ -386,6 +428,18 @@ class CreatorSchool(GcdData):
     school_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def deletable(self):
         return self.creator.pending_deletion() is False
@@ -416,7 +470,7 @@ class Degree(models.Model):
         return unicode(self.degree_name)
 
 
-class CreatorDegree(GcdData):
+class CreatorDegree(models.Model):
     """
     record the degrees creators received
     """
@@ -435,6 +489,18 @@ class CreatorDegree(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
+
     def deletable(self):
         return self.creator.pending_deletion() is False
 
@@ -448,7 +514,7 @@ class CreatorDegree(GcdData):
                             unicode(self.degree.degree_name))
 
 
-class CreatorArtInfluence(GcdData):
+class CreatorArtInfluence(models.Model):
     """
     record the Name of artistic influences for creators
     """
@@ -465,12 +531,24 @@ class CreatorArtInfluence(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
     # only one of the two will be set
     def influence(self):
         if self.influence_link:
             return self.influence_link.gcd_official_name
         else:
             return self.influence_name
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def deletable(self):
         return self.creator.pending_deletion() is False
@@ -500,7 +578,7 @@ class MembershipType(models.Model):
         return unicode(self.type)
 
 
-class CreatorMembership(GcdData):
+class CreatorMembership(models.Model):
     """
     record societies and other organizations related to their
     artistic profession that creators held memberships in
@@ -521,6 +599,18 @@ class CreatorMembership(GcdData):
     membership_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -546,7 +636,7 @@ class Award(models.Model):
         return unicode(self.name)
 
 
-class CreatorAward(GcdData):
+class CreatorAward(models.Model):
     """
     record any awards and honors a creator received
     """
@@ -565,6 +655,18 @@ class CreatorAward(GcdData):
     award_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def deletable(self):
         return self.creator.pending_deletion() is False
@@ -610,7 +712,7 @@ class NonComicWorkRole(models.Model):
         return unicode(self.role_name)
 
 
-class CreatorNonComicWork(GcdData):
+class CreatorNonComicWork(models.Model):
     """
     record the non-comics work of comics creators
     """
@@ -630,6 +732,18 @@ class CreatorNonComicWork(GcdData):
     work_urls = models.TextField()
     data_source = models.ManyToManyField(DataSource)
     notes = models.TextField()
+
+    # Fields related to change management.
+    reserved = models.BooleanField(default=False, db_index=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    deleted = models.BooleanField(default=False, db_index=True)
+
+    def delete(self):
+        self.deleted = True
+        self.reserved = False
+        self.save()
 
     def deletable(self):
         return self.creator.pending_deletion() is False
