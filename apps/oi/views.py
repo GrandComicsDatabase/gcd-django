@@ -3755,8 +3755,7 @@ def undo_move_cover(request, id, cover_id):
         return _cant_get(request)
 
     cover_revision = get_object_or_404(CoverRevision, id=cover_id, changeset=changeset)
-    cover_revision.cover.reserved=False
-    cover_revision.cover.save()
+    _free_revision_lock(cover_revision.cover)
     cover_revision.delete()
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',

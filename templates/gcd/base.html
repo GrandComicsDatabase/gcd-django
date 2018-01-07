@@ -10,7 +10,7 @@
 Having trouble with block / ifnotequal interactions.  Need to investigate.
 For now, just a simple single block for all CSS, despite redundancy.
 {% endcomment %}
-{% compress css %}
+{% compress css inline %}
 {% block css %}{% endblock %}
 {% endcompress %}
 {% block css_raw %}{% endblock %}
