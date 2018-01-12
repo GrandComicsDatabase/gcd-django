@@ -7,6 +7,23 @@
   <script type="application/javascript">
       var selected_collection;
   </script>
+  <script>
+    function remove_collection(selected_collection_id, collection_name, items_count) {
+        BootstrapDialog.confirm({
+            title: '<h4 class="modal-title">{% trans "Remove Collection" %}</h4>',
+            message: '{% trans "Do you want to remove the collection <b>" %}'+collection_name+'</b> ? The '+items_count+' items will be removed.',
+            closable: true,
+            btnCancelLabel: '{% trans "Cancel" %}',
+            btnOKLabel: '{% trans "Confirm" %}',
+            btnOKClass: 'btn-primary',
+            callback: function(result) {
+                if(result) {
+                    window.location.href='{% url "delete_collection" %}'+selected_collection_id;
+                };
+            }
+            });
+        }
+  </script>
   <div id="remove-collection" class="modal fade" tabindex="-1" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-content">

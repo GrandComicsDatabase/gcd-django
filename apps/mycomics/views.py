@@ -129,7 +129,7 @@ def delete_collection(request, collection_id):
     #Since above command doesn't delete any CollectionItems I just delete here
     # all collection items not belonging now to any collection.
     CollectionItem.objects.filter(collections=None).delete()
-    messages.success(request, _('Collection deleted.'))
+    messages.success(request, _('Collection <b>%s</b> deleted.' % collection.name))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 
@@ -279,7 +279,8 @@ def delete_item(request, item_id, collection_id):
 
     collection.items.remove(item)
     messages.success(request,
-                     _(u"Item removed from %s" % collection))
+                     _(u"Item <b>%s</b> removed from %s" % (item.issue.full_name(),
+                                                            collection)))
     if not item.collections.count():
         if item.acquisition_date:
             item.acquisition_date.delete()
@@ -317,8 +318,12 @@ def move_item(request, item_id, collection_id):
             messages.success(request, _("Item moved between collections"))
             if to_collection.own_used and to_collection.own_default != None:
                 if to_collection.own_default != item.own:
-                    messages.warning(request, _("Own/want default for new "
-                                     "collection differs from item status."))
+                    item.own = to_collection.own_default
+                    item.save()
+                    messages.warning(request,
+                                     _("Item status for own/want differed from"
+                                       " default of new collection <b>%s</b> "
+                                       "and was changed." % to_collection.name))
             return HttpResponseRedirect(urlresolvers.reverse('view_item',
                                     kwargs={'item_id': item_id,
                                             'collection_id': to_collection_id}))
@@ -818,7 +823,7 @@ def unsubscribe_series(request, subscription_id):
 @login_required
 def mycomics_search(request):
     sqs = GcdSearchQuerySet().facet('facet_model_name').facet('country') \
-                             .facet('language')
+                             .facet('language').facet('publisher')
 
     allowed_selects = ['issue', 'story']
     data = {'issue': True,
