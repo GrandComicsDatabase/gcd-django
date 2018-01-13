@@ -63,7 +63,8 @@ def generic_by_name(request, name, q_obj, sort,
     plural_suffix = 's'
     query_val = {'method': 'icontains'}
 
-    if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher)):
+    if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher,
+                   Creator)):
         if class_ is IndiciaPublisher:
             base_name = 'indicia_publisher'
             display_name = 'Indicia / Colophon Publisher'

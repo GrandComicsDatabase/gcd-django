@@ -1626,8 +1626,10 @@ def edit_issues_in_bulk(request):
             'persists, please contact an Editor.')
 
     nr_items = items.count()
-    items = items.filter(reserved=False)
-    nr_items_unreserved = items.count()
+    nr_items_reserved = RevisionLock.objects.filter(
+      object_id__in=items.values_list('id', flat=True),
+      content_type=ContentType.objects.get_for_model(items[0])).count()
+    nr_items_unreserved = nr_items - nr_items_reserved
     if nr_items_unreserved == 0:
         if nr_items == 0: # shouldn't really happen
             return HttpResponseRedirect(urlresolvers.reverse \
@@ -3753,8 +3755,7 @@ def undo_move_cover(request, id, cover_id):
         return _cant_get(request)
 
     cover_revision = get_object_or_404(CoverRevision, id=cover_id, changeset=changeset)
-    cover_revision.cover.reserved=False
-    cover_revision.cover.save()
+    _free_revision_lock(cover_revision.cover)
     cover_revision.delete()
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',

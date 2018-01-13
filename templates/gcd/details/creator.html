@@ -35,7 +35,7 @@
                     <p><strong>Notes:</strong> {{ creator.notes|urlizetrunc:75|linebreaksbr }}</p>
                     {% endif %}
                     <p><strong>Links:</strong>
-                    <a href="{% url "haystack_search" %}?q={{ creator.gcd_official_name }}&selected_facets=facet_model_name_exact:story&sort=chrono">Credits in the GCD</a>
+                    <a href="{% url "haystack_search" %}?q={{ creator.gcd_official_name }}&selected_facets=facet_model_name_exact:story&sort=chrono">Credits in the GCD (via search for {{ creator }})</a>
                     {% if creator.whos_who %}
                     / <a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a> {% endif %}</p>
                     </div>
