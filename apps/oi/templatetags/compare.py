@@ -320,7 +320,7 @@ def compare_current_reprints(object_type, changeset):
     else:
         reprint_string = ''
 
-    if (kept_origin | kept_target).count():
+    if kept_origin.exists() or kept_target.exists():
         kept_string = ''
         kept_target = list(kept_target.select_related(\
                            'origin_issue__series__publisher',

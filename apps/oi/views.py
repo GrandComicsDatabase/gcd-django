@@ -4371,7 +4371,9 @@ def show_cover_queue(request):
       callback=get_preview_image_tags_per_page)
 
 def compare(request, id):
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects\
+                                  .prefetch_related('comments__commenter'),
+                                  id=id)
 
     if changeset.inline():
         revision = changeset.inline_revision()
