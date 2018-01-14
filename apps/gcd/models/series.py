@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
 from django.core import urlresolvers
-from django.db.models import Count
+from django.db.models import Count, Case, When
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -149,10 +149,9 @@ class Series(models.Model):
 
     def active_base_issues_variant_count(self):
         issues = self.active_base_issues()
-        # TODO Counts also deleted variants. Seemingly can be fixed in 1.8
-        # http://stackoverflow.com/questions/30752268/\
-        # how-to-filter-objects-for-count-annotation-in-django
-        issues = issues.annotate(variant_count=Count('variant_set'))
+        issues = issues.annotate(variant_count=\
+                                 Count(Case(When(variant_set__deleted=False,
+                                                 then=1))))
         return issues
 
     def ordered_brands(self):
