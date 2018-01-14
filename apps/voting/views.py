@@ -80,7 +80,8 @@ def _classify_topics(topics, user):
     return (pending_topics, voted_topics, forbidden_topics)
 
 def dashboard(request):
-    topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True)
+    topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True,
+                                  result_calculated=False)
 
     # We ignore the forbidden topics on the dashboard and only show relevant topics.
     pending_topics, voted_topics, forbidden_topics = \
@@ -264,7 +265,8 @@ def topic(request, id):
                                 'topic': topic,
                                 'voted': topic.has_vote_from(request.user),
                                 'votes': votes,
-                                'closed': topic.deadline < datetime.now(),
+                                'closed': topic.deadline < datetime.now() \
+                                          or topic.result_calculated,
                                 'settings': settings,
                               },
                               context_instance=RequestContext(request))
@@ -388,8 +390,11 @@ def vote(request):
                                            salt, vote_ids),
                   fail_silently=(not settings.BETA))
 
+    if topic.expected_voters().count() > 0 and len(topic.absent_voters()) == 0:
+        _calculate_results([topic,])
+
     return HttpResponseRedirect(urlresolvers.reverse('ballot',
-      kwargs={ 'id': option.topic.id }))
+                                kwargs={ 'id': option.topic.id }))
 
 def agenda(request, id):
     agenda = get_object_or_404(Agenda, id=id)
@@ -400,8 +405,10 @@ def agenda(request, id):
     # approved (much less completed) still have open=False.  This translates
     # the conditions into what you would expect for open or closed ballots.
     past_due = Q(deadline__lte=datetime.now())
-    open = agenda.topics.exclude(past_due | Q(open=False))
-    closed = agenda.topics.filter(past_due & Q(open=True))
+    open = agenda.topics.exclude(past_due | Q(open=False))\
+                        .filter(result_calculated=False)
+    closed = agenda.topics.filter((past_due & Q(open=True)) |
+                                  Q(result_calculated=True))
 
     pending_items = agenda.items.filter(state__isnull=True)
     open_items = agenda.items.filter(state=True)
