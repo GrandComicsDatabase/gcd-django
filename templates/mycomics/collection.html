@@ -12,8 +12,11 @@
   <script>
     function remove_issue(item_id, collection_id, issue_name, collection_name) {
         var delete_url = '{% url "delete_item" '12345' '45678' %}';
-        delete_url = delete_url.replace('12345', item_id);
-        delete_url = delete_url.replace('45678', collection_id);
+        var delete_url = delete_url.replace('12345', item_id);
+        var delete_url = delete_url.replace('45678', collection_id);
+        var item = document.getElementById('remove-item-'+item_id);
+        var issue_name = item.dataset.issue;
+        var collection_name = item.dataset.collection;
         BootstrapDialog.confirm({
             title: '<h4 class="modal-title">{% trans "Remove issue from collection " %}'+collection_name+'</h4>',
             message: '{% trans "Do you want to remove the issue <b>" %}'+issue_name+'</b> ?',
@@ -82,8 +85,8 @@
           <div class="col-md-2">
             <div class="btn-group pull-right">
               <button type="button" class="my-btn btn-primary btn-sm"
-                      style="display: inline-block;" data-toggle="modal"
-                      onclick="remove_issue({{ item.id }}, {{ collection.id }}, '{{ item.issue.full_name|escapejs }}', '{{ collection.name|escapejs }}');">
+                      style="display: inline-block;" data-toggle="modal" onclick="remove_issue({{ item.id }}, {{ collection.id }});"
+                      id="remove-item-{{ item.id }}" data-issue="{{ item.issue.full_name }}" data-collection="{{ collection.name }}">
                   <span class="glyphicon glyphicon-remove"></span>
               </button>
             </div>
