@@ -105,7 +105,7 @@
               data-toggle="modal" href="#edit-item">{% trans "Edit" %}
       </button>
       <button type="button" class="btn btn-primary pull-right"
-              data-toggle="modal" onclick="remove_issue('{{ item.issue.full_name }}', '{{ collection.name }}', '{% url "delete_item" item.id collection.id %}');">{% trans "Delete from collection" %}
+              data-toggle="modal" onclick="remove_issue('{{ item.issue.full_name|escapejs }}', '{{ collection.name|escapejs }}', '{% url "delete_item" item.id collection.id %}');">{% trans "Delete from collection" %}
       </button>
       <button type="button" class="btn btn-primary pull-right"
               data-toggle="modal" href="#move-collection-item">{% trans "To other collection" %}
