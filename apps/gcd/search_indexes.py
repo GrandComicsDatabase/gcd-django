@@ -126,6 +126,15 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     publisher = indexes.CharField(model_attr='issue__series__publisher__name',
                                   faceted=True, indexed=False)
 
+    feature = indexes.MultiValueField(faceted=True, indexed=False, null=True)
+
+    script = indexes.MultiValueField(faceted=True, null=True)
+    pencils = indexes.MultiValueField(faceted=True, null=True)
+    inks = indexes.MultiValueField(faceted=True, null=True)
+    colors = indexes.MultiValueField(faceted=True, null=True)
+    letters = indexes.MultiValueField(faceted=True, null=True)
+    editing = indexes.MultiValueField(faceted=True, null=True)
+
     def get_model(self):
         return Story
 
@@ -143,6 +152,41 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return obj.issue.key_date
         else:
             return "9999-99-99"
+
+    def _prepare_credit(self, obj, field):
+        return_val = [(val.strip()) for val in getattr(obj, field).split(';')]
+        if return_val == ['']:
+            return None
+        else:
+            return return_val
+
+    def prepare_script(self, obj):
+        return self._prepare_credit(obj, 'script')
+
+    def prepare_pencils(self, obj):
+        return self._prepare_credit(obj, 'pencils')
+
+    def prepare_inks(self, obj):
+        return self._prepare_credit(obj, 'inks')
+
+    def prepare_colors(self, obj):
+        return self._prepare_credit(obj, 'colors')
+
+    def prepare_letters(self, obj):
+        return self._prepare_credit(obj, 'letters')
+
+    def prepare_editing(self, obj):
+        return_val = [(val.strip()) for val in
+                      getattr(obj, 'editing').split(';')]
+        return_val.extend([(val.strip()) for val in
+                          getattr(obj.issue, 'editing').split(';')])
+        if return_val == ['']:
+            return None
+        else:
+            return return_val
+
+    def prepare_feature(self, obj):
+        return self._prepare_credit(obj, 'feature')
 
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
@@ -217,6 +261,7 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_publisher(self, obj):
         return [(brand_group.parent.name) for brand_group in obj.group.all()]
 
+
 class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
@@ -250,9 +295,10 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()
-    sort_name = indexes.CharField(model_attr="gcd_official_name",indexed=False)
-    country = indexes.CharField(model_attr='birth_country__code', indexed=False,
-                                faceted=True, null=True)
+    sort_name = indexes.CharField(model_attr="gcd_official_name",
+                                  indexed=False)
+    country = indexes.CharField(model_attr='birth_country__code',
+                                indexed=False, faceted=True, null=True)
 
     def get_model(self):
         return Creator
@@ -261,7 +307,8 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "creator"
 
     def prepare_name(self, obj):
-        return [(creator_name.name) for creator_name in obj.creator_names.all()]
+        return [(creator_name.name) for creator_name in
+                obj.creator_names.all()]
 
     def prepare_year(self, obj):
         if obj.birth_date.year and '?' not in obj.birth_date.year:
@@ -270,15 +317,18 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return 9999
 
 
-class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,
+                             indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/creator_membership_text.txt')
-    name = indexes.CharField(model_attr="organization_name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="organization_name",
+                             boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    sort_name = indexes.CharField(model_attr='organization_name', indexed=False)
+    sort_name = indexes.CharField(model_attr='organization_name',
+                                  indexed=False)
 
     def get_model(self):
         return CreatorMembership
@@ -287,11 +337,10 @@ class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable
         return "creator membership"
 
 
-class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
-    text = indexes.CharField(document=True,
-                             use_template=True,
-                             template_name=
-                             'search/indexes/gcd/creator_art_influence_text.txt')
+class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
+                               indexes.Indexable):
+    text = indexes.CharField(document=True, use_template=True,
+             template_name='search/indexes/gcd/creator_art_influence_text.txt')
     name = indexes.CharField(model_attr="influence", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
@@ -330,15 +379,16 @@ class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "creator award"
 
 
-class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
-    text = indexes.CharField(document=True,
-                             use_template=True,
-                             template_name=
-                             'search/indexes/gcd/creator_non_comic_work_text.txt')
-    name = indexes.CharField(model_attr="publication_title", boost=DEFAULT_BOOST)
+class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex,
+                               indexes.Indexable):
+    text = indexes.CharField(document=True, use_template=True,
+           template_name='search/indexes/gcd/creator_non_comic_work_text.txt')
+    name = indexes.CharField(model_attr="publication_title",
+                             boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
-    sort_name = indexes.CharField(model_attr='publication_title', indexed=False)
+    sort_name = indexes.CharField(model_attr='publication_title',
+                                  indexed=False)
     country = indexes.CharField(model_attr='creator__birth_country__code',
                                 indexed=False, null=True)
 
@@ -347,5 +397,3 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexab
 
     def prepare_facet_model_name(self, obj):
         return "creator non comic work"
-
-
