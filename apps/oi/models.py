@@ -7197,7 +7197,7 @@ class CreatorArtInfluenceRevision(Revision):
             art = CreatorArtInfluence()
 
         elif self.deleted:
-            art.reserved = Falsef
+            art.reserved = False
             art.deleted = self.deleted
             art.save()
             return
