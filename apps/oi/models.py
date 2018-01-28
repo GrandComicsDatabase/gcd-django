@@ -1038,6 +1038,15 @@ class Changeset(models.Model):
         production display table.
         """
 
+        # TODO Save handling of double approvals.
+        # Although we have the following check here and in the view-code, we
+        # got rare double approvals, which for adds resulted in two created
+        # objects. With the below if on revision.source we do have another
+        # check, which will avoid double saves of objects due to the call of
+        # _free_revision_lock. It is to be seen if this is now safe for adds,
+        # they will get a source on the first save, but maybe the second one
+        # is fast enough ? We might be able to use RevisionLock on a revision
+        # for add ?
         if self.state not in [states.DISCUSSED, states.REVIEWING] or \
            self.approver is None:
             raise ValueError(
@@ -1233,6 +1242,8 @@ def _get_revision_lock(object, changeset=None):
     return revision_lock
 
 
+# This should not have @transaction.atomic, since the lock should stay till
+# the end of the request ?
 def _free_revision_lock(object):
     revision_lock = RevisionLock.objects.get(
       object_id=object.id,

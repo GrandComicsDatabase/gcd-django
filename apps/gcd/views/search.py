@@ -203,53 +203,64 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['barcode'] = name
 
     elif (class_ is Story):
-        # TODO: move this outside when series deletes are implemented
-        q_obj &= Q(deleted=False)
-
         item_name = 'stor'
         plural_suffix = 'y,ies'
-
-        things = class_.objects.filter(q_obj)
-        things = things.select_related('issue__series__publisher',
-                                       'type')
-
-        # TODO: This order_by stuff only works for Stories, which is
-        # TODO: OK for now, but might not always be.
-        if (sort == ORDER_ALPHA):
-            things = things.order_by("issue__series__sort_name",
-                                     "issue__series__year_began",
-                                     "issue__key_date",
-                                     "sequence_number")
-        elif (sort == ORDER_CHRONO):
-            things = things.order_by("issue__key_date",
-                                     "issue__series__sort_name",
-                                     "issue__series__year_began",
-                                     "sequence_number")
         heading = 'Story Search Results'
-        # build the query_string for the link to the advanced search
         query_val['target'] = 'sequence'
-        if credit in ['script', 'pencils', 'inks', 'colors', 'letters',
-                      'job_number']:
-            query_val[credit] = name
-        # remove the ones which are not matched in display of results
-        elif credit in ['reprint', 'title', 'feature']:
-            query_val[credit] = name
-            credit = None
-        elif credit.startswith('editing_search'):
-            query_val['story_editing'] = name
-            query_val['issue_editing'] = name
-            query_val['logic'] = True
-        elif credit.startswith('any'):
-            query_val['logic'] = True
-            for credit_type in ['script', 'pencils', 'inks', 'colors',
-                                'letters', 'story_editing', 'issue_editing']:
-                query_val[credit_type] = name
-        elif credit.startswith('characters'):
-            query_val['characters'] = name
-            # OR-logic only applies to credits, so we cannnot use it
-            # to mimic the double search for characters and features here
-            # query_val['feature'] = name
-            # query_val['logic'] = True
+        if sqs == None:
+            # TODO: move this outside when series deletes are implemented
+            q_obj &= Q(deleted=False)
+
+            things = class_.objects.filter(q_obj)
+            things = things.select_related('issue__series__publisher',
+                                           'type')
+
+            # TODO: This order_by stuff only works for Stories, which is
+            # TODO: OK for now, but might not always be.
+            if (sort == ORDER_ALPHA):
+                things = things.order_by("issue__series__sort_name",
+                                         "issue__series__year_began",
+                                         "issue__key_date",
+                                         "sequence_number")
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by("issue__key_date",
+                                         "issue__series__sort_name",
+                                         "issue__series__year_began",
+                                         "sequence_number")
+            # build the query_string for the link to the advanced search
+            if credit in ['script', 'pencils', 'inks', 'colors', 'letters',
+                          'job_number']:
+                query_val[credit] = name
+            # remove the ones which are not matched in display of results
+            elif credit in ['reprint', 'title', 'feature']:
+                query_val[credit] = name
+                credit = None
+            elif credit.startswith('editing_search'):
+                query_val['story_editing'] = name
+                query_val['issue_editing'] = name
+                query_val['logic'] = True
+            elif credit.startswith('any'):
+                query_val['logic'] = True
+                for credit_type in ['script', 'pencils', 'inks', 'colors',
+                                    'letters', 'story_editing', 'issue_editing']:
+                    query_val[credit_type] = name
+            elif credit.startswith('characters'):
+                query_val['characters'] = name
+                # OR-logic only applies to credits, so we cannnot use it
+                # to mimic the double search for characters and features here
+                # query_val['feature'] = name
+                # query_val['logic'] = True
+        else:
+            things = sqs
+            if (sort == ORDER_ALPHA):
+                things = things.order_by("sort_name",
+                                         "key_date",
+                                         "sequence_number")
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by("key_date",
+                                         "sort_name",
+                                         "sequence_number")
+
     else:
         raise TypeError, "Unsupported search target!"
 
@@ -427,53 +438,100 @@ def character_by_name(request, character_name, sort=ORDER_ALPHA):
 
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):
-    q_obj = Q(script__icontains=writer)
-    return generic_by_name(request, writer, q_obj, sort, credit="script",
-                           selected="writer")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(script=GcdNameQuery(writer)) \
+                              .models(Story)
+        return generic_by_name(request, writer, None, sort, credit="script",
+                               selected="writer", sqs=sqs)
+    else:
+        q_obj = Q(script__icontains=writer)
+        return generic_by_name(request, writer, q_obj, sort, credit="script",
+                               selected="writer")
 
 
 def penciller_by_name(request, penciller, sort=ORDER_ALPHA):
-    q_obj = Q(pencils__icontains=penciller)
-    return generic_by_name(request, penciller, q_obj, sort, credit="pencils",
-                           selected="penciller")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(pencils=GcdNameQuery(penciller)) \
+                              .models(Story)
+        return generic_by_name(request, penciller, None, sort, credit="pencils",
+                               selected="penciller", sqs=sqs)
+    else:
+        q_obj = Q(pencils__icontains=penciller)
+        return generic_by_name(request, penciller, q_obj, sort, credit="pencils",
+                               selected="penciller")
 
 
 def inker_by_name(request, inker, sort=ORDER_ALPHA):
-    q_obj = Q(inks__icontains=inker)
-    return generic_by_name(request, inker, q_obj, sort, credit="inks",
-                           selected="inker")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(inks=GcdNameQuery(inker)) \
+                              .models(Story)
+        return generic_by_name(request, inker, None, sort, credit="inks",
+                               selected="inker", sqs=sqs)
+    else:
+        q_obj = Q(inks__icontains=inker)
+        return generic_by_name(request, inker, q_obj, sort, credit="inks",
+                               selected="inker")
 
 
 def colorist_by_name(request, colorist, sort=ORDER_ALPHA):
-    q_obj = Q(colors__icontains=colorist)
-    return generic_by_name(request, colorist, q_obj, sort, credit="colors",
-                           selected="colorist")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(colors=GcdNameQuery(colorist)) \
+                              .models(Story)
+        return generic_by_name(request, colorist, None, sort, credit="colors",
+                               selected="colorist", sqs=sqs)
+    else:
+        q_obj = Q(colors__icontains=colorist)
+        return generic_by_name(request, colorist, q_obj, sort, credit="colors",
+                               selected="colorist")
 
 
 def letterer_by_name(request, letterer, sort=ORDER_ALPHA):
-    q_obj = Q(letters__icontains=letterer)
-    return generic_by_name(request, letterer, q_obj, sort, credit="letters",
-                           selected="letterer")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(letters=GcdNameQuery(letterer)) \
+                              .models(Story)
+        return generic_by_name(request, letterer, None, sort, credit="letters",
+                               selected="letterer", sqs=sqs)
+    else:
+        q_obj = Q(letters__icontains=letterer)
+        return generic_by_name(request, letterer, q_obj, sort, credit="letters",
+                               selected="letterer")
 
 
 def editor_by_name(request, editor, sort=ORDER_ALPHA):
-    q_obj = Q(editing__icontains=editor) | Q(issue__editing__icontains=editor)
-    return generic_by_name(request, editor, q_obj, sort,
-                           credit="editing_search:"+editor,
-                           selected="editor")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(editing=GcdNameQuery(editor)) \
+                              .models(Story)
+        return generic_by_name(request, editor, None, sort,
+                               credit="editing_search:"+editor,
+                               selected="editor", sqs=sqs)
+    else:
+        q_obj = Q(editing__icontains=editor) | Q(issue__editing__icontains=editor)
+        return generic_by_name(request, editor, q_obj, sort,
+                               credit="editing_search:"+editor,
+                               selected="editor")
 
 
 def story_by_credit(request, name, sort=ORDER_ALPHA):
     """Implements the 'Any Credit' story search."""
-    q_obj = Q(script__icontains=name) | \
-            Q(pencils__icontains=name) | \
-            Q(inks__icontains=name) | \
-            Q(colors__icontains=name) | \
-            Q(letters__icontains=name) | \
-            Q(editing__icontains=name) | \
-            Q(issue__editing__icontains=name)
-    return generic_by_name(request, name, q_obj, sort, credit=('any:'+name),
-                           selected="credit")
+    if settings.USE_ELASTICSEARCH:
+        query_part = GcdNameQuery(name)
+        sq = SQ(**{'script':query_part})
+        for field in ['pencils', 'inks', 'colors', 'letters', 'editing']:
+            sq |= SQ(**{field:query_part})
+        sqs = SearchQuerySet().filter(sq).models(Story)
+        return generic_by_name(request, name, None, sort, credit=('any:'+name),
+                               selected="credit", sqs=sqs)
+
+    else:
+        q_obj = Q(script__icontains=name) | \
+                Q(pencils__icontains=name) | \
+                Q(inks__icontains=name) | \
+                Q(colors__icontains=name) | \
+                Q(letters__icontains=name) | \
+                Q(editing__icontains=name) | \
+                Q(issue__editing__icontains=name)
+        return generic_by_name(request, name, q_obj, sort, credit=('any:'+name),
+                               selected="credit")
 
 
 def story_by_job_number(request, number, sort=ORDER_ALPHA):
