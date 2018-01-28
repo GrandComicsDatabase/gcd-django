@@ -168,5 +168,12 @@
     </div>
   </div>
 
+<script type="text/javascript">
+$(document).ready(function() {
 
+  if(window.location.href.indexOf('#edit-item') != -1) {
+    $('#edit-item').modal('show');
+  }
+});
+</script>
 {% endblock %}
