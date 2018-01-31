@@ -207,6 +207,19 @@ def generic_by_name(request, name, q_obj, sort,
         plural_suffix = 'y,ies'
         heading = 'Story Search Results'
         query_val['target'] = 'sequence'
+        # build the query_string for the link to the advanced search
+        if credit in ['script', 'pencils', 'inks', 'colors', 'letters',
+                      'job_number']:
+            query_val[credit] = name
+        elif credit.startswith('editing_search'):
+            query_val['story_editing'] = name
+            query_val['issue_editing'] = name
+            query_val['logic'] = True
+        elif credit.startswith('any'):
+            query_val['logic'] = True
+            for credit_type in ['script', 'pencils', 'inks', 'colors',
+                                'letters', 'story_editing', 'issue_editing']:
+                query_val[credit_type] = name
         if sqs == None:
             # TODO: move this outside when series deletes are implemented
             q_obj &= Q(deleted=False)
@@ -228,22 +241,10 @@ def generic_by_name(request, name, q_obj, sort,
                                          "issue__series__year_began",
                                          "sequence_number")
             # build the query_string for the link to the advanced search
-            if credit in ['script', 'pencils', 'inks', 'colors', 'letters',
-                          'job_number']:
-                query_val[credit] = name
             # remove the ones which are not matched in display of results
-            elif credit in ['reprint', 'title', 'feature']:
+            if credit in ['reprint', 'title', 'feature']:
                 query_val[credit] = name
                 credit = None
-            elif credit.startswith('editing_search'):
-                query_val['story_editing'] = name
-                query_val['issue_editing'] = name
-                query_val['logic'] = True
-            elif credit.startswith('any'):
-                query_val['logic'] = True
-                for credit_type in ['script', 'pencils', 'inks', 'colors',
-                                    'letters', 'story_editing', 'issue_editing']:
-                    query_val[credit_type] = name
             elif credit.startswith('characters'):
                 query_val['characters'] = name
                 # OR-logic only applies to credits, so we cannnot use it
