@@ -85,6 +85,13 @@ urlpatterns = patterns('',
      'apps.gcd.views.search.indicia_publisher_by_name',
      name='indicia_publisher_by_name'),
 
+    url(r'^award/(?P<award_id>\d+)/$',
+     'apps.gcd.views.details.award', name='show_award'),
+    url(r'^award/name/(?P<award_name>.+)/sort/(?P<sort>.+)/$',
+     'apps.gcd.views.search.award_by_name', name='award_by_name'),
+    url(r'^award/name/(?P<award_name>.+)/$',
+     'apps.gcd.views.search.award_by_name', name='award_by_name'),
+
     url(r'^creator/(?P<creator_id>\d+)/$',
      'apps.gcd.views.details.creator', name='show_creator'),
     url(r'^creator/name/(?P<creator_name>.+)/sort/(?P<sort>.+)/$',

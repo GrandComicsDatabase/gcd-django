@@ -192,6 +192,11 @@
                   <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
 
+            {% if result.model_name == 'award' %}
+                <td>[AWARD]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+            {% endif %}
+
             {% if result.model_name == 'creator' %}
                 <td>[CREATOR]</td>
                 <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.gcd_official_name }}</a></td>
@@ -206,7 +211,7 @@
             {% endif %}
             {% if result.model_name == 'creatoraward' %}
                 <td>[CREATOR AWARD]</td>
-                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.award }} - {{ result.object.award_name }}</a></td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.award }} - {{ result.object.display_name }}: {{ result.object.creator }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatornoncomicwork' %}
                 <td>[CREATOR NONCOMICWORK]</td>

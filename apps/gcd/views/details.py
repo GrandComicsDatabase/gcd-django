@@ -32,7 +32,7 @@ from apps.stats.models import CountStats
 from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
                             IndiciaPublisher, Brand, BrandGroup, Cover, \
-                            SeriesBond, Creator, CreatorMembership,\
+                            SeriesBond, Award, Creator, CreatorMembership,\
                             CreatorAward, CreatorDegree, CreatorArtInfluence,\
                             CreatorNonComicWork, CreatorSchool, CreatorRelation
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
@@ -177,6 +177,31 @@ def show_creator_school(request, creator_school, preview=False):
             'error_subject': creator_school,
             'preview': preview}
     return render(request, 'gcd/details/creator_school.html', vars)
+
+
+def award(request, award_id):
+    """
+    Display the details page for an Award.
+    """
+    award = get_object_or_404(Award, id = award_id)
+    if award.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'award', 'id': award_id}))
+
+    return show_award(request, award)
+
+
+def show_award(request, award, preview=False):
+    awards = award.active_awards().order_by(
+      'award_year', 'award_name')
+
+    vars = { 'award' : award,
+             'error_subject': '%s' % award,
+             'preview': preview }
+    return paginate_response(request,
+                             awards,
+                             'gcd/details/award.html',
+                             vars)
 
 
 def publisher(request, publisher_id):

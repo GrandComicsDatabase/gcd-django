@@ -154,9 +154,9 @@
           <li>
             <p>
       {% if award.award %}
-        {{ award.award.name }} -
+        <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
       {% endif %}
-            <a href="{{ award.get_absolute_url }}">{{ award.award_name }}</a>
+            <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a>
       {% if award.award_year %}
         year: {{ award.award_year }}
       {% endif %}

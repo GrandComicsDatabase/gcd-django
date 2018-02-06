@@ -31,7 +31,7 @@ from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             BrandGroup, Brand, IndiciaPublisher, STORY_TYPES, \
-                            Creator, CreatorMembership, CreatorAward, \
+                            Award, Creator, CreatorMembership, CreatorAward, \
                             CreatorArtInfluence, CreatorNonComicWork, \
                             CreatorNameDetail
 from apps.gcd.models.issue import INDEXED
@@ -63,8 +63,7 @@ def generic_by_name(request, name, q_obj, sort,
     plural_suffix = 's'
     query_val = {'method': 'icontains'}
 
-    if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher,
-                   Creator)):
+    if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher)):
         if class_ is IndiciaPublisher:
             base_name = 'indicia_publisher'
             display_name = 'Indicia / Colophon Publisher'
@@ -110,6 +109,22 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['pub_name'] = name
         else:
             query_val[base_name] = name
+
+    elif class_ is Award:
+        sort_name = "name"
+
+        if sqs == None:
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            things = things.order_by(sort_name)
+            things = things.distinct()
+        else:
+            things = sqs
+            things = things.order_by(sort_name)
+        display_name = class_.__name__
+        base_name = display_name.lower()
+        item_name = display_name.lower()
+
+        heading = '%s Search Results' % display_name
 
     elif class_ is Creator:
         sort_name = "gcd_official_name"
@@ -284,6 +299,17 @@ def generic_by_name(request, name, q_obj, sort,
              'which_credit': credit,
              'selected': selected }
     return paginate_response(request, things, template, vars)
+
+def award_by_name(request, award_name, sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(award_name)) \
+                              .models(Award)
+        return generic_by_name(request, award, None, sort, Award,
+                               'gcd/search/award_list.html', sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=award_name)
+        return generic_by_name(request, award_name, q_obj, sort,
+                               Award, 'gcd/search/award_list.html')
 
 def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:

@@ -1,0 +1,88 @@
+{% extends "gcd/base_view.html" %}
+
+{% load cycle from future %}
+{% load staticfiles %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Award :: {{ award.name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h1 class="item_id">
+  <div class="left">
+    <a href="{{ award.get_absolute_url }}">{{ award }}</a>
+  </div>
+</h1>
+
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+      <dl class="pub_data">
+{% if award.notes %}
+        <dt> Notes:
+        <dd> {{ award.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+      </dl>
+    </div>
+  </div>
+
+{% if not preview or award.source %}
+  <div id="control_rail">
+    <div class="edit_box">
+  {% if MYCOMICS %}
+      <div class="edit_header">
+        <div>my.comics.org</div>
+      </div>
+  {% else %}
+      <div class="edit_header">Editing</div>
+     {% if not preview %}
+       {% with object=award object_class='award' object_name='Award' %}
+         {% include "gcd/bits/status_banner.html" %}
+       {% endwith %}
+     {% endif %}
+    </div>
+  {% endif %} <!-- MYCOMICS -->
+    <div id="change_history" class="edit_footer">
+  {% if preview %}
+      <a href="{% url "change_history" model_name='award' id=award.source.id %}">View Change History</a>
+  {% else %}
+      <a href="{% url "change_history" model_name='award' id=award.id %}">View Change History</a>
+  {% endif %}
+    </div>
+  </div>
+{% endif %}
+</div>
+
+{% if page.object_list.count %}
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Name </th>
+    <th> Creator </th>
+    <th> Year Awarded </th>
+  </tr>
+  {% for awarded in page.object_list %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ awarded.get_absolute_url }}">{{ awarded.display_name }}</a> </td>
+    <td> <a href="{{ awarded.creator.get_absolute_url }}">{{ awarded.creator }}</a> </td>
+    <td> {{ awarded.display_year }} </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<h1 class="item_id">
+  <div class="left">
+    <a href="{{ award.get_absolute_url }}">{{ award }}</a>
+  </div>
+</h1>
+
+{% endblock %}
