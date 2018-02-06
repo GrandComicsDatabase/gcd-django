@@ -304,7 +304,7 @@ def award_by_name(request, award_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
         sqs = SearchQuerySet().filter(name=GcdNameQuery(award_name)) \
                               .models(Award)
-        return generic_by_name(request, award, None, sort, Award,
+        return generic_by_name(request, award_name, None, sort, Award,
                                'gcd/search/award_list.html', sqs=sqs)
     else:
         q_obj = Q(name__icontains=award_name)
@@ -729,15 +729,17 @@ def search(request):
         param_type = 'brand_name'
     elif view_type == 'indicia_publisher':
         param_type = 'ind_pub_name'
+    elif view_type == 'award':
+        param_type = 'award_name'
     elif view_type == 'creator':
         param_type = 'creator_name'
-    if view_type == 'creator_membership':
+    elif view_type == 'creator_membership':
         param_type = 'creator_membership_name'
-    if view_type == 'creator_award':
+    elif view_type == 'creator_award':
         param_type = 'creator_award_name'
-    if view_type == 'creator_art_influence':
+    elif view_type == 'creator_art_influence':
         param_type = 'creator_art_influence_name'
-    if view_type == 'creator_non_comic_work':
+    elif view_type == 'creator_non_comic_work':
         param_type = 'creator_non_comic_work_name'
 
     view = '%s_by_name' % view_type
