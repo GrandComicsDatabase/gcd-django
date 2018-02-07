@@ -123,6 +123,7 @@ def generic_by_name(request, name, q_obj, sort,
         display_name = class_.__name__
         base_name = display_name.lower()
         item_name = display_name.lower()
+        selected = base_name
 
         heading = '%s Search Results' % display_name
 
@@ -151,6 +152,7 @@ def generic_by_name(request, name, q_obj, sort,
         display_name = class_.__name__
         base_name = display_name.lower()
         item_name = display_name.lower()
+        selected = base_name
 
         heading = '%s Search Results' % display_name
         # query_string for the link to the advanced search
