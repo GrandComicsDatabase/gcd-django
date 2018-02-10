@@ -1503,21 +1503,29 @@ def countries_in_use(request):
     """
 
     if request.user.is_authenticated() and \
-      request.user.groups.filter(name='admin'):
-        countries_from_series = list(set(Series.objects.exclude(deleted=True).
-                                         values_list('country', flat=True)))
-        countries_from_indexers = list(set(Indexer.objects.
-                                           filter(user__is_active=True).
-                                           values_list('country', flat=True)))
-        countries_from_publishers = list(set(Publisher.objects.exclude(deleted=True).
-                                             values_list('country', flat=True)))
-        used_ids = list(set(countries_from_indexers +
-                            countries_from_series +
-                            countries_from_publishers))
-        used_countries = [Country.objects.filter(id=id)[0] for id in used_ids]
+       request.user.groups.filter(name='admin'):
+        countries_from_series = set(
+                Series.objects.exclude(deleted=True).
+                values_list('country', flat=True))
+        countries_from_indexers = set(
+                Indexer.objects.filter(user__is_active=True).
+                values_list('country', flat=True))
+        countries_from_publishers = set(
+                Publisher.objects.exclude(deleted=True).
+                values_list('country', flat=True))
+        countries_from_creators = set(
+                country for tuple in
+                Creator.objects.exclude(deleted=True).
+                values_list('birth_country', 'death_country')
+                for country in tuple)
+        used_ids = list(countries_from_indexers |
+                        countries_from_series |
+                        countries_from_publishers |
+                        countries_from_creators)
+        used_countries = Country.objects.filter(id__in=used_ids)
 
         return render_to_response('gcd/admin/countries.html',
-                                  {'countries' : used_countries },
+                                  {'countries': used_countries},
                                   context_instance=RequestContext(request))
     else:
         return render_to_response('indexer/error.html', {
