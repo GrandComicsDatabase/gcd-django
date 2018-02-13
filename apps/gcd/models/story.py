@@ -8,9 +8,9 @@ from issue import Issue
 
 STORY_TYPES = {
     'insert': 11,
-    'promo': 16,
     'soo': 22,
     'blank': 24,
+    'preview': 26,
 }
 
 OLD_TYPES = {
@@ -22,7 +22,7 @@ OLD_TYPES = {
 # core sequence types: (photo, text) story, cover (incl. reprint)
 CORE_TYPES = [6, 7, 13, 19, 21]
 # ad sequence types: ad, promo
-AD_TYPES = [2, 16]
+AD_TYPES = [2, 16, 26]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
 

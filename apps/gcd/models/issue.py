@@ -272,9 +272,9 @@ class Issue(models.Model):
 
     def has_reprints(self):
         from story import STORY_TYPES
-        """Simplifies UI checks for conditionals.  notes and reprint fields"""
+        """Simplifies UI checks for conditionals, notes and reprint fields"""
         return self.from_reprints.count() or \
-               self.to_reprints.exclude(target__type__id=STORY_TYPES['promo']).count() or \
+               self.to_reprints.exclude(target__type__id=STORY_TYPES['preview']).count() or \
                self.from_issue_reprints.count() or \
                self.to_issue_reprints.count()
 

@@ -503,7 +503,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                              notes=to_reprint.notes)
                 last_follow = follow_info
         else:
-            if no_promo and to_reprint.target.type.id == STORY_TYPES['promo']:
+            if no_promo and to_reprint.target.type.id == STORY_TYPES['preview']:
                 pass
             else:
                 follow_info = follow_reprint_link(to_reprint, 'in',
@@ -585,7 +585,7 @@ def show_reprints(story):
     from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
-    if story.type.id != STORY_TYPES['promo']:
+    if story.type.id != STORY_TYPES['preview']:
         no_promo = True
     else:
         no_promo = False
