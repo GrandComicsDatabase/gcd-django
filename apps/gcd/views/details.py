@@ -663,8 +663,9 @@ def change_history(request, model_name, id):
     from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
-                          'image', 'series_bond', 'creator', 'creator_membership',
-                          'creator_award', 'creator_art_influence','creator_non_comic_work']:
+                          'image', 'series_bond', 'award', 'creator',
+                          'creator_membership', 'creator_award',
+                          'creator_art_influence', 'creator_non_comic_work']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id, is_master=False).deleted):
             return render_to_response('indexer/error.html', {

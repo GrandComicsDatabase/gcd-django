@@ -71,6 +71,7 @@ CTYPES = {
     'creator_non_comic_work': 21,
     'creator_relation': 22,
     'creator_school': 23,
+    'award': 24,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -83,6 +84,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['reprint'],
                            CTYPES['image'],
                            CTYPES['series_bond'],
+                           CTYPES['award'],
                            CTYPES['creator'],
                            CTYPES['creator_art_influence'],
                            CTYPES['creator_award'],
@@ -677,6 +679,9 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['image']:
             return (self.imagerevisions.all(),)
+
+        if self.change_type == CTYPES['award']:
+            return (self.awardrevisions.all(),)
 
         if self.change_type == CTYPES['creator']:
             return (self.creatorrevisions.all(),
@@ -5705,6 +5710,107 @@ class ImageRevision(Revision):
         if self.source is None:
             return u'Image for %s' % unicode(self.object)
         return unicode(self.source)
+
+
+class AwardRevisionManager(RevisionManager):
+    def clone_revision(self, award, changeset):
+        """
+        Given an existing Award instance, create a new revision
+        based on it.
+
+        This new revision will be where the replacement is stored.
+        """
+        return RevisionManager.clone_revision(self,
+                                              instance=award,
+                                              instance_class=Award,
+                                              changeset=changeset)
+
+    def _do_create_revision(self, award, changeset, **ignore):
+        """
+        Helper delegate to do the class-specific work of clone_revision.
+        """
+        revision = AwardRevision(
+                # revision-specific fields:
+                award=award,
+                changeset=changeset,
+                # copied fields:
+                name=award.name,
+                notes=award.notes
+        )
+        revision.save()
+        return revision
+
+
+class AwardRevision(Revision):
+    """
+    record the different comic awards
+    """
+
+    class Meta:
+        db_table = 'oi_award_revision'
+        ordering = ['created', '-id']
+        verbose_name_plural = 'Award Revisions'
+
+    objects = AwardRevisionManager()
+    award = models.ForeignKey('gcd.Award', null=True, related_name='revisions')
+    name = models.CharField(max_length=200)
+    notes = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+    _base_field_list = ['name',
+                        'notes',
+                        ]
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'notes': '',
+        }
+
+    def _get_source(self):
+        return self.award
+
+    def _get_source_name(self):
+        return 'award'
+
+    def _imps_for(self, field_name):
+        if field_name in self._base_field_list:
+            return 1
+        return 0
+
+    def commit_to_display(self):
+        awd = self.award
+        if awd is None:
+            awd = Award()
+
+        elif self.deleted:
+            awd.deleted = self.deleted
+            awd.save()
+            return
+        awd.name = self.name
+        awd.notes = self.notes
+
+        awd.save()
+
+        if self.award is None:
+            self.award = awd
+            self.save()
+
+    def active_awards(self):
+        if self.award:
+            return self.award.active_awards()
+        else:
+            return None
+
+    def get_absolute_url(self):
+        if self.award is None:
+            return "/award/revision/%i/preview" % self.id
+        return self.award.get_absolute_url()
 
 
 class DataSourceRevisionManager(RevisionManager):

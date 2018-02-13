@@ -15,7 +15,8 @@ from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
 from apps.gcd.models.creator import Creator, CreatorMembership, CreatorAward, \
-                                    CreatorArtInfluence, CreatorNonComicWork
+                                    CreatorArtInfluence, CreatorNonComicWork, \
+                                    Award
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, \
                                       Publisher
 from apps.gcd.models.series import Series
@@ -303,9 +304,10 @@ def changed_fields(changeset, object):
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
+    elif object_class is Award:
+        revision = changeset.awardrevisions.all().get(award=object.id)
     elif object_class is Creator:
         revision = changeset.creatorrevisions.all().get(creator=object.id)
-
     elif object_class is CreatorMembership:
         revision = changeset.creatormembershiprevisions.all().get(creator_membership=object.id)
     elif object_class is CreatorAward:

@@ -634,6 +634,9 @@ class Award(GcdData):
     name = models.CharField(max_length=200)
     notes = models.TextField()
 
+    def deletable():
+        return False
+
     def active_awards(self):
         return self.creatoraward_set.exclude(deleted=True)
 
