@@ -390,8 +390,11 @@ class CreatorRelation(models.Model):
     def __unicode__(self):
         return '%s >Relation< %s :: %s' % (unicode(self.from_creator),
                                            unicode(self.to_creator),
-                                           unicode(self.relation_type)
-                                          )
+                                           unicode(self.relation_type))
+
+    def deletable(self):
+        return (self.from_creator.pending_deletion() is False and
+                self.to_creator.pending_deletion() is False)
 
 
 class School(models.Model):
