@@ -40,6 +40,9 @@ PUBLISHER_HELP_LINKS = {
     'comments': 'Comments '
 }
 
+AWARD_HELP_LINKS = {
+}
+
 BRAND_HELP_LINKS = {
     'name': 'Brand',
     'year_began': 'Years_of_Use_%28Brand%29',

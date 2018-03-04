@@ -22,6 +22,9 @@ GCD :: Award :: {{ award.name }}
     <a href="{{ award.get_absolute_url }}">{{ award }}</a>
   </div>
 </h1>
+<div class="item_id">
+  {% include "gcd/bits/pagination_bar.html" %}
+</div>
 
 <div class="control_body">
   <div id="control_container">
@@ -79,10 +82,8 @@ GCD :: Award :: {{ award.name }}
 </table>
 {% endif %}
 
-<h1 class="item_id">
-  <div class="left">
-    <a href="{{ award.get_absolute_url }}">{{ award }}</a>
-  </div>
-</h1>
+<div class="item_id">
+  {% include "gcd/bits/pagination_bar.html" %}
+</div>
 
 {% endblock %}

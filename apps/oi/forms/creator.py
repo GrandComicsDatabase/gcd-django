@@ -14,7 +14,7 @@ from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
                       CREATOR_NONCOMICWORK_HELP_TEXTS,
-                      CREATOR_RELATION_HELP_TEXTS,
+                      CREATOR_RELATION_HELP_TEXTS, AWARD_HELP_LINKS,
                       CREATOR_HELP_LINKS, CREATOR_AWARD_HELP_LINKS,
                       CREATOR_ARTINFLUENCE_HELP_LINKS,
                       CREATOR_DEGREE_HELP_LINKS, CREATOR_MEMBERSHIP_HELP_LINKS,
