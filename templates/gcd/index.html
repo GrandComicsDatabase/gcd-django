@@ -123,11 +123,8 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
         <span id="calendarTitle" style="font-size:medium"><a href="/calendar/">Comics Calendar</a></span>
         <iframe src="/agenda/{{ language.code }}/" style=" border-width:0 " width="100%" height="400" frameborder="0" scrolling="no"></iframe>
 {% endif %}
-{% if ADVERTISING and not BETA %}
-        <div style="clear: both;">
-        </div>
-        <script id="mNCC" language="javascript">  medianet_width='160';  medianet_height= '600';  medianet_crid='247738828';  </script>
-        <script id="mNSC" src="https://contextual.media.net/nmedianet.js?cid=8CU73W537&https=1" language="javascript"></script>
+{% if USE_TEMPLATESADMIN and ADVERTISING and not BETA %}
+  {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
 {% endif %}
       </div>
 
