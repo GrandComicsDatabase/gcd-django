@@ -61,6 +61,19 @@ IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
 
 
+PUB_WITH_ADULT_IMAGES = [
+  4117, # Ediciones La Cúpula
+  1052, # Avatar Press
+  445, # Fantagraphics
+]
+
+# to set flag for choice of ad providers
+def _publisher_image_content(publisher_id):
+    if publisher_id in PUB_WITH_ADULT_IMAGES:
+      return 2
+
+    return 1
+
 def get_gcd_object(model, object_id, model_name=None):
     object = get_object_or_404(model, id = object_id)
     if object.deleted:
@@ -306,7 +319,7 @@ def publisher_monthly_covers(request,
       'choose_url_before': choose_url_before,
       'use_on_sale': use_on_sale,
       'table_width': table_width,
-      'NO_ADS': True
+      'RANDOM_IMAGE': _publisher_image_content(publisher.id)
     }
 
     return paginate_response(request, covers,
@@ -501,7 +514,8 @@ def series(request, series_id):
     Display the details page for a series.
     """
 
-    series = get_object_or_404(Series, id=series_id)
+    series = get_object_or_404(Series.objects.select_related('publisher'),
+                               id=series_id)
     if series.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'series', 'id': series_id}))
@@ -546,7 +560,7 @@ def show_series(request, series, preview=False):
         'preview': preview,
         'is_empty': IS_EMPTY,
         'is_none': IS_NONE,
-        'NO_ADS': True
+        'RANDOM_IMAGE': _publisher_image_content(series.publisher_id)
       },
       context_instance=RequestContext(request))
 
@@ -844,7 +858,7 @@ def covers_to_replace(request, starts_with=None):
       {
         'table_width' : table_width,
         'starts_with' : starts_with,
-        'NO_ADS': True,
+        'RANDOM_IMAGE': 2,
       },
       per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
@@ -919,7 +933,7 @@ def daily_covers(request, show_date=None):
         'date_after' : date_after,
         'date_before' : date_before,
         'table_width' : table_width,
-        'NO_ADS': True
+        'RANDOM_IMAGE': 2
       },
       per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
@@ -1238,7 +1252,7 @@ def cover(request, issue_id, size):
         'cover_page': cover_page,
         'extra': extra,
         'error_subject': '%s cover' % issue,
-        'NO_ADS': True
+        'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
       },
       context_instance=RequestContext(request)
     )
@@ -1271,7 +1285,7 @@ def covers(request, series_id):
       'error_subject': '%s covers' % series,
       'table_width': table_width,
       'can_mark': can_mark,
-      'NO_ADS': True
+      'RANDOM_IMAGE': _publisher_image_content(series.publisher_id)
     }
 
     return paginate_response(request, covers, 'gcd/details/covers.html', vars,
@@ -1342,17 +1356,21 @@ def issue_form(request):
     except ValueError:
         raise Http404
 
+
 def issue(request, issue_id):
     """
     Display the issue details page, including story details.
     """
-    issue = get_object_or_404(Issue, id = issue_id)
+    issue = get_object_or_404(
+              Issue.objects.select_related('series__publisher'),
+              id=issue_id)
 
     if issue.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'issue', 'id': issue_id}))
 
     return show_issue(request, issue)
+
 
 def show_issue(request, issue, preview=False):
     """
@@ -1491,7 +1509,7 @@ def show_issue(request, issue, preview=False):
         'error_subject': '%s' % issue,
         'preview': preview,
         'not_shown_types': not_shown_types,
-        'NO_ADS': True
+        'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
       },
       context_instance=RequestContext(request))
 

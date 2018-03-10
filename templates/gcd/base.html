@@ -14,6 +14,10 @@ For now, just a simple single block for all CSS, despite redundancy.
 {% block css %}{% endblock %}
 {% endcompress %}
 {% block css_raw %}{% endblock %}
+
+{% if USE_TEMPLATESADMIN and ADVERTISING and not EDITING %}
+  {% include "managed_content/gcd/ads/common.html" %}
+{% endif %}
 </head>
 
 <body>

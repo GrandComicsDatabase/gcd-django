@@ -24,6 +24,9 @@
   <link href="https://plus.google.com/114804467432159116851" rel="publisher" />
   <meta name="msvalidate.01" content="75FC73707997CA1DE7B4BC39F77C829A" />
   <meta name="description" content = "The GCD is building the most comprehensive online comics database. It is fully searchable and includes data on creator credits, story details, or other publication details." />
+{% if USE_TEMPLATESADMIN and ADVERTISING and not EDITING %}
+  {% include "managed_content/gcd/ads/common.html" %}
+{% endif %}
 </head>
 
 <body>
@@ -207,8 +210,10 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             {% endfor %}
           </div>
         </div>
-{% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
-  {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
+{% if ADVERTISING and not EDITING %}
+        <div id='banner-160x600-2'>
+          <script>googletag.cmd.push(function() { googletag.display('banner-160x600-2'); });</script>
+        </div>
 {% endif %}
         <!-- Right Column end -->
       </div>
@@ -218,7 +223,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
 <div id="footer">
   {% include "gcd/bits/legalese.html" %}
-{% if USE_TEMPLATESADMIN %}
+{% if USE_TEMPLATESADMIN and ADVERTISING %}
   {% include "managed_content/gcd/ads/ad_bottom.html" %}
 {% endif %}
 </div>
