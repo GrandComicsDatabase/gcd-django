@@ -1008,7 +1008,7 @@ def daily_changes(request, show_date=None):
         .exclude(changeset__indexer=anon)\
         .values_list('brand', flat=True))
     brands = Brand.objects.filter(id__in=brand_revisions).distinct()\
-      .select_related('parent__country')
+      .prefetch_related('group__parent__country')
 
     indicia_publisher_revisions = list(IndiciaPublisherRevision.objects.filter(
       changeset__change_type=CTYPES['indicia_publisher'], **args)\

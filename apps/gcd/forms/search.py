@@ -5,7 +5,8 @@ from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from apps.stddata.models import Country, Language
 from apps.indexer.models import Indexer
-from apps.gcd.models import StoryType, OLD_TYPES
+from apps.gcd.models import StoryType, OLD_TYPES, SeriesPublicationType
+from apps.oi.models import GENRES
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],
@@ -127,6 +128,9 @@ class AdvancedSearch(forms.Form):
     paper_stock = forms.CharField(label='Paper Stock', required=False)
     binding = forms.CharField(label='Binding', required=False)
     publishing_format = forms.CharField(label='Publishing Format', required=False)
+    publication_type = forms.ModelMultipleChoiceField(label='Publication Type',
+                             queryset=SeriesPublicationType.objects.all(),
+                             required=False)
 
     issues = forms.CharField(label='Issues', required=False)
     volume = forms.CharField(label='Volume', required=False)
@@ -170,7 +174,7 @@ class AdvancedSearch(forms.Form):
                ('has_indicia', 'Has Indicia Scan'),
                ('needs_indicia', 'Needs Indicia Scan')),
       required=False)
-    indexer = forms.ModelMultipleChoiceField(required=False,
+    indexer = forms.ModelMultipleChoiceField(required=False, label='',
       queryset=Indexer.objects.filter(imps__gt=0).\
       order_by('user__first_name', 'user__last_name').select_related('user'),
       widget=FilteredSelectMultiple('Indexers', False, attrs={'size': '6'}))
@@ -197,7 +201,10 @@ class AdvancedSearch(forms.Form):
     story_editing = forms.CharField(label='Story Editing', required=False)
     job_number = forms.CharField(label='Job Number', required=False)
 
-    genre = forms.CharField(required=False)
+    first_line = forms.CharField(required=False)
+    genre = forms.MultipleChoiceField(required=False,
+      widget=FilteredSelectMultiple('Genres', False),
+      choices=([c, c] for c in GENRES['en']))
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
