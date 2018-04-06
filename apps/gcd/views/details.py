@@ -65,6 +65,7 @@ PUB_WITH_ADULT_IMAGES = [
   4117, # Ediciones La Cúpula
   1052, # Avatar Press
   445, # Fantagraphics
+  3729, # Amryl Entertainment
 ]
 
 # to set flag for choice of ad providers
