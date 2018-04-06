@@ -16,7 +16,7 @@ from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
                                           split_reprint_string
 from apps.gcd.models.creator import Creator, CreatorMembership, CreatorAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
-                                    Award
+                                    CreatorDegree, Award
 from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, \
                                       Publisher
 from apps.gcd.models.series import Series
@@ -290,32 +290,38 @@ def compare_field_between_revs(field, rev, prev_rev):
 def changed_fields(changeset, object):
     object_class = type(object)
     if object_class is Issue:
-        revision = changeset.issuerevisions.all().get(issue=object.id)
+        revision = changeset.issuerevisions.get(issue=object.id)
     elif object_class is Series:
-        revision = changeset.seriesrevisions.all().get(series=object.id)
+        revision = changeset.seriesrevisions.get(series=object.id)
     elif object_class is SeriesBond:
-        revision = changeset.seriesbondrevisions.all().get(series_bond=object.id)
+        revision = changeset.seriesbondrevisions.get(series_bond=object.id)
     elif object_class is Publisher:
-        revision = changeset.publisherrevisions.all().get(publisher=object.id)
+        revision = changeset.publisherrevisions.get(publisher=object.id)
     elif object_class is Brand:
-        revision = changeset.brandrevisions.all().get(brand=object.id)
+        revision = changeset.brandrevisions.get(brand=object.id)
     elif object_class is BrandGroup:
-        revision = changeset.brandgrouprevisions.all().get(brand_group=object.id)
+        revision = changeset.brandgrouprevisions.get(brand_group=object.id)
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
     elif object_class is Award:
-        revision = changeset.awardrevisions.all().get(award=object.id)
+        revision = changeset.awardrevisions.get(award=object.id)
     elif object_class is Creator:
-        revision = changeset.creatorrevisions.all().get(creator=object.id)
+        revision = changeset.creatorrevisions.get(creator=object.id)
     elif object_class is CreatorMembership:
-        revision = changeset.creatormembershiprevisions.all().get(creator_membership=object.id)
+        revision = changeset.creatormembershiprevisions\
+                            .get(creator_membership=object.id)
     elif object_class is CreatorAward:
-        revision = changeset.creatorawardrevisions.all().get(creator_award=object.id)
+        revision = changeset.creatorawardrevisions.get(creator_award=object.id)
     elif object_class is CreatorArtInfluence:
-        revision = changeset.creatorartinfluencerevisions.all().get(creator_art_influence=object.id)
+        revision = changeset.creatorartinfluencerevisions\
+                            .get(creator_art_influence=object.id)
+    elif object_class is CreatorDegree:
+        revision = changeset.creatordegreerevisions\
+                            .get(creator_degree=object.id)
     elif object_class is CreatorNonComicWork:
-        revision = changeset.creatornoncomicworkrevisions.all().get(creator_non_comic_work=object.id)
+        revision = changeset.creatornoncomicworkrevisions\
+                            .get(creator_non_comic_work=object.id)
     elif object_class in [Cover, Image]:
         return ""
 
