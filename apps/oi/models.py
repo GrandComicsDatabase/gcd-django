@@ -6013,9 +6013,6 @@ class CreatorRevision(Revision):
     whos_who = models.URLField(null=True, blank=True)
     bio = models.TextField(blank=True, null=True)
 
-    data_source = models.ManyToManyField(DataSourceRevision,
-                                         null=True,
-                                         blank=True)
     notes = models.TextField(blank=True, null=True)
 
     def _field_list(self):

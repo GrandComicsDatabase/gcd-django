@@ -1,5 +1,6 @@
 {% load credits %}
 {{ object.title|safe }}
+{{ object.first_line|safe }}
 {{ object.feature|safe }}
 {{ object.script|safe }}
 {{ object.pencils|safe }}

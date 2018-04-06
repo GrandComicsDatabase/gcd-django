@@ -33,7 +33,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             BrandGroup, Brand, IndiciaPublisher, STORY_TYPES, \
                             Award, Creator, CreatorMembership, CreatorAward, \
                             CreatorArtInfluence, CreatorNonComicWork, \
-                            CreatorNameDetail
+                            CreatorNameDetail, SeriesPublicationType
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
@@ -992,6 +992,15 @@ def used_search(search_values):
             text += ', %s' % storytype
         used_search_terms.append(('type', text))
         del search_values['type']
+    if 'publication_type' in search_values:
+        types = SeriesPublicationType.objects.filter(id__in=\
+          search_values.getlist('publication_type')).values_list('name',
+                                                                 flat=True)
+        text = types[0]
+        for publication_type in types[1:]:
+            text += ', %s' % publication_type
+        used_search_terms.append(('publication_type', text))
+        del search_values['publication_type']
     if 'country' in search_values:
         countries = Country.objects.filter(code__in=\
           search_values.getlist('country')).values_list('name', flat=True)
@@ -1267,6 +1276,11 @@ def search_series(data, op):
                                        start_name='%syear_began' % prefix,
                                        end_name='%syear_ended' % prefix))
 
+    if data['publication_type']:
+        publication_type_qargs = { '%spublication_type__in' % prefix:
+                                   data['publication_type'] }
+        q_and_only.append(Q(**publication_type_qargs))
+
     if data['language']:
         language_qargs = { '%slanguage__code__in' % prefix: data['language'] }
         q_and_only.append(Q(**language_qargs))
@@ -1521,7 +1535,7 @@ def search_stories(data, op):
             q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op):
                                 data[field] }))
 
-    for field in ('feature', 'title', 'genre', 'job_number', 'characters',
+    for field in ('feature', 'title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
         if data[field]:
             q_and_only.append(Q(**{ '%s%s__%s' % (prefix, field, op):
@@ -1529,6 +1543,10 @@ def search_stories(data, op):
 
     if data['type']:
         q_and_only.append(Q(**{ '%stype__in' % prefix: data['type'] }))
+
+    if data['genre']:
+        for genre in data['genre']:
+            q_and_only.append(Q(**{ '%sgenre__icontains' % prefix: genre }))
 
     if data['story_editing']:
         q_objs.append(Q(**{ '%sediting__%s' % (prefix, op):
