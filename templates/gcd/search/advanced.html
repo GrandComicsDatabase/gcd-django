@@ -61,24 +61,6 @@ if ($(window).width() < 1240) {
 </ol>
 </fieldset>
 
-<fieldset class="ordering">
-<legend>Ordering</legend>
-<ol>
-  {{ form.order1|show_form }}
-  {{ form.order2|show_form }}
-  {{ form.order3|show_form }}
-</ol>
-</fieldset>
-
-<fieldset class="universal">
-<legend>Date Fields</legend>
-<ol>
-  {{ form.start_date|show_form }}
-  {{ form.end_date|show_form }}
-  {{ form.use_on_sale_date|show_form }}
-</ol>
-</fieldset>
-
 <fieldset class="sequence">
   <legend> Story Fields </legend>
   <ol>
@@ -106,6 +88,7 @@ if ($(window).width() < 1240) {
     <legend> Contents </legend>
     <ol>
       {{ form.genre|show_form }}
+      {{ form.first_line|show_form }}
       {{ form.characters|show_form }}
       {{ form.synopsis|show_form }}
       {{ form.reprint_notes|show_form }}
@@ -119,9 +102,53 @@ if ($(window).width() < 1240) {
     </ol>
   </fieldset>
 </fieldset>
+<fieldset class="issue" id="issue_fieldset">
+  <legend>
+    Issue Fields
+  </legend>
+  <ol>
+    {{ form.issues|show_form }}
+    {{ form.volume|show_form }}
+    {{ form.issue_title|show_form }}
+    {{ form.variant_name|show_form }}
+    {{ form.is_variant|show_form }}
+    {{ form.issue_date|show_form }}
+    {{ form.indicia_frequency|show_form }}
+    {{ form.price|show_form }}
+    {{ form.issue_pages|show_form }}
+    {{ form.issue_pages_uncertain|show_form }}
+    {{ form.issue_editing|show_form }}
+    {{ form.isbn|show_form }}
+    {{ form.barcode|show_form }}
+    {{ form.rating|show_form }}
+    {{ form.issue_notes|show_form }}
+    {{ form.issue_reprinted|show_form }}
+    {{ form.cover_needed|show_form }}
+    {{ form.is_indexed|show_form }}
+    {{ form.image_resources|show_form }}
+  </ol>
+</fieldset>
 </div>
 
 <div class="search_right">
+<fieldset class="ordering">
+<legend>Ordering</legend>
+<ol>
+  {{ form.order1|show_form }}
+  {{ form.order2|show_form }}
+  {{ form.order3|show_form }}
+</ol>
+</fieldset>
+
+<fieldset class="universal">
+<legend>Date Fields</legend>
+<ol>
+  {{ form.start_date|show_form }}
+  {{ form.end_date|show_form }}
+  {{ form.use_on_sale_date|show_form }}
+</ol>
+</fieldset>
+
 <fieldset class="publisher" id="publisher_fieldset">
   <legend>
     Publisher Fields
@@ -164,6 +191,7 @@ if ($(window).width() < 1240) {
     {{ form.series|show_form }}
     {{ form.series_year_began|show_form }}
     {{ form.series_notes|show_form }}
+    {{ form.publication_type|show_form }}
     {{ form.tracking_notes|show_form }}
     {{ form.issue_count|show_form }}
     {{ form.not_reserved|show_form }}
@@ -171,45 +199,26 @@ if ($(window).width() < 1240) {
     {{ form.is_comics|show_form }}
     {{ form.language|show_form }}
   </ol>
-</fieldset>
 
-<fieldset class="format" id="format_fieldset">
-  <legend>
+  <fieldset class="format" id="format_fieldset">
+    <legend>
     Format Fields
-  </legend>
-  <ol>
+    </legend>
+    <ol>
     {{ form.color|show_form }}
     {{ form.dimensions|show_form }}
     {{ form.paper_stock|show_form }}
     {{ form.binding|show_form }}
     {{ form.publishing_format|show_form }}
-  </ol>
+    </ol>
+  </fieldset>
 </fieldset>
 
-<fieldset class="issue" id="issue_fieldset">
+<fieldset class="indexer" id="indexer_fieldset">
   <legend>
-    Issue Fields
+    Indexer
   </legend>
   <ol>
-    {{ form.issues|show_form }}
-    {{ form.volume|show_form }}
-    {{ form.issue_title|show_form }}
-    {{ form.variant_name|show_form }}
-    {{ form.is_variant|show_form }}
-    {{ form.issue_date|show_form }}
-    {{ form.indicia_frequency|show_form }}
-    {{ form.price|show_form }}
-    {{ form.issue_pages|show_form }}
-    {{ form.issue_pages_uncertain|show_form }}
-    {{ form.issue_editing|show_form }}
-    {{ form.isbn|show_form }}
-    {{ form.barcode|show_form }}
-    {{ form.rating|show_form }}
-    {{ form.issue_notes|show_form }}
-    {{ form.issue_reprinted|show_form }}
-    {{ form.cover_needed|show_form }}
-    {{ form.is_indexed|show_form }}
-    {{ form.image_resources|show_form }}
     {{ form.indexer|show_form }}
   </ol>
 </fieldset>

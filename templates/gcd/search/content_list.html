@@ -42,13 +42,7 @@
       {{ story|show_credit:which_credit|safe }}
       </dl>
     {% endif %}
-    <td> <a href="{{ url }}#{{ story.id}}">
-      {% if story.title %}
-        {{ story.title }}
-      {% else %}
-        [ no title ]
-      {% endif %}
-         </a><br>
+    <td> <a href="{{ url }}#{{ story.id}}">{{ story|show_title:1 }}</a><br>
     {% if story.feature %}
     {{ story.feature }} /
     {% endif %}
