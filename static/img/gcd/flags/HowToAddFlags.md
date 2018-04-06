@@ -8,9 +8,9 @@ corresponding commons.wikipedia.org page about the flag as listed in
 
 To add a missing icon:
 
-* put the flag from commons.wikipedia.org in SVG format and rename it to `svg/<language-code>.svg`
+* put the flag from commons.wikipedia.org in SVG format and rename it to `svg/<country-code>.svg`
 * run `svg/convertScript` (which requires the `convert` command from ImageMagick)
-* copy `<language-code>.png` to this directory
+* copy `<country-code>.png` to this directory
 * add the source page in `svg/svg_sources`
 * commit both the PNG and SVG file to git
 

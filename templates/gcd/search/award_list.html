@@ -1,0 +1,22 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% load cycle from future %}
+{% load display %}
+{% load credits %}
+
+{% block list_contents %}
+<table class="listing">
+  <tr style="vertical-align:top">
+    <th colspan="2"> Award </th>
+  </tr>
+  {% for award in items %}
+    {% with award|object_filter as award %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td class="listing_publisher"> <a href="{{ award.get_absolute_url }}">{{ award.name }}</a></td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>
+
+{% endblock %}
+

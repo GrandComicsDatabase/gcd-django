@@ -37,7 +37,10 @@
     {% csrf_token %}
   </form>
   <script>
-    function remove_issue(issue_name, collection_name, delete_url) {
+    function remove_issue(delete_url) {
+        var item = document.getElementById('remove-item');
+        var issue_name = item.dataset.issue;
+        var collection_name = item.dataset.collection;
         BootstrapDialog.confirm({
             title: '<h4 class="modal-title">{% trans "Remove issue from collection " %}'+collection_name+'</h4>',
             message: '{% trans "Do you want to remove the issue <b>" %}'+issue_name+'</b> ?',
@@ -83,8 +86,7 @@
 {% block content %}
   {% bootstrap_messages %}
   <div class="page-header middle-header">
-    <h1>
-    <a href="{{ item.issue.get_absolute_url }}">{{ item.issue.full_name }}</a>
+    <h1>{{ item.issue.full_name_with_link }}
     {% if item_after %}
     <a href="{% url 'view_item' item_id=item_after.id collection_id=collection.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-right"></span></button></a>
     {% endif %}
@@ -104,8 +106,8 @@
       <button type="button" class="btn btn-primary pull-right"
               data-toggle="modal" href="#edit-item">{% trans "Edit" %}
       </button>
-      <button type="button" class="btn btn-primary pull-right"
-              data-toggle="modal" onclick="remove_issue('{{ item.issue.full_name }}', '{{ collection.name }}', '{% url "delete_item" item.id collection.id %}');">{% trans "Delete from collection" %}
+      <button type="button" class="btn btn-primary pull-right" onclick="remove_issue('{% url "delete_item" item.id collection.id %}');"
+              id="remove-item" data-toggle="modal" data-issue="{{ item.issue.full_name }}" data-collection="{{ collection.name }}">{% trans "Delete from collection" %}
       </button>
       <button type="button" class="btn btn-primary pull-right"
               data-toggle="modal" href="#move-collection-item">{% trans "To other collection" %}
@@ -165,5 +167,12 @@
     </div>
   </div>
 
+<script type="text/javascript">
+$(document).ready(function() {
 
+  if(window.location.href.indexOf('#edit-item') != -1) {
+    $('#edit-item').modal('show');
+  }
+});
+</script>
 {% endblock %}

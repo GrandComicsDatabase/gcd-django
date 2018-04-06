@@ -31,7 +31,7 @@ from apps.indexer.views import ViewTerminationError, render_error
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
-    Series, SeriesBond, Story, StoryType, Creator, CreatorMembership,
+    Series, SeriesBond, Story, StoryType, Award, Creator, CreatorMembership,
     CreatorArtInfluence, CreatorAward, CreatorDegree, CreatorNonComicWork, 
     CreatorRelation, CreatorSchool, NameType, SourceType, School, Degree,
     RelationType)
@@ -39,7 +39,8 @@ from apps.gcd.views import paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
     show_creator_membership, show_creator_award, show_creator_art_influence, \
-    show_creator_non_comic_work, show_creator_school, show_creator_degree
+    show_creator_non_comic_work, show_creator_school, show_creator_degree, \
+    show_award
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -53,7 +54,7 @@ from apps.oi.models import (
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, OngoingReservation, RevisionLock, _get_revision_lock,
     _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last,
-    DataSourceRevision, CreatorRevision,
+    DataSourceRevision, AwardRevision, CreatorRevision,
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
@@ -64,6 +65,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
                            get_brand_use_revision_form,
                            get_bulk_issue_revision_form,
+                           get_award_revision_form,
                            get_creator_revision_form,
                            get_indicia_publisher_revision_form,
                            get_publisher_revision_form,
@@ -103,6 +105,7 @@ REVISION_CLASSES = {
     'cover': CoverRevision,
     'reprint': ReprintRevision,
     'image': ImageRevision,
+    'award': AwardRevision,
     'creator': CreatorRevision,
     'creator_art_influence': CreatorArtInfluenceRevision,
     'creator_award': CreatorAwardRevision,
@@ -130,6 +133,7 @@ DISPLAY_CLASSES = {
     'reprint_from_issue': ReprintFromIssue,
     'issue_reprint': IssueReprint,
     'image': Image,
+    'award': Award,
     'creator': Creator,
     'creator_art_influence': CreatorArtInfluence,
     'creator_award': CreatorAward,
@@ -4150,6 +4154,7 @@ def show_queue(request, queue_name, state):
     changes = Changeset.objects.filter(**kwargs).select_related(
       'indexer__indexer', 'approver__indexer')
 
+    awards = changes.filter(change_type=CTYPES['award'])
     creators = changes.filter(change_type=CTYPES['creator'])
     creator_art_influences = changes.filter(change_type=CTYPES['creator_art_influence'])
     creator_awards = changes.filter(change_type=CTYPES['creator_award'])
@@ -4188,6 +4193,11 @@ def show_queue(request, queue_name, state):
         'country_names': country_names,
           'data': [
               {
+                  'object_name': 'Awards',
+                  'object_type': 'award',
+                  'changesets': awards.order_by('modified', 'id')
+              },
+              {
                   'object_name': 'Creators',
                   'object_type': 'creator',
                   'changesets': creators.order_by('modified', 'id') \
@@ -4202,7 +4212,7 @@ def show_queue(request, queue_name, state):
                       'creatormembershiprevisions__creator__birth_country__id'))
               },
               {
-                  'object_name': 'Awards',
+                  'object_name': 'Creator Awards',
                   'object_type': 'creator_award',
                   'changesets': creator_awards.order_by('modified', 'id') \
                       .annotate(country=Max(
@@ -4665,6 +4675,18 @@ def preview(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     template = 'gcd/details/%s.html' % model_name
 
+    if 'issue' == model_name:
+        return show_issue(request, revision, True)
+    if 'series' == model_name:
+        return show_series(request, revision, True)
+    if 'publisher' == model_name:
+        return show_publisher(request, revision, True)
+    if 'indicia_publisher' == model_name:
+        return show_indicia_publisher(request, revision, True)
+    if 'brand_group' == model_name:
+        return show_brand_group(request, revision, True)
+    if 'brand' == model_name:
+        return show_brand(request, revision, True)
     if 'creator' == model_name:
         return show_creator(request, revision, True)
     if 'creator_membership' == model_name:
@@ -4679,18 +4701,8 @@ def preview(request, id, model_name):
         return show_creator_school(request, revision, True)
     if 'creator_degree' == model_name:
         return show_creator_degree(request, revision, True)
-    if 'publisher' == model_name:
-        return show_publisher(request, revision, True)
-    if 'indicia_publisher' == model_name:
-        return show_indicia_publisher(request, revision, True)
-    if 'brand_group' == model_name:
-        return show_brand_group(request, revision, True)
-    if 'brand' == model_name:
-        return show_brand(request, revision, True)
-    if 'series' == model_name:
-        return show_series(request, revision, True)
-    if 'issue' == model_name:
-        return show_issue(request, revision, True)
+    if 'award' == model_name:
+        return show_award(request, revision, True)
     return render_error(request,
       u'No preview for "%s" revisions.' % model_name)
 
@@ -4745,6 +4757,36 @@ def process_data_source(creator_form, field_name, changeset=None,
                                 changeset=changeset,
                                 sourced_revision=sourced_revision,
                                 field=field_name)
+
+
+@permission_required('indexer.can_reserve')
+def add_award(request):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('add'))
+
+    form = get_award_revision_form(user=request.user)(request.POST or None)
+    if form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['award'])
+        changeset.save()
+        revision = form.save(commit=False)
+        revision.save_added_revision(changeset=changeset)
+        return submit(request, changeset.id)
+    else:
+        object_name = 'Award'
+        object_url = urlresolvers.reverse('add_award')
+
+        return oi_render_to_response('oi/edit/add_frame.html',
+          {
+            'object_name': object_name,
+            'object_url': object_url,
+            'action_label': 'Submit new',
+            'form': form,
+          },
+          context_instance=RequestContext(request))
 
 
 @permission_required('indexer.can_reserve')

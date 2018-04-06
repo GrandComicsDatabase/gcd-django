@@ -5,6 +5,7 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 
+from .gcddata import GcdData
 from apps.gcd.models import Image
 from apps.stddata.models import Country, Date
 from apps.oi import states
@@ -624,13 +625,25 @@ class CreatorMembership(models.Model):
         return '%s' % unicode(self.organization_name)
 
 
-class Award(models.Model):
+class Award(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ('name',)
         verbose_name_plural = 'Awards'
 
     name = models.CharField(max_length=200)
+    notes = models.TextField()
+
+    def deletable():
+        return False
+
+    def active_awards(self):
+        return self.creatoraward_set.exclude(deleted=True)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_award',
+                kwargs={'award_id': self.id})
 
     def __unicode__(self):
         return unicode(self.name)
@@ -670,6 +683,18 @@ class CreatorAward(models.Model):
 
     def deletable(self):
         return self.creator.pending_deletion() is False
+
+    def display_name(self):
+        if self.award_name:
+            return self.award_name
+        else:
+            return '[no name]'
+
+    def display_year(self):
+        if not self.award_year:
+            return '?'
+        else:
+            return '%d%s' % (self.award_year, '?' if self.award_year_uncertain else '')
 
     def get_absolute_url(self):
         return urlresolvers.reverse(

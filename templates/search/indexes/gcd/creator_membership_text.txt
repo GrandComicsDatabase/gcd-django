@@ -1,4 +1,4 @@
-{{ object.organization_name }}
-{{ object.creator.gcd_official_name }}
-{{ object.creator.birth_country }}
-{{ object.membership_type }}
+{{ object.organization_name|safe }}
+{{ object.creator|safe }}
+{{ object.membership_type|safe }}
+{{ object.notes|safe }}

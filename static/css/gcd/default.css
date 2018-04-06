@@ -472,6 +472,22 @@ form.before_listing {
     float: left;
 }
 
+.facet_listing summary {
+    margin-top: 1em;
+    text-align: left;
+    background-color: rgb(136, 136, 136);
+    color: white;
+    font-weight: bold;
+    width: 10.25em;
+    padding: 0.4em;
+}
+
+.facet_listing table {
+    border-collapse: collapse;
+    width: 11em;
+    border-style: hidden;
+}
+
 .listing {
     float: left;
     clear: both;
@@ -492,7 +508,7 @@ form.before_listing {
     color: white;
 }
 
-.listing td {
+.listing td, .facet_listing td {
     padding: .3em .5em;
     border-right: solid silver 1px;
 }
