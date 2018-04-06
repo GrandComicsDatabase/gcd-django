@@ -30,7 +30,8 @@
 <ul>
     {% endif %}
     {% for collection in item.collections.all %}
-  <li>in <a href='{{ item|item_url:collection }}'>{{ collection }}</a>
+  <li style="font-size:larger;">in <a href='{{ item|item_url:collection }}'>{{ collection }}</a>
+    <form><button formaction='{{ item|item_url:collection }}#edit-item'>Edit Item</button></form>
     {% endfor %}
    {% if forloop.last %}
 </ul>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="800" viewBox="-64,-40 120,80">
+	<rect x="-64" y="-40" width="120" height="80" fill="#e70013"/>
+	<circle cx="-4" r="20" fill="#fff"/>
+	<circle cx="-4" r="13.26" fill="#e70013"/>
+	<circle r="12" fill="#fff"/>
+	<g id="c">
+		<path id="t" d="M -9,0 H 0 V -4.5" transform="rotate(18 -9,0)" fill="#e70013"/>
+		<use xlink:href="#t" transform="scale(1,-1)"/>
+	</g>
+	<use xlink:href="#c" transform="rotate(72)"/>
+	<use xlink:href="#c" transform="rotate(144)"/>
+	<use xlink:href="#c" transform="rotate(216)"/>
+	<use xlink:href="#c" transform="rotate(288)"/>
+</svg>

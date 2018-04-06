@@ -274,7 +274,7 @@ def compare_current_reprints(object_type, changeset):
           .exclude(changeset=changeset).filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True).exclude(next_revision=None)
 
-    if (active_origin | active_target).count():
+    if active_origin.exists() or active_target.exists():
         if object_type.changeset_id != changeset.id:
             reprint_string = '<ul>The following reprint links are edited in ' \
                              'the compared changeset.'
@@ -320,7 +320,7 @@ def compare_current_reprints(object_type, changeset):
     else:
         reprint_string = ''
 
-    if (kept_origin | kept_target).count():
+    if kept_origin.exists() or kept_target.exists():
         kept_string = ''
         kept_target = list(kept_target.select_related(\
                            'origin_issue__series__publisher',

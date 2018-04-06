@@ -7,13 +7,25 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('oi', '0005_issuerevision_volume_not_printed'),
+        ('oi', '0006_award_editable'),
     ]
 
     operations = [
         migrations.AlterModelOptions(
             name='creatorrelationrevision',
             options={'ordering': ('to_creator', 'relation_type', 'from_creator'), 'verbose_name_plural': 'Creator Relation Revisions'},
+        ),
+        migrations.AddField(
+            model_name='awardrevision',
+            name='committed',
+            field=models.NullBooleanField(default=None, db_index=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='awardrevision',
+            name='previous_revision',
+            field=models.OneToOneField(related_name='next_revision', null=True, to='oi.AwardRevision'),
+            preserve_default=True,
         ),
         migrations.AddField(
             model_name='brandgrouprevision',

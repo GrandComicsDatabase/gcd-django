@@ -436,6 +436,9 @@ def handle_gatefold_cover(request, cover, issue, form):
             'comments': comments, 'real_width': im.size[0]}
     if cover:
         vars['cover_id'] = cover.id
+        #  gatefold cover replacement might not be done till the end
+        _free_revision_lock(cover)
+
     form = GatefoldScanForm(initial=vars)
 
     return render_to_response('oi/edit/upload_gatefold_cover.html', {

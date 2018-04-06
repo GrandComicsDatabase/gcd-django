@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gcd', '0005_issue_volume_not_printed'),
+        ('gcd', '0006_award_editable'),
         ('oi', '0003_migrate_reservations_to_locks'),
     ]
 

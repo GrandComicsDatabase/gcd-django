@@ -1,4 +1,4 @@
-{{ object.publication_title }}
+{{ object.publication_title|safe }}
 {{ object.work_type }}
-{{ object.creator.gcd_official_name }}
-{{ object.creator.birth_country }}
+{{ object.creator|safe }}
+{{ object.notes|safe }}

@@ -19,16 +19,16 @@
       <dl class="pub_data">
 {% if creator_award.award %}
         <dt> Award:
-        <dd> {{ creator_award.award }}
+        <dd> <a href="{{ creator_award.award.get_absolute_url }}">{{ creator_award.award }}</a>
 {% endif %}
         <dt> Award Name:
-        <dd> {{ creator_award.award_name }}
+        <dd> {{ creator_award.display_name }}
 {% if creator_award.award_year %}
         <dt> Award Year:
         <dd> {{ creator_award.award_year }}
 {% endif %}
         {% if creator_award.notes %}
-        <dt>Notes
+        <dt>Notes:
         <dd>{{ creator_award.notes }}
         {% endif %}
         {% with creator_award.data_source.all as data_sources %}

@@ -62,6 +62,10 @@ table.status td {
     border: solid black 1px;
 }
 
+table.status a {
+    display: block;
+}
+
 table.status :link {
     color: black;
 }

@@ -1,7 +1,5 @@
-{{ object.gcd_official_name }}
+{{ object.gcd_official_name|safe }}
 {{ object.display_birthplace }}
-{{ object.display_birthday }}
 {{ object.display_deathplace }}
-{{ object.display_deathday }}
-{{ object.bio }}
-{{ object.notes }}
+{{ object.bio|safe }}
+{{ object.notes|safe }}

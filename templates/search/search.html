@@ -83,36 +83,47 @@
       {% endif %}
       <div id="Container">
       <div id="LeftSearchColumn">
-        <table class="listing left">
-          <tr>
-            <th>Country</th>
-          </tr>
+        <details {% if is_country_selected %} open="open" {% endif %} class="facet_listing left">
+        <summary>Country ({{ facets.fields.country|length }})</summary>
+        <table class="facet_listing left">
       {% for country in facets.fields.country %}
             <tr class="{% cycle 'listing_even' 'listing_odd' %}">
           <td><a href="?{{ query }}{{ facet_page }}{% if not is_country_selected %}&amp;selected_facets=country_exact:{{ country.0|urlencode }}{% endif %}">{{ country.0|get_country_flag:1 }} ({{ country.1}})</a>
           </td></tr>
       {% endfor %}
         </table>
-        <table class="listing left">
-          <tr>
-            <th>Language</th>
-          </tr>
+      </details>
+
+        <details {% if is_language_selected %} open="open" {% endif %} class="facet_listing left">
+        <summary>Language ({{ facets.fields.language|length }}) </summary>
+        <table class="facet_listing">
       {% for language in facets.fields.language %}
             <tr class="{% cycle 'listing_even' 'listing_odd' %}">
           <td><a href="?{{ query }}{{ facet_page }}{% if not is_language_selected %}&amp;selected_facets=language_exact:{{ language.0|urlencode }}{% endif %}">{{ language.0|get_native_language_name }} ({{ language.1}})</a>
           </td></tr>
       {% endfor %}
         </table>
-        <table class="listing left">
-          <tr>
-            <th>Publisher</th>
-          </tr>
+      </details>
+       <details {% if is_publisher_selected %} open="open" {% endif %} class="facet_listing left">
+        <summary>Publisher ({{ facets.fields.publisher|length }})</summary>
+        <table class="facet_listing left">
       {% for publisher in facets.fields.publisher %}
             <tr class="{% cycle 'listing_even' 'listing_odd' %}">
           <td><a href="?{{ query }}{{ facet_page }}{% if not is_publisher_selected %}&amp;selected_facets=publisher_exact:{{ publisher.0|urlencode }}{% endif %}">{{ publisher.0 }} ({{ publisher.1}})</a>
           </td></tr>
       {% endfor %}
         </table>
+      </details>
+       <details {% if is_feature_selected %} open="open" {% endif %} class="facet_listing left">
+        <summary>Feature ({{ facets.fields.feature|length }})</summary>
+        <table class="facet_listing left">
+      {% for feature in facets.fields.feature %}
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_feature_selected or forloop.counter > 1 %}&amp;selected_facets=feature_exact:{{ feature.0|urlencode }}{% endif %}">{{ feature.0 }} ({{ feature.1}})</a>
+          </td></tr>
+      {% endfor %}
+        </table>
+      </details>
       </div>
       <div id="RightSearchColumn">
       <div class="left">
@@ -152,11 +163,7 @@
             {% endif %}
             {% if result.model_name == 'story' %}
                 <td>[STORY]</td>
-                <td><a href="{{ result.object.get_absolute_url }}">{% if result.object.title %}
-                {{ result.object.title }}</a>
-              {% else %}
-                [ no title ]</a>
-              {% endif %}
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object|show_title }}</a>
               {% if result.object.feature %} / {{ result.object.feature }}{% endif %}
               {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}
               (from
@@ -185,6 +192,11 @@
                   <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
 
+            {% if result.model_name == 'award' %}
+                <td>[AWARD]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+            {% endif %}
+
             {% if result.model_name == 'creator' %}
                 <td>[CREATOR]</td>
                 <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.gcd_official_name }}</a></td>
@@ -199,7 +211,7 @@
             {% endif %}
             {% if result.model_name == 'creatoraward' %}
                 <td>[CREATOR AWARD]</td>
-                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.award }} - {{ result.object.award_name }}</a></td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.award }} - {{ result.object.display_name }}: {{ result.object.creator }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatornoncomicwork' %}
                 <td>[CREATOR NONCOMICWORK]</td>
@@ -254,4 +266,5 @@
           <li>using OR in a search finds matches for the terms before the OR or the <b>one</b> term/phrase directly after the OR, e.g. Grant Morrison OR "Warren Ellis", which is different to Grant Morrison OR Warren Ellis.
         </ul>
       Special characters, e.g. ,;/, are ignored.</p>
+{% include 'oi/bits/jquery.html' with details=True %}
 {% endblock %}

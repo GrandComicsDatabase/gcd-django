@@ -1,0 +1,2 @@
+{{ object.name|safe }}
+{{ object.notes|safe }}

@@ -8,12 +8,13 @@ from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
                            CreatorNonComicWorkRevision, CreatorRelationRevision, \
                            CreatorSchoolRevision, get_creator_field_list,\
                            DataSourceRevision, CreatorDegreeRevision, \
-                           _get_creator_sourced_fields, _check_year
+                           _get_creator_sourced_fields, _check_year, \
+                           AwardRevision
 
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
                       CREATOR_NONCOMICWORK_HELP_TEXTS,
-                      CREATOR_RELATION_HELP_TEXTS,
+                      CREATOR_RELATION_HELP_TEXTS, AWARD_HELP_LINKS,
                       CREATOR_HELP_LINKS, CREATOR_AWARD_HELP_LINKS,
                       CREATOR_ARTINFLUENCE_HELP_LINKS,
                       CREATOR_DEGREE_HELP_LINKS, CREATOR_MEMBERSHIP_HELP_LINKS,
@@ -31,6 +32,24 @@ def _generic_data_source_clean(form, cd):
         if not data_source_type or not data_source_description:
             form.add_error('_source_description',
               'Source description and source type must both be set.')
+
+
+def get_award_revision_form(revision=None, user=None):
+    class RuntimeAwardRevisionForm(AwardRevisionForm):
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, AWARD_HELP_LINKS)
+            return super(AwardRevisionForm, self).as_table()
+
+    return RuntimeAwardRevisionForm
+
+
+class AwardRevisionForm(forms.ModelForm):
+    class Meta:
+        model = AwardRevision
+        fields = model._base_field_list
+
+    comments = _get_comments_form_field()
 
 
 def get_creator_revision_form(revision=None, user=None):
