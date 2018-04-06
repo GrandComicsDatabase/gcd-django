@@ -202,16 +202,7 @@ class Creator(GcdData):
     death_city_uncertain = models.BooleanField(default=False)
 
     portrait = GenericRelation(Image)
-    # TODO needed this way ?
-    schools = models.ManyToManyField('School',
-                                     related_name='schoolinformation',
-                                     through='CreatorSchool',
-                                     null=True)
-    degrees = models.ManyToManyField('Degree',
-                                     related_name='degreeinformation',
-                                     through='CreatorDegree',
-                                     null=True)
-    # creators roles
+
     bio = models.TextField()
     sample_scan = GenericRelation(Image)
     notes = models.TextField()
