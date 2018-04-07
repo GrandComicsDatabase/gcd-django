@@ -3,22 +3,14 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 from apps.oi import states
-    
-def move_first_line_from_title(apps, schema_editor):
-    Story = apps.get_model('gcd', 'Story')
-    RevisionLock = apps.get_model('oi', 'RevisionLock')
+
+def actual_move(stories):
     StoryRevision = apps.get_model('oi', 'StoryRevision')
     ContentType = apps.get_model('contenttypes', 'ContentType')
-
-    stories=Story.objects.filter(title_inferred=True,
-                                 title__startswith='"',
-                                 title__endswith='"',
-                                 deleted=False)
+    RevisionLock = apps.get_model('oi', 'RevisionLock')
 
     ct = ContentType.objects.get(app_label='gcd',
                                  model='story')
-
-
     for story in stories:
         if not RevisionLock.objects.filter(object_id=story.id,
                                            content_type=ct).first():
@@ -38,6 +30,38 @@ def move_first_line_from_title(apps, schema_editor):
             revision.title_inferred = False
             revision.save()
 
+def move_first_line_from_title(apps, schema_editor):
+    Story = apps.get_model('gcd', 'Story')
+
+    stories=Story.objects.filter(title_inferred=True,
+                                 title__startswith='"',
+                                 title__endswith='"',
+                                 deleted=False)
+    actual_move(stories)
+
+    stories=Story.objects.filter(title_inferred=True,
+                                 title__startswith='"',
+                                 title__endswith="'",
+                                 deleted=False)
+    actual_move(stories)
+
+    stories=Story.objects.filter(title_inferred=True,
+                                 title__startswith="'",
+                                 title__endswith='"',
+                                 deleted=False)
+    actual_move(stories)
+
+    stories=Story.objects.filter(title_inferred=True,
+                                 title__startswith="'",
+                                 title__endswith="'",
+                                 deleted=False)
+    actual_move(stories)
+
+    stories=Story.objects.filter(title_inferred=True,
+                                 title__startswith='“',
+                                 title__endswith='”',
+                                 deleted=False)
+    actual_move(stories)
 
 class Migration(migrations.Migration):
 
