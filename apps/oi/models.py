@@ -5636,7 +5636,7 @@ class ImageRevision(Revision):
     image_file = models.ImageField(upload_to='%s/%%m_%%Y' %
                                              settings.NEW_GENERIC_IMAGE_DIR)
     scaled_image = ImageSpecField([ResizeToFit(width=400)],
-                                  image_field='image_file',
+                                  source='image_file',
                                   format='JPEG', options={'quality': 90})
 
     marked = models.BooleanField(default=False)
