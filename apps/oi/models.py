@@ -5079,6 +5079,7 @@ class StoryRevision(Revision):
     def has_content(self):
         return (self.genre or
                 self.characters or
+                self.first_line or
                 self.synopsis or
                 self.keywords or
                 self.has_reprints())
