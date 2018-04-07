@@ -109,6 +109,7 @@ class Story(GcdData):
         """Simplifies UI checks for conditionals.  Content fields"""
         return self.genre or \
                self.characters or \
+               self.first_line or \
                self.synopsis or \
                self.keywords.exists() or \
                self.has_reprints()
