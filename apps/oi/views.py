@@ -678,7 +678,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
             try:
                 publisher_id = form.cleaned_data['move_to_publisher_with_id']
                 publisher = Publisher.objects.get(id=publisher_id,
-                                                  deleted=False, is_master=True)
+                                                  deleted=False)
             except Publisher.DoesNotExist:
                 return show_error_with_return(request,
                   'No publisher with id %d.' % publisher_id, changeset)
@@ -1846,7 +1846,7 @@ def add_indicia_publisher(request, parent_id):
         return render_error(request, REACHED_CHANGE_LIMIT)
 
     try:
-        parent = Publisher.objects.get(id=parent_id, is_master=True)
+        parent = Publisher.objects.get(id=parent_id)
         if parent.deleted or parent.pending_deletion():
             return render_error(request, u'Cannot add indicia / colophon '
               u'publishers since "%s" is deleted or pending deletion.' % parent)
@@ -1897,7 +1897,7 @@ def add_brand_group(request, parent_id):
         return render_error(request, REACHED_CHANGE_LIMIT)
 
     try:
-        parent = Publisher.objects.get(id=parent_id, is_master=True)
+        parent = Publisher.objects.get(id=parent_id)
         if parent.deleted or parent.pending_deletion():
             return render_error(request, u'Cannot add brands '
               u'since "%s" is deleted or pending deletion.' % parent)
@@ -2091,7 +2091,7 @@ def add_series(request, publisher_id):
 
     # Process add form if this is a POST.
     try:
-        publisher = Publisher.objects.get(id=publisher_id, is_master=True)
+        publisher = Publisher.objects.get(id=publisher_id)
         if publisher.deleted or publisher.pending_deletion():
             return render_error(request, u'Cannot add series '
               u'since "%s" is deleted or pending deletion.' % publisher)
@@ -3532,8 +3532,7 @@ def move_series(request, series_revision_id, publisher_id):
         return render_error(request,
           'Only the reservation holder may move series.')
 
-    publisher = Publisher.objects.filter(id=publisher_id, is_master=True,
-                                         deleted=False)
+    publisher = Publisher.objects.filter(id=publisher_id, deleted=False)
     if not publisher:
         return render_error(request, 'No publisher with id %s.' \
                             % publisher_id, redirect=False)
@@ -3757,7 +3756,7 @@ def undo_move_cover(request, id, cover_id):
 
     if request.method != 'POST':
         return _cant_get(request)
-
+    # TODO FIXME
     cover_revision = get_object_or_404(CoverRevision, id=cover_id, changeset=changeset)
     _free_revision_lock(cover_revision.cover)
     cover_revision.delete()
@@ -4430,10 +4429,7 @@ def compare(request, id):
         if not (revision.publication_notes or prev_rev and \
           prev_rev.publication_notes):
             field_list.remove('publication_notes')
-    elif model_name == 'publisher':
-        field_list.remove('is_master')
-        field_list.remove('parent')
-    elif model_name in ['brand', 'indicia_publisher']:
+    elif model_name in ['indicia_publisher']:
         field_list.remove('parent')
     elif model_name == 'issue':
         if changeset.change_type == CTYPES['issue_bulk'] or \
