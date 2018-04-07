@@ -4,7 +4,7 @@
 {% load forms %}
 {% load compress %}
 
-{% block title %} GCD :: Advanced Search {% endblock %}
+{% block title %} GCD :: Advanced Query {% endblock %}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
@@ -15,7 +15,7 @@
 
 {% block body %}
 
-{% with "Advanced Search" as bar_heading %}
+{% with "Advanced Query" as bar_heading %}
 {% include "gcd/bits/search_bar.html" %}
 {% endwith %}
 
@@ -35,7 +35,7 @@ if ($(window).width() < 1240) {
 }
 </script>
 
-<b>Advanced Search</b> allows field specific queries. It is somewhat experimental query builder and has <a href="#blithering">known bugs and limitations</a>, see below for more information.
+<b>Advanced Query</b> allows field specific queries. It is a somewhat experimental query builder and has <a href="#blithering">known oddities and limitations</a>, see below for more information.
 
 {% if error_text %}
 <div class="error_message">
@@ -47,12 +47,12 @@ if ($(window).width() < 1240) {
       action="{% url "apps.gcd.views.search.process_advanced" %}"
       method="get">
 <fieldset class="submit" style="margin-bottom: 0em">
-  <input type="submit" value="Search">
+  <input type="submit" value="Query">
 </fieldset>
 
 <div class="search_left">
 <fieldset class="control">
-<legend>Search Control</legend>
+<legend>Query Control</legend>
 <ol>
   {{ form.target|show_form }}
   {{ form.method|show_form }}
@@ -216,7 +216,7 @@ if ($(window).width() < 1240) {
 </div>
 <div class='search_left'>
 <fieldset class="submit">
-  <input type="submit" value="Search">
+  <input type="submit" value="Query">
 </fieldset>
 <fieldset class="submit">
   <input type="submit" name="random_search" value="Random Search Result">
@@ -227,14 +227,14 @@ if ($(window).width() < 1240) {
 <div class="search_left">
   <div id="blithering">
   <a name="blithering"></a>
-    <b>Advanced Search</b> is somewhat experimental and has known bugs and limitations
+    <b>Advanced Query</b> is somewhat experimental and has known oddities and limitations
     <ul>
       <li> All searches match <b>exact substrings</b>.  Punctuation is not
            ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
            two different searches. This is fundamentally different to how our
            <a href="/searchNew/">regular search</a> behaves, which ignores word
            order, but looks for exact word occurrences (unless a * is given).
-      <li> The default ordering of the search results sorts according to series
+      <li> The default ordering of the query results sorts according to series
            name and issue date.
            This ordering is not very useful if you search for publishers, you might
            want to change it under "Ordering".
