@@ -143,9 +143,9 @@ class StoryRevisionForm(forms.ModelForm):
     title = forms.CharField(
         widget=forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
         required=False,
-        help_text='If no title can be determined, preferably use here'
-                  ' the first line of text/dialogue in "quotation marks", or '
-                  'a made up title, and check unofficial title.')
+        help_text='If no title can be determined from the issue, follow '
+                  ' our instructions to determine a title and check '
+                  'unofficial title if needed.')
     title_inferred = forms.BooleanField(
         required=False, label='Unofficial title', help_text='')
 
