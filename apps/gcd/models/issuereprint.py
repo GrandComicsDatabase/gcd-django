@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-from issue import Issue
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+
+from .issue import Issue
 
 class IssueReprint(models.Model):
     class Meta:

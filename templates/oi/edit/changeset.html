@@ -66,14 +66,6 @@
       {% if changeset.change_type == CTYPES.series_bond %}
         {% include 'oi/edit/series_bond_changeset.html' %}
       {% endif %}
-      {% comment %}
-      {% if changeset.change_type == CTYPES.creator %}
-        {% include "oi/edit/include_creator_frame.html" %}
-      {% endif %}
-      {% if changeset.change_type == CTYPES.creator_noncomicwork %}
-        {% include "oi/edit/include_create_noncomicwork_frame.html" %}
-      {% endif %}
-      {% endcomment %}
       {% include "oi/edit/include_frame.html" %}
     {% else %}
       {% if changeset.publisherrevisions.count %}

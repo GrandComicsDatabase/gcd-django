@@ -1,5 +1,5 @@
-{{ object.award }}
-{{ object.award_name }}
-{{ object.creator.gcd_official_name }}
-{{ object.creator.birth_country }}
+{{ object.award|safe }}
+{{ object.award_name|safe }}
+{{ object.creator|safe }}
 {{ object.award_year }}
+{{ object.notes|safe }}

@@ -31,7 +31,7 @@ from apps.indexer.views import ViewTerminationError, render_error
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
-    Series, SeriesBond, Story, StoryType, Creator, CreatorMembership,
+    Series, SeriesBond, Story, StoryType, Award, Creator, CreatorMembership,
     CreatorArtInfluence, CreatorAward, CreatorDegree, CreatorNonComicWork, 
     CreatorRelation, CreatorSchool, NameType, SourceType, School, Degree,
     RelationType)
@@ -39,7 +39,8 @@ from apps.gcd.views import paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
     show_creator_membership, show_creator_award, show_creator_art_influence, \
-    show_creator_non_comic_work, show_creator_school, show_creator_degree
+    show_creator_non_comic_work, show_creator_school, show_creator_degree, \
+    show_award
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -53,7 +54,7 @@ from apps.oi.models import (
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, OngoingReservation, RevisionLock, _get_revision_lock,
     _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last,
-    DataSourceRevision, CreatorRevision,
+    DataSourceRevision, AwardRevision, CreatorRevision,
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
@@ -64,6 +65,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
                            get_brand_use_revision_form,
                            get_bulk_issue_revision_form,
+                           get_award_revision_form,
                            get_creator_revision_form,
                            get_indicia_publisher_revision_form,
                            get_publisher_revision_form,
@@ -103,6 +105,7 @@ REVISION_CLASSES = {
     'cover': CoverRevision,
     'reprint': ReprintRevision,
     'image': ImageRevision,
+    'award': AwardRevision,
     'creator': CreatorRevision,
     'creator_art_influence': CreatorArtInfluenceRevision,
     'creator_award': CreatorAwardRevision,
@@ -130,6 +133,7 @@ DISPLAY_CLASSES = {
     'reprint_from_issue': ReprintFromIssue,
     'issue_reprint': IssueReprint,
     'image': Image,
+    'award': Award,
     'creator': Creator,
     'creator_art_influence': CreatorArtInfluence,
     'creator_award': CreatorAward,
@@ -674,7 +678,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
             try:
                 publisher_id = form.cleaned_data['move_to_publisher_with_id']
                 publisher = Publisher.objects.get(id=publisher_id,
-                                                  deleted=False, is_master=True)
+                                                  deleted=False)
             except Publisher.DoesNotExist:
                 return show_error_with_return(request,
                   'No publisher with id %d.' % publisher_id, changeset)
@@ -1626,8 +1630,10 @@ def edit_issues_in_bulk(request):
             'persists, please contact an Editor.')
 
     nr_items = items.count()
-    items = items.filter(reserved=False)
-    nr_items_unreserved = items.count()
+    nr_items_reserved = RevisionLock.objects.filter(
+      object_id__in=items.values_list('id', flat=True),
+      content_type=ContentType.objects.get_for_model(items[0])).count()
+    nr_items_unreserved = nr_items - nr_items_reserved
     if nr_items_unreserved == 0:
         if nr_items == 0: # shouldn't really happen
             return HttpResponseRedirect(urlresolvers.reverse \
@@ -1840,7 +1846,7 @@ def add_indicia_publisher(request, parent_id):
         return render_error(request, REACHED_CHANGE_LIMIT)
 
     try:
-        parent = Publisher.objects.get(id=parent_id, is_master=True)
+        parent = Publisher.objects.get(id=parent_id)
         if parent.deleted or parent.pending_deletion():
             return render_error(request, u'Cannot add indicia / colophon '
               u'publishers since "%s" is deleted or pending deletion.' % parent)
@@ -1891,7 +1897,7 @@ def add_brand_group(request, parent_id):
         return render_error(request, REACHED_CHANGE_LIMIT)
 
     try:
-        parent = Publisher.objects.get(id=parent_id, is_master=True)
+        parent = Publisher.objects.get(id=parent_id)
         if parent.deleted or parent.pending_deletion():
             return render_error(request, u'Cannot add brands '
               u'since "%s" is deleted or pending deletion.' % parent)
@@ -2085,7 +2091,7 @@ def add_series(request, publisher_id):
 
     # Process add form if this is a POST.
     try:
-        publisher = Publisher.objects.get(id=publisher_id, is_master=True)
+        publisher = Publisher.objects.get(id=publisher_id)
         if publisher.deleted or publisher.pending_deletion():
             return render_error(request, u'Cannot add series '
               u'since "%s" is deleted or pending deletion.' % publisher)
@@ -3526,8 +3532,7 @@ def move_series(request, series_revision_id, publisher_id):
         return render_error(request,
           'Only the reservation holder may move series.')
 
-    publisher = Publisher.objects.filter(id=publisher_id, is_master=True,
-                                         deleted=False)
+    publisher = Publisher.objects.filter(id=publisher_id, deleted=False)
     if not publisher:
         return render_error(request, 'No publisher with id %s.' \
                             % publisher_id, redirect=False)
@@ -3751,10 +3756,9 @@ def undo_move_cover(request, id, cover_id):
 
     if request.method != 'POST':
         return _cant_get(request)
-
+    # TODO FIXME
     cover_revision = get_object_or_404(CoverRevision, id=cover_id, changeset=changeset)
-    cover_revision.cover.reserved=False
-    cover_revision.cover.save()
+    _free_revision_lock(cover_revision.cover)
     cover_revision.delete()
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',
@@ -4149,6 +4153,7 @@ def show_queue(request, queue_name, state):
     changes = Changeset.objects.filter(**kwargs).select_related(
       'indexer__indexer', 'approver__indexer')
 
+    awards = changes.filter(change_type=CTYPES['award'])
     creators = changes.filter(change_type=CTYPES['creator'])
     creator_art_influences = changes.filter(change_type=CTYPES['creator_art_influence'])
     creator_awards = changes.filter(change_type=CTYPES['creator_award'])
@@ -4187,6 +4192,11 @@ def show_queue(request, queue_name, state):
         'country_names': country_names,
           'data': [
               {
+                  'object_name': 'Awards',
+                  'object_type': 'award',
+                  'changesets': awards.order_by('modified', 'id')
+              },
+              {
                   'object_name': 'Creators',
                   'object_type': 'creator',
                   'changesets': creators.order_by('modified', 'id') \
@@ -4201,7 +4211,7 @@ def show_queue(request, queue_name, state):
                       'creatormembershiprevisions__creator__birth_country__id'))
               },
               {
-                  'object_name': 'Awards',
+                  'object_name': 'Creator Awards',
                   'object_type': 'creator_award',
                   'changesets': creator_awards.order_by('modified', 'id') \
                       .annotate(country=Max(
@@ -4370,7 +4380,9 @@ def show_cover_queue(request):
       callback=get_preview_image_tags_per_page)
 
 def compare(request, id):
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects\
+                                  .prefetch_related('comments__commenter'),
+                                  id=id)
 
     if changeset.inline():
         revision = changeset.inline_revision()
@@ -4417,10 +4429,7 @@ def compare(request, id):
         if not (revision.publication_notes or prev_rev and \
           prev_rev.publication_notes):
             field_list.remove('publication_notes')
-    elif model_name == 'publisher':
-        field_list.remove('is_master')
-        field_list.remove('parent')
-    elif model_name in ['brand', 'indicia_publisher']:
+    elif model_name in ['indicia_publisher']:
         field_list.remove('parent')
     elif model_name == 'issue':
         if changeset.change_type == CTYPES['issue_bulk'] or \
@@ -4662,6 +4671,18 @@ def preview(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     template = 'gcd/details/%s.html' % model_name
 
+    if 'issue' == model_name:
+        return show_issue(request, revision, True)
+    if 'series' == model_name:
+        return show_series(request, revision, True)
+    if 'publisher' == model_name:
+        return show_publisher(request, revision, True)
+    if 'indicia_publisher' == model_name:
+        return show_indicia_publisher(request, revision, True)
+    if 'brand_group' == model_name:
+        return show_brand_group(request, revision, True)
+    if 'brand' == model_name:
+        return show_brand(request, revision, True)
     if 'creator' == model_name:
         return show_creator(request, revision, True)
     if 'creator_membership' == model_name:
@@ -4676,18 +4697,8 @@ def preview(request, id, model_name):
         return show_creator_school(request, revision, True)
     if 'creator_degree' == model_name:
         return show_creator_degree(request, revision, True)
-    if 'publisher' == model_name:
-        return show_publisher(request, revision, True)
-    if 'indicia_publisher' == model_name:
-        return show_indicia_publisher(request, revision, True)
-    if 'brand_group' == model_name:
-        return show_brand_group(request, revision, True)
-    if 'brand' == model_name:
-        return show_brand(request, revision, True)
-    if 'series' == model_name:
-        return show_series(request, revision, True)
-    if 'issue' == model_name:
-        return show_issue(request, revision, True)
+    if 'award' == model_name:
+        return show_award(request, revision, True)
     return render_error(request,
       u'No preview for "%s" revisions.' % model_name)
 
@@ -4742,6 +4753,36 @@ def process_data_source(creator_form, field_name, changeset=None,
                                 changeset=changeset,
                                 sourced_revision=sourced_revision,
                                 field=field_name)
+
+
+@permission_required('indexer.can_reserve')
+def add_award(request):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('add'))
+
+    form = get_award_revision_form(user=request.user)(request.POST or None)
+    if form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['award'])
+        changeset.save()
+        revision = form.save(commit=False)
+        revision.save_added_revision(changeset=changeset)
+        return submit(request, changeset.id)
+    else:
+        object_name = 'Award'
+        object_url = urlresolvers.reverse('add_award')
+
+        return oi_render_to_response('oi/edit/add_frame.html',
+          {
+            'object_name': object_name,
+            'object_url': object_url,
+            'action_label': 'Submit new',
+            'form': form,
+          },
+          context_instance=RequestContext(request))
 
 
 @permission_required('indexer.can_reserve')

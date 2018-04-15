@@ -1,3 +1,4 @@
-{{ object.influence }}
-{{ object.creator.gcd_official_name }}
-{{ object.creator.birth_country }}
+{{ object.influence_name|safe }}
+{{ object.influence_link|safe }}
+{{ object.creator|safe }}
+{{ object.notes|safe }}

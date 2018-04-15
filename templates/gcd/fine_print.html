@@ -2,7 +2,7 @@
 {% with 1 as error_link %}
   {% include "gcd/bits/legalese.html" %}
 {% endwith %}
-{% if USE_TEMPLATESADMIN %}
+{% if USE_TEMPLATESADMIN and ADVERTISING and not EDITING%}
   {% include "managed_content/gcd/ads/ad_bottom.html" %}
 {% endif %}
 </div>

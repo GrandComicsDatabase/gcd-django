@@ -5,4 +5,14 @@ if (typeof jQuery == 'undefined')
 {
 document.write(unescape("%3Cscript src='{% static "jquery/js/jquery.min.js" %}' type='text/javascript'%3E%3C/script%3E"));
 }
+{% if details %}
+function detectIE() {
+    var ua = window.navigator.userAgent;
+    var ie = ua.search('(MSIE|Trident\/|Edge\/)');
+    return ie > -1;
+}
+if (detectIE()){
+document.write(unescape("%3Cscript src='{% static "js/details-element-polyfill.js" %}' type='text/javascript'%3E%3C/script%3E"));
+}
+{% endif %}
 </script>

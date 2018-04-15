@@ -1,69 +1,78 @@
-- fields: {name: comic story, sort_code: 1}
+- fields: {name: activity, sort_code: 12}
   model: gcd.storytype
-  pk: 19
-- fields: {name: text story, sort_code: 2}
+  pk: 1
+- fields: {name: advertisement, sort_code: 9}
   model: gcd.storytype
-  pk: 21
-- fields: {name: text article, sort_code: 3}
+  pk: 2
+- fields: {name: (backcovers) *do not use* / *please fix*, sort_code: 22}
   model: gcd.storytype
-  pk: 20
-- fields: {name: photo story, sort_code: 4}
+  pk: 3
+- fields: {name: biography (nonfictional), sort_code: 13}
   model: gcd.storytype
-  pk: 13
+  pk: 4
+- fields: {name: cartoon, sort_code: 7}
+  model: gcd.storytype
+  pk: 5
 - fields: {name: cover, sort_code: 5}
   model: gcd.storytype
   pk: 6
 - fields: {name: cover reprint (on interior page), sort_code: 6}
   model: gcd.storytype
   pk: 7
-- fields: {name: cartoon, sort_code: 7}
+- fields: {name: 'credits, title page', sort_code: 17}
   model: gcd.storytype
-  pk: 5
+  pk: 8
+- fields: {name: filler, sort_code: 21}
+  model: gcd.storytype
+  pk: 9
+- fields: {name: 'foreword, introduction, preface, afterword', sort_code: 16}
+  model: gcd.storytype
+  pk: 10
+- fields: {name: insert or dust jacket, sort_code: 20}
+  model: gcd.storytype
+  pk: 11
+- fields: {name: letters page, sort_code: 19}
+  model: gcd.storytype
+  pk: 12
+- fields: {name: photo story, sort_code: 4}
+  model: gcd.storytype
+  pk: 13
 - fields: {name: illustration, sort_code: 8}
   model: gcd.storytype
   pk: 14
-- fields: {name: advertisement, sort_code: 9}
+- fields: {name: character profile, sort_code: 14}
   model: gcd.storytype
-  pk: 2
+  pk: 15
 - fields: {name: promo (ad from the publisher), sort_code: 10}
   model: gcd.storytype
   pk: 16
 - fields: {name: public service announcement, sort_code: 11}
   model: gcd.storytype
   pk: 17
-- fields: {name: activity, sort_code: 12}
-  model: gcd.storytype
-  pk: 1
-- fields: {name: biography (nonfictional), sort_code: 13}
-  model: gcd.storytype
-  pk: 4
-- fields: {name: character profile, sort_code: 14}
-  model: gcd.storytype
-  pk: 15
-- fields: {name: statement of ownership, sort_code: 15}
-  model: gcd.storytype
-  pk: 22
-- fields: {name: 'foreword, introduction, preface, afterword', sort_code: 16}
-  model: gcd.storytype
-  pk: 10
-- fields: {name: 'credits, title page', sort_code: 17}
-  model: gcd.storytype
-  pk: 8
 - fields: {name: recap, sort_code: 18}
   model: gcd.storytype
   pk: 18
-- fields: {name: letters page, sort_code: 19}
+- fields: {name: comic story, sort_code: 1}
   model: gcd.storytype
-  pk: 12
-- fields: {name: insert or dust jacket, sort_code: 20}
+  pk: 19
+- fields: {name: text article, sort_code: 3}
   model: gcd.storytype
-  pk: 11
-- fields: {name: filler, sort_code: 21}
+  pk: 20
+- fields: {name: text story, sort_code: 2}
   model: gcd.storytype
-  pk: 9
-- fields: {name: (backcovers) *do not use* / *please fix*, sort_code: 22}
+  pk: 21
+- fields: {name: statement of ownership, sort_code: 15}
   model: gcd.storytype
-  pk: 3
+  pk: 22
 - fields: {name: (unknown), sort_code: 100}
   model: gcd.storytype
   pk: 23
+- fields: {name: blank page(s), sort_code: 235}
+  model: gcd.storytype
+  pk: 24
+- fields: {name: table of contents, sort_code: 165}
+  model: gcd.storytype
+  pk: 25
+- fields: {name: preview (from the publisher), sort_code: 50}
+  model: gcd.storytype
+  pk: 26

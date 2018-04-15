@@ -26,14 +26,39 @@ ALLOWED_HOSTS = [
     '.comics.org.',  # Allow FQDN and subdomains.  Can be dropped in 1.7
 ]
 
-# absolute path to the directory that holds templates.
-TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
-                  abspath(join(dirname(__file__),
-                               'apps', 'indexer', 'templates')),
-                  abspath(join(dirname(__file__),
-                               'apps', 'stats', 'templates')),
-                  abspath(join(dirname(__file__),
-                               'apps', 'voting', 'templates')),)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            # insert your TEMPLATE_DIRS here
+            abspath(join(dirname(__file__), 'templates')),
+            abspath(join(dirname(__file__), 'apps', 'indexer', 'templates')),
+            abspath(join(dirname(__file__), 'apps', 'stats', 'templates')),
+            abspath(join(dirname(__file__), 'apps', 'voting', 'templates')),
+        ],
+        'OPTIONS': {
+            'context_processors': [
+                # Insert your TEMPLATE_CONTEXT_PROCESSORS here
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.request',
+                'django.template.context_processors.static',
+                'django.contrib.messages.context_processors.messages',
+                'django_mobile.context_processors.flavour',
+                'apps.gcd.context_processors.gcd',
+            ],
+            'loaders': [
+                # insert your TEMPLATE_LOADERS here
+                'django_mobile.loader.Loader',
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ],
+            'debug': DEBUG,
+        },
+    },
+]
 
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
@@ -132,25 +157,6 @@ INSTALLED_APPS = (
 # Overridden in production via settings_local.py.
 SECRET_KEY = 'th0lnu%wjs_8=r4u_km3shvogzd%1n)t-5eosi964g0ek+a4p+'
 
-# Callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django_mobile.loader.Loader',
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-)
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.media',
-    'django.core.context_processors.request',
-    'django.core.context_processors.static',
-    'django_mobile.context_processors.flavour',
-    'apps.gcd.context_processors.gcd',
-)
-
 AUTHENTICATION_BACKENDS = (
     'apps.indexer.backends.EmailBackend',
     'django.contrib.auth.backends.ModelBackend',
@@ -207,7 +213,7 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 #################################################################################
 
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
-                        'compressor.filters.csstidy.CSSTidyFilter']
+                        'compressor.filters.cssmin.rCSSMinFilter']
 
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
@@ -226,6 +232,7 @@ HAYSTACK_CONNECTIONS = {
     },
 }
 
+# assumingly this needs elasticstack
 ELASTICSEARCH_INDEX_SETTINGS = {
     # index settings
     'settings': {

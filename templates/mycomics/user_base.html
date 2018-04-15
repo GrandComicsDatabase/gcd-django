@@ -3,6 +3,15 @@
 
 {% block modals %}
   {% include "mycomics/bits/help.html" %}
+  <script>
+    function news() {
+        BootstrapDialog.alert({
+            title: '<h4>{% trans "News for " %} my.comics.org</h4>',
+            message: '<p>There were some changes to my.comics.org in January of 2018.</p><ul><li>When moving an item between collections the own/want status now gets set to the default of the new collection. If you prefer this behavior to be a user option please contact us.</li><li>Items can be removed also from the collection page .</li></ul>',
+            closable: true, // <-- Default value is false
+        });
+    }
+  </script>
 {% endblock %}
 
 {% block header %}
@@ -26,6 +35,7 @@
         <li><a href="{% url "collections_list" %}">{% trans 'Collections' %}</a></li>
         <li><a href="{% url "mycomics_settings" %}">{% trans 'Settings' %}</a></li>
         <li><a href="#help-item" data-toggle="modal">{% trans 'Help' %}</a></li>
+        <li><a href="#" data-toggle="modal" onclick="news();">{% trans 'News' %}</a></li>
       </ul>
       <form class="navbar-form navbar-left" role="search" action="{% url "mycomics_search" %}" method="get">
         <div class="form-group">

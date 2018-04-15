@@ -21,6 +21,9 @@ urlpatterns = patterns('',
     url(r'^mentoring/$', oi_views.mentoring,
         name='mentoring'),
 
+    url(r'^award/add/$',
+     'apps.oi.views.add_award', name='add_award'),
+
     # Creator URLs
     url(r'^creator/add/$',
      'apps.oi.views.add_creator', name='add_creator'),

@@ -4,7 +4,7 @@
 {% load forms %}
 {% load compress %}
 
-{% block title %} GCD :: Advanced Search {% endblock %}
+{% block title %} GCD :: Advanced Query {% endblock %}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
@@ -15,7 +15,7 @@
 
 {% block body %}
 
-{% with "Advanced Search" as bar_heading %}
+{% with "Advanced Query" as bar_heading %}
 {% include "gcd/bits/search_bar.html" %}
 {% endwith %}
 
@@ -35,7 +35,7 @@ if ($(window).width() < 1240) {
 }
 </script>
 
-<b>Advanced Search</b> allows field specific queries. It is somewhat experimental query builder and has <a href="#blithering">known bugs and limitations</a>, see below for more information.
+<b>Advanced Query</b> allows field specific queries. It is a somewhat experimental query builder and has <a href="#blithering">known oddities and limitations</a>, see below for more information.
 
 {% if error_text %}
 <div class="error_message">
@@ -47,35 +47,17 @@ if ($(window).width() < 1240) {
       action="{% url "apps.gcd.views.search.process_advanced" %}"
       method="get">
 <fieldset class="submit" style="margin-bottom: 0em">
-  <input type="submit" value="Search">
+  <input type="submit" value="Query">
 </fieldset>
 
 <div class="search_left">
 <fieldset class="control">
-<legend>Search Control</legend>
+<legend>Query Control</legend>
 <ol>
   {{ form.target|show_form }}
   {{ form.method|show_form }}
   {{ form.logic|show_form }}
   {{ form.keywords|show_form }}
-</ol>
-</fieldset>
-
-<fieldset class="ordering">
-<legend>Ordering</legend>
-<ol>
-  {{ form.order1|show_form }}
-  {{ form.order2|show_form }}
-  {{ form.order3|show_form }}
-</ol>
-</fieldset>
-
-<fieldset class="universal">
-<legend>Date Fields</legend>
-<ol>
-  {{ form.start_date|show_form }}
-  {{ form.end_date|show_form }}
-  {{ form.use_on_sale_date|show_form }}
 </ol>
 </fieldset>
 
@@ -106,6 +88,7 @@ if ($(window).width() < 1240) {
     <legend> Contents </legend>
     <ol>
       {{ form.genre|show_form }}
+      {{ form.first_line|show_form }}
       {{ form.characters|show_form }}
       {{ form.synopsis|show_form }}
       {{ form.reprint_notes|show_form }}
@@ -119,9 +102,53 @@ if ($(window).width() < 1240) {
     </ol>
   </fieldset>
 </fieldset>
+<fieldset class="issue" id="issue_fieldset">
+  <legend>
+    Issue Fields
+  </legend>
+  <ol>
+    {{ form.issues|show_form }}
+    {{ form.volume|show_form }}
+    {{ form.issue_title|show_form }}
+    {{ form.variant_name|show_form }}
+    {{ form.is_variant|show_form }}
+    {{ form.issue_date|show_form }}
+    {{ form.indicia_frequency|show_form }}
+    {{ form.price|show_form }}
+    {{ form.issue_pages|show_form }}
+    {{ form.issue_pages_uncertain|show_form }}
+    {{ form.issue_editing|show_form }}
+    {{ form.isbn|show_form }}
+    {{ form.barcode|show_form }}
+    {{ form.rating|show_form }}
+    {{ form.issue_notes|show_form }}
+    {{ form.issue_reprinted|show_form }}
+    {{ form.cover_needed|show_form }}
+    {{ form.is_indexed|show_form }}
+    {{ form.image_resources|show_form }}
+  </ol>
+</fieldset>
 </div>
 
 <div class="search_right">
+<fieldset class="ordering">
+<legend>Ordering</legend>
+<ol>
+  {{ form.order1|show_form }}
+  {{ form.order2|show_form }}
+  {{ form.order3|show_form }}
+</ol>
+</fieldset>
+
+<fieldset class="universal">
+<legend>Date Fields</legend>
+<ol>
+  {{ form.start_date|show_form }}
+  {{ form.end_date|show_form }}
+  {{ form.use_on_sale_date|show_form }}
+</ol>
+</fieldset>
+
 <fieldset class="publisher" id="publisher_fieldset">
   <legend>
     Publisher Fields
@@ -164,6 +191,7 @@ if ($(window).width() < 1240) {
     {{ form.series|show_form }}
     {{ form.series_year_began|show_form }}
     {{ form.series_notes|show_form }}
+    {{ form.publication_type|show_form }}
     {{ form.tracking_notes|show_form }}
     {{ form.issue_count|show_form }}
     {{ form.not_reserved|show_form }}
@@ -171,52 +199,33 @@ if ($(window).width() < 1240) {
     {{ form.is_comics|show_form }}
     {{ form.language|show_form }}
   </ol>
-</fieldset>
 
-<fieldset class="format" id="format_fieldset">
-  <legend>
+  <fieldset class="format" id="format_fieldset">
+    <legend>
     Format Fields
-  </legend>
-  <ol>
+    </legend>
+    <ol>
     {{ form.color|show_form }}
     {{ form.dimensions|show_form }}
     {{ form.paper_stock|show_form }}
     {{ form.binding|show_form }}
     {{ form.publishing_format|show_form }}
-  </ol>
+    </ol>
+  </fieldset>
 </fieldset>
 
-<fieldset class="issue" id="issue_fieldset">
+<fieldset class="indexer" id="indexer_fieldset">
   <legend>
-    Issue Fields
+    Indexer
   </legend>
   <ol>
-    {{ form.issues|show_form }}
-    {{ form.volume|show_form }}
-    {{ form.issue_title|show_form }}
-    {{ form.variant_name|show_form }}
-    {{ form.is_variant|show_form }}
-    {{ form.issue_date|show_form }}
-    {{ form.indicia_frequency|show_form }}
-    {{ form.price|show_form }}
-    {{ form.issue_pages|show_form }}
-    {{ form.issue_pages_uncertain|show_form }}
-    {{ form.issue_editing|show_form }}
-    {{ form.isbn|show_form }}
-    {{ form.barcode|show_form }}
-    {{ form.rating|show_form }}
-    {{ form.issue_notes|show_form }}
-    {{ form.issue_reprinted|show_form }}
-    {{ form.cover_needed|show_form }}
-    {{ form.is_indexed|show_form }}
-    {{ form.image_resources|show_form }}
     {{ form.indexer|show_form }}
   </ol>
 </fieldset>
 </div>
 <div class='search_left'>
 <fieldset class="submit">
-  <input type="submit" value="Search">
+  <input type="submit" value="Query">
 </fieldset>
 <fieldset class="submit">
   <input type="submit" name="random_search" value="Random Search Result">
@@ -227,14 +236,14 @@ if ($(window).width() < 1240) {
 <div class="search_left">
   <div id="blithering">
   <a name="blithering"></a>
-    <b>Advanced Search</b> is somewhat experimental and has known bugs and limitations
+    <b>Advanced Query</b> is somewhat experimental and has known oddities and limitations
     <ul>
       <li> All searches match <b>exact substrings</b>.  Punctuation is not
            ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
            two different searches. This is fundamentally different to how our
            <a href="/searchNew/">regular search</a> behaves, which ignores word
            order, but looks for exact word occurrences (unless a * is given).
-      <li> The default ordering of the search results sorts according to series
+      <li> The default ordering of the query results sorts according to series
            name and issue date.
            This ordering is not very useful if you search for publishers, you might
            want to change it under "Ordering".

@@ -1,4 +1,4 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<!DOCTYPE html>
 {% load compress %}
 {% load staticfiles %}
 <html>
@@ -10,10 +10,14 @@
 Having trouble with block / ifnotequal interactions.  Need to investigate.
 For now, just a simple single block for all CSS, despite redundancy.
 {% endcomment %}
-{% compress css %}
+{% compress css inline %}
 {% block css %}{% endblock %}
 {% endcompress %}
 {% block css_raw %}{% endblock %}
+
+{% if USE_TEMPLATESADMIN and ADVERTISING and not EDITING %}
+  {% include "managed_content/gcd/ads/common.html" %}
+{% endif %}
 </head>
 
 <body>

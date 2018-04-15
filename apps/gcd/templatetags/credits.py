@@ -49,6 +49,21 @@ def split_reprint_string(reprints):
     return liste
 
 
+def find_credit_search(credit, target, collator):
+    if settings.USE_ELASTICSEARCH:
+        result = 1
+        for string in target.split(' '):
+            search = icu.StringSearch(string.lower(),
+                                      credit, collator)
+            result = min(result, search.first())
+        return result
+    else:
+        search = icu.StringSearch(target.lower(),
+                                  credit,
+                                  collator)
+        return search.first()
+
+
 @register.filter
 def show_credit(story, credit):
     """
@@ -70,18 +85,15 @@ def show_credit(story, credit):
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
             story_credit = getattr(story, c).lower()
             if story_credit:
-                search = icu.StringSearch(target.lower(),
-                                          story_credit,
-                                          collator)
-                if search.first() != -1:
+                result = find_credit_search(story_credit, target, collator)
+                if result != -1:
                     credit_string += ' ' + __format_credit(story, c)
         if story.issue.editing:
-            search = icu.StringSearch(target.lower(),
-                                      story.issue.editing.lower(),
-                                      collator)
-            if search.first() != -1:
+            result = find_credit_search(story.issue.editing.lower(), target,
+                                        collator)
+            if result != -1:
                 credit_string += __format_credit(story.issue, 'editing')\
-                             .replace('Editing', 'Issue editing')
+                                 .replace('Editing', 'Issue editing')
         return credit_string
 
     elif credit.startswith('editing_search:'):
@@ -90,18 +102,16 @@ def show_credit(story, credit):
         target = credit[15:]
         formatted_credit = ""
         if story.editing:
-            search = icu.StringSearch(target.lower(),
-                                      story.editing.lower(),
-                                      collator)
-            if search.first() != -1:
+            result = find_credit_search(story.editing.lower(), target,
+                                        collator)
+            if result != -1:
                 formatted_credit = __format_credit(story, 'editing')\
                                    .replace('Editing', 'Story editing')
 
         if story.issue.editing:
-            search = icu.StringSearch(target.lower(),
-                                      story.issue.editing.lower(),
-                                      collator)
-            if search.first() != -1:
+            result = find_credit_search(story.issue.editing.lower(), target,
+                                        collator)
+            if result != -1:
                 formatted_credit += __format_credit(story.issue, 'editing')\
                                     .replace('Editing', 'Issue editing')
         return formatted_credit
@@ -172,6 +182,8 @@ def __format_credit(story, credit):
 
     if (credit == 'job_number'):
         label = _('Job Number:')
+    elif (credit == 'first_line'):
+        label = _('First Line of Dialogue:')
     else:
         label = _(credit.title()) + ':'
 
@@ -190,7 +202,7 @@ def __format_credit(story, credit):
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
-    if credit == 'genre':
+    if credit == 'genre' or credit == 'first_line':
         dt += ' short'
         dd += ' short'
     dt += '">'
@@ -347,14 +359,17 @@ def format_page_count(page_count):
 
 
 @register.filter
-def show_title(story):
+def show_title(story, use_first_line=False):
     """
     Return a properly formatted title.
     """
     if story is None:
         return u''
     if story.title == '':
-        return u'[no title indexed]'
+        if use_first_line and story.first_line:
+            return u'["%s"]' % story.first_line
+        else:
+            return u'[no title indexed]'
     if story.title_inferred:
         return u'[%s]' % story.title
     return story.title
@@ -493,7 +508,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                              notes=to_reprint.notes)
                 last_follow = follow_info
         else:
-            if no_promo and to_reprint.target.type.id == STORY_TYPES['promo']:
+            if no_promo and to_reprint.target.type.id == STORY_TYPES['preview']:
                 pass
             else:
                 follow_info = follow_reprint_link(to_reprint, 'in',
@@ -575,7 +590,7 @@ def show_reprints(story):
     from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
-    if story.type.id != STORY_TYPES['promo']:
+    if story.type.id != STORY_TYPES['preview']:
         no_promo = True
     else:
         no_promo = False

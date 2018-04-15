@@ -32,7 +32,14 @@
   {% endif %}
 </div>
 
+<div class="left">
 {% include "gcd/bits/generic_covers.html" %}
+</div>
+<div class="right">
+  {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
+    {% include "managed_content/gcd/ads/ad_med_rectangle.html" %}
+  {% endif %}
+</div>
 
 <h1 class="item_id search_id">
 <div class="left">

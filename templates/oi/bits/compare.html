@@ -3,12 +3,15 @@
 {% load compare %}
 {% load i18n %}
 
-{% ifequal changeset_type 'story' %}
-<h3> Sequence {{ revision.sequence_number }}
-<a name="{{ revision.id }}"></a>
-  {% ifequal user revision.changeset.indexer %}
-    {% ifequal changeset.state states.OPEN %}
-<span class="story_edit">
+{% ifequal revision.source_name 'story' %}
+<h3>
+<a name="{{ revision.id }}"></a> <!-- for link from comments on story to work -->
+<table class="comparison {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
+<tr class="story_edit">
+    <td>{{ revision|show_story_short }}</td>
+    <td>{{ revision|show_credit_status }}</td>
+  {% if user == revision.changeset.indexer and changeset.state == states.OPEN %}
+    <td>
       {% if revision.deleted %}
   <form class="story_button" method="POST"
         action="{% url "toggle_delete_story_revision" id=revision.id %}">
@@ -16,57 +19,42 @@
     <input type="submit" value="Restore"></input>
   </form>
       {% else %}
-  <a href="{% url "edit_revision" model_name=changeset_type id=revision.id %}">edit sequence</a>
+  <a href="{% url "edit_revision" model_name=revision.source_name id=revision.id %}">edit sequence</a>
       {% endif %}
-</span>
-    {% endifequal %}
-  {% endifequal %}
+    </td>
+  {% endif %}
+  </tr>
+  </table>
+</h3>
   {% if prev_rev %}
     {% if revision.changeset.change_type == CTYPES.two_issues and revision.issue != prev_rev.issue or revision.changeset.change_type == CTYPES.variant_add and revision.issue != prev_rev.issue %}
 <h3>This sequence is <span class="comparison_highlight">moved from the other issue</span>.</h3>
     {% endif %}
   {% endif %}
-</h3>
-{% endifequal %}
+{% endifequal %} <!-- story -->
 
-<table class="comparison {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
-{% if request.GET.collapse and revision.story and not revision.is_changed %}
-{% comment %} this if statement was a huge pain to get right. if only we had 1.2... {% endcomment %}
-  <h4> No changes to this sequence
+
+{% if revision.source_name == 'story' or revision.source_name == 'issue' %}
+<details {% if revision.is_changed or not request.GET.collapse %}open="open"{% endif %}>
+<summary>
+<h3 style="display: inline">
+  {% if revision.is_changed %}
+  There are changes
+  {% else %}
+  There are <u>no</u> changes
+  {% endif %}
+  to this {% if revision.source_name == 'story' %}sequence{% else %}issue{% endif %}
   {% if prev_rev %}
     / <a href="{% url "compare" id=prev_rev.changeset_id %}?collapse=1"> Previous </a>
   {% endif %}
   {% if post_rev %}
     / <a href="{% url "compare" id=post_rev.changeset_id %}?collapse=1"> Next </a>
   {% endif %}
-  </h4>
-  <tr>
-    <td>{{ revision|show_story_short }}</td>
-    <td>{{ revision|show_credit_status }}</td>
-    <td><a href="{% url "compare" id=revision.changeset_id %}">Expand compare view</a></td>
-  </tr>
-{% else %}
-  {% if request.GET.collapse and revision.issue and not revision.is_changed %}
-  <h4> No changes to the issue information
-    {% if prev_rev %}
-    / <a href="{% url "compare" id=prev_rev.changeset_id %}?collapse=1"> Previous </a>
-    {% endif %}
-    {% if post_rev %}
-    / <a href="{% url "compare" id=post_rev.changeset_id %}?collapse=1"> Next </a>
-    {% endif %}
-  </h4>
-    {% with revision as issue %}
-  <div class="issue_short">
-      {% include 'gcd/bits/issue_data.html' %}
-      {% if issue.notes %}
-    <dl>
-      <dt> Issue Notes:
-      <dd id="format_data" style="float:none">{{ issue.notes|linebreaksbr }}
-    </dl>
-      {% endif %}
-  </div>
-    {% endwith %}
-  {% else %}
+</h3>
+</summary>
+{% endif %}
+
+<table class="comparison {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
   <tr>
     <th> Field </th>
     {% if revision.deleted %}
@@ -106,33 +94,35 @@
         {% endfor %}
       {% endfor %}
     {% endif %}
+
     {% for field in field_list %}
       {% include 'oi/bits/compare_field.html' %}
-    {% if field in sourced_fields %}
-      {% with changeset|get_source_revisions:field as source_revisions %}
-        {% for source_revision in source_revisions %}
-          {% for source_field in source_fields %}
-            {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
-              {% include 'oi/bits/compare_field.html' %}
-            {% endwith %}
+      {% if field in sourced_fields %}
+        {% with changeset|get_source_revisions:field as source_revisions %}
+          {% for source_revision in source_revisions %}
+            {% for source_field in source_fields %}
+              {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
+                {% include 'oi/bits/compare_field.html' %}
+              {% endwith %}
+            {% endfor %}
           {% endfor %}
-        {% endfor %}
-      {% endwith %}
-    {% endif %}
-    {% if field in group_sourced_fields %}
-      {% with group_sourced_fields|lookup:field as field %}
-      {% with changeset|get_source_revisions:field as source_revisions %}
-        {% for source_revision in source_revisions %}
-          {% for source_field in source_fields %}
-            {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
-              {% include 'oi/bits/compare_field.html' %}
-            {% endwith %}
+        {% endwith %}
+      {% endif %}
+      {% if field in group_sourced_fields %}
+        {% with group_sourced_fields|lookup:field as field %}
+        {% with changeset|get_source_revisions:field as source_revisions %}
+          {% for source_revision in source_revisions %}
+            {% for source_field in source_fields %}
+              {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
+                {% include 'oi/bits/compare_field.html' %}
+              {% endwith %}
+            {% endfor %}
           {% endfor %}
-        {% endfor %}
-      {% endwith %}
-      {% endwith %}
-    {% endif %}
+        {% endwith %}
+        {% endwith %}
+      {% endif %}
     {% endfor %}
+
     {% if '' in sourced_fields %} {# one source for model #}
       {% with changeset|get_source_revisions:'' as source_revisions %}
         {% for source_revision in source_revisions %}
@@ -144,31 +134,8 @@
         {% endfor %}
       {% endwith %}
     {% endif %}
-    {% if changeset_type == 'story' %}
-      {% if revision.migration_status and not revision.migration_status.reprint_confirmed or revision.migration_status.modified > revision.changeset.created and revision.changeset.modified > revision.migration_status.modified or revision.migration_status.modified > revision.changeset.created and not revision.changeset.state == states.APPROVED %}
-        {% if not revision.migration_status.reprint_confirmed %}
-  <tr class="False">
-        {% else %}
-  <tr class="True">
-        {% endif %}
-    <td class="field_name"> Original Reprint Notes </td>
-    <td></td>
-    <td>
-        {% if not revision.migration_status.reprint_confirmed %}
-        The migration of the following original reprint notes needs confirmation:
-        {% else %}
-        The migration of the following original reprint notes was confirmed in this change:
-        {% endif %}
-      <ul>
-        {% for reprint in revision.migration_status.reprint_original_notes|split_reprint_string %}
-        <li>{{ reprint }}</li>
-        {% endfor %}
-      </ul>
-    </td>
-  </tr>
-      {% endif %}
-    {% endif %}
-    {% if changeset_type == 'story' or changeset_type == 'issue' %}
+
+    {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
       {% if revision.has_reprint_revisions %}
   <tr class="True">
       {% else %}
@@ -185,6 +152,7 @@
     </td>
   </tr>
     {% endif %}
+
     {% if revisions_after %}
       {% for revision_after in revisions_after %}
         {% for field in revision_after.field_list %}
@@ -194,16 +162,16 @@
         {% endfor %}
       {% endfor %}
     {% endif %}    
-  {% endif %}
-{% endif %}
-</table>
 
-{% ifequal changeset_type 'story' %}
-  {% if revision.comments.count %}
+</table>
+{% if revision.source_name == 'story' or revision.source_name == 'issue' %}
+</details>
+{% endif %}
+
+{% if revision.source_name == 'story' and revision.comments.count %}
   {% with revision.comments as comments %}
   {% with 1 as no_links %}
     {% include 'oi/bits/comments.html' %}
   {% endwith %}
   {% endwith %}
-  {% endif %}
-{% endifequal %}
+{% endif %}

@@ -401,9 +401,15 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         colors, no_colors = _check_for_none(fields[COLORS])
         letters, no_letters = _check_for_none(fields[LETTERS])
         editing, no_editing = _check_for_none(fields[STORY_EDITING])
-        genre = fields[GENRE].strip()
-        if genre and genre not in GENRES['en']:
-            genre = u''
+        genres = fields[GENRE].strip()
+        if genres:
+            filtered_genres = u''
+            for genre in genres.split(';'):
+                if genre.strip() in GENRES['en']:
+                    filtered_genres += u';' + genre
+            genre = filtered_genres[1:]
+        else:
+            genre = genres
         characters = fields[CHARACTERS].strip()
         job_number = fields[JOB_NUMBER].strip()
         reprint_notes = fields[REPRINT_NOTES].strip()

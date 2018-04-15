@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="960" height="600" xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <desc>Flag of the Republic of China (1912-1928)</desc>
+  <rect  width="960" height="120" fill="#de2119" />
+  <rect y="120" width="960" height="120" fill="#ffc500" />
+  <rect y="240" width="960" height="120" fill="#08639c" />
+  <rect y="360" width="960" height="120" fill="#fff" />
+  <rect y="480" width="960" height="120" fill="#000" />
+</svg>
