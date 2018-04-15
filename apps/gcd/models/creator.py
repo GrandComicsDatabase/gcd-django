@@ -472,7 +472,7 @@ class CreatorArtInfluence(GcdData):
                 kwargs={'creator_art_influence_id': self.id})
 
     def __unicode__(self):
-        return unicode(self.influence_name)
+        return u'%s > %s' % (self.influence(), self.creator.gcd_official_name)
 
 
 class MembershipType(models.Model):

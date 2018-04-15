@@ -155,6 +155,7 @@ Disallow: /credit/name/
 Disallow: /search/advanced/process/
 ## data withheld from search sites by individual requests
 Disallow: /issue/711094/
+Disallow: /issue/213575/
 
 Sitemap: https://www.comics.org/sitemap.xml
 

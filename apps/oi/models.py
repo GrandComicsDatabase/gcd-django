@@ -3012,6 +3012,12 @@ class SeriesRevision(Revision):
             return SeriesBond.objects.filter(pk__isnull=True)
         return self.series.from_series_bond.all()
 
+    def series_relative_bonds(self, **filter_args):
+        if self.series is None:
+            return []
+        else:
+            return self.series.series_relative_bonds(**filter_args)
+
     def get_ongoing_revision(self):
         if self.series is None:
             return None
