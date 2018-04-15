@@ -84,6 +84,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('oi', '0006_previous_revision_for_all'),
+        ('gcd', '0006_add_GcdData_and_model_cleanup'),
     ]
 
     operations = [

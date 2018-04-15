@@ -149,6 +149,12 @@ class StoryRevisionForm(forms.ModelForm):
     title_inferred = forms.BooleanField(
         required=False, label='Unofficial title', help_text='')
 
+    first_line = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
+        required=False,
+        help_text='First line of text/dialogue in the first panel of the '
+                  ' story, ignoring reoccurring blurbs or promotional text.')
+
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3)
     page_count_uncertain = forms.BooleanField(required=False)

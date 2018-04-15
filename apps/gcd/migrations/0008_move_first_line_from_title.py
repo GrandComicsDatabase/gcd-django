@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from django.db import models, migrations
 from apps.oi import states
 
-def actual_move(stories):
+def actual_move(apps, stories):
     StoryRevision = apps.get_model('oi', 'StoryRevision')
     ContentType = apps.get_model('contenttypes', 'ContentType')
     RevisionLock = apps.get_model('oi', 'RevisionLock')
@@ -37,31 +37,31 @@ def move_first_line_from_title(apps, schema_editor):
                                  title__startswith='"',
                                  title__endswith='"',
                                  deleted=False)
-    actual_move(stories)
+    actual_move(apps, stories)
 
     stories=Story.objects.filter(title_inferred=True,
                                  title__startswith='"',
                                  title__endswith="'",
                                  deleted=False)
-    actual_move(stories)
+    actual_move(apps, stories)
 
     stories=Story.objects.filter(title_inferred=True,
                                  title__startswith="'",
                                  title__endswith='"',
                                  deleted=False)
-    actual_move(stories)
+    actual_move(apps, stories)
 
     stories=Story.objects.filter(title_inferred=True,
                                  title__startswith="'",
                                  title__endswith="'",
                                  deleted=False)
-    actual_move(stories)
+    actual_move(apps, stories)
 
     stories=Story.objects.filter(title_inferred=True,
                                  title__startswith='“',
                                  title__endswith='”',
                                  deleted=False)
-    actual_move(stories)
+    actual_move(apps, stories)
 
 class Migration(migrations.Migration):
 

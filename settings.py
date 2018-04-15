@@ -213,7 +213,7 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 #################################################################################
 
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
-                        'compressor.filters.csstidy.CSSMinFilter']
+                        'compressor.filters.cssmin.rCSSMinFilter']
 
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),

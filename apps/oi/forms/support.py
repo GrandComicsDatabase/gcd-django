@@ -169,6 +169,7 @@ SEQUENCE_HELP_LINKS = {
     'type': 'Type',
     'title': 'Title',
     'title_inferred': 'Title',
+    'first_line': 'First_Line',
     'feature': 'Feature',
     'page_count': 'Page_Count',
     'page_count_uncertain': 'Page_Count',
