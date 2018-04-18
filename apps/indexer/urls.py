@@ -10,8 +10,7 @@ from apps.indexer import views as account_views
 from apps.indexer.forms import PasswordResetForm
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     # Logout will only look for a 'next_page' parameter in GET, but
     # GET requests should not have side effects so use a wrapper to
     # pull from POST.
@@ -72,4 +71,4 @@ urlpatterns = patterns(
     url(r'^accounts/reset/done/$',
         auth_views.password_reset_complete,
         {'template_name': 'indexer/password_reset_complete.html'}),
-)
+]
