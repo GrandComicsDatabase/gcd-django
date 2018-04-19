@@ -183,7 +183,7 @@ def __format_credit(story, credit):
     if (credit == 'job_number'):
         label = _('Job Number:')
     elif (credit == 'first_line'):
-        label = _('First Line of Dialogue:')
+        label = _('First Line of Dialogue or Text:')
     else:
         label = _(credit.title()) + ':'
 
