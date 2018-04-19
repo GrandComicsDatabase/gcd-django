@@ -5864,6 +5864,9 @@ class DataSourceRevision(Revision):
     def _get_source(self):
         return self.data_source
 
+    def _get_source_name(self):
+        return 'data_source'
+
     def _field_list(self):
         field_list = ['source_description', 'source_type']
         return field_list
