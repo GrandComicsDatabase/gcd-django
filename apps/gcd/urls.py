@@ -32,7 +32,7 @@ urlpatterns = [
     url(r'^search/advanced/$', gcd_views.search.advanced_search,
       name='advanced_search'),
     url(r'^search/advanced/process/csv/$', gcd_views.search.process_advanced,
-      {'export_csv': True}, name='process_advanced_search'),
+      {'export_csv': True}, name='process_advanced_search_csv'),
     url(r'^search/advanced/process/$', gcd_views.search.process_advanced,
       name='process_advanced_search'),
 

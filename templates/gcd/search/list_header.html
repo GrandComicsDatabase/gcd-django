@@ -16,7 +16,7 @@
 <div class="item_id">
   <div class="left" class="item_data">
   Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }}
-  matching your {% if used_search_terms %}<a href="#search_terms">search<a/>{% else %}search{% endif %}{% if search_term %} for '{{ search_term }}'{% endif %}. 
+  matching your {% if used_search_terms %}<a href="#search_terms">query<a/>{% else %}query{% endif %}{% if search_term %} for '{{ search_term }}'{% endif %}.
   </div>
   {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
@@ -25,7 +25,7 @@
 </div>
 {% if position == 'top' and not select_key and not confirm_selection %}
 <div id="search_reminder">
-Refine your search using an <a href="{% url "apps.gcd.views.search.advanced_search" %}?{{ query_string }}">advanced search query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>.
+Refine your query using an <a href="{% url "process_advanced_search" %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>. Download <a href="{% url "process_advanced_search_csv" %}?{{ query_string }}">results as csv</a>.
 {% if change_order %}
 Change sort order to <a href="{{ change_order}}">{% if 'chrono' in change_order %} chronological{% else %} alphabetical{% endif %}</a>.
   {% if item_name == 'series' %}

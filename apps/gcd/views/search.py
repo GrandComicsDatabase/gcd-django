@@ -21,7 +21,9 @@ from django.core import urlresolvers
 from django.template import RequestContext
 from django.utils.http import urlquote
 
+from djqscsv import render_to_csv_response
 from haystack.query import SearchQuerySet
+
 from apps.gcd.views.search_haystack import GcdNameQuery
 
 from apps.stddata.models import Country, Language
@@ -61,7 +63,7 @@ def generic_by_name(request, name, q_obj, sort,
     name = name.encode('utf-8')
     base_name = 'unknown'
     plural_suffix = 's'
-    query_val = {'method': 'icontains'}
+    query_val = {'method': 'icontains', 'logic': 'True'}
 
     if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher)):
         if class_ is IndiciaPublisher:
@@ -1030,7 +1032,7 @@ def used_search(search_values):
             used_search_terms.append((i, search_values[i]))
     return target, method, logic, used_search_terms
 
-def process_advanced(request):
+def process_advanced(request, export_csv=False):
     """
     Runs advanced searches.
     """
@@ -1080,6 +1082,15 @@ def process_advanced(request):
     context['method'] = method
     context['logic'] = logic
     context['used_search_terms'] = used_search_terms
+
+    if export_csv:
+        fields = [f.name for f in items.model._meta.get_fields()
+                              if f.auto_created==False]
+        fields = [f for f in fields if f not in {'created', 'modified',
+                                                 'deleted', 'keywords',
+                                                 'tagged_items'}]
+        return render_to_csv_response(items.values(*fields),
+                                      append_datestamp=True)
 
     if item_name in ['cover', 'issue_cover']:
         context['table_width'] = COVER_TABLE_WIDTH
