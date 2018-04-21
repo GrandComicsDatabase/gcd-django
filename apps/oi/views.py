@@ -990,7 +990,7 @@ def assign(request, id):
     # model layer in the first place.  See tech bug #199.
     try:
         changeset.assign(approver=request.user, notes=comment_text)
-    except ValueError:
+    except ViewTerminationError:
         if changeset.approver is None:
             return render_error(request,
               'This change has been retracted by the indexer after you loaded '
@@ -1216,13 +1216,13 @@ def approve(request, id):
           'Only REVIEWING changes with an approver can be approved.')
 
     comment_text = request.POST['comments'].strip()
-    try:
-        changeset.approve(notes=comment_text)
-    except ValueError as detail:
-        if len(detail.args) > 0:
-            return render_error(request, detail.args[0])
-        else:
-            raise detail
+    #try:
+    changeset.approve(notes=comment_text)
+    #except ValueError as detail:
+        #if len(detail.args) > 0:
+            #return render_error(request, detail.args[0])
+        #else:
+            #raise detail
     email_comments = '.'
     postscript = ''
     if comment_text:
@@ -3260,7 +3260,9 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
     else:
         story_revision = StoryRevision.objects.clone_revision(story=story,
                                                changeset=changeset)
+        # overwrite data for 'normale' clone
         story_revision.story = None
+        story_revision.previous_revision = None
         story_revision.issue = changeset_issue.issue
         story_revision.sequence_number = changeset_issue.next_sequence_number()
         if story_revision.issue.series.language != story.issue.series.language:

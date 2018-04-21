@@ -39,6 +39,8 @@ from apps.gcd.models import (
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
 
+from apps.indexer.views import ViewTerminationError
+
 from apps.legacy.models import Reservation, MigrationStoryStatus
 
 LANGUAGE_STATS = ['de']
@@ -655,7 +657,7 @@ class Changeset(models.Model):
                     self.storyrevisions.all())
 
         if self.change_type == CTYPES['series_bond']:
-            return (self.seriesbondrevisions.all().select_related('series'),)
+            return (self.seriesbondrevisions.all().select_related('series_bond'),)
 
         if self.change_type == CTYPES['publisher']:
             return (self.publisherrevisions.all(), self.brandrevisions.all(),
@@ -916,7 +918,7 @@ class Changeset(models.Model):
 
         if (self.state != states.OPEN) and \
            not (delete and self.state == states.UNRESERVED):
-            raise ValueError(
+            raise ViewTerminationError(
                 "Only OPEN changes can be submitted for approval.")
 
         new_state = self._check_approver()
@@ -942,9 +944,10 @@ class Changeset(models.Model):
         """
 
         if self.state != states.PENDING:
-            raise ValueError("Only PENDING changes my be retracted.")
+            raise ViewTerminationError("Only PENDING changes my be retracted.")
         if self.approver is not None:
-            raise ValueError("Only changes with no approver may be retracted.")
+            raise ViewTerminationError(
+                  "Only changes with no approver may be retracted.")
 
         self.comments.create(commenter=self.indexer,
                              text=notes,
@@ -961,8 +964,8 @@ class Changeset(models.Model):
         reservation, or by an approver, effectively canceling it.
         """
         if self.state not in states.ACTIVE:
-            raise ValueError("Only OPEN, PENDING, DISCUSSED, or REVIEWING "
-                             "changes may be discarded.")
+            raise ViewTerminationError("Only OPEN, PENDING, DISCUSSED, or "
+                                       "REVIEWING changes may be discarded.")
 
         self.comments.create(commenter=discarder,
                              text=notes,
@@ -989,7 +992,7 @@ class Changeset(models.Model):
         the examiner's approval queue.
         """
         if self.state != states.PENDING:
-            raise ValueError("Only PENDING changes can be reviewed.")
+            raise ViewTerminationError("Only PENDING changes can be reviewed.")
 
         # TODO: check that the approver has approval priviliges.
         if not isinstance(approver, User):
@@ -1006,8 +1009,8 @@ class Changeset(models.Model):
     def release(self, notes=''):
         if self.state not in states.ACTIVE or \
            self.approver is None:
-            raise ValueError(
-                "Only changes with an approver may be unassigned.")
+            raise ViewTerminationError(
+                  "Only changes with an approver may be unassigned.")
 
         if self.state in [states.DISCUSSED, states.REVIEWING]:
             new_state = states.PENDING
@@ -1025,7 +1028,8 @@ class Changeset(models.Model):
     def discuss(self, commenter, notes=''):
         if self.state not in [states.OPEN, states.REVIEWING] or \
            self.approver is None:
-            raise ValueError("Only changes with an approver may be discussed.")
+            raise ViewTerminationError(
+                  "Only changes with an approver may be discussed.")
 
         self.comments.create(commenter=commenter,
                              text=notes,
@@ -1053,8 +1057,8 @@ class Changeset(models.Model):
         # for add ?
         if self.state not in [states.DISCUSSED, states.REVIEWING] or \
            self.approver is None:
-            raise ValueError(
-                "Only REVIEWING changes with an approver can be approved.")
+            raise ViewTerminationError(
+                  "Only REVIEWING changes with an approver can be approved.")
 
         issue_revision_count = self.issuerevisions.count()
         if self.change_type == CTYPES['issue_add'] and \
@@ -1105,8 +1109,8 @@ class Changeset(models.Model):
 
         if self.state not in [states.DISCUSSED, states.REVIEWING] or \
            self.approver is None:
-            raise ValueError(
-                "Only REVIEWING changes with an approver can be disapproved.")
+            raise ViewTerminationError(
+                  "Only REVIEWING changes with an approver can be disapproved.")
         self.comments.create(commenter=self.approver,
                              text=notes,
                              old_state=self.state,
@@ -1314,6 +1318,7 @@ class RevisionManager(models.Manager):
         previous_revision = type(revision).objects.get(
                             next_revision=None,
                             changeset__state=states.APPROVED,
+                            committed=True,
                             **{revision.source_name: instance})
         revision.previous_revision = previous_revision
         revision.save()
@@ -2824,7 +2829,6 @@ class SeriesRevisionManager(RevisionManager):
             year_ended_uncertain=series.year_ended_uncertain,
             is_current=series.is_current,
 
-            publication_notes=series.publication_notes,
             tracking_notes=series.tracking_notes,
 
             has_barcode=series.has_barcode,
@@ -3156,7 +3160,6 @@ class SeriesRevision(Revision):
                 self.previous() and self.previous().is_current):
             reservation.delete()
 
-        series.publication_notes = self.publication_notes
         series.tracking_notes = self.tracking_notes
 
         # a new series has language_id None
@@ -5291,6 +5294,15 @@ class ReprintRevision(Revision):
         return self.previous_revision
 
     def _get_source(self):
+        source = self._get_source_name()
+        if source:
+            return getattr(self, source)
+        else:
+            return None
+
+    def _get_source_name(self):
+        # is also used to determine which prevision revision to use
+        # when reserving a reprint link
         if self.deleted and self.changeset.state == states.APPROVED:
             return None
         if self.out_type is not None:
@@ -5300,24 +5312,20 @@ class ReprintRevision(Revision):
         else:
             return None
         # reprint link objects can be deleted, so the source may be gone
-        # could access source for change history, so catch it
+        # and we need to catch that
         if reprint_type == REPRINT_TYPES['story_to_story'] and \
            self.reprint:
-            return self.reprint
+            return "reprint"
         if reprint_type == REPRINT_TYPES['issue_to_story'] and \
            self.reprint_from_issue:
-            return self.reprint_from_issue
+            return "reprint_from_issue"
         if reprint_type == REPRINT_TYPES['story_to_issue'] and \
            self.reprint_to_issue:
-            return self.reprint_to_issue
+            return "reprint_to_issue"
         if reprint_type == REPRINT_TYPES['issue_to_issue'] and \
            self.issue_reprint:
-            return self.issue_reprint
-        # TODO is None the right return ? Maybe placeholder object ?
+            return "issue_reprint"
         return None
-
-    def _get_source_name(self):
-        return 'reprint'
 
     def _field_list(self):
         return ['origin_story', 'origin_revision', 'origin_issue',
@@ -5397,7 +5405,7 @@ class ReprintRevision(Revision):
 
         if self.in_type is not None and self.in_type != out_type:
             deleted_link = self.source
-            field_name = REPRINT_FIELD[self.in_type] + '_id'
+            field_name = REPRINT_FIELD[self.in_type]
             for revision in deleted_link.revisions.all():
                 setattr(revision, field_name, None)
                 revision.save()
@@ -5449,7 +5457,6 @@ class ReprintRevision(Revision):
                 self.issue_reprint.target_issue = self.target_issue
                 self.issue_reprint.notes = self.notes
                 self.issue_reprint.save()
-
         self.save()
 
     def get_compare_string(self, base_issue, do_compare=False):
@@ -5671,7 +5678,7 @@ class ImageRevision(Revision):
                         object_id=self.object.id,
                         type=self.type,
                         deleted=False).count():
-                    raise ValueError(
+                    raise ViewTerminationError(
                         '%s has an %s. Additional images cannot be uploaded, '
                         'only replacements are possible.' %
                         (self.object, self.type.description))
