@@ -25,7 +25,7 @@ def actual_move(apps, stories):
             revision.save()
         else:
             revision = story.revisions.get(changeset__state__in=states.ACTIVE)
-            revision.first_line = story.title[-1:1]
+            revision.first_line = story.title[1:-1]
             revision.title = ''
             revision.title_inferred = False
             revision.save()
@@ -60,6 +60,12 @@ def move_first_line_from_title(apps, schema_editor):
     stories=Story.objects.filter(title_inferred=True,
                                  title__startswith='“',
                                  title__endswith='”',
+                                 deleted=False)
+    actual_move(apps, stories)
+
+    stories=Story.objects.filter(title_inferred=True,
+                                 title__startswith='"',
+                                 title__endswith=u'\u201d',
                                  deleted=False)
     actual_move(apps, stories)
 

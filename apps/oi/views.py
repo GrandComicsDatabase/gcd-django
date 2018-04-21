@@ -3258,19 +3258,8 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
               'reprint_revision': reprint_revision, 'direction': direction },
             context_instance=RequestContext(request))
     else:
-        story_revision = StoryRevision.objects.clone_revision(story=story,
-                                               changeset=changeset)
-        # overwrite data for 'normale' clone
-        story_revision.story = None
-        story_revision.previous_revision = None
-        story_revision.issue = changeset_issue.issue
-        story_revision.sequence_number = changeset_issue.next_sequence_number()
-        if story_revision.issue.series.language != story.issue.series.language:
-            if story_revision.letters:
-                story_revision.letters = u'?'
-            story_revision.title = u''
-            story_revision.title_inferred = False
-        story_revision.save()
+        story_revision = StoryRevision.objects.copy_revision(story, changeset,
+                                                             issue=issue)
         if reprint_revision.origin_story:
             reprint_revision.target_revision = story_revision
             reprint_revision.target_issue = None

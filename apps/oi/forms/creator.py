@@ -207,7 +207,7 @@ def get_creator_membership_revision_form(revision=None, user=None):
 class CreatorMembershipRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorMembershipRevision
-        exclude = ['creator', 'creator_membership', 'changeset', 'deleted',]
+        fields = model._base_field_list
         help_texts = CREATOR_MEMBERSHIP_HELP_TEXTS
 
     def __init__(self, *args, **kwargs):
@@ -291,7 +291,7 @@ def get_creator_art_influence_revision_form(revision=None, user=None):
 class CreatorArtInfluenceRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorArtInfluenceRevision
-        exclude = ['creator', 'creator_art_influence','changeset', 'deleted',]
+        fields = model._base_field_list
         help_texts = CREATOR_ARTINFLUENCE_HELP_TEXTS
 
     def __init__(self, *args, **kwargs):

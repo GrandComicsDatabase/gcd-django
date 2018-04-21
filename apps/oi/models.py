@@ -4502,6 +4502,22 @@ class StoryRevisionManager(RevisionManager):
                                               instance_class=Story,
                                               changeset=changeset)
 
+    def copy_revision(self, story, changeset, issue):
+        revision = self._do_create_revision(story,
+                                            changeset=changeset)
+        issue_revision = changeset.issuerevisions.get(issue=issue)
+        revision.story = None
+        revision.issue = issue
+        revision.sequence_number = issue_revision.next_sequence_number()
+        if revision.issue.series.language != story.issue.series.language:
+            if revision.letters:
+                revision.letters = u'?'
+            revision.title = u''
+            revision.title_inferred = False
+            revision.first_line = u''
+        revision.save()
+        return revision
+
     def _do_create_revision(self, story, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
