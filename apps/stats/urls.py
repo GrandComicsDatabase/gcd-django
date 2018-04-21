@@ -6,6 +6,4 @@ from django.conf.urls import patterns, url
 from apps.stats import views
 
 
-urlpatterns = patterns('',
-    url(r'^download/', views.download, {}, name='download'),
-)
+urlpatterns = [url(r'^download/', views.download, {}, name='download'),]

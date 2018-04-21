@@ -3,7 +3,7 @@ from django.conf.urls import patterns, url
 from apps.indexer import views as account_views
 from apps.mycomics import views as mycomics_views
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', mycomics_views.index, name='home'),
     url(r'^accounts/login/$', account_views.login,
         {'template_name': 'mycomics/index.html',
@@ -79,4 +79,4 @@ urlpatterns = patterns('',
         name='delete_purchase_location'),
 
     url(r'^import_items/$', mycomics_views.import_items, name='import_items'),
-)
+]

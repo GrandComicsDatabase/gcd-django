@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from apps.select import views as select_views
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^issue/(?P<issue_id>\d+)/cache/$', select_views.cache_content,
         name='cache_issue'),
     url(r'^story/(?P<story_id>\d+)/cache/$', select_views.cache_content,
@@ -18,4 +18,4 @@ urlpatterns = patterns('',
 
     url(r'^select_objects/(?P<select_key>.+)/$',
       select_views.process_multiple_selects, name='process_multiple_selects'),
-)
+]
