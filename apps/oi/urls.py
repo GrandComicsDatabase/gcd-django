@@ -11,7 +11,7 @@ from apps.oi import import_export as oi_import
 from apps.oi import coordinators as oi_coordinators
 from apps.oi import states
 
-urlpatterns = patterns('',
+urlpatterns = [
     # General-purpose new record add page.
     url(r'^add/$',
         login_required(
@@ -22,25 +22,25 @@ urlpatterns = patterns('',
         name='mentoring'),
 
     url(r'^award/add/$',
-     'apps.oi.views.add_award', name='add_award'),
+     oi_views.add_award, name='add_award'),
 
     # Creator URLs
     url(r'^creator/add/$',
-     'apps.oi.views.add_creator', name='add_creator'),
+     oi_views.add_creator, name='add_creator'),
     url(r'^creator/(?P<creator_id>\d+)/award/add/$',
-     'apps.oi.views.add_creator_award', name='add_creator_award'),
+     oi_views.add_creator_award, name='add_creator_award'),
     url(r'^creator/(?P<creator_id>\d+)/influence/add/$',
-     'apps.oi.views.add_creator_art_influence', name='add_creator_art_influence'),
+     oi_views.add_creator_art_influence, name='add_creator_art_influence'),
     url(r'^creator/(?P<creator_id>\d+)/membership/add/$',
-     'apps.oi.views.add_creator_membership', name='add_creator_membership'),
+     oi_views.add_creator_membership, name='add_creator_membership'),
     url(r'^creator/(?P<creator_id>\d+)/non_comic_work/add/$',
-     'apps.oi.views.add_creator_non_comic_work', name='add_creator_non_comic_work'),
+     oi_views.add_creator_non_comic_work, name='add_creator_non_comic_work'),
     url(r'^creator/(?P<creator_id>\d+)/relation/add/$',
-     'apps.oi.views.add_creator_relation', name='add_creator_relation'),
+     oi_views.add_creator_relation, name='add_creator_relation'),
     url(r'^creator/(?P<creator_id>\d+)/school/add/$',
-     'apps.oi.views.add_creator_school', name='add_creator_school'),
+     oi_views.add_creator_school, name='add_creator_school'),
     url(r'^creator/(?P<creator_id>\d+)/degree/add/$',
-     'apps.oi.views.add_creator_degree', name='add_creator_degree'),
+     oi_views.add_creator_degree, name='add_creator_degree'),
 
     # Publisher URLs
     url(r'^publisher/add/$',
@@ -317,9 +317,9 @@ urlpatterns = patterns('',
     url(r'^coordinator/$',
         bv.TemplateView.as_view(template_name='oi/edit/coordinators.html'),
         name='coordinators_toc'),
-)
+]
 
-urlpatterns += patterns('',
-    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare',
-                                                          permanent=False)),
-)
+urlpatterns += [
+    url(r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare',
+                                                             permanent=False)),
+]
