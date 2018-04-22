@@ -242,6 +242,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 cd['month_on_sale'] = cd['on_sale_date'].month
                 cd['day_on_sale'] = cd['on_sale_date'].day
 
+            if cd['key_date'] == '' and (cd['year_on_sale'] or
+                                         cd['publication_date']):
+                raise forms.ValidationError(
+                  'Dates are present, but the key date is empty.')
+
             if cd['page_count_uncertain'] and not cd['page_count']:
                 raise forms.ValidationError(
                     'You cannot check page count '
