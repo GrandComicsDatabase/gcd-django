@@ -1,6 +1,6 @@
 # GCD Web Application
 
-This file last updated: *February 2017*
+This file last updated: *April 2018*
 
 This is the current implementation of the Grand Comics Database, hosted at
 http://www.comics.org/ (production) and http://beta.comics.org/ (public beta
@@ -65,15 +65,14 @@ There will probably be some modernization and code clean-up along the way.
 Contact: [handrews](https://github.com/handrews)
 via [gcd-tech](http://groups.google.com/group/gcd-tech/)
 
-### Future branch `rest`
+### api_experimental
 
-This will be for developing the REST API, after the project has been moved
-to the current version of Django (1.8 at the time of this writing).
-This will likely also involve some code clean-up to move the web UI onto
+This is an experimental branch for developing the REST API. We expect that
+proceeding here will also involve some code clean-up to move the web UI onto
 the REST API.  It is not yet determined how often this branch will merge
-to `devel`.
+to `beta`.
 
-Contact: [handrews](https://github.com/handrews)
+Contact: gcd-tech-team
 via [gcd-tech](http://groups.google.com/group/gcd-tech/)
 
 ### Closed branches
@@ -90,9 +89,8 @@ Django 0.96, and rushed into deployment in late 2009 when the prior system's
 host crashed after many years of service.  Due to both of these facts, there
 remain some oddities and things that you would not see in a modern Django system.
 
-The current production code runs on Django 1.4, although there is a project
-underway to bring it up to Django 1.8, which will likely involve a fair amount
-of modernization and cleanup of the code.
+The current production code runs on Django 1.8, although there is a project
+underway to bring it up to Django 1.11.
 
 ## Reporting or Examining Bugs
 
