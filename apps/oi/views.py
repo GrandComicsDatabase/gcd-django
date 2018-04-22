@@ -9,10 +9,8 @@ from urllib import unquote
 
 from django.core import urlresolvers
 from django.conf import settings
-from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404, render
 from django.db import transaction, IntegrityError
@@ -24,7 +22,6 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
 from apps.stddata.models import Country
-from apps.stddata.forms import DateForm
 
 from apps.indexer.views import ViewTerminationError, render_error
 
@@ -32,9 +29,8 @@ from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
     Series, SeriesBond, Story, StoryType, Award, Creator, CreatorMembership,
-    CreatorArtInfluence, CreatorAward, CreatorDegree, CreatorNonComicWork, 
-    CreatorRelation, CreatorSchool, NameType, SourceType, School, Degree,
-    RelationType)
+    CreatorArtInfluence, CreatorAward, CreatorDegree, CreatorNonComicWork,
+    CreatorRelation, CreatorSchool, NameType, SourceType, School)
 from apps.gcd.views import paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
@@ -90,7 +86,6 @@ from apps.oi.covers import get_preview_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
 from apps.oi import states
 from apps.oi.templatetags.editing import is_locked
-from apps.legacy.models import MigrationStoryStatus
 
 REVISION_CLASSES = {
     'publisher': PublisherRevision,
@@ -155,14 +150,18 @@ REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
 # Helper functions
 ##############################################################################
 
+
 def _cant_get(request):
-    return render_error(request,
+    return render_error(
+      request,
       'This page may only be accessed through the proper form.',
-       redirect=False)
+      redirect=False)
+
 
 def oi_render_to_response(template_name, context, context_instance):
     context['EDITING'] = True
     return render_to_response(template_name, context, context_instance)
+
 
 def oi_render(request, template_name, context={}):
     context['EDITING'] = True
@@ -172,6 +171,7 @@ def oi_render(request, template_name, context={}):
 # Generic view functions
 ##############################################################################
 
+
 @permission_required('indexer.can_reserve')
 def delete(request, id, model_name):
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
@@ -180,39 +180,44 @@ def delete(request, id, model_name):
         # These can only be reached if people try to paste in URLs directly,
         # but as we know, some people do that sort of thing.
         if display_obj.deleted:
-            return render_error(request,
+            return render_error(
+              request,
               u'Cannot delete "%s" as it is already deleted.' % display_obj,
               redirect=False)
         if not display_obj.deletable():
-            return render_error(request,
+            return render_error(
+              request,
               u'"%s" cannot be deleted.' % display_obj, redirect=False)
 
-        return oi_render_to_response('oi/edit/deletion_comment.html',
-        {
-            'model_name' : model_name,
-            'id' : id,
-            'object' : display_obj,
-            'no_comment' : False
-        },
-        context_instance=RequestContext(request))
+        return oi_render_to_response(
+          'oi/edit/deletion_comment.html',
+          {
+            'model_name': model_name,
+            'id': id,
+            'object': display_obj,
+            'no_comment': False
+          },
+          context_instance=RequestContext(request))
 
     if 'cancel' in request.POST:
         if model_name == 'cover':
             return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
-                     kwargs={'issue_id' : display_obj.issue.id}))
+                                        kwargs={'issue_id':
+                                                display_obj.issue.id}))
         return HttpResponseRedirect(urlresolvers.reverse('show_%s' % model_name,
-                 kwargs={'%s_id' % model_name : id}))
+                                    kwargs={'%s_id' % model_name: id}))
 
     if not request.POST.__contains__('comments') or \
        request.POST['comments'].strip() == '':
-        return oi_render_to_response('oi/edit/deletion_comment.html',
-        {
-            'model_name' : model_name,
-            'id' : id,
-            'object' : display_obj,
-            'no_comment' : True
-        },
-        context_instance=RequestContext(request))
+        return oi_render_to_response(
+          'oi/edit/deletion_comment.html',
+          {
+            'model_name': model_name,
+            'id': id,
+            'object': display_obj,
+            'no_comment': True
+          },
+          context_instance=RequestContext(request))
 
     return reserve(request, id, model_name, delete=True)
 
@@ -285,6 +290,7 @@ def reserve(request, id, model_name, delete=False,
         #_free_revision_lock(display_obj)
         raise
 
+
 def _do_reserve(indexer, display_obj, model_name, delete=False,
                 changeset=None):
     """
@@ -345,6 +351,7 @@ def _do_reserve(indexer, display_obj, model_name, delete=False,
 
     return changeset
 
+
 @permission_required('indexer.can_reserve')
 def edit_two_issues(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id, deleted=False)
@@ -363,6 +370,7 @@ def edit_two_issues(request, issue_id):
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
           kwargs={'select_key': select_key}))
 
+
 @permission_required('indexer.can_reserve')
 def confirm_two_edits(request, data, object_type, issue_two_id):
     if object_type != 'issue':
@@ -380,6 +388,7 @@ def confirm_two_edits(request, data, object_type, issue_two_id):
         {'issue_one': issue_one, 'issue_two': issue_two},
         context_instance=RequestContext(request))
 
+
 @permission_required('indexer.can_reserve')
 # in case of variants: issue_one = variant, issue_two = base
 def reserve_two_issues(request, issue_one_id, issue_two_id):
@@ -395,6 +404,7 @@ def reserve_two_issues(request, issue_one_id, issue_two_id):
     return reserve(request, issue_two_id, 'issue',
                    callback=reserve_other_issue,
                    callback_args=kwargs)
+
 
 def reserve_other_issue(changeset, revision, issue_one):
     if not _do_reserve(changeset.indexer, issue_one, 'issue',
@@ -420,6 +430,7 @@ def extract_creator_names(request):
                 'relation_type_' + str(i)) else None
             creator_names.append(name_data)
     return creator_names
+
 
 def process_creator_other_names(request, changeset, revision, creator_name):
     # Update Creator's Other Names
@@ -483,6 +494,7 @@ def edit_revision(request, id, model_name):
     form = form_class(instance=revision)
     return _display_edit_form(request, revision.changeset, form, revision)
 
+
 @permission_required('indexer.can_reserve')
 def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
@@ -497,6 +509,7 @@ def edit(request, id):
     # Note that for non-inline changesets, no form is expected so
     # it may be None.
     return _display_edit_form(request, changeset, form, revision)
+
 
 def _display_edit_form(request, changeset, form, revision=None):
     if revision is None or changeset.inline():
@@ -581,6 +594,7 @@ def _display_edit_form(request, changeset, form, revision=None):
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
+
 @permission_required('indexer.can_reserve')
 def submit(request, id):
     """
@@ -630,6 +644,7 @@ thanks,
 
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
+
 def show_error_with_return(request, text, changeset):
     return render_error(request, '%s <a href="%s">Return to changeset.</a>' \
         % (esc(text), urlresolvers.reverse('edit',
@@ -647,6 +662,7 @@ def _save_data_source_revision(form, revision, field):
                         revision=data_source_revision,
                         sourced_revision=revision)
 
+
 def _other_forms_valid(request, changeset):
     if not changeset or changeset.change_type != CTYPES['creator']:
         return True
@@ -656,6 +672,7 @@ def _other_forms_valid(request, changeset):
     if birth_date_form.is_valid() and death_date_form.is_valid():
         return True
     return False
+
 
 def _save(request, form, changeset=None, revision_id=None, model_name=None):
     if form.is_valid() and _other_forms_valid(request, changeset):
@@ -809,6 +826,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
         raise ValueError
     return _display_edit_form(request, changeset, form, revision)
 
+
 @permission_required('indexer.can_reserve')
 def retract(request, id):
     """
@@ -830,6 +848,7 @@ def retract(request, id):
 
     return HttpResponseRedirect(
       urlresolvers.reverse('edit', kwargs={'id': changeset.id }))
+
 
 @permission_required('indexer.can_reserve')
 def confirm_discard(request, id, has_comment=0):
@@ -891,6 +910,7 @@ thanks,
         # redirect we don't have this information here.
         return HttpResponseRedirect(urlresolvers.reverse('edit',
                                     kwargs={'id': changeset.id }))
+
 
 @permission_required('indexer.can_reserve')
 def discard(request, id):
@@ -971,6 +991,7 @@ thanks,
                   urlresolvers.reverse('pending_covers'))
             else:
                 return HttpResponseRedirect(urlresolvers.reverse('pending'))
+
 
 @permission_required('indexer.can_approve')
 def assign(request, id):
@@ -1058,6 +1079,7 @@ thanks,
                                              kwargs={'id': changeset.id }) \
                                 + option)
 
+
 @permission_required('indexer.can_approve')
 def release(request, id):
     """
@@ -1107,6 +1129,7 @@ thanks,
             return HttpResponseRedirect(urlresolvers.reverse('pending_covers'))
         else:
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
+
 
 @permission_required('indexer.can_approve')
 def discuss(request, id):
@@ -1195,6 +1218,7 @@ def _reserve_newly_created_issue(issue, changeset, indexer):
     # TODO maybe check for False vs. None here ?
     if not new_change:
         _send_declined_reservation_email(indexer, issue)
+
 
 @permission_required('indexer.can_approve')
 def approve(request, id):
@@ -1332,6 +1356,7 @@ thanks,
         else:
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
+
 def _send_declined_reservation_email(indexer, issue):
     email_body = u"""
 Hello from the %s!
@@ -1357,6 +1382,7 @@ thanks,
     indexer.email_user('GCD automatic reservation declined',
       email_body,
       settings.EMAIL_INDEXING)
+
 
 def _send_declined_ongoing_email(indexer, series):
     course_of_action = ("Please contact a GCD Editor on the gcd_main group "
@@ -1384,6 +1410,7 @@ thanks,
     indexer.email_user('GCD automatic reservation declined',
       email_body,
       settings.EMAIL_INDEXING)
+
 
 @permission_required('indexer.can_approve')
 def disapprove(request, id):
@@ -1442,6 +1469,7 @@ thanks,
         else:
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
+
 def send_comment_observer(request, changeset, comments):
     email_body = u"""
 Hello from the %s!
@@ -1474,6 +1502,7 @@ thanks,
     for commenter in commenters:
         User.objects.get(id=commenter).email_user('GCD comment',
             email_body, settings.EMAIL_INDEXING)
+
 
 @permission_required('indexer.can_reserve')
 def add_comments(request, id):
@@ -1527,6 +1556,7 @@ thanks,
     return HttpResponseRedirect(urlresolvers.reverse(compare,
                                                      kwargs={ 'id': id }))
 
+
 @permission_required('indexer.can_reserve')
 def process(request, id):
     """
@@ -1575,6 +1605,7 @@ def process(request, id):
     return render_error(request, 'Unknown action requested!  Please try again. '
       'If this error message persists, please contact an Editor.')
 
+
 @permission_required('indexer.can_reserve')
 def process_revision(request, id, model_name):
     if request.method != 'POST':
@@ -1598,11 +1629,14 @@ def process_revision(request, id, model_name):
 ##############################################################################
 # Bulk Changes
 ##############################################################################
+
+
 def _clean_bulk_issue_change_form(form, remove_fields, items,
                                   number_of_issues=True):
     for i in remove_fields:
         form.fields.pop(i)
     return form
+
 
 @permission_required('indexer.can_reserve')
 def edit_issues_in_bulk(request):
@@ -1779,6 +1813,7 @@ def edit_issues_in_bulk(request):
 
     return submit(request, changeset.id)
 
+
 def _display_bulk_issue_change_form(request, form,
                                     nr_items, nr_items_unreserved,
                                     search_option,
@@ -1804,6 +1839,7 @@ def _display_bulk_issue_change_form(request, form,
 # Adding Items
 ##############################################################################
 
+
 @permission_required('indexer.can_reserve')
 def add_publisher(request):
     if not request.user.indexer.can_reserve_another():
@@ -1827,6 +1863,7 @@ def add_publisher(request):
     revision.save_added_revision(changeset=changeset)
     return submit(request, changeset.id)
 
+
 def _display_add_publisher_form(request, form):
     object_name = 'Publisher'
     object_url = urlresolvers.reverse('add_publisher')
@@ -1839,6 +1876,7 @@ def _display_add_publisher_form(request, form):
         'form': form,
       },
       context_instance=RequestContext(request))
+
 
 @permission_required('indexer.can_reserve')
 def add_indicia_publisher(request, parent_id):
@@ -1877,6 +1915,7 @@ def add_indicia_publisher(request, parent_id):
         return render_error(request,
           'Could not find publisher for id ' + parent_id)
 
+
 def _display_add_indicia_publisher_form(request, parent, form):
     object_name = 'Indicia / Colophon Publisher'
     object_url = urlresolvers.reverse('add_indicia_publisher',
@@ -1890,6 +1929,7 @@ def _display_add_indicia_publisher_form(request, parent, form):
         'form': form,
       },
       context_instance=RequestContext(request))
+
 
 @permission_required('indexer.can_reserve')
 def add_brand_group(request, parent_id):
@@ -1927,6 +1967,7 @@ def add_brand_group(request, parent_id):
         return render_error(request,
           'Could not find publisher for id ' + parent_id)
 
+
 def _display_add_brand_group_form(request, parent, form):
     object_name = 'BrandGroup'
     object_url = urlresolvers.reverse('add_brand_group',
@@ -1940,6 +1981,7 @@ def _display_add_brand_group_form(request, parent, form):
         'form': form,
       },
       context_instance=RequestContext(request))
+
 
 @permission_required('indexer.can_reserve')
 def add_brand(request, brand_group_id=None, publisher_id=None):
@@ -2014,6 +2056,7 @@ def _display_add_brand_form(request, form, brand_group=None, publisher=None):
       },
       context_instance=RequestContext(request))
 
+
 @permission_required('indexer.can_reserve')
 def add_brand_use(request, brand_id, publisher_id=None):
     brand = get_object_or_404(Brand, id=brand_id, deleted=False)
@@ -2058,6 +2101,7 @@ def add_brand_use(request, brand_id, publisher_id=None):
         return HttpResponseRedirect(urlresolvers.reverse('select_object',
             kwargs={'select_key': select_key}))
 
+
 @permission_required('indexer.can_reserve')
 def process_add_brand_use(request, data, object_type, publisher_id):
     if object_type != 'publisher':
@@ -2068,6 +2112,7 @@ def process_add_brand_use(request, data, object_type, publisher_id):
 
     form = get_brand_use_revision_form(user=request.user)
     return _display_add_brand_use_form(request, form, brand, publisher)
+
 
 def _display_add_brand_use_form(request, form, brand, publisher):
     object_name = 'BrandUse for %s at %s' % (brand, publisher)
@@ -2083,6 +2128,7 @@ def _display_add_brand_use_form(request, form, brand, publisher):
         'form': form,
       },
       context_instance=RequestContext(request))
+
 
 @permission_required('indexer.can_reserve')
 def add_series(request, publisher_id):
@@ -2129,6 +2175,7 @@ def add_series(request, publisher_id):
         return render_error(request,
           'Could not find publisher for id ' + publisher_id)
 
+
 def _display_add_series_form(request, publisher, form):
     kwargs = {
         'publisher_id': publisher.id,
@@ -2142,6 +2189,7 @@ def _display_add_series_form(request, publisher, form):
         'form': form,
       },
       context_instance=RequestContext(request))
+
 
 def init_added_variant(form_class, initial, issue):
     for key in initial.keys():
@@ -2157,6 +2205,7 @@ def init_added_variant(form_class, initial, issue):
                                             .latest('sort_code').id
     form = form_class(initial=initial)
     return form
+
 
 @permission_required('indexer.can_reserve')
 def add_issue(request, series_id, sort_after=None, variant_of=None,
@@ -2224,6 +2273,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                  variant_of=variant_of)
     return submit(request, changeset.id)
 
+
 def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -2268,6 +2318,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
       'edit',
       kwargs={ 'id': changeset_id }))
 
+
 def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
     if changeset.change_type == CTYPES['cover']:
         # via create variant for cover
@@ -2287,6 +2338,7 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
                                       variant_of=variant_of)
     return True
 
+
 @permission_required('indexer.can_reserve')
 def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
     if cover_id:
@@ -2304,6 +2356,7 @@ def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
     else:
         return add_issue(request, issue.series.id, variant_of=issue,
                          variant_cover=cover)
+
 
 def _display_add_issue_form(request, series, form, variant_of, variant_cover,
                             issue_revision=None):
@@ -2351,6 +2404,7 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         'alternative_label': alternative_label,
       },
       context_instance=RequestContext(request))
+
 
 @permission_required('indexer.can_reserve')
 def add_issues(request, series_id, method=None):
@@ -2417,6 +2471,7 @@ def add_issues(request, series_id, method=None):
 
     return submit(request, changeset.id)
 
+
 def _build_whole_numbered_issues(series, form, changeset):
     issue_revisions = []
     cd = form.cleaned_data
@@ -2430,6 +2485,7 @@ def _build_whole_numbered_issues(series, form, changeset):
           display_volume_with_number=cd['display_volume_with_number']))
         increment += 1
     return issue_revisions
+
 
 def _build_per_volume_issues(series, form, changeset):
     issue_revisions = []
@@ -2451,6 +2507,7 @@ def _build_per_volume_issues(series, form, changeset):
           display_volume_with_number=True))
     return issue_revisions
 
+
 def _build_per_year_issues(series, form, changeset):
     issue_revisions = []
     cd = form.cleaned_data
@@ -2470,6 +2527,7 @@ def _build_per_year_issues(series, form, changeset):
           no_volume=cd['no_volume'],
           display_volume_with_number=cd['display_volume_with_number']))
     return issue_revisions
+
 
 def _build_per_year_volume_issues(series, form, changeset):
     issue_revisions = []
@@ -2492,6 +2550,7 @@ def _build_per_year_volume_issues(series, form, changeset):
           no_volume=False,
           display_volume_with_number=cd['display_volume_with_number']))
     return issue_revisions
+
 
 def _build_issue(form, revision_sort_code, number,
                  volume, no_volume, display_volume_with_number):
@@ -2517,6 +2576,7 @@ def _build_issue(form, revision_sort_code, number,
       no_barcode=cd['no_barcode'],
       revision_sort_code=revision_sort_code)
 
+
 def _display_bulk_issue_form(request, series, form, method=None):
     kwargs = {
         'series_id': series.id,
@@ -2535,12 +2595,24 @@ def _display_bulk_issue_form(request, series, form, method=None):
       },
       context_instance=RequestContext(request))
 
+
 @permission_required('indexer.can_reserve')
 def add_story(request, issue_revision_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
         return render_error(request,
           'Only the reservation holder may add stories.')
+    # check if this is a request to add a copy of a sequence
+    if 'copy' in request.GET:
+        issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
+        if issue_revision.issue:
+            issue_id = issue_revision.issue_id
+        else:
+            raise NotImplementedError
+        seq = request.GET.get('added_sequence_number')
+        initial = _get_initial_add_story_data(request, issue_revision, seq)
+        return copy_sequence(request, changeset_id, issue_id,
+                             sequence_number=initial['sequence_number'])
     # Process add form if this is a POST.
     try:
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
@@ -2606,6 +2678,7 @@ def add_story(request, issue_revision_id, changeset_id):
         return render_error(request,
           'Could not find issue revision for id ' + issue_revision_id)
 
+
 def _get_initial_add_story_data(request, issue_revision, seq):
     # First, if we have an integer sequence number, make certain it's
     # not a duplicate as we can't tell if they meant above or below.
@@ -2649,6 +2722,7 @@ def _get_initial_add_story_data(request, issue_revision, seq):
     initial['sequence_number'] = seq_num
     return initial
 
+
 def _display_add_story_form(request, issue, form, changeset_id):
     kwargs = {
         'issue_revision_id': issue.id,
@@ -2669,6 +2743,7 @@ def _display_add_story_form(request, issue, form, changeset_id):
 # Series Bond Editing
 ##############################################################################
 
+
 @permission_required('indexer.can_reserve')
 def edit_series_bonds(request, series_id):
     series = get_object_or_404(Series, id=series_id)
@@ -2677,6 +2752,7 @@ def edit_series_bonds(request, series_id):
         'series': series,
       },
       context_instance=RequestContext(request))
+
 
 @permission_required('indexer.can_reserve')
 def save_selected_series_bond(request, data, object_type, selected_id):
@@ -2703,6 +2779,7 @@ def save_selected_series_bond(request, data, object_type, selected_id):
     series_bond_revision.save()
     return HttpResponseRedirect(urlresolvers.reverse('edit',
         kwargs={'id': series_bond_revision.changeset.id}))
+
 
 @permission_required('indexer.can_reserve')
 def edit_series_bond(request, id):
@@ -2751,6 +2828,7 @@ def edit_series_bond(request, id):
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
         kwargs={'select_key': select_key}))
 
+
 def save_added_series_bond(request, data, object_type, selected_id):
     if request.method != 'POST':
         return _cant_get(request)
@@ -2771,6 +2849,7 @@ def save_added_series_bond(request, data, object_type, selected_id):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
         kwargs={'id': series_bond_revision.changeset.id}))
 
+
 @permission_required('indexer.can_reserve')
 def add_series_bond(request, id):
     series = get_object_or_404(Series, id=id)
@@ -2790,6 +2869,7 @@ def add_series_bond(request, id):
 ##############################################################################
 # Reprint Link Editing
 ##############################################################################
+
 
 def parse_reprint(reprints):
     """ parse a reprint entry for exactly our standard """
@@ -2868,6 +2948,7 @@ def parse_reprint(reprints):
             pass
     return None, None, None, None, None
 
+
 @permission_required('indexer.can_reserve')
 def list_issue_reprints(request, id):
     issue_revision = get_object_or_404(IssueRevision, id=id)
@@ -2880,6 +2961,7 @@ def list_issue_reprints(request, id):
       context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
+
 
 @permission_required('indexer.can_reserve')
 def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
@@ -3153,6 +3235,7 @@ def edit_reprint(request, id, which_side=None):
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
         kwargs={'select_key': select_key}))
 
+
 @permission_required('indexer.can_reserve')
 def add_reprint(request, changeset_id,
                 story_id=None, issue_id=None, reprint_note=''):
@@ -3189,6 +3272,7 @@ def add_reprint(request, changeset_id,
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
           kwargs={'select_key': select_key}))
+
 
 @permission_required('indexer.can_reserve')
 def select_internal_object(request, id, changeset_id, which_side,
@@ -3235,6 +3319,65 @@ def select_internal_object(request, id, changeset_id, which_side,
           'reprint_revision': reprint_revision, 'which_side': which_side },
         context_instance=RequestContext(request))
 
+
+def _selected_copy_sequence(request, data, object_type, selected_id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('edit',
+          kwargs={ 'id': data['changeset_id'] }))
+
+    return copy_sequence(request, data['changeset_id'], data['issue_id'],
+                         story_id=selected_id,
+                         sequence_number=data['sequence_number'])
+
+
+@permission_required('indexer.can_reserve')
+def copy_sequence(request, changeset_id, issue_id, story_id=None,
+                  sequence_number=None):
+    changeset = get_object_or_404(Changeset, id=changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may access this page.')
+
+    issue = get_object_or_404(Issue, id=issue_id)
+    if issue_id not in changeset.issuerevisions.values_list('issue_id', flat=True):
+        return _cant_get(request)
+
+    if request.method != 'POST':
+        heading = 'Select story to copy into %s' % (esc(issue))
+        data = {'issue_id': issue_id,
+                'changeset_id': changeset_id,
+                'story': True,
+                'initial': {},
+                'heading': mark_safe('<h2>%s</h2>' % heading),
+                'target': 'a story',
+                'return': _selected_copy_sequence,
+                'sequence_number': sequence_number,
+                'cancel': HttpResponseRedirect(urlresolvers.reverse('edit',
+                                               kwargs={'id': changeset_id}))}
+        select_key = store_select_data(request, None, data)
+        return HttpResponseRedirect(urlresolvers.reverse('select_object',
+                                    kwargs={'select_key': select_key}))
+    else:
+        story = get_object_or_404(Story, id=story_id)
+        story_revision = StoryRevision.objects.copy_revision(story, changeset,
+                                                             issue=issue)
+        # sequence number should be determined in add_story
+        # but this routine could be called differently as well
+        if sequence_number:
+            story_revision.sequence_number = sequence_number
+            story_revision.save()
+            issue_revision = changeset.issuerevisions.get(issue_id=issue_id)
+            stories = issue_revision.active_stories().exclude(id=story_revision.id)
+            _reorder_children(request, issue_revision, stories, 'sequence_number',
+                              stories, commit=True, unique=False,
+                              skip=story_revision)
+        return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
+                                    kwargs={'model_name': 'story',
+                                            'id': story_revision.id }))
+
+
 @permission_required('indexer.can_reserve')
 def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, edit=False):
     story = get_object_or_404(Story, id=story_id)
@@ -3269,6 +3412,7 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
         reprint_revision.save()
         return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
               kwargs={ 'model_name': 'story', 'id': story_revision.id }))
+
 
 @permission_required('indexer.can_reserve')
 def confirm_reprint(request, data, object_type, selected_id):
@@ -3343,6 +3487,7 @@ def confirm_reprint(request, data, object_type, selected_id):
         'which_side': which_side
         },
         context_instance=RequestContext(request))
+
 
 @permission_required('indexer.can_reserve')
 def save_reprint(request, reprint_revision_id, changeset_id,
@@ -3515,6 +3660,7 @@ def remove_reprint_revision(request, id):
 # Moving Items
 ##############################################################################
 
+
 @permission_required('indexer.can_reserve')
 def move_series(request, series_revision_id, publisher_id):
     series_revision = get_object_or_404(SeriesRevision, id=series_revision_id,
@@ -3593,6 +3739,7 @@ def move_series(request, series_revision_id, publisher_id):
             series_revision.save()
             return submit(request, series_revision.changeset.id)
 
+
 @permission_required('indexer.can_reserve')
 def move_issue(request, issue_revision_id, series_id):
     """ move issue to series """
@@ -3663,6 +3810,7 @@ def move_issue(request, issue_revision_id, series_id):
         return HttpResponseRedirect(urlresolvers.reverse('edit',
             kwargs={'id': issue_revision.changeset.id}))
 
+
 @permission_required('indexer.can_reserve')
 def move_story_revision(request, id):
     """ move story revision between two issue revisions """
@@ -3690,6 +3838,7 @@ def move_story_revision(request, id):
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',
       kwargs={ 'id': story.changeset.id }))
+
 
 @permission_required('indexer.can_reserve')
 def move_cover(request, id, cover_id=None):
@@ -3738,6 +3887,7 @@ def move_cover(request, id, cover_id=None):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
       kwargs={ 'id': changeset.id }))
 
+
 @permission_required('indexer.can_reserve')
 def undo_move_cover(request, id, cover_id):
     changeset = get_object_or_404(Changeset, id=id)
@@ -3758,6 +3908,7 @@ def undo_move_cover(request, id, cover_id):
 ##############################################################################
 # Removing Items from a Changeset
 ##############################################################################
+
 
 @permission_required('indexer.can_reserve')
 def remove_story_revision(request, id):
@@ -3805,6 +3956,7 @@ def remove_story_revision(request, id):
     return HttpResponseRedirect(urlresolvers.reverse('edit',
       kwargs={ 'id': story.changeset.id }))
 
+
 @permission_required('indexer.can_reserve')
 def toggle_delete_story_revision(request, id):
     story = get_object_or_404(StoryRevision, id=id)
@@ -3819,6 +3971,7 @@ def toggle_delete_story_revision(request, id):
 ##############################################################################
 # Ongoing Reservations
 ##############################################################################
+
 
 @permission_required('indexer.can_reserve')
 def ongoing(request, user_id=None):
@@ -3857,6 +4010,7 @@ def ongoing(request, user_id=None):
             return render_error(request, u'Something went wrong while reserving'
               ' the series. Please contact us if this error persists.')
 
+
 def delete_ongoing(request, series_id):
     if request.method != 'POST':
         return render_error(request,
@@ -3874,6 +4028,7 @@ def delete_ongoing(request, series_id):
 ##############################################################################
 # Reordering
 ##############################################################################
+
 
 def _process_reorder_form(request, parent, sort_field, child_name, child_class):
     """
@@ -3920,6 +4075,7 @@ def _process_reorder_form(request, parent, sort_field, child_name, child_class):
     child_map = child_class.objects.in_bulk(reorder_list)
     return [child_map[child_id] for child_id in reorder_list]
 
+
 @permission_required('indexer.can_approve')
 def reorder_series(request, series_id):
     series = get_object_or_404(Series, id=series_id)
@@ -3936,6 +4092,7 @@ def reorder_series(request, series_id):
     except ViewTerminationError as vte:
         return vte.response
 
+
 @permission_required('indexer.can_approve')
 def reorder_series_by_key_date(request, series_id):
     if request.method != 'POST':
@@ -3944,6 +4101,7 @@ def reorder_series_by_key_date(request, series_id):
 
     issues = series.active_issues().order_by('key_date')
     return _reorder_series(request, series, issues)
+
 
 @permission_required('indexer.can_approve')
 def reorder_series_by_issue_number(request, series_id):
@@ -3983,6 +4141,7 @@ def reorder_series_by_issue_number(request, series_id):
           "Cannot sort by issue numbers because they are not all whole numbers",
           redirect=False)
 
+
 def _reorder_series(request, series, issues):
     """
     Internal method for actually changing the sort codes.
@@ -4009,6 +4168,7 @@ def _reorder_series(request, series, issues):
       { 'series': series,
         'issue_list': issue_list },
       context_instance=RequestContext(request))
+
 
 @permission_required('indexer.can_reserve')
 def reorder_stories(request, issue_id, changeset_id):
@@ -4041,6 +4201,7 @@ def reorder_stories(request, issue_id, changeset_id):
 
     except ViewTerminationError as vte:
         return vte.response
+
 
 def _reorder_children(request, parent, children, sort_field, child_set,
                       commit, unique=True, skip=None):
@@ -4120,6 +4281,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
 ##############################################################################
 # Queue Views
 ##############################################################################
+
 
 @permission_required('indexer.can_reserve')
 def show_queue(request, queue_name, state):
@@ -4335,6 +4497,7 @@ def show_approved(request):
       {'CTYPES': CTYPES, 'EDITING': True},
       per_page=50)
 
+
 @login_required
 def show_editor_log(request):
     changed_states = set(states.CLOSED+states.ACTIVE)
@@ -4350,6 +4513,7 @@ def show_editor_log(request):
       'oi/queues/editor_log.html',
       {'CTYPES': CTYPES, 'EDITING': True},
       per_page=50)
+
 
 @login_required
 def show_cover_queue(request):
@@ -4369,6 +4533,7 @@ def show_cover_queue(request):
       per_page=50,
       callback_key='tags',
       callback=get_preview_image_tags_per_page)
+
 
 def compare(request, id):
     changeset = get_object_or_404(Changeset.objects\
@@ -4487,6 +4652,7 @@ def compare(request, id):
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
+
 def get_cover_width(name):
     try:
         source_name = glob.glob(name)[0]
@@ -4498,6 +4664,7 @@ def get_cover_width(name):
     im = pyImage.open(source_name)
     cover_width = im.size[0]
     return cover_width
+
 
 @login_required
 def cover_compare(request, changeset, revision):
@@ -4618,6 +4785,7 @@ def cover_compare(request, changeset, revision):
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
+
 @login_required
 def image_compare(request, changeset, revision):
     '''
@@ -4656,6 +4824,7 @@ def image_compare(request, changeset, revision):
                                   context_instance=RequestContext(request))
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
+
 
 @login_required
 def preview(request, id, model_name):
@@ -4696,6 +4865,7 @@ def preview(request, id, model_name):
 ##############################################################################
 # Mentoring
 ##############################################################################
+
 
 @permission_required('indexer.can_mentor')
 def mentoring(request):
