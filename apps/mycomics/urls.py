@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from apps.indexer import views as account_views
 from apps.mycomics import views as mycomics_views
 

@@ -53,7 +53,7 @@
     |
   {% endif %}
     <form style="display:inline"
-          action="{% url "apps.gcd.views.details.issue_form" %}">
+          action="{% url "issue_select_form" %}">
       <input type="hidden" name="extra" value="{{ extra }}">
       <select name="id" id="id">
     {% for other_issue in series.active_base_issues_variant_count %}

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.conf import settings
 from django.views.generic import base as bv
 

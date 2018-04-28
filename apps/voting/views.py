@@ -10,7 +10,7 @@ from django.core.mail import send_mail
 from django.core.files import File
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 
 from apps.indexer.views import render_error
@@ -86,13 +86,10 @@ def dashboard(request):
     # We ignore the forbidden topics on the dashboard and only show relevant topics.
     pending_topics, voted_topics, forbidden_topics = \
       _classify_topics(topics, request.user)
-    return render_to_response('voting/dashboard.html',
-                              {
-                                'voted_topics': voted_topics,
-                                'pending_topics': pending_topics,
-                                'agendas': Agenda.objects.all(),
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'voting/dashboard.html',
+                  {'voted_topics': voted_topics,
+                   'pending_topics': pending_topics,
+                   'agendas': Agenda.objects.all()})
 
 def _calculate_results(unresolved):
     """
@@ -260,16 +257,13 @@ def topic(request, id):
     # But this is why "voted" is not just a check for at least one vote here.
     votes = topic.options.filter(votes__voter=request.user)
 
-    return render_to_response('voting/topic.html',
-                              {
-                                'topic': topic,
-                                'voted': topic.has_vote_from(request.user),
-                                'votes': votes,
-                                'closed': topic.deadline < datetime.now() \
-                                          or topic.result_calculated,
-                                'settings': settings,
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'voting/topic.html',
+                  {'topic': topic,
+                   'voted': topic.has_vote_from(request.user),
+                   'votes': votes,
+                   'closed': topic.deadline < datetime.now() \
+                             or topic.result_calculated,
+                   'settings': settings})
 
 @permission_required('indexer.can_vote')
 def vote(request):
@@ -420,15 +414,12 @@ def agenda(request, id):
 
     # result_counts = map(lambda t: (t.name, t.results().count()), closed)
     # raise Exception, result_counts
-    return render_to_response('voting/agenda.html',
-                              {
-                                'agenda': agenda,
-                                'closed_topics': closed.order_by('-deadline'),
-                                'pending_topics': pending_topics,
-                                'voted_topics': voted_topics,
-                                'forbidden_topics': forbidden_topics,
-                                'open_items': open_items,
-                                'pending_items': pending_items,
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'voting/agenda.html',
+                  {'agenda': agenda,
+                   'closed_topics': closed.order_by('-deadline'),
+                   'pending_topics': pending_topics,
+                   'voted_topics': voted_topics,
+                   'forbidden_topics': forbidden_topics,
+                   'open_items': open_items,
+                   'pending_items': pending_items})
 

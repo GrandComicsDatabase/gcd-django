@@ -15,7 +15,7 @@ from django.conf import settings
 from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.safestring import mark_safe
 
 from apps.gcd.views.pagination import DiggPaginator
@@ -65,8 +65,7 @@ def index(request):
         'stats_for_language': stats_for_language,
         'CALENDAR': settings.CALENDAR,
     })
-    return render_to_response('gcd/index.html', template_vars,
-                              context_instance=RequestContext(request))
+    return render(request, 'gcd/index.html', template_vars)
 
 
 class ResponsePaginator(object):
@@ -143,8 +142,7 @@ class ResponsePaginator(object):
         if self.view:
             return self.view()
 
-        return render_to_response(self.template, self.vars,
-                                  context_instance=RequestContext(request))
+        return render(request, self.template, self.vars)
 
 
 def paginate_response(request, queryset, template, vars, per_page=100,

@@ -4,8 +4,7 @@ from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.core import urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
@@ -25,22 +24,23 @@ from apps.oi.import_export import UnicodeReader, UnicodeWriter
 
 from apps.select.views import store_select_data
 
-from apps.mycomics.forms import *
+from apps.mycomics.forms import CollectionForm, CollectionItemForm, \
+                                CollectionSelectForm, CollectorForm, \
+                                LocationForm, PurchaseLocationForm
 from apps.stddata.forms import DateForm
-from apps.mycomics.models import Collection, CollectionItem, Subscription
-
-from django.contrib import messages
+from apps.mycomics.models import Collection, CollectionItem, Subscription, \
+                                 Location, PurchaseLocation
 from django.utils.translation import ugettext as _
 
-INDEX_TEMPLATE='mycomics/index.html'
-COLLECTION_TEMPLATE='mycomics/collection.html'
-COLLECTION_LIST_TEMPLATE='mycomics/collections.html'
-COLLECTION_FORM_TEMPLATE='mycomics/collection_form.html'
-COLLECTION_ITEM_TEMPLATE='mycomics/collection_item.html'
-COLLECTION_SUBSCRIPTIONS_TEMPLATE='mycomics/collection_subscriptions.html'
-MESSAGE_TEMPLATE='mycomics/message.html'
-SETTINGS_TEMPLATE='mycomics/settings.html'
-DEFAULT_PER_PAGE=25
+INDEX_TEMPLATE = 'mycomics/index.html'
+COLLECTION_TEMPLATE = 'mycomics/collection.html'
+COLLECTION_LIST_TEMPLATE = 'mycomics/collections.html'
+COLLECTION_FORM_TEMPLATE = 'mycomics/collection_form.html'
+COLLECTION_ITEM_TEMPLATE = 'mycomics/collection_item.html'
+COLLECTION_SUBSCRIPTIONS_TEMPLATE = 'mycomics/collection_subscriptions.html'
+MESSAGE_TEMPLATE = 'mycomics/message.html'
+SETTINGS_TEMPLATE = 'mycomics/settings.html'
+DEFAULT_PER_PAGE = 25
 
 
 def index(request):
@@ -48,15 +48,13 @@ def index(request):
     if request.user:
         return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
     vars = {'next': urlresolvers.reverse('collections_list')}
-    return render_to_response(INDEX_TEMPLATE, vars,
-                              context_instance=RequestContext(request))
+    return render(request, INDEX_TEMPLATE, vars)
 
 
 @login_required
 def display_message(request):
     """Generates a page displaying only a message set in messages framework."""
-    return render_to_response(MESSAGE_TEMPLATE, {},
-                              context_instance=RequestContext(request))
+    return render(request, MESSAGE_TEMPLATE, {})
 
 
 @login_required
@@ -67,8 +65,7 @@ def collections_list(request):
         id=def_have.id).exclude(id=def_want.id).order_by('name')
     vars = {'collection_list': collection_list}
 
-    return render_to_response(COLLECTION_LIST_TEMPLATE, vars,
-                              context_instance=RequestContext(request))
+    return render(request, COLLECTION_LIST_TEMPLATE, vars)
 
 
 def view_collection(request, collection_id):
@@ -117,8 +114,7 @@ def edit_collection(request, collection_id=None):
     else:
         form = CollectionForm(instance=collection)
 
-    return render_to_response(COLLECTION_FORM_TEMPLATE, {'form': form},
-                              context_instance=RequestContext(request))
+    return render(request, COLLECTION_FORM_TEMPLATE, {'form': form})
 
 
 @login_required
@@ -126,7 +122,7 @@ def delete_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
     collection.delete()
-    #Since above command doesn't delete any CollectionItems I just delete here
+    # Since above command doesn't delete any CollectionItems I just delete here
     # all collection items not belonging now to any collection.
     CollectionItem.objects.filter(collections=None).delete()
     messages.success(request, _('Collection <b>%s</b> deleted.' % collection.name))
@@ -184,19 +180,19 @@ def export_collection(request, collection_id):
         if collection.condition_used:
             export_data.append(unicode(item.grade) if item.grade else u'')
         if collection.acquisition_date_used:
-            export_data.append(unicode(item.acquisition_date) \
+            export_data.append(unicode(item.acquisition_date)
                                if item.acquisition_date else u'')
         if collection.sell_date_used:
-            export_data.append(unicode(item.sell_date) \
+            export_data.append(unicode(item.sell_date)
                                if item.sell_date else u'')
         if collection.location_used:
-            export_data.append(unicode(item.location) \
+            export_data.append(unicode(item.location)
                                if item.location else u'')
         if collection.purchase_location_used:
-            export_data.append(unicode(item.purchase_location) \
+            export_data.append(unicode(item.purchase_location)
                                if item.purchase_location else u'')
         if collection.was_read_used:
-            export_data.append(unicode(item.was_read) \
+            export_data.append(unicode(item.was_read)
                                if item.was_read != None else u'')
         if collection.for_sale_used:
             export_data.append(unicode(item.for_sale))
@@ -229,7 +225,7 @@ def export_collection(request, collection_id):
 
 def get_item_for_collector(item_id, collector):
     item = get_object_or_404(CollectionItem, id=item_id)
-    #checking if this user can see this item
+    # checking if this user can see this item
     if item.collections.all()[0].collector != collector:
         raise PermissionDenied
     return item
@@ -390,19 +386,19 @@ def view_item(request, item_id, collection_id):
 
     # TODO with django1.6 use first/last here
     item_before = collection.items.filter(issue__series__sort_name__lte=
-                                            item.issue.series.sort_name)\
+                                          item.issue.series.sort_name)\
                                   .exclude(issue__series__sort_name=
-                                             item.issue.series.sort_name,
+                                           item.issue.series.sort_name,
                                            issue__series__year_began__gt=
-                                             item.issue.series.year_began)\
+                                           item.issue.series.year_began)\
                                   .exclude(issue__series_id=
-                                             item.issue.series.id,
+                                           item.issue.series.id,
                                            issue__sort_code__gt=
-                                             item.issue.sort_code)\
+                                           item.issue.sort_code)\
                                   .exclude(issue__series_id=
-                                             item.issue.series.id,
+                                           item.issue.series.id,
                                            issue__sort_code=
-                                             item.issue.sort_code,
+                                           item.issue.sort_code,
                                            id__gte=item.id).reverse()
 
     if item_before:
@@ -411,34 +407,33 @@ def view_item(request, item_id, collection_id):
     else:
         page = 1
     item_after = collection.items.filter(issue__series__sort_name__gte=
-                                           item.issue.series.sort_name)\
+                                         item.issue.series.sort_name)\
                                  .exclude(issue__series__sort_name=
-                                            item.issue.series.sort_name,
+                                          item.issue.series.sort_name,
                                           issue__series__year_began__lt=
-                                            item.issue.series.year_began)\
+                                          item.issue.series.year_began)\
                                  .exclude(issue__series_id=
-                                            item.issue.series.id,
+                                          item.issue.series.id,
                                           issue__sort_code__lt=
-                                            item.issue.sort_code)\
+                                          item.issue.sort_code)\
                                  .exclude(issue__series_id=
-                                            item.issue.series.id,
+                                          item.issue.series.id,
                                           issue__sort_code=
-                                            item.issue.sort_code,
+                                          item.issue.sort_code,
                                           id__lte=item.id)
     if item_after:
         item_after = item_after[0]
 
-    return render_to_response(COLLECTION_ITEM_TEMPLATE,
-                              {'item': item, 'item_form': item_form,
-                               'item_before': item_before,
-                               'item_after': item_after,
-                               'page': page,
-                               'collection': collection,
-                               'other_collections': other_collections,
-                               'sell_date_form': sell_date_form,
-                               'acquisition_date_form': acquisition_date_form,
-                               'collection_form': collection_form},
-                              context_instance=RequestContext(request))
+    return render(request, COLLECTION_ITEM_TEMPLATE,
+                  {'item': item, 'item_form': item_form,
+                   'item_before': item_before,
+                   'item_after': item_after,
+                   'page': page,
+                   'collection': collection,
+                   'other_collections': other_collections,
+                   'sell_date_form': sell_date_form,
+                   'acquisition_date_form': acquisition_date_form,
+                   'collection_form': collection_form})
 
 
 @login_required
@@ -491,20 +486,18 @@ def save_item(request, item_id, collection_id):
                     acquisition_date_form.fields['date'].label = \
                                                         _('Acquisition date')
                 messages.error(request, _('Date was entered in wrong format.'))
-                return render_to_response(COLLECTION_ITEM_TEMPLATE,
-                                   {'item': item, 'item_form': item_form,
-                                    'collection': collection,
-                                    'sell_date_form': sell_date_form,
-                                    'acquisition_date_form': acquisition_date_form},
-                                   context_instance=RequestContext(request))
+                return render(request, COLLECTION_ITEM_TEMPLATE,
+                              {'item': item, 'item_form': item_form,
+                               'collection': collection,
+                               'sell_date_form': sell_date_form,
+                               'acquisition_date_form': acquisition_date_form})
         else:
             messages.error(request, _('Some data was entered incorrectly.'))
-            return render_to_response(COLLECTION_ITEM_TEMPLATE,
-                               {'item': item, 'item_form': item_form,
-                                'collection': collection,
-                                'sell_date_form': sell_date_form,
-                                'acquisition_date_form': acquisition_date_form},
-                               context_instance=RequestContext(request))
+            return render(request, COLLECTION_ITEM_TEMPLATE,
+                          {'item': item, 'item_form': item_form,
+                           'collection': collection,
+                           'sell_date_form': sell_date_form,
+                           'acquisition_date_form': acquisition_date_form})
         return HttpResponseRedirect(
             urlresolvers.reverse('view_item',
                                  kwargs={'item_id': item_id,
@@ -692,7 +685,7 @@ def add_series_issues_to_collection(request, series_id):
                                               series.sort_name).reverse()
 
         if item_before:
-            page = "?page=%d" % (item_before.count()/DEFAULT_PER_PAGE + 1)
+            page = "?page=%d" % (item_before.count() / DEFAULT_PER_PAGE + 1)
         else:
             page = ""
         messages.success(request, u"All issues added to your "
@@ -751,12 +744,11 @@ def subscriptions_collection(request, collection_id):
     if not collection:
         return error_return
     subscriptions = collection.subscriptions.order_by('series__sort_name')
-    return render_to_response(COLLECTION_SUBSCRIPTIONS_TEMPLATE,
-                              {'collection': collection,
-                               'subscriptions': subscriptions,
-                               'collection_list': request.user.collector\
-                                                  .ordered_collections()},
-                              context_instance=RequestContext(request))
+    return render(request, COLLECTION_SUBSCRIPTIONS_TEMPLATE,
+                  {'collection': collection,
+                   'subscriptions': subscriptions,
+                   'collection_list': request.user.collector.
+                                              ordered_collections()})
 
 
 @login_required
@@ -817,7 +809,8 @@ def unsubscribe_series(request, subscription_id):
     subscription.delete()
     return HttpResponseRedirect(
              urlresolvers.reverse('subscriptions_collection',
-               kwargs={'collection_id': subscription.collection.id}))
+                                  kwargs={'collection_id':
+                                          subscription.collection.id}))
 
 
 @login_required
@@ -830,7 +823,7 @@ def mycomics_search(request):
             'story': True,
             'allowed_selects': allowed_selects,
             'return': add_selected_issues_to_collection,
-            'cancel': HttpResponseRedirect(urlresolvers\
+            'cancel': HttpResponseRedirect(urlresolvers
                                            .reverse('collections_list'))}
     select_key = store_select_data(request, None, data)
     context = {'select_key': select_key,
@@ -857,20 +850,20 @@ def mycomics_settings(request):
     else:
         settings_form = CollectorForm(request.user.collector)
 
-    location_form = LocationForm(instance=Location(user=request.user.collector))
+    location_form = LocationForm(instance=Location(user=
+                                                   request.user.collector))
     purchase_location_form = PurchaseLocationForm(
         instance=PurchaseLocation(user=request.user.collector))
     locations = Location.objects.filter(user=request.user.collector)
     purchase_locations = PurchaseLocation.objects.filter(
         user=request.user.collector)
 
-    return render_to_response(SETTINGS_TEMPLATE,
-                              {'settings_form' : settings_form,
-                               'location_form' : location_form,
-                               'purchase_location_form' : purchase_location_form,
-                               'locations' : locations,
-                               'purchase_locations' : purchase_locations},
-                              context_instance=RequestContext(request))
+    return render(request, SETTINGS_TEMPLATE,
+                  {'settings_form': settings_form,
+                   'location_form': location_form,
+                   'purchase_location_form': purchase_location_form,
+                   'locations': locations,
+                   'purchase_locations': purchase_locations})
 
 
 def _edit_location(request, location_class, location_form_class, location_id):
@@ -884,7 +877,7 @@ def _edit_location(request, location_class, location_form_class, location_id):
         form.save()
         messages.success(request, _('Location saved.'))
     else:
-        #Since there is no real validation, this should't happen anyway
+        # Since there is no real validation, this should't happen anyway
         messages.error(_('Entered data was incorrect.'))
 
     return HttpResponseRedirect(urlresolvers.reverse('mycomics_settings'))
@@ -916,4 +909,3 @@ def delete_location(request, location_id):
 @login_required
 def delete_purchase_location(request, location_id):
     return _delete_location(request, PurchaseLocation, location_id)
-

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 
-from django.contrib.auth.models import User, check_password
+from django.contrib.auth.models import User
 
 
 class EmailBackend:
@@ -23,7 +23,7 @@ class EmailBackend:
     def authenticate(self, username=None, password=None):
         try:
             user = User.objects.get(email=username)
-            if check_password(password, user.password):
+            if User.check_password(password, user.password):
                 return user
             return None
         except (User.DoesNotExist, User.MultipleObjectsReturned):

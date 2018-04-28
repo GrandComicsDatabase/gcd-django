@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.conf import settings
 from django.views.generic import base as bv
 from haystack.forms import FacetedSearchForm
@@ -184,7 +184,7 @@ urlpatterns = [
     # Issue
     url(r'^issue/(?P<issue_id>\d+)/$',
       gcd_views.details.issue, name='show_issue'),
-    url(r'^issue/$', gcd_views.details.issue_form),
+    url(r'^issue/$', gcd_views.details.issue_form, name='issue_select_form'),
     # ISBNs don't have 'name' in the path, but otherwise work the same
     url(r'^isbn/name/(?P<isbn>.+)/sort/(?P<sort>.+)/$',
       gcd_views.search.issue_by_isbn_name),

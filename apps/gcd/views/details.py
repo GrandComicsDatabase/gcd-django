@@ -14,8 +14,7 @@ from django import forms
 from django.db.models import Q
 from django.conf import settings
 from django.core import urlresolvers
-from django.shortcuts import render_to_response, \
-                             get_object_or_404, \
+from django.shortcuts import get_object_or_404, \
                              get_list_or_404, \
                              render
 from django.http import HttpResponseRedirect, Http404, HttpResponse
@@ -123,8 +122,7 @@ def show_creator_art_influence(request, creator_art_influence, preview=False):
     vars = {'creator_art_influence': creator_art_influence,
             'error_subject': creator_art_influence,
             'preview': preview}
-    return render(request, 'gcd/details/creator_art_influence.html',
-                  vars)
+    return render(request, 'gcd/details/creator_art_influence.html', vars)
 
 
 def creator_award(request, creator_award_id):
@@ -162,8 +160,7 @@ def show_creator_non_comic_work(request, creator_non_comic_work, preview=False):
     vars = {'creator_non_comic_work': creator_non_comic_work,
             'error_subject': creator_non_comic_work,
             'preview': preview}
-    return render(request, 'gcd/details/creator_non_comic_work.html',
-                  vars)
+    return render(request, 'gcd/details/creator_non_comic_work.html', vars)
 
 
 def creator_relation(request, creator_relation_id):
@@ -176,8 +173,7 @@ def show_creator_relation(request, creator_relation, preview=False):
     vars = {'creator_relation': creator_relation,
             'error_subject': creator_relation,
             'preview': preview}
-    return render(request, 'gcd/details/creator_relation.html',
-                  vars)
+    return render(request, 'gcd/details/creator_relation.html', vars)
 
 
 def creator_school(request, creator_school_id):
@@ -536,8 +532,7 @@ def show_series(request, series, preview=False):
     if series.has_issue_title:
         table_width = 2
 
-    return render_to_response(
-      'gcd/details/series.html',
+    return render(request, 'gcd/details/series.html',
       {
         'series': series,
         'scans': scans,
@@ -551,8 +546,7 @@ def show_series(request, series, preview=False):
         'is_empty': IS_EMPTY,
         'is_none': IS_NONE,
         'RANDOM_IMAGE': _publisher_image_content(series.publisher_id)
-      },
-      context_instance=RequestContext(request))
+      })
 
 def series_details(request, series_id, by_date=False):
     """
@@ -641,7 +635,7 @@ def series_details(request, series_id, by_date=False):
       series.active_issues().filter(no_rating=True, variant_of=None)\
                             .count() - num_issues
 
-    return render_to_response('gcd/details/series_details.html',
+    return render(request, 'gcd/details/series_details.html',
       {
         'series': series,
         'by_date': by_date,
@@ -656,8 +650,7 @@ def series_details(request, series_id, by_date=False):
         'on_sale_date_present': on_sale_date_present,
         'rating_present': rating_present,
         'bad_dates': len(bad_key_dates),
-      },
-      context_instance=RequestContext(request))
+      })
 
 def change_history(request, model_name, id):
     """
@@ -672,13 +665,15 @@ def change_history(request, model_name, id):
                           'creator_art_influence', 'creator_non_comic_work']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id).deleted):
-            return render_to_response('indexer/error.html', {
-              'error_text': 'There is no change history for this type of object.'},
-              context_instance=RequestContext(request))
+            return render(
+              request, 'indexer/error.html',
+              {'error_text':
+               'There is no change history for this type of object.'})
     if model_name == 'cover' and not request.user.has_perm('indexer.can_vote'):
-        return render_to_response('indexer/error.html', {
-          'error_text': 'Only members can access the change history for covers.'},
-          context_instance=RequestContext(request))
+        return render(
+          request, 'indexer/error.html',
+          {'error_text':
+           'Only members can access the change history for covers.'})
 
     template = 'gcd/details/change_history.html'
     prev_issue = None
@@ -701,22 +696,21 @@ def change_history(request, model_name, id):
     if model_name == 'issue':
         [prev_issue, next_issue] = object.get_prev_next_issue()
 
-    return render_to_response(template,
+    return render(request, template,
       {
         'description': model_name.replace('_', ' ').title(),
         'object': object,
         'changesets': changesets,
         'prev_issue': prev_issue,
         'next_issue': next_issue,
-      },
-      context_instance=RequestContext(request))
+      })
 
 def _handle_key_date(issue, grid_date, prev_year, prev_month, issues_by_date):
     """
     Helper function for building timelines of issues by key_date.
     """
     if prev_year == None:
-        issues_by_date.append({'date': grid_date, 'issues': [issue] })
+        issues_by_date.append({'date': grid_date, 'issues': [issue]})
 
     elif prev_year == grid_date.year:
         last_date_issues = issues_by_date[len(issues_by_date) - 1]
@@ -763,16 +757,18 @@ def status(request, series_id):
     """
     series = get_object_or_404(Series, id=series_id)
     if series.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'series', 'id': series_id}))
+        return HttpResponseRedirect(
+          urlresolvers.reverse('change_history',
+                               kwargs={'model_name': 'series',
+                                       'id': series_id}))
 
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
 
-    return render_to_response('gcd/status/status.html', {
-      'series': series,
-      'table_width': table_width },
-      context_instance=RequestContext(request))
+    return render(request, 'gcd/status/status.html',
+                  {'series': series,
+                   'table_width': table_width})
+
 
 def _get_scan_table(series, show_cover=True):
     # freshly added series have no scans on preview page
@@ -805,12 +801,13 @@ def _get_scan_table(series, show_cover=True):
 
     return scans, image_tag, issue
 
+
 def scans(request, series_id):
     """
     Display the cover scan status matrix for a series.
     """
 
-    series = get_object_or_404(Series, id = series_id)
+    series = get_object_or_404(Series, id=series_id)
     if series.deleted:
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': 'series', 'id': series_id}))
@@ -820,11 +817,11 @@ def scans(request, series_id):
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = 12
 
-    return render_to_response('gcd/status/scans.html', {
-      'series' : series,
-      'scans' : scans,
-      'table_width' : table_width },
-      context_instance=RequestContext(request))
+    return render(request, 'gcd/status/scans.html',
+                  {'series': series,
+                   'scans': scans,
+                   'table_width': table_width})
+
 
 def covers_to_replace(request, starts_with=None):
     """
@@ -1057,7 +1054,7 @@ def daily_changes(request, show_date=None):
     if soo_issues:
       images.append((soo_issues, 'image/', 'Statement of ownership', 'issue'))
 
-    return render_to_response('gcd/status/daily_changes.html',
+    return render(request, 'gcd/status/daily_changes.html',
       {
         'date' : show_date,
         'date_after' : date_after,
@@ -1071,9 +1068,7 @@ def daily_changes(request, show_date=None):
         'series_bonds' : series_bonds,
         'issues' : issues,
         'all_images' : images
-      },
-      context_instance=RequestContext(request)
-    )
+      })
 
 def do_on_sale_weekly(request, year=None, week=None):
     """
@@ -1194,15 +1189,12 @@ def int_stats(request, object_type, choices):
         kwargs = {object_name: obj}
         stats.append((obj, CountStats.objects.filter(**kwargs)))
 
-    return render_to_response(
-      'gcd/status/international_stats.html',
+    return render(request, 'gcd/status/international_stats.html',
       {
         'stats' : stats,
         'type' : object_name,
         'form': form
-      },
-      context_instance=RequestContext(request)
-    )
+      })
  
 def cover(request, issue_id, size):
     """
@@ -1232,8 +1224,7 @@ def cover(request, issue_id, size):
                                   deleted=False)
     cover_page = covers.count()/COVERS_PER_GALLERY_PAGE + 1
 
-    return render_to_response(
-      'gcd/details/cover.html',
+    return render(request, 'gcd/details/cover.html',
       {
         'issue': issue,
         'prev_issue': prev_issue,
@@ -1243,9 +1234,7 @@ def cover(request, issue_id, size):
         'extra': extra,
         'error_subject': '%s cover' % issue,
         'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
-      },
-      context_instance=RequestContext(request)
-    )
+      })
 
 def covers(request, series_id):
     """
@@ -1308,8 +1297,7 @@ def issue_images(request, issue_id):
     else:
         soo_tag = None
 
-    return render_to_response(
-      'gcd/details/issue_images.html',
+    return render(request, 'gcd/details/issue_images.html',
       {
         'issue': issue,
         'prev_issue': prev_issue,
@@ -1319,9 +1307,7 @@ def issue_images(request, issue_id):
         'soo_tag': soo_tag,
         'soo_image': soo_image,
         'extra': 'image/'
-      },
-      context_instance=RequestContext(request)
-    )
+      })
 
 def issue_form(request):
     """
@@ -1481,8 +1467,7 @@ def show_issue(request, issue, preview=False):
         country = None
         language = None
 
-    return render_to_response(
-      'gcd/details/issue.html',
+    return render(request, 'gcd/details/issue.html',
       {
         'issue': issue,
         'prev_issue': prev_issue,
@@ -1500,8 +1485,7 @@ def show_issue(request, issue, preview=False):
         'preview': preview,
         'not_shown_types': not_shown_types,
         'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
-      },
-      context_instance=RequestContext(request))
+      })
 
 
 # this should later be moved to admin.py or something like that
@@ -1533,14 +1517,13 @@ def countries_in_use(request):
                         countries_from_creators)
         used_countries = Country.objects.filter(id__in=used_ids)
 
-        return render_to_response('gcd/admin/countries.html',
-                                  {'countries': used_countries},
-                                  context_instance=RequestContext(request))
+        return render(request, 'gcd/admin/countries.html',
+                      {'countries': used_countries})
     else:
-        return render_to_response('indexer/error.html', {
-          'error_text' : 'You are not allowed to access this page.',
-          },
-          context_instance=RequestContext(request))
+        return render(request, 'indexer/error.html',
+                      {'error_text':
+                       'You are not allowed to access this page.'})
+
 
 def agenda(request, language):
     """
