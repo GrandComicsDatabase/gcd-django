@@ -1483,7 +1483,7 @@ class Revision(models.Model):
                                          created__lt=self.created) \
                                  .latest('created')
         # edits which are not comitted do not have a stored previous revision
-        elif self.committed == False and not self.added:
+        elif self.committed is False and self.source:
             self._prev_rev = self.source.revisions \
                                  .filter(committed=True,
                                          created__lt=self.created) \
