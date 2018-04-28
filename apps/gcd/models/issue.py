@@ -195,12 +195,20 @@ class Issue(GcdData):
             variants = self.variant_set.all()
         return list(variants.exclude(deleted=True))
 
+    @property
+    def full_descriptor(self):
+        if self.variant_name:
+            return "%s [%s]" % (self.issue_descriptor, self.variant_name)
+        else:
+            return self.issue_descriptor
+
+    @property
     def issue_descriptor(self):
         return issue_descriptor(self)
 
     @property
     def display_number(self):
-        number = self.issue_descriptor()
+        number = self.issue_descriptor
         if number:
             return u'#' + number
         else:

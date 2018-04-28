@@ -6,10 +6,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core import urlresolvers
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.utils.html import conditional_escape as esc
+
+from djqscsv import render_to_csv_response
 
 from apps.indexer.views import render_error, ErrorWithMessage
 from apps.gcd.models import Issue, Series
@@ -20,7 +22,7 @@ from apps.gcd.templatetags.credits import show_keywords_comma
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 
-from apps.oi.import_export import UnicodeReader, UnicodeWriter
+from apps.oi.import_export import UnicodeReader
 
 from apps.select.views import store_select_data
 
@@ -71,9 +73,9 @@ def collections_list(request):
 def view_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     if request.user.is_authenticated() and \
-      collection.collector == request.user.collector:
+       collection.collector == request.user.collector:
         collection_list = request.user.collector.ordered_collections()
-    elif collection.public == True:
+    elif collection.public is True:
         collection_list = Collection.objects.none()
     elif not request.user.is_authenticated():
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
@@ -125,7 +127,8 @@ def delete_collection(request, collection_id):
     # Since above command doesn't delete any CollectionItems I just delete here
     # all collection items not belonging now to any collection.
     CollectionItem.objects.filter(collections=None).delete()
-    messages.success(request, _('Collection <b>%s</b> deleted.' % collection.name))
+    messages.success(request,
+                     _('Collection <b>%s</b> deleted.' % collection.name))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 
@@ -137,90 +140,55 @@ def export_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
     filename = unicode(collection).replace(' ', '_').encode('utf-8')
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename=%s.csv' % filename
-    writer = UnicodeWriter(response)
 
-    export_data = ["series", "publisher", "number"]
+    export_data = ["issue__series__name", "issue__series__publisher__name",
+                   "issue"]
+    field_header_map = {"issue__series__name": "series",
+                        "issue__series__publisher__name": "publisher",
+                        "notes": "description",
+                        "id": "tags"}
     if collection.condition_used:
         export_data.append("grade")
     if collection.acquisition_date_used:
-        export_data.append("acquisition date")
+        export_data.append("acquisition_date")
     if collection.sell_date_used:
         export_data.append("sell_date")
     if collection.location_used:
         export_data.append("location")
     if collection.purchase_location_used:
-        export_data.append("purchase location")
+        export_data.append("purchase_location")
     if collection.was_read_used:
-        export_data.append("was read")
+        export_data.append("was_read")
     if collection.for_sale_used:
-        export_data.append("for sale")
+        export_data.append("for_sale")
     if collection.signed_used:
         export_data.append("signed")
     if collection.price_paid_used:
-        export_data.append("price paid")
+        export_data.append("price_paid")
+        export_data.append("price_paid_currency__code")
+        field_header_map["price_paid_currency__code"] = ""
     if collection.market_value_used:
-        export_data.append("market value")
+        export_data.append("market_value")
+        export_data.append("market_value_currency__code")
+        field_header_map["market_value_currency__code"] = ""
     if collection.sell_price_used:
-        export_data.append("sell price")
-    export_data.append("description")
-    export_data.append("tags")
-    writer.writerow(export_data)
+        export_data.append("sell_price")
+        export_data.append("sell_price_currency__code")
+        field_header_map["sell_price_currency__code"] = ""
+    export_data.append("notes")
+    export_data.append("id")
 
     items = collection.items.all()
 
-    for item in items:
-        export_data = [item.issue.series.name, item.issue.series.publisher.name]
-        if item.issue.variant_name:
-            export_data.append("%s [%s]" % (item.issue.issue_descriptor(),
-                                            item.issue.variant_name))
-        else:
-            export_data.append(item.issue.issue_descriptor())
-        if collection.condition_used:
-            export_data.append(unicode(item.grade) if item.grade else u'')
-        if collection.acquisition_date_used:
-            export_data.append(unicode(item.acquisition_date)
-                               if item.acquisition_date else u'')
-        if collection.sell_date_used:
-            export_data.append(unicode(item.sell_date)
-                               if item.sell_date else u'')
-        if collection.location_used:
-            export_data.append(unicode(item.location)
-                               if item.location else u'')
-        if collection.purchase_location_used:
-            export_data.append(unicode(item.purchase_location)
-                               if item.purchase_location else u'')
-        if collection.was_read_used:
-            export_data.append(unicode(item.was_read)
-                               if item.was_read != None else u'')
-        if collection.for_sale_used:
-            export_data.append(unicode(item.for_sale))
-        if collection.signed_used:
-            export_data.append(unicode(item.signed))
-        if collection.price_paid_used:
-            export_data.append(u"%s %s" % (item.price_paid,
-                                           item.price_paid_currency.code
-                                             if item.price_paid_currency
-                                             else u'')
-                               if item.price_paid else u'')
-        if collection.market_value_used:
-            export_data.append(u"%s %s" % (item.market_value,
-                                           item.market_value_currency.code
-                                             if item.market_value_currency
-                                             else u'')
-                               if item.market_value else u'')
-        if collection.sell_price_used:
-            export_data.append(u"%s %s" % (item.sell_price,
-                                           item.sell_price_currency.code
-                                             if item.sell_price_currency
-                                             else u'')
-                               if item.sell_price else u'')
-        export_data.append(unicode(item.notes))
-        export_data.append(unicode(show_keywords_comma(item)))
-        writer.writerow(export_data)
-
-    return response
+    return render_to_csv_response(
+      items.values(*export_data),
+      append_datestamp=True,
+      field_serializer_map={
+        'issue': (lambda x: "%s" % Issue.objects.get(id=x).full_descriptor),
+        'id': (lambda x:
+               "%s" % show_keywords_comma(CollectionItem.objects.get(id=x)))},
+      field_header_map=field_header_map,
+      filename=filename)
 
 
 def get_item_for_collector(item_id, collector):
@@ -263,20 +231,21 @@ def delete_item(request, item_id, collection_id):
     check_item_is_in_collection(request, item, collection)
 
     position = collection.items.filter(issue__series__sort_name__lte=
-                                         item.issue.series.sort_name)\
+                                       item.issue.series.sort_name)\
                                .exclude(issue__series__sort_name=
-                                          item.issue.series.sort_name,
+                                        item.issue.series.sort_name,
                                         issue__series__year_began__gt=
-                                          item.issue.series.year_began)\
+                                        item.issue.series.year_began)\
                                .exclude(issue__series_id=
-                                          item.issue.series.id,
+                                        item.issue.series.id,
                                         issue__sort_code__gte=
-                                          item.issue.sort_code).count()
+                                        item.issue.sort_code).count()
 
     collection.items.remove(item)
-    messages.success(request,
-                     _(u"Item <b>%s</b> removed from %s" % (item.issue.full_name(),
-                                                            collection)))
+    messages.success(
+      request,
+      _(u"Item <b>%s</b> removed from %s" % (item.issue.full_name(),
+                                             collection)))
     if not item.collections.count():
         if item.acquisition_date:
             item.acquisition_date.delete()
@@ -284,13 +253,14 @@ def delete_item(request, item_id, collection_id):
             item.sell_date.delete()
         item.delete()
     else:
-        return HttpResponseRedirect(urlresolvers.reverse('view_item',
-                        kwargs={'item_id': item.id,
-                                'collection_id': item.collections.all()[0].id}))
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'view_item',
+          kwargs={'item_id': item.id,
+                  'collection_id': item.collections.all()[0].id}))
 
     return HttpResponseRedirect(urlresolvers.reverse('view_collection',
-                                  kwargs={'collection_id': collection_id}) + \
-                                "?page=%d" % (position/DEFAULT_PER_PAGE + 1))
+                                  kwargs={'collection_id': collection_id}) +
+                                "?page=%d" % (position / DEFAULT_PER_PAGE + 1))
 
 
 @login_required
@@ -312,7 +282,7 @@ def move_item(request, item_id, collection_id):
             from_collection.items.remove(item)
             item.collections.add(to_collection)
             messages.success(request, _("Item moved between collections"))
-            if to_collection.own_used and to_collection.own_default != None:
+            if to_collection.own_used and to_collection.own_default is not None:
                 if to_collection.own_default != item.own:
                     item.own = to_collection.own_default
                     item.save()
@@ -320,13 +290,15 @@ def move_item(request, item_id, collection_id):
                                      _("Item status for own/want differed from"
                                        " default of new collection <b>%s</b> "
                                        "and was changed." % to_collection.name))
-            return HttpResponseRedirect(urlresolvers.reverse('view_item',
-                                    kwargs={'item_id': item_id,
-                                            'collection_id': to_collection_id}))
+            return HttpResponseRedirect(
+              urlresolvers.reverse('view_item',
+                                   kwargs={'item_id': item_id,
+                                           'collection_id': to_collection_id}))
         elif 'copy' in request.POST:
             item.collections.add(to_collection)
             messages.success(request, _("Item copied between collections"))
-            if to_collection.own_used and to_collection.own_default != None:
+            if to_collection.own_used and \
+               to_collection.own_default is not None:
                 if to_collection.own_default != item.own:
                     messages.warning(request, _("Own/want default for new "
                                      "collection differs from item status."))
@@ -344,9 +316,9 @@ def view_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     collector = collection.collector
     if request.user.is_authenticated() and \
-      collector == request.user.collector:
+       collector == request.user.collector:
         item = get_item_for_collector(item_id, request.user.collector)
-    elif collection.public == True:
+    elif collection.public is True:
         item = get_item_for_collector(item_id, collector)
     elif not request.user.is_authenticated():
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
@@ -358,7 +330,7 @@ def view_item(request, item_id, collection_id):
     sell_date_form = None
     acquisition_date_form = None
     if request.user.is_authenticated() and \
-      collector == request.user.collector:
+       collector == request.user.collector:
         initial = {}
         if collector.default_currency:
             if not item.price_paid_currency:
@@ -370,7 +342,8 @@ def view_item(request, item_id, collection_id):
         item_form = CollectionItemForm(collector, instance=item,
                                        initial=initial)
         if item.collections.filter(sell_date_used=True).exists():
-            sell_date_form = DateForm(instance=item.sell_date, prefix='sell_date')
+            sell_date_form = DateForm(instance=item.sell_date,
+                                      prefix='sell_date')
             sell_date_form.fields['date'].label = _('Sell date')
         if item.collections.filter(acquisition_date_used=True).exists():
             acquisition_date_form = DateForm(instance=item.acquisition_date,
@@ -402,7 +375,7 @@ def view_item(request, item_id, collection_id):
                                            id__gte=item.id).reverse()
 
     if item_before:
-        page = item_before.count()/DEFAULT_PER_PAGE + 1
+        page = item_before.count() / DEFAULT_PER_PAGE + 1
         item_before = item_before[0]
     else:
         page = 1
@@ -463,7 +436,7 @@ def save_item(request, item_id, collection_id):
             acquisition_date_form_valid = True
 
         if item_form_valid:
-            if  sell_date_form_valid and acquisition_date_form_valid:
+            if sell_date_form_valid and acquisition_date_form_valid:
                 if sell_date_form:
                     sell_date = sell_date_form.save()
                 else:
@@ -540,7 +513,7 @@ def add_single_issue_to_collection(request, issue_id):
         return error_return
     collected = create_collection_item(issue, collection)
     messages.success(request, u"Issue <a href='%s'>%s</a> was added to your "
-                               "'%s' collection." % \
+                              "'%s' collection." %
                               (collected.get_absolute_url(collection),
                                esc(issue), esc(collection.name)))
     request.session['collection_id'] = collection.id
@@ -590,7 +563,7 @@ def select_issues_from_preselection(request, issues, cancel,
     if not issues.exists():
         raise ErrorWithMessage("No issues to select from.")
     data = {'issue': True,
-            'allowed_selects': ['issue',],
+            'allowed_selects': ['issue', ],
             'return': add_selected_issues_to_collection,
             'cancel': cancel}
     if post_process_selection:
@@ -599,13 +572,13 @@ def select_issues_from_preselection(request, issues, cancel,
         data['collection_list'] = collection_list
     select_key = store_select_data(request, None, data)
     context = {'select_key': select_key,
-            'multiple_selects': True,
-            'item_name': 'issue',
-            'plural_suffix': 's',
-            'no_bulk_edit': True,
-            'all_pre_selected': True,
-            'heading': 'Issues'
-    }
+               'multiple_selects': True,
+               'item_name': 'issue',
+               'plural_suffix': 's',
+               'no_bulk_edit': True,
+               'all_pre_selected': True,
+               'heading': 'Issues'
+               }
     return paginate_response(request, issues,
                             'gcd/search/issue_list.html', context,
                             per_page=issues.count())
@@ -613,23 +586,23 @@ def select_issues_from_preselection(request, issues, cancel,
 
 def select_from_on_sale_weekly(request, year=None, week=None):
     issues_on_sale, context = do_on_sale_weekly(request, year, week)
-    if context == None:
+    if context is None:
         return issues_on_sale
     data = {'issue': True,
             'allowed_selects': ['issue'],
             'return': add_selected_issues_to_collection}
     select_key = store_select_data(request, None, data)
     context.update({'select_key': select_key,
-            'multiple_selects': True,
-            'item_name': 'issue',
-            'plural_suffix': 's',
-            'no_bulk_edit': True,
-            'all_pre_selected': True,
-            'heading': 'Issues'
-    })
+                    'multiple_selects': True,
+                    'item_name': 'issue',
+                    'plural_suffix': 's',
+                    'no_bulk_edit': True,
+                    'all_pre_selected': True,
+                    'heading': 'Issues'
+                    })
     return paginate_response(request, issues_on_sale,
                              'gcd/status/issues_on_sale.html', context,
-                             per_page=max(1,issues_on_sale.count()))
+                             per_page=max(1, issues_on_sale.count()))
 
 
 @login_required
@@ -649,7 +622,7 @@ def import_items(request):
                 series = line[0].strip()
                 number = line[1].strip().lstrip('#')
                 if series != '' and number != '':
-                    issue = Issue.objects.filter(\
+                    issue = Issue.objects.filter(
                                           series__name__icontains=series,
                                           number=number)
                 else:
@@ -668,7 +641,7 @@ def import_items(request):
         issues = issues.distinct()
         tmpfile.close()
         os.remove(tmpfile_name)
-        cancel = HttpResponseRedirect(urlresolvers\
+        cancel = HttpResponseRedirect(urlresolvers
                                       .reverse('collections_list'))
         return select_issues_from_preselection(request, issues, cancel)
 
@@ -689,9 +662,9 @@ def add_series_issues_to_collection(request, series_id):
         else:
             page = ""
         messages.success(request, u"All issues added to your "
-                                   "<a href='%s%s'>%s</a> collection." % \
-                                   (collection.get_absolute_url(), page,
-                                    collection.name))
+                                  "<a href='%s%s'>%s</a> collection." %
+                                  (collection.get_absolute_url(), page,
+                                   collection.name))
         return add_issues_to_collection(request, collection_id, issues,
           urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
     else:
@@ -712,7 +685,7 @@ def add_series_issues_to_collection(request, series_id):
             tmpfile.close()
             os.remove(tmpfile_name)
         elif 'which_issues' in request.GET:
-            # allow user to choose which issues to add to the selected collection
+            # allow user to choose which issues to add to selected collection
             if request.GET['which_issues'] == 'base_issues':
                 issues = series.active_base_issues()
             elif request.GET['which_issues'] == 'all_issues':
@@ -803,9 +776,9 @@ def subscribe_series(request, series_id):
 def unsubscribe_series(request, subscription_id):
     subscription = get_object_or_404(Subscription, id=subscription_id)
     if subscription.collection.collector.user != request.user:
-        return render_error(request,
-            'Only the owner of a collection can unsubscribe series.',
-            redirect=False)
+        return render_error(
+          request, 'Only the owner of a collection can unsubscribe series.',
+          redirect=False)
     subscription.delete()
     return HttpResponseRedirect(
              urlresolvers.reverse('subscriptions_collection',
