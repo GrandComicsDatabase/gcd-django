@@ -48,7 +48,7 @@ def get_select_data(request, select_key):
 
 def get_select_forms(request, initial, data, publisher=False,
                      series=False, issue=False, story=False):
-    if issue or story:
+    if issue:
         cached_issue = get_cached_issue(request)
     else:
         cached_issue = None

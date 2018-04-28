@@ -487,6 +487,10 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
             is_replacement = True)
         revision_lock.changeset = changeset
         revision_lock.save()
+        revision.previous_revision = cover.revisions.get(
+                                           next_revision=None,
+                                           changeset__state=states.APPROVED,
+                                           committed=True)
     else:
         revision = CoverRevision(changeset=changeset, issue=issue,
             file_source=file_source, marked=marked)
@@ -778,6 +782,7 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
     return render_to_response(upload_template, kwargs,
                               context_instance=RequestContext(request))
 
+
 @permission_required('indexer.can_approve')
 def flip_artwork_flag(request, revision_id=None):
     """
@@ -794,7 +799,8 @@ def flip_artwork_flag(request, revision_id=None):
         for s in story:
             s.delete()
     elif len(story) == 0:
-        story_revision = StoryRevision(changeset=changeset,
+        story_revision = StoryRevision(
+          changeset=changeset,
           type=StoryType.objects.get(name='cover'),
           pencils='?',
           inks='?',
@@ -805,10 +811,11 @@ def flip_artwork_flag(request, revision_id=None):
         story_revision.save()
     else:
         # this should never happen
-        raise ValueError, 'More than one story sequence in a cover revision.'
+        raise ValueError, "More than one story sequence in a cover revision."
 
     return HttpResponseRedirect(urlresolvers.reverse('compare',
-            kwargs={'id': cover.changeset.id} ))
+                                kwargs={'id': cover.changeset.id}))
+
 
 @permission_required('indexer.can_approve')
 def mark_cover(request, marked, cover_id=None, revision_id=None):
@@ -828,10 +835,10 @@ def mark_cover(request, marked, cover_id=None, revision_id=None):
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
     elif revision_id:
         return HttpResponseRedirect(urlresolvers.reverse('compare',
-                kwargs={'id': cover.changeset.id} ))
+                                    kwargs={'id': cover.changeset.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
-                kwargs={'issue_id': cover.issue.id} ))
+                                    kwargs={'issue_id': cover.issue.id}))
 
 
 def handle_uploaded_image(request, display_obj, model_name, image_type,
@@ -876,6 +883,10 @@ def handle_uploaded_image(request, display_obj, model_name, image_type,
     if current_image:
         revision.image = current_image
         revision.is_replacement = True
+        revision.previous_revision = current_image.revisions.get(
+                                     next_revision=None,
+                                     changeset__state=states.APPROVED,
+                                     committed=True)
     revision.save()
     revision.image_file.save(str(revision.id) + '.jpg', content=File(image))
     revision.changeset.submit(form.cleaned_data['comments'])

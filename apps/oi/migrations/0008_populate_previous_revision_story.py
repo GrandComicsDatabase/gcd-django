@@ -22,7 +22,7 @@ def migrate_prev_rev(apps, schema_editor):
     for date in DATES:
         later = datetime.strptime(date,'%Y-%M-%d')
         # iterator avoids larger memory use, check for need & speed
-        for r in m.objects.filter(created__gt=earlier, created__lt=later)\
+        for r in m.objects.filter(created__gt=earlier, created__lte=later)\
                           .order_by('created', 'id')\
                           .prefetch_related('changeset').iterator():
             # Two models already have previous_revision set.

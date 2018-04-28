@@ -20,6 +20,7 @@ from django.utils.html import conditional_escape as esc
 from django.core.validators import RegexValidator, URLValidator
 from django.core.exceptions import ValidationError
 
+from imagekit.cachefiles.backends import CacheFileState
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
 
@@ -1481,7 +1482,12 @@ class Revision(models.Model):
                                  .filter(committed=True,
                                          created__lt=self.created) \
                                  .latest('created')
-
+        # edits which are not comitted do not have a stored previous revision
+        elif self.committed=False and not self.added:
+            self._prev_rev = self.source.revisions \
+                                 .filter(committed=True,
+                                         created__lt=self.created) \
+                                 .latest('created')
         return self._prev_rev
 
     def posterior(self):
@@ -5624,6 +5630,12 @@ class ImageRevisionManager(RevisionManager):
         return revision
 
 
+def _clear_image_cache(cached_image):
+    cached_image.storage.delete(cached_image)
+    cached_image.cachefile_backend.set_state(cached_image,
+                                             CacheFileState.DOES_NOT_EXIST)
+
+
 class ImageRevision(Revision):
     class Meta:
         db_table = 'oi_image_revision'
@@ -5710,6 +5722,10 @@ class ImageRevision(Revision):
         image.image_file.save(str(image.id) + '.jpg', content=self.image_file)
         self.image_file.delete()
         self.image = image
+        if self.is_replacement:
+            _clear_image_cache(image.scaled_image)
+            _clear_image_cache(image.thumbnail)
+            _clear_image_cache(image.icon)
         self.save()
 
     def __unicode__(self):
