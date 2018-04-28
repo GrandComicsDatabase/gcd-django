@@ -2980,7 +2980,7 @@ class SeriesRevision(Revision):
         return 'series'
 
     def active_base_issues(self):
-        return self.active_issues().exclude(variant_of__series=self)
+        return self.active_issues().exclude(variant_of__series=self.series)
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
