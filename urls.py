@@ -36,7 +36,8 @@ basic_patterns = [
     url(r'^donate/thanks/$',
         bv.TemplateView.as_view(template_name='gcd/donate/thanks.html'),
         name='donate_thanks'),
-    url(r'^jsi18n/$', javascript_catalog, js_info_dict),
+    url(r'^jsi18n/$', javascript_catalog, js_info_dict,
+        name='javascript-catalog'),
 ]
 
 read_only_patterns = [
