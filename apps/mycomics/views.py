@@ -10,6 +10,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.utils.html import conditional_escape as esc
+from django.utils.html import mark_safe
 
 from djqscsv import render_to_csv_response
 
@@ -127,8 +128,9 @@ def delete_collection(request, collection_id):
     # Since above command doesn't delete any CollectionItems I just delete here
     # all collection items not belonging now to any collection.
     CollectionItem.objects.filter(collections=None).delete()
-    messages.success(request,
-                     _('Collection <b>%s</b> deleted.' % collection.name))
+    messages.success(
+      request,
+      mark_safe(_('Collection <b>%s</b> deleted.' % esc(collection.name))))
     return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
 
 
@@ -244,8 +246,9 @@ def delete_item(request, item_id, collection_id):
     collection.items.remove(item)
     messages.success(
       request,
-      _(u"Item <b>%s</b> removed from %s" % (item.issue.full_name(),
-                                             collection)))
+      mark_safe(_(u"Item <b>%s</b> removed from %s" % (
+                  esc(item.issue.full_name()),
+                  esc(collection)))))
     if not item.collections.count():
         if item.acquisition_date:
             item.acquisition_date.delete()
@@ -286,10 +289,11 @@ def move_item(request, item_id, collection_id):
                 if to_collection.own_default != item.own:
                     item.own = to_collection.own_default
                     item.save()
-                    messages.warning(request,
-                                     _("Item status for own/want differed from"
-                                       " default of new collection <b>%s</b> "
-                                       "and was changed." % to_collection.name))
+                    messages.warning(
+                      request,
+                      mark_safe(_("Item status for own/want differed from"
+                                  " default of new collection <b>%s</b> and "
+                                  "was changed." % esc(to_collection.name))))
             return HttpResponseRedirect(
               urlresolvers.reverse('view_item',
                                    kwargs={'item_id': item_id,
@@ -512,13 +516,14 @@ def add_single_issue_to_collection(request, issue_id):
     if not collection:
         return error_return
     collected = create_collection_item(issue, collection)
-    messages.success(request, u"Issue <a href='%s'>%s</a> was added to your "
-                              "'%s' collection." %
-                              (collected.get_absolute_url(collection),
-                               esc(issue), esc(collection.name)))
+    messages.success(
+      request,
+      mark_safe(u"Issue <a href='%s'>%s</a> was added to your <b>%s</b> "
+                "collection." % (collected.get_absolute_url(collection),
+                                 esc(issue), esc(collection.name))))
     request.session['collection_id'] = collection.id
     return HttpResponseRedirect(urlresolvers.reverse('show_issue',
-                                  kwargs={'issue_id': issue_id}))
+                                kwargs={'issue_id': issue_id}))
 
 
 @login_required
@@ -661,11 +666,13 @@ def add_series_issues_to_collection(request, series_id):
             page = "?page=%d" % (item_before.count() / DEFAULT_PER_PAGE + 1)
         else:
             page = ""
-        messages.success(request, u"All issues added to your "
-                                  "<a href='%s%s'>%s</a> collection." %
-                                  (collection.get_absolute_url(), page,
-                                   collection.name))
-        return add_issues_to_collection(request, collection_id, issues,
+        messages.success(
+          request,
+          mark_safe(u"All issues added to your <a href='%s%s'>%s</a> "
+                    "collection." % (collection.get_absolute_url(), page,
+                                     esc(collection.name))))
+        return add_issues_to_collection(
+          request, collection_id, issues,
           urlresolvers.reverse('show_series', kwargs={'series_id': series_id}))
     else:
         issues = None
@@ -758,13 +765,18 @@ def subscribe_series(request, series_id):
     subscription = Subscription.objects.filter(series=series,
                                                collection=collection)
     if subscription.exists():
-        messages.error(request, _(u'Series %s is already subscribed for the '
-                         'collection %s.' % (series, collection)))
+        messages.error(
+          request, mark_safe(_(u'Series %s is already subscribed for the '
+                             'collection %s.' % (esc(series),
+                                                 esc(collection)))))
     elif series.is_current:
         subscription = Subscription.objects.create(series=series,
-                       collection=collection, last_pulled=datetime.today())
-        messages.success(request, _(u'Series %s is now subscribed for the '
-                           'collection %s.' % (series, collection)))
+                                            collection=collection,
+                                            last_pulled=datetime.today())
+        messages.success(
+          request, mark_safe(_(u'Series %s is now subscribed for the '
+                             'collection %s.' % (esc(series),
+                                                 esc(collection)))))
     else:
         messages.error(request, _(u'Selected series is not ongoing.'))
 
