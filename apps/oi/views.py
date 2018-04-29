@@ -2734,7 +2734,7 @@ def _display_add_story_form(request, issue, form, changeset_id):
 @permission_required('indexer.can_reserve')
 def edit_series_bonds(request, series_id):
     series = get_object_or_404(Series, id=series_id)
-    return oi_render_to_response(request, 'oi/edit/list_series_bonds.html',
+    return oi_render(request, 'oi/edit/list_series_bonds.html',
       {
         'series': series,
       })

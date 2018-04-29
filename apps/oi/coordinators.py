@@ -96,10 +96,10 @@ def clear_reservations(request=None, changes=None):
                     changed = True
 
         info_text = 'Created: %s <a href="%s%s">Change: %s</a> Indexer: %s' % \
-          (str(changeset.created), settings.SITE_URL,
+          (unicode(changeset.created), settings.SITE_URL,
            urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
-           str(changeset),
-           str(changeset.indexer.indexer))
+           unicode(changeset),
+           unicode(changeset.indexer.indexer))
         if changed:
             if not SCRIPT_DEBUG:
                 changeset.submit(notes='This is an automatic submit for an '
