@@ -15,6 +15,7 @@ from django.db.models import Q
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.core import urlresolvers
+from django.shortcuts import render
 from django.utils.http import urlquote
 
 from djqscsv import render_to_csv_response
