@@ -6,8 +6,7 @@ import glob
 
 from django.core import urlresolvers
 from django.conf import settings
-from django.shortcuts import get_object_or_404, \
-                             render_to_response
+from django.shortcuts import render, get_object_or_404
 from django.template import RequestContext
 from django.core.files import temp as tempfile
 from django.core.files import File
@@ -245,15 +244,13 @@ def edit_covers(request, issue_id):
     if issue.has_covers():
         covers = get_image_tags_per_issue(issue, "current covers", ZOOM_MEDIUM,
                                           as_list=True, variants=True)
-        return render_to_response(
-        'oi/edit/edit_covers.html',
-        {
-            'issue': issue,
-            'covers': covers,
-            'table_width': UPLOAD_WIDTH
-        },
-        context_instance=RequestContext(request)
-        )
+        return render(
+          request,
+          'oi/edit/edit_covers.html',
+          {'issue': issue,
+           'covers': covers,
+           'table_width': UPLOAD_WIDTH
+          })
     else:
         return upload_cover(request, issue_id=issue_id)
 
@@ -306,13 +303,12 @@ def uploaded_cover(request, revision_id):
                                               marked=True),
                                       issue, cover=True)
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
-    return render_to_response(uploaded_template, {
-              'marked_covers' : marked_covers,
-              'blank_issues' : blank_issues,
-              'revision': revision,
-              'issue' : issue,
-              'tag'   : tag},
-              context_instance=RequestContext(request))
+    return render(request, uploaded_template,
+                  {'marked_covers' : marked_covers,
+                   'blank_issues' : blank_issues,
+                   'revision': revision,
+                   'issue' : issue,
+                   'tag'   : tag})
 
 def process_edited_gatefold_cover(request):
     ''' process the edited gatefold cover and generate CoverRevision '''
@@ -441,13 +437,12 @@ def handle_gatefold_cover(request, cover, issue, form):
 
     form = GatefoldScanForm(initial=vars)
 
-    return render_to_response('oi/edit/upload_gatefold_cover.html', {
-                                'remember_source': remember_source,
-                                'scan_name': scan_name,
-                                'form': form,
-                                'issue': issue,
-                                'width': min(SHOW_GATEFOLD_WIDTH, im.size[0])},
-                              context_instance=RequestContext(request))
+    return render(request, 'oi/edit/upload_gatefold_cover.html',
+                  {'remember_source': remember_source,
+                   'scan_name': scan_name,
+                   'form': form,
+                   'issue': issue,
+                   'width': min(SHOW_GATEFOLD_WIDTH, im.size[0])})
 
 
 def handle_uploaded_cover(request, cover, issue, variant=False,
@@ -779,8 +774,7 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
     kwargs['issue'] = issue
     kwargs['active_covers'] = active_covers_tags
     kwargs['table_width'] = UPLOAD_WIDTH
-    return render_to_response(upload_template, kwargs,
-                              context_instance=RequestContext(request))
+    return render(request, upload_template, kwargs)
 
 
 @permission_required('indexer.can_approve')
@@ -1009,8 +1003,7 @@ def _display_image_upload_form(request, form, display_obj, model_name,
     kwargs['display_obj'] = display_obj
     kwargs['model_name'] = model_name
     kwargs['image_type'] = image_type
-    return render_to_response(upload_template, kwargs,
-                              context_instance=RequestContext(request))
+    return render(request, upload_template, kwargs)
 
 
 @permission_required('indexer.can_approve')

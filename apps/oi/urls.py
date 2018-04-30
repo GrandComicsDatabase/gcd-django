@@ -201,7 +201,7 @@ urlpatterns = [
     url(r'^cover/(?P<cover_id>\d+)/changeset/(?P<id>\d+)/undo_move$',
       oi_views.undo_move_cover, name='undo_move_cover'),
 
-    url(r'^ongoing/$', oi_views.ongoing),
+    url(r'^ongoing/$', oi_views.ongoing, name='reserve_ongoing'),
     url(r'^ongoing/(?P<series_id>\d+)/delete/$', oi_views.delete_ongoing,
         name='delete_ongoing'),
 

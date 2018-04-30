@@ -193,7 +193,7 @@
       {% if user.is_authenticated %}
         {% if not series.pending_deletion %}
           {% if series.is_current and not series.ongoing_reservation %}
-        <form method="POST" action="{% url "apps.oi.views.ongoing" %}">
+        <form method="POST" action="{% url "reserve_ongoing" %}">
             {% csrf_token %}
           <input id="series" name="series" type="hidden" value="{{ series.id }}">
           </input>

@@ -276,8 +276,8 @@ def reserve(request, id, model_name, delete=False,
                     changeset.delete()
                     return render_error(request,
                       'Not all objects could be reserved.')
-            return HttpResponseRedirect(urlresolvers.reverse('edit',
-              kwargs={ 'id': changeset.id }))
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'edit', kwargs={ 'id': changeset.id }))
 
     except:
         #_free_revision_lock(display_obj)
@@ -360,8 +360,8 @@ def edit_two_issues(request, issue_id):
             'cancel': HttpResponseRedirect(urlresolvers.reverse('show_issue',
                         kwargs={'issue_id': issue_id}))}
     select_key = store_select_data(request, None, data)
-    return HttpResponseRedirect(urlresolvers.reverse('select_object',
-          kwargs={'select_key': select_key}))
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'select_object', kwargs={'select_key': select_key}))
 
 
 @permission_required('indexer.can_reserve')
@@ -387,8 +387,8 @@ def reserve_two_issues(request, issue_one_id, issue_two_id):
     if request.method != 'POST':
         return _cant_get(request)
     if 'cancel' in request.POST:
-        return HttpResponseRedirect(urlresolvers.reverse('show_issue',
-          kwargs={'issue_id': issue_one_id}))
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'show_issue', kwargs={'issue_id': issue_one_id}))
     issue_one = get_object_or_404(Issue, id=issue_one_id, deleted=False)
     issue_two = get_object_or_404(Issue, id=issue_two_id, deleted=False)
 
@@ -703,9 +703,9 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                       ('Some issues for series %s are reserved. '
                        'No move possible.') % revision.series,
                       changeset)
-            return HttpResponseRedirect(urlresolvers.reverse('move_series',
-                kwargs={'series_revision_id': revision.id,
-                        'publisher_id': publisher_id}))
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'move_series', kwargs={'series_revision_id': revision.id,
+                                     'publisher_id': publisher_id}))
 
         if hasattr(form, 'save_m2m'):
             # TODO
@@ -3978,8 +3978,7 @@ def ongoing(request, user_id=None):
             reservation.indexer = request.user
             reservation.save()
             return HttpResponseRedirect(urlresolvers.reverse(
-              'apps.gcd.views.details.series',
-               kwargs={ 'series_id': reservation.series.id }))
+              'show_series', kwargs={ 'series_id': reservation.series.id }))
         else:
             return render_error(request, u'Something went wrong while reserving'
               ' the series. Please contact us if this error persists.')
@@ -3996,8 +3995,7 @@ def delete_ongoing(request, series_id):
     series = reservation.series
     reservation.delete()
     return HttpResponseRedirect(urlresolvers.reverse(
-      'apps.gcd.views.details.series',
-      kwargs={ 'series_id': series.id }))
+      'show_series', kwargs={ 'series_id': series.id }))
 
 ##############################################################################
 # Reordering
@@ -4135,8 +4133,7 @@ def _reorder_series(request, series, issues):
     if 'commit' in request.POST:
         set_series_first_last(series)
         return HttpResponseRedirect(urlresolvers.reverse(
-          'apps.gcd.views.details.series',
-          kwargs={ 'series_id': series.id }))
+          'show_series', kwargs={ 'series_id': series.id }))
 
     return oi_render(request, 'oi/edit/reorder_series.html',
       { 'series': series,
@@ -5028,8 +5025,7 @@ def add_creator_relation(request, creator_id):
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
-                'apps.gcd.views.details.creator',
-                kwargs={'creator_id': creator_id}))
+                'show_creator', kwargs={'creator_id': creator_id}))
 
     initial = {}
     initial['from_creator'] = creator
@@ -5074,8 +5070,7 @@ def add_creator_school(request, creator_id):
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
-                'apps.gcd.views.details.creator',
-                kwargs={'creator_id': creator_id}))
+                'show_creator', kwargs={'creator_id': creator_id}))
 
     school_form = CreatorSchoolRevisionForm(request.POST or None)
 
@@ -5116,8 +5111,7 @@ def add_creator_degree(request, creator_id):
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
-                'apps.gcd.views.details.creator',
-                kwargs={'creator_id': creator_id}))
+                'show_creator', kwargs={'creator_id': creator_id}))
 
     degree_form = CreatorDegreeRevisionForm(request.POST or None)
 
@@ -5162,8 +5156,7 @@ def add_creator_membership(request, creator_id):
     elif request.method == 'POST':
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
-                    'apps.gcd.views.details.creator',
-                    kwargs={'creator_id': creator_id}))
+                    'show_creator', kwargs={'creator_id': creator_id}))
 
         membership_form = CreatorMembershipRevisionForm(
                 request.POST or None,
@@ -5209,8 +5202,7 @@ def add_creator_award(request, creator_id):
     elif request.method == 'POST':
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
-                    'apps.gcd.views.details.creator',
-                    kwargs={'creator_id': creator_id}))
+                    'show_creator', kwargs={'creator_id': creator_id}))
 
         award_form = CreatorAwardRevisionForm(
                 request.POST or None,
@@ -5258,8 +5250,7 @@ def add_creator_art_influence(request, creator_id):
     elif request.method == 'POST':
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
-                    'apps.gcd.views.details.creator',
-                    kwargs={'creator_id': creator_id}))
+                    'show_creator', kwargs={'creator_id': creator_id}))
 
         artinfluence_form = CreatorArtInfluenceRevisionForm(
                 request.POST or None,
@@ -5308,7 +5299,7 @@ def add_creator_non_comic_work(request, creator_id):
     elif request.method == 'POST':
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
-                    'apps.gcd.views.details.creator',
+                    'show_creator',
                     kwargs={'creator_id': creator_id}))
 
         noncomicwork_form = CreatorNonComicWorkRevisionForm(
