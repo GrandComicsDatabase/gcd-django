@@ -11,8 +11,7 @@ from django.core import urlresolvers
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404, render
+from django.shortcuts import get_object_or_404, render
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F
 from django.utils.html import mark_safe, conditional_escape as esc
@@ -70,7 +69,6 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_story_revision_form,
                            get_date_revision_form,
                            OngoingReservationForm,
-                           CreatorRevisionForm,
                            CreatorArtInfluenceRevisionForm,
                            CreatorMembershipRevisionForm,
                            CreatorAwardRevisionForm,
