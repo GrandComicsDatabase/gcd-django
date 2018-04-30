@@ -44,7 +44,7 @@ if ($(window).width() < 1240) {
 {% endif %}
 {{ form.non_field_errors }}
 <form id="advanced_search_form"
-      action="{% url "apps.gcd.views.search.process_advanced" %}"
+      action="{% url 'process_advanced_search' %}"
       method="get">
 <fieldset class="submit" style="margin-bottom: 0em">
   <input type="submit" value="Query">
