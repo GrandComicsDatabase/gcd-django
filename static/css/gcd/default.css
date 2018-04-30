@@ -219,7 +219,7 @@ div.item_id :visited {
 
 a:link, a:visited {
     text-decoration: None;
-    color: blue;
+    color: #00e;
 }
 
 a:hover {
