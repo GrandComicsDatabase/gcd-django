@@ -13,7 +13,7 @@
     <th colspan="2"> Publisher </th>
     <th> Title </th>
     <th> Year </th>
-    <th> #&nbsp;Issues </th>
+    <th style="text-align: center"> #&nbsp;Issues </th>
     <th> Covers </th>
     <th> Published </th> 
   </tr>
@@ -34,7 +34,7 @@
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a></td>
     <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} </td>
     <td style="text-align: right"> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
-    <td>
+    <td style="text-align: right">
     {% if not series.issue_count or not series.is_comics_publication %}
       No Covers
     {% else %}
@@ -51,7 +51,7 @@
       {% endif %}
     {% endif %}
     </td>
-    <td> {{ series.display_publication_dates }} </td>
+    <td style="text-align: right"> {{ series.display_publication_dates }} </td>
   </tr>
   {% endwith %}
 {% endfor %}

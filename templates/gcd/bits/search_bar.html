@@ -8,13 +8,11 @@
   <form action="{% url "basic_search" %}" method="get">
     <a href="{% url "home" %}"><img src="{% static "img/gcd_logo_icon.png" %}" alt="GCD" style="border:0;"></a>
     | <a href="{% url "home" %}">Home</a> |
-    <span class="search_message">Search</span>
     {% include "gcd/bits/search_for.html" %}
     <input type="text" name="query" size="15" value="{{ search_term|default:"" }}">
+    <input type="submit" name="submit" value="Search">
     Sort by
     {% include "gcd/bits/search_order.html" %}
-    &nbsp;
-    <input type="submit" name="submit" value="Go">
   </form>
   | <a href="{% url "advanced_search" %}">Advanced Query</a> |
 {% if user.is_authenticated %}

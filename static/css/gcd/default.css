@@ -1,6 +1,7 @@
 body {
     font-family: Verdana, Arial, Helvetica, sans-serif;
     font-size: 100%;
+    overflow-x: hidden;
 }
 
 #sizing_base {
@@ -13,6 +14,14 @@ body {
 
 .right {
     float: right;
+}
+
+.flex_left {
+}
+
+.flex_right {
+    flex: 1;
+    text-align: right;
 }
 
 #RightSearchColumn {
@@ -39,7 +48,7 @@ body {
 #special_banner {
     font-size: 1.4em;
     background-color: #EE7;
-    margin-bottom 0em;
+    margin-bottom: 0em;
     padding: 0.3em;
 }
 
@@ -144,13 +153,16 @@ div.stats_header {
      * to line up due to the necessary 100% width which is itself due
      * to needing to float things in order to implement float left/right.
      */
-    padding: 0.2em 0;
+    margin: 0 -500%;
+    padding: 0.2em 500%;
     margin-top: 0;
     margin-bottom: 0;
     background-color: #444;
     color: white;
     font-weight: bold;
     width: 100%;
+    display: flex;
+    align-items: center;
 }
 
 #item_id_footer {
@@ -173,11 +185,12 @@ div.stats_header {
 }
 
 .item_id .left {
-    padding-left: 0.2em;
+    flex: None;
 }
 
 .item_id .right {
-    padding-right: 0.2em;
+    flex: 1;
+    text-align: right;
 }
 
 .item_id .pagination {
@@ -204,23 +217,19 @@ div.item_id :visited {
     color: black;
 }
 
-div.item_id div.item_data {
-    float: left;
+a:link, a:visited {
+    text-decoration: None;
+    color: blue;
 }
-div.item_id div.prev_next {
-    padding-right: 0.2em;
-    float: right;
+
+a:hover {
+    text-decoration: underline;
 }
 
 /* Specialized version of part of the item_id for search result pages. */
 
 h1.search_id {
     font-size: 1.25em;
-}
-
-div.search_id_nav {
-    float: right;
-    padding-right: 0.2em;
 }
 
 .search_id_nav img {
@@ -235,12 +244,15 @@ div.search_id_nav {
 /* Search or plain header bars that appear at the top of nearly every page. */
 
 .search_bar, #plain_bar {
+    margin-left: -500%;
+    margin-right: -500%;
+    padding: 0.5em 500% 0.5em 500%;
     clear: both;
     background-color: #66E;
     color: black;
-    margin-bottom: 0.5em;
+    margin-top: 0em;
+    margin-bottom: 0em;
     vertical-align: middle;
-    padding: 0.6em;
     font-weight: bold;
 }
 
@@ -510,7 +522,6 @@ form.before_listing {
 
 .listing td, .facet_listing td {
     padding: .3em .5em;
-    border-right: solid silver 1px;
 }
 
 tr.row_even_False,

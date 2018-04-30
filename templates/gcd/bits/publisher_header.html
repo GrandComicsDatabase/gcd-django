@@ -41,7 +41,7 @@
 <div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
      class="item_id">
 {% ifnotequal paginate_only 1 %}
-  <div class="left">
+  <div class="flex_left">
     <!-- Each of these things should have one space between them, currently
          done via newline, but if they are put on one line please preserve
          the space. -->
@@ -52,5 +52,7 @@
     {% if publisher.year_ended_uncertain %}?{% endif %}
   </div>
 {% endifnotequal %}
+  <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
+  </div>
 </div>

@@ -24,14 +24,14 @@
 {% endifnotequal %}
 
 <div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
-     class="item_id">
+     class="item_id" style="min-height: 2em">
 
 {% ifnotequal paginate_only 1 %}
-  <div class="left" class="item_data">
+  <div class="item_data left">
   {{ series.publisher|absolute_url }},
   {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} Series
   </div>
-  <div class="right" id="language_country">
+  <div class="language_country right">
   {% if language %}
     Published in {{ language }}
   {% endif %}
@@ -43,7 +43,7 @@
 {% endifnotequal %}
 
 {% if issue_number and series.issue_count > 1 %}
-  <div class="right" class="prev_next">
+  <div class="prev_next right">
   {% if prev_issue %}
     {% if description %}
     <a href="{% url "change_history" model_name='issue' id=prev_issue.id %}">&lt; {% trans "Previous Issue" %}</a>

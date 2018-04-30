@@ -138,7 +138,7 @@
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %}
-    <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
+    <td style="text-align: right"> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
     <td>{% if not series.issue_count or not series.is_comics_publication %}
       No Covers
     {% else %}

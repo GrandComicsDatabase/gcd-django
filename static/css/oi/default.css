@@ -1,34 +1,46 @@
 /* Search or plain header bars that appear at the top of nearly every page. */
 
 .oi_bar {
+    margin: 0 -500%;
+    padding: 0.5em 500%;
     clear: both;
     background-color: #DDD;
     color: black;
     margin-bottom: 0.5em;
     vertical-align: middle;
-    padding: 0.6em 0 0.6em 0;
     font-weight: bold;
     width: 100%;
 }
 
-.oi_bar :link {
+.oi_bar a:link {
     color: black;
+    text-decoration: None;
 }
 
-.oi_bar :visited {
+.oi_bar a:hover {
+    color: black;
+    text-decoration: underline;
+}
+
+.oi_bar a:visited {
     color: black;
 }
 
 .oi_bar_title {
-    padding: 0.6em;  /* 0 0.6em 0 0.6em; */
-    margin: 0;
-    margin-right: 0.6em;
     background-color: black;
     color: white;
+    margin: 0 0.6em 0 -10%;
+    padding: 0.6em 0.6em 0.6em 10%;
 }
 
 span.oi_bar_title :link {
     color: white;
+    text-decoration: None;
+}
+
+span.oi_bar_title :hover {
+    color: white;
+    text-decoration: underline;
 }
 
 span.oi_bar_title :visited {

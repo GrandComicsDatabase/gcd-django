@@ -4,19 +4,18 @@
 
 .queues table {
     border-collapse: collapse;
+    border: solid #DDD 1px;
 }
 
 .queues th {
     padding: 0.4em;
-    background-color: #DDD;
-    border-style: hidden;
-    border-left: solid #DDD 1px;
-    border-right: solid #DDD 1px;
+    background-color: #f1f8ff;
+    border-bottom: 1px solid #DDD;
 }
 
 .queues td {
     padding: 0.4em;
-    border: solid silver 1px;
+    border-bottom: 1px solid #DDD;
 }
 
 .queues span.add {
@@ -25,6 +24,14 @@
 
 .queues span.delete {
     background-color: tomato;
+}
+
+.queues td a:link {
+    text-decoration: None;
+}
+
+.queues td a:hover {
+    text-decoration: underline;
 }
 
 .queues td.add {

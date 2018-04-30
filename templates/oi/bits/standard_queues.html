@@ -1,6 +1,7 @@
 {% load credits %}
 {% load display %}
 {% load editing %}
+{% load humanize %}
 
 {% for section in data %}
   {% with section.changesets.count as section_count %}
@@ -57,9 +58,9 @@
     <td> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
         {% endif %}
     <td> {{ changeset.display_state }} </td>
-    <td> {{ changeset.modified }} </td>
+    <td> {{ changeset.modified|naturaltime }} </td>
       {% if queue_name == 'editing' %}
-    <td {{ changeset|is_overdue }} > {{ changeset.expires }} </td>
+    <td {{ changeset|is_overdue }} > {{ changeset.expires|naturaltime }} </td>
       {% endif %}
     <td> {% with changeset.id as action_id %}{% include actions %}{% endwith %} </td>
   </tr>
