@@ -25,7 +25,7 @@
 </div>
 {% if position == 'top' and not select_key and not confirm_selection %}
 <div id="search_reminder">
-Refine your query using an <a href="{% url "process_advanced_search" %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>. Download <a href="{% url "process_advanced_search_csv" %}?{{ query_string }}">results as csv</a>.
+Refine your query using an <a href="{% url 'advanced_search' %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>. Download <a href="{% url "process_advanced_search_csv" %}?{{ query_string }}">results as csv</a>.
 {% if change_order %}
 Change sort order to <a href="{{ change_order}}">{% if 'chrono' in change_order %} chronological{% else %} alphabetical{% endif %}</a>.
   {% if item_name == 'series' %}
