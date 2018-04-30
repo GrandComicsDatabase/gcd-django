@@ -18,7 +18,7 @@ django-imagekit<4.1
 django-queryset-csv==1.0.0
 git+git://github.com/GrandComicsDatabase/django-mobile.git@django111
 git+git://github.com/GrandComicsDatabase/django-taggit.git@django18
-git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@gcd-production
+git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@django111
 elasticsearch<2.0
 elasticstack<0.6
 facebook-sdk==2.0
