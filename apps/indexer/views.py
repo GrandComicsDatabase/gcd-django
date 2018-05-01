@@ -20,7 +20,6 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
-from django.template import RequestContext
 from django.template.loader import get_template
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
@@ -383,8 +382,7 @@ Mentor this indexer: %s
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
                   recipient_list=[indexer.user.email],
                   subject='GCD successfull registration',
-                  message=get_template('indexer/welcome_mail.html').render(
-                            RequestContext(request)),
+                  message=get_template('indexer/welcome_mail.html').render(),
                   fail_silently=(not settings.BETA))
 
         return HttpResponseRedirect(urlresolvers.reverse('welcome'))

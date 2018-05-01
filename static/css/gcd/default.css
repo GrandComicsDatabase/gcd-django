@@ -461,7 +461,7 @@ div.issue_covers {
     color: #666;
 }
 
-.cover_grid .wraparound_cover_img, #cover_uploaded .wraparound_cover_img {
+.cover_grid .wraparound_cover_img, #cover_uploaded .wraparound_cover_img, .cover_grid_flex .wraparound_cover_img {
     background-color: black;
     color: black;
     margin-left: 15px;
