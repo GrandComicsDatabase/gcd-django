@@ -401,7 +401,6 @@ h1.search_id {
 /* Some of this goes down to cover.css, some is common.  TODO: Figure out. */
 div.covers {
     margin: 1em 0;
-    width: calc(100% - 300px);
     display: flex;
     flex-wrap: wrap;
 }
