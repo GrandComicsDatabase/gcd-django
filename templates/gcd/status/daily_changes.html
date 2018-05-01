@@ -55,8 +55,8 @@
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
       <td class="listing_country"> <img {{ publisher.country|show_country_info }}></td>
       <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a></td>
-        {% if publisher.brand_count %}
       <td>
+        {% if publisher.brand_count %}
           <a href="{{ publisher.get_absolute_url}}brands/">{{ publisher.brand_count }}</a>
         {% else %}
           {{ publisher.brand_count }}
