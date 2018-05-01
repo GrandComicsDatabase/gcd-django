@@ -10,7 +10,7 @@ from stdnum import isbn
 from django import forms
 from django.conf import settings
 from django.db import models, transaction, IntegrityError
-from django.db.models import Q, F, Manager
+from django.db.models import F, Manager
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, \
@@ -40,7 +40,7 @@ from apps.gcd.models import (
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
 
-from apps.indexer.views import ViewTerminationError
+from apps.indexer.views import ErrorWithMessage
 
 from apps.legacy.models import Reservation, MigrationStoryStatus
 
@@ -919,8 +919,8 @@ class Changeset(models.Model):
 
         if (self.state != states.OPEN) and \
            not (delete and self.state == states.UNRESERVED):
-            raise ViewTerminationError(
-                "Only OPEN changes can be submitted for approval.")
+            raise ErrorWithMessage(
+                  "Only OPEN changes can be submitted for approval.")
 
         new_state = self._check_approver()
 
@@ -945,9 +945,9 @@ class Changeset(models.Model):
         """
 
         if self.state != states.PENDING:
-            raise ViewTerminationError("Only PENDING changes my be retracted.")
+            raise ErrorWithMessage("Only PENDING changes my be retracted.")
         if self.approver is not None:
-            raise ViewTerminationError(
+            raise ErrorWithMessage(
                   "Only changes with no approver may be retracted.")
 
         self.comments.create(commenter=self.indexer,
@@ -965,8 +965,8 @@ class Changeset(models.Model):
         reservation, or by an approver, effectively canceling it.
         """
         if self.state not in states.ACTIVE:
-            raise ViewTerminationError("Only OPEN, PENDING, DISCUSSED, or "
-                                       "REVIEWING changes may be discarded.")
+            raise ErrorWithMessage("Only OPEN, PENDING, DISCUSSED, or "
+                                   "REVIEWING changes may be discarded.")
 
         self.comments.create(commenter=discarder,
                              text=notes,
@@ -993,7 +993,7 @@ class Changeset(models.Model):
         the examiner's approval queue.
         """
         if self.state != states.PENDING:
-            raise ViewTerminationError("Only PENDING changes can be reviewed.")
+            raise ErrorWithMessage("Only PENDING changes can be reviewed.")
 
         # TODO: check that the approver has approval priviliges.
         if not isinstance(approver, User):
@@ -1010,7 +1010,7 @@ class Changeset(models.Model):
     def release(self, notes=''):
         if self.state not in states.ACTIVE or \
            self.approver is None:
-            raise ViewTerminationError(
+            raise ErrorWithMessage(
                   "Only changes with an approver may be unassigned.")
 
         if self.state in [states.DISCUSSED, states.REVIEWING]:
@@ -1029,7 +1029,7 @@ class Changeset(models.Model):
     def discuss(self, commenter, notes=''):
         if self.state not in [states.OPEN, states.REVIEWING] or \
            self.approver is None:
-            raise ViewTerminationError(
+            raise ErrorWithMessage(
                   "Only changes with an approver may be discussed.")
 
         self.comments.create(commenter=commenter,
@@ -1058,7 +1058,7 @@ class Changeset(models.Model):
         # for add ?
         if self.state not in [states.DISCUSSED, states.REVIEWING] or \
            self.approver is None:
-            raise ViewTerminationError(
+            raise ErrorWithMessage(
                   "Only REVIEWING changes with an approver can be approved.")
 
         issue_revision_count = self.issuerevisions.count()
@@ -1110,7 +1110,7 @@ class Changeset(models.Model):
 
         if self.state not in [states.DISCUSSED, states.REVIEWING] or \
            self.approver is None:
-            raise ViewTerminationError(
+            raise ErrorWithMessage(
                   "Only REVIEWING changes with an approver can be disapproved.")
         self.comments.create(commenter=self.approver,
                              text=notes,
@@ -5706,10 +5706,10 @@ class ImageRevision(Revision):
                         object_id=self.object.id,
                         type=self.type,
                         deleted=False).count():
-                    raise ViewTerminationError(
-                        '%s has an %s. Additional images cannot be uploaded, '
-                        'only replacements are possible.' %
-                        (self.object, self.type.description))
+                    raise ErrorWithMessage(
+                          '%s has an %s. Additional images cannot be uploaded,'
+                          ' only replacements are possible.' %
+                          (self.object, self.type.description))
 
             # first generate instance
             image = Image(content_type=self.content_type,
