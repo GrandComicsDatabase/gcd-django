@@ -23,27 +23,21 @@
 </div>
 
 <div class="left">
-  <table id="covers">
-    <tr>
-  {% for cover, issue, tag in tags %}
-      <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-        <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
-        <br>
-        <div class="cover_caption">
-          <span class="cover_number"><a href="{{ issue.get_absolute_url }}">Issue {{ issue.display_number }}</a></span>
-        {% if issue.publication_date %}
-          <br><span class="cover_date">{{ issue.publication_date }}</span>
-        {% endif %}
-          <br><a href="{% url "edit_covers" issue_id=cover.issue.id %}">Add/replace cover</a>
-        </div>
-      </td>
-    {% if forloop.counter|divisibleby:table_width %}
-    </tr>
-    <tr>
-    {% endif %}
-  {% endfor %}
-    </tr>
-  </table>
+  <div class="covers">
+{% for cover, issue, tag in tags %}
+    <div class="cover_grid_flex{% if cover.marked %} marked{% endif %}">
+      <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
+      <br>
+      <div class="cover_caption">
+        <span class="cover_number"><a href="{{ issue.get_absolute_url }}">Issue {{ issue.display_number }}</a></span>
+  {% if issue.publication_date %}
+        <br><span class="cover_date">{{ issue.publication_date }}</span>
+  {% endif %}
+        <br><a href="{% url "edit_covers" issue_id=cover.issue.id %}">Add/replace cover</a>
+      </div>
+    </div>
+{% endfor %}
+  </div>
 </div>
 <div class="right">
   {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}

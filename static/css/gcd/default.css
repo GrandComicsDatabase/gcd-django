@@ -127,8 +127,17 @@ img .cover_img {
     background-color: black;
 }
 
-div.stats_left,
-div.stats_right {
+h3.stats {
+    padding: 0.2em 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    background-color: #444;
+    color: white;
+    font-weight: bold;
+    width: 100%;
+}
+
+div.stats {
     width: 49%;
     float: left;
     margin-bottom: 1em;
@@ -176,11 +185,11 @@ div.stats_header {
     margin-bottom: 1em;
 }
 
-.item_id :link {
+.item_id :link, .stats :link {
     color: white;
 }
 
-.item_id :visited {
+.item_id :visited, .stats :link {
     color: white;
 }
 
@@ -390,26 +399,15 @@ h1.search_id {
 }
 
 /* Some of this goes down to cover.css, some is common.  TODO: Figure out. */
-
-table#covers {
+div.covers {
     margin: 1em 0;
-    clear: left;
+    width: calc(100% - 300px);
+    display: flex;
+    flex-wrap: wrap;
 }
 
-table#covers td.marked {
+.covers div.marked {
     background-color: #DDD;
-}
-
-table#covers span.add {
-    background-color: palegreen;
-}
-
-table#covers span.delete {
-    background-color: tomato;
-}
-
-table#covers span.modify {
-    background-color: yellow;
 }
 
 .no_cover {
@@ -430,6 +428,13 @@ table#covers span.modify {
     font-weight: bold;
 }
 
+.cover_grid_flex {
+    text-align: center;
+    vertical-align: top;
+    width: 120px;
+    margin: 2px 3px;
+}
+
 .cover_grid {
     text-align: center;
     vertical-align: top;
@@ -440,6 +445,7 @@ table#covers span.modify {
     background-color: black;
     color: black;
 }
+
 .cover_grid img :link {
     color: black;
 }
