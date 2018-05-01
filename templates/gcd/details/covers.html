@@ -29,7 +29,7 @@
       <a href="{{ issue.get_absolute_url }}cover/4/">{{ tag }}</a>
       <br>
       <div class="cover_caption">
-        <span class="cover_number"><a href="{{ issue.get_absolute_url }}">Issue {{ issue.display_number }}</a></span>
+        <span class="cover_number"><a href="{{ issue.get_absolute_url }}">{{ issue.full_descriptor }}</a></span>
   {% if issue.publication_date %}
         <br><span class="cover_date">{{ issue.publication_date }}</span>
   {% endif %}

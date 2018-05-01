@@ -1215,8 +1215,7 @@ def cover(request, issue_id, size):
 
     cover_tag = get_image_tags_per_issue(issue, "Cover for %s" % \
                                                 unicode(issue.full_name()), 
-                                         size, variants=True)
-
+                                         size, variants=True, as_list=True)
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
     covers = Cover.objects.filter(issue__series=issue.series,

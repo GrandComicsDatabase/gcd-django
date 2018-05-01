@@ -406,6 +406,14 @@ div.covers {
     flex-wrap: wrap;
 }
 
+div.issue_covers {
+    margin: 1em 0;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 .covers div.marked {
     background-color: #DDD;
 }
