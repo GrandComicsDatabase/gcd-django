@@ -27,7 +27,7 @@
 {% for cover in cover_tag %}
   <div style="flex-grow: 1">
     <a href="{{ cover.0.issue.get_absolute_url }}">{{ cover.2 }}</a><br>
-    <a href="{{ issue.get_absolute_url }}">{{ cover.0.issue.full_descriptor }}</a>
+    <a href="{{ cover.0.issue.get_absolute_url }}">{{ cover.0.issue.full_descriptor }}</a>
   </div>
 {% endfor %}
   </div>
