@@ -874,10 +874,7 @@ class Changeset(models.Model):
         revision = self.cached_revisions.next()
         if revision.deleted:
             return ACTION_DELETE
-        # issue_adds are separate, avoid revision.previous
-        elif self.change_type == CTYPES['issue']:
-            return ACTION_MODIFY
-        elif revision.previous() is None:
+        if not revision.previous_revision:
             return ACTION_ADD
         return ACTION_MODIFY
 
