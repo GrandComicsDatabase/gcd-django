@@ -3,7 +3,7 @@
 View methods related to displaying search and search results pages.
 """
 
-from re import match
+from re import match, split, sub
 from urllib import urlencode
 from decimal import Decimal
 from string import capitalize
@@ -1097,6 +1097,7 @@ def process_advanced(request, export_csv=False):
         fields = [f for f in fields if f not in {'created', 'modified',
                                                  'deleted', 'keywords',
                                                  'tagged_items'}]
+        fields.append(0, 'id')
         return render_to_csv_response(items.values(*fields),
                                       append_datestamp=True)
 
