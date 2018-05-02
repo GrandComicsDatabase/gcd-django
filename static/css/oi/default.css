@@ -2,9 +2,9 @@
 
 .oi_bar {
     margin: 0 -500%;
-    padding: 0.5em 500%;
+    padding: 0 500%;
     clear: both;
-    background-color: #DDD;
+    background-color: #ebf3ff;
     color: black;
     margin-bottom: 0.5em;
     vertical-align: middle;
@@ -29,31 +29,62 @@
 .oi_bar_title {
     background-color: black;
     color: white;
-    margin: 0 0.6em 0 -10%;
-    padding: 0.6em 0.6em 0.6em 10%;
 }
 
-span.oi_bar_title :link {
+.oi_bar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #ebf3ff;
+}
+
+.oi_bar_active {
+    background-color: #4CAF50;
+}
+
+.oi_bar li {
+    float: left;
+    border-right: 1px solid #bbb;
+}
+
+.oi_bar li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 0.6em 0.6em 0.6em 0.6em;
+    text-decoration: none;
+}
+
+.oi_bar li a:hover {
+    background-color: #b3cff8;
+    color: DarkSlateGray;
+    text-decoration: none;
+}
+
+li.oi_bar_title :link {
     color: white;
     text-decoration: None;
 }
 
-span.oi_bar_title :hover {
+li.oi_bar_title a:hover {
     color: white;
-    text-decoration: underline;
+    text-decoration: None;
+    background-color: DarkSlateGray;
 }
 
-span.oi_bar_title :visited {
+li.oi_bar_title :visited {
     color: white;
 }
 
-span.oi_bar_nav {
+li.oi_bar_nav {
     float: right;
-    padding-right: 0.2em;
+    border: 0px;
 }
 
 .oi_bar_nav img {
-    border: 0px;
+    margin-top: -0.3em;
+    margin-bottom: -0.3em;
 }
 
 form th {
@@ -112,13 +143,13 @@ div.indexer_right_box {
 }
 
 div.indexer_right_box h2 {
-    background-color: #DDD;
+    background-color: #ebf3ff;
     margin-bottom: 0em;
     padding-left: 0.4em;
 }
 
 div.indexer_notice {
-    background-color: #EEE;
+    background-color: #f6fbff;
     padding: 1em 0.4em;
     margin-bottom: 1em;
 }

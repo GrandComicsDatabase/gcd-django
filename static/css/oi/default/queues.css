@@ -9,8 +9,12 @@
 
 .queues th {
     padding: 0.4em;
-    background-color: #f1f8ff;
+    background-color: #ebf3ff;
     border-bottom: 1px solid #DDD;
+}
+
+.queues tr:hover {
+    background: #f6fbff;
 }
 
 .queues td {
