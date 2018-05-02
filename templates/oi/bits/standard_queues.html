@@ -39,17 +39,18 @@
     </td>
         {% endif %}
     <td>
+        {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
+      <a style="display: block;" href="{% url "compare" id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">
+        {% else %}
+      <a style="display: block;" href="{% url "edit" id=changeset.id %}">
+        {% endif %}
         {% if changeset.country %}
           {% with country_names|key:changeset.country as name %}
       <img {{ countries|key:changeset.country|show_country_info:name }} class="embedded_flag">
           {% endwith %}
         {% endif %}
-        {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
-      <a href="{% url "compare" id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">{{ changeset.queue_name }}</a>
-        {% else %}
-      <a href="{% url "edit" id=changeset.id %}">{{ changeset.queue_name }}</a>
-        {% endif %}
-      <span class="{{ changeset.changeset_action }}">{{ changeset.queue_descriptor }}</span>
+        {{ changeset.queue_name }}
+      <span class="{{ changeset.changeset_action }}">{{ changeset.queue_descriptor }}</span></a>
     </td>
         {% if queue_name != 'editing' %}
     <td> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
