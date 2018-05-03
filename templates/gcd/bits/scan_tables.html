@@ -1,33 +1,41 @@
 {% load gcdtable %}
 
-<table border="1" class="status" id="key">
-  <tr>
-    <td class="scan_status_3"> Scan available </td>
-    <td class="scan_status_4"> Needs Replacement </td>
-    <td class="scan_status_0"> No Scan available </td>
-  </tr>
-</table>
-<p class="spacer"/>
-<table border="1" class="status">
-  <tr>
-  {% for entry in scans %}
-    {% if entry.issue %}
-    <td class="scan_status_{{ entry.get_cover_status }}">
-      <a href="{{ entry.get_status_url }}">{{ entry.issue.issue_descriptor|default:entry }}</a>
-    </td>
+<div class="left" style="width:calc(100% - 300px);">
+  <table class="status">
+    <tr>
+      <td class="scan_status_3"> Scan available </td>
+      <td class="scan_status_4"> Needs Replacement </td>
+      <td class="scan_status_0"> No Scan available </td>
+    </tr>
+  </table>
+  <div class="status_grid">
+{% for entry in scans %}
+    <div class="status_grid_flex">
+  {% if entry.issue %}
+      <div class="scan_status_{{ entry.get_cover_status }}">
+        <a href="{{ entry.get_status_url }}">{{ entry.issue.full_descriptor|default:entry }}</a>
+      </div>
     {% else %}
-    <td class="scan_status_0">
-      <a href="{% url "upload_cover" issue_id=entry.id %}">{{ entry.issue_descriptor|default:entry }}</a>
-    </td>
+      <div class="scan_status_0">
+        <a href="{% url "upload_cover" issue_id=entry.id %}">{{ entry.full_descriptor|default:entry }}</a>
+      </div>
     {% endif %}
-    {% if forloop.last %}
-      {{ forloop.counter|finishrow:table_width }}
-  </tr>
+    </div>
+{% endfor %}
+  </div>
+  <div class="status_grid">
+{% for entry in scans %}
+    <div class="status_grid_flex">
+  {% if entry.issue %}
+      <div class="scan_status_{{ entry.get_cover_status }}">
+        <a href="{{ entry.get_status_url }}">{{ entry.issue.issue_descriptor|default:entry }}</a>
+      </div>
     {% else %}
-      {% if forloop.counter|divisibleby:table_width %}
-  </tr>
-  <tr>
-      {% endif %}
+      <div class="scan_status_0">
+        <a href="{% url "upload_cover" issue_id=entry.id %}">{{ entry.issue_descriptor|default:entry }}</a>
+      </div>
     {% endif %}
-  {% endfor %}
-</table>
+    </div>
+{% endfor %}
+  </div>
+</div>
