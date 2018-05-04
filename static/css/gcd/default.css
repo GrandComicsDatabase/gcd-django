@@ -1,11 +1,15 @@
 body {
     font-family: Verdana, Arial, Helvetica, sans-serif;
     font-size: 100%;
-    overflow-x: hidden;
+    margin: 0;
 }
 
 #sizing_base {
     font-size: 0.9em;
+}
+
+div.body_content {
+    margin: 0 8px;
 }
 
 .left {
@@ -162,8 +166,8 @@ div.stats_header {
      * to line up due to the necessary 100% width which is itself due
      * to needing to float things in order to implement float left/right.
      */
-    margin: 0 -500%;
-    padding: 0.2em 500%;
+    margin: 0 -8px;
+    padding: 0 8px;
     margin-top: 0;
     margin-bottom: 0;
     background-color: #444;
@@ -253,8 +257,6 @@ h1.search_id {
 /* Search or plain header bars that appear at the top of nearly every page. */
 
 .search_bar, #plain_bar {
-    margin: 0 -500%;
-    padding: 0 500%;
     clear: both;
     background-color: #66E;
     color: black;
@@ -262,8 +264,6 @@ h1.search_id {
 }
 
 .my_search_bar{
-    margin: 0 -500%;
-    padding: 0 500%;
     clear: both;
     background-color: #A9302A;
     color: white;

@@ -1,12 +1,12 @@
 /* Search or plain header bars that appear at the top of nearly every page. */
 
 .oi_bar {
-    margin: 0 -500%;
-    padding: 0 500%;
+    margin-left: -8px;
+    padding-left: 8px;
     clear: both;
     background-color: #ebf3ff;
     color: black;
-    margin-bottom: 0.5em;
+    margin-bottom: 0em;
     vertical-align: middle;
     font-weight: bold;
     width: 100%;
