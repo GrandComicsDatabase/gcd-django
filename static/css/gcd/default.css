@@ -29,12 +29,12 @@ div.body_content {
 }
 
 #RightSearchColumn {
-    margin-left : 150px;
+    margin-left : 168px;
 }
 
 #LeftSearchColumn {
     float : left;
-    width : 145px;
+    width : 163px;
 }
 
 /*
@@ -304,7 +304,7 @@ h1.search_id {
 .search_bar li a:hover {
     background-color: #b3cff8;
     color: DarkSlateGray;
-    text-decoration: none;
+    text-decoration: none;f
 }
 
 .my_search_bar li a:hover {
