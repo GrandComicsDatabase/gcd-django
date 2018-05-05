@@ -532,8 +532,10 @@ def show_series(request, series, preview=False):
     else:
         issue_status_width = "status_small";
 
-    if series.has_issue_title or series.active_issues().exclude(variant_name='').count():
+    if series.has_issue_title:
         cover_status_width = "status_wide";
+    elif series.active_issues().exclude(variant_name='').count():
+        cover_status_width = "status_medium";
     else:
         cover_status_width = "status_small";
 

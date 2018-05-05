@@ -20,9 +20,10 @@
     {% if publisher.parent %}
       <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
     {% endif %}
-      <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
-    {% if extra %}
-      {{ extra }}
+    {% if extra or description %}
+      <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> {{ extra }}
+    {% else %}
+      {{ publisher.name }}
     {% endif %}
     {% if description %}
       {% ifnotequal description 'Publisher' %}

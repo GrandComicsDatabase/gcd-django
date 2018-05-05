@@ -190,6 +190,7 @@ div.stats_header {
 
 .item_id :link, .stats :link {
     color: white;
+    text-decoration: underline;
 }
 
 .item_id :visited, .stats :link {
@@ -382,7 +383,7 @@ h1.search_id {
 .edit_box {
     margin-top: 1em;
     margin-bottom: 0;
-    font-size: 0.85em;
+    font-size: 0.9em;
 }
 
 .edit_box form {
@@ -413,8 +414,9 @@ h1.search_id {
 }
 
 #change_history {
-    font-size: 0.85em;
+    font-size: 0.9em;
     font-weight: bold;
+    text-align: center;
 }
 
 #change_history a {

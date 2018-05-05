@@ -105,8 +105,12 @@ div.status_grid {
     width: 90px;
 }
 
+.status_medium {
+    width: 15em;
+}
+
 .status_wide {
-    width: 20em;
+    width: 25em;
 }
 
 .status_grid_flex :visited, .status_grid_flex :link {
