@@ -946,7 +946,13 @@ def do_advanced_search(request):
     if data['keywords'] and data['target'] not in ['cover', 'issue_cover']:
         for keyword in data['keywords'].split(';'):
             items = items.filter(Q(**{ 'keywords__name__%s' % (op): keyword.strip() }))
-        
+
+    if data.get('updated_since'):
+        d = data['updated_since']
+        items = items.filter(modified__gte='%04d-%02d-%02d' % (d.year,
+                                                               d.month,
+                                                               d.day))
+
     return items, data['target']
 
 

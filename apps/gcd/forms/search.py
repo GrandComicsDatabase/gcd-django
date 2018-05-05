@@ -90,6 +90,8 @@ class AdvancedSearch(forms.Form):
                                  input_formats=DATE_FORMATS)
     use_on_sale_date = forms.BooleanField(label="Use On-Sale Date",
                                           required=False)
+    updated_since = forms.DateField(label='Updated Since', required=False,
+                                    input_formats=DATE_FORMATS)
 
     pub_name = forms.CharField(label='Publisher', required=False)
     pub_notes = forms.CharField(label='Notes', required=False)
