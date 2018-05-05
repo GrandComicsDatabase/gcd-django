@@ -6,7 +6,7 @@
 <h1 class="item_id">
 <div class="left" id="series_and_issue">
   <span id="series_name">
-  {% if issue or description %}
+  {% if issue or description or tags %}
     <a href="{{ series.get_absolute_url }}">{{ series.name }}</a>
   {% else %}
     {{ series.name }}
