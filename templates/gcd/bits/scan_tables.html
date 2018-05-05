@@ -10,30 +10,24 @@
   </table>
   <div class="status_grid">
 {% for entry in scans %}
-    <div class="status_grid_flex">
   {% if entry.issue %}
-      <div class="scan_status_{{ entry.get_cover_status }}">
+    <div class="status_grid_flex {{ cover_status_width }} scan_status_{{ entry.get_cover_status }}">
         <a href="{{ entry.get_status_url }}">{{ entry.issue.full_descriptor|default:entry }}</a>
-      </div>
     {% else %}
-      <div class="scan_status_0">
+    <div class="status_grid_flex {{ cover_status_width }} scan_status_0">
         <a href="{% url "upload_cover" issue_id=entry.id %}">{{ entry.full_descriptor|default:entry }}</a>
-      </div>
     {% endif %}
     </div>
 {% endfor %}
   </div>
   <div class="status_grid">
 {% for entry in scans %}
-    <div class="status_grid_flex">
   {% if entry.issue %}
-      <div class="scan_status_{{ entry.get_cover_status }}">
+    <div class="status_grid_flex {{ issue_status_width }} scan_status_{{ entry.get_cover_status }}">
         <a href="{{ entry.get_status_url }}">{{ entry.issue.issue_descriptor|default:entry }}</a>
-      </div>
     {% else %}
-      <div class="scan_status_0">
+    <div class="status_grid_flex {{ issue_status_width }} scan_status_0">
         <a href="{% url "upload_cover" issue_id=entry.id %}">{{ entry.issue_descriptor|default:entry }}</a>
-      </div>
     {% endif %}
     </div>
 {% endfor %}

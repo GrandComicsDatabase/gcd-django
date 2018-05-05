@@ -144,8 +144,7 @@ h3.stats {
 div.stats {
     width: 49%;
     float: left;
-    margin-bottom: 1em;
-    margin-right: 1%;
+    margin: 0.5em 0.5%;
 }
 
 div.stats_content {

@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block view_body %}
-<div style='margin-bottom: 1em'>
+<div style='margin: 1em 0'>
 Statistics by {{ type }}, ordered by number of 
 <form style='display:inline;' action="{% if type == 'language' %}{% url "international_stats_language" %}{% else %}{% url "international_stats_country" %}{% endif %}" method="get">
     {{ form }}

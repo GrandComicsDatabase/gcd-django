@@ -101,6 +101,14 @@ div.status_grid {
     font-size: 0.95em;
 }
 
+.status_small {
+    width: 90px;
+}
+
+.status_wide {
+    width: 20em;
+}
+
 .status_grid_flex :visited, .status_grid_flex :link {
     color: black;
 }
