@@ -110,7 +110,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 <h2> current cover{{ current_covers|length|pluralize }} </h2>
 <table id="covers">
   <tr>
-  {% for cover, issue, tag in current_covers %}
+  {% for cover, issue, tag, count in current_covers %}
     <td class="cover_grid">
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>
