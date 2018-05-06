@@ -207,6 +207,14 @@ class Issue(GcdData):
         return issue_descriptor(self)
 
     @property
+    def display_full_descriptor(self):
+        number = self.full_descriptor
+        if number:
+            return u'#' + number
+        else:
+            return u''
+
+    @property
     def display_number(self):
         number = self.issue_descriptor
         if number:
