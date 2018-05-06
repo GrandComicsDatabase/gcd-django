@@ -20,16 +20,4 @@
     </div>
 {% endfor %}
   </div>
-  <div class="status_grid">
-{% for entry in scans %}
-  {% if entry.issue %}
-    <div class="status_grid_flex {{ issue_status_width }} scan_status_{{ entry.get_cover_status }}">
-        <a href="{{ entry.get_status_url }}">{{ entry.issue.issue_descriptor|default:entry }}</a>
-    {% else %}
-    <div class="status_grid_flex {{ issue_status_width }} scan_status_0">
-        <a href="{% url "upload_cover" issue_id=entry.id %}">{{ entry.issue_descriptor|default:entry }}</a>
-    {% endif %}
-    </div>
-{% endfor %}
-  </div>
 </div>
