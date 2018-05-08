@@ -5,7 +5,7 @@
     first_name: Ed
     last_name: Tor
     email: nobody@comics.org
-    password: 'sha1$66b61$8dafc5b8b3470a1e6f849f2c380a4b0959447508' # editme
+    password: 'pbkdf2_sha256$36000$fdd7KwXivtGR$dX/flXbiytPtepyugOYCZT7mauwhc6fnFuovXWxdkpI=' # editme
     is_active: True
     is_staff: False
     is_superuser: False
@@ -33,7 +33,7 @@
     first_name: Dexter
     last_name: Indexer
     email: test@comics.org
-    password: 'sha1$1acd5$9cbf7fb2a284cb56e1484752aec2ff151976341e' # test
+    password: 'pbkdf2_sha256$36000$fRjrnHPkFZDS$CcHcpg6my81nZGduBr3tluucrdF2OKj0CJ2P4SGV9pw=' # test
     is_active: True
     is_staff: False
     is_superuser: False
