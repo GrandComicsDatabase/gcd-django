@@ -7,9 +7,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.core import urlresolvers
 from django.core.mail import send_mail
-from django.core.files import File
 from django.http import HttpResponseRedirect
-from django.template import RequestContext
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 
@@ -45,6 +43,7 @@ vote id:
 '%s'
 """
 
+
 def _classify_topics(topics, user):
     # Permissions are returned as appname.codename by get_all_permissions().
     if user.is_anonymous():
@@ -79,6 +78,7 @@ def _classify_topics(topics, user):
             pending_topics.append(topic)
     return (pending_topics, voted_topics, forbidden_topics)
 
+
 def dashboard(request):
     topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True,
                                   result_calculated=False)
@@ -90,6 +90,7 @@ def dashboard(request):
                   {'voted_topics': voted_topics,
                    'pending_topics': pending_topics,
                    'agendas': Agenda.objects.all()})
+
 
 def _calculate_results(unresolved):
     """
@@ -216,6 +217,7 @@ def _calculate_results(unresolved):
 
         _send_result_email(topic, extra)
 
+
 def _send_result_email(topic, extra=''):
     for list_config in topic.agenda.agenda_mailing_lists.all():
         if list_config.on_vote_close:
@@ -245,6 +247,7 @@ def _send_result_email(topic, extra=''):
             list_config.send_mail(subject="GCD Vote Result: %s" % topic,
                                   message=email_body)
 
+
 @login_required
 def topic(request, id):
     topic = get_object_or_404(Topic, id=id)
@@ -264,6 +267,7 @@ def topic(request, id):
                    'closed': topic.deadline < datetime.now() \
                              or topic.result_calculated,
                    'settings': settings})
+
 
 @permission_required('indexer.can_vote')
 def vote(request):
@@ -301,7 +305,6 @@ def vote(request):
         if first is True:
             first = False
             topic = option.topic
-
             if not request.user.has_perm('%s.%s' %
                 (topic.agenda.permission.content_type.app_label,
                  topic.agenda.permission.codename)):
@@ -390,6 +393,7 @@ def vote(request):
     return HttpResponseRedirect(urlresolvers.reverse('ballot',
                                 kwargs={ 'id': option.topic.id }))
 
+
 def agenda(request, id):
     agenda = get_object_or_404(Agenda, id=id)
 
@@ -422,4 +426,3 @@ def agenda(request, id):
                    'forbidden_topics': forbidden_topics,
                    'open_items': open_items,
                    'pending_items': pending_items})
-
