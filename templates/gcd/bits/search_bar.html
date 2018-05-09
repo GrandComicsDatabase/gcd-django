@@ -5,36 +5,43 @@
 {% else %}
 <div class="search_bar">
 {% endif %}
+<ul>
+  <li><a href="{% url "home" %}"><img src="{% static "img/gcd_logo.png" %}" alt="GCD" style="border:0;"></a></li>
+  <li>
   <form action="{% url "basic_search" %}" method="get">
-    <a href="{% url "home" %}"><img src="{% static "img/gcd_logo_icon.png" %}" alt="GCD" style="border:0;"></a>
-    | <a href="{% url "home" %}">Home</a> |
-    <span class="search_message">Search</span>
     {% include "gcd/bits/search_for.html" %}
     <input type="text" name="query" size="15" value="{{ search_term|default:"" }}">
+    <input type="submit" name="submit" value="Search">
     Sort by
     {% include "gcd/bits/search_order.html" %}
-    &nbsp;
-    <input type="submit" name="submit" value="Go">
   </form>
-  | <a href="{% url "advanced_search" %}">Advanced Query</a> |
+  </li>
+  <li><a href="{% url "advanced_search" %}">Advanced Query</a></li>
 {% if user.is_authenticated %}
+  <li>
   {% if MYCOMICS %}
-  <a href="{% url "collections_list" %}">Collections</a> |
+  <a href="{% url "collections_list" %}">Collections</a>
   {% else %}
-  <a href="{% url "editing" %}">Editing</a> |
+  <a href="{% url "editing" %}">Editing</a>
   {% endif %}
+  </li>
+  <li>
   <form action="{% url "logout" %}" method="POST">
     {% csrf_token %}
     <input type="submit" name="logout" value="Log Out" />
     <input type="hidden" name="next" value="{{ request.get_full_path }}" />
   </form>
+  </li>
 {% else %}
+  <li>
   <form action="{% url "login" %}" method="GET">
     <input type="submit" name="login" value="Log In" />
     <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-  </form> |
-  <span class="donate_link"><a method="post" href="{% url "donate" %}">Donate</a></span>
+  </form>
+  </li>
+  <li class="donate_link"><a method="post" href="{% url "donate" %}">Donate</a></span></li>
 {% endif %}
+</ul>
 </div>
 {% if USE_TEMPLATESADMIN %}
 {% include "managed_content/gcd/messages/survey_banner.html" %}

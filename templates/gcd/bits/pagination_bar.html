@@ -14,7 +14,7 @@
     |
     {% for number in page.page_range %}
         {% ifequal number page_number %}
-            {{ number }}
+            <span style="text-decoration: underline">{{ number }}</span>
         {% else %}
             {% if not number %}
                 ...  {# literally dots #}

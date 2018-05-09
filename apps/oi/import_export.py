@@ -362,7 +362,7 @@ def _find_story_type(request, changeset, split_line):
     '''
     try:
         story_type = StoryType.objects.get(name=split_line[TYPE].
-                                           strip().lower)
+                                           strip().lower())
         return story_type, False
     except StoryType.DoesNotExist:
         error_text = 'Story type "%s" in line %s does not exist.' \

@@ -4,27 +4,44 @@
 
 .queues table {
     border-collapse: collapse;
+    border: solid #DDD 1px;
 }
 
 .queues th {
     padding: 0.4em;
-    background-color: #DDD;
-    border-style: hidden;
-    border-left: solid #DDD 1px;
-    border-right: solid #DDD 1px;
+    background-color: #ebf3ff;
+    border-bottom: 1px solid #DDD;
+}
+
+.queues tr:hover {
+    background: #f6fbff;
 }
 
 .queues td {
-    padding: 0.4em;
-    border: solid silver 1px;
+    padding: 0.2em 0.4em;
+    border-bottom: 1px solid #DDD;
+}
+
+.queues td a {
+    padding: 0.3em 0em;
 }
 
 .queues span.add {
     background-color: palegreen;
+    color: black;
 }
 
 .queues span.delete {
     background-color: tomato;
+    color: black;
+}
+
+.queues td a:link {
+    text-decoration: None;
+}
+
+.queues td a:hover {
+    text-decoration: underline;
 }
 
 .queues td.add {
@@ -37,6 +54,18 @@
 
 .queues td.overdue {
     color: red;
+}
+
+table#covers span.add {
+    background-color: palegreen;
+}
+
+table#covers span.delete {
+    background-color: tomato;
+}
+
+table#covers span.modify {
+    background-color: yellow;
 }
 
 .queues form {

@@ -3,6 +3,7 @@
  * CSS specific to the index status page.
  * ***************************************/
 
+.scan_status_0,
 .status_available,
 .status_0,
 .collection_status_empty {
@@ -23,13 +24,14 @@
     background-color: #F93;
 }
 
+.scan_status_3,
 .status_approved,
 .status_3,
 .collection_status_own {
-    /* background-color: #0B2; */
     background-color: #3C3;
 }
 
+.scan_status_4,
 .status_partial,
 .status_4,
 .collection_status_several {
@@ -46,11 +48,13 @@ table.status {
     border-collapse: collapse;
     border-spacing: 0px;
     border: double black 2px;
-    width: 50em;
-    font-size: 0.85em;
+    min-width: 50em;
+    width: calc(100% - 300px);
+    font-size: 0.95em;
     font-weight: bold;
     margin-top: 1em;
     margin-bottom: 1em;
+    text-align: center;
 }
 
 table#status_key {
@@ -73,6 +77,46 @@ table.status :link {
 table.status :visited {
     color: #666;
 }
+
+/* new style */
+
+div.status_grid {
+    margin: 1em 0;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.status_grid_flex {
+    text-align: center;
+    min-width: 90px;
+    border-width: 1px;
+    border-style: solid;
+    margin: 0 -1px -1px 0;
+}
+
+.status_grid_flex a {
+    padding: 0.2em 0.6em;
+    display: block;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+
+.status_small {
+    width: 90px;
+}
+
+.status_medium {
+    width: 15em;
+}
+
+.status_wide {
+    width: 25em;
+}
+
+.status_grid_flex :visited, .status_grid_flex :link {
+    color: black;
+}
+
 
 /* spacers are used in a few places where spacing is normally
  * controlled by CSS but non-CSS browsers need a bit of help.

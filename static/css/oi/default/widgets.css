@@ -20,10 +20,9 @@ select.filtered {
 }
 
 .selector-available h2, .selector-chosen h2 {
-    font-size: 0.9em;
+    font-size: 1em;
     margin: 0px;
     padding: 2px 5px 1px;
-    background: url("../../../admin/img/default-bg.gif") repeat-x scroll left top rgb(124, 160, 199);
     color: white;
     clear: left;
 }

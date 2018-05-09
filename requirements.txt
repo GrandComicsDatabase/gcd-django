@@ -1,6 +1,6 @@
 # not fully sure if we actually use it
 #beautifulsoup4==4.6.0
-Django<1.9
+Django<2.0
 MySQL-python==1.2.5
 Pillow<4.4
 PyICU<2.0
@@ -13,12 +13,12 @@ diff-match-patch==20121119
 django-appconf==1.0.2
 django-bootstrap3<9.2
 django-compressor<2.3
-django-haystack==2.4.1
+django-haystack==2.8.1
 django-imagekit<4.1
 django-queryset-csv==1.0.0
-git+git://github.com/GrandComicsDatabase/django-mobile.git@django19
+git+git://github.com/GrandComicsDatabase/django-mobile.git@django111
 git+git://github.com/GrandComicsDatabase/django-taggit.git@django18
-git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@gcd-production
+git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@django111
 elasticsearch<2.0
 elasticstack<0.6
 facebook-sdk==2.0

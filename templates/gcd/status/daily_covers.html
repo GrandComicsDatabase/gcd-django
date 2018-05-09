@@ -17,9 +17,9 @@
 <div class="left">
   {% trans "Covers for "%}{{ date }}
 </div>
-{% url "apps.gcd.views.details.daily_covers" as choose_url%}
-{% url "apps.gcd.views.details.daily_covers" show_date=date_before as choose_url_before %}
-{% url "apps.gcd.views.details.daily_covers" show_date=date_after as choose_url_after %}
+{% url "covers_by_date" as choose_url%}
+{% url "covers_by_date" show_date=date_before as choose_url_before %}
+{% url "covers_by_date" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 
@@ -35,19 +35,14 @@
 <div class="left">
 {% include "gcd/bits/generic_covers.html" %}
 </div>
-<div class="right">
-  {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
-    {% include "managed_content/gcd/ads/ad_med_rectangle.html" %}
-  {% endif %}
-</div>
 
 <h1 class="item_id search_id">
 <div class="left">
   {% trans "Covers for "%}{{ date }}
 </div>
-{% url "apps.gcd.views.details.daily_covers" as choose_url%}
-{% url "apps.gcd.views.details.daily_covers" show_date=date_before as choose_url_before %}
-{% url "apps.gcd.views.details.daily_covers" show_date=date_after as choose_url_after %}
+{% url "covers_by_date" as choose_url%}
+{% url "covers_by_date" show_date=date_before as choose_url_before %}
+{% url "covers_by_date" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 <div id="item_id_footer" class="item_id">

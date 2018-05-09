@@ -18,9 +18,9 @@
 <div class="left">
   {% trans "Changes for "%}{{ date }}
 </div>
-{% url "apps.gcd.views.details.daily_changes" as choose_url%}
-{% url "apps.gcd.views.details.daily_changes" show_date=date_before as choose_url_before %}
-{% url "apps.gcd.views.details.daily_changes" show_date=date_after as choose_url_after %}
+{% url "changes_by_date" as choose_url%}
+{% url "changes_by_date" show_date=date_before as choose_url_before %}
+{% url "changes_by_date" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 
@@ -49,7 +49,6 @@
     <th> #&nbsp;Indicia Publishers </th>
     <th> #&nbsp;Series </th>
     <th> #&nbsp;Issues </th>
-    <th> #&nbsp;Imprints </th>
     <th> Change History </th>
   </tr>
   {% for publisher in publishers %}
@@ -72,13 +71,6 @@
       </td>
       <td> {{ publisher.series_count }} </td>
       <td> {{ publisher.issue_count }} </td>
-      <td>
-        {% if publisher.imprint_count %}
-          <a href="{{ publisher.get_absolute_url }}imprints/">{{ publisher.imprint_count }}</a>
-        {% else %}
-          {{ publisher.imprint_count }}
-        {% endif %}
-      </td>
       <td>
         <a href="{% url "change_history" model_name='publisher' id=publisher.id %}">Change History</a>
       </td>
@@ -191,15 +183,15 @@
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }}</td>
     <td>
     {% if not series.scan_needed_count %}
-    <a href="{% url "apps.gcd.views.details.covers" series_id=series.id %}">Gallery</a>
+    <a href="{% url "series_covers" series_id=series.id %}">Gallery</a>
     {% else %}
       {% if series.has_gallery %}
-        <a href="{% url "apps.gcd.views.details.covers" series_id=series.id %}">Have 
+        <a href="{% url "series_covers" series_id=series.id %}">Have
         {{ series.scan_count}}</a>
-        (<a href="{% url "apps.gcd.views.details.scans" series_id=series.id %}">Need 
+        (<a href="{% url "series_scan_table" series_id=series.id %}">Need
         {{ series.scan_needed_count }}</a>)
       {% else %}
-        <a href="{% url "apps.gcd.views.details.scans" series_id=series.id %}">Add</a>
+        <a href="{% url "series_scan_table" series_id=series.id %}">Add</a>
       {% endif %}
     {% endif %}
     </td>
@@ -276,9 +268,9 @@
 <div class="left">
   {% trans "Changes for "%}{{ date }}
 </div>
-{% url "apps.gcd.views.details.daily_changes" as choose_url%}
-{% url "apps.gcd.views.details.daily_changes" show_date=date_before as choose_url_before %}
-{% url "apps.gcd.views.details.daily_changes" show_date=date_after as choose_url_after %}
+{% url "changes_by_date" as choose_url%}
+{% url "changes_by_date" show_date=date_before as choose_url_before %}
+{% url "changes_by_date" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 <hr>

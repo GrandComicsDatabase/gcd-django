@@ -19,8 +19,7 @@ from django.core import urlresolvers
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404
 from django.template.loader import get_template
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
@@ -114,9 +113,7 @@ def error_view(request, error_text=''):
                 errors[0].delete()
             else:
                 error_text = 'Unknown error.'
-    return render_to_response('indexer/error.html',
-                              {'error_text': error_text},
-                              context_instance=RequestContext(request))
+    return render(request, 'indexer/error.html', {'error_text': error_text})
 
 
 def login(request, template_name, landing_view='default_profile'):
@@ -199,16 +196,12 @@ def register(request):
 
     if request.method == 'GET':
         form = RegistrationForm(auto_id=True)
-        return render_to_response('indexer/register.html',
-          { 'form' : form },
-          context_instance=RequestContext(request))
+        return render(request, 'indexer/register.html', {'form' : form})
 
     errors = []
     form = RegistrationForm(request.POST)
     if not form.is_valid():
-        return render_to_response('indexer/register.html',
-                                  { 'form': form },
-                                  context_instance=RequestContext(request))
+        return render(request, 'indexer/register.html', {'form': form})
 
     cd = form.cleaned_data
     email_users = User.objects.filter(email=cd['email'])
@@ -389,8 +382,7 @@ Mentor this indexer: %s
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
                   recipient_list=[indexer.user.email],
                   subject='GCD successfull registration',
-                  message=get_template('indexer/welcome_mail.html').render(
-                            RequestContext(request)),
+                  message=get_template('indexer/welcome_mail.html').render(),
                   fail_silently=(not settings.BETA))
 
         return HttpResponseRedirect(urlresolvers.reverse('welcome'))
@@ -528,9 +520,7 @@ def profile(request, user_id=None, edit=False):
     if profile_user == request.user:
         context['ranking'] = ranking(profile_user.indexer)
 
-    return render_to_response('indexer/profile.html',
-                              context,
-                              context_instance=RequestContext(request))
+    return render(request, 'indexer/profile.html', context)
 
 def update_profile(request, user_id=None):
     """
@@ -543,9 +533,7 @@ def update_profile(request, user_id=None):
     errors = []
     form = ProfileForm(request.POST)
     if not form.is_valid():
-        return render_to_response('indexer/profile.html',
-                                  { 'form': form },
-                                  context_instance=RequestContext(request))
+        return render(request, 'indexer/profile.html', {'form': form})
 
     set_password = False
     old = form.cleaned_data['old_password']
@@ -564,9 +552,8 @@ def update_profile(request, user_id=None):
             set_password = True
 
     if errors:
-        return render_to_response('indexer/profile.html',
-                                  { 'form': form, 'error_list': errors },
-                                  context_instance=RequestContext(request))
+        return render(request, 'indexer/profile.html', {'form': form,
+                                                        'error_list': errors })
 
     request.user.first_name = form.cleaned_data['first_name']
     request.user.last_name = form.cleaned_data['last_name']
@@ -621,9 +608,7 @@ def mentor(request, indexer_id):
         if 'HTTP_REFERER' in request.META:
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    return render_to_response('indexer/mentor.html',
-                              { 'indexer' : indexer },
-                              context_instance=RequestContext(request))
+    return render(request, 'indexer/mentor.html', {'indexer' : indexer})
 
 @login_required
 def unmentor(request, indexer_id):

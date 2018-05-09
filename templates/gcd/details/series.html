@@ -17,9 +17,6 @@
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/status.css" %}">
 </link>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default/scans.css" %}">
-</link>
 {% endblock %}
 
 {% block view_body %}
@@ -193,7 +190,7 @@
       {% if user.is_authenticated %}
         {% if not series.pending_deletion %}
           {% if series.is_current and not series.ongoing_reservation %}
-        <form method="POST" action="{% url "apps.oi.views.ongoing" %}">
+        <form method="POST" action="{% url "reserve_ongoing" %}">
             {% csrf_token %}
           <input id="series" name="series" type="hidden" value="{{ series.id }}">
           </input>
@@ -261,11 +258,12 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 <h3> Collection Status </h3>
     {% include 'mycomics/bits/series_collection_status.html' %}
   {% endif %}
+<hr>
 
 <h3> Index Status </h3>
 
   {% include "gcd/bits/status_tables.html" %}
-<hr/>
+<hr>
 
   {% if series.is_comics_publication %}
 <h3> Cover Status </h3>

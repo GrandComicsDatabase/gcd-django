@@ -1,33 +1,31 @@
 {% if user.is_authenticated %}
 <div class="oi_bar">
-  <span class="oi_bar_title">
-    <a href="http://docs.comics.org/wiki/Formatting_Documentation">Help</a> |
-    <a href="http://docs.comics.org/wiki/OI_Tutorial">Tutorial</a>
-  </span>
-  <a href="{% url "editing" %}">Editing</a> |
-  <a href="{% url "pending" %}">Pending</a> |
-  <a href="{% url "pending_covers" %}">Covers</a> |
+ <ul>
+  <li class="oi_bar_title" style="margin-left: -2em; padding-left: 2em"><a href="http://docs.comics.org/wiki/Formatting_Documentation">Help</a> </li>
+  <li class="oi_bar_title"><a href="http://docs.comics.org/wiki/OI_Tutorial">Tutorial</a></li>
+  <li><a href="{% url "editing" %}">Editing</a> </li>
+  <li><a href="{% url "pending" %}">Pending</a> </li>
+  <li><a href="{% url "pending_covers" %}">Covers</a> </li>
   {% if perms.indexer.can_approve %}
-  <a href="{% url "reviewing" %}">Reviewing</a> |
-  <a href="{% url "editor_log" %}">Editor Log</a> |
+  <li><a href="{% url "reviewing" %}">Reviewing</a> </li>
+  <li><a href="{% url "editor_log" %}">Editor Log</a> </li>
   {% endif %}
-  <a href="{% url "approved" %}">Approved</a> |
-  <a href="{% url "add" %}">Add New</a> |
+  <li><a href="{% url "approved" %}">Approved</a> </li>
+  <li><a href="{% url "add" %}">Add New</a> </li>
   {% if perms.indexer.can_mentor %}
-  <a href="{% url "mentoring" %}">Mentoring</a> |
+  <li><a href="{% url "mentoring" %}">Mentoring</a> </li>
   {% endif %}
-  <a href="{% url "voting_dashboard" %}">Voting</a> |
+  <li><a href="{% url "voting_dashboard" %}">Voting</a> </li>
   {% if not user.is_anonymous %}
-  <a href="{% url "view_profile" user_id=user.id %}">Profile</a> |
+  <li><a href="{% url "view_profile" user_id=user.id %}">Profile</a> </li>
   {% endif %}
   {% if user.is_staff %}
-  <a href="/admin/">Admin</a> |
+  <li><a href="/admin/">Admin</a> </li>
   {% endif %}
-<span class="oi_bar_nav">
 <a name="{{ position }}"></a>
-<a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
+<li class="oi_bar_nav"><a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
 <img src="{{ STATIC_URL }}/img/gcd/icons/{{ ICON_SET }}/19x19/actions/go-{{ link_direction }}.png">
-</a>
-</span>
+</a></li>
+</ul>
 </div>
 {% endif %}

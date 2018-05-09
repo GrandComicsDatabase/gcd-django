@@ -1,4 +1,4 @@
-{% extends "gcd/base.html" %}
+{% extends "gcd/base_view.html" %}
 
 {% load staticfiles %}
 {% load forms %}
@@ -13,11 +13,7 @@
       href="{% static "css/gcd/default/advanced_search.css" %}">
 {% endblock %}
 
-{% block body %}
-
-{% with "Advanced Query" as bar_heading %}
-{% include "gcd/bits/search_bar.html" %}
-{% endwith %}
+{% block view_body %}
 
 {% include "oi/bits/multi_selector.html" %}
 {% comment %}
@@ -26,7 +22,7 @@ override of SelectFilter does not seem to work
 {% endcomment %}
 {% compress js %}
 <script type='text/javascript'
-        src='{% static "admin/js/jquery.min.js" %}'></script>
+        src='{% static "admin/js/vendor/jquery/jquery.min.js" %}'></script>
 {% endcompress %}
 <script type='text/javascript'>
 <!--- overriding SelectFilter function for small windows --->

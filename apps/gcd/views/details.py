@@ -527,10 +527,17 @@ def show_series(request, series, preview=False):
 
     scans, image_tag, issue = _get_scan_table(display_series)
 
-    # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 12
     if series.has_issue_title:
-        table_width = 2
+        issue_status_width = "status_wide";
+    else:
+        issue_status_width = "status_small";
+
+    if series.has_issue_title:
+        cover_status_width = "status_wide";
+    elif series.active_issues().exclude(variant_name='').count():
+        cover_status_width = "status_medium";
+    else:
+        cover_status_width = "status_small";
 
     return render(request, 'gcd/details/series.html',
       {
@@ -540,7 +547,8 @@ def show_series(request, series, preview=False):
         'image_issue': issue,
         'country': series.country,
         'language': series.language,
-        'table_width': table_width,
+        'issue_status_width': issue_status_width,
+        'cover_status_width': cover_status_width,
         'error_subject': '%s' % series,
         'preview': preview,
         'is_empty': IS_EMPTY,
@@ -1215,8 +1223,7 @@ def cover(request, issue_id, size):
 
     cover_tag = get_image_tags_per_issue(issue, "Cover for %s" % \
                                                 unicode(issue.full_name()), 
-                                         size, variants=True)
-
+                                         size, variants=True, as_list=True)
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
     covers = Cover.objects.filter(issue__series=issue.series,
