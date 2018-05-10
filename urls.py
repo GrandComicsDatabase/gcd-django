@@ -64,9 +64,9 @@ if settings.SITE_DOWN:
             return context
 
     urlpatterns = [
-        (r'^site-down/$',  SiteDownTemplateView.as_view(
+        url(r'^site-down/$',  SiteDownTemplateView.as_view(
             template_name= 'site_down.html')),
-        (r'^.*$', lambda request: redirect('/site-down/')),
+        url(r'^.*$', lambda request: redirect('/site-down/')),
     ]
 
 elif settings.NO_OI:
