@@ -1103,7 +1103,7 @@ def process_advanced(request, export_csv=False):
         fields = [f for f in fields if f not in {'created', 'modified',
                                                  'deleted', 'keywords',
                                                  'tagged_items'}]
-        fields.append(0, 'id')
+        fields.insert(0, 'id')
         return render_to_csv_response(items.values(*fields),
                                       append_datestamp=True)
 
