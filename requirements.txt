@@ -18,7 +18,7 @@ django-imagekit<4.1
 django-queryset-csv==1.0.0
 git+git://github.com/GrandComicsDatabase/django-mobile.git@django111
 git+git://github.com/GrandComicsDatabase/django-taggit.git@django18
-git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@django111
+git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@gcd-production
 elasticsearch<2.0
 elasticstack<0.6
 facebook-sdk==2.0
@@ -28,7 +28,7 @@ facebook-sdk==2.0
 # python-dateutil==2.2
 python-graph-core==1.8.2
 python-memcached==1.59
-python-stdnum<1.9
+python-stdnum<1.10
 python-vote-core==20120423.0
 requests<2.12
 simplejson==3.4.0
