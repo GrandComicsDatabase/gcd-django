@@ -943,9 +943,19 @@ def do_advanced_search(request):
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
 
-    if data['keywords'] and data['target'] not in ['cover', 'issue_cover']:
+    if data['keywords']:
         for keyword in data['keywords'].split(';'):
-            items = items.filter(Q(**{ 'keywords__name__%s' % (op): keyword.strip() }))
+            if data['target'] == 'cover':
+                items = items.filter(Q(**{'issue__story__keywords__name__%s'
+                                          % (op): keyword.strip(),
+                                          'issue__story__type':
+                                          STORY_TYPES['cover']}))
+            elif data['target'] == 'issue_cover':
+                items = items.filter(Q(**{'issue__story__keywords__name__%s'
+                                          % (op): keyword.strip()}))
+            else:
+                items = items.filter(Q(**{'keywords__name__%s'
+                                          % (op): keyword.strip()}))
 
     if data.get('updated_since'):
         d = data['updated_since']

@@ -17,7 +17,7 @@ django-haystack==2.8.1
 django-imagekit<4.1
 django-queryset-csv==1.0.0
 git+git://github.com/GrandComicsDatabase/django-mobile.git@django111
-git+git://github.com/GrandComicsDatabase/django-taggit.git@django18
+git+git://github.com/GrandComicsDatabase/django-taggit.git@django111
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@gcd-production
 elasticsearch<2.0
 elasticstack<0.6
