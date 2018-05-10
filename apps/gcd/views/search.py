@@ -763,9 +763,9 @@ def search(request):
         param_type = 'title'
         view = story_by_title
     elif object_type in ('credit', 'job_number', 'feature'):
-        view = 'apps.gcd.views.search.story_by_%s' % object_type
+        view = 'story_by_%s' % object_type
     elif object_type in ('barcode', 'isbn'):
-        view = 'apps.gcd.views.search.issue_by_%s' % object_type
+        view = 'issue_by_%s' % object_type
 
     if object_type == 'credit':
         param_type = 'name'

@@ -191,18 +191,18 @@ urlpatterns = [
     url(r'^isbn/name/(?P<isbn>.+)/$',
       gcd_views.search.issue_by_isbn_name),
     url(r'^isbn/(?P<isbn>.+)/sort/(?P<sort>.+)/$',
-      gcd_views.search.issue_by_isbn),
+      gcd_views.search.issue_by_isbn, name='issue_by_isbn'),
     url(r'^isbn/(?P<isbn>.+)/$',
-      gcd_views.search.issue_by_isbn),
+      gcd_views.search.issue_by_isbn, name='issue_by_isbn'),
     # barcodes don't have 'name' in the path, but otherwise work the same
     url(r'^barcode/name/(?P<barcode>.+)/sort/(?P<sort>.+)/$',
       gcd_views.search.issue_by_barcode_name),
     url(r'^barcode/name/(?P<barcode>.+)/$',
       gcd_views.search.issue_by_barcode_name),
     url(r'^barcode/(?P<barcode>.+)/sort/(?P<sort>.+)/$',
-      gcd_views.search.issue_by_barcode),
+      gcd_views.search.issue_by_barcode, name='issue_by_barcode'),
     url(r'^barcode/(?P<barcode>.+)/$',
-      gcd_views.search.issue_by_barcode),
+      gcd_views.search.issue_by_barcode, name='issue_by_barcode'),
 
     # Single Cover
     url(r'^issue/(?P<issue_id>\d+)/cover/(?P<size>\d+)/$',
@@ -249,19 +249,19 @@ urlpatterns = [
       gcd_views.search.editor_by_name, name='editor_by_name'),
 
     url(r'^story/name/(?P<title>.+)/sort/(?P<sort>.+)/$',
-      gcd_views.search.story_by_title),
+      gcd_views.search.story_by_title, name='story_by_title'),
     url(r'^story/name/(?P<title>.+)/$',
-      gcd_views.search.story_by_title),
+      gcd_views.search.story_by_title, name='story_by_title'),
 
     url(r'^feature/name/(?P<feature>.+)/sort/(?P<sort>.+)/$',
-      gcd_views.search.story_by_feature),
+      gcd_views.search.story_by_feature, name='story_by_feature'),
     url(r'^feature/name/(?P<feature>.+)/$',
-      gcd_views.search.story_by_feature),
+      gcd_views.search.story_by_feature, name='story_by_feature'),
 
     url(r'^credit/name/(?P<name>.+)/sort/(?P<sort>.+)/$',
-      gcd_views.search.story_by_credit),
+      gcd_views.search.story_by_credit, name='story_by_credit'),
     url(r'^credit/name/(?P<name>.+)/$',
-      gcd_views.search.story_by_credit),
+      gcd_views.search.story_by_credit, name='story_by_credit'),
 
     # Special display pages
     url(r'^checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
@@ -277,9 +277,9 @@ urlpatterns = [
     url(r'^job_number/name/(?P<number>.+)/$',
       gcd_views.search.story_by_job_number_name),
     url(r'^job_number/(?P<number>.+)/sort/(?P<sort>.+)/$',
-      gcd_views.search.story_by_job_number),
+      gcd_views.search.story_by_job_number, name='story_by_job_number'),
     url(r'^job_number/(?P<number>.+)/$',
-      gcd_views.search.story_by_job_number),
+      gcd_views.search.story_by_job_number, name='story_by_job_number'),
 
     # show covers/changes from a particular date
     url(r'^daily_covers/$',
