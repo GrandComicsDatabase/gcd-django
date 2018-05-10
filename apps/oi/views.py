@@ -1881,7 +1881,7 @@ def add_indicia_publisher(request, parent_id):
 
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
-              'apps.gcd.views.details.publisher',
+              'show_publisher',
               kwargs={ 'publisher_id': parent_id }))
 
         form = \
@@ -1934,7 +1934,7 @@ def add_brand_group(request, parent_id):
 
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
-              'apps.gcd.views.details.publisher',
+              'show_publisher',
               kwargs={ 'publisher_id': parent_id }))
 
         form = get_brand_group_revision_form(user=request.user)(request.POST)
@@ -2003,11 +2003,11 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
     if 'cancel' in request.POST:
         if brand_group_id:
             return HttpResponseRedirect(urlresolvers.reverse(
-                'apps.gcd.views.details.brand_group',
+                'show_brand_group',
                 kwargs={ 'brand_group_id': brand_group_id }))
         else:
             return HttpResponseRedirect(urlresolvers.reverse(
-                'apps.gcd.views.details.publisher',
+                'show_publisher',
                 kwargs={ 'publisher_id': publisher_id }))
 
     form = get_brand_revision_form(user=request.user, publisher=publisher,
@@ -2060,7 +2060,7 @@ def add_brand_use(request, brand_id, publisher_id=None):
 
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
-                'apps.gcd.views.details.brand',
+                'show_brand',
                 kwargs={ 'brand_id': brand_id }))
 
         form = get_brand_use_revision_form(user=request.user)(request.POST)
@@ -2141,7 +2141,7 @@ def add_series(request, publisher_id):
 
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
-              'apps.gcd.views.details.publisher',
+              'show_publisher',
               kwargs={ 'publisher_id': publisher_id }))
 
         form = get_series_revision_form(publisher,
@@ -2227,11 +2227,11 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     if 'cancel' in request.POST:
         if variant_of:
             return HttpResponseRedirect(urlresolvers.reverse(
-              'apps.gcd.views.details.issue',
+              'show_issue',
               kwargs={ 'issue_id': variant_of.id }))
         else:
             return HttpResponseRedirect(urlresolvers.reverse(
-              'apps.gcd.views.details.series',
+              'show_series',
               kwargs={ 'series_id': series_id }))
 
     form = form_class(request.POST)
@@ -2426,7 +2426,7 @@ def add_issues(request, series_id, method=None):
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
-          'apps.gcd.views.details.series',
+          'show_series',
           kwargs={ 'series_id': series_id }))
 
     form = form_class(request.POST)
