@@ -441,23 +441,12 @@ def process_creator_other_names(request, changeset, revision, creator_name):
             creator_other_name.name = other_name['name']
             creator_other_name.type = type
             creator_other_name.save()
-            #name_relation = NameRelationRevision.objects.get(
-                #gcd_official_name=creator_name,
-                #to_name=creator_other_name
-            #)
-            #name_relation.rel_type_id=other_name['relation_type_id']
-            #name_relation.save()
         else:
             creator_other_name = CreatorNameDetailRevision.objects.create(
                 creator=revision,
                 name=other_name['name'],
                 type=type,
                 changeset=changeset)
-            #name_relation = NameRelationRevision.objects.create(
-                #gcd_official_name=creator_name,
-                #to_name=creator_other_name,
-                #rel_type_id=other_name['relation_type_id'],
-                #changeset=changeset)
         updated_creator_name_list.append(creator_other_name.id)
 
     removed_creator_names = CreatorNameDetailRevision.objects\
@@ -465,13 +454,6 @@ def process_creator_other_names(request, changeset, revision, creator_name):
                             .exclude(id__in=updated_creator_name_list)
     if removed_creator_names:
         for removed_creator_name in removed_creator_names:
-            #if removed_creator_name.cr_to_name.count():
-                #name_rel = removed_creator_name.cr_to_name.get()
-                #if name_rel.name_relation:
-                    #name_rel.deleted = True
-                    #name_rel.save()
-                #else:
-                    #name_rel.delete()
             if removed_creator_name.creator_name_detail:
                 removed_creator_name.deleted = True
                 removed_creator_name.save()

@@ -1,12 +1,6 @@
 {% load compare %}
 <input type="hidden" name="total_names"
         value="{{ other_name_details|length }}" id="total_names">
-<input type="hidden" name="total_schools"
-        value="{{ revision.school_revisions.all|length }}"
-        id="total_schools">
-<input type="hidden" name="total_degrees"
-        value="{{ revision.degree_revisions.all|length }}"
-        id="total_degrees">
 
 <div class="gcd-official-name-div">
     <div class="name-details"
