@@ -2,14 +2,15 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core import urlresolvers
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
+from django.utils.safestring import mark_safe
 
 from apps.oi import states
-from apps.oi.models import *
+from apps.oi.models import Changeset, CTYPES
 
 SCRIPT_DEBUG = False
+
 
 def issue_untouched(c, clearing_date):
     modified = issue_revision_modified(c)
@@ -19,6 +20,7 @@ def issue_untouched(c, clearing_date):
             return False
     return True
 
+
 def issue_revision_modified(changeset):
     # was there an edit to the issue changeset in the last week
     modified = changeset.issuerevisions.latest('modified').modified
@@ -27,6 +29,7 @@ def issue_revision_modified(changeset):
         if modified < modified_story.modified:
             modified = modified_story.modified
     return modified
+
 
 @permission_required('oi.change_ongoingreservation')
 def clear_reservations_three_weeks(request=None):
@@ -113,9 +116,6 @@ def clear_reservations(request=None, changes=None):
                                   'automatic discard of an unchanged edit '
                                   'which was reserved for 9 weeks')
             discarded_list.append(mark_safe(info_text))
-    return render_to_response('oi/edit/clear_reservations.html',
-      {
-        'submitted_list': submitted_list,
-        'discarded_list': discarded_list
-      },
-      context_instance=RequestContext(request))
+    return render(request, 'oi/edit/clear_reservations.html',
+                  {'submitted_list': submitted_list,
+                   'discarded_list': discarded_list})
