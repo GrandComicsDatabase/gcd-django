@@ -1,6 +1,6 @@
 # GCD Web Application
 
-This file last updated: *April 2018*
+This file last updated: *May 2018*
 
 This is the current implementation of the Grand Comics Database, hosted at
 http://www.comics.org/ (production) and http://beta.comics.org/ (public beta
@@ -75,13 +75,6 @@ to `beta`.
 Contact: gcd-tech-team
 via [gcd-tech](http://groups.google.com/group/gcd-tech/)
 
-### Closed branches
-The `newsearch` branch is dead- it was used to add Elasticsearch to the system.
-
-The `mycomics` branch is dead - it was used to collection management to the site.
-
-The `django-17` branch is dead - it was used to upgrade to django 1.7.
-
 ## History of the Code
 
 This version of the GCD web application was initially written in Python using
@@ -89,8 +82,7 @@ Django 0.96, and rushed into deployment in late 2009 when the prior system's
 host crashed after many years of service.  Due to both of these facts, there
 remain some oddities and things that you would not see in a modern Django system.
 
-The current production code runs on Django 1.8, although there is a project
-underway to bring it up to Django 1.11.
+The current production code runs on Django 1.11.
 
 ## Reporting or Examining Bugs
 
