@@ -440,27 +440,27 @@ def get_bulk_issue_revision_form(series, method, user=None):
             if not series.has_indicia_frequency:
                 indicia_frequency = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_indicia_frequency = forms.CharField(
+                no_indicia_frequency = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_volume:
                 volume = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_volume = forms.CharField(
+                no_volume = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
-                display_volume_with_number = forms.CharField(
+                display_volume_with_number = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
                 volume_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_isbn:
-                no_isbn = forms.CharField(
+                no_isbn = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_barcode:
-                no_barcode = forms.CharField(
+                no_barcode = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_rating:
                 rating = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_rating = forms.CharField(
+                no_rating = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
 
         after = forms.ModelChoiceField(
