@@ -37,6 +37,19 @@ PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
 COUNT_RANGE_REGEXP = r'(?P<min>\d+)?\s*-\s*(?P<max>\d+)?$'
 
 class AdvancedSearch(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(AdvancedSearch, self).__init__(*args, **kwargs)
+        self.fields['country'] = forms.MultipleChoiceField(
+          required=False,
+          widget=FilteredSelectMultiple('Countries', False),
+          choices=([c.code, c.name.title()]
+                   for c in Country.objects.order_by('name')))
+        self.fields['language'] = forms.MultipleChoiceField(
+          required=False,
+          choices=([l.code, l.name]
+                   for l in Language.objects.order_by('name')),
+          widget=FilteredSelectMultiple('Languages', False))
+
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
                                         ['brand_group', 'Publisher Brand Group'],
                                         ['brand_emblem', 'Publisher Brand Emblem'],
@@ -218,15 +231,8 @@ class AdvancedSearch(forms.Form):
 
     notes = forms.CharField(label='Notes', required=False)
 
-    country = forms.MultipleChoiceField(required=False, 
-      widget=FilteredSelectMultiple('Countries', False),
-      choices=([c.code, c.name.title()]
-               for c in Country.objects.order_by('name')))
     alt_country = forms.CharField(label='', required=False, max_length=3)
 
-    language = forms.MultipleChoiceField(required=False,
-      choices=([l.code, l.name] for l in Language.objects.order_by('name')),
-      widget=FilteredSelectMultiple('Languages', False))
     alt_language = forms.CharField(label='', required=False, max_length=3)
 
     def clean_pages(self):
