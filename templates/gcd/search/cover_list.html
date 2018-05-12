@@ -1,5 +1,9 @@
 {% extends "gcd/search/base_list.html" %}
 
 {% block list_contents %}
-{% include "gcd/bits/generic_covers.html" %}
+</div>
+{% with ADVERTISING=False %}
+  {% include "gcd/bits/generic_covers.html" %}
+{% endwith %}
+<div>
 {% endblock %}

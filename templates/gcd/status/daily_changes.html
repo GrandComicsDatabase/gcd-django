@@ -18,11 +18,14 @@
 <div class="left">
   {% trans "Changes for "%}{{ date }}
 </div>
-{% url "changes_by_date" as choose_url%}
-{% url "changes_by_date" show_date=date_before as choose_url_before %}
-{% url "changes_by_date" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
+
+{% if request.user.is_authenticated and request.user.indexer.imps > 0 %}
+<div class="left">
+Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all changes<a/>{% else %}my changes{% endif %}.
+</div>
+{% endif %}
 
 {% if creators %}
 <table class="listing">
@@ -268,9 +271,6 @@
 <div class="left">
   {% trans "Changes for "%}{{ date }}
 </div>
-{% url "changes_by_date" as choose_url%}
-{% url "changes_by_date" show_date=date_before as choose_url_before %}
-{% url "changes_by_date" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 <hr>

@@ -43,7 +43,7 @@ from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.gcd.forms import get_generic_select_form
 from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
-                           BrandGroupRevision, BrandRevision, \
+                           BrandGroupRevision, BrandRevision, CoverRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
                            SeriesBondRevision, CreatorRevision, CTYPES
 
@@ -860,7 +860,7 @@ def covers_to_replace(request, starts_with=None):
       callback=get_image_tags_per_page)
 
 
-def daily_covers(request, show_date=None):
+def daily_covers(request, show_date=None, user=False):
     """
     Produce a page displaying the covers uploaded on a given day.
     """
@@ -878,7 +878,7 @@ def daily_covers(request, show_date=None):
             show_date = requested_date.strftime('%Y-%m-%d')
             return HttpResponseRedirect(
               urlresolvers.reverse(
-                'covers_by_date',
+                '%scovers_by_date' % ('my_' if user else ''),
                 kwargs={'show_date': show_date} ))
 
         elif show_date:
@@ -897,7 +897,7 @@ def daily_covers(request, show_date=None):
         # the output, instead of seeing the erroneous date.
         return HttpResponseRedirect(
           urlresolvers.reverse(
-            'covers_by_date',
+            '%scovers_by_date' % ('my_' if user else ''),
             kwargs={'show_date' : date.today().strftime('%Y-%m-%d') }))
 
     date_before = requested_date + timedelta(-1)
@@ -913,6 +913,14 @@ def daily_covers(request, show_date=None):
                                   datetime.combine(requested_date, time.min),
                                   datetime.combine(requested_date, time.max)),
                                   deleted=False)
+    if user and request.user.is_authenticated:
+        revisions = CoverRevision.objects.filter(
+          changeset__comments__created__range=(datetime.combine(requested_date,
+                                                                time.min),
+                                               datetime.combine(requested_date,
+                                                                time.max)),
+          changeset__indexer=request.user, changeset__comments__new_state=5)
+        covers = covers.filter(revisions__in=revisions)
 
     covers = covers.order_by("issue__series__publisher__name",
                              "issue__series__sort_name",
@@ -925,16 +933,38 @@ def daily_covers(request, show_date=None):
       'gcd/status/daily_covers.html',
       {
         'date' : show_date,
-        'date_after' : date_after,
-        'date_before' : date_before,
-        'table_width' : table_width,
-        'RANDOM_IMAGE': 2
+        'RANDOM_IMAGE': 2,
+        'choose_url_before': urlresolvers.reverse(
+          '%scovers_by_date' % ('my_' if user else ''),
+          kwargs={'show_date': date_before}),
+        'choose_url_after': urlresolvers.reverse(
+          '%scovers_by_date' % ('my_' if user else ''),
+          kwargs={'show_date': date_after}),
+        'other_url': urlresolvers.reverse(
+          '%scovers_by_date' % ('my_' if user is False else ''),
+          kwargs={'show_date': requested_date}),
       },
       per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
       callback=get_image_tags_per_page)
 
-def daily_changes(request, show_date=None):
+
+def _get_daily_revisions(model, args, model_name, change_type=None,
+                         user=None):
+    anon = User.objects.get(username=settings.ANON_USER_NAME)
+    if change_type is None:
+        change_type = model_name
+    revisions = model.objects.filter(
+      changeset__change_type=CTYPES[change_type], **args)\
+      .exclude(changeset__indexer=anon).values_list(model_name,
+                                                    flat=True)
+    if user is None:
+        return revisions
+    else:
+        return revisions.filter(changeset__indexer=user)
+
+
+def daily_changes(request, show_date=None, user=False):
     """
     Produce a page displaying the changes on a given day.
     """
@@ -952,7 +982,7 @@ def daily_changes(request, show_date=None):
             show_date = requested_date.strftime('%Y-%m-%d')
             return HttpResponseRedirect(
               urlresolvers.reverse(
-                'changes_by_date',
+                '%schanges_by_date' % ('my_' if user is not None else ''),
                 kwargs={'show_date': show_date} ))
 
         elif show_date:
@@ -971,7 +1001,7 @@ def daily_changes(request, show_date=None):
         # the output, instead of seeing the erroneous date.
         return HttpResponseRedirect(
           urlresolvers.reverse(
-            'changes_by_date',
+            '%schanges_by_date' % ('my_' if user is not None else ''),
             kwargs={'show_date' : date.today().strftime('%Y-%m-%d') }))
 
     date_before = requested_date + timedelta(-1)
@@ -980,72 +1010,68 @@ def daily_changes(request, show_date=None):
     else:
         date_after = None
 
-    anon = User.objects.get(username=settings.ANON_USER_NAME)
-    
     args = {'changeset__modified__range' : \
                 (datetime.combine(requested_date, time.min),
                  datetime.combine(requested_date, time.max)),
             'deleted':False,
             'changeset__state': states.APPROVED }
 
+    if user and request.user.is_authenticated:
+        user = request.user
+    else:
+        user = None
+
     # TODO what aboud awards, memberships, etc. Display separately,
     # or display the affected creator for such changes as well.
-    creator_revisions = list(CreatorRevision.objects.filter(
-      changeset__change_type=CTYPES['creator'], **args)\
-      .exclude(changeset__indexer=anon).values_list('creator', flat=True))
+    creator_revisions = list(_get_daily_revisions(CreatorRevision, args,
+                                                  'creator', user=user))
     creators = Creator.objects.filter(id__in=creator_revisions).distinct()
 
-    publisher_revisions = list(PublisherRevision.objects.filter(
-      changeset__change_type=CTYPES['publisher'], **args)\
-      .exclude(changeset__indexer=anon).values_list('publisher', flat=True))
+    publisher_revisions = list(_get_daily_revisions(PublisherRevision, args,
+                                                    'publisher', user=user))
     publishers = Publisher.objects.filter(id__in=publisher_revisions)\
                                   .distinct().select_related('country')
 
-    brand_group_revisions = list(BrandGroupRevision.objects.filter(
-      changeset__change_type=CTYPES['brand_group'], **args)\
-        .exclude(changeset__indexer=anon)\
-        .values_list('brand_group', flat=True))
+    brand_group_revisions = list(_get_daily_revisions(BrandGroupRevision,
+                                                      args, 'brand_group',
+                                                      user=user))
     brand_groups = BrandGroup.objects.filter(id__in=brand_group_revisions)\
       .distinct().select_related('parent__country')
 
-    brand_revisions = list(BrandRevision.objects.filter(
-      changeset__change_type=CTYPES['brand'], **args)\
-        .exclude(changeset__indexer=anon)\
-        .values_list('brand', flat=True))
+    brand_revisions = list(_get_daily_revisions(BrandRevision, args, 'brand',
+                                                user=user))
     brands = Brand.objects.filter(id__in=brand_revisions).distinct()\
       .prefetch_related('group__parent__country')
 
-    indicia_publisher_revisions = list(IndiciaPublisherRevision.objects.filter(
-      changeset__change_type=CTYPES['indicia_publisher'], **args)\
-      .exclude(changeset__indexer=anon)\
-      .values_list('indicia_publisher', flat=True))
+    ind_pub_revisions = list(_get_daily_revisions(IndiciaPublisherRevision,
+                                                  args, 'indicia_publisher',
+                                                  user=user))
     indicia_publishers = IndiciaPublisher.objects.filter(
-      id__in=indicia_publisher_revisions).distinct()\
+      id__in=ind_pub_revisions).distinct()\
       .select_related('parent__country')
 
-    series_revisions = list(SeriesRevision.objects.filter(
-      changeset__change_type=CTYPES['series'], **args)\
-      .exclude(changeset__indexer=anon).values_list('series', flat=True))
+    series_revisions = list(_get_daily_revisions(SeriesRevision, args,
+                                                 'series', user=user))
     series = Series.objects.filter(id__in=series_revisions).distinct()\
       .select_related('publisher','country', 'first_issue','last_issue')
 
-    series_bond_revisions = list(SeriesBondRevision.objects.filter(
-      changeset__change_type=CTYPES['series_bond'], **args)\
-      .exclude(changeset__indexer=anon).values_list('series_bond', flat=True))
+    series_bond_revisions = list(_get_daily_revisions(SeriesBondRevision,
+                                                      args, 'series_bond',
+                                                      user=user))
     series_bonds = SeriesBond.objects.filter(id__in=series_bond_revisions)\
       .distinct().select_related('origin','target')
 
-    issues_change_types = [CTYPES['issue'], CTYPES['variant_add']]
-    issue_revisions = list(IssueRevision.objects.filter(\
-      changeset__change_type__in=issues_change_types, **args)\
-      .exclude(changeset__indexer=anon).values_list('issue', flat=True))
+    issue_revisions = list(_get_daily_revisions(IssueRevision, args, 'issue',
+                                                user=user))
+    issue_revisions.extend(list(_get_daily_revisions(IssueRevision, args,
+                                                     'issue', 'variant_add',
+                                                     user=user)))
     issues = Issue.objects.filter(id__in=issue_revisions).distinct()\
       .select_related('series__publisher', 'series__country')
 
     images = []
-    image_revisions = ImageRevision.objects.filter(
-      changeset__change_type=CTYPES['image'], **args)\
-      .exclude(changeset__indexer=anon).values_list('image', flat=True)
+    image_revisions = _get_daily_revisions(ImageRevision, args, 'image',
+                                           user=user)
 
     brand_revisions = list(image_revisions.filter(type__name='BrandScan'))
     brand_images = Brand.objects.filter(image_resources__id__in=brand_revisions).distinct()
@@ -1065,8 +1091,15 @@ def daily_changes(request, show_date=None):
     return render(request, 'gcd/status/daily_changes.html',
       {
         'date' : show_date,
-        'date_after' : date_after,
-        'date_before' : date_before,
+        'choose_url_before': urlresolvers.reverse(
+          '%schanges_by_date' % ('my_' if user is not None else ''),
+          kwargs={'show_date': date_before}),
+        'choose_url_after': urlresolvers.reverse(
+          '%schanges_by_date' % ('my_' if user is not None else ''),
+          kwargs={'show_date': date_after}),
+        'other_url': urlresolvers.reverse(
+          '%schanges_by_date' % ('my_' if user is None else ''),
+          kwargs={'show_date': requested_date}),
         'creators' : creators,
         'publishers' : publishers,
         'brand_groups' : brand_groups,
@@ -1257,7 +1290,7 @@ def covers(request, series_id):
     table_width = COVER_TABLE_WIDTH
 
     # TODO: once we get permissions going 'can_mark' should be one
-    if request.user.is_authenticated() and \
+    if request.user.is_authenticated and \
       request.user.groups.filter(name='editor'):
         can_mark = True
     else:
@@ -1409,7 +1442,7 @@ def show_issue(request, issue, preview=False):
                 issue_detail = int(request.GET['issue_detail'])
             except ValueError:
                 issue_detail = 1
-        elif request.user.is_authenticated():
+        elif request.user.is_authenticated:
             issue_detail = request.user.indexer.issue_detail
         else:
             issue_detail = 1
@@ -1502,7 +1535,7 @@ def countries_in_use(request):
     Main use is to find missing names and flags.
     """
 
-    if request.user.is_authenticated() and \
+    if request.user.is_authenticated and \
        request.user.groups.filter(name='admin'):
         countries_from_series = set(
                 Series.objects.exclude(deleted=True).

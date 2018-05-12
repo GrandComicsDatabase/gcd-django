@@ -17,9 +17,6 @@
 <div class="left">
   {% trans "Covers for "%}{{ date }}
 </div>
-{% url "covers_by_date" as choose_url%}
-{% url "covers_by_date" show_date=date_before as choose_url_before %}
-{% url "covers_by_date" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 
@@ -32,17 +29,18 @@
   {% endif %}
 </div>
 
+{% if request.user.is_authenticated and request.user.indexer.imps > 0 %}
 <div class="left">
-{% include "gcd/bits/generic_covers.html" %}
+Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all uploaded covers{% else %}my uploaded covers{% endif %}</a>.&nbsp;
 </div>
+{% endif %}
+
+{% include "gcd/bits/generic_covers.html" %}
 
 <h1 class="item_id search_id">
 <div class="left">
   {% trans "Covers for "%}{{ date }}
 </div>
-{% url "covers_by_date" as choose_url%}
-{% url "covers_by_date" show_date=date_before as choose_url_before %}
-{% url "covers_by_date" show_date=date_after as choose_url_after %}
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 <div id="item_id_footer" class="item_id">
