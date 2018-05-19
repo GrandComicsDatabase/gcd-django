@@ -5546,7 +5546,7 @@ class ReprintRevision(Revision):
                       '<a target="_blank" href="%s#%d">%s %s</a>' % \
                       (direction, esc(issue.full_name()),
                        issue.get_absolute_url(), story.id, esc(story),
-                       show_title(story))
+                       show_title(story, True))
         else:
             reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
                       (direction, issue.get_absolute_url(),
@@ -5577,7 +5577,7 @@ class ReprintRevision(Revision):
             else:
                 origin = self.origin_revision
             reprint = u'%s %s of %s ' % (
-                origin, show_title(origin), origin.issue)
+                origin, show_title(origin, True), origin.issue)
         else:
             reprint = u'%s ' % (self.origin_issue)
         if self.target_story or self.target_revision:
@@ -5586,7 +5586,7 @@ class ReprintRevision(Revision):
             else:
                 target = self.target_revision
             reprint += u'reprinted in %s %s of %s' % (
-                target, show_title(target), target.issue)
+                target, show_title(target, True), target.issue)
         else:
             reprint += u'reprinted in %s' % (self.target_issue)
         if self.notes:
