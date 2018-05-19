@@ -230,9 +230,14 @@ div.item_id :visited {
     color: black;
 }
 
-a:link, a:visited {
+a:link, h1 a:visited {
     text-decoration: None;
     color: #00e;
+}
+
+a:visited {
+    text-decoration: None;
+    color: #0645ad;
 }
 
 a:hover {

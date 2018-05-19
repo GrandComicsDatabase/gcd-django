@@ -82,7 +82,9 @@ table.status :visited {
 
 div.status_grid {
     margin: 1em 0;
+    display: -ms-flexbox;
     display: flex;
+    -ms-flex-wrap: wrap;
     flex-wrap: wrap;
 }
 
