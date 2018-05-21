@@ -32,6 +32,7 @@ class Indexer(models.Model):
             ('can_vote', 'Can vote in GCD elections'),
             ('can_publish',
              'Can publish non-database content on the web site'),
+            ('can_contact', 'Can see list of users who have opted-in'),
             ('on_board', 'Is on the Board of Directors'),
         )
 

@@ -20,6 +20,9 @@ urlpatterns = [
 
     url(r'^mentoring/$', oi_views.mentoring,
         name='mentoring'),
+    url(r'^contacting/$', oi_views.contacting,
+        name='contacting'),
+
 
     url(r'^award/add/$',
      oi_views.add_award, name='add_award'),

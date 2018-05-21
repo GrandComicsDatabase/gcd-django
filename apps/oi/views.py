@@ -4814,6 +4814,20 @@ def preview(request, id, model_name):
 ##############################################################################
 
 
+@permission_required('indexer.can_contact')
+def contacting(request):
+    users = User.objects.filter(indexer__opt_in_email=True) \
+                           .filter(is_active=True) \
+                           .order_by('-date_joined') \
+                           .select_related('indexer__country')
+
+    return oi_render(
+      request, 'oi/queues/contacting.html',
+      {
+        'users': users,
+      })
+
+
 @permission_required('indexer.can_mentor')
 def mentoring(request):
     max_show_new = 50

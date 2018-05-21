@@ -232,7 +232,7 @@ COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                        'templates/managed_content/')),]
-TEMPLATESADMIN_GROUP = 'prteam'
+TEMPLATESADMIN_GROUP = 'templateadmin'
 
 #################################################################################
 # Haystack and search
