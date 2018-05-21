@@ -21,7 +21,6 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import get_template
-from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.views import login as standard_login
 from django.contrib.auth.views import logout as standard_logout
@@ -29,8 +28,6 @@ from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 from django.utils.translation import ugettext as _
-
-from apps.stddata.models import Language, Country
 
 from apps.indexer.models import Indexer, Error
 from apps.indexer.forms import ProfileForm, RegistrationForm, \
@@ -132,16 +129,17 @@ def login(request, template_name, landing_view='default_profile'):
             except (User.DoesNotExist, User.MultipleObjectsReturned):
                 user = User.objects.get(username=request.POST['username'])
 
-
             if user.indexer.registration_expires is not None:
                 if date.today() > (user.indexer.registration_expires +
                                    timedelta(1)):
-                    return render_error(request,
+                    return render_error(
+                      request,
                       ('The account with the email "%s" was never confirmed '
-                       'and has expired.  You may <a href="' + \
-                       urlresolvers.reverse('register') + \
-                       '">re-register</a>.  ') % esc(user.email), is_safe=True )
-                return render_error(request,
+                       'and has expired.  You may <a href="' +
+                       urlresolvers.reverse('register') +
+                       '">re-register</a>.  ') % esc(user.email), is_safe=True)
+                return render_error(
+                  request,
                   ('The account with email "%s" has not yet been confirmed. '
                    'You should receive an email that gives you a URL to visit '
                    'to confirm your account.  After you have visited that URL '
@@ -167,6 +165,7 @@ def login(request, template_name, landing_view='default_profile'):
     return standard_login(request, template_name=template_name,
                           authentication_form=LongUsernameAuthenticationForm)
 
+
 def logout(request):
     """
     Handle logout.  Prevent GET requests from having side effects (such as
@@ -183,7 +182,8 @@ def logout(request):
         return render_error(request,
                             'Please use the logout button to log out.')
     return render_error(request,
-      'Cannot logout because you are not logged in.')
+                        'Cannot logout because you are not logged in.')
+
 
 def register(request):
     """
@@ -196,9 +196,8 @@ def register(request):
 
     if request.method == 'GET':
         form = RegistrationForm(auto_id=True)
-        return render(request, 'indexer/register.html', {'form' : form})
+        return render(request, 'indexer/register.html', {'form': form})
 
-    errors = []
     form = RegistrationForm(request.POST)
     if not form.is_valid():
         return render(request, 'indexer/register.html', {'form': form})
@@ -239,7 +238,8 @@ def register(request):
                 raise
 
     if new_user is None:
-        return render_error(request,
+        return render_error(
+          request,
           ('Could not create unique internal account name.  This is a very '
            'unlikely error, and it will probably go away if you try to '
            'register again.  We apologize for the inconvenience.  If it '
@@ -289,7 +289,7 @@ thanks,
 %s
 """ % (settings.SITE_NAME,
        settings.SITE_URL.rstrip('/') +
-         urlresolvers.reverse('confirm', kwargs={ 'key': key }),
+       urlresolvers.reverse('confirm', kwargs={'key': key}),
        settings.REGISTRATION_EXPIRATION_DELTA,
        settings.SITE_NAME,
        settings.SITE_URL)
@@ -301,6 +301,7 @@ thanks,
               fail_silently=(not settings.BETA))
 
     return HttpResponseRedirect(urlresolvers.reverse('confirm_instructions'))
+
 
 def confirm_account(request, key):
     """
@@ -322,20 +323,23 @@ def confirm_account(request, key):
         if indexer.registration_expires is None:
             if indexer.user.is_active:
                 # The indexer already confirmed his or her account.
-                return render_error(request,
+                return render_error(
+                  request,
                   'You have already successfully confirmed your account.  '
                   'Please use the login button in the bar at the top of the '
                   'screen to log in to your account.')
-            return render_error(request,
+            return render_error(
+              request,
               ('Your account has already been confirmed, but it is marked '
-               'as inactive.  Please <a href="mailto:%s">contact us</a> '
-               'if you would like ot re-activate it.') % settings.EMAIL_CONTACT,
+               'as inactive.  Please <a href="mailto:%s">contact us</a> if '
+               'you would like to re-activate it.') % settings.EMAIL_CONTACT,
               is_safe=True)
 
         if date.today() > indexer.registration_expires:
-            return render_error(request, 'Your confirmation key has expired. '
-                     'You may <a href="' + urlresolvers.reverse('register') + \
-                     '">re-register</a>.  ', is_safe=True )
+            return render_error(
+              request, 'Your confirmation key has expired. '
+              'You may <a href="' + urlresolvers.reverse('register') +
+              '">re-register</a>.  ', is_safe=True)
 
         indexer.user.is_active = True
         indexer.user.save()
@@ -357,7 +361,7 @@ Languages: %s
 Interests:
    %s
 
-Where heard from us: %s
+Where heard about us: %s
 Mentor this indexer: %s
         """ % (indexer,
                indexer.country.name,
@@ -366,7 +370,7 @@ Mentor this indexer: %s
                indexer.from_where,
                'http://' + request.get_host() +
                urlresolvers.reverse('mentor',
-                                    kwargs={ 'indexer_id': indexer.id }))
+                                    kwargs={'indexer_id': indexer.id}))
 
         if settings.BETA:
             email_subject = 'New BETA Indexer: %s' % indexer
@@ -374,7 +378,8 @@ Mentor this indexer: %s
             email_subject = 'New Indexer: %s' % indexer
 
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
-                  recipient_list=[settings.EMAIL_EDITORS, settings.EMAIL_PRTEAM],
+                  recipient_list=[settings.EMAIL_EDITORS,
+                                  settings.EMAIL_PRTEAM],
                   subject=email_subject,
                   message=email_body,
                   fail_silently=(not settings.BETA))
@@ -388,7 +393,8 @@ Mentor this indexer: %s
         return HttpResponseRedirect(urlresolvers.reverse('welcome'))
 
     except Indexer.DoesNotExist:
-        return render_error(request,
+        return render_error(
+          request,
           ('Invalid confirmation URL.  Please make certain that you copied '
            'the URL from the email correctly.  If it has been more than %d '
            'days, the confirmation code has expired and the account may have '
@@ -396,9 +402,11 @@ Mentor this indexer: %s
           (settings.REGISTRATION_EXPIRATION_DELTA + 1))
 
     except Indexer.MultipleObjectsReturned:
-        return render_error(request,
+        return render_error(
+          request,
           ('There is a problem with your confirmation key.  Please email %s '
            'for assistance.') % settings.EMAIL_CONTACT)
+
 
 def handle_existing_account(request, users):
     """
@@ -409,7 +417,8 @@ def handle_existing_account(request, users):
         # There are only a few people in this situation, all of whom are
         # either editors themselves or definitely know how to easily get
         # in touch with an editor.
-        return render_error(request,
+        return render_error(
+          request,
           ('You already have multiple accounts with this email '
            'address.  Please contact an editor to get your '
            'personal and/or shared accounts sorted out before '
@@ -417,10 +426,11 @@ def handle_existing_account(request, users):
 
     user = users[0]
     if user.is_active:
-        return render_error(request,
+        return render_error(
+          request,
           'You already have an active account with this email address.  If '
           'you have forgotten your password, you may <a href="' +
-           urlresolvers.reverse('forgot_password') + '">reset '
+          urlresolvers.reverse('forgot_password') + '">reset '
           'it</a>.  If you feel you need a second account with this email, '
           'please <a href="mailto:%s">contact us</a>.' %
           settings.EMAIL_CONTACT, is_safe=True)
@@ -448,33 +458,36 @@ use your email address.  In that case, simply do not confirm the account.
 thanks,
 -the %s team
 %s
-""" % (settings.SITE_NAME,
-       settings.SITE_URL.rstrip('/') +
-         urlresolvers.reverse('confirm',
-                              kwargs={ 'key': user.indexer.registration_key }),
-       settings.REGISTRATION_EXPIRATION_DELTA,
-       settings.SITE_NAME,
-       settings.SITE_URL)
+            """ % (settings.SITE_NAME,
+                   settings.SITE_URL.rstrip('/') + urlresolvers.reverse(
+                     'confirm', kwargs={'key': user.indexer.registration_key}),
+                   settings.REGISTRATION_EXPIRATION_DELTA,
+                   settings.SITE_NAME,
+                   settings.SITE_URL)
 
             send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
-                    recipient_list=[user.email],
-                    subject='GCD new account confirmation - resend',
-                    message=email_body,
-                    fail_silently=(not settings.BETA))
+                      recipient_list=[user.email],
+                      subject='GCD new account confirmation - resend',
+                      message=email_body,
+                      fail_silently=(not settings.BETA))
 
-            return HttpResponseRedirect(urlresolvers.reverse('resend_instructions'))
+            return HttpResponseRedirect(urlresolvers
+                                        .reverse('resend_instructions'))
         else:
-            return render_error(request,
+            return render_error(
+              request,
               ('An account with this email address already exists, '
                'but is deactivated.  Please '
                '<a href="mailto:%s">contact us</a> '
                'if you would like to reactivate it.') % settings.EMAIL_CONTACT,
               is_safe=True)
     else:
-        return render_error(request,
+        return render_error(
+          request,
           'A prior account with this email address has been '
           'shut down.  Please contact an Editor if you believe '
           'this was done in error.')
+
 
 def profile(request, user_id=None, edit=False):
     """
@@ -494,7 +507,7 @@ def profile(request, user_id=None, edit=False):
     else:
         profile_user = get_object_or_404(User, id=user_id)
 
-    context = { 'profile_user': profile_user, 'settings': settings }
+    context = {'profile_user': profile_user, 'settings': settings}
     if edit is True:
         if profile_user == request.user:
             form = ProfileForm(auto_id=True, initial={
@@ -503,24 +516,27 @@ def profile(request, user_id=None, edit=False):
               'last_name': profile_user.last_name,
               'country': profile_user.indexer.country.id,
               'languages':
-                [ lang.id for lang in profile_user.indexer.languages.all() ],
+              [lang.id for lang in profile_user.indexer.languages.all()],
               'interests': profile_user.indexer.interests,
               'from_where': profile_user.indexer.from_where,
               'opt_in_email': profile_user.indexer.opt_in_email,
               'issue_detail': profile_user.indexer.issue_detail,
               'notify_on_approve': profile_user.indexer.notify_on_approve,
-              'collapse_compare_view': profile_user.indexer.collapse_compare_view,
+              'collapse_compare_view':
+              profile_user.indexer.collapse_compare_view,
               'show_wiki_links': profile_user.indexer.show_wiki_links,
             })
             context['form'] = form
         else:
-            return render_error(request,
+            return render_error(
+              request,
               "You may not edit other users' profiles")
 
     if profile_user == request.user:
         context['ranking'] = ranking(profile_user.indexer)
 
     return render(request, 'indexer/profile.html', context)
+
 
 def update_profile(request, user_id=None):
     """
@@ -553,7 +569,7 @@ def update_profile(request, user_id=None):
 
     if errors:
         return render(request, 'indexer/profile.html', {'form': form,
-                                                        'error_list': errors })
+                                                        'error_list': errors})
 
     request.user.first_name = form.cleaned_data['first_name']
     request.user.last_name = form.cleaned_data['last_name']
@@ -578,6 +594,7 @@ def update_profile(request, user_id=None):
       urlresolvers.reverse('view_profile',
                            kwargs={'user_id': request.user.id}))
 
+
 @login_required
 def mentor(request, indexer_id):
     """
@@ -586,7 +603,8 @@ def mentor(request, indexer_id):
     POST: Takes on the user as a mentee.
     """
     if not request.user.has_perm('indexer.can_mentor'):
-        return render_error(request,
+        return render_error(
+          request,
           'You are not allowed to mentor new Indexers', redirect=False)
 
     indexer = get_object_or_404(Indexer, id=indexer_id)
@@ -596,9 +614,9 @@ def mentor(request, indexer_id):
         pending = indexer.user.changesets.filter(state=states.PENDING)
         for changeset in pending.all():
             try:
-              changeset.assign(approver=request.user, notes='')
+                changeset.assign(approver=request.user, notes='')
             except ValueError:
-                # Someone is already reviewing this.  Unlikely, and just let it go.
+                # Someone is already mentoring. Unlikely, and just let it go.
                 pass
 
         if pending.count():
@@ -608,7 +626,8 @@ def mentor(request, indexer_id):
         if 'HTTP_REFERER' in request.META:
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    return render(request, 'indexer/mentor.html', {'indexer' : indexer})
+    return render(request, 'indexer/mentor.html', {'indexer': indexer})
+
 
 @login_required
 def unmentor(request, indexer_id):
@@ -621,14 +640,17 @@ def unmentor(request, indexer_id):
     if indexer.mentor is None:
         return render_error(request, "This indexer does not have a mentor.")
     if request.user != indexer.mentor:
-        return render_error(request,
-            "You are not this indexer's mentor, so you may not un-mentor them.")
+        return render_error(
+          request,
+          "You are not this indexer's mentor, so you may not un-mentor them.")
     if request.method == 'POST':
         indexer.mentor = None
         indexer.save()
         return HttpResponseRedirect(urlresolvers.reverse('mentoring'))
 
-    return render_error(request, 'Please access this page through the proper form.')
+    return render_error(request,
+                        'Please access this page through the proper form.')
+
 
 @login_required
 def mentor_not_new(request, indexer_id):
@@ -638,12 +660,14 @@ def mentor_not_new(request, indexer_id):
     POST only, although a GET will redirect to the basic mentoring view.
     """
     if not request.user.has_perm('indexer.can_mentor'):
-        return render_error(request,
+        return render_error(
+          request,
           'You are not allowed to mentor new Indexers', redirect=False)
 
     indexer = get_object_or_404(Indexer, id=indexer_id)
     if indexer.mentor != request.user:
-        return render_error(request,
+        return render_error(
+          request,
           'You are not allowed to change the state of this new Indexer',
           redirect=False)
     else:
@@ -656,6 +680,7 @@ def mentor_not_new(request, indexer_id):
             indexer.save()
 
     return HttpResponseRedirect(urlresolvers.reverse('mentoring'))
+
 
 def ranking(indexer):
     """
@@ -686,4 +711,5 @@ def ranking(indexer):
         'national_leveldown':
             (indexer.imps - national_down[0].imps) if national_down else None,
         'global_leveldown':
-            (indexer.imps - worldwide_down[0].imps) if worldwide_down else None }
+            (indexer.imps - worldwide_down[0].imps) if worldwide_down else None
+            }
