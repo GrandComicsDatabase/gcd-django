@@ -195,6 +195,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             cd['notes'] = cd['notes'].strip()
             cd['comments'] = cd['comments'].strip()
             cd['isbn'] = cd['isbn'].strip()
+            if 'variant_name' in cd:
+                cd['variant_name'] = cd['variant_name'].strip()
 
             if cd['volume'] != "" and cd['no_volume']:
                 raise forms.ValidationError(
