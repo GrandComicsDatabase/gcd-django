@@ -4727,7 +4727,7 @@ class StoryRevision(Revision):
     def _imps_for(self, field_name):
         if field_name in ('first_line', 'type', 'feature', 'genre',
                           'characters', 'synopsis', 'job_number',
-                          'reprint_notes', 'notes', 'keywords'):
+                          'reprint_notes', 'notes', 'keywords', 'issue'):
             return 1
         if not self._seen_title and field_name in ('title', 'title_inferred'):
             self._seen_title = True
