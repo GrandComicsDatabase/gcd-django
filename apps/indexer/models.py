@@ -5,7 +5,6 @@ from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.core.mail import EmailMessage
-from django.template import Context
 from django.template.loader import get_template
 
 from apps.stddata.models import Country, Language
@@ -126,8 +125,8 @@ class Indexer(models.Model):
                              to=[self.user.email],
                              subject='GCD full member',
                              body=get_template('indexer/new_member_mail.html')
-                             .render(Context({'site_name': settings.SITE_NAME,
-                                              'chairman': settings.CHAIRMAN})
+                             .render({'site_name': settings.SITE_NAME,
+                                      'chairman': settings.CHAIRMAN}
                                      ),
                              cc=[settings.EMAIL_CHAIRMAN])
         email.send(fail_silently=(not settings.BETA))
