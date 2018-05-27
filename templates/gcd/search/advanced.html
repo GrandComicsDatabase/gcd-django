@@ -122,6 +122,10 @@ if ($(window).width() < 1240) {
     {{ form.cover_needed|show_form }}
     {{ form.is_indexed|show_form }}
     {{ form.image_resources|show_form }}
+    {% if user.is_authenticated %}
+      {{ form.in_collection|show_form }}
+      {{ form.in_selected_collection|show_form }}
+    {% endif %}
   </ol>
 </fieldset>
 </div>

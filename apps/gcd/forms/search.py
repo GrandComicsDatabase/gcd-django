@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 from re import match
 from decimal import Decimal, InvalidOperation
+
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.conf import settings
+
 from apps.stddata.models import Country, Language
 from apps.indexer.models import Indexer
 from apps.gcd.models import StoryType, OLD_TYPES, SeriesPublicationType
@@ -38,6 +41,7 @@ COUNT_RANGE_REGEXP = r'(?P<min>\d+)?\s*-\s*(?P<max>\d+)?$'
 
 class AdvancedSearch(forms.Form):
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super(AdvancedSearch, self).__init__(*args, **kwargs)
         self.fields['country'] = forms.MultipleChoiceField(
           required=False,
@@ -49,6 +53,16 @@ class AdvancedSearch(forms.Form):
           choices=([l.code, l.name]
                    for l in Language.objects.order_by('name')),
           widget=FilteredSelectMultiple('Languages', False))
+        if user and user.is_authenticated:
+            self.fields['in_collection'] = forms.ModelMultipleChoiceField(
+              label='',
+              widget=FilteredSelectMultiple('Collections', False),
+              queryset=user.collector.collections.all(),
+              required=False)
+            self.user = user
+            self.fields['in_selected_collection'] = forms.BooleanField(
+              label="Is in the selected collections", required=False,
+              initial=True)
 
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
                                         ['brand_group', 'Publisher Brand Group'],
@@ -289,6 +303,13 @@ class AdvancedSearch(forms.Form):
                 'not allowed in a keyword: < > { } : / \ | @ ,')
 
         return keywords
+
+    def clean_in_collection(self):
+        collections = self.cleaned_data['in_collection']
+        if collections.exclude(collector=self.user.collector).count():
+            raise forms.ValidationError(
+                  "One cannot search in the collections of other users.")
+        return collections
 
     def clean(self):
         cleaned_data = self.cleaned_data

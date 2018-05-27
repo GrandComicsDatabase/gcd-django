@@ -830,7 +830,7 @@ def advanced_search(request):
 
     if ('target' not in request.GET):
         return render(request, 'gcd/search/advanced.html',
-                      {'form': AdvancedSearch()})
+                      {'form': AdvancedSearch(user=request.user)})
     else:
         search_values = request.GET.copy()
         # convert a bit since MultipleChoiceField takes a list of IDs
@@ -839,14 +839,15 @@ def advanced_search(request):
         search_values['country'] = search_values.getlist('country')
         search_values['language'] = search_values.getlist('language')
         return render(request, 'gcd/search/advanced.html',
-                      {'form': AdvancedSearch(initial=search_values)})
+                      {'form': AdvancedSearch(user=request.user,
+                                              initial=search_values)})
 
 
 def do_advanced_search(request):
     """
     Runs advanced searches.
     """
-    form = AdvancedSearch(request.GET)
+    form = AdvancedSearch(request.GET, user=request.user)
     if not form.is_valid():
         raise ViewTerminationError(
           response = render(request, 'gcd/search/advanced.html',
@@ -1487,6 +1488,14 @@ def search_issues(data, op, stories_q=None):
         else:
             q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
                    Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
+
+    if 'in_collection' in data and data['in_collection']:
+        if data['in_selected_collection']:
+            q_objs.append(Q(**{'%scollectionitem__collections__in' % prefix:
+                                data['in_collection']}))
+        else:
+            q_objs.append(~Q(**{'%scollectionitem__collections__in' % prefix:
+                               data['in_collection']}))
 
     try:
         if data['issue_pages'] is not None and data['issue_pages'] != '':
