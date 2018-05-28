@@ -260,14 +260,15 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 <hr>
   {% endif %}
 
+<a name="index_status"></a>
 <h3> Index Status </h3>
 
   {% include "gcd/bits/status_tables.html" %}
 <hr>
 
   {% if series.is_comics_publication %}
+<a name="cover_status"></a>
 <h3> Cover Status </h3>
-
     {% include "gcd/bits/scan_tables.html" %}
   {% endif %}
 {% endif %}

@@ -763,19 +763,8 @@ def status(request, series_id):
     """
     Display the index status matrix for a series.
     """
-    series = get_object_or_404(Series, id=series_id)
-    if series.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'series',
-                                       'id': series_id}))
-
-    # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 12
-
-    return render(request, 'gcd/status/status.html',
-                  {'series': series,
-                   'table_width': table_width})
+    return HttpResponseRedirect(urlresolvers.reverse('show_series',
+      kwargs={'series_id': series_id}) + '#index_status')
 
 
 def _get_scan_table(series, show_cover=True):
@@ -814,21 +803,8 @@ def scans(request, series_id):
     """
     Display the cover scan status matrix for a series.
     """
-
-    series = get_object_or_404(Series, id=series_id)
-    if series.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'series', 'id': series_id}))
-
-    scans, unused_tag, unused_issue = _get_scan_table(series, show_cover=False)
-
-    # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 12
-
-    return render(request, 'gcd/status/scans.html',
-                  {'series': series,
-                   'scans': scans,
-                   'table_width': table_width})
+    return HttpResponseRedirect(urlresolvers.reverse('show_series',
+      kwargs={'series_id': series_id}) + '#cover_status')
 
 
 def covers_to_replace(request, starts_with=None):
