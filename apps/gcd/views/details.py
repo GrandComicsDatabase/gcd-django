@@ -59,12 +59,20 @@ COVERS_PER_GALLERY_PAGE = 50
 IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
 
-
+# For ad purposes, we need to be able to identify adult cover images,
+# right now we do it by publisher.
 PUB_WITH_ADULT_IMAGES = [
-  4117, # Ediciones La Cúpula
-  1052, # Avatar Press
-  445, # Fantagraphics
   3729, # Amryl Entertainment
+  1052, # Avatar Press
+  4810, # Dolmen Editorial
+  4117, # Ediciones La Cúpula
+  8484, # Editorial Toukan
+  445, # Fantagraphics
+  8415, # Hustler Magazine, Inc.
+  351, # Last Gasp
+  3287, # Penthouse
+  4829, # Weissblech Comics
+  3197, # Zenescope Entertainment
 ]
 
 # to set flag for choice of ad providers
