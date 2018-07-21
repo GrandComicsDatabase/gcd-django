@@ -347,7 +347,8 @@ def show_indicia_publisher(request, indicia_publisher, preview=False):
     return paginate_response(request,
                              indicia_publisher_issues,
                              'gcd/details/indicia_publisher.html',
-                             vars)
+                             vars,
+                             alpha=True)
 
 def brand_group(request, brand_group_id):
     """
@@ -374,7 +375,8 @@ def show_brand_group(request, brand_group, preview=False):
     return paginate_response(request,
                              brand_issues,
                              'gcd/details/brand_group.html',
-                             vars)
+                             vars,
+                             alpha=True)
 
 def brand(request, brand_id):
     """
@@ -400,7 +402,8 @@ def show_brand(request, brand, preview=False):
     return paginate_response(request,
                              brand_issues,
                              'gcd/details/brand.html',
-                             vars)
+                             vars,
+                             alpha=True)
 
 
 def imprint(request, imprint_id):
