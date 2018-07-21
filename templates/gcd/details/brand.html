@@ -40,10 +40,10 @@ GCD :: Brand Emblem :: {{ brand.name }}
         <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
-{% ifequal page.object_list.count 0 %}
+{% if not items  %}
         <dt> Issues:
         <dd> None
-{% endifequal %}
+{% endif %}
       </dl>
 {% if brand.emblem %}
 <img src="{{ brand.emblem.scaled_image.url }}">
@@ -181,14 +181,14 @@ GCD :: Brand Emblem :: {{ brand.name }}
 </table>
 {% endif %}
 
-{% if page.object_list.count %}
+{% if items %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Issue </th>
     <th> Publication Date </th>
     <th> Indicia Publisher </th>
   </tr>
-  {% for issue in page.object_list %}
+  {% for issue in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date }} </td>
