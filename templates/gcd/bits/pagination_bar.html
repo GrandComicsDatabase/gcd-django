@@ -1,6 +1,19 @@
 {% load i18n %}
 
 <div class="right pagination">
+{% if alpha_paginator.count > 1 %}
+    {% for a_page in alpha_paginator.page_range %}
+      {% if a_page %}
+        {% if a_page == alpha_page %}
+    <span>{{ a_page }}</span>
+        {% else %}
+    <a href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
+        {% endif %}
+      {% else %}
+    <a>...</a>
+      {% endif %}
+    {% endfor %}
+{% endif %}
 {% if page.has_other_pages %}
   {% if page.has_previous %}
     {% if extra_string %}
