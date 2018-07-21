@@ -125,8 +125,7 @@
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 
-{% if page.object_list.count %}
-
+{% if items %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Series </th>
@@ -134,7 +133,7 @@
     <th> #&nbsp;Issues </th>
     <th> Covers </th>
   </tr>
-  {% for series in page.object_list %}
+  {% for series in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %}

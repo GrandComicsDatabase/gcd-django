@@ -18,7 +18,8 @@ from django.template import RequestContext
 from django.shortcuts import render
 from django.utils.safestring import mark_safe
 
-from apps.gcd.views.pagination import DiggPaginator
+from .pagination import DiggPaginator
+from .alpha_pagination import AlphaPaginator
 
 from apps.stddata.models import Language
 from apps.stats.models import CountStats
@@ -146,8 +147,13 @@ class ResponsePaginator(object):
 
 
 def paginate_response(request, queryset, template, vars, per_page=100,
-                      callback_key=None, callback=None):
-    return ResponsePaginator(queryset, vars=vars, template=template,
+                      callback_key=None, callback=None, alpha=False):
+    paginator = ResponsePaginator(queryset, vars=vars, template=template,
                              per_page=per_page,
                              callback_key=callback_key,
-                             callback=callback).paginate(request)
+                             callback=callback)
+    if alpha:
+        alpha_paginator = AlphaPaginator(queryset,
+                                         per_page=per_page)
+        paginator.vars['alpha_paginator'] = alpha_paginator
+    return paginator.paginate(request)

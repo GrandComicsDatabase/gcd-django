@@ -245,7 +245,7 @@ def show_publisher(request, publisher, preview=False):
              'preview': preview}
 
     return paginate_response(request, publisher_series,
-                             'gcd/details/publisher.html', vars)
+                             'gcd/details/publisher.html', vars, alpha=True)
 
 
 def publisher_monthly_covers(request,
