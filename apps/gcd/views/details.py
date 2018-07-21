@@ -66,7 +66,9 @@ PUB_WITH_ADULT_IMAGES = [
   1052, # Avatar Press
   4810, # Dolmen Editorial
   4117, # Ediciones La Cúpula
+  1078, # Edifumetto
   8484, # Editorial Toukan
+  4562, # Ediperiodici
   445, # Fantagraphics
   8415, # Hustler Magazine, Inc.
   351, # Last Gasp
