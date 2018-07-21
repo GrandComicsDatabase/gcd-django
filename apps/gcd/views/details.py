@@ -349,7 +349,8 @@ def indicia_publisher(request, indicia_publisher_id):
 
 def show_indicia_publisher(request, indicia_publisher, preview=False):
     indicia_publisher_issues = indicia_publisher.active_issues().order_by(
-      'series__sort_name', 'sort_code')
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'brand')
 
     vars = { 'indicia_publisher' : indicia_publisher,
              'error_subject': '%s' % indicia_publisher,
@@ -358,7 +359,7 @@ def show_indicia_publisher(request, indicia_publisher, preview=False):
                              indicia_publisher_issues,
                              'gcd/details/indicia_publisher.html',
                              vars,
-                             alpha=True)
+                             alpha=False)
 
 def brand_group(request, brand_group_id):
     """
@@ -372,8 +373,9 @@ def brand_group(request, brand_group_id):
     return show_brand_group(request, brand_group)
 
 def show_brand_group(request, brand_group, preview=False):
-    brand_issues = brand_group.active_issues().order_by('series__sort_name',
-                                                        'sort_code')
+    brand_issues = brand_group.active_issues().order_by(
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'indicia_publisher')
     brand_emblems = brand_group.active_emblems()
 
     vars = {
@@ -386,7 +388,7 @@ def show_brand_group(request, brand_group, preview=False):
                              brand_issues,
                              'gcd/details/brand_group.html',
                              vars,
-                             alpha=True)
+                             alpha=False)
 
 def brand(request, brand_id):
     """
@@ -400,8 +402,10 @@ def brand(request, brand_id):
     return show_brand(request, brand)
 
 def show_brand(request, brand, preview=False):
-    brand_issues = brand.active_issues().order_by('series__sort_name',
-                                                  'sort_code')
+    brand_issues = brand.active_issues().order_by(
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'indicia_publisher')
+
     uses = brand.in_use.all()
     vars = {
         'brand' : brand,
@@ -413,7 +417,7 @@ def show_brand(request, brand, preview=False):
                              brand_issues,
                              'gcd/details/brand.html',
                              vars,
-                             alpha=True)
+                             alpha=False)
 
 
 def imprint(request, imprint_id):
