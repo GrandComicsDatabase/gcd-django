@@ -3,25 +3,24 @@
 """View methods for pages displaying entity details."""
 
 import re
-from urllib import urlencode
+from urllib import urlencode, quote
 from urllib2 import urlopen, HTTPError
 from datetime import date, datetime, time, timedelta
 from calendar import monthrange
 from operator import attrgetter
 from random import randint
 
-from django import forms
 from django.db.models import Q
 from django.conf import settings
 from django.core import urlresolvers
 from django.shortcuts import get_object_or_404, \
-                             get_list_or_404, \
                              render
 from django.http import HttpResponseRedirect, Http404, HttpResponse
-from django.template import RequestContext
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+
+from django_tables2 import RequestConfig
 
 from apps.indexer.views import ViewTerminationError
 
@@ -46,6 +45,8 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, CoverRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
                            SeriesBondRevision, CreatorRevision, CTYPES
+from apps.gcd.models.series import SeriesTable
+from apps.gcd.views import ResponsePaginator
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -62,30 +63,32 @@ IS_NONE = '[IS_NONE]'
 # For ad purposes, we need to be able to identify adult cover images,
 # right now we do it by publisher.
 PUB_WITH_ADULT_IMAGES = [
-  3729, # Amryl Entertainment
-  1052, # Avatar Press
-  4810, # Dolmen Editorial
-  4117, # Ediciones La Cúpula
-  1078, # Edifumetto
-  8484, # Editorial Toukan
-  4562, # Ediperiodici
-  445, # Fantagraphics
-  8415, # Hustler Magazine, Inc.
-  351, # Last Gasp
-  3287, # Penthouse
-  4829, # Weissblech Comics
-  3197, # Zenescope Entertainment
+  3729,  # Amryl Entertainment
+  1052,  # Avatar Press
+  4810,  # Dolmen Editorial
+  4117,  # Ediciones La Cúpula
+  1078,  # Edifumetto
+  8484,  # Editorial Toukan
+  4562,  # Ediperiodici
+  445,   # Fantagraphics
+  8415,  # Hustler Magazine, Inc.
+  351,   # Last Gasp
+  3287,  # Penthouse
+  4829,  # Weissblech Comics
+  3197,  # Zenescope Entertainment
 ]
+
 
 # to set flag for choice of ad providers
 def _publisher_image_content(publisher_id):
     if publisher_id in PUB_WITH_ADULT_IMAGES:
-      return 2
+        return 2
 
     return 1
 
+
 def get_gcd_object(model, object_id, model_name=None):
-    object = get_object_or_404(model, id = object_id)
+    object = get_object_or_404(model, id=object_id)
     if object.deleted:
         if not model_name:
             model_name = model._meta.model_name
@@ -237,11 +240,32 @@ def publisher(request, publisher_id):
 
 
 def show_publisher(request, publisher, preview=False):
-    publisher_series = publisher.active_series().order_by('sort_name')
+    publisher_series = publisher.active_series()
+
+    paginator = ResponsePaginator(publisher_series, per_page=100, alpha=True)
+    page_number = paginator.paginate(request).number
+    if 'sort' in request.GET:
+        extra_string = 'sort=%s' % (request.GET['sort'])
+        if request.GET['sort'] != 'name' and \
+          paginator.vars['pagination_type'] == 'alpha':
+            args = request.GET.copy()
+            args['page'] = 1
+            return HttpResponseRedirect(quote(request.path.encode('UTF-8')) +
+                                        u'?' + args.urlencode())
+    else:
+        extra_string = ''
+
+    table = SeriesTable(publisher_series, attrs={'class': 'listing'},
+                        template_name='gcd/bits/sortable_table.html',
+                        order_by=('name'))
+    RequestConfig(request, paginate={'per_page': 100,
+                                     'page': page_number}).configure(table)
     vars = { 'publisher': publisher,
              'current': publisher.series_set.filter(deleted=False,
                                                     is_current=True),
              'error_subject': publisher,
+             'table': table,
+             'extra_string': extra_string,
              'preview': preview}
 
     return paginate_response(request, publisher_series,

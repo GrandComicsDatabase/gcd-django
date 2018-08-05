@@ -557,7 +557,7 @@ form.before_listing {
 }
 
 .listing th {
-    text-align: left;
+    text-align: center;
     padding: .4em;
     background-color: #888;
     color: white;
@@ -567,12 +567,14 @@ form.before_listing {
     padding: .4em .5em;
 }
 
+.listing tr.odd,
 tr.row_even_False,
 tr.listing_odd {
     background-color: #FFF;
     vertical-align: top;
 }
 
+.listing tr.even,
 tr.row_even_True,
 tr.listing_even {
     background-color: #DDD;
