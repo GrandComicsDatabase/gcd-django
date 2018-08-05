@@ -86,11 +86,10 @@ def view_collection(request, collection_id):
     items = collection.items.all().select_related('issue__series')
     vars = {'collection': collection,
             'collection_list': collection_list}
-    paginator = ResponsePaginator(items, template=COLLECTION_TEMPLATE,
-                                  vars=vars, per_page=DEFAULT_PER_PAGE)
-    alpha_paginator = AlphaPaginator(items, per_page=DEFAULT_PER_PAGE)
-    paginator.vars['alpha_paginator'] = alpha_paginator
-    return paginator.paginate(request)
+    paginator = ResponsePaginator(items, vars=vars, per_page=DEFAULT_PER_PAGE,
+                                  alpha=True)
+    page = paginator.paginate(request)
+    return render(request, COLLECTION_TEMPLATE, vars)
 
 
 @login_required

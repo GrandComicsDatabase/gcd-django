@@ -22,7 +22,7 @@
 
 <div class="item_id">
   <div class="left">
-  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }}{% trans " covers posted" %}
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}{% trans " covers posted" %}
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}
@@ -45,7 +45,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all uploa
 </h1>
 <div id="item_id_footer" class="item_id">
   <div class="left">
-  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }}{% trans " covers posted" %}
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}{% trans " covers posted" %}
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}

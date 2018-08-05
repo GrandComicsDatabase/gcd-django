@@ -22,7 +22,7 @@
 
 <div class="item_id">
   <div class="left">
-  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} covers stored for this month.
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} covers stored for this month.
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}
@@ -44,7 +44,7 @@
 </h1>
 <div id="item_id_footer" class="item_id">
   <div class="left">
-  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} covers stored for this month.
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} covers stored for this month.
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}

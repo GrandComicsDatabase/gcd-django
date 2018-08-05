@@ -185,9 +185,9 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         if self.query:
             self.query = urlencode({'q': self.query.encode('utf-8')})
         self.paginator = ResponsePaginator(self.results,
-                                           view=self.create_response,
                                            vars=context)
-        return self.paginator.paginate(request)
+        self.paginator.vars['page'] = paginator.paginate(request)
+        return self.create_response()
 
     def extra_context(self):
         extra = super(PaginatedFacetedSearchView, self).extra_context()

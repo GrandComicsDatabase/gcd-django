@@ -26,7 +26,7 @@
   {% endif %} <!-- has_previous -->
     |
   {% for number in page.page_range %}
-    {% ifequal number page_number %}
+    {% ifequal number page.number %}
   <span style="text-decoration: none">{{ number }}</span>
     {% else %}
       {% if not number %}
@@ -51,7 +51,7 @@
     {% trans "Next" %} &gt;
   {% endif %} <!-- has_next -->
 {% else %}
-  &lt; {% trans "Previous" %} | {{ page_number }} | {% trans "Next" %} &gt;
+  &lt; {% trans "Previous" %} | {{ page.number }} | {% trans "Next" %} &gt;
 {% endif %}
   <form method="GET" style="display:inline">
     <label for="page">#</label>:
