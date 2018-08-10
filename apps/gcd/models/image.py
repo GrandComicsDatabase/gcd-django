@@ -73,18 +73,18 @@ class Image(models.Model):
 
     def get_absolute_url(self):
         if self.content_type == content_models.ContentType.objects\
-                                              .get(name='Issue'):
+                                              .get(model='Issue'):
             return urlresolvers.reverse(
                 'issue_images',
                 kwargs={'issue_id': self.object.id } )
         elif self.content_type == content_models.ContentType.objects\
-                                                .get(name='Brand'):
+                                                .get(model='Brand'):
             return urlresolvers.reverse(
                 'show_brand',
                 kwargs={'brand_id': self.object.id } )
 
         elif self.content_type == content_models.ContentType.objects\
-                                                .get(name='Creator'):
+                                                .get(model='Creator'):
             return urlresolvers.reverse(
                 'show_creator',
                 kwargs={'creator_id': self.object.id } )

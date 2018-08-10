@@ -20,9 +20,10 @@
     {% if publisher.parent %}
       <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
     {% endif %}
-      <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
-    {% if extra %}
-      {{ extra }}
+    {% if extra or description %}
+      <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> {{ extra }}
+    {% else %}
+      {{ publisher.name }}
     {% endif %}
     {% if description %}
       {% ifnotequal description 'Publisher' %}
@@ -41,7 +42,7 @@
 <div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
      class="item_id">
 {% ifnotequal paginate_only 1 %}
-  <div class="left">
+  <div class="flex_left">
     <!-- Each of these things should have one space between them, currently
          done via newline, but if they are put on one line please preserve
          the space. -->
@@ -52,5 +53,7 @@
     {% if publisher.year_ended_uncertain %}?{% endif %}
   </div>
 {% endifnotequal %}
+  <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
+  </div>
 </div>

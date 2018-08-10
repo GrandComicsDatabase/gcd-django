@@ -5,6 +5,8 @@ from django.db.models import Count, Case, When
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+from django.utils.functional import cached_property
+import django_tables2 as tables
 
 from taggit.managers import TaggableManager
 
@@ -19,6 +21,7 @@ from .seriesbond import SeriesRelativeBond
 # the other way around.  Probably.
 from apps.oi import states
 
+
 class SeriesPublicationType(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -30,6 +33,7 @@ class SeriesPublicationType(models.Model):
 
     def __unicode__(self):
         return self.name
+
 
 class Series(GcdData):
     class Meta:
@@ -142,7 +146,7 @@ class Series(GcdData):
 
     def active_base_issues_variant_count(self):
         issues = self.active_base_issues()
-        issues = issues.annotate(variant_count=\
+        issues = issues.annotate(variant_count=
                                  Count(Case(When(variant_set__deleted=False,
                                                  then=1))))
         return issues
@@ -153,10 +157,10 @@ class Series(GcdData):
         appear within the series.  Returned as a list so that the UI can check
         the length of the list and the contents with only one DB call.
         """
-        return list(Brand.objects.filter(issue__series=self,
-                                         issue__deleted=False)\
+        return list(
+          Brand.objects.filter(issue__series=self, issue__deleted=False)
           .annotate(first_by_brand=models.Min('issue__sort_code'),
-                    used_issue_count=models.Count('issue'))\
+                    used_issue_count=models.Count('issue'))
           .order_by('first_by_brand'))
 
     def brand_info_counts(self):
@@ -165,7 +169,7 @@ class Series(GcdData):
         """
 
         # There really should be a way to do this in one annotate clause, but I
-        # can't figure it out and the ORM may just not do it.  The SQL would be:
+        # can't figure it out and the ORM may just not do it. The SQL would be:
         # SELECT (brand_id IS NULL AND no_brand = 0) AS unknown, COUNT(*)
         #   FROM gcd_issue WHERE series_id=x GROUP BY unknown;
         # replacing x with the series id of course.
@@ -181,10 +185,11 @@ class Series(GcdData):
         appear within the series.  Returned as a list so that the UI can check
         the length of the list and the contents with only one DB call.
         """
-        return list(IndiciaPublisher.objects.filter(issue__series=self,
-                                                    issue__deleted=False)\
+        return list(
+          IndiciaPublisher.objects.filter(issue__series=self,
+                                          issue__deleted=False)
           .annotate(first_by_ind_pub=models.Min('issue__sort_code'),
-                    used_issue_count=models.Count('issue'))\
+                    used_issue_count=models.Count('issue'))
           .order_by('first_by_ind_pub'))
 
     def indicia_publisher_info_counts(self):
@@ -193,8 +198,8 @@ class Series(GcdData):
         with brand_info_counts which actually does return two counts.
         """
         return {
-            'unknown': self.active_issues().filter(indicia_publisher__isnull=True)\
-                                           .count(),
+            'unknown': self.active_issues()
+                           .filter(indicia_publisher__isnull=True).count(),
         }
 
     def get_ongoing_reservation(self):
@@ -214,6 +219,7 @@ class Series(GcdData):
     def marked_scans_count(self):
         return Cover.objects.filter(issue__series=self, marked=True).count()
 
+    @cached_property
     def scan_count(self):
         return Cover.objects.filter(issue__series=self, deleted=False).count()
 
@@ -222,9 +228,11 @@ class Series(GcdData):
         return issues.exclude(cover__isnull=False, cover__deleted=False)\
                      .distinct()
 
+    @cached_property
     def scan_needed_count(self):
         return self.issues_without_covers().count() + self.marked_scans_count()
 
+    @cached_property
     def issue_indexed_count(self):
         return self.active_base_issues()\
                    .exclude(is_indexed=INDEXED['skeleton']).count()
@@ -235,26 +243,29 @@ class Series(GcdData):
     def display_publication_dates(self):
         if self.issue_count == 0:
             return u'%s%s' % (unicode(self.year_began),
-                  self._date_uncertain(self.year_began_uncertain))
+                              self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:
             if self.first_issue.publication_date:
                 return self.first_issue.publication_date
             else:
                 return u'%s%s' % (unicode(self.year_began),
-                  self._date_uncertain(self.year_began_uncertain))
+                                  self._date_uncertain(
+                                    self.year_began_uncertain))
         else:
             if self.first_issue.publication_date:
                 date = u'%s - ' % self.first_issue.publication_date
             else:
                 date = u'%s%s - ' % (self.year_began,
-              self._date_uncertain(self.year_began_uncertain))
+                                     self._date_uncertain(
+                                       self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
                 date += u'%s%s' % (unicode(self.year_ended),
-                  self._date_uncertain(self.year_ended_uncertain))
+                                   self._date_uncertain(
+                                     self.year_ended_uncertain))
             else:
                 date += u'?'
             return date
@@ -262,29 +273,33 @@ class Series(GcdData):
     def search_result_name(self):
         if self.issue_count <= 1 and not self.is_current:
             date = u'%s%s' % (unicode(self.year_began),
-              self._date_uncertain(self.year_began_uncertain))
+                              self._date_uncertain(self.year_began_uncertain))
         else:
             date = u'%s%s - ' % (self.year_began,
-              self._date_uncertain(self.year_began_uncertain))
+                                 self._date_uncertain(
+                                   self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.year_ended:
                 date += u'%s%s' % (unicode(self.year_ended),
-                  self._date_uncertain(self.year_ended_uncertain))
+                                   self._date_uncertain(
+                                     self.year_ended_uncertain))
             else:
                 date += u'?'
 
         if self.is_singleton:
             issues = ''
         else:
-            issues = '%d issue%s in' % (self.issue_count, 
+            issues = '%d issue%s in' % (self.issue_count,
                                         pluralize(self.issue_count))
 
         return '%s (%s) %s %s' % (self.name, self.publisher, issues, date)
 
     def full_name(self):
         return '%s (%s, %s%s series)' % (self.name, self.publisher,
-          self.year_began, self._date_uncertain(self.year_began_uncertain))
+                                         self.year_began,
+                                         self._date_uncertain(
+                                           self.year_began_uncertain))
 
     def full_name_with_link(self, publisher=False):
         if publisher:
@@ -298,6 +313,81 @@ class Series(GcdData):
                                                  esc(self.full_name()))
         return mark_safe(name_link)
 
+    def cover_status_info(self):
+        if not self.issue_count or not self.is_comics_publication:
+            return "No Covers"
+        else:
+            gallery_url = urlresolvers.reverse("series_covers",
+                                               kwargs={'series_id': self.id})
+            table_url = urlresolvers.reverse("series_scan_table",
+                                             kwargs={'series_id': self.id})
+            if not self.scan_needed_count:
+                return mark_safe('<a href="%s">Gallery</a>' % (gallery_url))
+            elif self.has_gallery:
+                return mark_safe(
+                  '<a href="%s">Have %d</a> (<a href="%s">Need %d</a>)'
+                  % (gallery_url,
+                     self.scan_count,
+                     table_url,
+                     self.scan_needed_count))
+            else:
+                return mark_safe('<a href="%s">Add</a>' % (table_url))
+
     def __unicode__(self):
         return '%s (%s%s series)' % (self.name, self.year_began,
-          self._date_uncertain(self.year_began_uncertain))
+                                     self._date_uncertain(
+                                       self.year_began_uncertain))
+
+
+class CoversColumn(tables.Column):
+    def render(self, record):
+        return record.cover_status_info()
+
+
+class PublishedColumn(tables.Column):
+    def render(self, record):
+        return record.display_publication_dates()
+
+
+class NameColumn(tables.Column):
+    def render(self, record):
+        name_link = '<a href="%s">%s</a>' % (record.get_absolute_url(),
+                                             esc(record.name))
+        return mark_safe(name_link)
+
+    def order(self, QuerySet, is_descending):
+        QuerySet = QuerySet.order_by(('-' if is_descending else '')
+                                     + 'sort_name', 'year_began')
+        return (QuerySet, True)
+
+
+class SeriesTable(tables.Table):
+    name = NameColumn(verbose_name='Series')
+    year = tables.Column(accessor='year_began', verbose_name='Year')
+    issue_count = tables.Column(attrs={'td': {'style': "text-align: right"}},
+                                verbose_name='# Issues')
+    covers = CoversColumn(accessor='scan_count', orderable=False,
+                          attrs={'td': {'style': "text-align: right"}})
+    published = PublishedColumn(accessor='year_began',
+                                attrs={'td': {'style': "text-align: right"}},
+                                orderable=False,
+                                verbose_name='Published')
+
+    class Meta:
+        model = Series
+        fields = ('name', 'year', 'issue_count', 'covers', 'published')
+
+    def order_year(self, QuerySet, is_descending):
+        QuerySet = QuerySet.order_by(('-' if is_descending else '')
+                                     + 'year_began', 'sort_name')
+        return (QuerySet, True)
+
+    def order_issue_count(self, QuerySet, is_descending):
+        QuerySet = QuerySet.order_by(('-' if is_descending else '')
+                                     + 'issue_count', 'sort_name',
+                                     'year_began')
+        return (QuerySet, True)
+
+    def render_issue_count(self, record):
+        return '%d issues (%d indexed)' % (record.issue_count,
+                                           record.issue_indexed_count)

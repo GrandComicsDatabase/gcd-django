@@ -1,6 +1,4 @@
 {% extends "gcd/base_view.html" %}
-
-{% load url from future %}
 {% load staticfiles %}
 {% load forms %}
 
@@ -68,6 +66,7 @@ these off.
   {{ form.country|show_form_as_row }}
   {{ form.languages|show_form_as_row }}
   {{ form.interests|show_form_as_row }}
+  {{ form.seen_privacy_policy|show_form_as_row }}
   {{ form.opt_in_email|show_form_as_row }}
   {{ form.issue_detail|show_form_as_row }}
   {{ form.from_where|show_form_as_row }}

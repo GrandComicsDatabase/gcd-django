@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django import forms
 from django.utils.safestring import mark_safe
-from django.utils.encoding import force_unicode
-from django.utils.html import escape, conditional_escape
 from django.forms.widgets import TextInput
 
 from apps.gcd.models import Brand, SourceType
@@ -636,30 +634,16 @@ class PageCountInput(TextInput):
 
 
 class BrandEmblemSelect(forms.Select):
-    def render_option(self, selected_choices, option_value, option_label):
-        url = ''
-        if option_value:
-            brand = Brand.objects.get(id=option_value)
+    option_template_name = 'oi/forms/widgets/select_brand.html'
+
+    def create_option(self, name, value, label, selected, index, subindex=None,
+                      attrs=None):
+        option_dict = super(BrandEmblemSelect, self)\
+                      .create_option(name, value, label, selected, index,
+                                     subindex=subindex, attrs=attrs)
+        if value:
+            brand = Brand.objects.get(id=value)
             if brand.emblem and not settings.FAKE_IMAGES:
-                url = brand.emblem.icon.url
-        option_value = force_unicode(option_value)
-        if option_value in selected_choices:
-            selected_html = u' selected="selected"'
-            if not self.allow_multiple_selected:
-                # Only allow for a single selection.
-                selected_choices.remove(option_value)
-        else:
-            selected_html = ''
-        if url:
-            return (u'<option value="%s"%s data-image="%s" '
-                    'image-width="%d">%s</option>') % (
-                escape(option_value),
-                selected_html,
-                url,
-                brand.emblem.icon.width,
-                conditional_escape(force_unicode(option_label)))
-        else:
-            return u'<option value="%s"%s>%s</option>' % (
-                escape(option_value),
-                selected_html,
-                conditional_escape(force_unicode(option_label)))
+                option_dict['url'] = brand.emblem.icon.url
+                option_dict['image_width'] = brand.emblem.icon.width
+        return option_dict

@@ -19,7 +19,6 @@ which variables you can or must override.
 
 # disable on production!
 DEBUG          = True
-TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = [
     '.comics.org',
@@ -58,6 +57,21 @@ TEMPLATES = [
             'debug': DEBUG,
         },
     },
+]
+
+# We would prefer to remove the last 5 (to only use the django default),
+# but would need to update/migrate the existing stored passwords first.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+    'django.contrib.auth.hashers.SHA1PasswordHasher',
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+    'django.contrib.auth.hashers.UnsaltedSHA1PasswordHasher',
+    'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
+    'django.contrib.auth.hashers.CryptPasswordHasher'
 ]
 
 # absolute path to the directory that holds media.
@@ -136,6 +150,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_mobile',
+    'django_tables2',
     'apps.indexer',
     'apps.gcd',
     'apps.stats',
@@ -218,7 +233,7 @@ COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                        'templates/managed_content/')),]
-TEMPLATESADMIN_GROUP = 'prteam'
+TEMPLATESADMIN_GROUP = 'templateadmin'
 
 #################################################################################
 # Haystack and search
@@ -289,7 +304,7 @@ EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_PRTEAM = 'pr-team@comics.org'
 EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
-CHAIRMAN = 'Daniel Nauschuetz'
+CHAIRMAN = 'Lionel English'
 EMAIL_CHAIRMAN = '%s <chair@comics.org>' % CHAIRMAN
 
 # Number of days for which a registraton confirmation token is valid.

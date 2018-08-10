@@ -10,7 +10,7 @@ from stdnum import isbn
 from django import forms
 from django.conf import settings
 from django.db import models, transaction, IntegrityError
-from django.db.models import Q, F, Manager
+from django.db.models import F, Manager
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, \
@@ -20,6 +20,7 @@ from django.utils.html import conditional_escape as esc
 from django.core.validators import RegexValidator, URLValidator
 from django.core.exceptions import ValidationError
 
+from imagekit.cachefiles.backends import CacheFileState
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
 
@@ -38,6 +39,8 @@ from apps.gcd.models import (
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
+
+from apps.indexer.views import ErrorWithMessage
 
 from apps.legacy.models import Reservation, MigrationStoryStatus
 
@@ -655,7 +658,7 @@ class Changeset(models.Model):
                     self.storyrevisions.all())
 
         if self.change_type == CTYPES['series_bond']:
-            return (self.seriesbondrevisions.all().select_related('series'),)
+            return (self.seriesbondrevisions.all().select_related('series_bond'),)
 
         if self.change_type == CTYPES['publisher']:
             return (self.publisherrevisions.all(), self.brandrevisions.all(),
@@ -871,10 +874,7 @@ class Changeset(models.Model):
         revision = self.cached_revisions.next()
         if revision.deleted:
             return ACTION_DELETE
-        # issue_adds are separate, avoid revision.previous
-        elif self.change_type == CTYPES['issue']:
-            return ACTION_MODIFY
-        elif revision.previous() is None:
+        if not revision.previous_revision:
             return ACTION_ADD
         return ACTION_MODIFY
 
@@ -916,8 +916,8 @@ class Changeset(models.Model):
 
         if (self.state != states.OPEN) and \
            not (delete and self.state == states.UNRESERVED):
-            raise ValueError(
-                "Only OPEN changes can be submitted for approval.")
+            raise ErrorWithMessage(
+                  "Only OPEN changes can be submitted for approval.")
 
         new_state = self._check_approver()
 
@@ -942,9 +942,10 @@ class Changeset(models.Model):
         """
 
         if self.state != states.PENDING:
-            raise ValueError("Only PENDING changes my be retracted.")
+            raise ErrorWithMessage("Only PENDING changes my be retracted.")
         if self.approver is not None:
-            raise ValueError("Only changes with no approver may be retracted.")
+            raise ErrorWithMessage(
+                  "Only changes with no approver may be retracted.")
 
         self.comments.create(commenter=self.indexer,
                              text=notes,
@@ -961,8 +962,8 @@ class Changeset(models.Model):
         reservation, or by an approver, effectively canceling it.
         """
         if self.state not in states.ACTIVE:
-            raise ValueError("Only OPEN, PENDING, DISCUSSED, or REVIEWING "
-                             "changes may be discarded.")
+            raise ErrorWithMessage("Only OPEN, PENDING, DISCUSSED, or "
+                                   "REVIEWING changes may be discarded.")
 
         self.comments.create(commenter=discarder,
                              text=notes,
@@ -989,7 +990,7 @@ class Changeset(models.Model):
         the examiner's approval queue.
         """
         if self.state != states.PENDING:
-            raise ValueError("Only PENDING changes can be reviewed.")
+            raise ErrorWithMessage("Only PENDING changes can be reviewed.")
 
         # TODO: check that the approver has approval priviliges.
         if not isinstance(approver, User):
@@ -1006,8 +1007,8 @@ class Changeset(models.Model):
     def release(self, notes=''):
         if self.state not in states.ACTIVE or \
            self.approver is None:
-            raise ValueError(
-                "Only changes with an approver may be unassigned.")
+            raise ErrorWithMessage(
+                  "Only changes with an approver may be unassigned.")
 
         if self.state in [states.DISCUSSED, states.REVIEWING]:
             new_state = states.PENDING
@@ -1025,7 +1026,8 @@ class Changeset(models.Model):
     def discuss(self, commenter, notes=''):
         if self.state not in [states.OPEN, states.REVIEWING] or \
            self.approver is None:
-            raise ValueError("Only changes with an approver may be discussed.")
+            raise ErrorWithMessage(
+                  "Only changes with an approver may be discussed.")
 
         self.comments.create(commenter=commenter,
                              text=notes,
@@ -1053,8 +1055,8 @@ class Changeset(models.Model):
         # for add ?
         if self.state not in [states.DISCUSSED, states.REVIEWING] or \
            self.approver is None:
-            raise ValueError(
-                "Only REVIEWING changes with an approver can be approved.")
+            raise ErrorWithMessage(
+                  "Only REVIEWING changes with an approver can be approved.")
 
         issue_revision_count = self.issuerevisions.count()
         if self.change_type == CTYPES['issue_add'] and \
@@ -1105,8 +1107,8 @@ class Changeset(models.Model):
 
         if self.state not in [states.DISCUSSED, states.REVIEWING] or \
            self.approver is None:
-            raise ValueError(
-                "Only REVIEWING changes with an approver can be disapproved.")
+            raise ErrorWithMessage(
+                  "Only REVIEWING changes with an approver can be disapproved.")
         self.comments.create(commenter=self.approver,
                              text=notes,
                              old_state=self.state,
@@ -1314,6 +1316,7 @@ class RevisionManager(models.Manager):
         previous_revision = type(revision).objects.get(
                             next_revision=None,
                             changeset__state=states.APPROVED,
+                            committed=True,
                             **{revision.source_name: instance})
         revision.previous_revision = previous_revision
         revision.save()
@@ -1476,7 +1479,12 @@ class Revision(models.Model):
                                  .filter(committed=True,
                                          created__lt=self.created) \
                                  .latest('created')
-
+        # edits which are not comitted do not have a stored previous revision
+        elif self.committed is False and self.source:
+            self._prev_rev = self.source.revisions \
+                                 .filter(committed=True,
+                                         created__lt=self.created) \
+                                 .latest('created')
         return self._prev_rev
 
     def posterior(self):
@@ -2824,7 +2832,6 @@ class SeriesRevisionManager(RevisionManager):
             year_ended_uncertain=series.year_ended_uncertain,
             is_current=series.is_current,
 
-            publication_notes=series.publication_notes,
             tracking_notes=series.tracking_notes,
 
             has_barcode=series.has_barcode,
@@ -2970,7 +2977,7 @@ class SeriesRevision(Revision):
         return 'series'
 
     def active_base_issues(self):
-        return self.active_issues().exclude(variant_of__series=self)
+        return self.active_issues().exclude(variant_of__series=self.series)
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -3156,7 +3163,6 @@ class SeriesRevision(Revision):
                 self.previous() and self.previous().is_current):
             reservation.delete()
 
-        series.publication_notes = self.publication_notes
         series.tracking_notes = self.tracking_notes
 
         # a new series has language_id None
@@ -4499,6 +4505,22 @@ class StoryRevisionManager(RevisionManager):
                                               instance_class=Story,
                                               changeset=changeset)
 
+    def copy_revision(self, story, changeset, issue):
+        revision = self._do_create_revision(story,
+                                            changeset=changeset)
+        issue_revision = changeset.issuerevisions.get(issue=issue)
+        revision.story = None
+        revision.issue = issue
+        revision.sequence_number = issue_revision.next_sequence_number()
+        if revision.issue.series.language != story.issue.series.language:
+            if revision.letters:
+                revision.letters = u'?'
+            revision.title = u''
+            revision.title_inferred = False
+            revision.first_line = u''
+        revision.save()
+        return revision
+
     def _do_create_revision(self, story, changeset, **ignore):
         """
         Helper delegate to do the class-specific work of clone_revision.
@@ -4705,7 +4727,7 @@ class StoryRevision(Revision):
     def _imps_for(self, field_name):
         if field_name in ('first_line', 'type', 'feature', 'genre',
                           'characters', 'synopsis', 'job_number',
-                          'reprint_notes', 'notes', 'keywords'):
+                          'reprint_notes', 'notes', 'keywords', 'issue'):
             return 1
         if not self._seen_title and field_name in ('title', 'title_inferred'):
             self._seen_title = True
@@ -5291,6 +5313,15 @@ class ReprintRevision(Revision):
         return self.previous_revision
 
     def _get_source(self):
+        source = self._get_source_name()
+        if source:
+            return getattr(self, source)
+        else:
+            return None
+
+    def _get_source_name(self):
+        # is also used to determine which prevision revision to use
+        # when reserving a reprint link
         if self.deleted and self.changeset.state == states.APPROVED:
             return None
         if self.out_type is not None:
@@ -5300,24 +5331,20 @@ class ReprintRevision(Revision):
         else:
             return None
         # reprint link objects can be deleted, so the source may be gone
-        # could access source for change history, so catch it
+        # and we need to catch that
         if reprint_type == REPRINT_TYPES['story_to_story'] and \
            self.reprint:
-            return self.reprint
+            return "reprint"
         if reprint_type == REPRINT_TYPES['issue_to_story'] and \
            self.reprint_from_issue:
-            return self.reprint_from_issue
+            return "reprint_from_issue"
         if reprint_type == REPRINT_TYPES['story_to_issue'] and \
            self.reprint_to_issue:
-            return self.reprint_to_issue
+            return "reprint_to_issue"
         if reprint_type == REPRINT_TYPES['issue_to_issue'] and \
            self.issue_reprint:
-            return self.issue_reprint
-        # TODO is None the right return ? Maybe placeholder object ?
+            return "issue_reprint"
         return None
-
-    def _get_source_name(self):
-        return 'reprint'
 
     def _field_list(self):
         return ['origin_story', 'origin_revision', 'origin_issue',
@@ -5397,7 +5424,7 @@ class ReprintRevision(Revision):
 
         if self.in_type is not None and self.in_type != out_type:
             deleted_link = self.source
-            field_name = REPRINT_FIELD[self.in_type] + '_id'
+            field_name = REPRINT_FIELD[self.in_type]
             for revision in deleted_link.revisions.all():
                 setattr(revision, field_name, None)
                 revision.save()
@@ -5449,7 +5476,6 @@ class ReprintRevision(Revision):
                 self.issue_reprint.target_issue = self.target_issue
                 self.issue_reprint.notes = self.notes
                 self.issue_reprint.save()
-
         self.save()
 
     def get_compare_string(self, base_issue, do_compare=False):
@@ -5520,7 +5546,7 @@ class ReprintRevision(Revision):
                       '<a target="_blank" href="%s#%d">%s %s</a>' % \
                       (direction, esc(issue.full_name()),
                        issue.get_absolute_url(), story.id, esc(story),
-                       show_title(story))
+                       show_title(story, True))
         else:
             reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
                       (direction, issue.get_absolute_url(),
@@ -5551,7 +5577,7 @@ class ReprintRevision(Revision):
             else:
                 origin = self.origin_revision
             reprint = u'%s %s of %s ' % (
-                origin, show_title(origin), origin.issue)
+                origin, show_title(origin, True), origin.issue)
         else:
             reprint = u'%s ' % (self.origin_issue)
         if self.target_story or self.target_revision:
@@ -5560,7 +5586,7 @@ class ReprintRevision(Revision):
             else:
                 target = self.target_revision
             reprint += u'reprinted in %s %s of %s' % (
-                target, show_title(target), target.issue)
+                target, show_title(target, True), target.issue)
         else:
             reprint += u'reprinted in %s' % (self.target_issue)
         if self.notes:
@@ -5599,6 +5625,12 @@ class ImageRevisionManager(RevisionManager):
 
         revision.save()
         return revision
+
+
+def _clear_image_cache(cached_image):
+    cached_image.storage.delete(cached_image)
+    cached_image.cachefile_backend.set_state(cached_image,
+                                             CacheFileState.DOES_NOT_EXIST)
 
 
 class ImageRevision(Revision):
@@ -5671,10 +5703,10 @@ class ImageRevision(Revision):
                         object_id=self.object.id,
                         type=self.type,
                         deleted=False).count():
-                    raise ValueError(
-                        '%s has an %s. Additional images cannot be uploaded, '
-                        'only replacements are possible.' %
-                        (self.object, self.type.description))
+                    raise ErrorWithMessage(
+                          '%s has an %s. Additional images cannot be uploaded,'
+                          ' only replacements are possible.' %
+                          (self.object, self.type.description))
 
             # first generate instance
             image = Image(content_type=self.content_type,
@@ -5687,6 +5719,10 @@ class ImageRevision(Revision):
         image.image_file.save(str(image.id) + '.jpg', content=self.image_file)
         self.image_file.delete()
         self.image = image
+        if self.is_replacement:
+            _clear_image_cache(image.scaled_image)
+            _clear_image_cache(image.thumbnail)
+            _clear_image_cache(image.icon)
         self.save()
 
     def __unicode__(self):
@@ -5863,6 +5899,9 @@ class DataSourceRevision(Revision):
 
     def _get_source(self):
         return self.data_source
+
+    def _get_source_name(self):
+        return 'data_source'
 
     def _field_list(self):
         field_list = ['source_description', 'source_type']

@@ -1,9 +1,9 @@
 {% extends "gcd/base_view.html" %}
 
-{% load cycle from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load credits %}
+{% load django_tables2 %}
 
 {% block title %}
   GCD :: Publisher :: {{ publisher.name }}
@@ -66,7 +66,7 @@
           <dt> Web Site:
           <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
   {% endif %}
-  {% if publisher.notes and page_number == 1 %}
+  {% if publisher.notes and page.number == 1 %}
           <dt> Notes:
           <dd> {{ publisher.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
@@ -126,41 +126,7 @@
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 
-{% if page.object_list.count %}
-
-<table id="publisher_detail_listing" class="listing">
-  <tr>
-    <th> Series </th>
-    <th> Year </th>
-    <th> #&nbsp;Issues </th>
-    <th> Covers </th>
-  </tr>
-  {% for series in page.object_list %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
-    <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %}
-    <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
-    <td>{% if not series.issue_count or not series.is_comics_publication %}
-      No Covers
-    {% else %}
-      {% if not series.scan_needed_count %}
-    <a href="{% url "series_covers" series_id=series.id %}">Gallery</a>
-      {% else %}
-        {% if series.has_gallery %}
-        <a href="{% url "series_covers" series_id=series.id %}">Have
-          {{ series.scan_count}}</a>
-        (<a href="{% url "series_scan_table" series_id=series.id %}">Need
-          {{ series.scan_needed_count }}</a>)
-        {% else %}
-        <a href="{% url "series_scan_table" series_id=series.id %}">Add</a>
-        {% endif %}
-      {% endif %}
-    {% endif %}
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+{% render_table table %}
 
 {% with 1 as paginate_only %}
 {% include "gcd/bits/publisher_header.html" %}

@@ -80,21 +80,23 @@ class Date(models.Model):
         self.month = month
         self.day = day
         self.year_uncertain = year_uncertain or (not year and not empty) \
-                                             or (year and '?' in year)
+                                             or (year is not None
+                                                 and '?' in year)
         self.month_uncertain = month_uncertain or (not month and not empty) \
-                                               or (month and '?' in month)
+                                               or (month is not None and
+                                                   '?' in month)
         self.day_uncertain = day_uncertain or (not day and not empty) \
-                                           or (day and '?' in day)
+                                           or (day is not None and '?' in day)
 
     def __unicode__(self):
         year = self.year or ''
-        if self.year_uncertain and not '?' in year:
+        if self.year_uncertain and '?' not in year:
             year += '?'
         month = self.month or ''
-        if self.month_uncertain and not '?' in month:
+        if self.month_uncertain and '?' not in month:
             month += '?'
         day = self.day or ''
-        if self.day_uncertain and not '?' in day:
+        if self.day_uncertain and '?' not in day:
             day += '?'
         if day:
             return year+u'-'+month+u'-'+day
@@ -129,13 +131,11 @@ class Language(models.Model):
         """
         return (self.code,)
 
-
     def get_native_name(self):
         if self.native_name:
             return self.native_name
         else:
             return self.name
-
 
     def __unicode__(self):
         return self.name

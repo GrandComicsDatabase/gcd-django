@@ -24,7 +24,7 @@
 
 <div class="item_id">
   <div class="left">
-  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} covers needing replacement.
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} covers needing replacement.
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}

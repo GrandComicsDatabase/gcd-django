@@ -195,6 +195,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             cd['notes'] = cd['notes'].strip()
             cd['comments'] = cd['comments'].strip()
             cd['isbn'] = cd['isbn'].strip()
+            if 'variant_name' in cd:
+                cd['variant_name'] = cd['variant_name'].strip()
 
             if cd['volume'] != "" and cd['no_volume']:
                 raise forms.ValidationError(
@@ -241,6 +243,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 cd['year_on_sale'] = cd['on_sale_date'].year
                 cd['month_on_sale'] = cd['on_sale_date'].month
                 cd['day_on_sale'] = cd['on_sale_date'].day
+
+            if cd['key_date'] == '' and (cd['year_on_sale'] or
+                                         cd['publication_date']):
+                raise forms.ValidationError(
+                  'Dates are present, but the key date is empty.')
 
             if cd['page_count_uncertain'] and not cd['page_count']:
                 raise forms.ValidationError(
@@ -435,27 +442,27 @@ def get_bulk_issue_revision_form(series, method, user=None):
             if not series.has_indicia_frequency:
                 indicia_frequency = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_indicia_frequency = forms.CharField(
+                no_indicia_frequency = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_volume:
                 volume = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_volume = forms.CharField(
+                no_volume = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
-                display_volume_with_number = forms.CharField(
+                display_volume_with_number = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
                 volume_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_isbn:
-                no_isbn = forms.CharField(
+                no_isbn = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_barcode:
-                no_barcode = forms.CharField(
+                no_barcode = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_rating:
                 rating = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_rating = forms.CharField(
+                no_rating = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
 
         after = forms.ModelChoiceField(

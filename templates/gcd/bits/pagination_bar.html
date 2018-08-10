@@ -1,56 +1,69 @@
 {% load i18n %}
 
 <div class="right pagination">
-    {% if page.has_other_pages %}
-    {% if page.has_previous %}
-        {% if extra_string %}
-            <a href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+{% if alpha_paginator.count > 1 %}
+    {% for a_page in alpha_paginator.page_range %}
+      {% if a_page %}
+        {% if a_page == alpha_page %}
+    <span>{{ a_page }}</span>
         {% else %}
-            <a href="?page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+    <a href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
         {% endif %}
-    {% else %}
-        &lt; {% trans "Previous" %}
-    {% endif %} <!-- has_previous -->
-    |
-    {% for number in page.page_range %}
-        {% ifequal number page_number %}
-            {{ number }}
-        {% else %}
-            {% if not number %}
-                ...  {# literally dots #}
-            {% else %}{# pagelink num #}
-                {% if extra_string %}
-                    <a href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
-                {% else %}
-                    <a href="?page={{ number }}">{{ number }}</a>
-                {% endif %}
-            {% endif %}
-        {% endifequal %}
-        |
+      {% else %}
+    <a>...</a>
+      {% endif %}
     {% endfor %}
-    {% if page.has_next %}
+{% endif %}
+{% if page.has_other_pages %}
+  {% if page.has_previous %}
+    {% if extra_string %}
+  <a href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+    {% else %}
+  <a href="?page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+    {% endif %}
+  {% else %}
+    &lt; {% trans "Previous" %}
+  {% endif %} <!-- has_previous -->
+    |
+  {% for number in page.page_range %}
+    {% ifequal number page.number %}
+  <span style="text-decoration: none">{{ number }}</span>
+    {% else %}
+      {% if not number %}
+  ...  {# literally dots #}
+      {% else %}{# pagelink num #}
         {% if extra_string %}
-            <a href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+  <a href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
         {% else %}
-            <a href="?page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+  <a href="?page={{ number }}">{{ number }}</a>
         {% endif %}
+      {% endif %}
+    {% endifequal %}
+  |
+  {% endfor %}
+  {% if page.has_next %}
+    {% if extra_string %}
+  <a href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
     {% else %}
-        {% trans "Next" %} &gt;
-    {% endif %} <!-- has_next -->
-    {% else %}
-    &lt; {% trans "Previous" %} | {{ page_number }} | {% trans "Next" %} &gt;
+  <a href="?page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
     {% endif %}
-    <form method="GET" style="display:inline">
-        <label for="page">#</label>:
-        <input type="text" name="page" size="3">
-        <input type="submit" value="{% trans 'Go' %}">
-    {% if advanced_search %}
-      {% for field, value in request.GET.items %}
-        {% if field != "page" and field != "submit" %}
-        <input type="hidden" name="{{ field }}" value="{{ value|default:'' }}">
-        </input>
-        {% endif %}
-      {% endfor %}
+  {% else %}
+    {% trans "Next" %} &gt;
+  {% endif %} <!-- has_next -->
+{% else %}
+  &lt; {% trans "Previous" %} | {{ page.number }} | {% trans "Next" %} &gt;
+{% endif %}
+  <form method="GET" style="display:inline">
+    <label for="page">#</label>:
+    <input type="text" name="page" size="3">
+    <input type="submit" value="{% trans 'Go' %}">
+{% if advanced_search %}
+  {% for field, value in request.GET.items %}
+    {% if field != "page" and field != "submit" %}
+    <input type="hidden" name="{{ field }}" value="{{ value|default:'' }}">
+    </input>
     {% endif %}
-    </form>
+  {% endfor %}
+{% endif %}
+  </form>
 </div>

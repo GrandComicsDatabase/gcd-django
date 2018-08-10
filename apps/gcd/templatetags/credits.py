@@ -53,9 +53,10 @@ def find_credit_search(credit, target, collator):
     if settings.USE_ELASTICSEARCH:
         result = 1
         for string in target.split(' '):
-            search = icu.StringSearch(string.lower(),
-                                      credit, collator)
-            result = min(result, search.first())
+            if string:
+                search = icu.StringSearch(string.lower(),
+                                          credit, collator)
+                result = min(result, search.first())
         return result
     else:
         search = icu.StringSearch(target.lower(),
@@ -183,7 +184,7 @@ def __format_credit(story, credit):
     if (credit == 'job_number'):
         label = _('Job Number:')
     elif (credit == 'first_line'):
-        label = _('First Line of Dialogue:')
+        label = _('First Line of Dialogue or Text:')
     else:
         label = _(credit.title()) + ':'
 

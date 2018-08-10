@@ -3,26 +3,24 @@
 """View methods for pages displaying entity details."""
 
 import re
-from urllib import urlencode
+from urllib import urlencode, quote
 from urllib2 import urlopen, HTTPError
 from datetime import date, datetime, time, timedelta
 from calendar import monthrange
 from operator import attrgetter
 from random import randint
 
-from django import forms
 from django.db.models import Q
 from django.conf import settings
 from django.core import urlresolvers
-from django.shortcuts import render_to_response, \
-                             get_object_or_404, \
-                             get_list_or_404, \
+from django.shortcuts import get_object_or_404, \
                              render
 from django.http import HttpResponseRedirect, Http404, HttpResponse
-from django.template import RequestContext
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+
+from django_tables2 import RequestConfig
 
 from apps.indexer.views import ViewTerminationError
 
@@ -44,9 +42,11 @@ from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.gcd.forms import get_generic_select_form
 from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
-                           BrandGroupRevision, BrandRevision, \
+                           BrandGroupRevision, BrandRevision, CoverRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
                            SeriesBondRevision, CreatorRevision, CTYPES
+from apps.gcd.models.series import SeriesTable
+from apps.gcd.views import ResponsePaginator
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -60,23 +60,35 @@ COVERS_PER_GALLERY_PAGE = 50
 IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
 
-
+# For ad purposes, we need to be able to identify adult cover images,
+# right now we do it by publisher.
 PUB_WITH_ADULT_IMAGES = [
-  4117, # Ediciones La Cúpula
-  1052, # Avatar Press
-  445, # Fantagraphics
-  3729, # Amryl Entertainment
+  3729,  # Amryl Entertainment
+  1052,  # Avatar Press
+  4810,  # Dolmen Editorial
+  4117,  # Ediciones La Cúpula
+  1078,  # Edifumetto
+  8484,  # Editorial Toukan
+  4562,  # Ediperiodici
+  445,   # Fantagraphics
+  8415,  # Hustler Magazine, Inc.
+  351,   # Last Gasp
+  3287,  # Penthouse
+  4829,  # Weissblech Comics
+  3197,  # Zenescope Entertainment
 ]
+
 
 # to set flag for choice of ad providers
 def _publisher_image_content(publisher_id):
     if publisher_id in PUB_WITH_ADULT_IMAGES:
-      return 2
+        return 2
 
     return 1
 
+
 def get_gcd_object(model, object_id, model_name=None):
-    object = get_object_or_404(model, id = object_id)
+    object = get_object_or_404(model, id=object_id)
     if object.deleted:
         if not model_name:
             model_name = model._meta.model_name
@@ -123,8 +135,7 @@ def show_creator_art_influence(request, creator_art_influence, preview=False):
     vars = {'creator_art_influence': creator_art_influence,
             'error_subject': creator_art_influence,
             'preview': preview}
-    return render(request, 'gcd/details/creator_art_influence.html',
-                  vars)
+    return render(request, 'gcd/details/creator_art_influence.html', vars)
 
 
 def creator_award(request, creator_award_id):
@@ -162,8 +173,7 @@ def show_creator_non_comic_work(request, creator_non_comic_work, preview=False):
     vars = {'creator_non_comic_work': creator_non_comic_work,
             'error_subject': creator_non_comic_work,
             'preview': preview}
-    return render(request, 'gcd/details/creator_non_comic_work.html',
-                  vars)
+    return render(request, 'gcd/details/creator_non_comic_work.html', vars)
 
 
 def creator_relation(request, creator_relation_id):
@@ -176,8 +186,7 @@ def show_creator_relation(request, creator_relation, preview=False):
     vars = {'creator_relation': creator_relation,
             'error_subject': creator_relation,
             'preview': preview}
-    return render(request, 'gcd/details/creator_relation.html',
-                  vars)
+    return render(request, 'gcd/details/creator_relation.html', vars)
 
 
 def creator_school(request, creator_school_id):
@@ -231,15 +240,40 @@ def publisher(request, publisher_id):
 
 
 def show_publisher(request, publisher, preview=False):
-    publisher_series = publisher.active_series().order_by('sort_name')
+    publisher_series = publisher.active_series()
+
     vars = { 'publisher': publisher,
              'current': publisher.series_set.filter(deleted=False,
                                                     is_current=True),
              'error_subject': publisher,
              'preview': preview}
+    paginator = ResponsePaginator(publisher_series, per_page=100, vars=vars,
+                                  alpha=True)
+    page_number = paginator.paginate(request).number
+    # doing select_related above looks like a more costly query for
+    # ResponsePaginator
+    publisher_series = publisher.active_series().select_related('first_issue',
+                                                                'last_issue')
+    if 'sort' in request.GET:
+        extra_string = 'sort=%s' % (request.GET['sort'])
+        if request.GET['sort'] != 'name' and \
+          paginator.vars['pagination_type'] == 'alpha':
+            args = request.GET.copy()
+            args['page'] = 1
+            return HttpResponseRedirect(quote(request.path.encode('UTF-8')) +
+                                        u'?' + args.urlencode())
+    else:
+        extra_string = ''
 
-    return paginate_response(request, publisher_series,
-                             'gcd/details/publisher.html', vars)
+    table = SeriesTable(publisher_series, attrs={'class': 'listing'},
+                        template_name='gcd/bits/sortable_table.html',
+                        order_by=('name'))
+    RequestConfig(request, paginate={'per_page': 100,
+                                     'page': page_number}).configure(table)
+    vars['table'] = table
+    vars['extra_string'] = extra_string
+
+    return render(request, 'gcd/details/publisher.html', vars)
 
 
 def publisher_monthly_covers(request,
@@ -343,7 +377,8 @@ def indicia_publisher(request, indicia_publisher_id):
 
 def show_indicia_publisher(request, indicia_publisher, preview=False):
     indicia_publisher_issues = indicia_publisher.active_issues().order_by(
-      'series__sort_name', 'sort_code')
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'brand')
 
     vars = { 'indicia_publisher' : indicia_publisher,
              'error_subject': '%s' % indicia_publisher,
@@ -351,7 +386,8 @@ def show_indicia_publisher(request, indicia_publisher, preview=False):
     return paginate_response(request,
                              indicia_publisher_issues,
                              'gcd/details/indicia_publisher.html',
-                             vars)
+                             vars,
+                             alpha=False)
 
 def brand_group(request, brand_group_id):
     """
@@ -365,8 +401,9 @@ def brand_group(request, brand_group_id):
     return show_brand_group(request, brand_group)
 
 def show_brand_group(request, brand_group, preview=False):
-    brand_issues = brand_group.active_issues().order_by('series__sort_name',
-                                                        'sort_code')
+    brand_issues = brand_group.active_issues().order_by(
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'indicia_publisher')
     brand_emblems = brand_group.active_emblems()
 
     vars = {
@@ -378,7 +415,8 @@ def show_brand_group(request, brand_group, preview=False):
     return paginate_response(request,
                              brand_issues,
                              'gcd/details/brand_group.html',
-                             vars)
+                             vars,
+                             alpha=False)
 
 def brand(request, brand_id):
     """
@@ -392,8 +430,10 @@ def brand(request, brand_id):
     return show_brand(request, brand)
 
 def show_brand(request, brand, preview=False):
-    brand_issues = brand.active_issues().order_by('series__sort_name',
-                                                  'sort_code')
+    brand_issues = brand.active_issues().order_by(
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'indicia_publisher')
+
     uses = brand.in_use.all()
     vars = {
         'brand' : brand,
@@ -404,7 +444,8 @@ def show_brand(request, brand, preview=False):
     return paginate_response(request,
                              brand_issues,
                              'gcd/details/brand.html',
-                             vars)
+                             vars,
+                             alpha=False)
 
 
 def imprint(request, imprint_id):
@@ -531,13 +572,19 @@ def show_series(request, series, preview=False):
 
     scans, image_tag, issue = _get_scan_table(display_series)
 
-    # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 12
     if series.has_issue_title:
-        table_width = 2
+        issue_status_width = "status_wide";
+    else:
+        issue_status_width = "status_small";
 
-    return render_to_response(
-      'gcd/details/series.html',
+    if series.has_issue_title:
+        cover_status_width = "status_wide";
+    elif series.active_issues().exclude(variant_name='').count():
+        cover_status_width = "status_medium";
+    else:
+        cover_status_width = "status_small";
+
+    return render(request, 'gcd/details/series.html',
       {
         'series': series,
         'scans': scans,
@@ -545,14 +592,14 @@ def show_series(request, series, preview=False):
         'image_issue': issue,
         'country': series.country,
         'language': series.language,
-        'table_width': table_width,
+        'issue_status_width': issue_status_width,
+        'cover_status_width': cover_status_width,
         'error_subject': '%s' % series,
         'preview': preview,
         'is_empty': IS_EMPTY,
         'is_none': IS_NONE,
         'RANDOM_IMAGE': _publisher_image_content(series.publisher_id)
-      },
-      context_instance=RequestContext(request))
+      })
 
 def series_details(request, series_id, by_date=False):
     """
@@ -641,7 +688,7 @@ def series_details(request, series_id, by_date=False):
       series.active_issues().filter(no_rating=True, variant_of=None)\
                             .count() - num_issues
 
-    return render_to_response('gcd/details/series_details.html',
+    return render(request, 'gcd/details/series_details.html',
       {
         'series': series,
         'by_date': by_date,
@@ -656,8 +703,7 @@ def series_details(request, series_id, by_date=False):
         'on_sale_date_present': on_sale_date_present,
         'rating_present': rating_present,
         'bad_dates': len(bad_key_dates),
-      },
-      context_instance=RequestContext(request))
+      })
 
 def change_history(request, model_name, id):
     """
@@ -672,13 +718,15 @@ def change_history(request, model_name, id):
                           'creator_art_influence', 'creator_non_comic_work']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id).deleted):
-            return render_to_response('indexer/error.html', {
-              'error_text': 'There is no change history for this type of object.'},
-              context_instance=RequestContext(request))
+            return render(
+              request, 'indexer/error.html',
+              {'error_text':
+               'There is no change history for this type of object.'})
     if model_name == 'cover' and not request.user.has_perm('indexer.can_vote'):
-        return render_to_response('indexer/error.html', {
-          'error_text': 'Only members can access the change history for covers.'},
-          context_instance=RequestContext(request))
+        return render(
+          request, 'indexer/error.html',
+          {'error_text':
+           'Only members can access the change history for covers.'})
 
     template = 'gcd/details/change_history.html'
     prev_issue = None
@@ -701,22 +749,21 @@ def change_history(request, model_name, id):
     if model_name == 'issue':
         [prev_issue, next_issue] = object.get_prev_next_issue()
 
-    return render_to_response(template,
+    return render(request, template,
       {
         'description': model_name.replace('_', ' ').title(),
         'object': object,
         'changesets': changesets,
         'prev_issue': prev_issue,
         'next_issue': next_issue,
-      },
-      context_instance=RequestContext(request))
+      })
 
 def _handle_key_date(issue, grid_date, prev_year, prev_month, issues_by_date):
     """
     Helper function for building timelines of issues by key_date.
     """
     if prev_year == None:
-        issues_by_date.append({'date': grid_date, 'issues': [issue] })
+        issues_by_date.append({'date': grid_date, 'issues': [issue]})
 
     elif prev_year == grid_date.year:
         last_date_issues = issues_by_date[len(issues_by_date) - 1]
@@ -761,18 +808,9 @@ def status(request, series_id):
     """
     Display the index status matrix for a series.
     """
-    series = get_object_or_404(Series, id=series_id)
-    if series.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'series', 'id': series_id}))
+    return HttpResponseRedirect(urlresolvers.reverse('show_series',
+      kwargs={'series_id': series_id}) + '#index_status')
 
-    # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 12
-
-    return render_to_response('gcd/status/status.html', {
-      'series': series,
-      'table_width': table_width },
-      context_instance=RequestContext(request))
 
 def _get_scan_table(series, show_cover=True):
     # freshly added series have no scans on preview page
@@ -805,26 +843,14 @@ def _get_scan_table(series, show_cover=True):
 
     return scans, image_tag, issue
 
+
 def scans(request, series_id):
     """
     Display the cover scan status matrix for a series.
     """
+    return HttpResponseRedirect(urlresolvers.reverse('show_series',
+      kwargs={'series_id': series_id}) + '#cover_status')
 
-    series = get_object_or_404(Series, id = series_id)
-    if series.deleted:
-        return HttpResponseRedirect(urlresolvers.reverse('change_history',
-          kwargs={'model_name': 'series', 'id': series_id}))
-
-    scans, unused_tag, unused_issue = _get_scan_table(series, show_cover=False)
-
-    # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = 12
-
-    return render_to_response('gcd/status/scans.html', {
-      'series' : series,
-      'scans' : scans,
-      'table_width' : table_width },
-      context_instance=RequestContext(request))
 
 def covers_to_replace(request, starts_with=None):
     """
@@ -855,7 +881,7 @@ def covers_to_replace(request, starts_with=None):
       callback=get_image_tags_per_page)
 
 
-def daily_covers(request, show_date=None):
+def daily_covers(request, show_date=None, user=False):
     """
     Produce a page displaying the covers uploaded on a given day.
     """
@@ -873,7 +899,7 @@ def daily_covers(request, show_date=None):
             show_date = requested_date.strftime('%Y-%m-%d')
             return HttpResponseRedirect(
               urlresolvers.reverse(
-                'covers_by_date',
+                '%scovers_by_date' % ('my_' if user else ''),
                 kwargs={'show_date': show_date} ))
 
         elif show_date:
@@ -892,7 +918,7 @@ def daily_covers(request, show_date=None):
         # the output, instead of seeing the erroneous date.
         return HttpResponseRedirect(
           urlresolvers.reverse(
-            'covers_by_date',
+            '%scovers_by_date' % ('my_' if user else ''),
             kwargs={'show_date' : date.today().strftime('%Y-%m-%d') }))
 
     date_before = requested_date + timedelta(-1)
@@ -908,6 +934,14 @@ def daily_covers(request, show_date=None):
                                   datetime.combine(requested_date, time.min),
                                   datetime.combine(requested_date, time.max)),
                                   deleted=False)
+    if user and request.user.is_authenticated:
+        revisions = CoverRevision.objects.filter(
+          changeset__comments__created__range=(datetime.combine(requested_date,
+                                                                time.min),
+                                               datetime.combine(requested_date,
+                                                                time.max)),
+          changeset__indexer=request.user, changeset__comments__new_state=5)
+        covers = covers.filter(revisions__in=revisions)
 
     covers = covers.order_by("issue__series__publisher__name",
                              "issue__series__sort_name",
@@ -920,16 +954,38 @@ def daily_covers(request, show_date=None):
       'gcd/status/daily_covers.html',
       {
         'date' : show_date,
-        'date_after' : date_after,
-        'date_before' : date_before,
-        'table_width' : table_width,
-        'RANDOM_IMAGE': 2
+        'RANDOM_IMAGE': 2,
+        'choose_url_before': urlresolvers.reverse(
+          '%scovers_by_date' % ('my_' if user else ''),
+          kwargs={'show_date': date_before}),
+        'choose_url_after': urlresolvers.reverse(
+          '%scovers_by_date' % ('my_' if user else ''),
+          kwargs={'show_date': date_after}),
+        'other_url': urlresolvers.reverse(
+          '%scovers_by_date' % ('my_' if user is False else ''),
+          kwargs={'show_date': requested_date}),
       },
       per_page=COVERS_PER_GALLERY_PAGE,
       callback_key='tags',
       callback=get_image_tags_per_page)
 
-def daily_changes(request, show_date=None):
+
+def _get_daily_revisions(model, args, model_name, change_type=None,
+                         user=None):
+    anon = User.objects.get(username=settings.ANON_USER_NAME)
+    if change_type is None:
+        change_type = model_name
+    revisions = model.objects.filter(
+      changeset__change_type=CTYPES[change_type], **args)\
+      .exclude(changeset__indexer=anon).values_list(model_name,
+                                                    flat=True)
+    if user is None:
+        return revisions
+    else:
+        return revisions.filter(changeset__indexer=user)
+
+
+def daily_changes(request, show_date=None, user=False):
     """
     Produce a page displaying the changes on a given day.
     """
@@ -947,7 +1003,7 @@ def daily_changes(request, show_date=None):
             show_date = requested_date.strftime('%Y-%m-%d')
             return HttpResponseRedirect(
               urlresolvers.reverse(
-                'changes_by_date',
+                '%schanges_by_date' % ('my_' if user is not None else ''),
                 kwargs={'show_date': show_date} ))
 
         elif show_date:
@@ -966,7 +1022,7 @@ def daily_changes(request, show_date=None):
         # the output, instead of seeing the erroneous date.
         return HttpResponseRedirect(
           urlresolvers.reverse(
-            'changes_by_date',
+            '%schanges_by_date' % ('my_' if user is not None else ''),
             kwargs={'show_date' : date.today().strftime('%Y-%m-%d') }))
 
     date_before = requested_date + timedelta(-1)
@@ -975,72 +1031,68 @@ def daily_changes(request, show_date=None):
     else:
         date_after = None
 
-    anon = User.objects.get(username=settings.ANON_USER_NAME)
-    
     args = {'changeset__modified__range' : \
                 (datetime.combine(requested_date, time.min),
                  datetime.combine(requested_date, time.max)),
             'deleted':False,
             'changeset__state': states.APPROVED }
 
+    if user and request.user.is_authenticated:
+        user = request.user
+    else:
+        user = None
+
     # TODO what aboud awards, memberships, etc. Display separately,
     # or display the affected creator for such changes as well.
-    creator_revisions = list(CreatorRevision.objects.filter(
-      changeset__change_type=CTYPES['creator'], **args)\
-      .exclude(changeset__indexer=anon).values_list('creator', flat=True))
+    creator_revisions = list(_get_daily_revisions(CreatorRevision, args,
+                                                  'creator', user=user))
     creators = Creator.objects.filter(id__in=creator_revisions).distinct()
 
-    publisher_revisions = list(PublisherRevision.objects.filter(
-      changeset__change_type=CTYPES['publisher'], **args)\
-      .exclude(changeset__indexer=anon).values_list('publisher', flat=True))
+    publisher_revisions = list(_get_daily_revisions(PublisherRevision, args,
+                                                    'publisher', user=user))
     publishers = Publisher.objects.filter(id__in=publisher_revisions)\
                                   .distinct().select_related('country')
 
-    brand_group_revisions = list(BrandGroupRevision.objects.filter(
-      changeset__change_type=CTYPES['brand_group'], **args)\
-        .exclude(changeset__indexer=anon)\
-        .values_list('brand_group', flat=True))
+    brand_group_revisions = list(_get_daily_revisions(BrandGroupRevision,
+                                                      args, 'brand_group',
+                                                      user=user))
     brand_groups = BrandGroup.objects.filter(id__in=brand_group_revisions)\
       .distinct().select_related('parent__country')
 
-    brand_revisions = list(BrandRevision.objects.filter(
-      changeset__change_type=CTYPES['brand'], **args)\
-        .exclude(changeset__indexer=anon)\
-        .values_list('brand', flat=True))
+    brand_revisions = list(_get_daily_revisions(BrandRevision, args, 'brand',
+                                                user=user))
     brands = Brand.objects.filter(id__in=brand_revisions).distinct()\
       .prefetch_related('group__parent__country')
 
-    indicia_publisher_revisions = list(IndiciaPublisherRevision.objects.filter(
-      changeset__change_type=CTYPES['indicia_publisher'], **args)\
-      .exclude(changeset__indexer=anon)\
-      .values_list('indicia_publisher', flat=True))
+    ind_pub_revisions = list(_get_daily_revisions(IndiciaPublisherRevision,
+                                                  args, 'indicia_publisher',
+                                                  user=user))
     indicia_publishers = IndiciaPublisher.objects.filter(
-      id__in=indicia_publisher_revisions).distinct()\
+      id__in=ind_pub_revisions).distinct()\
       .select_related('parent__country')
 
-    series_revisions = list(SeriesRevision.objects.filter(
-      changeset__change_type=CTYPES['series'], **args)\
-      .exclude(changeset__indexer=anon).values_list('series', flat=True))
+    series_revisions = list(_get_daily_revisions(SeriesRevision, args,
+                                                 'series', user=user))
     series = Series.objects.filter(id__in=series_revisions).distinct()\
       .select_related('publisher','country', 'first_issue','last_issue')
 
-    series_bond_revisions = list(SeriesBondRevision.objects.filter(
-      changeset__change_type=CTYPES['series_bond'], **args)\
-      .exclude(changeset__indexer=anon).values_list('series_bond', flat=True))
+    series_bond_revisions = list(_get_daily_revisions(SeriesBondRevision,
+                                                      args, 'series_bond',
+                                                      user=user))
     series_bonds = SeriesBond.objects.filter(id__in=series_bond_revisions)\
       .distinct().select_related('origin','target')
 
-    issues_change_types = [CTYPES['issue'], CTYPES['variant_add']]
-    issue_revisions = list(IssueRevision.objects.filter(\
-      changeset__change_type__in=issues_change_types, **args)\
-      .exclude(changeset__indexer=anon).values_list('issue', flat=True))
+    issue_revisions = list(_get_daily_revisions(IssueRevision, args, 'issue',
+                                                user=user))
+    issue_revisions.extend(list(_get_daily_revisions(IssueRevision, args,
+                                                     'issue', 'variant_add',
+                                                     user=user)))
     issues = Issue.objects.filter(id__in=issue_revisions).distinct()\
       .select_related('series__publisher', 'series__country')
 
     images = []
-    image_revisions = ImageRevision.objects.filter(
-      changeset__change_type=CTYPES['image'], **args)\
-      .exclude(changeset__indexer=anon).values_list('image', flat=True)
+    image_revisions = _get_daily_revisions(ImageRevision, args, 'image',
+                                           user=user)
 
     brand_revisions = list(image_revisions.filter(type__name='BrandScan'))
     brand_images = Brand.objects.filter(image_resources__id__in=brand_revisions).distinct()
@@ -1057,11 +1109,18 @@ def daily_changes(request, show_date=None):
     if soo_issues:
       images.append((soo_issues, 'image/', 'Statement of ownership', 'issue'))
 
-    return render_to_response('gcd/status/daily_changes.html',
+    return render(request, 'gcd/status/daily_changes.html',
       {
         'date' : show_date,
-        'date_after' : date_after,
-        'date_before' : date_before,
+        'choose_url_before': urlresolvers.reverse(
+          '%schanges_by_date' % ('my_' if user is not None else ''),
+          kwargs={'show_date': date_before}),
+        'choose_url_after': urlresolvers.reverse(
+          '%schanges_by_date' % ('my_' if user is not None else ''),
+          kwargs={'show_date': date_after}),
+        'other_url': urlresolvers.reverse(
+          '%schanges_by_date' % ('my_' if user is None else ''),
+          kwargs={'show_date': requested_date}),
         'creators' : creators,
         'publishers' : publishers,
         'brand_groups' : brand_groups,
@@ -1071,9 +1130,7 @@ def daily_changes(request, show_date=None):
         'series_bonds' : series_bonds,
         'issues' : issues,
         'all_images' : images
-      },
-      context_instance=RequestContext(request)
-    )
+      })
 
 def do_on_sale_weekly(request, year=None, week=None):
     """
@@ -1194,15 +1251,12 @@ def int_stats(request, object_type, choices):
         kwargs = {object_name: obj}
         stats.append((obj, CountStats.objects.filter(**kwargs)))
 
-    return render_to_response(
-      'gcd/status/international_stats.html',
+    return render(request, 'gcd/status/international_stats.html',
       {
         'stats' : stats,
         'type' : object_name,
         'form': form
-      },
-      context_instance=RequestContext(request)
-    )
+      })
  
 def cover(request, issue_id, size):
     """
@@ -1223,8 +1277,7 @@ def cover(request, issue_id, size):
 
     cover_tag = get_image_tags_per_issue(issue, "Cover for %s" % \
                                                 unicode(issue.full_name()), 
-                                         size, variants=True)
-
+                                         size, variants=True, as_list=True)
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
     covers = Cover.objects.filter(issue__series=issue.series,
@@ -1232,8 +1285,7 @@ def cover(request, issue_id, size):
                                   deleted=False)
     cover_page = covers.count()/COVERS_PER_GALLERY_PAGE + 1
 
-    return render_to_response(
-      'gcd/details/cover.html',
+    return render(request, 'gcd/details/cover.html',
       {
         'issue': issue,
         'prev_issue': prev_issue,
@@ -1243,9 +1295,7 @@ def cover(request, issue_id, size):
         'extra': extra,
         'error_subject': '%s cover' % issue,
         'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
-      },
-      context_instance=RequestContext(request)
-    )
+      })
 
 def covers(request, series_id):
     """
@@ -1261,7 +1311,7 @@ def covers(request, series_id):
     table_width = COVER_TABLE_WIDTH
 
     # TODO: once we get permissions going 'can_mark' should be one
-    if request.user.is_authenticated() and \
+    if request.user.is_authenticated and \
       request.user.groups.filter(name='editor'):
         can_mark = True
     else:
@@ -1308,8 +1358,7 @@ def issue_images(request, issue_id):
     else:
         soo_tag = None
 
-    return render_to_response(
-      'gcd/details/issue_images.html',
+    return render(request, 'gcd/details/issue_images.html',
       {
         'issue': issue,
         'prev_issue': prev_issue,
@@ -1319,9 +1368,7 @@ def issue_images(request, issue_id):
         'soo_tag': soo_tag,
         'soo_image': soo_image,
         'extra': 'image/'
-      },
-      context_instance=RequestContext(request)
-    )
+      })
 
 def issue_form(request):
     """
@@ -1416,7 +1463,7 @@ def show_issue(request, issue, preview=False):
                 issue_detail = int(request.GET['issue_detail'])
             except ValueError:
                 issue_detail = 1
-        elif request.user.is_authenticated():
+        elif request.user.is_authenticated:
             issue_detail = request.user.indexer.issue_detail
         else:
             issue_detail = 1
@@ -1481,8 +1528,7 @@ def show_issue(request, issue, preview=False):
         country = None
         language = None
 
-    return render_to_response(
-      'gcd/details/issue.html',
+    return render(request, 'gcd/details/issue.html',
       {
         'issue': issue,
         'prev_issue': prev_issue,
@@ -1500,8 +1546,7 @@ def show_issue(request, issue, preview=False):
         'preview': preview,
         'not_shown_types': not_shown_types,
         'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
-      },
-      context_instance=RequestContext(request))
+      })
 
 
 # this should later be moved to admin.py or something like that
@@ -1511,7 +1556,7 @@ def countries_in_use(request):
     Main use is to find missing names and flags.
     """
 
-    if request.user.is_authenticated() and \
+    if request.user.is_authenticated and \
        request.user.groups.filter(name='admin'):
         countries_from_series = set(
                 Series.objects.exclude(deleted=True).
@@ -1533,14 +1578,13 @@ def countries_in_use(request):
                         countries_from_creators)
         used_countries = Country.objects.filter(id__in=used_ids)
 
-        return render_to_response('gcd/admin/countries.html',
-                                  {'countries': used_countries},
-                                  context_instance=RequestContext(request))
+        return render(request, 'gcd/admin/countries.html',
+                      {'countries': used_countries})
     else:
-        return render_to_response('indexer/error.html', {
-          'error_text' : 'You are not allowed to access this page.',
-          },
-          context_instance=RequestContext(request))
+        return render(request, 'indexer/error.html',
+                      {'error_text':
+                       'You are not allowed to access this page.'})
+
 
 def agenda(request, language):
     """

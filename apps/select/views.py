@@ -6,8 +6,7 @@ from haystack.forms import FacetedSearchForm
 from django.contrib.auth.decorators import permission_required
 from django.core import urlresolvers
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
 
 from apps.gcd.models import *
@@ -48,7 +47,7 @@ def get_select_data(request, select_key):
 
 def get_select_forms(request, initial, data, publisher=False,
                      series=False, issue=False, story=False):
-    if issue or story:
+    if issue:
         cached_issue = get_cached_issue(request)
     else:
         cached_issue = None
@@ -247,7 +246,7 @@ def select_object(request, select_key):
                                     initial, request_data, publisher=publisher,
                                     series=series, issue=issue, story=story)
         haystack_form = FacetedSearchForm()
-        return render_to_response('oi/edit/select_object.html',
+        return render(request, 'oi/edit/select_object.html',
         {
             'heading': data['heading'],
             'select_key': select_key,
@@ -259,8 +258,7 @@ def select_object(request, select_key):
             'issue': issue,
             'story': story,
             'target': data['target']
-        },
-        context_instance=RequestContext(request))
+        })
 
     if 'cancel' in request.POST:
         return data['cancel']

@@ -1,6 +1,5 @@
 {% extends "gcd/base_view.html" %}
 
-{% load cycle from future %}
 {% load staticfiles %}
 {% load humanize %}
 {% load i18n %}
@@ -14,7 +13,7 @@
 {% endblock %}
 
 {% block view_body %}
-<div style='margin-bottom: 1em'>
+<div style='margin: 1em 0'>
 Statistics by {{ type }}, ordered by number of 
 <form style='display:inline;' action="{% if type == 'language' %}{% url "international_stats_language" %}{% else %}{% url "international_stats_country" %}{% endif %}" method="get">
     {{ form }}
@@ -22,8 +21,8 @@ Statistics by {{ type }}, ordered by number of
 </form>
 </div>
 {% for object, stats_for_object in stats %}
-<div class="{% cycle 'stats_left' 'stats_right'%}">
-        <h3 class="item_id">
+<div class="stats">
+        <h3 class="stats">
         <div class='stats_header'>
             Statistics for Comics {% if type == 'country' %} published in <img style="vertical-align:middle" src="{{ STATIC_URL }}/img/gcd/flags/{{ object.code|lower }}.png" alt="{{ object }}">{% else %} in {% endif %} <a href="{% url "process_advanced_search" %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{{ type }}={{ object.code }}">{{ object }}{% if object.native_name %} ({{ object.native_name }}) {% endif %}</a>
         </div>

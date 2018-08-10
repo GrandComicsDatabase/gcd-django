@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 
-from django.contrib.contenttypes.management import update_contenttypes
+# from django.contrib.contenttypes.management import update_contenttypes
 # in 1.11 use instead create_contenttypes
 
 from apps.oi import states

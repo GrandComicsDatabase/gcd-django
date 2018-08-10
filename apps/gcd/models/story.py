@@ -6,6 +6,7 @@ from taggit.managers import TaggableManager
 from .gcddata import GcdData
 
 STORY_TYPES = {
+    'cover': 6,
     'insert': 11,
     'soo': 22,
     'blank': 24,

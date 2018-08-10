@@ -3,8 +3,8 @@
 View methods related to displaying search and search results pages.
 """
 
-from re import *
-from urllib import urlopen, urlencode
+from re import match, split, sub
+from urllib import urlencode
 from decimal import Decimal
 from string import capitalize
 from haystack.backends import SQ
@@ -13,15 +13,14 @@ from random import randint
 
 from django.db.models import Q
 from django.conf import settings
-from django.shortcuts import render_to_response, \
-                             get_object_or_404, \
-                             get_list_or_404
 from django.http import HttpResponseRedirect
 from django.core import urlresolvers
-from django.template import RequestContext
+from django.shortcuts import render
 from django.utils.http import urlquote
 
+from djqscsv import render_to_csv_response
 from haystack.query import SearchQuerySet
+
 from apps.gcd.views.search_haystack import GcdNameQuery
 
 from apps.stddata.models import Country, Language
@@ -45,8 +44,10 @@ from apps.gcd.views.covers import get_image_tags_per_page
 # TODO: states should probably live somewhere else.
 from apps.oi import states
 
+
 class SearchError(Exception):
     pass
+
 
 def generic_by_name(request, name, q_obj, sort,
                     class_=Story,
@@ -61,7 +62,7 @@ def generic_by_name(request, name, q_obj, sort,
     name = name.encode('utf-8')
     base_name = 'unknown'
     plural_suffix = 's'
-    query_val = {'method': 'icontains'}
+    query_val = {'method': 'icontains', 'logic': 'True'}
 
     if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher)):
         if class_ is IndiciaPublisher:
@@ -85,7 +86,7 @@ def generic_by_name(request, name, q_obj, sort,
 
         plural_suffix = '' if class_ is Series else 's'
         sort_name = "sort_name" if class_ is Series else "name"
-        if sqs == None:
+        if sqs is None:
             things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
@@ -113,7 +114,7 @@ def generic_by_name(request, name, q_obj, sort,
     elif class_ is Award:
         sort_name = "name"
 
-        if sqs == None:
+        if sqs is None:
             things = class_.objects.exclude(deleted=True).filter(q_obj)
             things = things.order_by(sort_name)
             things = things.distinct()
@@ -130,7 +131,7 @@ def generic_by_name(request, name, q_obj, sort,
     elif class_ is Creator:
         sort_name = "gcd_official_name"
 
-        if sqs == None:
+        if sqs is None:
             sort_year = "birth_date__year"
             things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
@@ -161,7 +162,7 @@ def generic_by_name(request, name, q_obj, sort,
 
     elif (class_ in (CreatorMembership, CreatorAward, CreatorArtInfluence, 
                      CreatorNonComicWork)):
-        if sqs == None:
+        if sqs is None:
             sort_year = "creator__birth_date__year"
 
             if class_ is CreatorMembership:
@@ -237,7 +238,7 @@ def generic_by_name(request, name, q_obj, sort,
             for credit_type in ['script', 'pencils', 'inks', 'colors',
                                 'letters', 'story_editing', 'issue_editing']:
                 query_val[credit_type] = name
-        if sqs == None:
+        if sqs is None:
             # TODO: move this outside when series deletes are implemented
             q_obj &= Q(deleted=False)
 
@@ -302,6 +303,7 @@ def generic_by_name(request, name, q_obj, sort,
              'selected': selected }
     return paginate_response(request, things, template, vars)
 
+
 def award_by_name(request, award_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
         sqs = SearchQuerySet().filter(name=GcdNameQuery(award_name)) \
@@ -313,6 +315,7 @@ def award_by_name(request, award_name, sort=ORDER_ALPHA):
         return generic_by_name(request, award_name, q_obj, sort,
                                Award, 'gcd/search/award_list.html')
 
+
 def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
         sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
@@ -323,6 +326,7 @@ def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
         q_obj = Q(name__icontains=publisher_name)
         return generic_by_name(request, publisher_name, q_obj, sort,
                                Publisher, 'gcd/search/publisher_list.html')
+
 
 def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
@@ -336,6 +340,7 @@ def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
         return generic_by_name(request, brand_group_name, q_obj, sort,
                                BrandGroup, 'gcd/search/brand_group_list.html')
 
+
 def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
         sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_name)) \
@@ -346,6 +351,7 @@ def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
         q_obj = Q(name__icontains=brand_name)
         return generic_by_name(request, brand_name, q_obj, sort,
                                Brand, 'gcd/search/brand_list.html')
+
 
 def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
@@ -606,6 +612,7 @@ def series_by_name(request, series_name, sort=ORDER_ALPHA):
         return generic_by_name(request, series_name, q_obj, sort,
                                Series, 'gcd/search/series_list.html')
 
+
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series_name """
     things = Issue.objects.exclude(deleted=True) \
@@ -626,6 +633,7 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
         return paginate_response(
           request, things, 'gcd/search/issue_list.html', context)
 
+
 def compute_isbn_qobj(isbn, prefix, op):
     if stdisbn.is_valid(isbn):
         isbn_compact = stdisbn.compact(isbn)
@@ -643,11 +651,13 @@ def compute_isbn_qobj(isbn, prefix, op):
         q_obj = Q(**{ '%sisbn__%s' % (prefix, op): isbn})
     return q_obj
 
+
 def issue_by_isbn(request, isbn, sort=ORDER_ALPHA):
     q_obj = compute_isbn_qobj(isbn, '', 'icontains')
     return generic_by_name(request, isbn, q_obj, sort, class_=Issue,
                            template='gcd/search/issue_list.html',
                            credit="isbn")
+
 
 def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
     """Handle the form-style URL from the basic search form by mapping
@@ -657,11 +667,13 @@ def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
       urlresolvers.reverse(issue_by_isbn,
                            kwargs={ 'isbn': isbn, 'sort': sort }))
 
+
 def issue_by_barcode(request, barcode, sort=ORDER_ALPHA):
     q_obj = Q(barcode__icontains = barcode)
     return generic_by_name(request, barcode, q_obj, sort, class_=Issue,
                            template='gcd/search/issue_list.html',
                            credit="barcode")
+
 
 def issue_by_barcode_name(request, barcode, sort=ORDER_ALPHA):
     """Handle the form-style URL from the basic search form by mapping
@@ -670,6 +682,7 @@ def issue_by_barcode_name(request, barcode, sort=ORDER_ALPHA):
     return HttpResponseRedirect(
       urlresolvers.reverse(issue_by_barcode,
                            kwargs={ 'barcode': barcode, 'sort': sort }))
+
 
 def search(request):
     """
@@ -750,9 +763,9 @@ def search(request):
         param_type = 'title'
         view = story_by_title
     elif object_type in ('credit', 'job_number', 'feature'):
-        view = 'apps.gcd.views.search.story_by_%s' % object_type
+        view = 'story_by_%s' % object_type
     elif object_type in ('barcode', 'isbn'):
-        view = 'apps.gcd.views.search.issue_by_%s' % object_type
+        view = 'issue_by_%s' % object_type
 
     if object_type == 'credit':
         param_type = 'name'
@@ -810,36 +823,35 @@ def checklist_by_name(request, creator, country=None, language=None):
     context['used_search_terms'] = used_search_terms
 
     return paginate_response(request, items, template, context)
+
         
 def advanced_search(request):
     """Displays the advanced search page."""
 
     if ('target' not in request.GET):
-        return render_to_response('gcd/search/advanced.html',
-          { 'form': AdvancedSearch() },
-          context_instance=RequestContext(request))
+        return render(request, 'gcd/search/advanced.html',
+                      {'form': AdvancedSearch(user=request.user)})
     else:
         search_values = request.GET.copy()
-        search_values_as_list = dict(request.GET.lists())
         # convert a bit since MultipleChoiceField takes a list of IDs
         search_values['type'] = search_values.getlist('type')
         search_values['indexer'] = search_values.getlist('indexer')
         search_values['country'] = search_values.getlist('country')
         search_values['language'] = search_values.getlist('language')
-        return render_to_response('gcd/search/advanced.html',
-          { 'form': AdvancedSearch(initial=search_values) },
-          context_instance=RequestContext(request))
+        return render(request, 'gcd/search/advanced.html',
+                      {'form': AdvancedSearch(user=request.user,
+                                              initial=search_values)})
+
 
 def do_advanced_search(request):
     """
     Runs advanced searches.
     """
-    form = AdvancedSearch(request.GET)
+    form = AdvancedSearch(request.GET, user=request.user)
     if not form.is_valid():
-        raise ViewTerminationError(response = render_to_response(
-          'gcd/search/advanced.html',
-          { 'form': form },
-          context_instance=RequestContext(request)))
+        raise ViewTerminationError(
+          response = render(request, 'gcd/search/advanced.html',
+          { 'form': form }))
 
     data = form.cleaned_data
     op = str(data['method'] or 'iregex')
@@ -863,24 +875,22 @@ def do_advanced_search(request):
                                 bq_obj, bgq_obj, ipq_obj, cq_obj)
         terms = compute_order(data)
     except SearchError, se:
-        raise ViewTerminationError, render_to_response(
-          'gcd/search/advanced.html',
+        raise ViewTerminationError, render(
+          request, 'gcd/search/advanced.html',
           {
               'form': form,
               'error_text': '%s' % se,
-          },
-          context_instance=RequestContext(request))
+          })
 
     if (not query) and terms and (not data['keywords']):
-        raise ViewTerminationError, render_to_response(
-          'gcd/search/advanced.html',
+        raise ViewTerminationError, render(
+          request, 'gcd/search/advanced.html',
           {
             'form': form,
             'error_text': "Please enter at least one search term "
                           "or clear the 'ordering' fields.  Ordered searches "
                           "must have at least one search term."
-          },
-          context_instance=RequestContext(request))
+          })
 
     items = []
     if data['target'] == 'publisher':
@@ -934,10 +944,26 @@ def do_advanced_search(request):
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
 
-    if data['keywords'] and data['target'] not in ['cover', 'issue_cover']:
+    if data['keywords']:
         for keyword in data['keywords'].split(';'):
-            items = items.filter(Q(**{ 'keywords__name__%s' % (op): keyword.strip() }))
-        
+            if data['target'] == 'cover':
+                items = items.filter(Q(**{'issue__story__keywords__name__%s'
+                                          % (op): keyword.strip(),
+                                          'issue__story__type':
+                                          STORY_TYPES['cover']}))
+            elif data['target'] == 'issue_cover':
+                items = items.filter(Q(**{'issue__story__keywords__name__%s'
+                                          % (op): keyword.strip()}))
+            else:
+                items = items.filter(Q(**{'keywords__name__%s'
+                                          % (op): keyword.strip()}))
+
+    if data.get('updated_since'):
+        d = data['updated_since']
+        items = items.filter(modified__gte='%04d-%02d-%02d' % (d.year,
+                                                               d.month,
+                                                               d.day))
+
     return items, data['target']
 
 
@@ -1030,7 +1056,8 @@ def used_search(search_values):
             used_search_terms.append((i, search_values[i]))
     return target, method, logic, used_search_terms
 
-def process_advanced(request):
+
+def process_advanced(request, export_csv=False):
     """
     Runs advanced searches.
     """
@@ -1081,6 +1108,16 @@ def process_advanced(request):
     context['logic'] = logic
     context['used_search_terms'] = used_search_terms
 
+    if export_csv:
+        fields = [f.name for f in items.model._meta.get_fields()
+                              if f.auto_created==False]
+        fields = [f for f in fields if f not in {'created', 'modified',
+                                                 'deleted', 'keywords',
+                                                 'tagged_items'}]
+        fields.insert(0, 'id')
+        return render_to_csv_response(items.values(*fields),
+                                      append_datestamp=True)
+
     if item_name in ['cover', 'issue_cover']:
         context['table_width'] = COVER_TABLE_WIDTH
         context['NO_ADS'] = True
@@ -1089,6 +1126,7 @@ def process_advanced(request):
                                  callback=get_image_tags_per_page)
     else:
         return paginate_response(request, items, template, context)
+
 
 def combine_q(data, *qobjs):
     """
@@ -1170,6 +1208,7 @@ def search_publishers(data, op):
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
 
+
 def search_brand_groups(data, op):
     """
     Handle brand group fields.
@@ -1196,6 +1235,7 @@ def search_brand_groups(data, op):
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
+
 
 def search_brands(data, op):
     """
@@ -1227,6 +1267,7 @@ def search_brands(data, op):
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
+
 
 def search_indicia_publishers(data, op):
     """
@@ -1262,6 +1303,7 @@ def search_indicia_publishers(data, op):
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
+
 
 def search_series(data, op):
     """
@@ -1447,6 +1489,14 @@ def search_issues(data, op, stories_q=None):
             q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
                    Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
 
+    if 'in_collection' in data and data['in_collection']:
+        if data['in_selected_collection']:
+            q_objs.append(Q(**{'%scollectionitem__collections__in' % prefix:
+                                data['in_collection']}))
+        else:
+            q_objs.append(~Q(**{'%scollectionitem__collections__in' % prefix:
+                               data['in_collection']}))
+
     try:
         if data['issue_pages'] is not None and data['issue_pages'] != '':
             range_match = match(PAGE_RANGE_REGEXP, data['issue_pages'])
@@ -1518,6 +1568,7 @@ def handle_numbers(field, data, prefix):
                                 Q(**{ '%sseries__has_volume' % prefix: True }))
 
     return reduce(lambda x, y: x | y, q_or_only)
+
 
 def search_stories(data, op):
     """

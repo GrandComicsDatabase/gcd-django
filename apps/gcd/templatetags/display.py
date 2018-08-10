@@ -13,7 +13,7 @@ from django.template.defaultfilters import title
 from apps.oi import states
 from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
-                                          split_reprint_string
+                                          split_reprint_string, show_title
 from apps.gcd.models.creator import Creator, CreatorMembership, CreatorAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
                                     CreatorDegree, Award
@@ -60,11 +60,8 @@ def show_story_short(story, no_number=False, markup=True):
     else:
         story_line = u'%s.' % story.sequence_number
 
-    if story.title:
-        if story.title_inferred:
-            title = u'[%s]' % esc(story.title)
-        else:
-            title = esc(story.title)
+    if story.title or story.first_line:
+        title = show_title(story, True)
     else:
         if markup:
             title = '<span class="no_data">no title</span>'

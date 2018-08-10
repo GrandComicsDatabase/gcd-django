@@ -12,13 +12,6 @@
             sources_dropdown = sources_dropdown + '<option value="{{ source.id }}">{{ source.type }}</option>';
         {% endfor %}
 
-        if (parseInt($('#total_schools').val()) > 0) {
-            $('#add_schools').hide();
-        }
-
-        if (parseInt($('#total_degrees').val()) > 0) {
-            $('#add_degrees').hide();
-        }
         {# Add New Gcd Official Name Division #}
         $(document).on("click", ".add_name_class", function () {
             var total_names = parseInt($('#total_names').val());

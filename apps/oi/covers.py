@@ -6,8 +6,7 @@ import glob
 
 from django.core import urlresolvers
 from django.conf import settings
-from django.shortcuts import get_object_or_404, \
-                             render_to_response
+from django.shortcuts import render, get_object_or_404
 from django.template import RequestContext
 from django.core.files import temp as tempfile
 from django.core.files import File
@@ -245,15 +244,13 @@ def edit_covers(request, issue_id):
     if issue.has_covers():
         covers = get_image_tags_per_issue(issue, "current covers", ZOOM_MEDIUM,
                                           as_list=True, variants=True)
-        return render_to_response(
-        'oi/edit/edit_covers.html',
-        {
-            'issue': issue,
-            'covers': covers,
-            'table_width': UPLOAD_WIDTH
-        },
-        context_instance=RequestContext(request)
-        )
+        return render(
+          request,
+          'oi/edit/edit_covers.html',
+          {'issue': issue,
+           'covers': covers,
+           'table_width': UPLOAD_WIDTH
+          })
     else:
         return upload_cover(request, issue_id=issue_id)
 
@@ -306,13 +303,12 @@ def uploaded_cover(request, revision_id):
                                               marked=True),
                                       issue, cover=True)
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
-    return render_to_response(uploaded_template, {
-              'marked_covers' : marked_covers,
-              'blank_issues' : blank_issues,
-              'revision': revision,
-              'issue' : issue,
-              'tag'   : tag},
-              context_instance=RequestContext(request))
+    return render(request, uploaded_template,
+                  {'marked_covers' : marked_covers,
+                   'blank_issues' : blank_issues,
+                   'revision': revision,
+                   'issue' : issue,
+                   'tag'   : tag})
 
 def process_edited_gatefold_cover(request):
     ''' process the edited gatefold cover and generate CoverRevision '''
@@ -441,13 +437,12 @@ def handle_gatefold_cover(request, cover, issue, form):
 
     form = GatefoldScanForm(initial=vars)
 
-    return render_to_response('oi/edit/upload_gatefold_cover.html', {
-                                'remember_source': remember_source,
-                                'scan_name': scan_name,
-                                'form': form,
-                                'issue': issue,
-                                'width': min(SHOW_GATEFOLD_WIDTH, im.size[0])},
-                              context_instance=RequestContext(request))
+    return render(request, 'oi/edit/upload_gatefold_cover.html',
+                  {'remember_source': remember_source,
+                   'scan_name': scan_name,
+                   'form': form,
+                   'issue': issue,
+                   'width': min(SHOW_GATEFOLD_WIDTH, im.size[0])})
 
 
 def handle_uploaded_cover(request, cover, issue, variant=False,
@@ -487,6 +482,10 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
             is_replacement = True)
         revision_lock.changeset = changeset
         revision_lock.save()
+        revision.previous_revision = cover.revisions.get(
+                                           next_revision=None,
+                                           changeset__state=states.APPROVED,
+                                           committed=True)
     else:
         revision = CoverRevision(changeset=changeset, issue=issue,
             file_source=file_source, marked=marked)
@@ -775,8 +774,8 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
     kwargs['issue'] = issue
     kwargs['active_covers'] = active_covers_tags
     kwargs['table_width'] = UPLOAD_WIDTH
-    return render_to_response(upload_template, kwargs,
-                              context_instance=RequestContext(request))
+    return render(request, upload_template, kwargs)
+
 
 @permission_required('indexer.can_approve')
 def flip_artwork_flag(request, revision_id=None):
@@ -794,7 +793,8 @@ def flip_artwork_flag(request, revision_id=None):
         for s in story:
             s.delete()
     elif len(story) == 0:
-        story_revision = StoryRevision(changeset=changeset,
+        story_revision = StoryRevision(
+          changeset=changeset,
           type=StoryType.objects.get(name='cover'),
           pencils='?',
           inks='?',
@@ -805,10 +805,11 @@ def flip_artwork_flag(request, revision_id=None):
         story_revision.save()
     else:
         # this should never happen
-        raise ValueError, 'More than one story sequence in a cover revision.'
+        raise ValueError, "More than one story sequence in a cover revision."
 
     return HttpResponseRedirect(urlresolvers.reverse('compare',
-            kwargs={'id': cover.changeset.id} ))
+                                kwargs={'id': cover.changeset.id}))
+
 
 @permission_required('indexer.can_approve')
 def mark_cover(request, marked, cover_id=None, revision_id=None):
@@ -828,10 +829,10 @@ def mark_cover(request, marked, cover_id=None, revision_id=None):
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
     elif revision_id:
         return HttpResponseRedirect(urlresolvers.reverse('compare',
-                kwargs={'id': cover.changeset.id} ))
+                                    kwargs={'id': cover.changeset.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
-                kwargs={'issue_id': cover.issue.id} ))
+                                    kwargs={'issue_id': cover.issue.id}))
 
 
 def handle_uploaded_image(request, display_obj, model_name, image_type,
@@ -876,6 +877,10 @@ def handle_uploaded_image(request, display_obj, model_name, image_type,
     if current_image:
         revision.image = current_image
         revision.is_replacement = True
+        revision.previous_revision = current_image.revisions.get(
+                                     next_revision=None,
+                                     changeset__state=states.APPROVED,
+                                     committed=True)
     revision.save()
     revision.image_file.save(str(revision.id) + '.jpg', content=File(image))
     revision.changeset.submit(form.cleaned_data['comments'])
@@ -998,8 +1003,7 @@ def _display_image_upload_form(request, form, display_obj, model_name,
     kwargs['display_obj'] = display_obj
     kwargs['model_name'] = model_name
     kwargs['image_type'] = image_type
-    return render_to_response(upload_template, kwargs,
-                              context_instance=RequestContext(request))
+    return render(request, upload_template, kwargs)
 
 
 @permission_required('indexer.can_approve')

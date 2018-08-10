@@ -11,7 +11,7 @@
             <ul>
               <li>Comics are organized in collections. Initally two collections exist, but more can be created using the "Add new"-button on the main page.</li>
               <li>To add comics to a collection search inside the database using the regular search options or the <a href="{% url "advanced_search" %}">advanced search</a>. You can select and add comics from search results, from the series page, and from the issue pages. </li>
-              <li>Ongoing series can be <a href="{% url "subscriptions_collection" request.user.collector.default_have_collection.id %}">subscribed</a> to a collection. You can pull issues added to the database since the last time you did such a pull.</li>
+              <li>Ongoing series can be <a href="{% url "subscriptions_collection" request.user.collector.default_have_collection.id|default:1 %}">subscribed</a> to a collection. You can pull issues added to the database since the last time you did such a pull.</li>
               <li>You can add a comic several times to a collection, e.g. if you have several copies, or if you want a second copy.</li>
               <li>A collection has several settings which control what additional information can be stored about a comic in that collection. You can store information about
               <ul>

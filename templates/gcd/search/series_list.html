@@ -1,6 +1,5 @@
 {% extends "gcd/search/base_list.html" %}
 
-{% load cycle from future %}
 {% load mathfilter %}
 {% load display %}
 {% load credits %}
@@ -14,7 +13,7 @@
     <th colspan="2"> Publisher </th>
     <th> Title </th>
     <th> Year </th>
-    <th> #&nbsp;Issues </th>
+    <th style="text-align: center"> #&nbsp;Issues </th>
     <th> Covers </th>
     <th> Published </th> 
   </tr>
@@ -34,25 +33,25 @@
     <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a></td>
     <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} </td>
-    <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
-    <td>
+    <td style="text-align: right"> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
+    <td style="text-align: right">
     {% if not series.issue_count or not series.is_comics_publication %}
       No Covers
     {% else %}
       {% if not series.scan_needed_count %}
-      <a href="{% url "apps.gcd.views.details.covers" series_id=series.id %}">Gallery</a>
+      <a href="{% url "series_covers" series_id=series.id %}">Gallery</a>
       {% else %}
         {% if series.has_gallery %}
-      <a href="{% url "apps.gcd.views.details.covers" series_id=series.id %}">Have 
+      <a href="{% url "series_covers" series_id=series.id %}">Have
       {{ series.scan_count}}</a>
-      (<a href="{% url "apps.gcd.views.details.scans" series_id=series.id %}">Need&nbsp;{{ series.scan_needed_count }}</a>)
+      (<a href="{% url "series_scan_table" series_id=series.id %}">Need&nbsp;{{ series.scan_needed_count }}</a>)
         {% else %}
-      <a href="{% url "apps.gcd.views.details.scans" series_id=series.id %}">Add</a>
+      <a href="{% url "series_scan_table" series_id=series.id %}">Add</a>
         {% endif %}
       {% endif %}
     {% endif %}
     </td>
-    <td> {{ series.display_publication_dates }} </td>
+    <td style="text-align: right"> {{ series.display_publication_dates }} </td>
   </tr>
   {% endwith %}
 {% endfor %}

@@ -1,0 +1,41 @@
+{% extends "oi/base_view.html" %}
+{% load staticfiles %}
+
+{% block title %}
+GCD :: Contacting Indexers
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default/queues.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+<div class="queues">
+<h2>Users who have opted-in for email.</h2>
+
+<p>
+After copying and saving into a file, you can load this into a spreadsheet by selecting 'tab' as the field delimiter.
+</p>
+
+<table>
+  <tr>
+    <th> Indexer </th>
+    <th> Country </th>
+    <th> E-Mail </th>
+  </tr>
+{% for indexer in users %}
+  <tr>
+    <td><a href="{% url "view_profile" user_id=indexer.id %}">{{ indexer.indexer }}</a></td>
+    <td>{{ indexer.indexer.country }}</td>
+    <td>{{ indexer.email }}</td>
+  </tr>
+{% endfor %}
+</table>
+</div>
+{% endblock %}
+

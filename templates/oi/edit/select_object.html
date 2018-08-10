@@ -81,7 +81,7 @@ or select from the data cache:
 <form action="{% url "select_object" select_key=select_key %}" method="POST">
 {% csrf_token %}
  <input type="submit" name="select_object" value="Select">
- <input type="hidden" name="object_choice" value="{{ radio.choice_value }}">
+ <input type="hidden" name="object_choice" value="{{ radio.data.value }}">
 {{ radio.choice_label }}
 </form>
 {% endfor %}

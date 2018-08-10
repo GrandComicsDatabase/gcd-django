@@ -1,6 +1,5 @@
 {% extends "gcd/base_view.html" %}
 
-{% load cycle from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load display %}
@@ -87,14 +86,14 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 {% endif %}
 </div>
 
-{% if page.object_list.count %}
+{% if items %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Issue </th>
     <th> Publication Date </th>
     <th> Brand </th>
   </tr>
-  {% for issue in page.object_list %}
+  {% for issue in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date }} </td>

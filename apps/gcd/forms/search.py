@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 from re import match
 from decimal import Decimal, InvalidOperation
+
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.conf import settings
+
 from apps.stddata.models import Country, Language
 from apps.indexer.models import Indexer
 from apps.gcd.models import StoryType, OLD_TYPES, SeriesPublicationType
@@ -37,6 +40,30 @@ PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
 COUNT_RANGE_REGEXP = r'(?P<min>\d+)?\s*-\s*(?P<max>\d+)?$'
 
 class AdvancedSearch(forms.Form):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super(AdvancedSearch, self).__init__(*args, **kwargs)
+        self.fields['country'] = forms.MultipleChoiceField(
+          required=False,
+          widget=FilteredSelectMultiple('Countries', False),
+          choices=([c.code, c.name.title()]
+                   for c in Country.objects.order_by('name')))
+        self.fields['language'] = forms.MultipleChoiceField(
+          required=False,
+          choices=([l.code, l.name]
+                   for l in Language.objects.order_by('name')),
+          widget=FilteredSelectMultiple('Languages', False))
+        if user and user.is_authenticated:
+            self.fields['in_collection'] = forms.ModelMultipleChoiceField(
+              label='',
+              widget=FilteredSelectMultiple('Collections', False),
+              queryset=user.collector.collections.all(),
+              required=False)
+            self.user = user
+            self.fields['in_selected_collection'] = forms.BooleanField(
+              label="Is in the selected collections", required=False,
+              initial=True)
+
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
                                         ['brand_group', 'Publisher Brand Group'],
                                         ['brand_emblem', 'Publisher Brand Emblem'],
@@ -90,6 +117,8 @@ class AdvancedSearch(forms.Form):
                                  input_formats=DATE_FORMATS)
     use_on_sale_date = forms.BooleanField(label="Use On-Sale Date",
                                           required=False)
+    updated_since = forms.DateField(label='Updated Since', required=False,
+                                    input_formats=DATE_FORMATS)
 
     pub_name = forms.CharField(label='Publisher', required=False)
     pub_notes = forms.CharField(label='Notes', required=False)
@@ -216,15 +245,8 @@ class AdvancedSearch(forms.Form):
 
     notes = forms.CharField(label='Notes', required=False)
 
-    country = forms.MultipleChoiceField(required=False, 
-      widget=FilteredSelectMultiple('Countries', False),
-      choices=([c.code, c.name.title()]
-               for c in Country.objects.order_by('name')))
     alt_country = forms.CharField(label='', required=False, max_length=3)
 
-    language = forms.MultipleChoiceField(required=False,
-      choices=([l.code, l.name] for l in Language.objects.order_by('name')),
-      widget=FilteredSelectMultiple('Languages', False))
     alt_language = forms.CharField(label='', required=False, max_length=3)
 
     def clean_pages(self):
@@ -282,6 +304,13 @@ class AdvancedSearch(forms.Form):
 
         return keywords
 
+    def clean_in_collection(self):
+        collections = self.cleaned_data['in_collection']
+        if collections.exclude(collector=self.user.collector).count():
+            raise forms.ValidationError(
+                  "One cannot search in the collections of other users.")
+        return collections
+
     def clean(self):
         cleaned_data = self.cleaned_data
         if self.is_valid():
@@ -303,11 +332,6 @@ class AdvancedSearch(forms.Form):
                     raise forms.ValidationError(
                       "The on-sale date can only be used in issue or story "
                       "searches.")
-            if cleaned_data['keywords']:
-                if cleaned_data['target'] in ['cover', 'issue_cover']:
-                    raise forms.ValidationError(
-                      "For technical reasons keywords cannot be used for "
-                      "searches for covers and covers for issues.")
             if cleaned_data['start_date'] or cleaned_data['end_date']:
                 if (cleaned_data['start_date'] and
                     len(self.data['start_date'])<=4) or \

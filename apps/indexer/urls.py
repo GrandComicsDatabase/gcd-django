@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.views.generic import base as bv
@@ -10,8 +10,7 @@ from apps.indexer import views as account_views
 from apps.indexer.forms import PasswordResetForm
 
 
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     # Logout will only look for a 'next_page' parameter in GET, but
     # GET requests should not have side effects so use a wrapper to
     # pull from POST.
@@ -68,8 +67,9 @@ urlpatterns = patterns(
         auth_views.password_reset_confirm,
         {'template_name': 'indexer/password_reset_confirm.html',
          'set_password_form': PasswordResetForm,
-         'post_reset_redirect': '/accounts/reset/done'}),
+         'post_reset_redirect': '/accounts/reset/done'},
+        name='password_reset_confirm'),
     url(r'^accounts/reset/done/$',
         auth_views.password_reset_complete,
         {'template_name': 'indexer/password_reset_complete.html'}),
-)
+]

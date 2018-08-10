@@ -1,10 +1,15 @@
 body {
     font-family: Verdana, Arial, Helvetica, sans-serif;
     font-size: 100%;
+    margin: 0;
 }
 
 #sizing_base {
-    font-size: 0.8em;
+    font-size: 0.9em;
+}
+
+div.body_content {
+    margin: 0 8px;
 }
 
 .left {
@@ -15,13 +20,21 @@ body {
     float: right;
 }
 
+.flex_left {
+}
+
+.flex_right {
+    flex: 1;
+    text-align: right;
+}
+
 #RightSearchColumn {
-    margin-left : 150px;
+    margin-left : 168px;
 }
 
 #LeftSearchColumn {
     float : left;
-    width : 145px;
+    width : 163px;
 }
 
 /*
@@ -39,7 +52,7 @@ body {
 #special_banner {
     font-size: 1.4em;
     background-color: #EE7;
-    margin-bottom 0em;
+    margin-bottom: 0em;
     padding: 0.3em;
 }
 
@@ -118,12 +131,20 @@ img .cover_img {
     background-color: black;
 }
 
-div.stats_left,
-div.stats_right {
+h3.stats {
+    padding: 0.2em 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    background-color: #444;
+    color: white;
+    font-weight: bold;
+    width: 100%;
+}
+
+div.stats {
     width: 49%;
     float: left;
-    margin-bottom: 1em;
-    margin-right: 1%;
+    margin: 0.5em 0.5%;
 }
 
 div.stats_content {
@@ -144,13 +165,16 @@ div.stats_header {
      * to line up due to the necessary 100% width which is itself due
      * to needing to float things in order to implement float left/right.
      */
-    padding: 0.2em 0;
+    margin: 0 -8px;
+    padding: 0 8px;
     margin-top: 0;
     margin-bottom: 0;
     background-color: #444;
     color: white;
     font-weight: bold;
     width: 100%;
+    display: flex;
+    align-items: center;
 }
 
 #item_id_footer {
@@ -164,20 +188,22 @@ div.stats_header {
     margin-bottom: 1em;
 }
 
-.item_id :link {
+.item_id :link, .stats :link {
     color: white;
+    text-decoration: underline;
 }
 
-.item_id :visited {
+.item_id :visited, .stats :link {
     color: white;
 }
 
 .item_id .left {
-    padding-left: 0.2em;
+    flex: None;
 }
 
 .item_id .right {
-    padding-right: 0.2em;
+    flex: 1;
+    text-align: right;
 }
 
 .item_id .pagination {
@@ -204,23 +230,24 @@ div.item_id :visited {
     color: black;
 }
 
-div.item_id div.item_data {
-    float: left;
+a:link, h1 a:visited {
+    text-decoration: None;
+    color: #00e;
 }
-div.item_id div.prev_next {
-    padding-right: 0.2em;
-    float: right;
+
+a:visited {
+    text-decoration: None;
+    color: #0645ad;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 /* Specialized version of part of the item_id for search result pages. */
 
 h1.search_id {
     font-size: 1.25em;
-}
-
-div.search_id_nav {
-    float: right;
-    padding-right: 0.2em;
 }
 
 .search_id_nav img {
@@ -238,9 +265,6 @@ div.search_id_nav {
     clear: both;
     background-color: #66E;
     color: black;
-    margin-bottom: 0.5em;
-    vertical-align: middle;
-    padding: 0.6em;
     font-weight: bold;
 }
 
@@ -248,36 +272,62 @@ div.search_id_nav {
     clear: both;
     background-color: #A9302A;
     color: white;
-    margin-bottom: 0.5em;
-    vertical-align: middle;
-    padding: 0.6em;
     font-weight: bold;
 }
 
-.search_bar form, .my_search_bar form {
+/* for menu */
+
+.search_bar ul {
+    list-style-type: none;
     margin: 0;
-    display: inline;
+    padding: 0;
+    overflow: hidden;
+    background-color: #66E;
+}
+
+.my_search_bar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #A9302A;
+}
+
+.search_bar li, .my_search_bar li {
+    line-height: 40px;
+    float: left;
+    border-right: 1px solid #bbb;
+}
+
+.search_bar li a, .search_bar li form, .my_search_bar li a, .my_search_bar li form {
+    padding: 0.3em 0.6em;
+    display: block;
+    color: white;
+    text-decoration: none;
+}
+
+.search_bar li a:hover {
+    background-color: #b3cff8;
+    color: DarkSlateGray;
+    text-decoration: none;f
+}
+
+.my_search_bar li a:hover {
+    background-color: #B96C68;
+    color: Gainsboro;
+    text-decoration: none;
 }
 
 .donate_link {
     background-color: #FFA500;
-    padding: 0.3em;
-}
-
-.search_bar input, .my_search_bar input {
-    font-size: 0.8em;
-}
-
-.search_bar select, .my_search_bar select {
-    font-size: 0.8em;
 }
 
 .search_bar img, .my_search_bar img, #plain_bar img {
-    display: inline;
-    height: 2em;
+    height: 40px;
     position: relative;
-    top: 0.5em;
-    margin-top: -0.5em;
+    top: 1em;
+    margin-top: -1em;
+    padding: 0 1em;
 }
 
 .search_bar :link {
@@ -338,7 +388,7 @@ div.search_id_nav {
 .edit_box {
     margin-top: 1em;
     margin-bottom: 0;
-    font-size: 0.85em;
+    font-size: 0.9em;
 }
 
 .edit_box form {
@@ -369,8 +419,9 @@ div.search_id_nav {
 }
 
 #change_history {
-    font-size: 0.85em;
+    font-size: 0.9em;
     font-weight: bold;
+    text-align: center;
 }
 
 #change_history a {
@@ -378,26 +429,22 @@ div.search_id_nav {
 }
 
 /* Some of this goes down to cover.css, some is common.  TODO: Figure out. */
-
-table#covers {
+div.covers {
     margin: 1em 0;
-    clear: left;
+    display: flex;
+    flex-wrap: wrap;
 }
 
-table#covers td.marked {
+div.issue_covers {
+    margin: 1em 0;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.covers div.marked {
     background-color: #DDD;
-}
-
-table#covers span.add {
-    background-color: palegreen;
-}
-
-table#covers span.delete {
-    background-color: tomato;
-}
-
-table#covers span.modify {
-    background-color: yellow;
 }
 
 .no_cover {
@@ -418,6 +465,13 @@ table#covers span.modify {
     font-weight: bold;
 }
 
+.cover_grid_flex {
+    text-align: center;
+    vertical-align: top;
+    width: 140px;
+    margin: 2px 4px;
+}
+
 .cover_grid {
     text-align: center;
     vertical-align: top;
@@ -428,6 +482,7 @@ table#covers span.modify {
     background-color: black;
     color: black;
 }
+
 .cover_grid img :link {
     color: black;
 }
@@ -436,7 +491,7 @@ table#covers span.modify {
     color: #666;
 }
 
-.cover_grid .wraparound_cover_img, #cover_uploaded .wraparound_cover_img {
+.cover_grid .wraparound_cover_img, #cover_uploaded .wraparound_cover_img, .cover_grid_flex .wraparound_cover_img {
     background-color: black;
     color: black;
     margin-left: 15px;
@@ -502,23 +557,24 @@ form.before_listing {
 }
 
 .listing th {
-    text-align: left;
+    text-align: center;
     padding: .4em;
     background-color: #888;
     color: white;
 }
 
 .listing td, .facet_listing td {
-    padding: .3em .5em;
-    border-right: solid silver 1px;
+    padding: .4em .5em;
 }
 
+.listing tr.odd,
 tr.row_even_False,
 tr.listing_odd {
     background-color: #FFF;
     vertical-align: top;
 }
 
+.listing tr.even,
 tr.row_even_True,
 tr.listing_even {
     background-color: #DDD;
