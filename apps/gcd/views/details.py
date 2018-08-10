@@ -242,8 +242,18 @@ def publisher(request, publisher_id):
 def show_publisher(request, publisher, preview=False):
     publisher_series = publisher.active_series()
 
-    paginator = ResponsePaginator(publisher_series, per_page=100, alpha=True)
+    vars = { 'publisher': publisher,
+             'current': publisher.series_set.filter(deleted=False,
+                                                    is_current=True),
+             'error_subject': publisher,
+             'preview': preview}
+    paginator = ResponsePaginator(publisher_series, per_page=100, vars=vars,
+                                  alpha=True)
     page_number = paginator.paginate(request).number
+    # doing select_related above looks like a more costly query for
+    # ResponsePaginator
+    publisher_series = publisher.active_series().select_related('first_issue',
+                                                                'last_issue')
     if 'sort' in request.GET:
         extra_string = 'sort=%s' % (request.GET['sort'])
         if request.GET['sort'] != 'name' and \
@@ -260,16 +270,10 @@ def show_publisher(request, publisher, preview=False):
                         order_by=('name'))
     RequestConfig(request, paginate={'per_page': 100,
                                      'page': page_number}).configure(table)
-    vars = { 'publisher': publisher,
-             'current': publisher.series_set.filter(deleted=False,
-                                                    is_current=True),
-             'error_subject': publisher,
-             'table': table,
-             'extra_string': extra_string,
-             'preview': preview}
+    vars['table'] = table
+    vars['extra_string'] = extra_string
 
-    return paginate_response(request, publisher_series,
-                             'gcd/details/publisher.html', vars, alpha=True)
+    return render(request, 'gcd/details/publisher.html', vars)
 
 
 def publisher_monthly_covers(request,
