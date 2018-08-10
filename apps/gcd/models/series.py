@@ -5,6 +5,7 @@ from django.db.models import Count, Case, When
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+from django.utils.functional import cached_property
 import django_tables2 as tables
 
 from taggit.managers import TaggableManager
@@ -218,6 +219,7 @@ class Series(GcdData):
     def marked_scans_count(self):
         return Cover.objects.filter(issue__series=self, marked=True).count()
 
+    @cached_property
     def scan_count(self):
         return Cover.objects.filter(issue__series=self, deleted=False).count()
 
@@ -226,9 +228,11 @@ class Series(GcdData):
         return issues.exclude(cover__isnull=False, cover__deleted=False)\
                      .distinct()
 
+    @cached_property
     def scan_needed_count(self):
         return self.issues_without_covers().count() + self.marked_scans_count()
 
+    @cached_property
     def issue_indexed_count(self):
         return self.active_base_issues()\
                    .exclude(is_indexed=INDEXED['skeleton']).count()
@@ -317,15 +321,15 @@ class Series(GcdData):
                                                kwargs={'series_id': self.id})
             table_url = urlresolvers.reverse("series_scan_table",
                                              kwargs={'series_id': self.id})
-            if not self.scan_needed_count():
+            if not self.scan_needed_count:
                 return mark_safe('<a href="%s">Gallery</a>' % (gallery_url))
             elif self.has_gallery:
                 return mark_safe(
                   '<a href="%s">Have %d</a> (<a href="%s">Need %d</a>)'
                   % (gallery_url,
-                     self.scan_count(),
+                     self.scan_count,
                      table_url,
-                     self.scan_needed_count()))
+                     self.scan_needed_count))
             else:
                 return mark_safe('<a href="%s">Add</a>' % (table_url))
 
@@ -386,4 +390,4 @@ class SeriesTable(tables.Table):
 
     def render_issue_count(self, record):
         return '%d issues (%d indexed)' % (record.issue_count,
-                                           record.issue_indexed_count())
+                                           record.issue_indexed_count)
