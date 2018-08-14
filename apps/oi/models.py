@@ -2677,7 +2677,7 @@ class CoverRevision(Revision):
             update_count('covers', -1,
                          language=cover.issue.series.language,
                          country=cover.issue.series.country)
-            if cover.issue.series.scan_count() == 0:
+            if cover.issue.series.scan_count == 0:
                 series = cover.issue.series
                 series.has_gallery = False
                 series.save()
@@ -2706,7 +2706,7 @@ class CoverRevision(Revision):
                     if not issue_rev.series.has_gallery:
                         issue_rev.series.has_gallery = True
                         issue_rev.series.save()
-                    if old_issue.series.scan_count() == 0:
+                    if old_issue.series.scan_count == 0:
                         old_issue.series.has_gallery = False
                         old_issue.series.save()
             else:
@@ -3241,17 +3241,17 @@ class SeriesRevision(Revision):
                     update_count('stories', story_count,
                                  language=self.language,
                                  country=self.country)
-                    update_count('covers', -series.scan_count(),
+                    update_count('covers', -series.scan_count,
                                  language=series.language,
                                  country=series.country)
-                    update_count('covers', series.scan_count(),
+                    update_count('covers', series.scan_count,
                                  language=self.language, country=self.country)
         series.country = self.country
         series.language = self.language
         series.publisher = self.publisher
         if series.is_comics_publication != self.is_comics_publication:
             series.has_gallery = (self.is_comics_publication and
-                                  series.scan_count())
+                                  series.scan_count)
         series.is_comics_publication = self.is_comics_publication
 
         series.save()
@@ -4345,7 +4345,7 @@ class IssueRevision(Revision):
                     if issue.active_covers().count():
                         self.series.has_gallery = True
                 # old series might have lost gallery after move
-                if issue.series.scan_count() == \
+                if issue.series.scan_count == \
                    issue.active_covers().count():
                     issue.series.has_gallery = False
 
