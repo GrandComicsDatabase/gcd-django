@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 from django.core import urlresolvers
 from apps.stddata.models import Country
 from django.core.exceptions import ObjectDoesNotExist
@@ -8,7 +9,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from taggit.managers import TaggableManager
 
 from apps.oi import states
-from .gcddata import GcdData
+from .gcddata import GcdData, GcdLink
 from .image import Image
 
 def _display_year(year, flag):
@@ -16,6 +17,7 @@ def _display_year(year, flag):
         return str(year) + (u' ?' if flag else u'')
     else:
         return '?'
+
 
 class BasePublisher(GcdData):
     class Meta:
@@ -34,8 +36,36 @@ class BasePublisher(GcdData):
     def has_keywords(self):
         return self.keywords.exists()
 
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+
+        Most classes derived from this base class only have an issue
+        count, so a default implementation is provided here.
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.iteritems():
+                deltas[k] = -v
+
+        # TODO: Reconsider use of F() objects due to undesired behavior
+        #       if multiple F() objects are used on a field before saving.
+        #
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('issues', 0):
+            self.issue_count = F('issue_count') + deltas['issues']
+
+    def full_name(self):
+        return unicode(self)
+
     def __unicode__(self):
         return self.name
+
 
 class Publisher(BasePublisher):
     class Meta:
@@ -60,6 +90,68 @@ class Publisher(BasePublisher):
     def active_brand_emblems(self):
         return Brand.objects.filter(in_use__publisher=self, deleted=False)
 
+    def active_indicia_publishers(self):
+        return self.indiciapublisher_set.exclude(deleted=True)
+
+    def active_series(self):
+        return self.series_set.exclude(deleted=True)
+
+    def has_dependents(self):
+        return bool(self.series_count or
+                    self.issue_count or
+                    self.brand_count or
+                    self.active_brands().exists() or
+                    self.brand_group_revisions.active_set().exists() or
+                    self.brand_use_revisions.active_set().exists() or
+                    self.indicia_publisher_revisions.active_set().exists() or
+                    self.series_revisions.active_set().exists())
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.iteritems():
+                deltas[k] = -v
+
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('brands', 0):
+            self.brand_count = F('brand_count') + deltas['brands']
+        if deltas.get('indicia publishers', 0):
+            self.indicia_publisher_count = (F('indicia_publisher_count') +
+                                            deltas['indicia publishers'])
+        if deltas.get('series', 0):
+            self.series_count = F('series_count') + deltas['series']
+        if deltas.get('issues', 0):
+            self.issue_count = F('issue_count') + deltas['issues']
+
+    _update_stats = True
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this publisher.
+
+        Includes a count for the publisher itself.
+        """
+        if self.deleted:
+            return {}
+
+        return {'publishers': 1}
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_publisher',
+            kwargs={'publisher_id': self.id } )
+
+    ############################
+    # TODO related to OI functionality, to be re-factored
+
     def active_brand_emblems_no_pending(self):
         """
         Active brands, not including those with pending deletes.
@@ -70,9 +162,6 @@ class Publisher(BasePublisher):
         return self.active_brand_emblems().exclude(revisions__deleted=True,
           revisions__changeset__state__in=states.ACTIVE).distinct()
 
-    def active_indicia_publishers(self):
-        return self.indiciapublisher_set.exclude(deleted=True)
-
     def active_indicia_publishers_no_pending(self):
         """
         Active indicia publishers, not including those with pending deletes.
@@ -82,43 +171,6 @@ class Publisher(BasePublisher):
         return self.active_indicia_publishers().exclude(revisions__deleted=True,
           revisions__changeset__state__in=states.ACTIVE)
 
-    def active_series(self):
-        return self.series_set.exclude(deleted=True)
-
-    def deletable(self):
-        # TODO: check for issue_count instead of series_count. Check for added
-        # issue skeletons. Also delete series and not just brands, ind pubs,
-        # and imprints.
-        active = { 'changeset__state__in': states.ACTIVE }
-        return self.series_count == 0 and \
-          self.series_revisions.filter(**active).count() == 0 and \
-          self.brand_revisions.filter(**active).count() == 0 and \
-          self.indicia_publisher_revisions.filter(**active).count() == 0
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
-
-    def __unicode__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        return urlresolvers.reverse(
-            'show_publisher',
-            kwargs={'publisher_id': self.id } )
-
-    def get_official_url(self):
-        """
-        TODO: This needs to be retired now that the data has been cleaned up.
-        If we want to ensure '' instead of None we should set the db column
-        to NOT NULL default ''.
-        """
-        if self.url is None:
-            return ''
-        return self.url
-
-    def get_full_name(self):
-        return self.name
 
 class IndiciaPublisher(BasePublisher):
     class Meta:
@@ -132,20 +184,29 @@ class IndiciaPublisher(BasePublisher):
 
     issue_count = models.IntegerField(default=0)
 
-    def deletable(self):
-        active = self.issue_revisions.filter(changeset__state__in=states.ACTIVE)
-        return self.issue_count == 0 and active.count() == 0
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.issue_revisions.active_set().exists())
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this indicia publisher.
+
+        Includes a count for the indicia publisher itself.
+        """
+        if self.deleted:
+            return {}
+
+        return {'indicia publishers': 1}
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_indicia_publisher',
             kwargs={'indicia_publisher_id': self.id } )
 
-    def __unicode__(self):
-        return self.name
 
 class BrandGroup(BasePublisher):
     class Meta:
@@ -157,10 +218,10 @@ class BrandGroup(BasePublisher):
 
     issue_count = models.IntegerField(default=0)
 
-    def deletable(self):
-        return self.active_emblems().count() == 0 and \
-            self.brand_revisions.filter(changeset__state__in=states.ACTIVE)\
-                                .count() == 0
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.active_emblems().exists() or
+                    self.brand_revisions.active_set().exists())
 
     def active_emblems(self):
         return self.brand_set.exclude(deleted=True)
@@ -171,20 +232,39 @@ class BrandGroup(BasePublisher):
         return Issue.objects.filter(brand__in=emblems_id,
                                     deleted=False)
 
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.iteritems():
+                deltas[k] = -v
+
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('issues', 0):
+            self.issue_count = F('issue_count') + deltas['issues']
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this brand group.
+
+        Includes a count for the brand group itself.
+        """
+        if self.deleted:
+            return {}
+
+        return {'brands': 1}
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_brand_group',
             kwargs={'brand_group_id': self.id } )
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
-
-    def full_name(self):
-        return unicode(self)
-
-    def __unicode__(self):
-        return self.name
 
 
 class Brand(BasePublisher):
@@ -207,15 +287,10 @@ class Brand(BasePublisher):
         else:
             return None
 
-    def deletable(self):
-        return self.issue_count == 0 and \
-          self.issue_revisions.filter(changeset__state__in=states.ACTIVE)\
-                              .count() == 0 and \
-          self.in_use.filter(reserved=True).count() == 0
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.use_revisions.active_set().exists() or
+                    self.issue_revisions.active_set().exists())
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -223,18 +298,24 @@ class Brand(BasePublisher):
     def group_parents(self):
         return self.group.values_list('parent', flat=True)
 
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this brand emblem.
+
+        Brand emblems themselves are not currently counted.
+        """
+        if self.deleted:
+            return {}
+
+        return {'issues': self.issue_count}
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_brand',
             kwargs={'brand_id': self.id } )
 
-    def full_name(self):
-        return unicode(self)
 
-    def __unicode__(self):
-        return self.name
-
-class BrandUse(models.Model):
+class BrandUse(GcdLink):
     class Meta:
         db_table = 'gcd_brand_use'
         app_label = 'gcd'
@@ -249,21 +330,13 @@ class BrandUse(models.Model):
 
     notes = models.TextField()
 
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateField(auto_now_add=True)
-    modified = models.DateField(auto_now=True)
-
     @property
     def deleted(self):
         return False
 
-    def deletable(self):
-        return True
-
     def active_issues(self):
         return self.emblem.issue_set.exclude(deleted=True)\
-          .filter(issue__series__publisher=publisher)
+          .filter(issue__series__publisher=self.publisher)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
