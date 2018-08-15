@@ -30,6 +30,12 @@ class GcdBase(models.Model):
         """
         return False
 
+    def pending_deletion(self):
+        return bool(self.revisions.pending_deletions().exists())
+
+    # Indicates if the global stats are updated for this data object.
+    _update_stats = False
+
     def stat_counts(self):
         """
         Returns all count values relevant to this data object.
@@ -93,6 +99,3 @@ class GcdLink(GcdBase):
     class Meta:
         app_label = 'gcd'
         abstract = True
-
-    def deletable(self):
-        return True

@@ -49,7 +49,3 @@ def test_data_delete():
         assert not del_mock.called
         assert data.deleted is True
         save_mock.assert_called_once_with()
-
-
-def test_link_deletable():
-    assert GcdLink().deletable() is True

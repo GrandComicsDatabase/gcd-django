@@ -31,7 +31,6 @@ def lockables():
                                                             country=country)
     return pub1, pub2, ipub1
 
-
 @pytest.mark.django_db
 def test_unique_together_configured_correctly(lockables):
     pub1, pub2, ipub1 = lockables
