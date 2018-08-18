@@ -8,6 +8,9 @@
     {% if table.show_header %}
     <thead>
         <tr>
+        {% if table.context.select_key %}
+        <th> Selection </th>
+        {% endif %}
         {% for column in table.columns %}
             {% if column.orderable %}
             <th {{ column.attrs.th.as_html }}><a href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a></th>
@@ -24,6 +27,15 @@
         {% for row in table.paginated_rows %}
         {% block table.tbody.row %}
         <tr {{ row.attrs.as_html }}>
+            {% if table.context.select_key %}
+            <td>
+              <form action="{% url "select_object" select_key=table.context.select_key %}" method="POST">
+              {% csrf_token %}
+                <input type="submit" name="search_select" value="Select this {{ table.context.select_target }}"></input>
+                <input type="hidden" name="object_choice" value="{{ table.context.select_target }}_{{ row.record.id }}"></input>
+              </form>
+            </td>
+            {% endif %}
             {% for column, cell in row.items %}
                 <td {{ column.attrs.td.as_html }}>{% if column.localize == None %}{{ cell }}{% else %}{% if column.localize %}{{ cell|localize }}{% else %}{{ cell|unlocalize }}{% endif %}{% endif %}</td>
             {% endfor %}

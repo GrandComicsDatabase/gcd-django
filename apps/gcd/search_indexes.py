@@ -46,12 +46,14 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     key_date = indexes.CharField(model_attr='key_date', indexed=False)
     sort_code = indexes.IntegerField(model_attr='sort_code', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='series__country__code',
+    country = indexes.CharField(model_attr='series__country__name',
                                 faceted=True, indexed=False)
     language = indexes.CharField(model_attr='series__language__code',
                                  faceted=True, indexed=False)
     publisher = indexes.CharField(model_attr='series__publisher__name',
                                   faceted=True, indexed=False)
+    issue_count = indexes.IntegerField(model_attr='issue_count',
+                                       indexed=False)
 
     def get_model(self):
         return Issue
@@ -82,7 +84,7 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     sort_name = indexes.CharField(model_attr='sort_name', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='country__code',  faceted=True,
+    country = indexes.CharField(model_attr='country__name',  faceted=True,
                                 indexed=False)
     language = indexes.CharField(model_attr='language__code', faceted=True,
                                  indexed=False)
@@ -119,7 +121,7 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                            indexed=False)
     type = indexes.CharField(model_attr='type__name', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='issue__series__country__code',
+    country = indexes.CharField(model_attr='issue__series__country__name',
                                 faceted=True, indexed=False)
     language = indexes.CharField(model_attr='issue__series__language__code',
                                  faceted=True, indexed=False)
@@ -204,7 +206,7 @@ class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='country__code', faceted=True,
+    country = indexes.CharField(model_attr='country__name', faceted=True,
                                 indexed=False)
     publisher = indexes.CharField(model_attr='name',
                                   faceted=True, indexed=False)
@@ -227,7 +229,7 @@ class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='country__code', faceted=True,
+    country = indexes.CharField(model_attr='country__name', faceted=True,
                                 indexed=False)
     publisher = indexes.CharField(model_attr='parent__name',
                                   faceted=True, indexed=False)
@@ -272,7 +274,7 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
     year = indexes.IntegerField()
-    country = indexes.CharField(model_attr='parent__country__code',
+    country = indexes.CharField(model_attr='parent__country__name',
                                 faceted=True, indexed=False)
     publisher = indexes.CharField(model_attr='parent__name',
                                   faceted=True, indexed=False)
@@ -314,7 +316,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     year = indexes.IntegerField()
     sort_name = indexes.CharField(model_attr="gcd_official_name",
                                   indexed=False)
-    country = indexes.CharField(model_attr='birth_country__code',
+    country = indexes.CharField(model_attr='birth_country__name',
                                 indexed=False, faceted=True, null=True)
 
     def get_model(self):
@@ -362,7 +364,7 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='influence', indexed=False)
-    country = indexes.CharField(model_attr='creator__birth_country__code',
+    country = indexes.CharField(model_attr='creator__birth_country__name',
                                 indexed=False, null=True)
 
     def get_model(self):
@@ -406,7 +408,7 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex,
 
     sort_name = indexes.CharField(model_attr='publication_title',
                                   indexed=False)
-    country = indexes.CharField(model_attr='creator__birth_country__code',
+    country = indexes.CharField(model_attr='creator__birth_country__name',
                                 indexed=False, null=True)
 
     def get_model(self):

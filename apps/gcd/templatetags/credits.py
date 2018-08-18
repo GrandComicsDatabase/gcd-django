@@ -295,16 +295,7 @@ def show_cover_contributor(cover_revision):
 
 
 @register.filter
-def show_country_info(country, name=None):
-    if name:
-        code = country
-    else:
-        if country:
-            code = country.code
-            name = country.name
-        else:
-            code = 'zz'
-
+def show_country_info_by_code(code, name):
     src = u'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
                                               code.lower())
     alt = u'alt="%s"' % esc(code.upper())
@@ -313,11 +304,25 @@ def show_country_info(country, name=None):
 
 
 @register.filter
-def get_country_flag(country, given_code=False):
-    if given_code:
-        country = Country.objects.get(code=country)
+def show_country_info(country):
+    if country:
+        code = country.code
+        name = country.name
+    else:
+        code = 'zz'
+        name = 'unknown country'
+    return show_country_info_by_code(code, name)
+
+
+@register.filter
+def get_country_flag(country):
     return mark_safe(u'<img %s class="embedded_flag">'
                      % show_country_info(country))
+
+
+@register.filter
+def get_country_flag_by_name(country_name):
+    return(get_country_flag(Country.objects.get(name=country_name)))
 
 
 @register.filter

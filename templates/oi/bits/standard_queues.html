@@ -46,7 +46,7 @@
         {% endif %}
         {% if changeset.country %}
           {% with country_names|key:changeset.country as name %}
-      <img {{ countries|key:changeset.country|show_country_info:name }} class="embedded_flag">
+      <img {{ countries|key:changeset.country|show_country_info_by_code:name }} class="embedded_flag">
           {% endwith %}
         {% endif %}
         {{ changeset.queue_name }}
