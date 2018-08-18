@@ -3251,7 +3251,7 @@ class SeriesRevision(Revision):
         series.publisher = self.publisher
         if series.is_comics_publication != self.is_comics_publication:
             series.has_gallery = (self.is_comics_publication and
-                                  series.scan_count)
+                                  series.scan_count > 0)
         series.is_comics_publication = self.is_comics_publication
 
         series.save()
