@@ -53,7 +53,7 @@ from apps.oi.models import (
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
-    CreatorRelationRevision,
+    CreatorRelationRevision, PreviewBrand,
     _get_creator_sourced_fields)
 
 from apps.oi.forms import (get_brand_group_revision_form,
@@ -4778,18 +4778,30 @@ def preview(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     template = 'gcd/details/%s.html' % model_name
 
+    if model_name in ['publisher', 'indicia_publisher', 'brand_group',
+                      'brand']:
+        if model_name == 'brand':
+            # fake for brand emblems the group_set
+            if revision.source:
+                model_object = PreviewBrand(revision.source)
+                model_object.id = revision.source.id
+                for field in revision._get_irregular_fields():
+                    setattr(model_object, field,
+                            getattr(revision.source, field))
+            else:
+                model_object = PreviewBrand()
+            model_object._group  = revision.group
+        else:
+            if revision.source:
+                model_object = revision.source
+            else:
+                model_object = revision.source_class()
+        revision._copy_fields_to(model_object)
+        return globals()['show_%s' % (model_name)](request, model_object, True)
     if 'issue' == model_name:
         return show_issue(request, revision, True)
     if 'series' == model_name:
         return show_series(request, revision, True)
-    if 'publisher' == model_name:
-        return show_publisher(request, revision, True)
-    if 'indicia_publisher' == model_name:
-        return show_indicia_publisher(request, revision, True)
-    if 'brand_group' == model_name:
-        return show_brand_group(request, revision, True)
-    if 'brand' == model_name:
-        return show_brand(request, revision, True)
     if 'creator' == model_name:
         return show_creator(request, revision, True)
     if 'creator_membership' == model_name:

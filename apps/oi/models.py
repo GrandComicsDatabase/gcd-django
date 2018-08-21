@@ -2520,6 +2520,11 @@ class PublisherRevisionBase(Revision):
     keywords = models.TextField(blank=True, default='')
     url = models.URLField(blank=True)
 
+    def __unicode__(self):
+        if self.source is None:
+            return self.name
+        return unicode(self.source)
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -2553,11 +2558,6 @@ class PublisherRevisionBase(Revision):
         elif field_name in self._base_field_list:
             return 1
         return 0
-
-    def __unicode__(self):
-        if self.source is None:
-            return self.name
-        return unicode(self.source)
 
 
 class PublisherRevisionManager(RevisionManager):
@@ -2632,15 +2632,6 @@ class PublisherRevision(PublisherRevisionBase):
     ######################################
     # TODO old methods, t.b.c
 
-    def active_series(self):
-        return self.series_set.exclude(deleted=True)
-
-    @property
-    def series_set(self):
-        if self.publisher is None:
-            return Series.objects.filter(pk__isnull=True)
-        return self.publisher.series_set
-
     def _queue_name(self):
         return u'%s (%s, %s)' % (self.name, self.year_began,
                                  self.country.code.upper())
@@ -2673,35 +2664,6 @@ class PublisherRevision(PublisherRevisionBase):
         if field_name == 'country':
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
-
-    @property
-    def indicia_publisher_count(self):
-        if self.source is None:
-            return 0
-        return self.source.indicia_publisher_count
-
-    @property
-    def brand_count(self):
-        if self.source is None:
-            return 0
-        return self.source.brand_count
-
-    @property
-    def series_count(self):
-        if self.source is None:
-            return 0
-        return self.source.series_count
-
-    @property
-    def issue_count(self):
-        if self.source is None:
-            return 0
-        return self.source.issue_count
-
-    def get_absolute_url(self):
-        if self.publisher is None:
-            return "/publisher/revision/%i/preview" % self.id
-        return self.publisher.get_absolute_url()
 
 
 class IndiciaPublisherRevisionManager(RevisionManager):
@@ -2788,27 +2750,6 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
                                      self.year_began,
                                      self.country.code.upper())
 
-    def active_issues(self):
-        return self.issue_set.exclude(deleted=True)
-
-    # Fake the issue sets for the preview page.
-    @property
-    def issue_set(self):
-        if self.indicia_publisher is None:
-            return Issue.objects.filter(pk__isnull=True)
-        return self.indicia_publisher.issue_set
-
-    @property
-    def issue_count(self):
-        if self.indicia_publisher is None:
-            return 0
-        return self.indicia_publisher.issue_count
-
-    def get_absolute_url(self):
-        if self.indicia_publisher is None:
-            return "/indicia_publisher/revision/%i/preview" % self.id
-        return self.indicia_publisher.get_absolute_url()
-
 
 class BrandGroupRevisionManager(RevisionManager):
 
@@ -2858,6 +2799,13 @@ class BrandGroupRevision(PublisherRevisionBase):
             brand_revision.group.add(self.brand_group)
             brand_revision.commit_to_display()
 
+    def _do_complete_added_revision(self, parent):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.parent = parent
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -2887,37 +2835,6 @@ class BrandGroupRevision(PublisherRevisionBase):
 
     def _queue_name(self):
         return u'%s: %s (%s)' % (self.parent.name, self.name, self.year_began)
-
-    def active_issues(self):
-        if self.brand_group is None:
-            return Issue.objects.none()
-        emblems_id = self.brand_group.active_emblems().values_list('id',
-                                                                   flat=True)
-        return Issue.objects.filter(brand__in=emblems_id,
-                                    deleted=False)
-
-    @property
-    def issue_count(self):
-        if self.brand_group is None:
-            return 0
-        return self.brand_group.issue_count
-
-    def active_emblems(self):
-        if self.brand_group is None:
-            return Brand.objects.none()
-        return self.brand_group.active_emblems()
-
-    def _do_complete_added_revision(self, parent):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.parent = parent
-
-    def get_absolute_url(self):
-        if self.brand_group is None:
-            return "/brand_group/revision/%i/preview" % self.id
-        return self.brand_group.get_absolute_url()
 
 
 class BrandRevisionManager(RevisionManager):
@@ -3027,27 +2944,11 @@ class BrandRevision(PublisherRevisionBase):
         return u'%s: %s (%s)' % (self.group.all()[0].name, self.name,
                                  self.year_began)
 
-    def active_issues(self):
-        return self.issue_set.exclude(deleted=True)
 
-    # Fake the in_use sets for the preview page.
+class PreviewBrand(Brand):
     @property
-    def in_use(self):
-        if self.brand is None:
-            return BrandUse.objects.none()
-        return self.brand.in_use
-
-    # Fake the issue sets for the preview page.
-    @property
-    def issue_set(self):
-        if self.brand is None:
-            return Issue.objects.filter(pk__isnull=True)
-        return self.brand.issue_set
-
-    def get_absolute_url(self):
-        if self.brand is None:
-            return "/brand/revision/%i/preview" % self.id
-        return self.brand.get_absolute_url()
+    def group(self):
+        return self._group.all()
 
 
 class BrandUseRevisionManager(RevisionManager):
@@ -3145,10 +3046,6 @@ class BrandUseRevision(Revision):
     def _queue_name(self):
         return u'%s at %s (%s)' % (self.emblem.name, self.publisher.name,
                                    self.year_began)
-
-    def active_issues(self):
-        return self.emblem.issue_set.exclude(deleted=True)\
-                          .filter(issue__series__publisher=self.publisher)
 
     def __unicode__(self):
         return u'brand emblem %s used by %s.' % (self.emblem, self.publisher)
