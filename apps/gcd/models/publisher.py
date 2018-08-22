@@ -120,7 +120,6 @@ class Publisher(BasePublisher):
             deltas = deltas.copy()
             for k, v in deltas.iteritems():
                 deltas[k] = -v
-
         # Don't apply F() if delta is 0, because we don't want
         # a lazy evaluation F-object result in a count field
         # if we don't absolutely need it.
@@ -131,6 +130,10 @@ class Publisher(BasePublisher):
                                             deltas['indicia publishers'])
         if deltas.get('series', 0):
             self.series_count = F('series_count') + deltas['series']
+        # special case for non-comics publications,
+        # counts for publisher series, but not for stats
+        if deltas.get('publisher series', 0):
+            self.series_count = F('series_count') + deltas['publisher series']
         if deltas.get('issues', 0):
             self.issue_count = F('issue_count') + deltas['issues']
 
