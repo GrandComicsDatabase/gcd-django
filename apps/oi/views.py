@@ -4779,7 +4779,7 @@ def preview(request, id, model_name):
     template = 'gcd/details/%s.html' % model_name
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
-                      'brand']:
+                      'brand', 'series']:
         if model_name == 'brand':
             # fake for brand emblems the group_set
             if revision.source:
@@ -4800,8 +4800,6 @@ def preview(request, id, model_name):
         return globals()['show_%s' % (model_name)](request, model_object, True)
     if 'issue' == model_name:
         return show_issue(request, revision, True)
-    if 'series' == model_name:
-        return show_series(request, revision, True)
     if 'creator' == model_name:
         return show_creator(request, revision, True)
     if 'creator_membership' == model_name:

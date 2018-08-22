@@ -34,11 +34,7 @@
       <div class="clear">
 {% if series.is_comics_publication and series.has_gallery %}
         <div id="series_cover">
-  {% if preview %}
           <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
-  {% else %}
-          <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
-  {% endif %}
   {{ image_issue.display_number }}<br>
   {{ image_issue.publication_date }}<br>
           <a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
@@ -94,15 +90,8 @@
   {% if series.has_gallery %}
             <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png">Cover Gallery</a>&nbsp;
   {% endif %}
-  {% if not preview or series.source %}
-    {% if preview %}
-            <a  href="{% url "series_details" series_id=series.source.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
-            <a href="{% url "series_timeline" series_id=series.source.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
-    {% else %}
             <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
             <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
-    {% endif %}
-  {% endif %}
 {% endif %}
           </ul>
 
@@ -156,7 +145,7 @@
         </div> <!-- series_data -->
       </div> <!-- class="clear" -->
     </div> <!-- control_center -->
-{% if not preview or series.source %}
+{% if not preview or series.id %}
     <div id="control_rail">
       <div class="edit_box">
   {% if MYCOMICS %}
@@ -222,15 +211,10 @@
       {% endif %} <!-- logged in -->
     {% endif %} <!-- not preview -->
         <div id="change_history" class="edit_footer">
-  {% if preview %}
-          <a href="{% url "change_history" model_name='series' id=series.source.id %}">View Change History</a>
-  {% else %}
           <a href="{% url "change_history" model_name='series' id=series.id %}">View Change History</a>
-  {% endif %}
         </div>
   {% endif %} <!-- MYCOMICS -->
       </div>
-{% if not preview %}
   {% if MYCOMICS %}
       <div class="www_comics_cross_link">
         <a href="http://www.comics.org{% url "show_series" series_id=series.id %}">Series at www.comics.org</a>
@@ -240,7 +224,6 @@
         <a href="http://my.comics.org{% url "show_series" series_id=series.id %}">Series at my.comics.org</a>
       </div>
   {% endif %}
-{% endif %}
     </div> <!-- control_rail -->
 {% endif %}
   </div> <!-- control_container -->
