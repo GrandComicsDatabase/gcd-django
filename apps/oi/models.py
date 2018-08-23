@@ -2852,7 +2852,6 @@ class BrandGroupRevision(PublisherRevisionBase):
 
 
 class BrandRevisionManager(RevisionManager):
-
     def clone_revision(self, brand, changeset):
         return BrandRevision.clone(brand, changeset)
 
@@ -2886,12 +2885,6 @@ class BrandRevision(PublisherRevisionBase):
     @classmethod
     def _get_parent_field_tuples(cls):
         return frozenset({('group',)})
-
-    @property
-    def issue_count(self):
-        if self.brand is None:
-            return 0
-        return self.brand.issue_count
 
     def _create_dependent_revisions(self, delete=False):
         if delete:

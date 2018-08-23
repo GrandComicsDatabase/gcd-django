@@ -120,6 +120,7 @@ class Publisher(BasePublisher):
             deltas = deltas.copy()
             for k, v in deltas.iteritems():
                 deltas[k] = -v
+
         # Don't apply F() if delta is 0, because we don't want
         # a lazy evaluation F-object result in a count field
         # if we don't absolutely need it.
