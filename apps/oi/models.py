@@ -2220,7 +2220,6 @@ class Revision(models.Model):
             new_rp.set_value(self.source, old_rp.get_value(self))
 
         self._post_save_object(changes)
-
         new_stats = self.source.stat_counts()
         self._adjust_stats(changes, old_stats, new_stats)
         if self.deleted:
@@ -2520,6 +2519,11 @@ class PublisherRevisionBase(Revision):
     keywords = models.TextField(blank=True, default='')
     url = models.URLField(blank=True)
 
+    def __unicode__(self):
+        if self.source is None:
+            return self.name
+        return unicode(self.source)
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -2553,11 +2557,6 @@ class PublisherRevisionBase(Revision):
         elif field_name in self._base_field_list:
             return 1
         return 0
-
-    def __unicode__(self):
-        if self.source is None:
-            return self.name
-        return unicode(self.source)
 
 
 class PublisherRevisionManager(RevisionManager):
@@ -2632,15 +2631,6 @@ class PublisherRevision(PublisherRevisionBase):
     ######################################
     # TODO old methods, t.b.c
 
-    def active_series(self):
-        return self.series_set.exclude(deleted=True)
-
-    @property
-    def series_set(self):
-        if self.publisher is None:
-            return Series.objects.filter(pk__isnull=True)
-        return self.publisher.series_set
-
     def _queue_name(self):
         return u'%s (%s, %s)' % (self.name, self.year_began,
                                  self.country.code.upper())
@@ -2673,30 +2663,6 @@ class PublisherRevision(PublisherRevisionBase):
         if field_name == 'country':
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
-
-    @property
-    def indicia_publisher_count(self):
-        if self.source is None:
-            return 0
-        return self.source.indicia_publisher_count
-
-    @property
-    def brand_count(self):
-        if self.source is None:
-            return 0
-        return self.source.brand_count
-
-    @property
-    def series_count(self):
-        if self.source is None:
-            return 0
-        return self.source.series_count
-
-    @property
-    def issue_count(self):
-        if self.source is None:
-            return 0
-        return self.source.issue_count
 
     def get_absolute_url(self):
         if self.publisher is None:
@@ -2751,6 +2717,11 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         """
         self.parent = parent
 
+    def get_absolute_url(self):
+        if self.indicia_publisher is None:
+            return "/indicia_publisher/revision/%i/preview" % self.id
+        return self.indicia_publisher.get_absolute_url()
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -2787,27 +2758,6 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
                                      self.name,
                                      self.year_began,
                                      self.country.code.upper())
-
-    def active_issues(self):
-        return self.issue_set.exclude(deleted=True)
-
-    # Fake the issue sets for the preview page.
-    @property
-    def issue_set(self):
-        if self.indicia_publisher is None:
-            return Issue.objects.filter(pk__isnull=True)
-        return self.indicia_publisher.issue_set
-
-    @property
-    def issue_count(self):
-        if self.indicia_publisher is None:
-            return 0
-        return self.indicia_publisher.issue_count
-
-    def get_absolute_url(self):
-        if self.indicia_publisher is None:
-            return "/indicia_publisher/revision/%i/preview" % self.id
-        return self.indicia_publisher.get_absolute_url()
 
 
 class BrandGroupRevisionManager(RevisionManager):
@@ -2858,6 +2808,18 @@ class BrandGroupRevision(PublisherRevisionBase):
             brand_revision.group.add(self.brand_group)
             brand_revision.commit_to_display()
 
+    def _do_complete_added_revision(self, parent):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.parent = parent
+
+    def get_absolute_url(self):
+        if self.brand_group is None:
+            return "/brand_group/revision/%i/preview" % self.id
+        return self.brand_group.get_absolute_url()
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -2888,40 +2850,8 @@ class BrandGroupRevision(PublisherRevisionBase):
     def _queue_name(self):
         return u'%s: %s (%s)' % (self.parent.name, self.name, self.year_began)
 
-    def active_issues(self):
-        if self.brand_group is None:
-            return Issue.objects.none()
-        emblems_id = self.brand_group.active_emblems().values_list('id',
-                                                                   flat=True)
-        return Issue.objects.filter(brand__in=emblems_id,
-                                    deleted=False)
-
-    @property
-    def issue_count(self):
-        if self.brand_group is None:
-            return 0
-        return self.brand_group.issue_count
-
-    def active_emblems(self):
-        if self.brand_group is None:
-            return Brand.objects.none()
-        return self.brand_group.active_emblems()
-
-    def _do_complete_added_revision(self, parent):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.parent = parent
-
-    def get_absolute_url(self):
-        if self.brand_group is None:
-            return "/brand_group/revision/%i/preview" % self.id
-        return self.brand_group.get_absolute_url()
-
 
 class BrandRevisionManager(RevisionManager):
-
     def clone_revision(self, brand, changeset):
         return BrandRevision.clone(brand, changeset)
 
@@ -2956,12 +2886,6 @@ class BrandRevision(PublisherRevisionBase):
     def _get_parent_field_tuples(cls):
         return frozenset({('group',)})
 
-    @property
-    def issue_count(self):
-        if self.brand is None:
-            return 0
-        return self.brand.issue_count
-
     def _create_dependent_revisions(self, delete=False):
         if delete:
             for brand_use in self.brand.in_use.all():
@@ -2993,6 +2917,11 @@ class BrandRevision(PublisherRevisionBase):
                     year_ended_uncertain=self.year_ended_uncertain)
                 use.save()
                 use.commit_to_display()
+
+    def get_absolute_url(self):
+        if self.brand is None:
+            return "/brand/revision/%i/preview" % self.id
+        return self.brand.get_absolute_url()
 
     ######################################
     # TODO old methods, t.b.c
@@ -3027,27 +2956,11 @@ class BrandRevision(PublisherRevisionBase):
         return u'%s: %s (%s)' % (self.group.all()[0].name, self.name,
                                  self.year_began)
 
-    def active_issues(self):
-        return self.issue_set.exclude(deleted=True)
 
-    # Fake the in_use sets for the preview page.
+class PreviewBrand(Brand):
     @property
-    def in_use(self):
-        if self.brand is None:
-            return BrandUse.objects.none()
-        return self.brand.in_use
-
-    # Fake the issue sets for the preview page.
-    @property
-    def issue_set(self):
-        if self.brand is None:
-            return Issue.objects.filter(pk__isnull=True)
-        return self.brand.issue_set
-
-    def get_absolute_url(self):
-        if self.brand is None:
-            return "/brand/revision/%i/preview" % self.id
-        return self.brand.get_absolute_url()
+    def group(self):
+        return self._group.all()
 
 
 class BrandUseRevisionManager(RevisionManager):
@@ -3145,10 +3058,6 @@ class BrandUseRevision(Revision):
     def _queue_name(self):
         return u'%s at %s (%s)' % (self.emblem.name, self.publisher.name,
                                    self.year_began)
-
-    def active_issues(self):
-        return self.emblem.issue_set.exclude(deleted=True)\
-                          .filter(issue__series__publisher=self.publisher)
 
     def __unicode__(self):
         return u'brand emblem %s used by %s.' % (self.emblem, self.publisher)
@@ -3362,69 +3271,8 @@ class CoverRevision(Revision):
 
 
 class SeriesRevisionManager(RevisionManager):
-    """
-    Custom manager allowing the cloning of revisions from existing rows.
-    """
-
     def clone_revision(self, series, changeset):
-        """
-        Given an existing Series instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
-        Entirely new series should be started by simply instantiating
-        a new SeriesRevision directly.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=series,
-                                              instance_class=Series,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, series, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = SeriesRevision(
-            # revision-specific fields:
-            series=series,
-            changeset=changeset,
-
-            # copied fields:
-            name=series.name,
-            leading_article=series.name != series.sort_name,
-            format=series.format,
-            color=series.color,
-            dimensions=series.dimensions,
-            paper_stock=series.paper_stock,
-            binding=series.binding,
-            publishing_format=series.publishing_format,
-            publication_type=series.publication_type,
-            is_singleton=series.is_singleton,
-            notes=series.notes,
-            keywords=get_keywords(series),
-            year_began=series.year_began,
-            year_ended=series.year_ended,
-            year_began_uncertain=series.year_began_uncertain,
-            year_ended_uncertain=series.year_ended_uncertain,
-            is_current=series.is_current,
-
-            tracking_notes=series.tracking_notes,
-
-            has_barcode=series.has_barcode,
-            has_indicia_frequency=series.has_indicia_frequency,
-            has_isbn=series.has_isbn,
-            has_volume=series.has_volume,
-            has_issue_title=series.has_issue_title,
-            has_rating=series.has_rating,
-            is_comics_publication=series.is_comics_publication,
-
-            country=series.country,
-            language=series.language,
-            publisher=series.publisher)
-
-        revision.save()
-        return revision
+        return SeriesRevision.clone(series, changeset)
 
 
 def get_series_field_list():
@@ -3476,7 +3324,6 @@ class SeriesRevision(Revision):
     publication_notes = models.TextField(blank=True)
 
     # Fields for tracking relationships between series.
-    # Crossref fields don't appear to really be used- nearly all null.
     tracking_notes = models.TextField(blank=True)
 
     # Fields for handling the presence of certain issue fields
@@ -3503,109 +3350,95 @@ class SeriesRevision(Revision):
                                 related_name='imprint_series_revisions')
     date_inferred = models.BooleanField(default=False)
 
-    @property
-    def first_issue(self):
-        if self.series is None:
-            return None
-        return self.series.first_issue
+    source_name = 'series'
+    source_class = Series
 
     @property
-    def last_issue(self):
-        if self.series is None:
-            return None
-        return self.series.last_issue
-
-    @property
-    def issue_count(self):
-        if self.series is None:
-            return 0
-        return self.series.issue_count
-
-    def display_publication_dates(self):
-        if self.series is None:
-            return unicode(self.year_began)
-        else:
-            return self.series.display_publication_dates()
-
-    def ordered_brands(self):
-        if self.series is None:
-            return []
-        return self.series.ordered_brands()
-
-    def brand_info_counts(self):
-        if self.series is None:
-            return {'unknown': 0, 'no_brand': 0}
-        return self.series.brand_info_counts()
-
-    def ordered_indicia_publishers(self):
-        if self.series is None:
-            return []
-        return self.series.ordered_indicia_publishers()
-
-    def indicia_publisher_info_counts(self):
-        if self.series is None:
-            return {'unknown': 0}
-        return self.series.indicia_publisher_info_counts()
-
-    def _get_source(self):
+    def source(self):
         return self.series
 
-    def _get_source_name(self):
-        return 'series'
+    @source.setter
+    def source(self, value):
+        self.series = value
 
-    def active_base_issues(self):
-        return self.active_issues().exclude(variant_of__series=self.series)
+    @classmethod
+    def _get_excluded_field_names(cls):
+        return frozenset(
+            super(SeriesRevision, cls)._get_excluded_field_names() |
+            {'open_reserve', 'publication_dates'}
+        )
 
-    def active_issues(self):
-        return self.issue_set.exclude(deleted=True)
+    @classmethod
+    def _get_parent_field_tuples(cls):
+        return frozenset({('publisher',)})
 
-    # Fake the issue and cover sets and a few other fields
-    # for the preview page.
-    @property
-    def issue_set(self):
-        if self.series is None:
-            return Issue.objects.filter(pk__isnull=True)
-        return self.series.active_issues()
+    @classmethod
+    def _get_major_flag_field_tuples(self):
+        return frozenset({
+            ('is_comics_publication',),
+            ('is_current',),
+            ('is_singleton',),
+        })
 
-    @property
-    def has_gallery(self):
-        if self.series is None:
-            return False
-        return self.series.has_gallery
+    @classmethod
+    def _get_deprecated_field_names(cls):
+        return frozenset({'format'})
 
-    def has_tracking(self):
-        if self.series is None:
-            return self.tracking_notes
-        return self.tracking_notes or self.series.has_series_bonds()
+    def _do_complete_added_revision(self, publisher):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.publisher = publisher
 
-    def has_series_bonds(self):
-        if self.series is None:
-            return False
+    def _handle_prerequisites(self, changes):
+        # Handle deletion of the singleton issue before getting the
+        # series stat counts to avoid double-counting the deletion.
+        if self.deleted and self.series.is_singleton:
+            issue_revision = IssueRevision.clone(
+                instance=self.series.issue_set[0], changeset=self.changeset)
+            issue_revision.deleted = True
+            issue_revision.save()
+            issue_revision.commit_to_display()
+
+    def _post_assign_fields(self, changes):
+        if self.leading_article:
+            self.series.sort_name = remove_leading_article(self.name)
         else:
-            return self.series.has_series_bonds()
+            self.series.sort_name = self.name
 
-    @property
-    def to_series_bond(self):
-        if self.series is None:
-            return SeriesBond.objects.filter(pk__isnull=True)
-        return self.series.to_series_bond.all()
+    def _pre_save_object(self, changes):
+        if changes['from is_current']:
+            reservation = self.series.get_ongoing_reservation()
+            reservation.delete()
 
-    @property
-    def from_series_bond(self):
-        if self.series is None:
-            return SeriesBond.objects.filter(pk__isnull=True)
-        return self.series.from_series_bond.all()
+        if changes['to is_comics_publication']:
+            # TODO: But don't we count covers for some non-comics?
+            self.series.has_gallery = bool(self.series.scan_count())
 
-    def series_relative_bonds(self, **filter_args):
-        if self.series is None:
-            return []
-        else:
-            return self.series.series_relative_bonds(**filter_args)
+    def _handle_dependents(self, changes):
+        # Handle adding the singleton issue last, to avoid double-counting
+        # the addition in statistics.
+        if changes['to is_singleton'] and self.series.issue_count == 0:
+            issue_revision = IssueRevision(changeset=self.changeset,
+                                           series=self.series,
+                                           after=None,
+                                           number='[nn]',
+                                           publication_date=self.year_began)
+            # We assume that a non-four-digit year is a typo of some
+            # sort, and do not propagate it.  The approval process
+            # should catch that sort of thing.
+            # TODO: Consider a validator on year_began?
+            if len(unicode(self.year_began)) == 4:
+                issue_revision.key_date = '%d-00-00' % self.year_began
+            issue_revision.save()
+            issue_revision.commit_to_display()
+            # TODO remove after issue re-factored
+            issue_revision.committed = True
+            issue_revision.save()
 
-    def get_ongoing_revision(self):
-        if self.series is None:
-            return None
-        return self.series.get_ongoing_revision()
+    ######################################
+    # TODO old methods, t.b.c
 
     def _field_list(self):
         fields = get_series_field_list()
@@ -3647,199 +3480,24 @@ class SeriesRevision(Revision):
             'is_comics_publication': True,
         }
 
+    def _start_imp_sum(self):
+        self._seen_year_began = False
+        self._seen_year_ended = False
+
     def _imps_for(self, field_name):
-        """
-        All current series fields are simple one point fields.
-        """
+        if field_name in ('year_began', 'year_began_uncertain'):
+            if not self._seen_year_began:
+                self._seen_year_began = True
+                return 1
+            else:
+                return 0
+        elif field_name in ('year_ended', 'year_ended_uncertain'):
+            if not self._seen_year_ended:
+                self._seen_year_ended = True
+                return 1
+            else:
+                return 0
         return 1
-
-    def _do_complete_added_revision(self, publisher):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.publisher = publisher
-
-    def commit_to_display(self):
-        series = self.series
-        if series is None:
-            series = Series(issue_count=0)
-            if self.is_comics_publication:
-                self.publisher.series_count = F('series_count') + 1
-                if not self.is_singleton:
-                    # if save also happens in IssueRevision gets twice +1
-                    self.publisher.save()
-                update_count('series', 1, language=self.language,
-                             country=self.country)
-            if self.is_singleton:
-                issue_revision = IssueRevision(
-                    changeset=self.changeset,
-                    after=None,
-                    number='[nn]',
-                    publication_date=self.year_began)
-                if len(unicode(self.year_began)) == 4:
-                    issue_revision.key_date = '%d-00-00' % self.year_began
-
-        elif self.deleted:
-            if series.is_comics_publication:
-                self.publisher.series_count = F('series_count') - 1
-                # TODO: implement when/if we allow series deletions along
-                # with all their issues
-                # self.publisher.issue_count -= series.issue_count
-                self.publisher.save()
-            series.delete()
-            if series.is_comics_publication:
-                update_count('series', -1, language=series.language,
-                             country=series.country)
-            reservation = self.source.get_ongoing_reservation()
-            if reservation:
-                reservation.delete()
-            return
-        else:
-            if self.publisher != self.series.publisher and \
-               series.is_comics_publication:
-                self.publisher.issue_count = (F('issue_count') +
-                                              series.issue_count)
-                self.publisher.series_count = F('series_count') + 1
-                self.publisher.save()
-                self.series.publisher.issue_count = (F('issue_count') -
-                                                     series.issue_count)
-                self.series.publisher.series_count = F('series_count') - 1
-                self.series.publisher.save()
-
-        series.name = self.name
-        if self.leading_article:
-            series.sort_name = remove_leading_article(self.name)
-        else:
-            series.sort_name = self.name
-        series.format = self.format
-        series.color = self.color
-        series.dimensions = self.dimensions
-        series.paper_stock = self.paper_stock
-        series.binding = self.binding
-        series.publishing_format = self.publishing_format
-        series.notes = self.notes
-        series.is_singleton = self.is_singleton
-        series.publication_type = self.publication_type
-
-        series.year_began = self.year_began
-        series.year_ended = self.year_ended
-        series.year_began_uncertain = self.year_began_uncertain
-        series.year_ended_uncertain = self.year_ended_uncertain
-        series.is_current = self.is_current
-        series.has_barcode = self.has_barcode
-        series.has_indicia_frequency = self.has_indicia_frequency
-        series.has_isbn = self.has_isbn
-        series.has_issue_title = self.has_issue_title
-        series.has_volume = self.has_volume
-        series.has_rating = self.has_rating
-
-        reservation = series.get_ongoing_reservation()
-        if (not self.is_current and
-                reservation and
-                self.previous() and self.previous().is_current):
-            reservation.delete()
-
-        series.tracking_notes = self.tracking_notes
-
-        # a new series has language_id None
-        if series.language_id is None:
-            if series.issue_count:
-                raise NotImplementedError("New series can't have issues!")
-
-        else:
-            if series.is_comics_publication != self.is_comics_publication:
-                if series.is_comics_publication:
-                    count = -1
-                else:
-                    count = +1
-                update_count('series', count, language=series.language,
-                             country=series.country)
-                if series.issue_count:
-                    update_count('issues', count * series.issue_count,
-                                 language=series.language,
-                                 country=series.country)
-                variant_issues = Issue.objects \
-                    .filter(series=series, deleted=False) \
-                    .exclude(variant_of=None)\
-                    .count()
-                update_count('variant issues', count * variant_issues,
-                             language=series.language, country=series.country)
-                issue_indexes = Issue.objects \
-                    .filter(series=series, deleted=False) \
-                    .exclude(is_indexed=INDEXED['skeleton']) \
-                    .count()
-                update_count('issue indexes', count * issue_indexes,
-                             language=series.language, country=series.country)
-
-            if ((series.language != self.language or
-                 series.country != self.country) and
-                    self.is_comics_publication):
-                update_count('series', -1,
-                             language=series.language,
-                             country=series.country)
-                update_count('series', 1,
-                             language=self.language,
-                             country=self.country)
-                if series.issue_count:
-                    update_count('issues', -series.issue_count,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('issues', series.issue_count,
-                                 language=self.language,
-                                 country=self.country)
-                    variant_issues = Issue.objects \
-                        .filter(series=series, deleted=False) \
-                        .exclude(variant_of=None) \
-                        .count()
-                    update_count('variant issues', -variant_issues,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('variant issues', variant_issues,
-                                 language=self.language,
-                                 country=self.country)
-                    issue_indexes = \
-                        Issue.objects.filter(series=series, deleted=False) \
-                                     .exclude(is_indexed=INDEXED['skeleton']) \
-                                     .count()
-                    update_count('issue indexes', -issue_indexes,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('issue indexes', issue_indexes,
-                                 language=self.language,
-                                 country=self.country)
-                    story_count = Story.objects \
-                                       .filter(issue__series=series,
-                                               deleted=False) \
-                                       .count()
-                    update_count('stories', -story_count,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('stories', story_count,
-                                 language=self.language,
-                                 country=self.country)
-                    update_count('covers', -series.scan_count,
-                                 language=series.language,
-                                 country=series.country)
-                    update_count('covers', series.scan_count,
-                                 language=self.language, country=self.country)
-        series.country = self.country
-        series.language = self.language
-        series.publisher = self.publisher
-        if series.is_comics_publication != self.is_comics_publication:
-            series.has_gallery = (self.is_comics_publication and
-                                  series.scan_count)
-        series.is_comics_publication = self.is_comics_publication
-
-        series.save()
-        save_keywords(self, series)
-        series.save()
-        if self.series is None:
-            self.series = series
-            self.save()
-            if self.is_singleton:
-                issue_revision.series = series
-                issue_revision.save()
 
     def get_absolute_url(self):
         if self.series is None:

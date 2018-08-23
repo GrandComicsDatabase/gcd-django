@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.db import models
 from django.db.models import F
 from django.core import urlresolvers
@@ -128,6 +131,10 @@ class Publisher(BasePublisher):
                                             deltas['indicia publishers'])
         if deltas.get('series', 0):
             self.series_count = F('series_count') + deltas['series']
+        # special case for non-comics publications,
+        # counts for publisher series, but not for stats
+        if deltas.get('publisher series', 0):
+            self.series_count = F('series_count') + deltas['publisher series']
         if deltas.get('issues', 0):
             self.issue_count = F('issue_count') + deltas['issues']
 
