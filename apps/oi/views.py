@@ -4796,6 +4796,7 @@ def preview(request, id, model_name):
                 model_object = revision.source
             else:
                 model_object = revision.source_class()
+                model_object.id = 0
         revision._copy_fields_to(model_object)
         return globals()['show_%s' % (model_name)](request, model_object, True)
     if 'issue' == model_name:
