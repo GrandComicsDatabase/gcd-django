@@ -100,7 +100,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
     {% endif %}
   {% else %}
     {% if issue.series.is_comics_publication or issue.can_have_cover %}
-            <a href="{% url "upload_cover" issue_id=issue.id %}">{{ image_tag }}</a>
+            <a href="{% if MYCOMICS %}https://www.comics.org/{% endif %}{% url "upload_cover" issue_id=issue.id %}">{{ image_tag }}</a>
     {% else %}
             <a href="http://docs.comics.org/wiki/Comics_Publication"> {{ image_tag }}</a>
     {% endif %}

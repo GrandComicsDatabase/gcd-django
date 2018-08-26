@@ -52,8 +52,6 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                  faceted=True, indexed=False)
     publisher = indexes.CharField(model_attr='series__publisher__name',
                                   faceted=True, indexed=False)
-    issue_count = indexes.IntegerField(model_attr='issue_count',
-                                       indexed=False)
 
     def get_model(self):
         return Issue
@@ -91,6 +89,8 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     title_search = indexes.CharField()
     publisher = indexes.CharField(model_attr='publisher__name',
                                   faceted=True, indexed=False)
+    issue_count = indexes.IntegerField(model_attr='issue_count',
+                                       indexed=False)
 
     def get_model(self):
         return Series
