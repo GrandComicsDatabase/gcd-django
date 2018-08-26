@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.db import models
 from django.core import urlresolvers
 from django.db.models import Count, Case, When
@@ -13,6 +15,7 @@ from taggit.managers import TaggableManager
 from apps.stddata.models import Country, Language
 from .gcddata import GcdData
 from .publisher import Publisher, Brand, IndiciaPublisher
+from .story import Story
 from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
@@ -69,10 +72,9 @@ class Series(GcdData):
                                     related_name='first_issue_series_set')
     last_issue = models.ForeignKey('Issue', null=True,
                                    related_name='last_issue_series_set')
-    issue_count = models.IntegerField()
+    issue_count = models.IntegerField(default=0)
 
     # Fields for tracking relationships between series.
-    # Crossref fields don't appear to really be used- nearly all null.
     tracking_notes = models.TextField()
 
     # Fields for handling the presence of certain issue fields
@@ -120,13 +122,10 @@ class Series(GcdData):
                       for b in self.from_series_bond.filter(**filter_args)])
         return bonds
 
-    def deletable(self):
-        active = self.issue_revisions.filter(changeset__state__in=states.ACTIVE)
-        return self.issue_count == 0 and active.count() == 0
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
+    def has_dependents(self):
+        # use active_issues() rather than issue_count to include variants.
+        return (self.active_issues().exists() or
+                self.issue_revisions.active_set().exists())
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -150,6 +149,86 @@ class Series(GcdData):
                                  Count(Case(When(variant_set__deleted=False,
                                                  then=1))))
         return issues
+
+    def active_non_base_variants(self):
+        """
+        All non-base variants, including those with a base in another series.
+
+        We want to be able to count all variant records related to this series,
+        so we leave in the variants with bases in other series, as they can
+        be further filtered out in cases where they are not desirable.
+        """
+        return self.active_issues().exclude(variant_of=None)
+
+    def active_indexed_issues(self):
+        return self.active_issues().exclude(is_indexed=INDEXED['skeleton'])
+
+    def set_first_last_issues(self):
+        issues = self.active_issues().order_by('sort_code')
+        if issues.count() == 0:
+            self.first_issue = None
+            self.last_issue = None
+        else:
+            self.first_issue = issues[0]
+            self.last_issue = issues[len(issues) - 1]
+        self.save()
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this series.
+
+        Includes a count for the series itself.
+
+        Non-comics publications do not return series and issue
+        counts as they do not contribute those types of statistics.
+        Story and cover statistics are tracked for all publications.
+        """
+        if self.deleted:
+            return {}
+
+        counts = {
+            'covers': self.scan_count,
+            'stories': Story.objects.filter(issue__series=self)
+                                    .exclude(deleted=True).count(),
+        }
+        if self.is_comics_publication:
+            counts['series'] = 1
+            # Need to filter out variants of bases in other series, which
+            # are considered "base issues" with respect to this series.
+            counts['issues'] = self.active_base_issues() \
+                                   .filter(variant_of=None).count()
+            counts['variant issues'] = self.active_non_base_variants().count()
+            counts['issue indexes'] = self.active_indexed_issues().count()
+        else:
+            # Non comics publications do not count for global stats, but
+            # for publisher series counts. But not for issue counts.
+            # TODO correctly process this
+            counts['publisher series'] = 1
+        return counts
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+
+        In the case of series, there is only one local count (for issues).
+        Note that we use 'series issues' rather than 'issues' for this
+        count, because the series issue count tracks all non-variant issues,
+        while all other issue counts ignore issues that are part of
+        series that are not comics publications.
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.iteritems():
+                deltas[k] = -v
+
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('series issues', 0):
+            self.issue_count = F('issue_count') + deltas['series issues']
 
     def ordered_brands(self):
         """
@@ -212,9 +291,12 @@ class Series(GcdData):
             return None
 
     def get_absolute_url(self):
-        return urlresolvers.reverse(
-            'show_series',
-            kwargs={'series_id': self.id})
+        if self.id:
+            return urlresolvers.reverse(
+                'show_series',
+                kwargs={'series_id': self.id})
+        else:
+            return ''
 
     def marked_scans_count(self):
         return Cover.objects.filter(issue__series=self, marked=True).count()
@@ -241,7 +323,7 @@ class Series(GcdData):
         return u' ?' if flag else u''
 
     def display_publication_dates(self):
-        if self.issue_count == 0:
+        if not self.issue_count:
             return u'%s%s' % (unicode(self.year_began),
                               self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:

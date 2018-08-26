@@ -563,14 +563,7 @@ def show_series(request, series, preview=False):
     """
     covers = []
 
-    if preview and series.series:
-        display_series = series.series
-    elif preview:
-        display_series = None
-    else:
-        display_series = series
-
-    scans, image_tag, issue = _get_scan_table(display_series)
+    scans, image_tag, issue = _get_scan_table(series)
 
     if series.has_issue_title:
         issue_status_width = "status_wide";

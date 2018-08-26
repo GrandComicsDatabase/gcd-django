@@ -64,7 +64,7 @@
           <p>
   {% if publisher.url %}
           <dt> Web Site:
-          <dd> <a href="{{ publisher.get_official_url }}">{{ publisher.url }}</a>
+          <dd> <a href="{{ publisher.url }}">{{ publisher.url }}</a>
   {% endif %}
   {% if publisher.notes and page.number == 1 %}
           <dt> Notes:

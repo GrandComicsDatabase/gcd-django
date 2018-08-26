@@ -312,10 +312,6 @@ class BrandRevisionForm(forms.ModelForm):
                     raise forms.ValidationError(
                         "A brand group with id %d does not exist." %
                         cd['brand_group_other_publisher_id'])
-        elif cd['group'].count() > 1:
-            raise forms.ValidationError(
-                "When adding a brand emblem currently only one brand group can"
-                " be selected.")
         return cd
 
 
