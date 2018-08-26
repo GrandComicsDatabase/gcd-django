@@ -607,6 +607,20 @@ def _check_year(year):
     return year_number
 
 
+def _imps_for_years(revision, field_name, year_began, year_ended):
+    if field_name in (year_began, year_began + '_uncertain'):
+        if not revision._seen_year_began and revision.__dict__['year_began']:
+            revision._seen_year_began = True
+            return True, 1
+        return True, 0
+    elif field_name in (year_ended, year_ended + '_uncertain'):
+        if not revision._seen_year_ended and revision.__dict__['year_ended']:
+            revision._seen_year_ended = True
+            return True, 1
+        return True, 0
+    return False, None
+
+
 class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
@@ -1078,9 +1092,14 @@ class Changeset(models.Model):
                 previous_revision = revision
         else:
             for revision in self.revisions:
-                # For adds we might generate additional revisions, we call
-                # commit_to_display when generating the approvals. Check
+                # For adds we might generate additional revisions, and call
+                # commit_to_display when generating these approvals. Check
                 # committed status to avoid double adds.
+                # TODO check regarding stats
+                # TODO revision generated later in the chain will be
+                #      picked by up self.revisions anyway, so maybe not needed
+                #      for purpose of avoiding double adds.
+                #      But check shouldn't hurt anyway ?
                 if revision.committed is not True:
                     # adds have a (created) source only after commit_to_display
                     if revision.source:
@@ -2258,7 +2277,7 @@ class Revision(models.Model):
         )
 
     # #####################################################################
-    # Old methods. Deprecated.
+    # Old methods. t.b.c, if deprecated.
 
     def _changed(self):
         """
@@ -2546,14 +2565,10 @@ class PublisherRevisionBase(Revision):
         self._seen_year_ended = False
 
     def _imps_for(self, field_name):
-        if field_name in ('year_began', 'year_began_uncertain'):
-            if not self._seen_year_began:
-                self._seen_year_began = True
-                return 1
-        elif field_name in ('year_ended', 'year_ended_uncertain'):
-            if not self._seen_year_ended:
-                self._seen_year_ended = True
-                return 1
+        years_found, value = _imps_for_years(self, field_name,
+                                             'year_began', 'year_ended')
+        if years_found:
+            return value
         elif field_name in self._base_field_list:
             return 1
         return 0
@@ -3390,15 +3405,21 @@ class SeriesRevision(Revision):
         series revision for adding a record before it can be saved.
         """
         self.publisher = publisher
+        if self.is_singleton:
+            self.year_ended = self.year_began
+            self.year_ended_uncertain = self.year_began_uncertain
 
     def _handle_prerequisites(self, changes):
         # Handle deletion of the singleton issue before getting the
         # series stat counts to avoid double-counting the deletion.
+        # TODO currently never used, has_dependents does not handle
+        # singletons separately, so active_issues.count prevents joint delete
         if self.deleted and self.series.is_singleton:
             issue_revision = IssueRevision.clone(
                 instance=self.series.issue_set[0], changeset=self.changeset)
             issue_revision.deleted = True
             issue_revision.save()
+            # TODO if joint delete changed, check here in regard to counting
             issue_revision.commit_to_display()
 
     def _post_assign_fields(self, changes):
@@ -3414,7 +3435,7 @@ class SeriesRevision(Revision):
 
         if changes['to is_comics_publication']:
             # TODO: But don't we count covers for some non-comics?
-            self.series.has_gallery = bool(self.series.scan_count())
+            self.series.has_gallery = bool(self.series.scan_count)
 
     def _handle_dependents(self, changes):
         # Handle adding the singleton issue last, to avoid double-counting
@@ -3431,10 +3452,6 @@ class SeriesRevision(Revision):
             # TODO: Consider a validator on year_began?
             if len(unicode(self.year_began)) == 4:
                 issue_revision.key_date = '%d-00-00' % self.year_began
-            issue_revision.save()
-            issue_revision.commit_to_display()
-            # TODO remove after issue re-factored
-            issue_revision.committed = True
             issue_revision.save()
 
     ######################################
@@ -3485,18 +3502,10 @@ class SeriesRevision(Revision):
         self._seen_year_ended = False
 
     def _imps_for(self, field_name):
-        if field_name in ('year_began', 'year_began_uncertain'):
-            if not self._seen_year_began:
-                self._seen_year_began = True
-                return 1
-            else:
-                return 0
-        elif field_name in ('year_ended', 'year_ended_uncertain'):
-            if not self._seen_year_ended:
-                self._seen_year_ended = True
-                return 1
-            else:
-                return 0
+        years_found, value = _imps_for_years(self, field_name,
+                                             'year_began', 'year_ended')
+        if years_found:
+            return value
         return 1
 
     def get_absolute_url(self):
@@ -6412,12 +6421,12 @@ class CreatorRevision(Revision):
                 if influence_lock is None:
                     raise IntegrityError("needed CreatorArtInfluence lock not"
                                          " possible")
-                creator_art_influence_revison = \
+                creator_art_influence_revision = \
                   CreatorArtInfluenceRevision.objects.clone_revision(
                     creator_art_influence=creator_art_influence,
                     changeset=self.changeset)
-                creator_art_influence_revison.deleted = True
-                creator_art_influence_revison.save()
+                creator_art_influence_revision.deleted = True
+                creator_art_influence_revision.save()
 
             for creator_award in self.creator.active_awards():
                 award_lock = _get_revision_lock(creator_award,
@@ -6425,11 +6434,11 @@ class CreatorRevision(Revision):
                 if award_lock is None:
                     raise IntegrityError("needed CreatorAward lock not "
                                          "possible")
-                creator_award_revison = \
+                creator_award_revision = \
                   CreatorAwardRevision.objects.clone_revision(
                     creator_award=creator_award, changeset=self.changeset)
-                creator_award_revison.deleted = True
-                creator_award_revison.save()
+                creator_award_revision.deleted = True
+                creator_award_revision.save()
 
             for creator_degree in self.creator.active_degrees():
                 degree_lock = _get_revision_lock(creator_degree,
@@ -6437,11 +6446,11 @@ class CreatorRevision(Revision):
                 if degree_lock is None:
                     raise IntegrityError("needed CreatorDegree lock not "
                                          "possible")
-                creator_degree_revison = \
+                creator_degree_revision = \
                   CreatorDegreeRevision.objects.clone_revision(
                     creator_degree=creator_degree, changeset=self.changeset)
-                creator_degree_revison.deleted = True
-                creator_degree_revison.save()
+                creator_degree_revision.deleted = True
+                creator_degree_revision.save()
 
             for creator_membership in self.creator.active_memberships():
                 membership_lock = _get_revision_lock(creator_membership,
@@ -6449,12 +6458,12 @@ class CreatorRevision(Revision):
                 if membership_lock is None:
                     raise IntegrityError("needed CreatorMembership lock not "
                                          "possible")
-                creator_membership_revison = \
+                creator_membership_revision = \
                   CreatorMembershipRevision.objects.clone_revision(
                     creator_membership=creator_membership,
                     changeset=self.changeset)
-                creator_membership_revison.deleted = True
-                creator_membership_revison.save()
+                creator_membership_revision.deleted = True
+                creator_membership_revision.save()
 
             for creator_non_comic_work in \
               self.creator.active_non_comic_works():
@@ -6463,12 +6472,12 @@ class CreatorRevision(Revision):
                 if noncomicwork_lock is None:
                     raise IntegrityError("needed CreatorNonComicWork lock not"
                                          " possible")
-                creator_non_comic_work_revison = \
+                creator_non_comic_work_revision = \
                   CreatorNonComicWorkRevision.objects.clone_revision(
                     creator_non_comic_work=creator_non_comic_work,
                     changeset=self.changeset)
-                creator_non_comic_work_revison.deleted = True
-                creator_non_comic_work_revison.save()
+                creator_non_comic_work_revision.deleted = True
+                creator_non_comic_work_revision.save()
 
             for creator_relation in self.creator.active_relations():
                 relation_lock = _get_revision_lock(creator_relation,
@@ -6476,12 +6485,12 @@ class CreatorRevision(Revision):
                 if relation_lock is None:
                     raise IntegrityError("needed CreatorRelation lock not "
                                          "possible")
-                creator_relation_revison = \
+                creator_relation_revision = \
                   CreatorRelationRevision.objects.clone_revision(
                     creator_relation=creator_relation,
                     changeset=self.changeset)
-                creator_relation_revison.deleted = True
-                creator_relation_revison.save()
+                creator_relation_revision.deleted = True
+                creator_relation_revision.save()
 
             for creator_school in self.creator.active_schools():
                 school_lock = _get_revision_lock(creator_school,
@@ -6489,11 +6498,11 @@ class CreatorRevision(Revision):
                 if school_lock is None:
                     raise IntegrityError("needed CreatorSchool lock not "
                                          "possible")
-                creator_school_revison = \
+                creator_school_revision = \
                   CreatorSchoolRevision.objects.clone_revision(
                     creator_school=creator_school, changeset=self.changeset)
-                creator_school_revison.deleted = True
-                creator_school_revison.save()
+                creator_school_revision.deleted = True
+                creator_school_revision.save()
 
         return True
 

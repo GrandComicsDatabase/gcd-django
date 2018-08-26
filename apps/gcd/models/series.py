@@ -124,6 +124,9 @@ class Series(GcdData):
 
     def has_dependents(self):
         # use active_issues() rather than issue_count to include variants.
+        # TODO allow deletes of singletons with the issues, including
+        #      all variants ?
+        # return ((not self.is_singleton and self.active_issues().exists()) or
         return (self.active_issues().exists() or
                 self.issue_revisions.active_set().exists())
 
