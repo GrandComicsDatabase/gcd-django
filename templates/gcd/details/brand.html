@@ -40,10 +40,6 @@ GCD :: Brand Emblem :: {{ brand.name }}
         <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
-{% if not items  %}
-        <dt> Issues:
-        <dd> None
-{% endif %}
       </dl>
 {% if brand.emblem %}
 <img src="{{ brand.emblem.scaled_image.url }}">

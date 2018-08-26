@@ -66,6 +66,70 @@ class CountStatsManager(models.Manager):
         self.create(name='stories', language=language, country=country,
                     count=Story.objects.filter(**kwargs).count())
 
+    def update_count(self, field, delta, language=None, country=None):
+        """
+        Updates a single statistic (generic, per language, and per country).
+
+        The generic statistic is always updated.  The language and/or
+        country statistics are updated if their respective parameters
+        are not None.
+        """
+        stat = self.get(name=field, language=None, country=None)
+        stat.count = models.F('count') + delta
+        stat.save()
+
+        if language:
+            try:
+                stat = self.get(name=field, language=language, country=None)
+                stat.count = models.F('count') + delta
+                stat.save()
+            except CountStats.DoesNotExist:
+                self.init_stats(language=language)
+
+        if country:
+            try:
+                stat = self.get(name=field, language=None, country=country)
+                stat.count = models.F('count') + delta
+                stat.save()
+            except CountStats.DoesNotExist:
+                self.init_stats(country=country)
+
+    def update_all_counts(self, deltas, negate=False,
+                          language=None, country=None):
+        """
+        Apply the deltas to the various statistices.
+
+        Language and country can both be updated at once.
+        The generic stats (with language and country both None) are always
+        updated.  If neither language nor country are passed, then only
+        the generic stats are updated.
+
+        By default, the deltas are added, but if negate=True, then the
+        deltas will be subtracted (by negating them before update).
+
+        If the language or country do not have stats yet, they will
+        be initialized and the deltas will not be applied to them.
+        As this should be called after the changes have been committed
+        back to the display (which is needed to get the deltas),
+        the stats initialization will include the latest changes.
+        """
+        if country and not self.filter(country=country,
+                                       language=None).exists():
+            self.init_stats(country=country)
+            country = None
+
+        if language and not self.filter(language=language,
+                                        country=None).exists():
+            self.init_stats(language=language)
+            language = None
+
+        for field in deltas:
+            # 'series issues' apply only to the Series object, not CountStats.
+            if field != 'series issues' and deltas[field]:
+                delta = -deltas[field] if negate else deltas[field]
+                self.update_count(field=field, delta=delta,
+                                  language=language, country=country)
+
 
 class CountStats(models.Model):
     """

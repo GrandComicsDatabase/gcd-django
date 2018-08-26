@@ -15,7 +15,7 @@
         <a href="{{ entry.get_status_url }}">{{ entry.issue.full_descriptor|default:entry }}</a>
     {% else %}
     <div class="status_grid_flex {{ cover_status_width }} scan_status_0">
-        <a href="{% url "upload_cover" issue_id=entry.id %}">{{ entry.full_descriptor|default:entry }}</a>
+        <a href="{% if MYCOMICS %}https://www.comics.org/{% endif %}{% url "upload_cover" issue_id=entry.id %}">{{ entry.full_descriptor|default:entry }}</a>
     {% endif %}
     </div>
 {% endfor %}

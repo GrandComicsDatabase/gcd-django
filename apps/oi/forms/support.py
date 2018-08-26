@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import re
+import six
+
 from django.conf import settings
 from django import forms
 from django.utils.safestring import mark_safe
@@ -631,6 +634,56 @@ class PageCountInput(TextInput):
     def render(self, name, value, attrs=None):
         value = format_page_count(value)
         return super(PageCountInput, self).render(name, value, attrs)
+
+
+class ForeignKeyField(forms.IntegerField):
+    def __init__(self, queryset, target_name=None, **kwargs):
+        forms.IntegerField.__init__(self, **kwargs)
+        self.queryset = queryset
+        if target_name is not None:
+            self.target_name = target_name
+
+    def clean(self, value):
+        id = forms.IntegerField.clean(self, value)
+        if id is None:
+            return id
+        try:
+            return self.queryset.get(id=id)
+        except ObjectDoesNotExist:
+            raise forms.ValidationError, ("%d is not the ID of a valid %s" %
+                               (id, self.target_name))
+        except MultipleObjectsReturned:
+            raise forms.ValidationError, (
+              "%d matched multiple instances of %s" % (id, self.target_name))
+
+
+class KeywordsWidget(forms.TextInput):
+    def render(self, name, value, attrs=None):
+        if value is not None and not isinstance(value, six.string_types):
+            value = u'; '.join([
+                o.tag.name for o in value.select_related("tag")])
+        return super(KeywordsWidget, self).render(name, value, attrs)
+
+
+class KeywordsField(forms.CharField):
+    _SPLIT_RE = re.compile(ur'\s*;\s*')
+    _NOT_ALLOWED = ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']
+
+    widget = KeywordsWidget
+
+    def clean(self, value):
+        value = super(KeywordsField, self).clean(value)
+        value.strip()
+
+        for c in self._NOT_ALLOWED:
+            if c in value:
+                raise forms.ValidationError(
+                    'The following characters are not allowed in a keyword: ' +
+                    ' '.join(self._NOT_ALLOWED))
+
+        keywords = [k for k in self._SPLIT_RE.split(value) if k]
+        keywords.sort()
+        return keywords
 
 
 class BrandEmblemSelect(forms.Select):

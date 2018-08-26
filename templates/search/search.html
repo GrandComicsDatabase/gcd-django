@@ -88,7 +88,7 @@
         <table class="facet_listing left">
       {% for country in facets.fields.country %}
             <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-          <td><a href="?{{ query }}{{ facet_page }}{% if not is_country_selected %}&amp;selected_facets=country_exact:{{ country.0|urlencode }}{% endif %}">{{ country.0|get_country_flag:1 }} ({{ country.1}})</a>
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_country_selected %}&amp;selected_facets=country_exact:{{ country.0|urlencode }}{% endif %}">{{ country.0|get_country_flag_by_name }} ({{ country.1}})</a>
           </td></tr>
       {% endfor %}
         </table>

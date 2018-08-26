@@ -81,6 +81,13 @@ urlpatterns = [
     url(r'^brand/name/(?P<brand_name>.+)/$',
       gcd_views.search.brand_by_name, name='brand_by_name'),
 
+    url(r'^brand_emblem/(?P<brand_id>\d+)/$',
+      gcd_views.details.brand, name='show_brand'),
+    url(r'^brand_emblem/name/(?P<brand_name>.+)/sort/(?P<sort>.+)/$',
+      gcd_views.search.brand_by_name, name='brand_by_name'),
+    url(r'^brand_emblem/name/(?P<brand_name>.+)/$',
+      gcd_views.search.brand_by_name, name='brand_by_name'),
+
     url(r'^indicia_publisher/(?P<indicia_publisher_id>\d+)/$',
       gcd_views.details.indicia_publisher, name='show_indicia_publisher'),
     url(r'^indicia_publisher/name/(?P<ind_pub_name>.+)/sort/(?P<sort>.+)/$',

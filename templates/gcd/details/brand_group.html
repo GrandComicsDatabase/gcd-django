@@ -39,10 +39,6 @@ GCD :: Brand Group :: {{ brand.name }}
         <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
-{% if not items %}
-        <dt> Issues:
-        <dd> None
-{% endif %}
       </dl>
     </div> <!-- control_center -->
 
