@@ -3412,7 +3412,7 @@ class SeriesRevision(Revision):
             self.year_ended = self.year_began
             self.year_ended_uncertain = self.year_began_uncertain
 
-    def _handle_prerequisites(self, changes):
+    def _TODO_handle_prerequisites(self, changes):
         # Handle deletion of the singleton issue before getting the
         # series stat counts to avoid double-counting the deletion.
         # TODO currently never used, has_dependents does not handle
@@ -3434,7 +3434,8 @@ class SeriesRevision(Revision):
     def _pre_save_object(self, changes):
         if changes['from is_current']:
             reservation = self.series.get_ongoing_reservation()
-            reservation.delete()
+            if reservation:
+                 reservation.delete()
 
         if changes['to is_comics_publication']:
             # TODO: But don't we count covers for some non-comics?
