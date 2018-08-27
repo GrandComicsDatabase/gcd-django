@@ -2973,6 +2973,9 @@ class BrandRevision(PublisherRevisionBase):
 
 
 class PreviewBrand(Brand):
+    class Meta:
+        abstract = True
+
     @property
     def group(self):
         return self._group.all()
