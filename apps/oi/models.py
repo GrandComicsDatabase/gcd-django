@@ -1075,37 +1075,30 @@ class Changeset(models.Model):
                   "Only REVIEWING changes with an approver can be approved.")
 
         issue_revision_count = self.issuerevisions.count()
-        if self.change_type == CTYPES['issue_add'] and \
-           issue_revision_count > 1:
-            # Bulk add of skeletons is relatively complicated.
-            # The first issue will have the "after" field set.  Later
-            # issues will need the "after" field set to the issue that was
-            # just created by the previous save.
-            previous_revision = None
-            for revision in self.issuerevisions.order_by('revision_sort_code'):
-                if previous_revision is None:
-                    revision.commit_to_display(
-                        space_count=issue_revision_count)
-                else:
-                    revision.after = previous_revision.issue
-                    revision.commit_to_display(space_count=0)
-                previous_revision = revision
-        else:
-            for revision in self.revisions:
-                # For adds we might generate additional revisions, and call
-                # commit_to_display when generating these approvals. Check
-                # committed status to avoid double adds.
-                # TODO check regarding stats
-                # TODO revision generated later in the chain will be
-                #      picked by up self.revisions anyway, so maybe not needed
-                #      for purpose of avoiding double adds.
-                #      But check shouldn't hurt anyway ?
-                if revision.committed is not True:
-                    # adds have a (created) source only after commit_to_display
-                    if revision.source:
-                        _free_revision_lock(revision.source)
-                    # first free the lock, commit_to_display might delete source
-                    revision.commit_to_display()
+        for revision in self.revisions:
+            # TODO rethink the depency handling during committing
+            #
+            # We might have saved other revision due to dependences.
+            # Other types, later in the itertools.chain, are fresh,
+            # but revision of the same type can became stale
+            # in self.revisions, so refresh_from_db. Could do a
+            # check for type, i.e. same as before, to reduce db calls.
+            revision.refresh_from_db()
+
+            # For adds we might generate additional revisions, and call
+            # commit_to_display when generating these approvals. Check
+            # committed status to avoid double adds.
+            # TODO check regarding stats
+            # TODO revision generated later in the chain will be
+            #      picked by up self.revisions anyway, so maybe not needed
+            #      for purpose of avoiding double adds.
+            #      But check shouldn't hurt anyway ?
+            if revision.committed is not True:
+                # adds have a (created) source only after commit_to_display
+                if revision.source:
+                    _free_revision_lock(revision.source)
+                # first free the lock, commit_to_display might delete source
+                revision.commit_to_display()
 
         self.comments.create(commenter=self.approver,
                              text=notes,
@@ -1215,8 +1208,9 @@ class Changeset(models.Model):
             return self.queue_name()
         if self.change_type == CTYPES['variant_add']:
             return self.queue_name() + u' [Variant]'
-        return 'Changeset: %d' % self.id
-
+        if self.id:
+            return 'Changeset: %d' % self.id
+        return "Changeset"
 
 class ChangesetComment(models.Model):
     """
@@ -2974,7 +2968,7 @@ class BrandRevision(PublisherRevisionBase):
 
 class PreviewBrand(Brand):
     class Meta:
-        abstract = True
+        proxy = True
 
     @property
     def group(self):
@@ -3665,72 +3659,8 @@ class SeriesBondRevision(Revision):
 
 
 class IssueRevisionManager(RevisionManager):
-
     def clone_revision(self, issue, changeset):
-        """
-        Given an existing Issue instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
-        Entirely new issues should be started by simply instantiating
-        a new IssueRevision directly.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=issue,
-                                              instance_class=Issue,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, issue, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = IssueRevision(
-            # revision-specific fields:
-            issue=issue,
-            changeset=changeset,
-
-            # copied fields:
-            number=issue.number,
-            title=issue.title,
-            no_title=issue.no_title,
-            volume=issue.volume,
-            no_volume=issue.no_volume,
-            volume_not_printed=issue.volume_not_printed,
-            display_volume_with_number=issue.display_volume_with_number,
-            publication_date=issue.publication_date,
-            key_date=issue.key_date,
-            on_sale_date_uncertain=issue.on_sale_date_uncertain,
-            price=issue.price,
-            indicia_frequency=issue.indicia_frequency,
-            no_indicia_frequency=issue.no_indicia_frequency,
-            series=issue.series,
-            indicia_publisher=issue.indicia_publisher,
-            indicia_pub_not_printed=issue.indicia_pub_not_printed,
-            brand=issue.brand,
-            no_brand=issue.no_brand,
-            page_count=issue.page_count,
-            page_count_uncertain=issue.page_count_uncertain,
-            editing=issue.editing,
-            no_editing=issue.no_editing,
-            barcode=issue.barcode,
-            no_barcode=issue.no_barcode,
-            isbn=issue.isbn,
-            no_isbn=issue.no_isbn,
-            variant_of=issue.variant_of,
-            variant_name=issue.variant_name,
-            rating=issue.rating,
-            no_rating=issue.no_rating,
-            notes=issue.notes,
-            keywords=get_keywords(issue))
-
-        if issue.on_sale_date:
-            (revision.year_on_sale,
-             revision.month_on_sale,
-             revision.day_on_sale) = on_sale_date_fields(issue.on_sale_date)
-
-        revision.save()
-        return revision
+        return IssueRevision.clone(issue, changeset)
 
 
 def get_issue_field_list():
@@ -3758,7 +3688,8 @@ class IssueRevision(Revision):
     # when saving back the the DB. If null, place at the beginning of
     # the series.
     after = models.ForeignKey(
-        Issue, null=True, blank=True, related_name='after_revisions')
+        Issue, null=True, blank=True, related_name='after_revisions',
+        verbose_name='Add this issue after')
 
     # This is used *only* for multiple issues within the same changeset.
     # It does NOT correspond directly to gcd_issue.sort_code, which must be
@@ -3768,7 +3699,8 @@ class IssueRevision(Revision):
     # When adding an issue, this requests the reservation upon approval of
     # the new issue.  The request will be granted unless an ongoing reservation
     # is in place at the time of approval.
-    reservation_requested = models.BooleanField(default=False)
+    reservation_requested = models.BooleanField(
+        default=False, verbose_name='Request reservation')
 
     number = models.CharField(max_length=50)
 
@@ -3809,27 +3741,328 @@ class IssueRevision(Revision):
     series = models.ForeignKey(Series, related_name='issue_revisions')
     indicia_publisher = models.ForeignKey(
         IndiciaPublisher, null=True, blank=True, default=None,
-        related_name='issue_revisions')
-    indicia_pub_not_printed = models.BooleanField(default=False)
+        related_name='issue_revisions',
+        verbose_name='indicia/colophon publisher')
+    indicia_pub_not_printed = models.BooleanField(
+        default=False,
+        verbose_name='indicia/colophon pub. not printed')
     brand = models.ForeignKey(
         Brand, null=True, default=None, blank=True,
-        related_name='issue_revisions')
-    no_brand = models.BooleanField(default=False)
+        related_name='issue_revisions', verbose_name='brand emblem')
+    no_brand = models.BooleanField(default=False,
+                                   verbose_name='no brand emblem')
 
-    isbn = models.CharField(max_length=32, blank=True, default='')
-    no_isbn = models.BooleanField(default=False)
+    isbn = models.CharField(max_length=32, blank=True, default='',
+                            verbose_name='ISBN')
+    no_isbn = models.BooleanField(default=False, verbose_name='No ISBN')
 
     barcode = models.CharField(max_length=38, blank=True, default='')
     no_barcode = models.BooleanField(default=False)
 
-    rating = models.CharField(max_length=255, blank=True, default='')
-    no_rating = models.BooleanField(default=False)
+    rating = models.CharField(max_length=255, blank=True, default='',
+                              verbose_name="Publisher's age guidelines")
+    no_rating = models.BooleanField(
+        default=False, verbose_name="No publisher's age guidelines")
 
     date_inferred = models.BooleanField(default=False)
 
+    source_name = 'issue'
+    source_class = Issue
+
     @property
-    def valid_isbn(self):
-        return validated_isbn(self.isbn)
+    def source(self):
+        return self.issue
+
+    @source.setter
+    def source(self, value):
+        self.issue = value
+
+    @property
+    def series_changed(self):
+        """ True if the series changed and this is neither add nor delete. """
+        return ((not self.deleted) and
+                (self.previous_revision is not None) and
+                self.previous_revision.series != self.series)
+
+    @classmethod
+    def fork_variant(cls, issue, changeset,
+                     variant_name, variant_cover_revision=None,
+                     reservation_requested=False):
+        current_variants = issue.variant_set.all().order_by('-sort_code')
+        if current_variants:
+            add_after = current_variants[0]
+        else:
+            add_after = issue
+
+        variant_revision = IssueRevision.clone(
+            issue, changeset, fork=True, exclude={
+                'publication_date',
+                'key_date',
+                'on_sale_date',
+                'on_sale_date_uncertain',
+                'price',
+                'brand',
+                'no_brand',
+                'isbn',
+                'no_isbn',
+                'barcode',
+                'no_barcode',
+                'keywords',
+            })
+        variant_revision.add_after = add_after
+        variant_revision.variant_of = issue
+        variant_revision.variant_name = variant_name
+        variant_revision.reservation_requested = reservation_requested
+        variant_revision.save()
+
+        if variant_cover_revision:
+            cover_sequence_revision = StoryRevision(
+                changeset=changeset,
+                type=StoryType.objects.get(name='cover'),
+                no_script=True,
+                pencils='?',
+                inks='?',
+                colors='?',
+                no_letters=True,
+                no_editing=True,
+                sequence_number=0,
+                page_count=2 if variant_cover_revision.is_wraparound else 1)
+            cover_sequence_revision.save()
+        else:
+            cover_sequence_revision = None
+
+        return variant_revision, cover_sequence_revision
+
+    @classmethod
+    def _get_stats_category_field_tuples(cls):
+        return frozenset({('series', 'country',), ('series', 'language',)})
+
+    @classmethod
+    def _get_conditional_field_tuple_mapping(cls):
+        has_title = ('series', 'has_issue_title')
+        has_barcode = ('series', 'has_barcode')
+        has_isbn = ('series', 'has_isbn')
+        has_volume = ('series', 'has_volume')
+        has_ind_freq = ('series', 'has_indicia_frequency')
+        return {
+            'title': has_title,
+            'no_title': has_title,
+            'barcode': has_barcode,
+            'no_barcode': has_barcode,
+            'isbn': has_isbn,
+            'no_isbn': has_isbn,
+            'valid_isbn': has_isbn,
+            'volume': has_volume,
+            'no_volume': has_volume,
+            'display_volume_with_issue': has_volume,
+            'indicia_frequency': has_ind_freq,
+            'no_indicia_frequency': has_ind_freq,
+        }
+
+    @classmethod
+    def _get_parent_field_tuples(cls):
+        # There are several routes to a publisher object, but
+        # if there are differences, it is the publisher of the series
+        # that should get the count adjustments.
+        return frozenset({
+            ('series',),
+            ('series', 'publisher'),
+            ('indicia_publisher',),
+            ('brand',),
+            ('brand', 'group'),
+        })
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset()):
+        source = fork_source if fork_source else self.issue
+        if source.on_sale_date and 'on_sale_date' not in exclude:
+            (self.year_on_sale,
+             self.month_on_sale,
+             self.day_on_sale) = on_sale_date_fields(source.on_sale_date)
+
+    def _do_complete_added_revision(self, series, variant_of=None):
+        """
+        Do the necessary processing to complete the fields of a new
+        issue revision for adding a record before it can be saved.
+        """
+        self.series = series
+        if variant_of:
+            self.variant_of = variant_of
+
+    def _same_series_revisions(self):
+        return self.changeset.issuerevisions.filter(series=self.series)
+
+    def _same_series_open_with_after(self):
+        return self._same_series_revisions().filter(after__isnull=False,
+                                                    committed=None)
+
+    def _open_prereq_revisions(self):
+        # Adds and moves go first to last, deletes last to first.
+        if self.deleted:
+            return self._same_series_revisions().exclude(id__lte=self.id) \
+                                                .filter(committed=None) \
+                                                .order_by('-revision_sort_code')
+        else:
+            return self._same_series_revisions().exclude(id__gte=self.id) \
+                                                .filter(committed=None) \
+                                                .order_by('revision_sort_code')
+
+    def _committed_prereq_revisions(self):
+        # We pop off of open prereqs and push onto committed, so reverse sort.
+        sort = 'revision_sort_code' if self.deleted else '-revision_sort_code'
+        return self._same_series_revisions().exclude(id=self.id) \
+                                            .filter(committed=True) \
+                                            .order_by(sort)
+
+    def _pre_commit_check(self):
+        # If any other issue from this series has been committed, we have
+        # already gone through this logic, so skip it.
+        if self._same_series_revisions().filter(committed=True).exists():
+            return
+
+        # Verify that we have at most one uncommitted revision with this
+        # series that has a non-null 'after' field.  This means that for now
+        # we can only support one contiguous run of added/moved issues per
+        # series.
+        #
+        # TODO: This may need further tweaking for various cases of working
+        #       with variants, moving covers, etc. but is sufficient for
+        #       general single and bulk issue operations.
+        after = self._same_series_open_with_after()
+        if after.count() > 1:
+            raise ValueError(
+                ("%s, %s: Only one IssueRevision per series within a "
+                 "changeset can have 'after' set.  All others are assumed "
+                 "to follow it based on the 'revision_sort_code' field.") %
+                (self.changeset, self))
+        if after.exists() and (after.first() !=
+                               self._same_series_revisions()
+                                   .order_by('revision_sort_code')
+                                   .first()):
+            raise ValueError(
+                ("%s, %s: The IssueRevision that specifies an 'after' must "
+                 "have the lowest revision_sort_code.") %
+                (self.changeset, after.first()))
+
+    def _ensure_sort_code_space(self):
+        first_rev = self._same_series_open_with_after().first()
+        after_code = -1 if first_rev is None else first_rev.after.sort_code
+
+        # Include deleted issues due to unique constraint on sort_code.
+        later_issues = Issue.objects.filter(
+            series=self.series,
+            sort_code__gt=after_code).order_by('-sort_code')
+
+        if not later_issues.exists():
+            # We're appending to the series, no space needed.
+            return
+
+        num_issues = self._same_series_revisions().count()
+        if later_issues.last().sort_code - after_code > num_issues:
+            # Someone else already made space here.
+            return
+
+        for later_issue in later_issues:
+            later_issue.sort_code += num_issues
+            later_issue.save()
+
+    def _handle_prerequisites(self, changes):
+        if self.edited and not self.series_changed:
+            # order of revision commit doesn't matter, as we do issue
+            # sort_code reorderings separately from the main editing
+            # workflow, at least for now.
+            return
+
+        if not self.deleted:
+            self._ensure_sort_code_space()
+
+        current_prereq_qs = self._open_prereq_revisions().all()
+        current_prereq_count = current_prereq_qs.count()
+
+        stats_changed = False
+        while current_prereq_count:
+            stats_changed = True
+            current_prereq_qs.first().commit_to_display()
+            # Always eval a new queryset as committing may cause other commits.
+            # Calling all() produces an identical but unevaluated queryset.
+            current_prereq_qs = current_prereq_qs.all()
+            new_prereq_count = current_prereq_qs.count()
+
+            if new_prereq_count >= current_prereq_count:
+                # We should never *gain* revisions- even if we create
+                # revisions during a commit, those newly created revisions
+                # should themselves be committed before the other commit
+                # completes.  Prevent infinite loops by raising.
+                # TODO we can add revisions for later commit in some
+                #      cases, e.g. when they are in a later part of
+                #      the itertools.chain. Check on this assumption.
+                raise RuntimeError("Committing revisions did not reduce the "
+                                   "number of uncommitted revisions!")
+
+            current_prereq_count = new_prereq_count
+
+        # refresh the series, otherwise the updated issue_counts from the other
+        # issues (i.e. current_prereq_qs) in a bulk-add are overwritten
+        # TODO rethink this handling, rethink F
+        # TODO what if series changes publisher
+        if stats_changed:
+            self.series.refresh_from_db()
+
+    def _post_assign_fields(self, changes):
+        self.issue.on_sale_date = on_sale_date_as_string(self)
+
+        if self.series.has_isbn:
+            self.issue.valid_isbn = validated_isbn(self.issue.isbn)
+
+        # TODO: Support adding base + variant by adding a variant_of_rev
+        #       field to IssueRevision and setting variant_of to the
+        #       committed issue of the variant_of_rev field automatically,
+        #       committing the variant_of_rev if necessary.
+        #       Idea may be good for other new dependent object situations.
+        if self.added or self.series_changed:
+            if not self.after:
+                # If we're handling a run of issues, this is the
+                # previous issue in the run, if any.
+                committed = self._committed_prereq_revisions().first()
+                if committed:
+                    self.after = committed.issue
+
+            if self.after:
+                self.issue.sort_code = self.after.sort_code + 1
+            else:
+                self.issue.sort_code = 0
+
+    def _post_save_object(self, changes):
+        self.series.set_first_last_issues()
+        if self.series_changed:
+            old_series = self.previous_revision.series
+            old_series.set_first_last_issues()
+
+            # new series might have gallery after move
+            if not self.series.has_gallery and \
+               self.issue.active_covers().count():
+                self.series.has_gallery = True
+                self.series.save()
+
+            # old series might have lost gallery after move
+            if old_series.scan_count == 0:
+                old_series.has_gallery = False
+                old_series.save()
+
+    def _handle_dependents(self, changes):
+        # These story revisions will handle their own stats when committed.
+        # They will also update the issue's is_indexed field.
+        for story in self.changeset.storyrevisions.filter(issue=None):
+            story.issue = self.issue
+            story.save()
+
+        if not self.deleted and self.issue.is_indexed != INDEXED['skeleton']:
+            RecentIndexedIssue.objects.update_recents(self.issue)
+
+
+
+    ######################################
+    # TODO old methods, t.b.c
 
     @property
     def display_number(self):
@@ -3838,22 +4071,6 @@ class IssueRevision(Revision):
             return u'#' + number
         else:
             return u''
-
-    @property
-    def sort_code(self):
-        if self.issue is None:
-            return 0
-        return self.issue.sort_code
-
-    @property
-    def on_sale_date(self):
-        return on_sale_date_as_string(self)
-
-    def active_covers(self):
-        raise NotImplementedError
-
-    def shown_covers(self):
-        raise NotImplementedError
 
     @property
     def other_issue_revision(self):
@@ -3865,74 +4082,6 @@ class IssueRevision(Revision):
             return self._saved_other_issue_revision
         else:
             raise ValueError
-
-    def variant_covers(self):
-        image_set = Cover.objects.none()
-        if self.issue and not self.variant_of:
-            if self.changeset.change_type in [CTYPES['variant_add'],
-                                              CTYPES['two_issues']] \
-                    and self.changeset.coverrevisions.count():
-                image_set |= self.issue.variant_covers()
-                if self.other_issue_revision.variant_of == self.issue:
-                    # maybe a cover move from the variant issue
-                    ids = list(self.changeset.coverrevisions
-                                   .filter(issue=self.issue)
-                                   .values_list('cover__id', flat=True))
-                    image_set |= Cover.objects.filter(id__in=ids)
-                    # maybe a cover move from the other issue for 'two_issues'
-                    if self.changeset.change_type == CTYPES['two_issues']:
-                        exclude_ids = list(self.changeset.coverrevisions
-                                               .exclude(issue=self.issue)
-                                               .values_list('cover__id',
-                                                            flat=True))
-                        image_set = image_set.exclude(id__in=exclude_ids)
-            else:
-                image_set |= self.issue.variant_covers()
-        elif self.variant_of:
-            if self.changeset.change_type in [CTYPES['variant_add'],
-                                              CTYPES['two_issues']] \
-               and self.changeset.coverrevisions.count():
-                image_set |= self.variant_of.variant_covers()
-                if self.issue:
-                    # take out owns ones
-                    image_set = image_set.exclude(issue=self.issue)
-                    if self.variant_of == self.other_issue_revision.issue:
-                        # maybe a cover move to the other issue
-                        # for 'two_issues'
-                        ids = list(self.changeset.coverrevisions
-                                                 .filter(issue=self.issue)
-                                                 .values_list('cover__id',
-                                                              flat=True))
-                        image_set |= Cover.objects.filter(id__in=ids)
-                if self.variant_of == self.other_issue_revision.issue:
-                    # maybe a cover move from the other issue to exclude
-                    exclude_ids = list(self.changeset.coverrevisions
-                                           .exclude(issue=self.issue)
-                                           .values_list('cover__id',
-                                                        flat=True))
-                    image_set |= self.variant_of.active_covers()\
-                                                .exclude(id__in=exclude_ids)
-                else:
-                    image_set |= self.variant_of.active_covers()
-            elif self.issue:
-                image_set |= self.issue.variant_covers()
-            else:
-                image_set |= self.variant_of.variant_covers()
-                image_set |= self.variant_of.active_covers()
-        return image_set
-
-    def has_covers(self):
-        if self.issue is None:
-            return False
-        return self.issue.has_covers()
-
-    def has_reprints(self):
-        if self.issue is None:
-            return False
-        return (self.from_reprints.count() or
-                self.to_reprints.count() or
-                self.from_issue_reprints.count() or
-                self.to_issue_reprints.count())
 
     def can_add_reprints(self):
         if self.variant_of and self.ordered_story_revisions().count() > 0:
@@ -3987,10 +4136,6 @@ class IssueRevision(Revision):
         else:
             return from_reprints
 
-    @property
-    def from_reprints(self):
-        return self.from_reprints_oi(preview=True)
-
     def from_issue_reprints_oi(self, preview=False):
         if self.issue is None:
             return IssueReprint.objects.none()
@@ -4017,10 +4162,6 @@ class IssueRevision(Revision):
             return new_revisions | old_revisions
         else:
             return from_issue_reprints
-
-    @property
-    def from_issue_reprints(self):
-        return self.from_issue_reprints_oi(preview=True)
 
     def to_reprints_oi(self, preview=False):
         if self.issue is None:
@@ -4049,10 +4190,6 @@ class IssueRevision(Revision):
         else:
             return to_reprints
 
-    @property
-    def to_reprints(self):
-        return self.to_reprints_oi(preview=True)
-
     def to_issue_reprints_oi(self, preview=False):
         if self.issue is None:
             return IssueReprint.objects.none()
@@ -4079,10 +4216,6 @@ class IssueRevision(Revision):
             return new_revisions | old_revisions
         else:
             return to_issue_reprints
-
-    @property
-    def to_issue_reprints(self):
-        return self.to_issue_reprints_oi(preview=True)
 
     def has_reprint_revisions(self):
         if self.issue is None:
@@ -4126,84 +4259,13 @@ class IssueRevision(Revision):
                 return True
         return False
 
-    def _empty_reprint_revisions(self):
-        return ReprintRevision.objects.none()
-    origin_reprint_revisions = property(_empty_reprint_revisions)
-    target_reprint_revisions = property(_empty_reprint_revisions)
-
-    def other_variants(self):
-        if self.variant_of:
-            variants = self.variant_of.variant_set.all()
-            if self.issue:
-                variants = variants.exclude(id=self.issue.id)
-        else:
-            variants = self.variant_set.all()
-        variants = list(variants.exclude(deleted=True))
-
-        if self.changeset.change_type == CTYPES['variant_add'] \
-                and not self.variant_of:
-            variants.extend(self.changeset.issuerevisions
-                                          .exclude(issue=self.issue))
-
-        return variants
-
-    @property
-    def variant_set(self):
-        if self.issue is None:
-            return Issue.objects.none()
-        return self.issue.variant_set.all()
-
+    # TODO what can be re-used/share with PreviewIssue
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
-
-    def shown_stories(self):
-        if self.variant_of:
-            if self.changeset.issuerevisions.filter(issue=self.variant_of)\
-                                            .count():
-                # if base_issue is part of the changeset use the storyrevisions
-                base_issue = self.changeset.issuerevisions\
-                                           .filter(issue=self.variant_of).get()
-            else:
-                base_issue = self.variant_of
-            stories = list(base_issue.active_stories()
-                                     .order_by('sequence_number')
-                                     .select_related('type'))
-        else:
-            stories = list(self.active_stories().order_by('sequence_number')
-                                                .select_related('type'))
-        if self.series.is_comics_publication:
-            if (len(stories) > 0):
-                cover_story = stories.pop(0)
-                if self.variant_of:
-                    # can have only one sequence, the variant cover
-                    own_stories = list(self.active_stories())
-                    if own_stories:
-                        cover_story = own_stories[0]
-            elif self.variant_of and len(list(self.active_stories())):
-                cover_story = self.active_stories()[0]
-            else:
-                cover_story = None
-        else:
-            cover_story = None
-        return cover_story, stories
 
     @property
     def story_set(self):
         return self.ordered_story_revisions()
-
-    @property
-    def reservation_set(self):
-        # Just totally fake this for now.
-        # TODO delete this, I think
-        return Reservation.objects.filter(pk__isnull=True)
-
-    def get_prev_next_issue(self):
-        if self.issue is not None:
-            return self.issue.get_prev_next_issue()
-        if self.after is not None:
-            [p, n] = self.after.get_prev_next_issue()
-            return [self.after, n]
-        return [None, None]
 
     def _field_list(self):
         fields = get_issue_field_list()
@@ -4352,12 +4414,6 @@ class IssueRevision(Revision):
         # Note, the "after" field does not directly contribute IMPs.
         return 0
 
-    def _get_source(self):
-        return self.issue
-
-    def _get_source_name(self):
-        return 'issue'
-
     def _do_complete_added_revision(self, series, variant_of=None):
         """
         Do the necessary processing to complete the fields of a new
@@ -4415,278 +4471,6 @@ class IssueRevision(Revision):
             return stories.order_by('-sequence_number')[0].sequence_number + 1
         return 0
 
-    def commit_to_display(self, space_count=1):
-        issue = self.issue
-        check_series_order = None
-
-        if issue is None:
-            if self.after is None:
-                after_code = -1
-            else:
-                after_code = self.after.sort_code
-
-            # sort_codes tend to be sequential, so just always increment them
-            # out of the way.
-            later_issues = Issue.objects.filter(
-                series=self.series,
-                sort_code__gt=after_code).order_by('-sort_code')
-
-            # Make space for the issue(s) being added.  The changeset will
-            # pass a larger number or zero in order to make all necessary
-            # space for a multiple add on the first pass, and then not
-            # have to update this for the remaining issues.
-            if space_count > 0:
-                # Unique constraint prevents us from doing this:
-                # later_issues.update(sort_code=F('sort_code') + space_count)
-                # which is vastly more efficient.  TODO: revisit.
-                for later_issue in later_issues:
-                    later_issue.sort_code += space_count
-                    later_issue.save()
-
-            issue = Issue(sort_code=after_code + 1)
-            if self.variant_of:
-                if self.series.is_comics_publication:
-                    update_count('variant issues', 1,
-                                 language=self.series.language,
-                                 country=self.series.country)
-            else:
-                self.series.issue_count = F('issue_count') + 1
-                # do NOT save the series here, it gets saved later in
-                # self._check_first_last(), if we save here as well
-                # the issue_count goes up by 2
-                if self.series.is_comics_publication:
-                    self.series.publisher.issue_count = F('issue_count') + 1
-                    self.series.publisher.save()
-                    if self.brand:
-                        self.brand.issue_count = F('issue_count') + 1
-                        self.brand.save()
-                        for group in self.brand.group.all():
-                            group.issue_count = F('issue_count') + 1
-                            group.save()
-                    if self.indicia_publisher:
-                        self.indicia_publisher.issue_count = \
-                            F('issue_count') + 1
-                        self.indicia_publisher.save()
-                    update_count('issues', 1, language=self.series.language,
-                                 country=self.series.country)
-
-        elif self.deleted:
-            if self.variant_of:
-                if self.series.is_comics_publication:
-                    update_count('variant issues', -1,
-                                 language=self.series.language,
-                                 country=self.series.country)
-            else:
-                self.series.issue_count = F('issue_count') - 1
-                # do NOT save the series here, it gets saved later in
-                # self._check_first_last(), if we save here as well
-                # the issue_count goes down by 2
-                if self.series.is_comics_publication:
-                    self.series.publisher.issue_count = F('issue_count') - 1
-                    self.series.publisher.save()
-                    if self.brand:
-                        self.brand.issue_count = F('issue_count') - 1
-                        self.brand.save()
-                        for group in self.brand.group.all():
-                            group.issue_count = F('issue_count') - 1
-                            group.save()
-                    if self.indicia_publisher:
-                        self.indicia_publisher.issue_count = \
-                            F('issue_count') - 1
-                        self.indicia_publisher.save()
-                    update_count('issues', -1, language=issue.series.language,
-                                 country=issue.series.country)
-            issue.delete()
-            self._check_first_last()
-            return
-
-        else:
-            if not self.variant_of and self.series.is_comics_publication:
-                if self.brand != issue.brand:
-                    if self.brand:
-                        self.brand.issue_count = F('issue_count') + 1
-                        self.brand.save()
-                        for group in self.brand.group.all():
-                            group.issue_count = F('issue_count') + 1
-                            group.save()
-                    if issue.brand:
-                        issue.brand.issue_count = F('issue_count') - 1
-                        issue.brand.save()
-                        for group in issue.brand.group.all():
-                            group.issue_count = F('issue_count') - 1
-                            group.save()
-                if self.indicia_publisher != issue.indicia_publisher:
-                    if self.indicia_publisher:
-                        self.indicia_publisher.issue_count = \
-                            F('issue_count') + 1
-                        self.indicia_publisher.save()
-                    if issue.indicia_publisher:
-                        issue.indicia_publisher.issue_count = \
-                            F('issue_count') - 1
-                        issue.indicia_publisher.save()
-            if self.series != issue.series:
-                if self.series.issue_count:
-                    # move to the end of the new series
-                    issue.sort_code = (self.series.active_issues()
-                                                  .latest('sort_code')
-                                                  .sort_code) + 1
-                else:
-                    issue.sort_code = 0
-                # update counts
-                if self.variant_of:
-                    if self.series.language != issue.series.language or \
-                       self.series.country != issue.series.country:
-                        if self.series.is_comics_publication:
-                            update_count('variant issues', 1,
-                                         language=self.series.language,
-                                         country=self.series.country)
-                        if issue.series.is_comics_publication:
-                            update_count('variant issues', -1,
-                                         language=issue.series.language,
-                                         country=issue.series.country)
-                else:
-                    self.series.issue_count = F('issue_count') + 1
-                    issue.series.issue_count = F('issue_count') - 1
-                    if self.series.publisher != issue.series.publisher:
-                        if self.series.is_comics_publication:
-                            if self.series.publisher:
-                                self.series.publisher.issue_count = \
-                                    F('issue_count') + 1
-                                self.series.publisher.save()
-                        if issue.series.is_comics_publication:
-                            if issue.series.publisher:
-                                issue.series.publisher.issue_count = \
-                                    F('issue_count') - 1
-                                issue.series.publisher.save()
-                    if self.series.language != issue.series.language or \
-                       self.series.country != issue.series.country:
-                        if self.series.is_comics_publication:
-                            update_count('issues', 1,
-                                         language=self.series.language,
-                                         country=self.series.country)
-                        if issue.series.is_comics_publication:
-                            update_count('issues', -1,
-                                         language=issue.series.language,
-                                         country=issue.series.country)
-                        story_count = self.issue.active_stories().count()
-                        update_count('stories', story_count,
-                                     language=self.series.language,
-                                     country=self.series.country)
-                        update_count('stories', -story_count,
-                                     language=issue.series.language,
-                                     country=issue.series.country)
-                        cover_count = self.issue.active_covers().count()
-                        update_count('covers', cover_count,
-                                     language=self.series.language,
-                                     country=self.series.country)
-                        update_count('covers', -cover_count,
-                                     language=issue.series.language,
-                                     country=issue.series.country)
-
-                check_series_order = issue.series
-                # new series might have gallery after move
-                # do NOT save the series here, it gets saved later
-                if self.series.has_gallery is False:
-                    if issue.active_covers().count():
-                        self.series.has_gallery = True
-                # old series might have lost gallery after move
-                if issue.series.scan_count == \
-                   issue.active_covers().count():
-                    issue.series.has_gallery = False
-
-        issue.number = self.number
-        # only if the series has_field is True write to issue
-        if self.series.has_issue_title:
-            issue.title = self.title
-            issue.no_title = self.no_title
-        # handle case when series has_field changes during lifetime
-        # of issue changeset, then changeset resets to issue data
-        else:
-            self.title = issue.title
-            self.no_title = issue.no_title
-            self.save()
-
-        if self.series.has_volume:
-            issue.volume = self.volume
-            issue.no_volume = self.no_volume
-            issue.volume_not_printed = self.volume_not_printed
-            issue.display_volume_with_number = self.display_volume_with_number
-        else:
-            self.volume = issue.volume
-            self.no_volume = issue.no_volume
-            self.volume_not_printed = issue.volume_not_printed
-            self.display_volume_with_number = issue.display_volume_with_number
-            self.save()
-
-        issue.variant_of = self.variant_of
-        issue.variant_name = self.variant_name
-
-        issue.publication_date = self.publication_date
-        issue.key_date = self.key_date
-        issue.on_sale_date = on_sale_date_as_string(self)
-        issue.on_sale_date_uncertain = self.on_sale_date_uncertain
-
-        if self.series.has_indicia_frequency:
-            issue.indicia_frequency = self.indicia_frequency
-            issue.no_indicia_frequency = self.no_indicia_frequency
-        else:
-            self.indicia_frequency = issue.indicia_frequency
-            self.no_indicia_frequency = issue.no_indicia_frequency
-            self.save()
-
-        issue.price = self.price
-        issue.page_count = self.page_count
-        issue.page_count_uncertain = self.page_count_uncertain
-
-        issue.editing = self.editing
-        issue.no_editing = self.no_editing
-        issue.notes = self.notes
-        issue.series = self.series
-        issue.indicia_publisher = self.indicia_publisher
-        issue.indicia_pub_not_printed = self.indicia_pub_not_printed
-        issue.brand = self.brand
-        issue.no_brand = self.no_brand
-
-        if self.series.has_isbn:
-            issue.isbn = self.isbn
-            issue.no_isbn = self.no_isbn
-            issue.valid_isbn = validated_isbn(issue.isbn)
-        else:
-            self.isbn = issue.isbn
-            self.no_isbn = issue.no_isbn
-            self.save()
-
-        if self.series.has_barcode:
-            issue.barcode = self.barcode
-            issue.no_barcode = self.no_barcode
-        else:
-            self.barcode = issue.barcode
-            self.no_barcode = issue.no_barcode
-            self.save()
-
-        if self.series.has_rating:
-            issue.rating = self.rating
-            issue.no_rating = self.no_rating
-        else:
-            self.rating = issue.rating
-            self.no_rating = issue.no_rating
-            self.save()
-
-        issue.save()
-        save_keywords(self, issue)
-        issue.save()
-        if self.issue is None:
-            self.issue = issue
-            self.save()
-            self._check_first_last()
-            for story in self.changeset.storyrevisions.filter(issue=None):
-                story.issue = issue
-                story.save()
-
-        if check_series_order:
-            set_series_first_last(check_series_order)
-            self._check_first_last()
-
     def _check_first_last(self):
         set_series_first_last(self.series)
 
@@ -4722,6 +4506,126 @@ class IssueRevision(Revision):
             return u'%s %s' % (self.series, self.display_number)
         else:
             return u'%s' % self.series
+
+
+class PreviewIssue(Issue):
+    class Meta:
+        proxy = True
+
+    def get_prev_next_issue(self):
+        if self.id:
+            return self._get_prev_next_issue()
+        if self.after is not None:
+            [p, n] = self.after.get_prev_next_issue()
+            return [self.after, n]
+        return [None, None]
+
+    def active_variants(self):
+        if self.id == 0:
+            return Cover.objects.none()
+        # TODO in case of variant add together with issue, would
+        # need to do something like the following to be correct.
+        # We can do something like this with other_variants, there
+        # we have a list. Better to use that one in templates for checks
+        # when displaying something which is preview-relevant.
+        # maybe iterchain helps, but that does not provide a count
+        #if self.revision.changeset.issuerevisions.filter(variant_of=self)\
+                                                 #.exists():
+            #return (self._active_variants() | self.revision.changeset
+                                                 #.issuerevisions
+                                                 #.filter(variant_of=self))
+        #else:
+        return self._active_variants()
+
+    def other_variants(self):
+        if self.variant_of:
+            variants = self.variant_of.active_variants()
+            if self.id:
+                variants = variants.exclude(id=self.id)
+        else:
+            variants = self.active_variants()
+        variants = list(variants)
+
+        # check for newly added variants
+        if self.revision.changeset.issuerevisions.filter(variant_of=self,
+                                                         issue=None)\
+                                                 .exists():
+            variants.extend(self.revision.changeset.issuerevisions
+                                         .filter(variant_of=self,
+                                                 issue=None))
+        return variants
+
+    def active_covers(self):
+        if self.can_have_cover():
+            if self.id != 0:
+                return self._active_covers()
+        return Cover.objects.none()
+
+    def active_stories(self):
+        return self.story_set.exclude(deleted=True)
+
+    @property
+    def story_set(self):
+        return self.ordered_story_revisions()
+
+    def _story_revisions(self):
+        if self.id == 0:
+            return self.storyrevisions.filter(issue__isnull=True)\
+                                 .select_related('changeset', 'type')
+        return self.storyrevisions.filter(issue=self)\
+                             .select_related('changeset', 'issue', 'type')
+
+    def ordered_story_revisions(self):
+        return self._story_revisions().order_by('sequence_number')
+
+    def shown_stories(self):
+        if self.variant_of:
+            if self.issuerevisions.filter(issue=self.variant_of).exists():
+                # if base_issue is part of the changeset use the storyrevisions
+                base_issue_revision = self.issuerevisions\
+                                 .filter(issue=self.variant_of).get()
+                base_issue = PreviewIssue(base_issue_revision.source)
+                base_issue.storyrevisions = base_issue_revision.changeset.storyrevisions
+                base_issue.id = base_issue_revision.source.id
+            else:
+                base_issue = self.variant_of
+            stories = list(base_issue.active_stories()
+                                     .order_by('sequence_number')
+                                     .select_related('type'))
+        else:
+            stories = list(self.active_stories().order_by('sequence_number')
+                                                .select_related('type'))
+        if self.series.is_comics_publication:
+            if (len(stories) > 0):
+                cover_story = stories.pop(0)
+                if self.variant_of:
+                    # can have only one sequence, the variant cover
+                    own_stories = list(self.active_stories())
+                    if own_stories:
+                        cover_story = own_stories[0]
+            elif self.variant_of and len(list(self.active_stories())):
+                cover_story = self.active_stories()[0]
+            else:
+                cover_story = None
+        else:
+            cover_story = None
+        return cover_story, stories
+
+    @property
+    def from_reprints(self):
+        return self.revision.from_reprints_oi(preview=True)
+
+    @property
+    def to_reprints(self):
+        return self.revision.to_reprints_oi(preview=True)
+
+    @property
+    def from_issue_reprints(self):
+        return self.revision.from_issue_reprints_oi(preview=True)
+
+    @property
+    def to_issue_reprints(self):
+        return self.revision.to_issue_reprints_oi(preview=True)
 
 
 def get_story_field_list():
