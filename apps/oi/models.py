@@ -3402,6 +3402,10 @@ class SeriesRevision(Revision):
     def _get_deprecated_field_names(cls):
         return frozenset({'format'})
 
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset()):
+        self.leading_article = self.series.name != self.series.sort_name
+
     def _do_complete_added_revision(self, publisher):
         """
         Do the necessary processing to complete the fields of a new

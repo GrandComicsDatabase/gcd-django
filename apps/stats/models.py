@@ -125,7 +125,8 @@ class CountStatsManager(models.Manager):
 
         for field in deltas:
             # 'series issues' apply only to the Series object, not CountStats.
-            if field != 'series issues' and deltas[field]:
+            if field not in ['series issues', 'publisher series'] \
+              and deltas[field]:
                 delta = -deltas[field] if negate else deltas[field]
                 self.update_count(field=field, delta=delta,
                                   language=language, country=country)
