@@ -21,19 +21,6 @@ from apps.oi.models import (
     SeriesRevision, SeriesBondRevision, IssueRevision, StoryRevision,
     Changeset, CTYPES)
 
-# TODO How to handle test models with pytest.mark.django_db, i.e.
-# when actually saving to the db. Although the test models are not
-# used, django complains. Should be doable by corresponding SQL-statement
-# in django_db_setup. Or, there might be still a way, for the db-affecting
-# tests to not see these models ?
-# There are reports about work on something for this, either in django or
-# pytest-django, but at this time this is not really supported.
-# Would think, that schema_editor.create_model(Dummy) could work, but
-# seemingly doesn't ?
-LOAD_MODELS = True
-if LOAD_MODELS:
-    from apps.oi.tests.models import *
-
 
 @pytest.fixture
 def keywords():

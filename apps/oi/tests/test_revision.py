@@ -8,7 +8,7 @@ import pytest
 from apps.oi.models import Revision, RevisionManager, Changeset
 from apps.stddata.models import Country, Language
 
-from .conftest import (
+from .dummy_models import (
     Dummy, DummyRevision, OtherDummy, OtherDummyRevision,
     SimpleSourceRevision, SimplestRevision)
 
@@ -322,9 +322,9 @@ def patched_other_dummy():
     # Note that OtherDummy.save must be patched before
     # OtherDummyRevision.other_dummy, as the new OtherDummy value must be
     # constructed under the patch.
-    with mock.patch('apps.oi.tests.conftest.OtherDummy.save'), \
-            mock.patch('apps.oi.tests.conftest.OtherDummyRevision.other_dummy',
-                       new=OtherDummy()):
+    with mock.patch('apps.oi.tests.dummy_models.OtherDummy.save'), \
+      mock.patch('apps.oi.tests.dummy_models.OtherDummyRevision.other_dummy',
+                 new=OtherDummy()):
         # revision.other_dummy is mocked, so no need to set it in constructor.
         # attempting to set it without mocking triggers a database operation,
         # even if the object is never saved.

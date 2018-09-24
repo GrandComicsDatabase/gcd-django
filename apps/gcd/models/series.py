@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.core import urlresolvers
-from django.db.models import Count, Case, When
+from django.db.models import Count, Case, When, F
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -175,6 +175,8 @@ class Series(GcdData):
             self.first_issue = issues[0]
             self.last_issue = issues[len(issues) - 1]
         self.save()
+
+    _update_stats = True
 
     def stat_counts(self):
         """
