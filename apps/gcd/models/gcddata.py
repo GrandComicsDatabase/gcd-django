@@ -83,6 +83,9 @@ class GcdData(GcdBase):
 
     deleted = models.BooleanField(default=False, db_index=True)
 
+    def has_keywords(self):
+        return self.keywords.exists()
+
     def delete(self):
         self.deleted = True
         self.save()
