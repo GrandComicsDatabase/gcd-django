@@ -197,9 +197,6 @@ class Issue(GcdData):
         else:
             return False
 
-    def has_keywords(self):
-        return self.keywords.exists()
-
     def other_variants(self):
         if self.variant_of:
             variants = self.variant_of.active_variants().exclude(id=self.id)

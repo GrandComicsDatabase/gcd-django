@@ -92,9 +92,20 @@ class Story(GcdData):
     # Fields from issue.
     issue = models.ForeignKey('Issue')
 
+    _update_stats = True
+
+    def stat_counts(self):
+        if self.deleted:
+            return {}
+
+        return {
+            'stories': 1,
+        }
+
     def has_credits(self):
-        """Simplifies UI checks for conditionals.  Credit fields.
-        Note that the editor field does not apply to the special cover story."""
+        """
+        Simplifies UI checks for conditionals.  Credit fields.
+        """
         return self.script or \
                self.pencils or \
                self.inks or \
@@ -103,16 +114,15 @@ class Story(GcdData):
                self.editing or \
                self.job_number
 
-    def has_keywords(self):
-        return self.keywords.exists()
-
     def has_content(self):
-        """Simplifies UI checks for conditionals.  Content fields"""
+        """
+        Simplifies UI checks for conditionals.  Content fields
+        """
         return self.genre or \
                self.characters or \
                self.first_line or \
                self.synopsis or \
-               self.keywords.exists() or \
+               self.has_keywords() or \
                self.has_reprints()
                
     def has_reprints(self, notes=True):
@@ -122,22 +132,10 @@ class Story(GcdData):
                self.from_issue_reprints.count() or \
                self.to_issue_reprints.count()
 
-    @property
-    def reprint_needs_inspection(self):
-        if hasattr(self, 'migration_status') and self.migration_status:
-            return self.migration_status.reprint_needs_inspection
-        else:
-            return False
-
-    @property
-    def reprint_confirmed(self):
-        if hasattr(self, 'migration_status') and self.migration_status:
-            return self.migration_status.reprint_confirmed
-        else:
-            return True
-
     def has_data(self):
-        """Simplifies UI checks for conditionals.  All non-heading fields"""
+        """
+        Simplifies UI checks for conditionals.  All non-heading fields
+        """
         return self.has_credits() or self.has_content() or self.notes
 
     def get_absolute_url(self):
@@ -147,4 +145,3 @@ class Story(GcdData):
 
     def __unicode__(self):
         return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
-

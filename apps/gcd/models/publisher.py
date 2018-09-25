@@ -36,9 +36,6 @@ class BasePublisher(GcdData):
     keywords = TaggableManager()
     url = models.URLField(max_length=255, blank=True, default=u'')
 
-    def has_keywords(self):
-        return self.keywords.exists()
-
     def update_cached_counts(self, deltas, negate=False):
         """
         Updates the database fields that cache child object counts.

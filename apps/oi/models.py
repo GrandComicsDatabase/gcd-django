@@ -1859,7 +1859,7 @@ class Revision(models.Model):
         'fork' may be set to true to create a revision for a new data
         object based on an existing data object.  The source and
         previous_revision fields will be left null in this case.  Due to
-        this, the source issue will be passed separately to the customization
+        this, the source will be passed separately to the customization
         methods as 'fork_source'.
 
         Entirely new data objects should be started by simply instantiating
@@ -2233,10 +2233,10 @@ class Revision(models.Model):
             new_rp.set_value(self.source, old_rp.get_value(self))
 
         self._post_save_object(changes)
-        new_stats = self.source.stat_counts()
-        self._adjust_stats(changes, old_stats, new_stats)
         if self.deleted:
             self.source.delete()
+        new_stats = self.source.stat_counts()
+        self._adjust_stats(changes, old_stats, new_stats)
         self._handle_dependents(changes)
         #self.refresh_from_db()
 
@@ -4063,6 +4063,10 @@ class IssueRevision(Revision):
         if not self.deleted and self.issue.is_indexed != INDEXED['skeleton']:
             RecentIndexedIssue.objects.update_recents(self.issue)
 
+    def _post_commit_to_display(self):
+        if self.changeset.changeset_action() == ACTION_MODIFY and \
+           self.issue.is_indexed != INDEXED['skeleton']:
+            RecentIndexedIssue.objects.update_recents(self.issue)
 
 
     ######################################
@@ -4271,6 +4275,22 @@ class IssueRevision(Revision):
     def story_set(self):
         return self.ordered_story_revisions()
 
+    def _story_revisions(self):
+        if self.source is None:
+            return self.changeset.storyrevisions.filter(issue__isnull=True)\
+                                 .select_related('changeset', 'type')
+        return self.changeset.storyrevisions.filter(issue=self.source)\
+                             .select_related('changeset', 'issue', 'type')
+
+    def ordered_story_revisions(self):
+        return self._story_revisions().order_by('sequence_number')
+
+    def next_sequence_number(self):
+        stories = self._story_revisions()
+        if stories.count():
+            return stories.order_by('-sequence_number')[0].sequence_number + 1
+        return 0
+
     def _field_list(self):
         fields = get_issue_field_list()
         if self.changeset.change_type == CTYPES['issue_add'] or \
@@ -4418,15 +4438,6 @@ class IssueRevision(Revision):
         # Note, the "after" field does not directly contribute IMPs.
         return 0
 
-    def _do_complete_added_revision(self, series, variant_of=None):
-        """
-        Do the necessary processing to complete the fields of a new
-        issue revision for adding a record before it can be saved.
-        """
-        self.series = series
-        if variant_of:
-            self.variant_of = variant_of
-
     def _create_dependent_revisions(self, delete=False):
         for story in self.issue.active_stories():
             # currently stories cannot be reserved without the issue, but
@@ -4453,27 +4464,6 @@ class IssueRevision(Revision):
                                                cover=cover, deleted=True)
                 cover_revision.save()
         return True
-
-    def _post_commit_to_display(self):
-        if self.changeset.changeset_action() == ACTION_MODIFY and \
-           self.issue.is_indexed != INDEXED['skeleton']:
-            RecentIndexedIssue.objects.update_recents(self.issue)
-
-    def _story_revisions(self):
-        if self.source is None:
-            return self.changeset.storyrevisions.filter(issue__isnull=True)\
-                                 .select_related('changeset', 'type')
-        return self.changeset.storyrevisions.filter(issue=self.source)\
-                             .select_related('changeset', 'issue', 'type')
-
-    def ordered_story_revisions(self):
-        return self._story_revisions().order_by('sequence_number')
-
-    def next_sequence_number(self):
-        stories = self._story_revisions()
-        if stories.count():
-            return stories.order_by('-sequence_number')[0].sequence_number + 1
-        return 0
 
     def _check_first_last(self):
         set_series_first_last(self.series)
@@ -4566,21 +4556,29 @@ class PreviewIssue(Issue):
         return Cover.objects.none()
 
     def active_stories(self):
-        return self.story_set.exclude(deleted=True)
+        stories = self.revision.story_set.exclude(deleted=True)\
+                                     .order_by('sequence_number')\
+                                     .select_related('type')
+        active_stories = []
+        for story in stories:
+            preview_story = PreviewStory.init(story)
+            active_stories.append(preview_story)
+        return active_stories
 
-    @property
-    def story_set(self):
-        return self.ordered_story_revisions()
+    #@property
+    #def story_set(self):
+        #return self.revision.ordered_story_revisions()
 
-    def _story_revisions(self):
-        if self.id == 0:
-            return self.storyrevisions.filter(issue__isnull=True)\
-                                 .select_related('changeset', 'type')
-        return self.storyrevisions.filter(issue=self)\
-                             .select_related('changeset', 'issue', 'type')
+    #def _story_revisions(self):
+        #return self.revision._story_revisions()
+        #if self.id == 0:
+            #return self.storyrevisions.filter(issue__isnufll=True)\
+                                 #.select_related('changeset', 'type')
+        #return self.storyrevisions.filter(issue=self)\
+                             #.select_related('changeset', 'issue', 'type')
 
-    def ordered_story_revisions(self):
-        return self._story_revisions().order_by('sequence_number')
+    #def ordered_story_revisions(self):
+        #return self._story_revisions().order_by('sequence_number')
 
     def shown_stories(self):
         if self.variant_of:
@@ -4591,23 +4589,26 @@ class PreviewIssue(Issue):
                 base_issue = PreviewIssue(base_issue_revision.source)
                 base_issue.storyrevisions = base_issue_revision.changeset.storyrevisions
                 base_issue.id = base_issue_revision.source.id
+                base_issue.revision = base_issue_revision
+                #base_issue.series = base_issue_revision.series
             else:
                 base_issue = self.variant_of
-            stories = list(base_issue.active_stories()
-                                     .order_by('sequence_number')
-                                     .select_related('type'))
+            stories = base_issue.active_stories()
+            #stories = list(base_issue.active_stories()
+                                     #.order_by('sequence_number')
+                                     #.select_related('type'))
         else:
-            stories = list(self.active_stories().order_by('sequence_number')
-                                                .select_related('type'))
+            stories = self.active_stories()#.order_by('sequence_number')
+                                                #.select_related('type'))
         if self.series.is_comics_publication:
             if (len(stories) > 0):
                 cover_story = stories.pop(0)
                 if self.variant_of:
                     # can have only one sequence, the variant cover
-                    own_stories = list(self.active_stories())
+                    own_stories = self.active_stories()
                     if own_stories:
                         cover_story = own_stories[0]
-            elif self.variant_of and len(list(self.active_stories())):
+            elif self.variant_of and len(self.active_stories()):
                 cover_story = self.active_stories()[0]
             else:
                 cover_story = None
@@ -4642,83 +4643,8 @@ def get_story_field_list():
 
 
 class StoryRevisionManager(RevisionManager):
-
     def clone_revision(self, story, changeset):
-        """
-        Given an existing Story instance, create a new revision based on it.
-
-        This new revision will be where the edits are made.
-        If there are no revisions, first save a baseline so that the pre-edit
-        values are preserved.
-        Entirely new stories should be started by simply instantiating
-        a new StoryRevision directly.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=story,
-                                              instance_class=Story,
-                                              changeset=changeset)
-
-    def copy_revision(self, story, changeset, issue):
-        revision = self._do_create_revision(story,
-                                            changeset=changeset)
-        issue_revision = changeset.issuerevisions.get(issue=issue)
-        revision.story = None
-        revision.issue = issue
-        revision.sequence_number = issue_revision.next_sequence_number()
-        if revision.issue.series.language != story.issue.series.language:
-            if revision.letters:
-                revision.letters = u'?'
-            revision.title = u''
-            revision.title_inferred = False
-            revision.first_line = u''
-        revision.save()
-        return revision
-
-    def _do_create_revision(self, story, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = StoryRevision(
-            # revision-specific fields:
-            story=story,
-            changeset=changeset,
-
-            # copied fields:
-            title=story.title,
-            title_inferred=story.title_inferred,
-            first_line=story.first_line,
-            feature=story.feature,
-            page_count=story.page_count,
-            page_count_uncertain=story.page_count_uncertain,
-
-            script=story.script,
-            pencils=story.pencils,
-            inks=story.inks,
-            colors=story.colors,
-            letters=story.letters,
-            editing=story.editing,
-
-            no_script=story.no_script,
-            no_pencils=story.no_pencils,
-            no_inks=story.no_inks,
-            no_colors=story.no_colors,
-            no_letters=story.no_letters,
-            no_editing=story.no_editing,
-
-            notes=story.notes,
-            keywords=get_keywords(story),
-            synopsis=story.synopsis,
-            characters=story.characters,
-            reprint_notes=story.reprint_notes,
-            genre=story.genre,
-            type=story.type,
-            job_number=story.job_number,
-            sequence_number=story.sequence_number,
-
-            issue=story.issue)
-
-        revision.save()
-        return revision
+        return StoryRevision.clone(story, changeset)
 
 
 class StoryRevision(Revision):
@@ -4767,21 +4693,117 @@ class StoryRevision(Revision):
     issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
     date_inferred = models.BooleanField(default=False)
 
-    @property
-    def my_issue_revision(self):
-        if not hasattr(self, '_saved_my_issue_revision'):
-            self._saved_my_issue_revision = \
-                self.changeset.issuerevisions.filter(issue=self.issue)[0]
-            return self._saved_my_issue_revision
+    source_name = 'story'
+    source_class = Story
 
-    def toggle_deleted(self):
+    @property
+    def source(self):
+        return self.story
+
+    @source.setter
+    def source(self, value):
+        self.story = value
+
+    @classmethod
+    def _get_stats_category_field_tuples(cls):
+        return frozenset({('issue', 'series', 'country',),
+                          ('issue', 'series', 'language',)})
+
+    @classmethod
+    def copied_revision(cls, story, changeset, issue):
         """
-        Mark this revision as deleted, meaning that instead of copying it
-        back to the display table, the display table entry will be removed
-        when the revision is committed.
+        Given an existing story, create a new revision based on it for a 
+        new story with the copied data. 'fork' is set to true in such a case.
         """
-        self.deleted = not self.deleted
-        self.save()
+        revision = StoryRevision.clone(story, changeset, fork=True)
+        issue_revision = changeset.issuerevisions.get(issue=issue)
+        revision.issue = issue
+        revision.sequence_number = issue_revision.next_sequence_number()
+        if revision.issue.series.language != story.issue.series.language:
+            if revision.letters:
+                revision.letters = u'?'
+            revision.title = u''
+            revision.title_inferred = False
+            revision.first_line = u''
+        revision.save()
+        return revision
+
+    def _get_major_changes(self, extra_field_tuples=frozenset()):
+        # We need to look at issue for index status changes, but it does
+        # not otherwise behave like a normal parent field, nor does it
+        # fit into any of the other unusual field classifications.
+        extras = {('issue',)}
+
+        if extra_field_tuples:
+            # extra_field_tuples might be a frozenset, so add to our new
+            # set rather than the other way around.
+            extras.add(extra_field_tuples)
+
+        return super(StoryRevision, self)._get_major_changes(
+            extra_field_tuples=extras)
+
+    def _do_complete_added_revision(self, issue):
+        """
+        Do the necessary processing to complete the fields of a new
+        story revision for adding a record before it can be saved.
+        """
+        self.issue = issue
+
+    def _reset_values(self):
+        if self.deleted:
+            # users can edit story revisions before deleting them.
+            # ensure that the final deleted revision matches the
+            # final state of the story.
+            self.title = self.story.title
+            self.title_inferred = self.story.title_inferred
+            self.first_line = self.first_line
+            self.feature = self.story.feature
+            self.page_count = self.story.page_count
+            self.page_count_uncertain = self.story.page_count_uncertain
+
+            self.script = self.story.script
+            self.pencils = self.story.pencils
+            self.inks = self.story.inks
+            self.colors = self.story.colors
+            self.letters = self.story.letters
+            self.editing = self.story.editing
+
+            self.no_script = self.story.no_script
+            self.no_pencils = self.story.no_pencils
+            self.no_inks = self.story.no_inks
+            self.no_colors = self.story.no_colors
+            self.no_letters = self.story.no_letters
+            self.no_editing = self.story.no_editing
+
+            self.notes = self.story.notes
+            self.synopsis = self.story.synopsis
+            self.characters = self.story.characters
+            self.reprint_notes = self.story.reprint_notes
+            self.genre = self.story.genre
+            self.type = self.story.type
+            self.job_number = self.story.job_number
+            self.sequence_number = self.story.sequence_number
+            self.save()
+
+    def _handle_dependents(self, changes):
+        # While committing an issue is a prerequisite for the story,
+        # accounting for index status changes is dependent upon the
+        # story commit.
+        issues = [] if self.added else [changes['old issue']]
+        if changes['issue changed'] and not self.deleted:
+            issues.append(changes['new issue'])
+
+        #import pytest
+        for issue in issues:
+            delta = issue.set_indexed_status()
+            if delta:
+                if self.edited:
+                    assert issue.series.country is not None
+                    assert issue.series.language is not None
+                CountStats.objects.update_all_counts(
+                    {'issue indexes': delta},
+                    country=issue.series.country,
+                    language=issue.series.language)
 
     def deletable(self):
         if self.changeset.reprintrevisions \
@@ -4792,6 +4814,25 @@ class StoryRevision(Revision):
             return False
         else:
             return True
+
+    def toggle_deleted(self):
+        """
+        Mark this revision as deleted, meaning that instead of copying it
+        back to the display table, the display table entry will be removed
+        when the revision is committed.
+        """
+        self.deleted = not self.deleted
+        self.save()
+
+    ######################################
+    # TODO old methods, t.b.cf
+
+    @property
+    def my_issue_revision(self):
+        if not hasattr(self, '_saved_my_issue_revision'):
+            self._saved_my_issue_revision = \
+                self.changeset.issuerevisions.filter(issue=self.issue)[0]
+            return self._saved_my_issue_revision
 
     def moveable(self):
         """
@@ -4911,141 +4952,6 @@ class StoryRevision(Revision):
                 return 1
         return 0
 
-    def _get_source(self):
-        return self.story
-
-    def _get_source_name(self):
-        return 'story'
-
-    def _do_complete_added_revision(self, issue):
-        """
-        Do the necessary processing to complete the fields of a new
-        story revision for adding a record before it can be saved.
-        """
-        self.issue = issue
-
-    def _reset_values(self):
-        if self.deleted:
-            # users can edit story revisions before deleting them.
-            # ensure that the final deleted revision matches the
-            # final state of the story.
-            self.title = self.story.title
-            self.title_inferred = self.story.title_inferred
-            self.first_line = self.first_line
-            self.feature = self.story.feature
-            self.page_count = self.story.page_count
-            self.page_count_uncertain = self.story.page_count_uncertain
-
-            self.script = self.story.script
-            self.pencils = self.story.pencils
-            self.inks = self.story.inks
-            self.colors = self.story.colors
-            self.letters = self.story.letters
-            self.editing = self.story.editing
-
-            self.no_script = self.story.no_script
-            self.no_pencils = self.story.no_pencils
-            self.no_inks = self.story.no_inks
-            self.no_colors = self.story.no_colors
-            self.no_letters = self.story.no_letters
-            self.no_editing = self.story.no_editing
-
-            self.notes = self.story.notes
-            self.synopsis = self.story.synopsis
-            self.characters = self.story.characters
-            self.reprint_notes = self.story.reprint_notes
-            self.genre = self.story.genre
-            self.type = self.story.type
-            self.job_number = self.story.job_number
-            self.sequence_number = self.story.sequence_number
-            self.save()
-
-    def commit_to_display(self):
-        story = self.story
-        if story is None:
-            story = Story()
-            update_count('stories', 1, language=self.issue.series.language,
-                         country=self.issue.series.country)
-        elif self.deleted:
-            if self.issue.is_indexed != INDEXED['skeleton']:
-                if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
-                   self.issue.series.is_comics_publication:
-                    update_count('issue indexes', -1,
-                                 language=story.issue.series.language,
-                                 country=story.issue.series.country)
-            update_count('stories', -1, language=story.issue.series.language,
-                         country=story.issue.series.country)
-            self._reset_values()
-            story.delete()
-            return
-
-        story.title = self.title
-        story.title_inferred = self.title_inferred
-        story.first_line = self.first_line
-        story.feature = self.feature
-        if hasattr(story, 'issue') and (story.issue != self.issue):
-            if story.issue.series.language != self.issue.series.language or \
-               story.issue.series.country != self.issue.series.country:
-                update_count('stories', 1,
-                             language=self.issue.series.language,
-                             country=self.issue.series.country)
-                update_count('stories', -1,
-                             language=story.issue.series.language,
-                             country=story.issue.series.country)
-            old_issue = story.issue
-            story.issue = self.issue
-            if old_issue.set_indexed_status() is False:
-                update_count('issue indexes', -1,
-                             language=old_issue.series.language,
-                             country=old_issue.series.country)
-        else:
-            story.issue = self.issue
-        story.page_count = self.page_count
-        story.page_count_uncertain = self.page_count_uncertain
-
-        story.script = self.script
-        story.pencils = self.pencils
-        story.inks = self.inks
-        story.colors = self.colors
-        story.letters = self.letters
-        story.editing = self.editing
-
-        story.no_script = self.no_script
-        story.no_pencils = self.no_pencils
-        story.no_inks = self.no_inks
-        story.no_colors = self.no_colors
-        story.no_letters = self.no_letters
-        story.no_editing = self.no_editing
-
-        story.notes = self.notes
-        story.synopsis = self.synopsis
-        story.reprint_notes = self.reprint_notes
-        story.characters = self.characters
-        story.genre = self.genre
-        story.type = self.type
-        story.job_number = self.job_number
-        story.sequence_number = self.sequence_number
-
-        story.save()
-        save_keywords(self, story)
-        story.save()
-
-        if self.story is None:
-            self.story = story
-            self.save()
-
-        if self.issue.is_indexed == INDEXED['skeleton']:
-            if self.issue.set_indexed_status() != INDEXED['skeleton'] and \
-               self.issue.series.is_comics_publication:
-                update_count('issue indexes', 1,
-                             language=self.issue.series.language,
-                             country=self.issue.series.country)
-        else:
-            if self.issue.set_indexed_status() == INDEXED['skeleton'] and \
-               self.issue.series.is_comics_publication:
-                update_count('issue indexes', -1,
-                             language=self.issue.series.language,
-                             country=self.issue.series.country)
 
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue
@@ -5101,10 +5007,6 @@ class StoryRevision(Revision):
         else:
             return from_reprints
 
-    @property
-    def from_reprints(self):
-        return self.from_reprints_oi(preview=True)
-
     def from_issue_reprints_oi(self, preview=False):
         if self.story is None:
             return self.target_reprint_revisions\
@@ -5135,10 +5037,6 @@ class StoryRevision(Revision):
         else:
             return from_issue_reprints
 
-    @property
-    def from_issue_reprints(self):
-        return self.from_issue_reprints_oi(preview=True)
-
     def to_reprints_oi(self, preview=False):
         if self.story is None:
             return self.origin_reprint_revisions\
@@ -5167,10 +5065,6 @@ class StoryRevision(Revision):
             return new_revisions | old_revisions
         else:
             return to_reprints
-
-    @property
-    def to_reprints(self):
-        return self.to_reprints_oi(preview=True)
 
     def to_issue_reprints_oi(self, preview=False):
         if self.story is None:
@@ -5202,16 +5096,6 @@ class StoryRevision(Revision):
             return new_revisions | old_revisions
         else:
             return to_issue_reprints
-
-    @property
-    def to_issue_reprints(self):
-        return self.to_issue_reprints_oi(preview=True)
-
-    @property
-    def migration_status(self):
-        if self.story is None or not hasattr(self.story, 'migration_status'):
-            return MigrationStoryStatus.objects.none()
-        return self.story.migration_status
 
     def has_reprint_revisions(self):
         if self.story is None:
@@ -5248,46 +5132,46 @@ class StoryRevision(Revision):
             return True
         return False
 
-    def has_credits(self):
-        return (self.script or
-                self.pencils or
-                self.inks or
-                self.colors or
-                self.letters or
-                self.editing or
-                self.job_number)
+    #def has_credits(self):
+        #return (self.script or
+                #self.pencils or
+                #self.inks or
+                #self.colors or
+                #self.letters or
+                #self.editing or
+                #self.job_number)
 
-    def has_content(self):
-        return (self.genre or
-                self.characters or
-                self.first_line or
-                self.synopsis or
-                self.keywords or
-                self.has_reprints())
+    #def has_content(self):
+        #return (self.genre or
+                #self.characters or
+                #self.first_line or
+                #self.synopsis or
+                #self.keywords or
+                #self.has_reprints())
 
-    def has_reprints(self, notes=True):
-        return ((notes and self.reprint_notes) or
-                self.from_reprints.count() or
-                self.to_reprints.count() or
-                self.from_issue_reprints.count() or
-                self.to_issue_reprints.count())
+    #def has_reprints(self, notes=True):
+        #return ((notes and self.reprint_notes) or
+                #self.from_reprints.count() or
+                #self.to_reprints.count() or
+                #self.from_issue_reprints.count() or
+                #self.to_issue_reprints.count())
 
-    @property
-    def reprint_needs_inspection(self):
-        if self.story:
-            return self.story.reprint_needs_inspection
-        else:
-            return False
+    #@property
+    #def reprint_needs_inspection(self):
+        #if self.story:
+            #return self.story.reprint_needs_inspection
+        #else:
+            #return False
 
-    @property
-    def reprint_confirmed(self):
-        if self.story:
-            return self.story.reprint_confirmed
-        else:
-            return True
+    #@property
+    #def reprint_confirmed(self):
+        #if self.story:
+            #return self.story.reprint_confirmed
+        #else:
+            #return True
 
-    def has_data(self):
-        return self.has_credits() or self.has_content() or self.notes
+    #def has_data(self):
+        #return self.has_credits() or self.has_content() or self.notes
 
     def get_absolute_url(self):
         if self.story is None:
@@ -5300,6 +5184,42 @@ class StoryRevision(Revision):
         Re-implement locally instead of using self.story because it may change.
         """
         return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
+
+
+class PreviewStory(Story):
+    class Meta:
+        proxy = True
+
+    @classmethod
+    def init(cls, story_revision):
+        preview_story = PreviewStory(story_revision.source)
+        story_revision._copy_fields_to(preview_story)
+        preview_story.keywords = story_revision.keywords       
+        preview_story.revision = story_revision
+        if story_revision.source:
+            preview_story.id = story_revision.source.id
+        else:
+            preview_story.id = 0
+        return preview_story
+
+    @property
+    def from_reprints(self):
+        return self.revision.from_reprints_oi(preview=True)
+
+    @property
+    def to_reprints(self):
+        return self.revision.to_reprints_oi(preview=True)
+
+    @property
+    def from_issue_reprints(self):
+        return self.revision.from_issue_reprints_oi(preview=True)
+
+    @property
+    def to_issue_reprints(self):
+        return self.revision.to_issue_reprints_oi(preview=True)
+
+    def has_keywords(self):
+        return self.revision.has_keywords()
 
 
 class ReprintRevisionManager(RevisionManager):

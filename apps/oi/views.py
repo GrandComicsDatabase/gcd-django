@@ -53,7 +53,7 @@ from apps.oi.models import (
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
-    CreatorRelationRevision, PreviewBrand, PreviewIssue,
+    CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
     _get_creator_sourced_fields, on_sale_date_as_string)
 
 from apps.oi.forms import (get_brand_group_revision_form,
@@ -3323,8 +3323,8 @@ def copy_sequence(request, changeset_id, issue_id, story_id=None,
                                     kwargs={'select_key': select_key}))
     else:
         story = get_object_or_404(Story, id=story_id)
-        story_revision = StoryRevision.objects.copy_revision(story, changeset,
-                                                             issue=issue)
+        story_revision = StoryRevision.copied_revision(story, changeset,
+                                                       issue=issue)
         # sequence number should be determined in add_story
         # but this routine could be called differently as well
         if sequence_number:
@@ -3362,8 +3362,8 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
             { 'issue': issue, 'story': story,
               'reprint_revision': reprint_revision, 'direction': direction })
     else:
-        story_revision = StoryRevision.objects.copy_revision(story, changeset,
-                                                             issue=issue)
+        story_revision = StoryRevision.copied_revision(story, changeset,
+                                                       issue=issue)
         if reprint_revision.origin_story:
             reprint_revision.target_revision = story_revision
             reprint_revision.target_issue = None
@@ -3880,10 +3880,11 @@ def remove_story_revision(request, id):
         return toggle_delete_story_revision(request, id)
 
     if request.method != 'POST':
+        preview_story = PreviewStory.init(story)
         return oi_render(
           request, 'oi/edit/remove_story_revision.html',
           {
-            'story' : story,
+            'story' : preview_story,
             'issue' : story.issue
           })
 
@@ -4815,6 +4816,9 @@ def preview(request, id, model_name):
         else:
             model_object.id = revision.source.id
         revision._copy_fields_to(model_object)
+        # keywords are a TextField for the revision, but a M2M-relation
+        # for the model, overwrite for preview.
+        model_object.keywords = revision.keywords
         return globals()['show_%s' % (model_name)](request, model_object, True)
     if 'creator' == model_name:
         return show_creator(request, revision, True)
