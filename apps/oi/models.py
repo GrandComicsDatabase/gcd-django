@@ -4227,14 +4227,7 @@ class IssueRevision(Revision):
 
     def has_reprint_revisions(self):
         if self.issue is None:
-            if self.target_reprint_revisions\
-                   .filter(changeset__id=self.changeset_id).count():
-                return True
-            elif self.origin_reprint_revisions\
-                     .filter(changeset__id=self.changeset_id).count():
-                return True
-            else:
-                return False
+            return False
         if self.issue.target_reprint_revisions\
                .filter(changeset__id=self.changeset_id).count():
             return True
@@ -4266,6 +4259,12 @@ class IssueRevision(Revision):
             if active.filter(target_issue=self.issue):
                 return True
         return False
+
+    # IssueRevisions cannot have reprint links, need to fake for compare-view,
+    def _empty_reprint_revisions(self):
+        return ReprintRevision.objects.none()
+    origin_reprint_revisions = property(_empty_reprint_revisions)
+    target_reprint_revisions = property(_empty_reprint_revisions)
 
     # TODO what can be re-used/share with PreviewIssue
     def active_stories(self):
