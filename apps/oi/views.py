@@ -4109,7 +4109,10 @@ def _reorder_series(request, series, issues):
     # Do not move the call further down in this method.
     try:
         issue_list = _reorder_children(request, series, issues, 'sort_code',
-                                       series.active_issues(), 'commit' in request.POST)
+                                       series.issue_set.all(),
+                                       'commit' in request.POST,
+                                       extras=series.issue_set.filter(
+                                         deleted=True))
     except ViewTerminationError as vte:
         return vte.response
 
@@ -4156,7 +4159,7 @@ def reorder_stories(request, issue_id, changeset_id):
 
 
 def _reorder_children(request, parent, children, sort_field, child_set,
-                      commit, unique=True, skip=None):
+                      commit, unique=True, skip=None, extras=None):
     """
     Internal function implementing reordering in a generic way.
     Note that "children" may be a list or a query_set, while "child_set"
@@ -4226,6 +4229,12 @@ def _reorder_children(request, parent, children, sort_field, child_set,
     # Special case if there were no children and therefore for loop did nothing.
     if not children and skip is not None:
         setattr(skip, sort_field, current_code)
+
+    if commit and extras:
+        for child in extras:
+            setattr(child, sort_field, current_code)
+            child.save()
+            current_code += 1
 
     return child_list
 

@@ -1074,7 +1074,6 @@ class Changeset(models.Model):
             raise ErrorWithMessage(
                   "Only REVIEWING changes with an approver can be approved.")
 
-        issue_revision_count = self.issuerevisions.count()
         for revision in self.revisions:
             # TODO rethink the depency handling during committing
             #
@@ -3909,6 +3908,7 @@ class IssueRevision(Revision):
         else:
             return self._same_series_revisions().exclude(id__gte=self.id) \
                                                 .filter(committed=None) \
+                                                .filter(issue=None) \
                                                 .order_by('revision_sort_code')
 
     def _committed_prereq_revisions(self):
@@ -3941,6 +3941,7 @@ class IssueRevision(Revision):
                 (self.changeset, self))
         if after.exists() and (after.first() !=
                                self._same_series_revisions()
+                                   .filter(issue=None)
                                    .order_by('revision_sort_code')
                                    .first()):
             raise ValueError(
