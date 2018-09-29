@@ -2159,7 +2159,7 @@ def _display_add_series_form(request, publisher, form):
       })
 
 
-def init_added_variant(form_class, initial, issue):
+def init_added_variant(form_class, initial, issue, revision=False):
     for key in initial.keys():
         if key.startswith('_'):
             initial.pop(key)
@@ -2168,6 +2168,8 @@ def init_added_variant(form_class, initial, issue):
     if issue.indicia_publisher:
         initial['indicia_publisher'] = issue.indicia_publisher.id
     initial['variant_name'] = u''
+    if revision:
+        issue = issue.issue
     if issue.variant_set.filter(deleted=False).count():
         initial['after'] = issue.variant_set.filter(deleted=False)\
                                             .latest('sort_code').id
@@ -2261,7 +2263,8 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
 
     if request.method != 'POST':
         initial = dict(issue_revision.__dict__)
-        form = init_added_variant(form_class, initial, issue_revision)
+        form = init_added_variant(form_class, initial, issue_revision,
+                                  revision=True)
         return _display_add_issue_form(request, series, form, None, None,
                                        issue_revision=issue_revision)
 
@@ -2331,6 +2334,8 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
     action_label = 'Submit new'
     alternative_action = None
     alternative_label = None
+    extra_object_info = ''
+
     if variant_of:
         kwargs = {
             'issue_id': variant_of.id,
@@ -2361,12 +2366,14 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         }
         url = urlresolvers.reverse('add_issue', kwargs=kwargs)
         object_name = 'Issue'
+        extra_object_info = 'to %s' % series
 
     return oi_render(
       request, 'oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': url,
+        'extra_object_info': extra_object_info,
         'action_label': action_label,
         'form': form,
         'alternative_action': alternative_action,
