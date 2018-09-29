@@ -2334,7 +2334,6 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
     action_label = 'Submit new'
     alternative_action = None
     alternative_label = None
-    extra_object_info = ''
 
     if variant_of:
         kwargs = {
@@ -2343,12 +2342,14 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         if variant_cover:
             kwargs['cover_id'] = variant_cover.id
             action_label = 'Save new'
-            object_name = 'Variant Issue for %s and edit both' % variant_of
+            object_name = 'Variant Issue'
+            extra_adding_info = 'of %s and edit both' % variant_of
         else:
             alternative_action = 'edit_with_base'
             alternative_label = 'Save new Variant Issue for %s and edit both' \
                                 % variant_of
-            object_name = 'Variant Issue for %s' % variant_of
+            object_name = 'Variant Issue'
+            extra_adding_info = 'of %s' % variant_of
 
         url = urlresolvers.reverse('add_variant_issue', kwargs=kwargs)
     elif issue_revision:
@@ -2359,21 +2360,22 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         action_label = 'Save new'
         url = urlresolvers.reverse('add_variant_to_issue_revision',
                                    kwargs=kwargs)
-        object_name = 'Variant Issue for %s' % issue_revision
+        object_name = 'Variant Issue'
+        extra_adding_info = 'of %s' % issue_revision
     else:
         kwargs = {
             'series_id': series.id,
         }
         url = urlresolvers.reverse('add_issue', kwargs=kwargs)
         object_name = 'Issue'
-        extra_object_info = 'to %s' % series
+        extra_adding_info = 'to %s' % series
 
     return oi_render(
       request, 'oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': url,
-        'extra_object_info': extra_object_info,
+        'extra_adding_info': extra_adding_info,
         'action_label': action_label,
         'form': form,
         'alternative_action': alternative_action,
@@ -2560,11 +2562,13 @@ def _display_bulk_issue_form(request, series, form, method=None):
         kwargs['method'] = method
         url_name = 'add_multiple_issues'
     url = urlresolvers.reverse(url_name, kwargs=kwargs)
+    extra_adding_info = 'to %s' % series
     return oi_render(
       request, 'oi/edit/add_frame.html',
       {
         'object_name': 'Issues',
         'object_url': url,
+        'extra_adding_info': extra_adding_info,
         'action_label': 'Submit new',
         'form': form,
       })
