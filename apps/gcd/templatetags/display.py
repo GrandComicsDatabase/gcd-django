@@ -3,7 +3,6 @@ from decimal import Decimal
 from stdnum import ean as stdean
 from stdnum import isbn as stdisbn
 
-from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -12,8 +11,7 @@ from django.template.defaultfilters import title
 
 from apps.oi import states
 from apps.oi.models import StoryRevision, CTYPES, INDEXED
-from apps.gcd.templatetags.credits import show_page_count, format_page_count, \
-                                          split_reprint_string, show_title
+from apps.gcd.templatetags.credits import show_page_count, show_title
 from apps.gcd.models.creator import Creator, CreatorMembership, CreatorAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
                                     CreatorDegree, Award
@@ -40,6 +38,8 @@ STATE_CSS_NAME = {
     states.DISCARDED: 'discarded',
 }
 
+
+@register.filter
 def absolute_url(item, additional=''):
     if item is not None and hasattr(item, 'get_absolute_url'):
         if additional:
@@ -50,10 +50,14 @@ def absolute_url(item, additional=''):
                              (item.get_absolute_url(), esc(item)))
     return ''
 
+
+@register.filter
 def cover_image_tag(cover, size_alt_text):
     size, alt_text = size_alt_text.split(',')
     return get_image_tag(cover, alt_text, int(size))
 
+
+@register.filter
 def show_story_short(story, no_number=False, markup=True):
     if no_number:
         story_line = u''
@@ -72,8 +76,10 @@ def show_story_short(story, no_number=False, markup=True):
                                       esc(story.feature))
     else:
         if markup:
-            story_line = u'%s %s (%s)' % (esc(story_line), title,
-                                    '<span class="no_data">no feature</span>')
+            story_line = u'%s %s (%s)' % (
+              esc(story_line),
+              title,
+              '<span class="no_data">no feature</span>')
         else:
             story_line = u'%s %s (no feature)' % (esc(story_line), title)
 
@@ -88,6 +94,8 @@ def show_story_short(story, no_number=False, markup=True):
             story_line += 'no page count'
     return mark_safe(story_line)
 
+
+@register.filter
 def show_revision_short(revision, markup=True):
     if revision is None:
         return u''
@@ -95,6 +103,8 @@ def show_revision_short(revision, markup=True):
         return show_story_short(revision, markup=markup)
     return unicode(revision)
 
+
+@register.filter
 def show_volume(issue):
     if issue.no_volume:
         return u''
@@ -104,12 +114,15 @@ def show_volume(issue):
         return u'[%s]' % issue.volume
     return issue.volume
 
+
+@register.filter
 def show_issue_number(issue_number):
     """
     Return issue number.
     """
-    return mark_safe('<span class="issue_number">' + \
-        esc(issue_number) + '</span>')
+    return mark_safe('<span class="issue_number">' + esc(issue_number)
+                     + '</span>')
+
 
 def show_one_barcode(_barcode):
     """
@@ -136,6 +149,8 @@ def show_one_barcode(_barcode):
 
     return barcode
 
+
+@register.filter
 def show_barcode(_barcode):
     barcode = ''
     for code in _barcode.split(';'):
@@ -144,6 +159,8 @@ def show_barcode(_barcode):
         # chop trailing '; '
         return barcode[:-2]
 
+
+@register.filter
 def show_isbn(_isbn):
     isbn = ''
     for code in _isbn.split(';'):
@@ -155,6 +172,8 @@ def show_isbn(_isbn):
         # chop trailing '; '
         return isbn[:-2]
 
+
+@register.filter
 def show_issue(issue):
     if issue.display_number:
         issue_number = '%s' % (esc(issue.display_number))
@@ -171,6 +190,8 @@ def show_issue(issue):
                       esc(issue.series.year_began),
                       issue_number))
 
+
+@register.filter
 def show_series_tracking(series):
     tracking_line = u""
     if not series.has_series_bonds():
@@ -193,7 +214,7 @@ def show_series_tracking(series):
             near_issue_preposition = u"with"
             far_issue_preposition = u"from"
             far_preposition = u"from"
-        elif series  == srbond.bond.origin:
+        elif series == srbond.bond.origin:
             near_issue_preposition = u"after"
             far_issue_preposition = u"with"
             far_preposition = u"in"
@@ -230,6 +251,8 @@ def show_series_tracking(series):
 
     return mark_safe(tracking_line)
 
+
+@register.filter
 def show_indicia_pub(issue):
     if issue.indicia_publisher is None:
         if issue.indicia_pub_not_printed:
@@ -243,6 +266,8 @@ def show_indicia_pub(issue):
             ip_url += u' [not printed on item]'
     return mark_safe(ip_url)
 
+
+@register.filter
 def index_status_css(issue):
     """
     Text form of issue indexing status.  If clauses arranged in order of most
@@ -251,7 +276,7 @@ def index_status_css(issue):
     from apps.oi.templatetags.editing import is_locked
 
     if is_locked(issue):
-        active =  issue.revisions.get(changeset__state__in=states.ACTIVE)
+        active = issue.revisions.get(changeset__state__in=states.ACTIVE)
         return STATE_CSS_NAME[active.changeset.state]
     elif issue.is_indexed == INDEXED['full']:
         return 'approved'
@@ -260,6 +285,8 @@ def index_status_css(issue):
     else:
         return 'available'
 
+
+@register.filter
 def show_revision_type(cover):
     if cover.deleted:
         return u'[DELETED]'
@@ -274,6 +301,7 @@ def show_revision_type(cover):
         return u'[ADDITIONAL]'
     return u'[ADDED]'
 
+
 def compare_field_between_revs(field, rev, prev_rev):
     old = getattr(prev_rev, field)
     new = getattr(rev, field)
@@ -283,8 +311,12 @@ def compare_field_between_revs(field, rev, prev_rev):
         field_changed = old != new
     return field_changed
 
-# get a human readable list of fields changed in a given approved changeset
+
+@register.filter
 def changed_fields(changeset, object):
+    """
+    get a human readable list of fields changed in a given approved changeset
+    """
     object_class = type(object)
     if object_class is Issue:
         revision = changeset.issuerevisions.get(issue=object.id)
@@ -325,9 +357,10 @@ def changed_fields(changeset, object):
     prev_rev = revision.previous()
     changed_list = []
     if prev_rev is None:
-        # there was no previous revision so only list the initial add of the object.
-        # otherwise too many fields to list.
-        changed_list = [u'%s added' % title(revision.source_name.replace('_', ' '))]
+        # There was no previous revision so only list the initial add of
+        # the object. Otherwise too many fields to list.
+        changed_list = [u'%s added' % title(revision.source_name
+                                                    .replace('_', ' '))]
     elif revision.deleted:
         changed_list = [u'%s deleted' %
                         title(revision.source_name.replace('_', ' '))]
@@ -339,16 +372,21 @@ def changed_fields(changeset, object):
                 # history page. the only time it's relevant the line will
                 # read "issue added"
                 continue
-	    if compare_field_between_revs(field, revision, prev_rev):
+            if compare_field_between_revs(field, revision, prev_rev):
                 changed_list.append(field_name(field))
     return ", ".join(changed_list)
 
-# get a bulleted list of changes at the sequence level
+
+@register.filter
 def changed_story_list(changeset):
+    """
+    get a bulleted list of changes at the sequence level
+    """
     if changeset.issuerevisions.count() and \
-      changeset.change_type != CTYPES['issue_bulk']:
+       changeset.change_type != CTYPES['issue_bulk']:
         # only relevant for single issue changesets
-        story_revisions = changeset.storyrevisions.all().order_by('sequence_number')
+        story_revisions = changeset.storyrevisions.all()\
+                                   .order_by('sequence_number')
     else:
         return u''
 
@@ -374,6 +412,7 @@ def changed_story_list(changeset):
             output = u'<ul>%s</ul>' % output
     return mark_safe(output)
 
+
 def sum_page_counts(stories):
     """
     Return the sum of the story page counts.
@@ -384,8 +423,12 @@ def sum_page_counts(stories):
             count += story.page_count
     return count
 
-# translate field name into more human friendly name
+
+@register.filter
 def field_name(field):
+    """
+    translate field name into more human friendly name
+    """
     if field in ['is_current', 'is_surrogate']:
         return u'%s?' % title(field.replace(u'is_', u''))
     elif field in ['url', 'isbn']:
@@ -401,6 +444,8 @@ def field_name(field):
     else:
         return title(field.replace('_', ' '))
 
+
+@register.filter
 def link_other_reprint(reprint, is_source):
     if is_source:
         if hasattr(reprint, 'target'):
@@ -424,6 +469,8 @@ def link_other_reprint(reprint, is_source):
                       reprint.origin_issue.full_name())
     return mark_safe(text)
 
+
+@register.filter
 def key(d, key_name):
     try:
         value = d[key_name]
@@ -434,6 +481,8 @@ def key(d, key_name):
 
     return value
 
+
+@register.filter
 def str_encl(string, bracket):
     if string:
         if bracket == '(':
@@ -444,12 +493,16 @@ def str_encl(string, bracket):
             return '{' + string + '}'
     return string
 
+
+@register.filter
 def object_filter(search_result):
     if hasattr(search_result, 'object'):
         return search_result.object
     else:
         return search_result
 
+
+@register.filter
 def current_search(selected, search):
     if selected:
         if search == selected:
@@ -459,24 +512,10 @@ def current_search(selected, search):
             return mark_safe('"%s" selected' % search)
     return mark_safe('"%s"' % search)
 
-register.filter(current_search)
-register.filter(object_filter)
-register.filter(str_encl)
-register.filter(key)
-register.filter(absolute_url)
-register.filter(cover_image_tag)
-register.filter(show_story_short)
-register.filter(show_revision_short)
-register.filter(show_volume)
-register.filter(show_issue_number)
-register.filter(show_barcode)
-register.filter(show_isbn)
-register.filter(show_issue)
-register.filter(show_series_tracking)
-register.filter(show_indicia_pub)
-register.filter(index_status_css)
-register.filter(show_revision_type)
-register.filter(changed_fields)
-register.filter(changed_story_list)
-register.filter(field_name)
-register.filter(link_other_reprint)
+
+@register.filter
+def short_pub_type(publication_type):
+    if publication_type:
+        return '[' + publication_type.name[0] + ']'
+    else:
+        return ''
