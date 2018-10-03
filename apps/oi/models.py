@@ -4562,6 +4562,7 @@ class PreviewIssue(Issue):
         active_stories = []
         for story in stories:
             preview_story = PreviewStory.init(story)
+            preview_story.issue = self
             active_stories.append(preview_story)
         return active_stories
 
@@ -4590,10 +4591,11 @@ class PreviewIssue(Issue):
                 base_issue.storyrevisions = base_issue_revision.changeset.storyrevisions
                 base_issue.id = base_issue_revision.source.id
                 base_issue.revision = base_issue_revision
-                #base_issue.series = base_issue_revision.series
+                base_issue.series = base_issue_revision.series
+                stories = base_issue.active_stories()
             else:
                 base_issue = self.variant_of
-            stories = base_issue.active_stories()
+                stories = list(base_issue.active_stories())
             #stories = list(base_issue.active_stories()
                                      #.order_by('sequence_number')
                                      #.select_related('type'))
