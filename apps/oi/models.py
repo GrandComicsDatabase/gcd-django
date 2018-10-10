@@ -3691,8 +3691,7 @@ class IssueRevision(Revision):
     # when saving back the the DB. If null, place at the beginning of
     # the series.
     after = models.ForeignKey(
-        Issue, null=True, blank=True, related_name='after_revisions',
-        verbose_name='Add this issue after')
+        Issue, null=True, blank=True, related_name='after_revisions')
 
     # This is used *only* for multiple issues within the same changeset.
     # It does NOT correspond directly to gcd_issue.sort_code, which must be
@@ -3702,8 +3701,7 @@ class IssueRevision(Revision):
     # When adding an issue, this requests the reservation upon approval of
     # the new issue.  The request will be granted unless an ongoing reservation
     # is in place at the time of approval.
-    reservation_requested = models.BooleanField(
-        default=False, verbose_name='Request reservation')
+    reservation_requested = models.BooleanField(default=False)
 
     number = models.CharField(max_length=50)
 
@@ -3744,28 +3742,21 @@ class IssueRevision(Revision):
     series = models.ForeignKey(Series, related_name='issue_revisions')
     indicia_publisher = models.ForeignKey(
         IndiciaPublisher, null=True, blank=True, default=None,
-        related_name='issue_revisions',
-        verbose_name='indicia/colophon publisher')
-    indicia_pub_not_printed = models.BooleanField(
-        default=False,
-        verbose_name='indicia/colophon pub. not printed')
+        related_name='issue_revisions')
+    indicia_pub_not_printed = models.BooleanField(default=False)
     brand = models.ForeignKey(
         Brand, null=True, default=None, blank=True,
-        related_name='issue_revisions', verbose_name='brand emblem')
-    no_brand = models.BooleanField(default=False,
-                                   verbose_name='no brand emblem')
+        related_name='issue_revisions')
+    no_brand = models.BooleanField(default=False)
 
-    isbn = models.CharField(max_length=32, blank=True, default='',
-                            verbose_name='ISBN')
-    no_isbn = models.BooleanField(default=False, verbose_name='No ISBN')
+    isbn = models.CharField(max_length=32, blank=True, default='')
+    no_isbn = models.BooleanField(default=False)
 
     barcode = models.CharField(max_length=38, blank=True, default='')
     no_barcode = models.BooleanField(default=False)
 
-    rating = models.CharField(max_length=255, blank=True, default='',
-                              verbose_name="Publisher's age guidelines")
-    no_rating = models.BooleanField(
-        default=False, verbose_name="No publisher's age guidelines")
+    rating = models.CharField(max_length=255, blank=True, default='')
+    no_rating = models.BooleanField(default=False)
 
     date_inferred = models.BooleanField(default=False)
 
