@@ -68,11 +68,12 @@ REPRINT_NOTES = 13
 SYNOPSIS = 14
 STORY_NOTES = 15
 STORY_KEYWORDS = 16
+FIRST_LINE = 17
 
 SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
                    'pencils', 'inks', 'colors', 'letters', 'editing',
                    'genre', 'characters', 'job_number', 'reprint_notes',
-                   'synopsis', 'notes', 'keywords']
+                   'synopsis', 'notes', 'keywords', 'first_line']
 
 
 # from http://docs.python.org/library/csv.html
@@ -384,6 +385,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
             return story_type
 
         title = fields[TITLE].strip()
+        first_line = fields[FIRST_LINE].strip()
         if title.startswith('[') and title.endswith(']'):
             title = title[1:-1]
             title_inferred = True
@@ -421,6 +423,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
           changeset=changeset,
           title=title,
           title_inferred=title_inferred,
+          first_line=first_line,
           feature=feature,
           type=story_type,
           sequence_number=running_number,
