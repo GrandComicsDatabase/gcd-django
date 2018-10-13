@@ -6108,10 +6108,10 @@ class CreatorRevision(Revision):
     death_city = models.CharField(max_length=200, blank=True)
     death_city_uncertain = models.BooleanField(default=False)
 
-    whos_who = models.URLField(null=True, blank=True)
-    bio = models.TextField(blank=True, null=True)
+    whos_who = models.URLField(blank=True)
+    bio = models.TextField(blank=True)
 
-    notes = models.TextField(blank=True, null=True)
+    notes = models.TextField(blank=True)
 
     def _field_list(self):
         return get_creator_field_list()
