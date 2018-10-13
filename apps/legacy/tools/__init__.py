@@ -4,11 +4,12 @@ from django.contrib.auth.models import User
 from apps.oi.models import Changeset
 from apps.oi.views import _do_reserve
 from apps.oi import states
+from apps.oi.templatetags.editing import is_locked
 
 ANON_USER = User.objects.get(username=settings.ANON_USER_NAME)
 
 def migrate_reserve(display, label, comment=''):
-    if display.reserved == False:
+    if is_locked(display) == None:
         changeset=_do_reserve(ANON_USER, display, label)
         if changeset == None:
             raise ValueError, display
@@ -17,9 +18,6 @@ def migrate_reserve(display, label, comment=''):
         comment = changeset.comments.create(commenter=ANON_USER,
           text='This is an automatically generated changeset %s.' % comment,
           old_state=states.UNRESERVED, new_state=states.OPEN)
-        # not really race conflict save, but we cannot do a double click anyway
-        display.reserved=True
-        display.save()
         return changeset
     else:
         print "%s %s is reserved" % (label.capitalize(), display)
