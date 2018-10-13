@@ -175,6 +175,7 @@ def test_pre_commit_check_success(pre_commit_rev):
     pre_commit_rev._same_series_open_with_after.return_value \
                   .first.return_value = first_rev_mock
     pre_commit_rev._same_series_revisions.return_value \
+                  .filter.return_value \
                   .order_by.return_value \
                   .first.return_value = first_rev_mock
 
@@ -187,8 +188,9 @@ def test_pre_commit_check_success(pre_commit_rev):
         mock.call().filter(committed=True),
         mock.call().filter().exists(),
         mock.call(),
-        mock.call().order_by('revision_sort_code'),
-        mock.call().order_by().first()])
+        mock.call().filter(issue=None),
+        mock.call().filter().order_by('revision_sort_code'),
+        mock.call().filter().order_by().first()])
 
     # Note that the __nonzero__ call represents the result of exists()
     # being evaluated in a boolean expression.  __nonzero__ is the method
@@ -646,7 +648,7 @@ def patched_edit(story_revs):
 
 
 def test_handle_dependents_add(story_revs):
-    with mock.patch(RECENT) as recent_mock, mock.patch(SAVE), \
+    with mock.patch(SAVE), \
             mock.patch('%s.storyrevisions' % CSET) as story_mock:
         story_mock.filter.return_value = story_revs
         rev = IssueRevision(changeset=Changeset(),
@@ -658,8 +660,6 @@ def test_handle_dependents_add(story_revs):
             assert story.issue == rev.issue
             story.save.assert_called_once_with()
 
-        recent_mock.assert_called_once_with(rev.issue)
-
 
 def test_handle_dependents_edit(patched_edit, story_revs):
     rev, recent_mock = patched_edit
@@ -669,7 +669,7 @@ def test_handle_dependents_edit(patched_edit, story_revs):
         assert story.issue == rev.issue
         story.save.assert_called_once_with()
 
-    recent_mock.assert_called_once_with(rev.issue)
+    assert not recent_mock.called
 
 
 def test_handle_dependents_delete(patched_edit, story_revs):
@@ -731,6 +731,10 @@ def test_open_prereq_revisions(deleted):
         op_revs = mock.MagicMock()
         ssrevs_mock.return_value.exclude.return_value \
                                 .filter.return_value \
+                                .filter.return_value \
+                                .order_by.return_value = op_revs
+        ssrevs_mock.return_value.exclude.return_value \
+                                .filter.return_value \
                                 .order_by.return_value = op_revs
         rev = IssueRevision()
         rev.id = 1234
@@ -746,7 +750,8 @@ def test_open_prereq_revisions(deleted):
             ssrevs_mock.return_value.exclude.assert_has_calls([
                 mock.call(id__gte=1234),
                 mock.call().filter(committed=None),
-                mock.call().filter().order_by(sort)])
+                mock.call().filter().filter(issue=None),
+                mock.call().filter().filter().order_by(sort)])
 
 @pytest.mark.parametrize('deleted', (True, False))
 def test_committed_prereq_revisions(deleted):
