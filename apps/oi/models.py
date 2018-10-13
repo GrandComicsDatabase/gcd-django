@@ -4540,21 +4540,6 @@ class PreviewIssue(Issue):
             active_stories.append(preview_story)
         return active_stories
 
-    #@property
-    #def story_set(self):
-        #return self.revision.ordered_story_revisions()
-
-    #def _story_revisions(self):
-        #return self.revision._story_revisions()
-        #if self.id == 0:
-            #return self.storyrevisions.filter(issue__isnufll=True)\
-                                 #.select_related('changeset', 'type')
-        #return self.storyrevisions.filter(issue=self)\
-                             #.select_related('changeset', 'issue', 'type')
-
-    #def ordered_story_revisions(self):
-        #return self._story_revisions().order_by('sequence_number')
-
     def shown_stories(self):
         if self.variant_of:
             if self.issuerevisions.filter(issue=self.variant_of).exists():
@@ -4570,12 +4555,8 @@ class PreviewIssue(Issue):
             else:
                 base_issue = self.variant_of
                 stories = list(base_issue.active_stories())
-            #stories = list(base_issue.active_stories()
-                                     #.order_by('sequence_number')
-                                     #.select_related('type'))
         else:
-            stories = self.active_stories()#.order_by('sequence_number')
-                                                #.select_related('type'))
+            stories = self.active_stories()
         if self.series.is_comics_publication:
             if (len(stories) > 0):
                 cover_story = stories.pop(0)
@@ -4807,7 +4788,7 @@ class StoryRevision(Revision):
         self.save()
 
     ######################################
-    # TODO old methods, t.b.cf
+    # TODO old methods, t.b.c.
 
     @property
     def my_issue_revision(self):
@@ -5113,47 +5094,6 @@ class StoryRevision(Revision):
                .count():
             return True
         return False
-
-    #def has_credits(self):
-        #return (self.script or
-                #self.pencils or
-                #self.inks or
-                #self.colors or
-                #self.letters or
-                #self.editing or
-                #self.job_number)
-
-    #def has_content(self):
-        #return (self.genre or
-                #self.characters or
-                #self.first_line or
-                #self.synopsis or
-                #self.keywords or
-                #self.has_reprints())
-
-    #def has_reprints(self, notes=True):
-        #return ((notes and self.reprint_notes) or
-                #self.from_reprints.count() or
-                #self.to_reprints.count() or
-                #self.from_issue_reprints.count() or
-                #self.to_issue_reprints.count())
-
-    #@property
-    #def reprint_needs_inspection(self):
-        #if self.story:
-            #return self.story.reprint_needs_inspection
-        #else:
-            #return False
-
-    #@property
-    #def reprint_confirmed(self):
-        #if self.story:
-            #return self.story.reprint_confirmed
-        #else:
-            #return True
-
-    #def has_data(self):
-        #return self.has_credits() or self.has_content() or self.notes
 
     def get_absolute_url(self):
         if self.story is None:
