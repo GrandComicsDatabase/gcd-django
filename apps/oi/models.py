@@ -1109,8 +1109,8 @@ class Changeset(models.Model):
         self.indexer.indexer.add_imps(self.total_imps())
         self.approver.indexer.add_imps(IMP_APPROVER_VALUE)
 
+        # TODO remove once all type of revisions are re-factored
         for revision in self.revisions:
-            revision._post_commit_to_display()
             revision.committed = True
             revision.save()
 
@@ -2480,15 +2480,6 @@ class Revision(models.Model):
 
     def has_keywords(self):
         return self.keywords
-
-    def _post_commit_to_display(self):
-        """
-        Hook for individual revisions to perform additional processing
-        after it and all other revisions in the same changeset have been
-        committed to the display.  For instance, this allows an issue to
-        perform actions based on all attched stories having been committed.
-        """
-        pass
 
 
 class OngoingReservation(models.Model):
@@ -4052,14 +4043,6 @@ class IssueRevision(Revision):
             story.issue = self.issue
             story.save()
 
-        if not self.deleted and self.issue.is_indexed != INDEXED['skeleton']:
-            RecentIndexedIssue.objects.update_recents(self.issue)
-
-    def _post_commit_to_display(self):
-        if self.changeset.changeset_action() == ACTION_MODIFY and \
-           self.issue.is_indexed != INDEXED['skeleton']:
-            RecentIndexedIssue.objects.update_recents(self.issue)
-
 
     ######################################
     # TODO old methods, t.b.c
@@ -4797,6 +4780,12 @@ class StoryRevision(Revision):
                     {'issue indexes': delta},
                     country=issue.series.country,
                     language=issue.series.language)
+            # this is done for every story, but does not result in double
+            # entries in RecentIndexedIssue, check is in update_recents
+            #
+            # maybe can be done using changes[] on the changeset level ?
+            if issue.is_indexed:
+                RecentIndexedIssue.objects.update_recents(issue)
 
     def deletable(self):
         if self.changeset.reprintrevisions \
