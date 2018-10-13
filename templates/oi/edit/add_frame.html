@@ -23,7 +23,7 @@ Adding {{ object_name }}
 
 {% block view_body %}
 {% include "oi/bits/multi_selector.html" %}
-<h1>Adding {{ object_name }}</h1>
+<h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
 
 <div class="edit">
 <form action="{{ object_url }}" method="POST">

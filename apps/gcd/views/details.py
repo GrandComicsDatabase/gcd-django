@@ -1409,70 +1409,32 @@ def show_issue(request, issue, preview=False):
     """
     alt_text = u'Cover Thumbnail for %s' % issue.full_name()
     zoom_level = ZOOM_MEDIUM
-    if preview:
-        images_count = 0
-        not_shown_types = []
-        # excludes are currently only relevant for variant_add, maybe later
-        # other cover moves will be possible
-        if issue.changeset.change_type in [CTYPES['variant_add'],
-                                           CTYPES['two_issues']] and \
-          issue.changeset.coverrevisions.count():
-            # need to exclude the moved one
-            image_tag = mark_safe('')
-            if issue.issue and issue.issue.active_covers().count():
-                exclude_ids = issue.changeset.coverrevisions\
-                .filter(issue=issue.issue).values_list('cover__id', flat=True)
-                if len(exclude_ids) < issue.issue.active_covers().count():
-                    image_tag = get_image_tags_per_issue(issue=issue.issue,
-                                  zoom_level=zoom_level,
-                                  alt_text=alt_text,
-                                  exclude_ids=exclude_ids)
-            # add moved cover(s)
-            for cover in issue.changeset.coverrevisions\
-                                        .exclude(issue=issue.issue):
-                image_tag += get_image_tag(cover.cover,
-                                           alt_text=alt_text,
-                                           zoom_level=zoom_level)
-            if image_tag == '':
-                image_tag = mark_safe(get_image_tag(cover=None,
-                                                    zoom_level=zoom_level,
-                                                    alt_text=alt_text))
-        elif issue.issue:
-            image_tag = get_image_tags_per_issue(issue=issue.issue,
-                                                 zoom_level=zoom_level,
-                                                 alt_text=alt_text)
-            images_count = Image.objects.filter(object_id=issue.issue.id, 
-              deleted=False, 
-              content_type = ContentType.objects.get_for_model(issue.issue))\
-                                        .count()
-        else:
-            image_tag = mark_safe(get_image_tag(cover=None,
-                                                zoom_level=zoom_level,
-                                                alt_text=alt_text))
-        cover_page = 1
-    else:
-        if 'issue_detail' in request.GET:
-            try:
-                issue_detail = int(request.GET['issue_detail'])
-            except ValueError:
-                issue_detail = 1
-        elif request.user.is_authenticated:
-            issue_detail = request.user.indexer.issue_detail
-        else:
-            issue_detail = 1
-        if issue_detail == 0:
-            not_shown_types = StoryType.objects.exclude(id__in=CORE_TYPES)\
-                                .values_list('id', flat=True)
-        elif issue_detail == 1:
-            not_shown_types = AD_TYPES
-        else:
-            not_shown_types = []
-        image_tag = get_image_tags_per_issue(issue=issue,
-                                             zoom_level=zoom_level,
-                                             alt_text=alt_text)
-        images_count = Image.objects.filter(object_id=issue.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(issue)).count()
 
+    if 'issue_detail' in request.GET:
+        try:
+            issue_detail = int(request.GET['issue_detail'])
+        except ValueError:
+            issue_detail = 1
+    elif request.user.is_authenticated:
+        issue_detail = request.user.indexer.issue_detail
+    else:
+        issue_detail = 1
+    if issue_detail == 0:
+        not_shown_types = StoryType.objects.exclude(id__in=CORE_TYPES)\
+                            .values_list('id', flat=True)
+    elif issue_detail == 1:
+        not_shown_types = AD_TYPES
+    else:
+        not_shown_types = []
+    image_tag = get_image_tags_per_issue(issue=issue,
+                                          zoom_level=zoom_level,
+                                          alt_text=alt_text)
+    images_count = Image.objects.filter(object_id=issue.id, deleted=False,
+      content_type = ContentType.objects.get_for_model(issue)).count()
+
+    if preview:
+        cover_page = 0
+    else:
         covers = Cover.objects.filter(issue__series=issue.series,
                                       issue__sort_code__lt=issue.sort_code,
                                       deleted=False)
@@ -1496,18 +1458,13 @@ def show_issue(request, issue, preview=False):
     cover_story, stories = issue.shown_stories()
 
     # get reservations which got approved and make unique for indexers
-    res = issue.reservation_set.filter(status=3)
     oi_indexers = []
-    for i in res:
-        oi_indexers.append(i.indexer)
+    if not preview:
+        res = issue.reservation_set.filter(status=3)
+        for i in res:
+            oi_indexers.append(i.indexer)
 
-    if preview:
-        if issue.issue:
-            res = IssueRevision.objects.filter(issue=issue.issue)
-        else:
-            res = IssueRevision.objects.none()
-    else:
-        res = IssueRevision.objects.filter(issue=issue)
+    res = IssueRevision.objects.filter(issue=issue)
     res = res.filter(changeset__state=states.APPROVED)\
              .exclude(changeset__indexer__username=settings.ANON_USER_NAME)
     for i in res:
