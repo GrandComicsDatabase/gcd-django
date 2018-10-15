@@ -53,8 +53,8 @@ from apps.oi.models import (
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
-    CreatorRelationRevision, PreviewBrand,
-    _get_creator_sourced_fields)
+    CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
+    _get_creator_sourced_fields, on_sale_date_as_string)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -2159,7 +2159,7 @@ def _display_add_series_form(request, publisher, form):
       })
 
 
-def init_added_variant(form_class, initial, issue):
+def init_added_variant(form_class, initial, issue, revision=False):
     for key in initial.keys():
         if key.startswith('_'):
             initial.pop(key)
@@ -2168,6 +2168,8 @@ def init_added_variant(form_class, initial, issue):
     if issue.indicia_publisher:
         initial['indicia_publisher'] = issue.indicia_publisher.id
     initial['variant_name'] = u''
+    if revision:
+        issue = issue.issue
     if issue.variant_set.filter(deleted=False).count():
         initial['after'] = issue.variant_set.filter(deleted=False)\
                                             .latest('sort_code').id
@@ -2261,7 +2263,8 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
 
     if request.method != 'POST':
         initial = dict(issue_revision.__dict__)
-        form = init_added_variant(form_class, initial, issue_revision)
+        form = init_added_variant(form_class, initial, issue_revision,
+                                  revision=True)
         return _display_add_issue_form(request, series, form, None, None,
                                        issue_revision=issue_revision)
 
@@ -2331,6 +2334,7 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
     action_label = 'Submit new'
     alternative_action = None
     alternative_label = None
+
     if variant_of:
         kwargs = {
             'issue_id': variant_of.id,
@@ -2338,12 +2342,14 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         if variant_cover:
             kwargs['cover_id'] = variant_cover.id
             action_label = 'Save new'
-            object_name = 'Variant Issue for %s and edit both' % variant_of
+            object_name = 'Variant Issue'
+            extra_adding_info = 'of %s and edit both' % variant_of
         else:
             alternative_action = 'edit_with_base'
             alternative_label = 'Save new Variant Issue for %s and edit both' \
                                 % variant_of
-            object_name = 'Variant Issue for %s' % variant_of
+            object_name = 'Variant Issue'
+            extra_adding_info = 'of %s' % variant_of
 
         url = urlresolvers.reverse('add_variant_issue', kwargs=kwargs)
     elif issue_revision:
@@ -2354,19 +2360,22 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         action_label = 'Save new'
         url = urlresolvers.reverse('add_variant_to_issue_revision',
                                    kwargs=kwargs)
-        object_name = 'Variant Issue for %s' % issue_revision
+        object_name = 'Variant Issue'
+        extra_adding_info = 'of %s' % issue_revision
     else:
         kwargs = {
             'series_id': series.id,
         }
         url = urlresolvers.reverse('add_issue', kwargs=kwargs)
         object_name = 'Issue'
+        extra_adding_info = 'to %s' % series
 
     return oi_render(
       request, 'oi/edit/add_frame.html',
       {
         'object_name': object_name,
         'object_url': url,
+        'extra_adding_info': extra_adding_info,
         'action_label': action_label,
         'form': form,
         'alternative_action': alternative_action,
@@ -2553,11 +2562,13 @@ def _display_bulk_issue_form(request, series, form, method=None):
         kwargs['method'] = method
         url_name = 'add_multiple_issues'
     url = urlresolvers.reverse(url_name, kwargs=kwargs)
+    extra_adding_info = 'to %s' % series
     return oi_render(
       request, 'oi/edit/add_frame.html',
       {
         'object_name': 'Issues',
         'object_url': url,
+        'extra_adding_info': extra_adding_info,
         'action_label': 'Submit new',
         'form': form,
       })
@@ -3323,8 +3334,8 @@ def copy_sequence(request, changeset_id, issue_id, story_id=None,
                                     kwargs={'select_key': select_key}))
     else:
         story = get_object_or_404(Story, id=story_id)
-        story_revision = StoryRevision.objects.copy_revision(story, changeset,
-                                                             issue=issue)
+        story_revision = StoryRevision.copied_revision(story, changeset,
+                                                       issue=issue)
         # sequence number should be determined in add_story
         # but this routine could be called differently as well
         if sequence_number:
@@ -3362,8 +3373,8 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
             { 'issue': issue, 'story': story,
               'reprint_revision': reprint_revision, 'direction': direction })
     else:
-        story_revision = StoryRevision.objects.copy_revision(story, changeset,
-                                                             issue=issue)
+        story_revision = StoryRevision.copied_revision(story, changeset,
+                                                       issue=issue)
         if reprint_revision.origin_story:
             reprint_revision.target_revision = story_revision
             reprint_revision.target_issue = None
@@ -3880,10 +3891,11 @@ def remove_story_revision(request, id):
         return toggle_delete_story_revision(request, id)
 
     if request.method != 'POST':
+        preview_story = PreviewStory.init(story)
         return oi_render(
           request, 'oi/edit/remove_story_revision.html',
           {
-            'story' : story,
+            'story' : preview_story,
             'issue' : story.issue
           })
 
@@ -4108,7 +4120,10 @@ def _reorder_series(request, series, issues):
     # Do not move the call further down in this method.
     try:
         issue_list = _reorder_children(request, series, issues, 'sort_code',
-                                       series.active_issues(), 'commit' in request.POST)
+                                       series.issue_set.all(),
+                                       'commit' in request.POST,
+                                       extras=series.issue_set.filter(
+                                         deleted=True))
     except ViewTerminationError as vte:
         return vte.response
 
@@ -4155,7 +4170,7 @@ def reorder_stories(request, issue_id, changeset_id):
 
 
 def _reorder_children(request, parent, children, sort_field, child_set,
-                      commit, unique=True, skip=None):
+                      commit, unique=True, skip=None, extras=None):
     """
     Internal function implementing reordering in a generic way.
     Note that "children" may be a list or a query_set, while "child_set"
@@ -4225,6 +4240,12 @@ def _reorder_children(request, parent, children, sort_field, child_set,
     # Special case if there were no children and therefore for loop did nothing.
     if not children and skip is not None:
         setattr(skip, sort_field, current_code)
+
+    if commit and extras:
+        for child in extras:
+            setattr(child, sort_field, current_code)
+            child.save()
+            current_code += 1
 
     return child_list
 
@@ -4779,28 +4800,46 @@ def preview(request, id, model_name):
     template = 'gcd/details/%s.html' % model_name
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
-                      'brand', 'series']:
+                      'brand', 'series', 'issue']:
+        # TODO the model specific settings very likely should be methods
+        #      on the revision
         if model_name == 'brand':
             # fake for brand emblems the group_set
             if revision.source:
                 model_object = PreviewBrand(revision.source)
-                model_object.id = revision.source.id
                 for field in revision._get_irregular_fields():
                     setattr(model_object, field,
                             getattr(revision.source, field))
             else:
                 model_object = PreviewBrand()
             model_object._group  = revision.group
+        elif model_name == 'issue':
+            if revision.source:
+                model_object = PreviewIssue(revision.source)
+                model_object.sort_code = revision.source.sort_code
+            else:
+                model_object = PreviewIssue()
+                model_object.after = revision.after
+            model_object.issuerevisions = revision.changeset.issuerevisions
+            model_object.storyrevisions = revision.changeset.storyrevisions
+            model_object.series = revision.series
+            model_object.revision = revision
+            model_object.on_sale_date = on_sale_date_as_string(revision)
         else:
             if revision.source:
                 model_object = revision.source
             else:
                 model_object = revision.source_class()
-                model_object.id = 0
+        if not revision.source:
+            # this of course depends on there being no valid data with id 0
+            model_object.id = 0
+        else:
+            model_object.id = revision.source.id
         revision._copy_fields_to(model_object)
+        # keywords are a TextField for the revision, but a M2M-relation
+        # for the model, overwrite for preview.
+        model_object.keywords = revision.keywords
         return globals()['show_%s' % (model_name)](request, model_object, True)
-    if 'issue' == model_name:
-        return show_issue(request, revision, True)
     if 'creator' == model_name:
         return show_creator(request, revision, True)
     if 'creator_membership' == model_name:

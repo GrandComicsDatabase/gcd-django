@@ -98,9 +98,6 @@ class Series(GcdData):
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher)
 
-    def has_keywords(self):
-        return self.keywords.exists()
-
     def has_tracking(self):
         return self.tracking_notes or self.has_series_bonds()
 

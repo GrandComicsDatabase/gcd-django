@@ -1,5 +1,6 @@
 from django import template
 from diff_match_patch import diff_match_patch
+from django.conf import settings
 from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
                                            pluralize
 from django.utils.safestring import mark_safe
@@ -72,8 +73,11 @@ def field_value(revision, field):
         return value.full_name_with_link()
     elif field == 'brand':
         if value and value.emblem:
-            return mark_safe('<img src="' + value.emblem.icon.url + '"> ' \
-                             + absolute_url(value))
+            if settings.FAKE_IMAGES:
+                return absolute_url(value)
+            else:
+                return mark_safe('<img src="' + value.emblem.icon.url + '"> ' \
+                                 + absolute_url(value))
         return absolute_url(value)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
                    'characters', 'synopsis']:
