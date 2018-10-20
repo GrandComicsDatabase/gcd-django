@@ -20,7 +20,8 @@ from apps.indexer.views import render_error
 from apps.gcd.views.details import KEY_DATE_REGEXP
 from apps.gcd.models import StoryType, Issue
 from apps.oi.models import (
-    Changeset, StoryRevision, IssueRevision, get_keywords, GENRES)
+    Changeset, StoryRevision, IssueRevision, PreviewIssue, get_keywords,
+    GENRES, on_sale_date_as_string)
 
 MIN_ISSUE_FIELDS = 10
 # MAX_ISSUE_FIELDS is set to 16 to allow import of export issue lines, but
@@ -648,7 +649,12 @@ def generate_reprint_link(reprints, direction):
 @permission_required('indexer.can_reserve')
 def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     if revision:
-        issue = get_object_or_404(IssueRevision, id=issue_id)
+        issue_revision = get_object_or_404(IssueRevision, id=issue_id)
+        issue = PreviewIssue(issue_revision)
+        issue.series = issue_revision.series
+        issue.on_sale_date = on_sale_date_as_string(issue_revision)
+        issue.revision = issue_revision
+        issue.keywords = issue_revision.keywords
     else:
         issue = get_object_or_404(Issue, id=issue_id)
     series = issue.series

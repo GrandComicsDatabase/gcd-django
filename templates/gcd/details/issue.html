@@ -147,7 +147,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% if request.user.is_authenticated %}
           <div class="right">
     {% if preview %}
-            <a class="link_info_left" href="{% url "export_issue_revision_csv" issue.id %}"><span>download issue data (CSV)</span>
+            <a class="link_info_left" href="{% url "export_issue_revision_csv" issue.revision.id %}"><span>download issue data (CSV)</span>
     {% else %}
             <a class="link_info_left" href="{% url "export_issue_csv" issue.id %}"><span>download issue data (CSV)</span>
     {% endif %}
@@ -155,7 +155,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
             </a>
 
     {% if preview %}
-            <a class="link_info_left" href="{% url "export_issue_revision" issue.id %}"><span>download issue data</span>
+            <a class="link_info_left" href="{% url "export_issue_revision" issue.revision.id %}"><span>download issue data</span>
     {% else %}
             <a class="link_info_left" href="{% url "export_issue" issue.id %}"><span>download issue data</span>
     {% endif %}
