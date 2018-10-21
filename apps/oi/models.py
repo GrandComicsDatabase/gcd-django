@@ -4477,6 +4477,7 @@ class IssueRevision(Revision):
 
 
 class PreviewIssue(Issue):
+    # TODO add and use PreviewIssue.init
     class Meta:
         proxy = True
 
@@ -4544,6 +4545,7 @@ class PreviewIssue(Issue):
         if self.variant_of:
             if self.issuerevisions.filter(issue=self.variant_of).exists():
                 # if base_issue is part of the changeset use the storyrevisions
+                # TODO add and use PreviewIssue.init
                 base_issue_revision = self.issuerevisions\
                                  .filter(issue=self.variant_of).get()
                 base_issue = PreviewIssue(base_issue_revision.source)

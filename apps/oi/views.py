@@ -4816,6 +4816,7 @@ def preview(request, id, model_name):
                 model_object = PreviewBrand()
             model_object._group  = revision.group
         elif model_name == 'issue':
+            # TODO add and use PreviewIssue.init
             if revision.source:
                 model_object = PreviewIssue(revision.source)
                 model_object.sort_code = revision.source.sort_code
