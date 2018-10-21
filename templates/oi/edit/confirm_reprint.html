@@ -28,7 +28,7 @@
   {% csrf_token %}
   {% endif %}
   {% if story_revision %}
-  <form id="confirm" action="{% url "save_revision_story_reprint" story_revision_id=story.id changeset_id=changeset.id story_two_id=selected_story.id reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url "save_revision_story_reprint" story_revision_id=story.revision.id changeset_id=changeset.id story_two_id=selected_story.id reprint_revision_id=reprint_revision_id %}" method="POST">
   {% csrf_token %}
   {% endif %}
   {% if issue %}
@@ -41,7 +41,7 @@
   {% csrf_token %}
   {% endif %}
   {% if story_revision %}
-  <form id="confirm" action="{% url "save_revision_issue_reprint" story_revision_id=story.id changeset_id=changeset.id issue_two_id=selected_issue.id reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url "save_revision_issue_reprint" story_revision_id=story.revision.id changeset_id=changeset.id issue_two_id=selected_issue.id reprint_revision_id=reprint_revision_id %}" method="POST">
   {% csrf_token %}
   {% endif %}
   {% if issue %}

@@ -3106,7 +3106,7 @@ def edit_reprint(request, id, which_side=None):
                 story_revision = False
                 issue = None
             elif reprint_revision.origin_revision:
-                story = reprint_revision.origin_revision
+                story = PreviewStory.init(reprint_revision.origin_revision)
                 story_story = False
                 story_revision = True
                 issue = None
@@ -3129,7 +3129,7 @@ def edit_reprint(request, id, which_side=None):
                 story_revision = False
                 issue = None
             elif reprint_revision.target_revision:
-                story = reprint_revision.target_revision
+                story = PreviewStory.init(reprint_revision.target_revision)
                 story_story = False
                 story_revision = True
                 issue = None
@@ -3284,6 +3284,7 @@ def select_internal_object(request, id, changeset_id, which_side,
         this_story = None
     else:
         this_story = get_object_or_404(StoryRevision, id=story_id)
+        this_story = PreviewStory.init(this_story)
         this_issue = None
 
     return oi_render(request, 'oi/edit/confirm_internal.html',
@@ -3395,25 +3396,26 @@ def confirm_reprint(request, data, object_type, selected_id):
           kwargs={ 'id': data['changeset_id'] }))
 
     if 'story_id' in data and data['story_id']:
-        current_story = get_object_or_404(Story, id=data['story_id'])
-        current_story_revision = None
-        story = current_story
+        story = get_object_or_404(Story, id=data['story_id'])
+        story_revision = False
+        story_story = True
         current_issue = None
     elif 'story_revision_id' in data and data['story_revision_id']:
-        current_story = None
-        current_story_revision = get_object_or_404(StoryRevision,
+        story_story = False
+        story_revision = True
+        story_revision = get_object_or_404(StoryRevision,
                                    id=data['story_revision_id'],
                                    changeset__id=data['changeset_id'])
-        story = current_story_revision
+        story = PreviewStory.init(story_revision)
         current_issue = None
     elif 'issue_id' in data and data['issue_id']:
-        current_story = None
-        current_story_revision = None
+        story_story = False
+        story_revision = False
         story = None
         current_issue = get_object_or_404(Issue, id=data['issue_id'])
     elif 'issue_revision_id' in data and data['issue_revision_id']:
-        current_story = None
-        current_story_revision =None
+        story_story = False
+        story_revision = False
         story = None
         current_issue = get_object_or_404(IssueRevision,
                                           id=data['issue_revision_id'])
@@ -3449,8 +3451,8 @@ def confirm_reprint(request, data, object_type, selected_id):
         {
         'story': story,
         'issue': current_issue,
-        'story_story': current_story,
-        'story_revision': current_story_revision,
+        'story_story': story_story,
+        'story_revision': story_revision,
         'selected_story': selected_story,
         'selected_issue': selected_issue,
         'reprint_revision': reprint_revision,
