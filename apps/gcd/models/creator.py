@@ -573,7 +573,7 @@ class CreatorAward(GcdData):
         return self.creator.pending_deletion() is False
 
     def display_name(self):
-        if self.award_name:
+        if not self.no_award_name:
             return self.award_name
         else:
             return '[no name]'

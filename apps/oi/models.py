@@ -4575,6 +4575,15 @@ class PreviewIssue(Issue):
             cover_story = None
         return cover_story, stories
 
+    # we do not use ignore on preview, since target does not exist
+    # for revision and property cannot be filtered on
+    def has_reprints(self):
+        """Simplifies UI checks for conditionals, notes and reprint fields"""
+        return self.from_reprints.count() or \
+            self.to_reprints.count() or \
+            self.from_issue_reprints.count() or \
+            self.to_issue_reprints.count()
+
     @property
     def from_reprints(self):
         return self.revision.from_reprints_oi(preview=True)
@@ -5116,7 +5125,7 @@ class PreviewStory(Story):
 
     @classmethod
     def init(cls, story_revision):
-        preview_story = PreviewStory(story_revision.source)
+        preview_story = PreviewStory()
         story_revision._copy_fields_to(preview_story)
         preview_story.keywords = story_revision.keywords       
         preview_story.revision = story_revision
@@ -5727,31 +5736,7 @@ class ImageRevision(Revision):
 
 class AwardRevisionManager(RevisionManager):
     def clone_revision(self, award, changeset):
-        """
-        Given an existing Award instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=award,
-                                              instance_class=Award,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, award, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = AwardRevision(
-                # revision-specific fields:
-                award=award,
-                changeset=changeset,
-                # copied fields:
-                name=award.name,
-                notes=award.notes
-        )
-        revision.save()
-        return revision
+        return AwardRevision.clone(award, changeset)
 
 
 class AwardRevision(Revision):
@@ -5769,8 +5754,22 @@ class AwardRevision(Revision):
     name = models.CharField(max_length=200)
     notes = models.TextField(blank=True)
 
+    source_name = 'award'
+    source_class = Award
+
+    @property
+    def source(self):
+        return self.award
+
+    @source.setter
+    def source(self, value):
+        self.award = value
+
     def __unicode__(self):
         return self.name
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
 
     _base_field_list = ['name',
                         'notes',
@@ -5785,40 +5784,10 @@ class AwardRevision(Revision):
             'notes': '',
         }
 
-    def _get_source(self):
-        return self.award
-
-    def _get_source_name(self):
-        return 'award'
-
     def _imps_for(self, field_name):
         if field_name in self._base_field_list:
             return 1
         return 0
-
-    def commit_to_display(self):
-        awd = self.award
-        if awd is None:
-            awd = Award()
-
-        elif self.deleted:
-            awd.deleted = self.deleted
-            awd.save()
-            return
-        awd.name = self.name
-        awd.notes = self.notes
-
-        awd.save()
-
-        if self.award is None:
-            self.award = awd
-            self.save()
-
-    def active_awards(self):
-        if self.award:
-            return self.award.active_awards()
-        else:
-            return None
 
     def get_absolute_url(self):
         if self.award is None:
@@ -7019,45 +6988,8 @@ class CreatorMembershipRevision(Revision):
 
 
 class CreatorAwardRevisionManager(RevisionManager):
-    def _base_field_kwargs(self, instance):
-        return {
-            'award': instance.award,
-            'award_name': instance.award_name,
-            'no_award_name': instance.no_award_name,
-            'award_year': instance.award_year,
-            'award_year_uncertain': instance.award_year_uncertain,
-            'notes': instance.notes,
-        }
-
     def clone_revision(self, creator_award, changeset):
-        """
-        Given an existing CreatorAward instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_award,
-                                              instance_class=CreatorAward,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, creator_award, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._base_field_kwargs(creator_award)
-        revision = CreatorAwardRevision(
-                # revision-specific fields:
-                creator_award=creator_award,
-                changeset=changeset,
-                # copied fields:
-                creator=creator_award.creator,
-                **kwargs
-        )
-
-        revision.save()
-
-        return revision
+        return CreatorAwardRevision.clone(creator_award, changeset)
 
 
 class CreatorAwardRevision(Revision):
@@ -7083,6 +7015,28 @@ class CreatorAwardRevision(Revision):
     award_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
+    source_name = 'creator_award'
+    source_class = CreatorAward
+
+    @property
+    def source(self):
+        return self.creator_award
+
+    @source.setter
+    def source(self, value):
+        self.creator_award = value
+
+    def _do_complete_added_revision(self, creator):
+        """
+        Do the necessary processing to complete the fields of a new
+        series revision for adding a record before it can be saved.
+        """
+        self.creator = creator
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_award.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
     def __unicode__(self):
         if self.award:
             name = u'%s - %s' % (self.award.name, self.award_name)
@@ -7092,6 +7046,10 @@ class CreatorAwardRevision(Revision):
             return u'%s: %s (%d)' % (self.creator, name, self.award_year)
         else:
             return u'%s: %s' % (self.creator, name)
+
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
 
     _base_field_list = ['award',
                         'award_name',
@@ -7104,13 +7062,6 @@ class CreatorAwardRevision(Revision):
     def _field_list(self):
         return self._base_field_list
 
-    def _do_complete_added_revision(self, creator):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.creator = creator
-
     def _get_blank_values(self):
         return {
             'award': '',
@@ -7120,12 +7071,6 @@ class CreatorAwardRevision(Revision):
             'award_year_uncertain': False,
             'notes': '',
         }
-
-    def _get_source(self):
-        return self.creator_award
-
-    def _get_source_name(self):
-        return 'creator_award'
 
     def _start_imp_sum(self):
         self._seen_year = False
@@ -7146,36 +7091,19 @@ class CreatorAwardRevision(Revision):
             return 1
         return 0
 
-    def _create_dependent_revisions(self, delete=False):
-        data_sources = self.creator_award.data_source.all()
-        reserve_data_sources(data_sources, self.changeset, self, delete)
-
-    def commit_to_display(self, clear_reservation=True):
-        awd = self.creator_award
-        if awd is None:
-            awd = CreatorAward()
-
-        elif self.deleted:
-            awd.deleted = self.deleted
-            awd.save()
-            return
-        awd.creator = self.creator
-        awd.award = self.award
-        awd.award_name = self.award_name
-        awd.award_year = self.award_year
-        awd.award_year_uncertain = self.award_year_uncertain
-        awd.notes = self.notes
-
-        awd.save()
-
-        if self.creator_award is None:
-            self.creator_award = awd
-            self.save()
-
     def get_absolute_url(self):
         if self.creator_award is None:
             return "/creator_award/revision/%i/preview" % self.id
         return self.creator_award.get_absolute_url()
+
+
+class PreviewCreatorAward(CreatorAward):
+    class Meta:
+        proxy = True
+
+    @property
+    def data_source(self):
+        return DataSourceRevision.objects.filter(revision_id=self.revision.id)
 
 
 class CreatorArtInfluenceRevisionManager(RevisionManager):
