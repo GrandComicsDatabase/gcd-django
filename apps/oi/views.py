@@ -54,7 +54,8 @@ from apps.oi.models import (
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
     CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
-    PreviewCreatorAward, _get_creator_sourced_fields, on_sale_date_as_string)
+    PreviewCreatorAward, PreviewCreatorArtInfluence, PreviewCreatorDegree,
+    _get_creator_sourced_fields, on_sale_date_as_string)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -4802,7 +4803,8 @@ def preview(request, id, model_name):
     template = 'gcd/details/%s.html' % model_name
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
-                      'brand', 'series', 'issue', 'award', 'creator_award']:
+                      'brand', 'series', 'issue', 'award', 'creator_award',
+                      'creator_art_influence', 'creator_degree']:
         # TODO the model specific settings very likely should be methods
         #      on the revision
         if model_name == 'brand':
@@ -4831,6 +4833,12 @@ def preview(request, id, model_name):
         elif model_name == 'creator_award':
             model_object = PreviewCreatorAward()
             model_object.revision = revision
+        elif model_name == 'creator_art_influence':
+            model_object = PreviewCreatorArtInfluence()
+            model_object.revision = revision
+        elif model_name == 'creator_degree':
+            model_object = PreviewCreatorDegree()
+            model_object.revision = revision
         else:
             if revision.source:
                 model_object = revision.source
@@ -4845,7 +4853,8 @@ def preview(request, id, model_name):
         # keywords are a TextField for the revision, but a M2M-relation
         # for the model, overwrite for preview.
         # TODO should all have keywords ?
-        if not model_name in ['award', 'creator_award']:
+        if not model_name in ['award', 'creator_award', 'creator_art_influence',
+                              'creator_degree']:
             model_object.keywords = revision.keywords
         return globals()['show_%s' % (model_name)](request, model_object, True)
     if 'creator' == model_name:

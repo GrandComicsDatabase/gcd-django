@@ -2627,6 +2627,11 @@ class PublisherRevision(PublisherRevisionBase):
                 brand_revision.save()
         return True
 
+    def get_absolute_url(self):
+        if self.publisher is None:
+            return "/publisher/revision/%i/preview" % self.id
+        return self.publisher.get_absolute_url()
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -2662,11 +2667,6 @@ class PublisherRevision(PublisherRevisionBase):
         if field_name == 'country':
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
-
-    def get_absolute_url(self):
-        if self.publisher is None:
-            return "/publisher/revision/%i/preview" % self.id
-        return self.publisher.get_absolute_url()
 
 
 class IndiciaPublisherRevisionManager(RevisionManager):
@@ -2710,10 +2710,6 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         return frozenset({('parent',)})
 
     def _do_complete_added_revision(self, parent):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
         self.parent = parent
 
     def get_absolute_url(self):
@@ -2808,10 +2804,6 @@ class BrandGroupRevision(PublisherRevisionBase):
             brand_revision.commit_to_display()
 
     def _do_complete_added_revision(self, parent):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
         self.parent = parent
 
     def get_absolute_url(self):
@@ -3023,6 +3015,9 @@ class BrandUseRevision(Revision):
         self.publisher = publisher
         self.emblem = emblem
 
+    def __unicode__(self):
+        return u'brand emblem %s used by %s.' % (self.emblem, self.publisher)
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -3060,9 +3055,6 @@ class BrandUseRevision(Revision):
     def _queue_name(self):
         return u'%s at %s (%s)' % (self.emblem.name, self.publisher.name,
                                    self.year_began)
-
-    def __unicode__(self):
-        return u'brand emblem %s used by %s.' % (self.emblem, self.publisher)
 
 
 class CoverRevisionManager(RevisionManager):
@@ -3446,6 +3438,16 @@ class SeriesRevision(Revision):
                 issue_revision.key_date = '%d-00-00' % self.year_began
             issue_revision.save()
 
+    def get_absolute_url(self):
+        if self.series is None:
+            return "/series/revision/%i/preview" % self.id
+        return self.series.get_absolute_url()
+
+    def __unicode__(self):
+        if self.series is None:
+            return u'%s (%s series)' % (self.name, self.year_began)
+        return unicode(self.series)
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -3499,16 +3501,6 @@ class SeriesRevision(Revision):
         if years_found:
             return value
         return 1
-
-    def get_absolute_url(self):
-        if self.series is None:
-            return "/series/revision/%i/preview" % self.id
-        return self.series.get_absolute_url()
-
-    def __unicode__(self):
-        if self.series is None:
-            return u'%s (%s series)' % (self.name, self.year_began)
-        return unicode(self.series)
 
 
 class SeriesBondRevisionManager(RevisionManager):
@@ -4043,6 +4035,10 @@ class IssueRevision(Revision):
             story.issue = self.issue
             story.save()
 
+    def get_absolute_url(self):
+        if self.issue is None:
+            return "/issue/revision/%i/preview" % self.id
+        return self.issue.get_absolute_url()
 
     ######################################
     # TODO old methods, t.b.c
@@ -4442,11 +4438,6 @@ class IssueRevision(Revision):
     def _check_first_last(self):
         set_series_first_last(self.series)
 
-    def get_absolute_url(self):
-        if self.issue is None:
-            return "/issue/revision/%i/preview" % self.id
-        return self.issue.get_absolute_url()
-
     def full_name(self):
         if self.variant_name:
             return u'%s %s [%s]' % (self.series.full_name(),
@@ -4798,6 +4789,18 @@ class StoryRevision(Revision):
         self.deleted = not self.deleted
         self.save()
 
+    def get_absolute_url(self):
+        if self.story is None:
+            return "/issue/revision/%i/preview/#%i" % (
+                self.my_issue_revision.id, self.id)
+        return self.story.get_absolute_url()
+
+    def __unicode__(self):
+        """
+        Re-implement locally instead of using self.story because it may change.
+        """
+        return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
+
     ######################################
     # TODO old methods, t.b.c.
 
@@ -5105,18 +5108,6 @@ class StoryRevision(Revision):
                .count():
             return True
         return False
-
-    def get_absolute_url(self):
-        if self.story is None:
-            return "/issue/revision/%i/preview/#%i" % (
-                self.my_issue_revision.id, self.id)
-        return self.story.get_absolute_url()
-
-    def __unicode__(self):
-        """
-        Re-implement locally instead of using self.story because it may change.
-        """
-        return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
 
 
 class PreviewStory(Story):
@@ -5765,6 +5756,11 @@ class AwardRevision(Revision):
     def source(self, value):
         self.award = value
 
+    def get_absolute_url(self):
+        if self.award is None:
+            return "/award/revision/%i/preview" % self.id
+        return self.award.get_absolute_url()
+
     def __unicode__(self):
         return self.name
 
@@ -5788,11 +5784,6 @@ class AwardRevision(Revision):
         if field_name in self._base_field_list:
             return 1
         return 0
-
-    def get_absolute_url(self):
-        if self.award is None:
-            return "/award/revision/%i/preview" % self.id
-        return self.award.get_absolute_url()
 
 
 class DataSourceRevisionManager(RevisionManager):
@@ -6676,37 +6667,7 @@ class CreatorSchoolRevision(Revision):
 
 class CreatorDegreeRevisionManager(RevisionManager):
     def clone_revision(self, creator_degree, changeset):
-        """
-        Given an existing CreatorDegree instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_degree,
-                                              instance_class=CreatorDegree,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, creator_degree, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = CreatorDegreeRevision(
-                # revision-specific fields:
-                creator_degree=creator_degree,
-                changeset=changeset,
-                # copied fields:
-                creator=creator_degree.creator,
-                degree=creator_degree.degree,
-                school=creator_degree.school,
-                degree_year=creator_degree.degree_year,
-                degree_year_uncertain=creator_degree.degree_year_uncertain,
-                notes=creator_degree.notes
-        )
-
-        revision.save()
-
-        return revision
+        return CreatorDegreeRevision.clone(creator_degree, changeset)
 
 
 class CreatorDegreeRevision(Revision):
@@ -6734,15 +6695,38 @@ class CreatorDegreeRevision(Revision):
     degree_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
-    _base_field_list = ['school', 'degree',
-                        'degree_year', 'degree_year_uncertain', 'notes']
+    source_name = 'creator_degree'
+    source_class = CreatorDegree
+
+    @property
+    def source(self):
+        return self.creator_degree
+
+    @source.setter
+    def source(self, value):
+        self.creator_degree = value
 
     def _do_complete_added_revision(self, creator):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
         self.creator = creator
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_degree.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
+    def get_absolute_url(self):
+        if self.creator_degree is None:
+            return "/creator_degree/revision/%i/preview" % self.id
+        return self.creator_degree.get_absolute_url()
+
+    def __unicode__(self):
+        return u'%s - %s' % (
+            unicode(self.creator), unicode(self.degree.degree_name))
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
+
+    _base_field_list = ['school', 'degree',
+                        'degree_year', 'degree_year_uncertain', 'notes']
 
     def _field_list(self):
         return self._base_field_list
@@ -6769,54 +6753,16 @@ class CreatorDegreeRevision(Revision):
             return 1
         return 0
 
-    def _get_source(self):
-        return self.creator_degree
 
-    def _get_source_name(self):
-        return 'creator_degree'
+class PreviewCreatorDegree(CreatorDegree):
+    class Meta:
+        proxy = True
 
-    def _create_dependent_revisions(self, delete=False):
-        data_sources = self.creator_degree.data_source.all()
-        reserve_data_sources(data_sources, self.changeset, self, delete)
-
-    def commit_to_display(self):
-        creator_degree = self.creator_degree
-        if creator_degree is None:
-            creator_degree = CreatorDegree()
-        elif self.deleted:
-            creator_degree.delete()
-            return
-
-        creator_degree.school = self.school
-        creator_degree.degree = self.degree
-        creator_degree.degree_year = self.degree_year
-        creator_degree.degree_year_uncertain = \
-                                                    self.degree_year_uncertain
-        creator_degree.creator = self.creator
-        creator_degree.notes = self.notes
-        creator_degree.save()
-
-        if self.creator_degree is None:
-            self.creator_degree = creator_degree
-            self.save()
-
-    def get_absolute_url(self):
-        if self.creator_degree is None:
-            return "/creator_degree/revision/%i/preview" % self.id
-        return self.creator_degree.get_absolute_url()
-
-    def __unicode__(self):
-        return u'%s - %s' % (
-            unicode(self.creator), unicode(self.degree.degree_name))
-
-
-def _create_data_source_revision(instance, changeset, revision):
-    data_sources = instance.data_source.all()
-    for data_source in data_sources:
-        DataSourceRevision.objects.clone_revision(
-                                            data_source,
-                                            changeset=changeset,
-                                            sourced_revision=revision)
+    @property
+    def data_source(self):
+        return DataSourceRevision.objects.filter(
+          revision_id=self.revision.id,
+          content_type=ContentType.objects.get_for_model(self.revision))
 
 
 class CreatorMembershipRevisionManager(RevisionManager):
@@ -7027,15 +6973,16 @@ class CreatorAwardRevision(Revision):
         self.creator_award = value
 
     def _do_complete_added_revision(self, creator):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
         self.creator = creator
 
     def _create_dependent_revisions(self, delete=False):
         data_sources = self.creator_award.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
+
+    def get_absolute_url(self):
+        if self.creator_award is None:
+            return "/creator_award/revision/%i/preview" % self.id
+        return self.creator_award.get_absolute_url()
 
     def __unicode__(self):
         if self.award:
@@ -7091,11 +7038,6 @@ class CreatorAwardRevision(Revision):
             return 1
         return 0
 
-    def get_absolute_url(self):
-        if self.creator_award is None:
-            return "/creator_award/revision/%i/preview" % self.id
-        return self.creator_award.get_absolute_url()
-
 
 class PreviewCreatorAward(CreatorAward):
     class Meta:
@@ -7103,47 +7045,14 @@ class PreviewCreatorAward(CreatorAward):
 
     @property
     def data_source(self):
-        return DataSourceRevision.objects.filter(revision_id=self.revision.id)
+        return DataSourceRevision.objects.filter(
+          revision_id=self.revision.id,
+          content_type=ContentType.objects.get_for_model(self.revision))
 
 
 class CreatorArtInfluenceRevisionManager(RevisionManager):
-    def _base_field_kwargs(self, instance):
-        return {
-            'influence_name': instance.influence_name,
-            'influence_link': instance.influence_link,
-            'notes': instance.notes,
-        }
-
     def clone_revision(self, creator_art_influence, changeset):
-        """
-        Given an existing CreatorArtInfluence instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager\
-          .clone_revision(self,
-                          instance=creator_art_influence,
-                          instance_class=CreatorArtInfluence,
-                          changeset=changeset)
-
-    def _do_create_revision(self, creator_art_influence, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._base_field_kwargs(creator_art_influence)
-        revision = CreatorArtInfluenceRevision(
-                # revision-specific fields:
-                creator_art_influence=creator_art_influence,
-                changeset=changeset,
-                # copied fields:
-                creator=creator_art_influence.creator,
-                **kwargs
-        )
-
-        revision.save()
-
-        return revision
+        return CreatorArtInfluenceRevision.clone(creator_art_influence, changeset)
 
 
 class CreatorArtInfluenceRevision(Revision):
@@ -7169,6 +7078,29 @@ class CreatorArtInfluenceRevision(Revision):
                                        related_name='influenced_revisions')
     notes = models.TextField(blank=True)
 
+    source_name = 'creator_art_influence'
+    source_class = CreatorArtInfluence
+
+    @property
+    def source(self):
+        return self.creator_art_influence
+
+    @source.setter
+    def source(self, value):
+        self.creator_art_influence = value
+
+    def _do_complete_added_revision(self, creator):
+        self.creator = creator
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_art_influence.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
+    def get_absolute_url(self):
+        if self.creator_art_influence is None:
+            return "/creator_art_influence/revision/%i/preview" % self.id
+        return self.creator_art_influence.get_absolute_url()
+
     def __unicode__(self):
         if self.influence_name:
             influence = self.influence_name
@@ -7176,6 +7108,9 @@ class CreatorArtInfluenceRevision(Revision):
             influence = self.influence_link
 
         return u'%s: %s' % (self.creator, influence)
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
 
     _base_field_list = ['influence_name',
                         'influence_link',
@@ -7185,13 +7120,6 @@ class CreatorArtInfluenceRevision(Revision):
     def _field_list(self):
         return self._base_field_list
 
-    def _do_complete_added_revision(self, creator):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.creator = creator
-
     def _get_blank_values(self):
         return {
             'influence_name': '',
@@ -7199,46 +7127,21 @@ class CreatorArtInfluenceRevision(Revision):
             'notes': '',
         }
 
-    def _get_source(self):
-        return self.creator_art_influence
-
-    def _get_source_name(self):
-        return 'creator_art_influence'
-
     def _imps_for(self, field_name):
         if field_name in self._base_field_list:
             return 1
         return 0
 
-    def _create_dependent_revisions(self, delete=False):
-        data_sources = self.creator_art_influence.data_source.all()
-        reserve_data_sources(data_sources, self.changeset, self, delete)
 
-    def commit_to_display(self, clear_reservation=True):
-        art = self.creator_art_influence
-        if art is None:
-            art = CreatorArtInfluence()
+class PreviewCreatorArtInfluence(CreatorArtInfluence):
+    class Meta:
+        proxy = True
 
-        elif self.deleted:
-            art.deleted = self.deleted
-            art.save()
-            return
-
-        art.creator = self.creator
-        art.influence_name = self.influence_name
-        art.influence_link = self.influence_link
-        art.notes = self.notes
-
-        art.save()
-
-        if self.creator_art_influence is None:
-            self.creator_art_influence = art
-            self.save()
-
-    def get_absolute_url(self):
-        if self.creator_art_influence is None:
-            return "/creator_art_influence/revision/%i/preview" % self.id
-        return self.creator_art_influence.get_absolute_url()
+    @property
+    def data_source(self):
+        return DataSourceRevision.objects.filter(
+          revision_id=self.revision.id,
+          content_type=ContentType.objects.get_for_model(self.revision))
 
 
 class MultiURLValidator(URLValidator):
