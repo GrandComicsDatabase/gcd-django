@@ -6766,48 +6766,8 @@ class PreviewCreatorDegree(CreatorDegree):
 
 
 class CreatorMembershipRevisionManager(RevisionManager):
-    def _base_field_kwargs(self, instance):
-        return {
-            'organization_name': instance.organization_name,
-            'membership_type': instance.membership_type,
-            'membership_year_began': instance.membership_year_began,
-            'membership_year_began_uncertain':
-                instance.membership_year_began_uncertain,
-            'membership_year_ended': instance.membership_year_ended,
-            'membership_year_ended_uncertain':
-                instance.membership_year_ended_uncertain,
-            'notes': instance.notes,
-        }
-
     def clone_revision(self, creator_membership, changeset):
-        """
-        Given an existing CreatorMembership instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_membership,
-                                              instance_class=CreatorMembership,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, creator_membership, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._base_field_kwargs(creator_membership)
-        revision = CreatorMembershipRevision(
-                # revision-specific fields:
-                changeset=changeset,
-                creator_membership=creator_membership,
-                # copied fields:
-                creator=creator_membership.creator,
-                **kwargs
-        )
-
-        revision.save()
-
-        return revision
+        return CreatorMembershipRevision.clone(creator_membership, changeset)
 
 
 class CreatorMembershipRevision(Revision):
@@ -6839,6 +6799,35 @@ class CreatorMembershipRevision(Revision):
     membership_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
+    source_name = 'creator_membership'
+    source_class = CreatorMembership
+
+    @property
+    def source(self):
+        return self.creator_membership
+
+    @source.setter
+    def source(self, value):
+        self.creator_membership = value
+
+    def _do_complete_added_revision(self, creator):
+        self.creator = creator
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_membership.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
+    def get_absolute_url(self):
+        if self.creator_membership is None:
+            return "/creator_membership/revision/%i/preview" % self.id
+        return self.creator_membership.get_absolute_url()
+
+    def __unicode__(self):
+        return u'%s: %s' % (self.creator, unicode(self.organization_name))
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
+
     _base_field_list = ['organization_name',
                         'membership_type',
                         'membership_year_began',
@@ -6851,13 +6840,6 @@ class CreatorMembershipRevision(Revision):
     def _field_list(self):
         return self._base_field_list
 
-    def _do_complete_added_revision(self, creator):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.creator = creator
-
     def _get_blank_values(self):
         return {
             'organization_name': '',
@@ -6868,12 +6850,6 @@ class CreatorMembershipRevision(Revision):
             'membership_year_ended_uncertain': False,
             'notes': '',
         }
-
-    def _get_source(self):
-        return self.creator_membership
-
-    def _get_source_name(self):
-        return 'creator_membership'
 
     def _start_imp_sum(self):
         self._seen_year_began = False
@@ -6894,43 +6870,16 @@ class CreatorMembershipRevision(Revision):
             return 1
         return 0
 
-    def _create_dependent_revisions(self, delete=False):
-        data_sources = self.creator_membership.data_source.all()
-        reserve_data_sources(data_sources, self.changeset, self, delete)
 
-    def commit_to_display(self, clear_reservation=True):
-        ctm = self.creator_membership
-        if ctm is None:
-            ctm = CreatorMembership()
+class PreviewCreatorMembership(CreatorMembership):
+    class Meta:
+        proxy = True
 
-        elif self.deleted:
-            ctm.deleted = self.deleted
-            ctm.save()
-            return
-        ctm.creator = self.creator
-        ctm.organization_name = self.organization_name
-        ctm.membership_type = self.membership_type
-        ctm.membership_year_began = self.membership_year_began
-        ctm.membership_year_began_uncertain = \
-          self.membership_year_began_uncertain
-        ctm.membership_year_ended = self.membership_year_ended
-        ctm.membership_year_ended_uncertain = \
-          self.membership_year_ended_uncertain
-        ctm.notes = self.notes
-
-        ctm.save()
-
-        if self.creator_membership is None:
-            self.creator_membership = ctm
-            self.save()
-
-    def get_absolute_url(self):
-        if self.creator_membership is None:
-            return "/creator_membership/revision/%i/preview" % self.id
-        return self.creator_membership.get_absolute_url()
-
-    def __unicode__(self):
-        return u'%s: %s' % (self.creator, unicode(self.organization_name))
+    @property
+    def data_source(self):
+        return DataSourceRevision.objects.filter(
+          revision_id=self.revision.id,
+          content_type=ContentType.objects.get_for_model(self.revision))
 
 
 class CreatorAwardRevisionManager(RevisionManager):
