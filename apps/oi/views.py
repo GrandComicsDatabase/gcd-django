@@ -55,7 +55,8 @@ from apps.oi.models import (
     CreatorSchoolRevision, CreatorDegreeRevision,
     CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
     PreviewCreatorAward, PreviewCreatorArtInfluence, PreviewCreatorDegree,
-    _get_creator_sourced_fields, on_sale_date_as_string)
+    PreviewCreatorMembership, _get_creator_sourced_fields,
+    on_sale_date_as_string)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -4804,7 +4805,8 @@ def preview(request, id, model_name):
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
                       'brand', 'series', 'issue', 'award', 'creator_award',
-                      'creator_art_influence', 'creator_degree']:
+                      'creator_art_influence', 'creator_degree',
+                      'creator_membership']:
         # TODO the model specific settings very likely should be methods
         #      on the revision
         if model_name == 'brand':
@@ -4839,6 +4841,9 @@ def preview(request, id, model_name):
         elif model_name == 'creator_degree':
             model_object = PreviewCreatorDegree()
             model_object.revision = revision
+        elif model_name == 'creator_membership':
+            model_object = PreviewCreatorMembership()
+            model_object.revision = revision
         else:
             if revision.source:
                 model_object = revision.source
@@ -4854,25 +4859,15 @@ def preview(request, id, model_name):
         # for the model, overwrite for preview.
         # TODO should all have keywords ?
         if not model_name in ['award', 'creator_award', 'creator_art_influence',
-                              'creator_degree']:
+                              'creator_degree', 'creator_membership']:
             model_object.keywords = revision.keywords
         return globals()['show_%s' % (model_name)](request, model_object, True)
     if 'creator' == model_name:
         return show_creator(request, revision, True)
-    if 'creator_membership' == model_name:
-        return show_creator_membership(request, revision, True)
-    if 'creator_award' == model_name:
-        return show_creator_award(request, revision, True)
-    if 'creator_art_influence' == model_name:
-        return show_creator_art_influence(request, revision, True)
     if 'creator_non_comic_work' == model_name:
         return show_creator_non_comic_work(request, revision, True)
     if 'creator_school' == model_name:
         return show_creator_school(request, revision, True)
-    if 'creator_degree' == model_name:
-        return show_creator_degree(request, revision, True)
-    if 'award' == model_name:
-        return show_award(request, revision, True)
     return render_error(request,
       u'No preview for "%s" revisions.' % model_name)
 
@@ -5234,6 +5229,9 @@ def add_creator_membership(request, creator_id):
 
             revision.save_added_revision(changeset=changeset, creator=creator)
             revision.save()
+
+            process_data_source(membership_form, '', changeset,
+                                sourced_revision=revision)
 
             return submit(request, changeset.id)
 
