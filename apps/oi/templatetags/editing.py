@@ -116,6 +116,8 @@ def header_link(changeset):
         return mark_safe(u'%s (%s) %s' % (series_url, pub_url, issue_num))
     elif changeset.change_type == CTYPES['image']:
         return absolute_url(revision.object)
+    elif changeset.change_type == CTYPES['award']:
+        return mark_safe(u'%s' % (absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator']:
         return mark_safe(u'%s' % (absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_art_influence']:
