@@ -55,8 +55,8 @@ from apps.oi.models import (
     CreatorSchoolRevision, CreatorDegreeRevision,
     CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
     PreviewCreatorAward, PreviewCreatorArtInfluence, PreviewCreatorDegree,
-    PreviewCreatorMembership, PreviewCreatorSchool, _get_creator_sourced_fields,
-    on_sale_date_as_string)
+    PreviewCreatorMembership, PreviewCreatorNonComicWork, PreviewCreatorSchool,
+    _get_creator_sourced_fields, on_sale_date_as_string)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -4806,7 +4806,8 @@ def preview(request, id, model_name):
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
                       'brand', 'series', 'issue', 'award', 'creator_award',
                       'creator_art_influence', 'creator_degree',
-                      'creator_membership', 'creator_school']:
+                      'creator_membership', 'creator_non_comic_work',
+                      'creator_school']:
         # TODO the model specific settings very likely should be methods
         #      on the revision
         if model_name == 'brand':
@@ -4844,6 +4845,9 @@ def preview(request, id, model_name):
         elif model_name == 'creator_membership':
             model_object = PreviewCreatorMembership()
             model_object.revision = revision
+        elif model_name == 'creator_non_comic_work':
+            model_object = PreviewCreatorNonComicWork()
+            model_object.revision = revision
         elif model_name == 'creator_school':
             model_object = PreviewCreatorSchool()
             model_object.revision = revision
@@ -4863,13 +4867,11 @@ def preview(request, id, model_name):
         # TODO should all have keywords ?
         if not model_name in ['award', 'creator_award', 'creator_art_influence',
                               'creator_degree', 'creator_membership',
-                              'creator_school']:
+                              'creator_non_comic_work', 'creator_school']:
             model_object.keywords = revision.keywords
         return globals()['show_%s' % (model_name)](request, model_object, True)
     if 'creator' == model_name:
         return show_creator(request, revision, True)
-    if 'creator_non_comic_work' == model_name:
-        return show_creator_non_comic_work(request, revision, True)
     return render_error(request,
       u'No preview for "%s" revisions.' % model_name)
 
