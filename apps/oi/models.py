@@ -6518,39 +6518,7 @@ class CreatorNameDetailRevision(Revision):
 
 class CreatorSchoolRevisionManager(RevisionManager):
     def clone_revision(self, creator_school, changeset):
-        """
-        Given an existing CreatorSchool instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_school,
-                                              instance_class=CreatorSchool,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, creator_school, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = CreatorSchoolRevision(
-                # revision-specific fields:
-                creator_school=creator_school,
-                changeset=changeset,
-                # copied fields:
-                creator=creator_school.creator,
-                school=creator_school.school,
-                school_year_began=creator_school.school_year_began,
-                school_year_began_uncertain=
-                  creator_school.school_year_began_uncertain,
-                school_year_ended=creator_school.school_year_ended,
-                school_year_ended_uncertain=
-                  creator_school.school_year_ended_uncertain,
-                notes=creator_school.notes
-        )
-        revision.save()
-
-        return revision
+        return CreatorSchoolRevision.clone(creator_school, changeset)
 
 
 class CreatorSchoolRevision(Revision):
@@ -6577,12 +6545,35 @@ class CreatorSchoolRevision(Revision):
     school_year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
+    source_name = 'creator_school'
+    source_class = CreatorSchool
+
+    @property
+    def source(self):
+        return self.creator_school
+
+    @source.setter
+    def source(self, value):
+        self.creator_school = value
+
     def _do_complete_added_revision(self, creator):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
         self.creator = creator
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_school.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
+    def get_absolute_url(self):
+        if self.creator_school is None:
+            return "/creator_school/revision/%i/preview" % self.id
+        return self.creator_school.get_absolute_url()
+
+    def __unicode__(self):
+        return u'%s - %s' % (
+            unicode(self.creator), unicode(self.school.school_name))
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
 
     _base_field_list = ['school',
                         'school_year_began', 'school_year_began_uncertain',
@@ -6621,48 +6612,16 @@ class CreatorSchoolRevision(Revision):
             return 1
         return 0
 
-    def _get_source(self):
-        return self.creator_school
 
-    def _get_source_name(self):
-        return 'creator_school'
+class PreviewCreatorSchool(CreatorSchool):
+    class Meta:
+        proxy = True
 
-    def _create_dependent_revisions(self, delete=False):
-        data_sources = self.creator_school.data_source.all()
-        reserve_data_sources(data_sources, self.changeset, self, delete)
-
-    def commit_to_display(self):
-        creator_school = self.creator_school
-        if creator_school is None:
-            creator_school = CreatorSchool()
-        elif self.deleted:
-            creator_school.delete()
-            return
-
-        creator_school.school = self.school
-        creator_school.school_year_began = self.school_year_began
-        creator_school.school_year_began_uncertain = \
-                                            self.school_year_began_uncertain
-        creator_school.school_year_ended = self.school_year_ended
-        creator_school.school_year_ended_uncertain = \
-                                            self.school_year_ended_uncertain
-        creator_school.creator = self.creator
-        creator_school.notes = self.notes
-
-        creator_school.save()
-
-        if self.creator_school is None:
-            self.creator_school = creator_school
-            self.save()
-
-    def get_absolute_url(self):
-        if self.creator_school is None:
-            return "/creator_school/revision/%i/preview" % self.id
-        return self.creator_school.get_absolute_url()
-
-    def __unicode__(self):
-        return u'%s - %s' % (
-            unicode(self.creator), unicode(self.school.school_name))
+    @property
+    def data_source(self):
+        return DataSourceRevision.objects.filter(
+          revision_id=self.revision.id,
+          content_type=ContentType.objects.get_for_model(self.revision))
 
 
 class CreatorDegreeRevisionManager(RevisionManager):
