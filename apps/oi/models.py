@@ -7066,47 +7066,9 @@ class MultiURLValidator(URLValidator):
 
 
 class CreatorNonComicWorkRevisionManager(RevisionManager):
-    def _base_field_kwargs(self, instance):
-        return {
-            'work_type': instance.work_type,
-            'publication_title': instance.publication_title,
-            'employer_name': instance.employer_name,
-            'work_title': instance.work_title,
-            'work_role': instance.work_role,
-            'work_urls': instance.work_urls,
-            'notes': instance.notes,
-        }
-
     def clone_revision(self, creator_non_comic_work, changeset):
-        """
-        Given an existing CreatorNonComicWork instance, create a new revision
-        based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager\
-          .clone_revision(self,
-                          instance=creator_non_comic_work,
-                          instance_class=CreatorNonComicWork,
-                          changeset=changeset)
-
-    def _do_create_revision(self, creator_non_comic_work, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._base_field_kwargs(creator_non_comic_work)
-        revision = CreatorNonComicWorkRevision(
-                # revision-specific fields:
-                creator_non_comic_work=creator_non_comic_work,
-                changeset=changeset,
-                # copied fields:
-                creator=creator_non_comic_work.creator,
-                **kwargs
-        )
-
-        revision.work_years = creator_non_comic_work.display_years()
-        revision.save()
-        return revision
+        return CreatorNonComicWorkRevision.clone(creator_non_comic_work,
+                                                 changeset)
 
 
 class CreatorNonComicWorkRevision(Revision):
@@ -7140,6 +7102,82 @@ class CreatorNonComicWorkRevision(Revision):
     work_urls = models.TextField(blank=True, validators=[MultiURLValidator()])
     notes = models.TextField(blank=True)
 
+    source_name = 'creator_non_comic_work'
+    source_class = CreatorNonComicWork
+
+    @property
+    def source(self):
+        return self.creator_non_comic_work
+
+    @source.setter
+    def source(self, value):
+        self.creator_non_comic_work = value
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset()):
+        self.work_years = self.creator_non_comic_work.display_years()
+
+    def _do_complete_added_revision(self, creator):
+        self.creator = creator
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_non_comic_work.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
+    def _save_work_years(self, ncw, year, year_uncertain):
+        ncw_year, created = NonComicWorkYear.objects\
+          .get_or_create(non_comic_work=ncw, work_year=year)
+        ncw_year.work_year_uncertain = year_uncertain
+        ncw_year.save()
+        if not created:
+            self.existing_years.remove(ncw_year.id)
+
+    def _post_save_object(self, changes):
+        if self.work_years:
+            ncw = self.creator_non_comic_work
+            self.existing_years = list(NonComicWorkYear.objects
+                                       .filter(non_comic_work=ncw)
+                                       .values_list('id', flat=True))
+            for year in self.work_years.split(';'):
+                range_split = year.split('-')
+                if len(range_split) == 2:
+                    year_began = _check_year(range_split[0])
+                    year_end = _check_year(range_split[1])
+                    if year_began > year_end:
+                        raise ValueError
+
+                    self._save_work_years(ncw, year_began,
+                                          '?' in range_split[0])
+                    self._save_work_years(ncw, year_end,
+                                          '?' in range_split[1])
+
+                    if '?' in range_split[1] and '?' in range_split[0]:
+                        years_uncertain = True
+                    else:
+                        years_uncertain = False
+                    for i in range(year_began + 1, year_end):
+                        self._save_work_years(ncw, i, years_uncertain)
+                else:
+                    year_number = _check_year(year)
+                    self._save_work_years(ncw, year_number, '?' in year)
+
+            # remove years which are not present in value anymore
+            for i in self.existing_years:
+                ncw_year = NonComicWorkYear.objects.get(id=i)
+                ncw_year.delete()
+
+    def get_absolute_url(self):
+        if self.creator_non_comic_work is None:
+            return "/creator_non_comic_work/revision/%i/preview" % self.id
+        return self.creator_non_comic_work.get_absolute_url()
+
+    def __unicode__(self):
+        return u'%s: %s' % (unicode(self.creator),
+                            unicode(self.publication_title))
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
+
     _base_field_list = ['work_type',
                         'publication_title',
                         'employer_name',
@@ -7153,13 +7191,6 @@ class CreatorNonComicWorkRevision(Revision):
     def _field_list(self):
         return self._base_field_list
 
-    def _do_complete_added_revision(self, creator):
-        """
-        Do the necessary processing to complete the fields of a new
-        series revision for adding a record before it can be saved.
-        """
-        self.creator = creator
-
     def _get_blank_values(self):
         return {
             'work_type': '',
@@ -7172,110 +7203,21 @@ class CreatorNonComicWorkRevision(Revision):
             'notes': '',
         }
 
-    def _get_source(self):
-        return self.creator_non_comic_work
-
-    def _get_source_name(self):
-        return 'creator_non_comic_work'
-
     def _imps_for(self, field_name):
         if field_name in self._base_field_list:
             return 1
         return 0
 
-    def _create_dependent_revisions(self, delete=False):
-        data_sources = self.creator_non_comic_work.data_source.all()
-        reserve_data_sources(data_sources, self.changeset, self, delete)
 
-    def commit_to_display(self, clear_reservation=True):
-        ncw = self.creator_non_comic_work
-        if ncw is None:
-            ncw = CreatorNonComicWork()
+class PreviewCreatorNonComicWork(CreatorNonComicWork):
+    class Meta:
+        proxy = True
 
-        elif self.deleted:
-            ncw.deleted = self.deleted
-            ncw.save()
-            return
+    def display_years(self):
+        return self.revision.work_years
 
-        ncw.creator = self.creator
-        ncw.work_type = self.work_type
-        ncw.publication_title = self.publication_title
-        ncw.employer_name = self.employer_name
-        ncw.work_title = self.work_title
-        ncw.work_role = self.work_role
-        ncw.work_urls = self.work_urls
-        ncw.notes = self.notes
-
-        ncw.save()
-
-        if self.creator_non_comic_work is None:
-            self.creator_non_comic_work = ncw
-            self.save()
-
-        if self.work_years:
-            existing_years = list(NonComicWorkYear.objects
-                                  .filter(non_comic_work=ncw)
-                                  .values_list('id', flat=True))
-            for year in self.work_years.split(';'):
-                range_split = year.split('-')
-                if len(range_split) == 2:
-                    year_began = _check_year(range_split[0])
-                    year_end = _check_year(range_split[1])
-                    if year_began > year_end:
-                        raise ValueError
-                    years_uncertain = False
-
-                    ncw_year, created = NonComicWorkYear.objects\
-                      .get_or_create(non_comic_work=ncw, work_year=year_began)
-                    if '?' in range_split[0]:
-                        ncw_year.work_year_uncertain = True
-                    else:
-                        ncw_year.work_year_uncertain = False
-                    ncw_year.save()
-                    if not created:
-                        existing_years.remove(ncw_year.id)
-
-                    ncw_year, created = NonComicWorkYear.objects\
-                      .get_or_create(non_comic_work=ncw, work_year=year_end)
-                    if '?' in range_split[1]:
-                        ncw_year.work_year_uncertain = True
-                        if '?' in range_split[0]:
-                            years_uncertain = True
-                    else:
-                        ncw_year.work_year_uncertain = False
-                    ncw_year.save()
-                    if not created:
-                        existing_years.remove(ncw_year.id)
-
-                    for i in range(year_began + 1, year_end):
-                        ncw_year, created = NonComicWorkYear.objects\
-                          .get_or_create(non_comic_work=ncw, work_year=i)
-                        ncw_year.work_year_uncertain = years_uncertain
-                        ncw_year.save()
-                        if not created:
-                            existing_years.remove(ncw_year.id)
-                else:
-                    year_number = _check_year(year)
-                    ncw_year, created = NonComicWorkYear.objects\
-                      .get_or_create(non_comic_work=ncw,
-                                     work_year=year_number)
-                    if '?' in year:
-                        ncw_year.work_year_uncertain = True
-                    else:
-                        ncw_year.work_year_uncertain = False
-                    ncw_year.save()
-                    if not created:
-                        existing_years.remove(ncw_year.id)
-            # remove years which are not present in value anymore
-            for i in existing_years:
-                ncw_year = NonComicWorkYear.objects.get(id=i)
-                ncw_year.delete()
-
-    def get_absolute_url(self):
-        if self.creator_non_comic_work is None:
-            return "/creator_non_comic_work/revision/%i/preview" % self.id
-        return self.creator_non_comic_work.get_absolute_url()
-
-    def __unicode__(self):
-        return u'%s: %s' % (unicode(self.creator),
-                            unicode(self.publication_title))
+    @property
+    def data_source(self):
+        return DataSourceRevision.objects.filter(
+          revision_id=self.revision.id,
+          content_type=ContentType.objects.get_for_model(self.revision))
