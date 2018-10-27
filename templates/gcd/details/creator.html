@@ -37,7 +37,8 @@
             <p><strong>Links:</strong>
             <a href="{% url "haystack_search" %}?q={{ creator.gcd_official_name }}&selected_facets=facet_model_name_exact:story&sort=chrono">Credits in the GCD (via search for {{ creator }})</a>
   {% if creator.whos_who %}
-            / <a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a> {% endif %}</p>
+            / <a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a>
+  {% endif %}</p>
           </div> <!-- table-container -->
   {% if creator.portrait %}
           <h3>Portrait Image:</h3>
@@ -283,7 +284,7 @@
       </div> <!-- control_center -->
 
 
-  {% if not preview or creator.source %}
+  {% if not preview or creator.id %}
       <div id="control_rail">
         <div class="edit_box">
     {% if MYCOMICS %}
@@ -377,14 +378,9 @@
     {% endif %} <!-- MYCOMCIS -->
         </div> <!-- control_rail -->
         <div id="change_history" class="edit_footer">
-    {% if preview %}
-          <a href="{% url "change_history" model_name='creator' id=creator.source.id %}">View Change History</a>
-    {% else %}
           <a href="{% url "change_history" model_name='creator' id=creator.id %}">View Change History</a>
-    {% endif %}
         </div>
   {% endif %}
       </div> <!-- control_container -->
     </div> <!-- control_body -->
-  </div>
 {% endblock %}

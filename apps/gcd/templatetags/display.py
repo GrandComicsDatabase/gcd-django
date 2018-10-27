@@ -308,7 +308,12 @@ def compare_field_between_revs(field, rev, prev_rev):
     if type(new) == unicode:
         field_changed = old.strip() != new.strip()
     else:
-        field_changed = old != new
+        # TODO should be not hard-coded
+        import apps.stddata.models
+        if type(old) == apps.stddata.models.Date:
+            field_changed = str(old) != str(new)
+        else:
+            field_changed = old != new
     return field_changed
 
 

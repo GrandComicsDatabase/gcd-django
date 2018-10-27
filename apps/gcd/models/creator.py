@@ -96,6 +96,7 @@ class CreatorNameDetail(GcdData):
         verbose_name_plural = 'CreatorName Details'
 
     name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True, default='')
     creator = models.ForeignKey('Creator', related_name='creator_names')
     type = models.ForeignKey('NameType', related_name='nametypes', null=True)
 
@@ -304,6 +305,17 @@ class Creator(GcdData):
 
     def active_schools(self):
         return self.school_set.exclude(deleted=True)
+
+    _update_stats = True
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this creator.
+        """
+        if self.deleted:
+            return {}
+
+        return {'creators': 1}
 
     def get_absolute_url(self):
         return urlresolvers.reverse(

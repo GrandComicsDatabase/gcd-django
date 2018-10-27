@@ -11,6 +11,11 @@
                 name="gcd_official_name"
                 value="{{ official_name_details.name }}" required
                 style="margin-left: -12px;width: 138px;"> &nbsp;
+        <label>Sort Name:</label>
+        <input type="text" id="gcd_official_sort_name"
+                name="gcd_official_sort_name"
+                value="{{ official_name_details.sort_name }}"
+                style="margin-left: -12px;width: 138px;"> &nbsp;
         <label>Type:</label>
         <select name="gcd_official_type" id="gcd_official_type"
                 style="width: 118px; margin-left: -12px;">
@@ -52,6 +57,11 @@
                     name="name_{{ forloop.counter }}"
                     value="{{ other_name_detail.name }}" required
                     style="margin-left: -12px;width: 138px;"> &nbsp;
+            <label>Sort Name:</label>
+            <input type="text" id="sort_name_{{ forloop.counter }}"
+                    name="sort_name_{{ forloop.counter }}"
+                    value="{{ other_name_detail.sort_name }}"
+                    style="margin-left: -12px;width: 138px;"> &nbsp;
             <label>Type:</label>
             <select name="name_type_{{ forloop.counter }}"
                     id="name_type_{{ forloop.counter }}"
@@ -90,7 +100,7 @@
     {% endfor %}
 </div>
 <div>
-<span class="helptext"> All known names for a creator can be recorded, where we record various types of name. In particular pen name for any known signature, alias, etc., or the full name separated into the name(s) given at birth and the family name.</span>
+<span class="helptext"> All known names for a creator can be recorded, where we record various types of name. In particular pen name for any known signature, alias, etc., or the full name separated into the name(s) given at birth and the family name. For alphabetical sorting we use the sort name, which often is 'family name, given name', by default it is the same as 'name'.</span>
         <br><br>
 </div>
     <table class="editing">

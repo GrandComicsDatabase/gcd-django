@@ -114,7 +114,8 @@ def show_creator(request, creator, preview=False):
 
 def creator_membership(request, creator_membership_id):
     creator_membership = get_gcd_object(CreatorMembership, 
-                                        creator_membership_id)
+                                        creator_membership_id,
+                                        model_name='creator_membership')
     return show_creator_membership(request, creator_membership)
 
 
@@ -127,7 +128,8 @@ def show_creator_membership(request, creator_membership, preview=False):
 
 def creator_art_influence(request, creator_art_influence_id):
     creator_art_influence = get_gcd_object(CreatorArtInfluence,
-                                           creator_art_influence_id)
+                                           creator_art_influence_id,
+                                           model_name='creator_art_influence')
     return show_creator_art_influence(request, creator_art_influence)
 
 
@@ -139,7 +141,8 @@ def show_creator_art_influence(request, creator_art_influence, preview=False):
 
 
 def creator_award(request, creator_award_id):
-    creator_award = get_gcd_object(CreatorAward, creator_award_id)
+    creator_award = get_gcd_object(CreatorAward, creator_award_id,
+                                   model_name='creator_award')
     return show_creator_award(request, creator_award)
 
 
@@ -151,7 +154,8 @@ def show_creator_award(request, creator_award, preview=False):
 
 
 def creator_degree(request, creator_degree_id):
-    creator_degree = get_gcd_object(CreatorDegree, creator_degree_id)
+    creator_degree = get_gcd_object(CreatorDegree, creator_degree_id,
+                                    model_name='creator_degree')
     return show_creator_degree(request, creator_degree)
 
 
@@ -165,7 +169,8 @@ def show_creator_degree(request, creator_degree, preview=False):
 
 def creator_non_comic_work(request, creator_non_comic_work_id):
     creator_non_comic_work = get_gcd_object(CreatorNonComicWork,
-                                            creator_non_comic_work_id)
+                                            creator_non_comic_work_id,
+                                            model_name='creator_non_comic_work')
     return show_creator_non_comic_work(request, creator_non_comic_work)
 
 
@@ -178,7 +183,8 @@ def show_creator_non_comic_work(request, creator_non_comic_work, preview=False):
 
 def creator_relation(request, creator_relation_id):
     creator_relation = get_gcd_object(CreatorRelation,
-                                      creator_relation_id)
+                                      creator_relation_id,
+                                      model_name='creator_relation')
     return show_creator_relation(request, creator_relation)
 
 
@@ -190,7 +196,8 @@ def show_creator_relation(request, creator_relation, preview=False):
 
 
 def creator_school(request, creator_school_id):
-    creator_school = get_gcd_object(CreatorSchool, creator_school_id)
+    creator_school = get_gcd_object(CreatorSchool, creator_school_id,
+                                    model_name='creator_school')
     return show_creator_school(request, creator_school)
 
 
